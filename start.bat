@@ -11,7 +11,7 @@ echo.
 
 REM ---- Check Node.js ----
 where node >nul 2>&1
-if %ERRORLEVEL% neq 0 (
+if !ERRORLEVEL! neq 0 (
     echo [ERROR] Node.js is not installed or not in PATH.
     echo Please install Node.js from https://nodejs.org/
     echo.
@@ -25,7 +25,7 @@ echo.
 
 REM ---- Check npm ----
 where npm >nul 2>&1
-if %ERRORLEVEL% neq 0 (
+if !ERRORLEVEL! neq 0 (
     echo [ERROR] npm is not found.
     echo.
     pause
@@ -81,6 +81,17 @@ if "%1"=="--skip-build" (
     echo.
 )
 
+REM ---- Verify .next directory exists ----
+if not exist ".next\" (
+    echo.
+    echo [ERROR] .next directory not found after build!
+    echo This means the build did not complete properly.
+    echo Try running 'npm run build' manually to see errors.
+    echo.
+    pause
+    exit /b 1
+)
+
 REM ---- Start the server ----
 echo ============================================================
 echo   Starting PoE2 Market Dashboard...
@@ -91,7 +102,21 @@ echo ============================================================
 echo.
 
 set NODE_ENV=production
-call npx next start -p 3000
+
+REM Use npm run start instead of npx next start for reliability
+call npm run start
+if !ERRORLEVEL! neq 0 (
+    echo.
+    echo [ERROR] Server failed to start! Error code: !ERRORLEVEL!
+    echo.
+    echo [TIP] Common fixes:
+    echo   1. Port 3000 may be in use - close other apps or change port
+    echo   2. Try running: npm run dev
+    echo   3. Delete .next folder and run start.bat again
+    echo.
+    pause
+    exit /b 1
+)
 
 REM If next start exits unexpectedly, keep the window open
 echo.
