@@ -35,6 +35,16 @@ if !ERRORLEVEL! neq 0 (
 echo [OK] npm found.
 echo.
 
+REM ---- Kill any existing Next.js server on port 3000 ----
+echo [INFO] Checking for existing server on port 3000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
+    echo [INFO] Found process %%a on port 3000. Terminating...
+    taskkill /PID %%a /F >nul 2>&1
+    timeout /t 1 /nobreak >nul
+)
+echo [OK] Port 3000 is free.
+echo.
+
 REM ---- Install dependencies if needed ----
 if not exist "node_modules\" (
     echo [INFO] node_modules not found. Installing dependencies...
@@ -56,9 +66,10 @@ if not exist "node_modules\" (
     echo.
 )
 
-REM ---- Build project (always rebuild) ----
-if "%1"=="--skip-build" (
-    echo [INFO] Skipping build (--skip-build flag provided).
+REM ---- Build project ----
+REM Use --skip-build flag to skip:  start.bat --skip-build
+if "%~1"=="--skip-build" (
+    echo [INFO] Skipping build ^(--skip-build flag provided^).
     echo.
 ) else (
     echo [INFO] Building project...
@@ -103,20 +114,11 @@ echo.
 
 set NODE_ENV=production
 
-REM Use npm run start instead of npx next start for reliability
+REM Start the server — cleanup is handled automatically:
+REM When this CMD window closes (X button), Windows terminates
+REM the entire process tree including child node processes.
+REM We also kill port 3000 at the start of this script.
 call npm run start
-if !ERRORLEVEL! neq 0 (
-    echo.
-    echo [ERROR] Server failed to start! Error code: !ERRORLEVEL!
-    echo.
-    echo [TIP] Common fixes:
-    echo   1. Port 3000 may be in use - close other apps or change port
-    echo   2. Try running: npm run dev
-    echo   3. Delete .next folder and run start.bat again
-    echo.
-    pause
-    exit /b 1
-)
 
 REM If next start exits unexpectedly, keep the window open
 echo.
