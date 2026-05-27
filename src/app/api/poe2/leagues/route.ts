@@ -5,9 +5,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const realm = searchParams.get("realm");
-    if (!realm) {
+    if (!realm)
       return NextResponse.json({ error: "realm is required" }, { status: 400 });
-    }
     const leagues = await getLeagues(realm);
     return NextResponse.json(leagues);
   } catch (e: unknown) {

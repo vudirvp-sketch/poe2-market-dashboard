@@ -33,14 +33,16 @@ export async function GET(req: NextRequest) {
         const itemId = searchParams.get("itemId");
         if (!itemId) return NextResponse.json({ error: "itemId required" }, { status: 400 });
         const logCount = Number(searchParams.get("logCount") || 168);
-        const data = await getItemHistory(realm, league, itemId, logCount);
+        const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
+        const data = await getItemHistory(realm, league, itemId, logCount, referenceCurrency);
         return NextResponse.json(data);
       }
       case "daily": {
         const itemId = searchParams.get("itemId");
         if (!itemId) return NextResponse.json({ error: "itemId required" }, { status: 400 });
         const dayCount = Number(searchParams.get("dayCount") || 30);
-        const data = await getItemDailyStats(realm, league, itemId, dayCount);
+        const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
+        const data = await getItemDailyStats(realm, league, itemId, dayCount, referenceCurrency);
         return NextResponse.json(data);
       }
       default: {

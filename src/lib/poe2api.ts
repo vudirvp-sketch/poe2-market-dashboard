@@ -143,6 +143,14 @@ export interface SnapshotHistoryPoint {
   itemCount: number;
 }
 
+// Reference currency
+export interface ReferenceCurrency {
+  apiId: string;
+  text: string;
+  iconUrl: string | null;
+  relativePrice: number;
+}
+
 // ===================== API FUNCTIONS =====================
 
 // --- Realms ---
@@ -167,8 +175,8 @@ export async function getExchangeSnapshot(realm: string, league: string): Promis
   return cachedFetch<ExchangeSnapshot>(`${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ExchangeSnapshot`);
 }
 
-export async function getReferenceCurrencies(realm: string, league: string): Promise<PoeItem[]> {
-  return cachedFetch<PoeItem[]>(`${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ReferenceCurrencies`);
+export async function getReferenceCurrencies(realm: string, league: string): Promise<ReferenceCurrency[]> {
+  return cachedFetch<ReferenceCurrency[]>(`${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ReferenceCurrencies`);
 }
 
 export async function getSnapshotHistory(realm: string, league: string, limit = 24): Promise<SnapshotHistoryPoint[]> {
@@ -192,12 +200,16 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
   return cachedFetch<PoeItem>(`${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}`);
 }
 
-export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168): Promise<PoeItemHistoryPoint[]> {
-  return cachedFetch<PoeItemHistoryPoint[]>(`${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`);
+export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168, referenceCurrency?: string): Promise<PoeItemHistoryPoint[]> {
+  let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
+  if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
+  return cachedFetch<PoeItemHistoryPoint[]>(url);
 }
 
-export async function getItemDailyStats(realm: string, league: string, itemId: string, dayCount = 30): Promise<DailyStat[]> {
-  return cachedFetch<DailyStat[]>(`${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`);
+export async function getItemDailyStats(realm: string, league: string, itemId: string, dayCount = 30, referenceCurrency?: string): Promise<DailyStat[]> {
+  let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`;
+  if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
+  return cachedFetch<DailyStat[]>(url);
 }
 
 // --- Uniques (paginated) ---
@@ -207,7 +219,8 @@ export async function getUniquesByCategory(
   category = "all",
   page = 1,
   perPage = 50,
-  search = ""
+  search = "",
+  referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
   const params = new URLSearchParams({
     Category: category,
@@ -215,6 +228,7 @@ export async function getUniquesByCategory(
     PerPage: String(perPage),
   });
   if (search) params.set("Search", search);
+  if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
   return cachedFetch<PaginatedResponse<PoeItem>>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
   );
@@ -226,13 +240,15 @@ export async function getCurrenciesByCategory(
   league: string,
   category = "all",
   page = 1,
-  perPage = 50
+  perPage = 50,
+  referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
   const params = new URLSearchParams({
     Category: category,
     Page: String(page),
     PerPage: String(perPage),
   });
+  if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
   return cachedFetch<PaginatedResponse<PoeItem>>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
   );

@@ -10,12 +10,13 @@ export async function GET(req: NextRequest) {
     const page = Number(searchParams.get("page") || 1);
     const perPage = Number(searchParams.get("perPage") || 50);
     const search = searchParams.get("search") || "";
+    const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
 
     if (!realm || !league) {
       return NextResponse.json({ error: "realm and league are required" }, { status: 400 });
     }
 
-    const data = await getUniquesByCategory(realm, league, category, page, perPage, search);
+    const data = await getUniquesByCategory(realm, league, category, page, perPage, search, referenceCurrency);
     return NextResponse.json(data);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";

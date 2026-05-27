@@ -1,173 +1,45 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import {
   Coins,
   Shield,
   ArrowLeftRight,
-  Search,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  ChevronLeft,
-  ChevronRight,
-  X,
+  Star,
+  BarChart3,
   Loader2,
   AlertTriangle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+import { Header } from "@/components/dashboard/header";
+import { CurrencyCard } from "@/components/dashboard/currency-card";
+import { UniqueTable } from "@/components/dashboard/unique-table";
+import { ExchangePairCard } from "@/components/dashboard/exchange-pair-card";
+import { DetailDialog } from "@/components/dashboard/detail-dialog";
+import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
+import { MarketOverview } from "@/components/dashboard/market-overview";
+import { WatchlistTab } from "@/components/dashboard/watchlist-tab";
+import { Pagination } from "@/components/dashboard/pagination";
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-
-// ============================================================================
-// Types (mirrored from poe2api.ts for client use)
-// ============================================================================
-interface Realm {
-  name: string;
-  displayName: string;
-}
-
-interface League {
-  name: string;
-  displayName: string;
-  active: boolean;
-}
-
-interface PoeItem {
-  id: string;
-  apiId: string;
-  name: string;
-  type: string;
-  category: string;
-  iconUrl: string | null;
-  price: number | null;
-  priceChaos: number | null;
-  relativePrice: number | null;
-  change: number | null;
-  changePercent: number | null;
-  volume: number | null;
-  sevenDayPriceChange: number | null;
-  sevenDayPriceChangePercent: number | null;
-  lowConfidence: boolean;
-  listingCount: number | null;
-  history: PoeItemHistoryPoint[] | null;
-}
-
-interface PoeItemHistoryPoint {
-  timestamp: string;
-  price: number;
-  priceChaos: number;
-  relativePrice: number;
-  volume: number;
-}
-
-interface ExchangePair {
-  id: string;
-  currency1Id: string;
-  currency1Name: string;
-  currency1IconUrl: string | null;
-  currency2Id: string;
-  currency2Name: string;
-  currency2IconUrl: string | null;
-  price: number;
-  relativePrice: number;
-  volume: number;
-  change: number | null;
-  changePercent: number | null;
-}
-
-interface ItemCategory {
-  name: string;
-  displayName: string;
-  count: number;
-}
-
-interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  perPage: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-// ============================================================================
-// Fetch helpers (through our proxy routes)
-// ============================================================================
-async function fetchApi<T>(path: string, params?: Record<string, string>): Promise<T> {
-  const url = new URL(path, window.location.origin);
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => {
-      if (v) url.searchParams.set(k, v);
-    });
-  }
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
-  }
-  return res.json() as Promise<T>;
-}
-
-// ============================================================================
-// Sparkline component (tiny inline chart)
-// ============================================================================
-function Sparkline({ data, color, width = 80, height = 28 }: { data: number[]; color: string; width?: number; height?: number }) {
-  if (!data || data.length < 2) return <span className="text-muted-foreground text-xs">—</span>;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const points = data.map((v, i) => `${(i / (data.length - 1)) * width},${height - ((v - min) / range) * height}`).join(" ");
-  return (
-    <svg width={width} height={height} className="inline-block">
-      <polyline fill="none" stroke={color} strokeWidth={1.5} points={points} />
-    </svg>
-  );
-}
-
-// ============================================================================
-// Format helpers
-// ============================================================================
-function fmt(n: number | null | undefined, digits = 2): string {
-  if (n == null) return "—";
-  if (n >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 1 });
-  return n.toFixed(digits);
-}
-
-function fmtChange(pct: number | null | undefined): { text: string; color: string } {
-  if (pct == null) return { text: "—", color: "text-muted-foreground" };
-  const sign = pct > 0 ? "+" : "";
-  const color = pct > 0 ? "text-emerald-400" : pct < 0 ? "text-red-400" : "text-muted-foreground";
-  return { text: `${sign}${pct.toFixed(1)}%`, color };
-}
+  fetchApi,
+  fmt,
+  fmtChange,
+  exportToCsv,
+  exportToJson,
+} from "@/lib/types";
+import type {
+  Realm,
+  League,
+  PoeItem,
+  ExchangePair,
+  ItemCategory,
+  PaginatedResponse,
+  ReferenceCurrency,
+} from "@/lib/types";
 
 // ============================================================================
 // Main Dashboard
@@ -176,16 +48,30 @@ export default function Dashboard() {
   // --- Selection state ---
   const [realm, setRealm] = useState("pc");
   const [league, setLeague] = useState("");
-  const [tab, setTab] = useState("currencies");
+  const [tab, setTab] = useState("overview");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // --- Pagination state for uniques ---
+  // --- Pagination state ---
   const [uniquesPage, setUniquesPage] = useState(1);
+  const [uniquesPerPage, setUniquesPerPage] = useState(50);
+  const [currenciesPage, setCurrenciesPage] = useState(1);
+  const [currenciesPerPage, setCurrenciesPerPage] = useState(50);
 
   // --- Detail dialog ---
   const [detailItem, setDetailItem] = useState<PoeItem | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+
+  // --- Pair detail dialog ---
+  const [detailPair, setDetailPair] = useState<ExchangePair | null>(null);
+  const [pairDetailOpen, setPairDetailOpen] = useState(false);
+
+  // --- Auto-refresh ---
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // --- Base currency ---
+  const [referenceCurrency, setReferenceCurrency] = useState("");
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -206,64 +92,110 @@ export default function Dashboard() {
     return active?.name || leagues?.[0]?.name || "";
   }, [league, leagues]);
 
-  const { data: currenciesData, isLoading: currenciesLoading, refetch: refetchCurrencies } = useQuery({
-    queryKey: ["currencies", realm, effectiveLeague, categoryFilter],
+  // Reference currencies
+  const { data: referenceCurrencies } = useQuery({
+    queryKey: ["referenceCurrencies", realm, effectiveLeague],
+    queryFn: () =>
+      fetchApi<ReferenceCurrency[]>("/api/poe2/exchange", {
+        realm,
+        league: effectiveLeague,
+        action: "reference",
+      }),
+    enabled: !!effectiveLeague,
+  });
+
+  // Currencies
+  const {
+    data: currenciesData,
+    isLoading: currenciesLoading,
+    refetch: refetchCurrencies,
+  } = useQuery({
+    queryKey: [
+      "currencies",
+      realm,
+      effectiveLeague,
+      categoryFilter,
+      currenciesPage,
+      currenciesPerPage,
+      referenceCurrency,
+    ],
     queryFn: () =>
       fetchApi<PaginatedResponse<PoeItem>>("/api/poe2/currencies", {
         realm,
         league: effectiveLeague,
         action: "byCategory",
         category: categoryFilter,
+        page: String(currenciesPage),
+        perPage: String(currenciesPerPage),
+        referenceCurrency: referenceCurrency || "",
       }),
     enabled: tab === "currencies" && !!effectiveLeague,
+    refetchInterval: autoRefresh ? 60_000 : false,
+    refetchIntervalInBackground: false,
   });
 
+  // Item categories
   const { data: uniqueCategories } = useQuery({
     queryKey: ["itemCategories", realm, effectiveLeague],
-    queryFn: () => fetchApi<ItemCategory[]>("/api/poe2/items", { realm, league: effectiveLeague, action: "categories" }),
+    queryFn: () =>
+      fetchApi<ItemCategory[]>("/api/poe2/items", {
+        realm,
+        league: effectiveLeague,
+        action: "categories",
+      }),
     enabled: !!effectiveLeague,
   });
 
-  const { data: uniquesData, isLoading: uniquesLoading, refetch: refetchUniques } = useQuery({
-    queryKey: ["uniques", realm, effectiveLeague, categoryFilter, uniquesPage, search],
+  // Uniques
+  const {
+    data: uniquesData,
+    isLoading: uniquesLoading,
+    refetch: refetchUniques,
+  } = useQuery({
+    queryKey: [
+      "uniques",
+      realm,
+      effectiveLeague,
+      categoryFilter,
+      uniquesPage,
+      uniquesPerPage,
+      search,
+      referenceCurrency,
+    ],
     queryFn: () =>
       fetchApi<PaginatedResponse<PoeItem>>("/api/poe2/uniques", {
         realm,
         league: effectiveLeague,
         category: categoryFilter,
         page: String(uniquesPage),
-        perPage: "50",
+        perPage: String(uniquesPerPage),
         search,
+        referenceCurrency: referenceCurrency || "",
       }),
     enabled: tab === "uniques" && !!effectiveLeague,
+    refetchInterval: autoRefresh ? 60_000 : false,
+    refetchIntervalInBackground: false,
   });
 
-  const { data: exchangeData, isLoading: exchangeLoading, refetch: refetchExchange } = useQuery({
+  // Exchange
+  const {
+    data: exchangeData,
+    isLoading: exchangeLoading,
+    refetch: refetchExchange,
+  } = useQuery({
     queryKey: ["exchange", realm, effectiveLeague],
-    queryFn: () => fetchApi<ExchangePair[]>("/api/poe2/exchange", { realm, league: effectiveLeague, action: "pairs" }),
-    enabled: tab === "exchange" && !!effectiveLeague,
-  });
-
-  // Detail history
-  const { data: detailHistory, isLoading: detailHistoryLoading } = useQuery({
-    queryKey: ["itemHistory", realm, effectiveLeague, detailItem?.id],
     queryFn: () =>
-      fetchApi<PoeItemHistoryPoint[]>("/api/poe2/items", {
+      fetchApi<ExchangePair[]>("/api/poe2/exchange", {
         realm,
         league: effectiveLeague,
-        action: "history",
-        itemId: detailItem!.id,
+        action: "pairs",
       }),
-    enabled: !!detailItem && detailOpen,
+    enabled: tab === "exchange" && !!effectiveLeague,
+    refetchInterval: autoRefresh ? 60_000 : false,
+    refetchIntervalInBackground: false,
   });
 
   // --- Derived data ---
-  const currencyItems = useMemo(() => {
-    const items = currenciesData?.items || [];
-    if (!search) return items;
-    return items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
-  }, [currenciesData, search]);
-
   const exchangePairs = useMemo(() => {
     const pairs = exchangeData || [];
     if (!search) return pairs;
@@ -282,107 +214,150 @@ export default function Dashboard() {
   }, [uniqueCategories]);
 
   const uniqueCategoriesList = useMemo(() => {
-    const cats = uniqueCategories?.filter((c) => c.name === "Unique" || c.name.includes("Unique") || c.name.includes("Armour") || c.name.includes("Weapon") || c.name.includes("Accessory") || c.name.includes("Flask") || c.name.includes("Jewel") || c.name.includes("Gem")) || [];
+    const cats =
+      uniqueCategories?.filter(
+        (c) =>
+          c.name === "Unique" ||
+          c.name.includes("Unique") ||
+          c.name.includes("Armour") ||
+          c.name.includes("Weapon") ||
+          c.name.includes("Accessory") ||
+          c.name.includes("Flask") ||
+          c.name.includes("Jewel") ||
+          c.name.includes("Gem")
+      ) || [];
     if (cats.length === 0) cats.push({ name: "all", displayName: "All", count: 0 });
     return cats;
   }, [uniqueCategories]);
 
-  const currentCategories = tab === "currencies" ? currencyCategories : uniqueCategoriesList;
+  const currentCategories =
+    tab === "currencies" ? currencyCategories : uniqueCategoriesList;
 
   // --- Handlers ---
-  function openDetail(item: PoeItem) {
+  const openDetail = useCallback((item: PoeItem) => {
     setDetailItem(item);
     setDetailOpen(true);
-  }
+  }, []);
 
-  function handleRefresh() {
+  const openPairDetail = useCallback((pair: ExchangePair) => {
+    setDetailPair(pair);
+    setPairDetailOpen(true);
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    setLastUpdated(new Date());
     if (tab === "currencies") refetchCurrencies();
     else if (tab === "uniques") refetchUniques();
-    else refetchExchange();
-    toast.success("Refreshing data...");
-  }
+    else if (tab === "exchange") refetchExchange();
+  }, [tab, refetchCurrencies, refetchUniques, refetchExchange]);
 
-  // Filter items by search for currencies tab (client-side)
-  const filteredCurrencies = useMemo(() => {
-    if (!search) return currencyItems;
-    return currencyItems.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
-  }, [currencyItems, search]);
+  // Update lastUpdated when data arrives
+  useEffect(() => {
+    if (currenciesData || uniquesData || exchangeData) {
+      setLastUpdated(new Date());
+    }
+  }, [currenciesData, uniquesData, exchangeData]);
 
-  // --- Loading / Error states ---
+  // Keyboard navigation for pages
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (tab === "uniques" && uniquesData) {
+        if (e.key === "ArrowLeft" && e.altKey) {
+          setUniquesPage((p) => Math.max(1, p - 1));
+        } else if (e.key === "ArrowRight" && e.altKey) {
+          setUniquesPage((p) => Math.min(uniquesData.totalPages, p + 1));
+        }
+      }
+      if (tab === "currencies" && currenciesData) {
+        if (e.key === "ArrowLeft" && e.altKey) {
+          setCurrenciesPage((p) => Math.max(1, p - 1));
+        } else if (e.key === "ArrowRight" && e.altKey) {
+          setCurrenciesPage((p) => Math.min(currenciesData.totalPages, p + 1));
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tab, uniquesData, currenciesData]);
+
+  // --- Export handler ---
+  const handleExport = useCallback(
+    (format: "csv" | "json") => {
+      const timestamp = new Date().toISOString().slice(0, 10);
+      if (tab === "currencies" && currenciesData) {
+        const data = currenciesData.items.map((i) => ({
+          name: i.name,
+          type: i.type,
+          price: i.relativePrice ?? i.priceChaos,
+          changePercent: i.changePercent,
+          volume: i.volume,
+        }));
+        const fname = `currencies-${effectiveLeague}-${timestamp}`;
+        if (format === "csv") exportToCsv(data, fname);
+        else exportToJson(data, fname);
+      } else if (tab === "uniques" && uniquesData) {
+        const data = uniquesData.items.map((i) => ({
+          name: i.name,
+          type: i.type,
+          price: i.relativePrice ?? i.priceChaos,
+          changePercent: i.changePercent,
+          sevenDayChange: i.sevenDayPriceChangePercent,
+          volume: i.volume,
+        }));
+        const fname = `uniques-${effectiveLeague}-${timestamp}`;
+        if (format === "csv") exportToCsv(data, fname);
+        else exportToJson(data, fname);
+      } else if (tab === "exchange" && exchangeData) {
+        const data = exchangePairs.map((p) => ({
+          from: p.currency1Name,
+          to: p.currency2Name,
+          price: p.relativePrice,
+          volume: p.volume,
+          changePercent: p.changePercent,
+        }));
+        const fname = `exchange-${effectiveLeague}-${timestamp}`;
+        if (format === "csv") exportToCsv(data, fname);
+        else exportToJson(data, fname);
+      }
+    },
+    [tab, currenciesData, uniquesData, exchangeData, exchangePairs, effectiveLeague]
+  );
+
+  // --- Loading state ---
   const isLoading =
     (tab === "currencies" && currenciesLoading) ||
     (tab === "uniques" && uniquesLoading) ||
     (tab === "exchange" && exchangeLoading);
 
+  const showExport = tab === "currencies" || tab === "uniques" || tab === "exchange";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 mr-4">
-            <Activity className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-bold tracking-tight">PoE2 Market</h1>
-          </div>
-
-          {/* Realm select */}
-          <Select value={realm} onValueChange={(v) => { setRealm(v); setLeague(""); }}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Realm" />
-            </SelectTrigger>
-            <SelectContent>
-              {realmsLoading ? (
-                <SelectItem value="loading" disabled>Loading...</SelectItem>
-              ) : (
-                realms?.map((r) => (
-                  <SelectItem key={r.name} value={r.name}>
-                    {r.displayName}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-
-          {/* League select */}
-          <Select value={effectiveLeague} onValueChange={setLeague}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="League" />
-            </SelectTrigger>
-            <SelectContent>
-              {leaguesLoading ? (
-                <SelectItem value="loading" disabled>Loading...</SelectItem>
-              ) : (
-                leagues?.map((l) => (
-                  <SelectItem key={l.name} value={l.name}>
-                    {l.displayName} {!l.active && "(inactive)"}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search items..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-2.5 top-2.5">
-                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-              </button>
-            )}
-          </div>
-
-          {/* Refresh */}
-          <Button variant="outline" size="sm" onClick={handleRefresh} className="h-9">
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Refresh
-          </Button>
-        </div>
-      </header>
+      <Header
+        realms={realms}
+        leagues={leagues}
+        realmsLoading={realmsLoading}
+        leaguesLoading={leaguesLoading}
+        realm={realm}
+        league={league}
+        effectiveLeague={effectiveLeague}
+        search={search}
+        onRealmChange={(v) => {
+          setRealm(v);
+          setLeague("");
+        }}
+        onLeagueChange={setLeague}
+        onSearchChange={setSearch}
+        onRefresh={handleRefresh}
+        autoRefresh={autoRefresh}
+        onAutoRefreshToggle={() => setAutoRefresh(!autoRefresh)}
+        lastUpdated={lastUpdated}
+        referenceCurrencies={referenceCurrencies}
+        referenceCurrency={referenceCurrency}
+        onReferenceCurrencyChange={setReferenceCurrency}
+        onExport={showExport ? handleExport : undefined}
+      />
 
       {/* Main content */}
       <main className="max-w-[1600px] mx-auto px-4 py-4">
@@ -392,9 +367,20 @@ export default function Dashboard() {
             <p className="text-lg">Select a realm and league to begin</p>
           </div>
         ) : (
-          <Tabs value={tab} onValueChange={(v) => { setTab(v); setCategoryFilter("all"); setUniquesPage(1); }}>
+          <Tabs
+            value={tab}
+            onValueChange={(v) => {
+              setTab(v);
+              setCategoryFilter("all");
+              setUniquesPage(1);
+              setCurrenciesPage(1);
+            }}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <TabsList>
+                <TabsTrigger value="overview" className="gap-1.5">
+                  <BarChart3 className="h-4 w-4" /> Overview
+                </TabsTrigger>
                 <TabsTrigger value="currencies" className="gap-1.5">
                   <Coins className="h-4 w-4" /> Currencies
                 </TabsTrigger>
@@ -404,29 +390,45 @@ export default function Dashboard() {
                 <TabsTrigger value="exchange" className="gap-1.5">
                   <ArrowLeftRight className="h-4 w-4" /> Exchange
                 </TabsTrigger>
+                <TabsTrigger value="watchlist" className="gap-1.5">
+                  <Star className="h-4 w-4" /> Watchlist
+                </TabsTrigger>
               </TabsList>
 
-              {/* Category filter buttons */}
-              <div className="flex flex-wrap gap-1.5">
-                <Badge
-                  variant={categoryFilter === "all" ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => setCategoryFilter("all")}
-                >
-                  All
-                </Badge>
-                {currentCategories.map((cat) => (
+              {/* Category filter buttons (only for currencies/uniques) */}
+              {(tab === "currencies" || tab === "uniques") && (
+                <div className="flex flex-wrap gap-1.5">
                   <Badge
-                    key={cat.name}
-                    variant={categoryFilter === cat.name ? "default" : "outline"}
+                    variant={categoryFilter === "all" ? "default" : "outline"}
                     className="cursor-pointer"
-                    onClick={() => setCategoryFilter(cat.name)}
+                    onClick={() => setCategoryFilter("all")}
                   >
-                    {cat.displayName}
+                    All
                   </Badge>
-                ))}
-              </div>
+                  {currentCategories.map((cat) => (
+                    <Badge
+                      key={cat.name}
+                      variant={
+                        categoryFilter === cat.name ? "default" : "outline"
+                      }
+                      className="cursor-pointer"
+                      onClick={() => setCategoryFilter(cat.name)}
+                    >
+                      {cat.displayName}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* ============ OVERVIEW TAB ============ */}
+            <TabsContent value="overview">
+              <MarketOverview
+                realm={realm}
+                league={effectiveLeague}
+                onItemClick={openDetail}
+              />
+            </TabsContent>
 
             {/* ============ CURRENCIES TAB ============ */}
             <TabsContent value="currencies">
@@ -434,51 +436,34 @@ export default function Dashboard() {
                 <div className="flex items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : filteredCurrencies.length === 0 ? (
-                <p className="text-center text-muted-foreground py-20">No currencies found</p>
+              ) : !currenciesData?.items?.length ? (
+                <p className="text-center text-muted-foreground py-20">
+                  No currencies found
+                </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {filteredCurrencies.map((item) => {
-                    const chg = fmtChange(item.changePercent);
-                    const sparkData = item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) || [];
-                    return (
-                      <Card
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {currenciesData.items.map((item) => (
+                      <CurrencyCard
                         key={item.id}
-                        className="cursor-pointer hover:border-primary/50 transition-colors"
-                        onClick={() => openDetail(item)}
-                      >
-                        <CardHeader className="pb-2 pt-3 px-3">
-                          <div className="flex items-start gap-2">
-                            {item.iconUrl ? (
-                              <img src={item.iconUrl} alt="" className="w-8 h-8 object-contain shrink-0" />
-                            ) : (
-                              <Coins className="w-8 h-8 text-muted-foreground shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <CardTitle className="text-sm font-semibold truncate">{item.name}</CardTitle>
-                              <p className="text-xs text-muted-foreground truncate">{item.type}</p>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="px-3 pb-3 pt-0">
-                          <div className="flex items-end justify-between">
-                            <div>
-                              <p className="text-lg font-bold">{fmt(item.relativePrice ?? item.priceChaos)}</p>
-                              <p className={`text-xs font-medium ${chg.color}`}>{chg.text}</p>
-                            </div>
-                            <Sparkline data={sparkData} color={item.changePercent && item.changePercent >= 0 ? "#34d399" : "#f87171"} />
-                          </div>
-                          {item.volume != null && (
-                            <p className="text-xs text-muted-foreground mt-1">Vol: {item.volume.toLocaleString()}</p>
-                          )}
-                          {item.lowConfidence && (
-                            <Badge variant="outline" className="mt-1 text-[10px] px-1 py-0">Low Confidence</Badge>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                        item={item}
+                        onClick={openDetail}
+                      />
+                    ))}
+                  </div>
+                  <Pagination
+                    page={currenciesPage}
+                    totalPages={currenciesData.totalPages}
+                    totalItems={currenciesData.totalItems}
+                    perPage={currenciesPerPage}
+                    onPageChange={setCurrenciesPage}
+                    onPerPageChange={(v) => {
+                      setCurrenciesPerPage(v);
+                      setCurrenciesPage(1);
+                    }}
+                    perPageOptions={[25, 50, 100]}
+                  />
+                </>
               )}
             </TabsContent>
 
@@ -489,92 +474,27 @@ export default function Dashboard() {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : !uniquesData?.items?.length ? (
-                <p className="text-center text-muted-foreground py-20">No unique items found</p>
+                <p className="text-center text-muted-foreground py-20">
+                  No unique items found
+                </p>
               ) : (
                 <>
-                  <div className="rounded-md border border-border overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border bg-muted/30">
-                            <th className="text-left py-2 px-3 font-medium">Item</th>
-                            <th className="text-right py-2 px-3 font-medium">Price</th>
-                            <th className="text-right py-2 px-3 font-medium">Change</th>
-                            <th className="text-right py-2 px-3 font-medium">7d</th>
-                            <th className="text-right py-2 px-3 font-medium">Volume</th>
-                            <th className="text-center py-2 px-3 font-medium w-[100px]">Trend</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {uniquesData.items.map((item) => {
-                            const chg = fmtChange(item.changePercent);
-                            const chg7 = fmtChange(item.sevenDayPriceChangePercent);
-                            const sparkData = item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) || [];
-                            return (
-                              <tr
-                                key={item.id}
-                                className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
-                                onClick={() => openDetail(item)}
-                              >
-                                <td className="py-2 px-3">
-                                  <div className="flex items-center gap-2">
-                                    {item.iconUrl ? (
-                                      <img src={item.iconUrl} alt="" className="w-6 h-6 object-contain" />
-                                    ) : (
-                                      <Shield className="w-6 h-6 text-muted-foreground" />
-                                    )}
-                                    <div>
-                                      <span className="font-medium">{item.name}</span>
-                                      <span className="text-muted-foreground ml-1 text-xs">{item.type}</span>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="text-right py-2 px-3 font-mono">{fmt(item.relativePrice ?? item.priceChaos)}</td>
-                                <td className={`text-right py-2 px-3 font-mono ${chg.color}`}>{chg.text}</td>
-                                <td className={`text-right py-2 px-3 font-mono ${chg7.color}`}>{chg7.text}</td>
-                                <td className="text-right py-2 px-3 font-mono text-muted-foreground">
-                                  {item.volume != null ? item.volume.toLocaleString() : "—"}
-                                </td>
-                                <td className="py-2 px-3 text-center">
-                                  <Sparkline
-                                    data={sparkData}
-                                    color={item.changePercent && item.changePercent >= 0 ? "#34d399" : "#f87171"}
-                                    width={80}
-                                    height={20}
-                                  />
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Pagination */}
-                  {uniquesData.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 mt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={uniquesPage <= 1}
-                        onClick={() => setUniquesPage((p) => Math.max(1, p - 1))}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Page {uniquesData.page} of {uniquesData.totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={uniquesPage >= uniquesData.totalPages}
-                        onClick={() => setUniquesPage((p) => p + 1)}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+                  <UniqueTable
+                    items={uniquesData.items}
+                    onItemClick={openDetail}
+                  />
+                  <Pagination
+                    page={uniquesPage}
+                    totalPages={uniquesData.totalPages}
+                    totalItems={uniquesData.totalItems}
+                    perPage={uniquesPerPage}
+                    onPageChange={setUniquesPage}
+                    onPerPageChange={(v) => {
+                      setUniquesPerPage(v);
+                      setUniquesPage(1);
+                    }}
+                    perPageOptions={[25, 50, 100]}
+                  />
                 </>
               )}
             </TabsContent>
@@ -586,178 +506,52 @@ export default function Dashboard() {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : exchangePairs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-20">No exchange pairs found</p>
+                <p className="text-center text-muted-foreground py-20">
+                  No exchange pairs found
+                </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {exchangePairs.map((pair) => {
-                    const chg = fmtChange(pair.changePercent);
-                    return (
-                      <Card key={pair.id} className="hover:border-primary/50 transition-colors">
-                        <CardContent className="py-3 px-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {pair.currency1IconUrl ? (
-                                <img src={pair.currency1IconUrl} alt="" className="w-5 h-5 object-contain" />
-                              ) : (
-                                <Coins className="w-5 h-5 text-muted-foreground" />
-                              )}
-                              <span className="font-medium text-sm">{pair.currency1Name}</span>
-                            </div>
-                            <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{pair.currency2Name}</span>
-                              {pair.currency2IconUrl ? (
-                                <img src={pair.currency2IconUrl} alt="" className="w-5 h-5 object-contain" />
-                              ) : (
-                                <Coins className="w-5 h-5 text-muted-foreground" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between mt-2">
-                            <div>
-                              <span className="text-lg font-bold font-mono">{fmt(pair.relativePrice)}</span>
-                              <span className={`ml-2 text-xs font-medium ${chg.color}`}>{chg.text}</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              Vol: {pair.volume?.toLocaleString() ?? "—"}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                  {exchangePairs.map((pair) => (
+                    <ExchangePairCard
+                      key={pair.id}
+                      pair={pair}
+                      onClick={openPairDetail}
+                    />
+                  ))}
                 </div>
               )}
+            </TabsContent>
+
+            {/* ============ WATCHLIST TAB ============ */}
+            <TabsContent value="watchlist">
+              <WatchlistTab
+                realm={realm}
+                league={effectiveLeague}
+                onItemClick={openDetail}
+              />
             </TabsContent>
           </Tabs>
         )}
       </main>
 
-      {/* ============ DETAIL DIALOG ============ */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          {detailItem && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {detailItem.iconUrl ? (
-                    <img src={detailItem.iconUrl} alt="" className="w-6 h-6 object-contain" />
-                  ) : null}
-                  {detailItem.name}
-                  <Badge variant="outline" className="font-normal">{detailItem.type}</Badge>
-                </DialogTitle>
-              </DialogHeader>
+      {/* ============ ITEM DETAIL DIALOG ============ */}
+      <DetailDialog
+        item={detailItem}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        realm={realm}
+        league={effectiveLeague}
+        referenceCurrency={referenceCurrency}
+      />
 
-              {/* Key metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Price</p>
-                  <p className="text-lg font-bold font-mono">{fmt(detailItem.relativePrice ?? detailItem.priceChaos)}</p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">24h Change</p>
-                  <p className={`text-lg font-bold font-mono ${fmtChange(detailItem.changePercent).color}`}>
-                    {fmtChange(detailItem.changePercent).text}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">7d Change</p>
-                  <p className={`text-lg font-bold font-mono ${fmtChange(detailItem.sevenDayPriceChangePercent).color}`}>
-                    {fmtChange(detailItem.sevenDayPriceChangePercent).text}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Volume</p>
-                  <p className="text-lg font-bold font-mono">{detailItem.volume?.toLocaleString() ?? "—"}</p>
-                </div>
-              </div>
-
-              {/* Price history chart */}
-              {detailHistoryLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : detailHistory && detailHistory.length > 1 ? (
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                      <TrendingUp className="h-4 w-4" /> Price History
-                    </h4>
-                    <div className="h-[250px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={detailHistory}>
-                          <defs>
-                            <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis
-                            dataKey="timestamp"
-                            tick={{ fontSize: 10 }}
-                            tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          />
-                          <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => fmt(v, 0)} />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "12px",
-                            }}
-                            labelFormatter={(v: string) => new Date(v).toLocaleString()}
-                            formatter={(value: number) => [fmt(value), "Price"]}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="relativePrice"
-                            stroke="#8b5cf6"
-                            fill="url(#priceGrad)"
-                            strokeWidth={2}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  {/* Volume chart */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                      <Activity className="h-4 w-4" /> Trading Volume
-                    </h4>
-                    <div className="h-[120px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={detailHistory}>
-                          <XAxis
-                            dataKey="timestamp"
-                            tick={{ fontSize: 10 }}
-                            tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          />
-                          <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "12px",
-                            }}
-                            labelFormatter={(v: string) => new Date(v).toLocaleString()}
-                            formatter={(value: number) => [value.toLocaleString(), "Volume"]}
-                          />
-                          <Bar dataKey="volume" fill="#6366f1" radius={[2, 2, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-10">No history data available</p>
-              )}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* ============ PAIR DETAIL DIALOG ============ */}
+      <PairDetailDialog
+        pair={detailPair}
+        open={pairDetailOpen}
+        onOpenChange={setPairDetailOpen}
+        realm={realm}
+        league={effectiveLeague}
+      />
     </div>
   );
 }

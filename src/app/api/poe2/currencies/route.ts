@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
         const category = searchParams.get("category") || "all";
         const page = Number(searchParams.get("page") || 1);
         const perPage = Number(searchParams.get("perPage") || 50);
-        const data = await getCurrenciesByCategory(realm, league, category, page, perPage);
+        const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
+        const data = await getCurrenciesByCategory(realm, league, category, page, perPage, referenceCurrency);
         return NextResponse.json(data);
       }
       case "detail": {
