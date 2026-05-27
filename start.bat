@@ -100,6 +100,13 @@ if not exist ".next\BUILD_ID" (
 REM ----------------------------------------------------------
 REM Step 5: Start the server
 REM ----------------------------------------------------------
+REM NOTE: "output: standalone" has been REMOVED from next.config.ts
+REM because it breaks `next start` for local development.
+REM Now we can safely use `next start` directly.
+REM If you need standalone for Docker, add it back and use:
+REM   node .next\standalone\server.js
+REM ============================================================
+
 echo ============================================================
 echo   Starting PoE2 Market Dashboard...
 echo   Open your browser: http://localhost:3000

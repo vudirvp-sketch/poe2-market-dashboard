@@ -1,6 +1,11 @@
 // ============================================================================
 // PoE2 Market Dashboard — Zustand Store (Favorites + Comparison + Alerts)
+//
+// v0.5 FIX: Deferred localStorage reads to avoid hydration mismatch.
+// On SSR and first client render, state starts with empty/default values.
+// After mount, a `rehydrate()` call loads from localStorage.
 // ============================================================================
+
 import { create } from "zustand";
 
 // ---------- Price Alert type ----------
@@ -46,82 +51,64 @@ interface DashboardStore {
   removeAlert: (itemId: string) => void;
   updateAlert: (itemId: string, updates: Partial<PriceAlert>) => void;
   getAlertsForItem: (itemId: string) => PriceAlert[];
+
+  // Hydration
+  _hydrated: boolean;
+  rehydrate: () => void;
 }
 
 // ---------- localStorage helpers ----------
-function loadFavorites(): string[] {
-  if (typeof window === "undefined") return [];
+function loadFromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
   try {
-    const stored = localStorage.getItem("poe2-favorites");
-    return stored ? JSON.parse(stored) : [];
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : fallback;
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-function saveFavorites(ids: string[]) {
+function saveToStorage(key: string, value: unknown) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem("poe2-favorites", JSON.stringify(ids));
-  } catch {
-    // ignore
-  }
-}
-
-function loadAlerts(): PriceAlert[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem("poe2-alerts");
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAlerts(alerts: PriceAlert[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem("poe2-alerts", JSON.stringify(alerts));
-  } catch {
-    // ignore
-  }
-}
-
-function loadPairComparison(): PairComparisonId[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem("poe2-pair-comparison");
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function savePairComparison(pairs: PairComparisonId[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem("poe2-pair-comparison", JSON.stringify(pairs));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // ignore
   }
 }
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
-  favorites: loadFavorites(),
+  // Start with empty defaults — prevents hydration mismatch
+  favorites: [],
+  comparisonIds: [],
+  pairComparisonIds: [],
+  alerts: [],
+  _hydrated: false,
+
+  /**
+   * Call this once after mount (in a useEffect) to load persisted data.
+   * This avoids hydration mismatches because SSR always renders with empty state.
+   */
+  rehydrate: () => {
+    const favorites = loadFromStorage<string[]>("poe2-favorites", []);
+    const pairComparisonIds = loadFromStorage<PairComparisonId[]>("poe2-pair-comparison", []);
+    const alerts = loadFromStorage<PriceAlert[]>("poe2-alerts", []);
+    set({ favorites, pairComparisonIds, alerts, _hydrated: true });
+  },
 
   addFavorite: (id) => {
     const favs = get().favorites;
     if (!favs.includes(id)) {
       const next = [...favs, id];
       set({ favorites: next });
-      saveFavorites(next);
+      saveToStorage("poe2-favorites", next);
     }
   },
 
   removeFavorite: (id) => {
     const next = get().favorites.filter((f) => f !== id);
     set({ favorites: next });
-    saveFavorites(next);
+    saveToStorage("poe2-favorites", next);
   },
 
   isFavorite: (id) => get().favorites.includes(id),
@@ -131,15 +118,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     if (favs.includes(id)) {
       const next = favs.filter((f) => f !== id);
       set({ favorites: next });
-      saveFavorites(next);
+      saveToStorage("poe2-favorites", next);
     } else {
       const next = [...favs, id];
       set({ favorites: next });
-      saveFavorites(next);
+      saveToStorage("poe2-favorites", next);
     }
   },
-
-  comparisonIds: [],
 
   addToComparison: (id) => {
     const ids = get().comparisonIds;
@@ -157,8 +142,6 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   isInComparison: (id) => get().comparisonIds.includes(id),
 
   // ---- Pair Comparison ----
-  pairComparisonIds: loadPairComparison(),
-
   addPairToComparison: (pair) => {
     const pairs = get().pairComparisonIds;
     const key = `${pair.currency1Id}_${pair.currency2Id}`;
@@ -168,7 +151,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     if (!exists && pairs.length < 4) {
       const next = [...pairs, pair];
       set({ pairComparisonIds: next });
-      savePairComparison(next);
+      saveToStorage("poe2-pair-comparison", next);
     }
   },
 
@@ -177,17 +160,15 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       (p) => `${p.currency1Id}_${p.currency2Id}` !== key
     );
     set({ pairComparisonIds: next });
-    savePairComparison(next);
+    saveToStorage("poe2-pair-comparison", next);
   },
 
   clearPairComparison: () => {
     set({ pairComparisonIds: [] });
-    savePairComparison([]);
+    saveToStorage("poe2-pair-comparison", []);
   },
 
   // ---- Price Alerts ----
-  alerts: loadAlerts(),
-
   addAlert: (alert) => {
     const alerts = get().alerts;
     // Replace existing alert for same item + condition
@@ -198,13 +179,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       alert,
     ];
     set({ alerts: next });
-    saveAlerts(next);
+    saveToStorage("poe2-alerts", next);
   },
 
   removeAlert: (itemId) => {
     const next = get().alerts.filter((a) => a.itemId !== itemId);
     set({ alerts: next });
-    saveAlerts(next);
+    saveToStorage("poe2-alerts", next);
   },
 
   updateAlert: (itemId, updates) => {
@@ -212,7 +193,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       a.itemId === itemId ? { ...a, ...updates } : a
     );
     set({ alerts: next });
-    saveAlerts(next);
+    saveToStorage("poe2-alerts", next);
   },
 
   getAlertsForItem: (itemId) => get().alerts.filter((a) => a.itemId === itemId),

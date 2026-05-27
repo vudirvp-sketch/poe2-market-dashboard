@@ -110,7 +110,7 @@ export default function Dashboard() {
   const { comparisonIds, pairComparisonIds, alerts } = useDashboardStore();
 
   // --- i18n ---
-  const { t } = useI18n();
+  const { t, tp } = useI18n();
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -433,8 +433,8 @@ export default function Dashboard() {
         onExport={showExport ? handleExport : undefined}
       />
 
-      {/* Main content */}
-      <main className="max-w-[1600px] mx-auto px-4 py-4" role="main">
+      {/* Main content — id for skip-to-content a11y link */}
+      <main id="main-content" className="max-w-[1600px] mx-auto px-4 py-4" role="main">
         {!effectiveLeague ? (
           <div className="flex flex-col items-center justify-center py-32 text-muted-foreground" role="status">
             <AlertTriangle className="h-12 w-12 mb-4" aria-hidden="true" />
@@ -473,7 +473,7 @@ export default function Dashboard() {
               </TabsList>
 
               <div className="flex items-center gap-2">
-                {/* Price Alerts button */}
+                {/* Price Alerts button — with pluralization */}
                 <Button
                   variant={alerts.length > 0 ? "default" : "outline"}
                   size="sm"
@@ -482,10 +482,12 @@ export default function Dashboard() {
                   aria-label={alerts.length > 0 ? t("alertsCount", { "0": alerts.length }) : t("alerts")}
                 >
                   <Bell className="h-3.5 w-3.5" aria-hidden="true" />
-                  {alerts.length > 0 ? t("alertsCount", { "0": alerts.length }) : t("alerts")}
+                  {alerts.length > 0
+                    ? tp("alerts|оповещение|оповещения|оповещений", alerts.length, { "0": alerts.length })
+                    : t("alerts")}
                 </Button>
 
-                {/* Item Comparison button */}
+                {/* Item Comparison button — with pluralization */}
                 {comparisonIds.length > 0 && (
                   <Button
                     variant={comparisonIds.length >= 2 ? "default" : "outline"}
@@ -496,7 +498,7 @@ export default function Dashboard() {
                     aria-label={t("compare", { "0": comparisonIds.length })}
                   >
                     <GitCompare className="h-3.5 w-3.5" aria-hidden="true" />
-                    {t("compare", { "0": comparisonIds.length })}
+                    {tp("compare|Сравнить|Сравнить|Сравнить", comparisonIds.length, { "0": comparisonIds.length })}
                   </Button>
                 )}
 
@@ -511,7 +513,7 @@ export default function Dashboard() {
                     aria-label={t("pairCompare", { "0": pairComparisonIds.length })}
                   >
                     <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    {t("pairCompare", { "0": pairComparisonIds.length })}
+                    {tp("pairCompare|Сравнить пары|Сравнить пары|Сравнить пары", pairComparisonIds.length, { "0": pairComparisonIds.length })}
                   </Button>
                 )}
 
