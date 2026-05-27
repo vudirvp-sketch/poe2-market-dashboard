@@ -79,14 +79,16 @@ if not exist "node_modules\" (
     echo.
 )
 
-REM ---- Build project ----
-REM Use --skip-build flag to skip: start.bat --skip-build
+REM ---- Handle flags ----
 REM Use --dev flag for dev mode: start.bat --dev
+REM Use --skip-build flag to skip: start.bat --skip-build
+REM Use --clean flag to clean .next before build: start.bat --clean
+
 if "%~1"=="--dev" (
     echo [INFO] Starting in DEVELOPMENT mode ^(--dev flag^)
     echo.
     echo ============================================================
-    echo   Starting PoE2 Market Dashboard ^ DEV MODE
+    echo   Starting PoE2 Market Dashboard - DEV MODE
     echo   Open your browser: http://localhost:3000
     echo.
     echo   Press Ctrl+C to stop the server.
@@ -96,10 +98,28 @@ if "%~1"=="--dev" (
     goto :end
 )
 
+REM ---- Clean .next directory ----
+REM Always clean .next to prevent stale chunk hashes from causing 404 errors.
+REM This is the #1 fix for "Failed to load resource: 404" errors.
 if "%~1"=="--skip-build" (
-    echo [INFO] Skipping build ^(--skip-build flag^)
+    echo [INFO] Skipping build and cleanup ^(--skip-build flag^)
     echo.
 ) else (
+    echo [INFO] Cleaning .next directory to prevent stale builds...
+    if exist ".next\" (
+        rmdir /s /q ".next" 2>nul
+        if exist ".next\" (
+            echo [WARN] Could not fully remove .next - some files may be locked.
+            echo         Try closing any running Next.js server first.
+        ) else (
+            echo [OK] .next directory cleaned.
+        )
+    ) else (
+        echo [OK] .next directory does not exist - clean start.
+    )
+    echo.
+
+    REM ---- Build project ----
     echo [INFO] Building project...
     echo This ensures you have the latest code compiled.
     echo.
@@ -136,6 +156,11 @@ REM ---- Start the server ----
 echo ============================================================
 echo   Starting PoE2 Market Dashboard...
 echo   Open your browser: http://localhost:3000
+echo.
+echo   IMPORTANT: If you see 404 errors in browser after a rebuild:
+echo     1. Hard-refresh: Ctrl+Shift+R (or Ctrl+F5)
+echo     2. Clear browser cache: Ctrl+Shift+Delete
+echo     3. Or open DevTools ^> Application ^> Storage ^> Clear site data
 echo.
 echo   If you see 502 errors, try editing .env.local:
 echo     POE2_API_BASE_URL=https://api.poe2scout.com/api

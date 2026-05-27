@@ -545,11 +545,30 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 // --- Realms ---
 export async function getRealms(): Promise<Realm[]> {
   const raw = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
-  return raw.map((r) => ({
-    name: r.realm_api_id === "poe2" ? "poe2" : r.realm_api_id,
-    displayName: r.game_api_id === "poe2" ? "PoE2" : `PoE1 ${r.realm_api_id.toUpperCase()}`,
-    defaultLeague: r.default_league_value || undefined,
-  }));
+  return raw.map((r) => {
+    // The API path segment for leagues/etc. uses realm_api_id directly:
+    //   - PoE2: realm_api_id = "poe2" → /poe2/Leagues ✓
+    //   - PoE1 PC: realm_api_id = "pc" → /pc/Leagues ✓
+    //   - PoE1 Xbox: realm_api_id = "xbox" → /xbox/Leagues ✓
+    //   - PoE1 Sony: realm_api_id = "sony" → /sony/Leagues ✓
+    const name = r.realm_api_id;
+
+    // Display names: include game name for clarity
+    let displayName: string;
+    if (r.game_api_id === "poe2") {
+      displayName = "PoE2";
+    } else if (r.game_api_id === "poe") {
+      displayName = `PoE1 ${r.realm_api_id.toUpperCase()}`;
+    } else {
+      displayName = r.realm_api_id;
+    }
+
+    return {
+      name,
+      displayName,
+      defaultLeague: r.default_league_value || undefined,
+    };
+  });
 }
 
 export async function getRealmFilters(realm: string): Promise<unknown> {
