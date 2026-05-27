@@ -33,6 +33,13 @@ import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 
+// Skeleton loaders (replace Loader2 spinners)
+import {
+  CurrencyGridSkeleton,
+  UniqueTableSkeleton,
+  ExchangeGridSkeleton,
+} from "@/components/dashboard/skeletons";
+
 import {
   fetchApi,
   fmt,
@@ -96,9 +103,6 @@ export default function Dashboard() {
   // --- Comparison store ---
   const { comparisonIds, pairComparisonIds, alerts } = useDashboardStore();
 
-  // --- Price alerts hook (auto-checks in background) ---
-  usePriceAlerts({ realm, league: effectiveLeagueRaw });
-
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
     queryKey: ["realms"],
@@ -139,6 +143,9 @@ export default function Dashboard() {
     queryFn: () => fetchApi<PoeItem[]>("/api/poe2/items", { realm, league: effectiveLeague }),
     enabled: !!effectiveLeague,
   });
+
+  // --- Price alerts hook (auto-checks in background) ---
+  usePriceAlerts({ realm, league: effectiveLeagueRaw });
 
   // Currencies
   const {
@@ -513,9 +520,7 @@ export default function Dashboard() {
             {/* ============ CURRENCIES TAB ============ */}
             <TabsContent value="currencies">
               {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+                <CurrencyGridSkeleton count={currenciesPerPage} />
               ) : !currenciesData?.items?.length ? (
                 <p className="text-center text-muted-foreground py-20">
                   No currencies found
@@ -553,9 +558,7 @@ export default function Dashboard() {
             {/* ============ UNIQUES TAB ============ */}
             <TabsContent value="uniques">
               {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+                <UniqueTableSkeleton rows={15} />
               ) : !uniquesData?.items?.length ? (
                 <p className="text-center text-muted-foreground py-20">
                   No unique items found
@@ -588,9 +591,7 @@ export default function Dashboard() {
             {/* ============ EXCHANGE TAB ============ */}
             <TabsContent value="exchange">
               {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+                <ExchangeGridSkeleton />
               ) : exchangePairs.length === 0 ? (
                 <p className="text-center text-muted-foreground py-20">
                   No exchange pairs found

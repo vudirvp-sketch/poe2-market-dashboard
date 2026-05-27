@@ -15,9 +15,53 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PoE2 Market Dashboard",
+  title: {
+    default: "PoE2 Market Dashboard — Real-time Prices & Exchange Rates",
+    template: "%s | PoE2 Market Dashboard",
+  },
   description:
-    "Monitor Path of Exile 2 market prices, unique items, and currency exchange rates.",
+    "Monitor Path of Exile 2 market prices, unique items, currency exchange rates, and arbitrage opportunities in real-time. Track price history, set alerts, and compare items.",
+  keywords: [
+    "Path of Exile 2",
+    "PoE2",
+    "market",
+    "prices",
+    "currency",
+    "exchange",
+    "arbitrage",
+    "trading",
+    "unique items",
+    "Divine Orb",
+    "Chaos Orb",
+  ],
+  authors: [{ name: "PoE2 Market Dashboard" }],
+  creator: "PoE2 Market Dashboard",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://poe2-market-dashboard.vercel.app",
+    title: "PoE2 Market Dashboard",
+    description:
+      "Real-time Path of Exile 2 market tracker. Monitor prices, exchange rates, and find arbitrage opportunities.",
+    siteName: "PoE2 Market Dashboard",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PoE2 Market Dashboard",
+    description:
+      "Real-time Path of Exile 2 market tracker with price alerts and arbitrage detection.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -41,6 +85,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icon-192.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}

@@ -1,7 +1,10 @@
-const CACHE_NAME = 'poe2-market-v1';
+const CACHE_NAME = 'poe2-market-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/logo.svg',
 ];
 
 // Install: cache static assets
@@ -25,7 +28,7 @@ self.addEventListener('activate', (event) => {
 // Fetch: stale-while-revalidate for API, cache-first for static
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  
+
   // API requests: stale-while-revalidate
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -42,7 +45,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  
+
   // Static assets: cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => {
