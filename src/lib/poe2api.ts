@@ -1,7 +1,26 @@
 // ============================================================================
-// PoE2 Scout API — TypeScript types + fetch functions + in-memory cache
+// PoE2 Scout API — Server-side fetch functions + in-memory cache
 // Base URL: https://poe2scout.com/api
+//
+// NOTE: Type definitions are consolidated in ./types.ts
+// This file ONLY contains server-side API fetch functions.
 // ============================================================================
+
+import type {
+  Realm,
+  League,
+  PoeItem,
+  PoeItemHistoryPoint,
+  DailyStat,
+  ItemCategory,
+  ExchangePair,
+  ExchangePairHistoryPoint,
+  PaginatedResponse,
+  ExchangeSnapshot,
+  LandingSplashInfo,
+  SnapshotHistoryPoint,
+  ReferenceCurrency,
+} from "./types";
 
 const BASE_URL = "https://poe2scout.com/api";
 
@@ -21,134 +40,6 @@ async function cachedFetch<T>(url: string): Promise<T> {
   const data = (await res.json()) as T;
   cache.set(url, { data, ts: Date.now() });
   return data;
-}
-
-// ===================== TYPES =====================
-
-// Realms
-export interface Realm {
-  name: string;
-  displayName: string;
-}
-
-// Leagues
-export interface League {
-  name: string;
-  displayName: string;
-  startAt: string | null;
-  endAt: string | null;
-  active: boolean;
-}
-
-// Item (unique or currency)
-export interface PoeItem {
-  id: string;
-  apiId: string;
-  name: string;
-  type: string;
-  category: string;
-  iconUrl: string | null;
-  price: number | null;
-  priceChaos: number | null;
-  relativePrice: number | null;
-  change: number | null;
-  changePercent: number | null;
-  volume: number | null;
-  sevenDayPriceChange: number | null;
-  sevenDayPriceChangePercent: number | null;
-  history: PoeItemHistoryPoint[] | null;
-  dailyStats: DailyStat[] | null;
-  lowConfidence: boolean;
-  listingCount: number | null;
-  baseType: string | null;
-  links: number | null;
-  variant: string | null;
-  levelRequired: number | null;
-}
-
-export interface PoeItemHistoryPoint {
-  timestamp: string;
-  price: number;
-  priceChaos: number;
-  relativePrice: number;
-  volume: number;
-}
-
-export interface DailyStat {
-  day: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
-// Category
-export interface ItemCategory {
-  name: string;
-  displayName: string;
-  count: number;
-}
-
-// Exchange pair
-export interface ExchangePair {
-  id: string;
-  currency1Id: string;
-  currency1Name: string;
-  currency1IconUrl: string | null;
-  currency2Id: string;
-  currency2Name: string;
-  currency2IconUrl: string | null;
-  price: number;
-  relativePrice: number;
-  volume: number;
-  change: number | null;
-  changePercent: number | null;
-  history: ExchangePairHistoryPoint[] | null;
-}
-
-export interface ExchangePairHistoryPoint {
-  timestamp: string;
-  relativePrice: number;
-  volume: number;
-}
-
-// Paginated response
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  perPage: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-// Exchange snapshot
-export interface ExchangeSnapshot {
-  pairs: ExchangePair[];
-  referenceCurrency: string;
-  timestamp: string;
-}
-
-// Landing splash info
-export interface LandingSplashInfo {
-  topItems: PoeItem[];
-  topCurrencies: PoeItem[];
-}
-
-// Snapshot history point (for market overview)
-export interface SnapshotHistoryPoint {
-  timestamp: string;
-  totalVolume: number;
-  totalMarketCap: number;
-  itemCount: number;
-}
-
-// Reference currency
-export interface ReferenceCurrency {
-  apiId: string;
-  text: string;
-  iconUrl: string | null;
-  relativePrice: number;
 }
 
 // ===================== API FUNCTIONS =====================

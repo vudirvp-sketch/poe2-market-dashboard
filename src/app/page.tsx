@@ -8,7 +8,6 @@ import {
   ArrowLeftRight,
   Star,
   BarChart3,
-  Loader2,
   AlertTriangle,
   GitCompare,
   Bell,
@@ -20,6 +19,7 @@ import { Button } from "@/components/ui/button";
 
 import { Header } from "@/components/dashboard/header";
 import { CurrencyCard } from "@/components/dashboard/currency-card";
+import { VirtualCurrencyGrid } from "@/components/dashboard/virtual-currency-grid";
 import { UniqueTable } from "@/components/dashboard/unique-table";
 import { ExchangePairCard } from "@/components/dashboard/exchange-pair-card";
 import { DetailDialog } from "@/components/dashboard/detail-dialog";
@@ -32,6 +32,8 @@ import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
+import { ErrorBoundary } from "@/components/dashboard/error-boundary";
+import { ApiErrorFallback } from "@/components/dashboard/api-error-fallback";
 
 // Skeleton loaders (replace Loader2 spinners)
 import {
@@ -58,6 +60,9 @@ import type {
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
+
+// Virtualization threshold: use virtual grid when more than this many currencies
+const CURRENCY_VIRTUAL_THRESHOLD = 30;
 
 // ============================================================================
 // Main Dashboard
@@ -152,6 +157,7 @@ export default function Dashboard() {
     data: currenciesData,
     isLoading: currenciesLoading,
     refetch: refetchCurrencies,
+    error: currenciesError,
   } = useQuery({
     queryKey: [
       "currencies",
@@ -175,6 +181,8 @@ export default function Dashboard() {
     enabled: tab === "currencies" && !!effectiveLeague,
     refetchInterval: autoRefresh ? 60_000 : false,
     refetchIntervalInBackground: false,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
   });
 
   // Item categories
@@ -194,6 +202,7 @@ export default function Dashboard() {
     data: uniquesData,
     isLoading: uniquesLoading,
     refetch: refetchUniques,
+    error: uniquesError,
   } = useQuery({
     queryKey: [
       "uniques",
@@ -218,6 +227,8 @@ export default function Dashboard() {
     enabled: tab === "uniques" && !!effectiveLeague,
     refetchInterval: autoRefresh ? 60_000 : false,
     refetchIntervalInBackground: false,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
   });
 
   // Exchange
@@ -225,6 +236,7 @@ export default function Dashboard() {
     data: exchangeData,
     isLoading: exchangeLoading,
     refetch: refetchExchange,
+    error: exchangeError,
   } = useQuery({
     queryKey: ["exchange", realm, effectiveLeague],
     queryFn: () =>
@@ -236,6 +248,8 @@ export default function Dashboard() {
     enabled: tab === "exchange" && !!effectiveLeague,
     refetchInterval: autoRefresh ? 60_000 : false,
     refetchIntervalInBackground: false,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
   });
 
   // --- Derived data ---
@@ -275,6 +289,9 @@ export default function Dashboard() {
 
   const currentCategories =
     tab === "currencies" ? currencyCategories : uniqueCategoriesList;
+
+  // Should we virtualize currencies?
+  const useVirtualCurrencies = (currenciesData?.items?.length ?? 0) > CURRENCY_VIRTUAL_THRESHOLD;
 
   // --- Handlers ---
   const openDetail = useCallback((item: PoeItem) => {
@@ -372,6 +389,16 @@ export default function Dashboard() {
     (tab === "uniques" && uniquesLoading) ||
     (tab === "exchange" && exchangeLoading);
 
+  // --- Error state ---
+  const activeError =
+    tab === "currencies"
+      ? currenciesError
+      : tab === "uniques"
+      ? uniquesError
+      : tab === "exchange"
+      ? exchangeError
+      : null;
+
   const showExport = tab === "currencies" || tab === "uniques" || tab === "exchange";
 
   return (
@@ -403,10 +430,10 @@ export default function Dashboard() {
       />
 
       {/* Main content */}
-      <main className="max-w-[1600px] mx-auto px-4 py-4">
+      <main className="max-w-[1600px] mx-auto px-4 py-4" role="main">
         {!effectiveLeague ? (
-          <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
-            <AlertTriangle className="h-12 w-12 mb-4" />
+          <div className="flex flex-col items-center justify-center py-32 text-muted-foreground" role="status">
+            <AlertTriangle className="h-12 w-12 mb-4" aria-hidden="true" />
             <p className="text-lg">Select a realm and league to begin</p>
           </div>
         ) : (
@@ -420,24 +447,24 @@ export default function Dashboard() {
             }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <TabsList>
-                <TabsTrigger value="overview" className="gap-1.5">
-                  <BarChart3 className="h-4 w-4" /> Overview
+              <TabsList aria-label="Dashboard sections">
+                <TabsTrigger value="overview" className="gap-1.5" aria-label="Market Overview">
+                  <BarChart3 className="h-4 w-4" aria-hidden="true" /> Overview
                 </TabsTrigger>
-                <TabsTrigger value="currencies" className="gap-1.5">
-                  <Coins className="h-4 w-4" /> Currencies
+                <TabsTrigger value="currencies" className="gap-1.5" aria-label="Currencies">
+                  <Coins className="h-4 w-4" aria-hidden="true" /> Currencies
                 </TabsTrigger>
-                <TabsTrigger value="uniques" className="gap-1.5">
-                  <Shield className="h-4 w-4" /> Uniques
+                <TabsTrigger value="uniques" className="gap-1.5" aria-label="Unique Items">
+                  <Shield className="h-4 w-4" aria-hidden="true" /> Uniques
                 </TabsTrigger>
-                <TabsTrigger value="exchange" className="gap-1.5">
-                  <ArrowLeftRight className="h-4 w-4" /> Exchange
+                <TabsTrigger value="exchange" className="gap-1.5" aria-label="Currency Exchange">
+                  <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Exchange
                 </TabsTrigger>
-                <TabsTrigger value="arbitrage" className="gap-1.5">
-                  <Zap className="h-4 w-4" /> Arbitrage
+                <TabsTrigger value="arbitrage" className="gap-1.5" aria-label="Arbitrage Calculator">
+                  <Zap className="h-4 w-4" aria-hidden="true" /> Arbitrage
                 </TabsTrigger>
-                <TabsTrigger value="watchlist" className="gap-1.5">
-                  <Star className="h-4 w-4" /> Watchlist
+                <TabsTrigger value="watchlist" className="gap-1.5" aria-label="Watchlist">
+                  <Star className="h-4 w-4" aria-hidden="true" /> Watchlist
                 </TabsTrigger>
               </TabsList>
 
@@ -448,8 +475,9 @@ export default function Dashboard() {
                   size="sm"
                   className="h-8 gap-1.5"
                   onClick={() => setAlertOpen(true)}
+                  aria-label={`Price alerts${alerts.length > 0 ? ` (${alerts.length} active)` : ""}`}
                 >
-                  <Bell className="h-3.5 w-3.5" />
+                  <Bell className="h-3.5 w-3.5" aria-hidden="true" />
                   {alerts.length > 0 ? `Alerts (${alerts.length})` : "Alerts"}
                 </Button>
 
@@ -461,8 +489,9 @@ export default function Dashboard() {
                     className="h-8 gap-1.5"
                     onClick={() => setComparisonOpen(true)}
                     disabled={comparisonIds.length < 2}
+                    aria-label={`Compare items (${comparisonIds.length} selected)`}
                   >
-                    <GitCompare className="h-3.5 w-3.5" />
+                    <GitCompare className="h-3.5 w-3.5" aria-hidden="true" />
                     Compare ({comparisonIds.length})
                   </Button>
                 )}
@@ -475,19 +504,23 @@ export default function Dashboard() {
                     className="h-8 gap-1.5"
                     onClick={() => setPairComparisonOpen(true)}
                     disabled={pairComparisonIds.length < 2}
+                    aria-label={`Compare pairs (${pairComparisonIds.length} selected)`}
                   >
-                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                    <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
                     Pair Compare ({pairComparisonIds.length})
                   </Button>
                 )}
 
                 {/* Category filter buttons (only for currencies/uniques) */}
                 {(tab === "currencies" || tab === "uniques") && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Category filter">
                     <Badge
                       variant={categoryFilter === "all" ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => setCategoryFilter("all")}
+                      role="button"
+                      aria-pressed={categoryFilter === "all"}
+                      tabIndex={0}
                     >
                       All
                     </Badge>
@@ -499,6 +532,9 @@ export default function Dashboard() {
                         }
                         className="cursor-pointer"
                         onClick={() => setCategoryFilter(cat.name)}
+                        role="button"
+                        aria-pressed={categoryFilter === cat.name}
+                        tabIndex={0}
                       >
                         {cat.displayName}
                       </Badge>
@@ -510,35 +546,53 @@ export default function Dashboard() {
 
             {/* ============ OVERVIEW TAB ============ */}
             <TabsContent value="overview">
-              <MarketOverview
-                realm={realm}
-                league={effectiveLeague}
-                onItemClick={openDetail}
-              />
+              <ErrorBoundary fallbackTitle="Market Overview">
+                <MarketOverview
+                  realm={realm}
+                  league={effectiveLeague}
+                  onItemClick={openDetail}
+                />
+              </ErrorBoundary>
             </TabsContent>
 
             {/* ============ CURRENCIES TAB ============ */}
             <TabsContent value="currencies">
               {isLoading ? (
                 <CurrencyGridSkeleton count={currenciesPerPage} />
+              ) : activeError && !currenciesData ? (
+                <ApiErrorFallback
+                  error={activeError}
+                  onRetry={() => refetchCurrencies()}
+                  title="Failed to load currencies"
+                />
               ) : !currenciesData?.items?.length ? (
-                <p className="text-center text-muted-foreground py-20">
+                <p className="text-center text-muted-foreground py-20" role="status">
                   No currencies found
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {currenciesData.items.map((item) => (
-                      <CurrencyCard
-                        key={item.id}
-                        item={item}
-                        onClick={openDetail}
-                        realm={realm}
-                        league={effectiveLeague}
-                        referenceCurrency={referenceCurrency}
-                      />
-                    ))}
-                  </div>
+                  {useVirtualCurrencies ? (
+                    <VirtualCurrencyGrid
+                      items={currenciesData.items}
+                      onItemClick={openDetail}
+                      realm={realm}
+                      league={effectiveLeague}
+                      referenceCurrency={referenceCurrency}
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3" role="list" aria-label="Currency items">
+                      {currenciesData.items.map((item) => (
+                        <CurrencyCard
+                          key={item.id}
+                          item={item}
+                          onClick={openDetail}
+                          realm={realm}
+                          league={effectiveLeague}
+                          referenceCurrency={referenceCurrency}
+                        />
+                      ))}
+                    </div>
+                  )}
                   <Pagination
                     page={currenciesPage}
                     totalPages={currenciesData.totalPages}
@@ -559,8 +613,14 @@ export default function Dashboard() {
             <TabsContent value="uniques">
               {isLoading ? (
                 <UniqueTableSkeleton rows={15} />
+              ) : activeError && !uniquesData ? (
+                <ApiErrorFallback
+                  error={activeError}
+                  onRetry={() => refetchUniques()}
+                  title="Failed to load unique items"
+                />
               ) : !uniquesData?.items?.length ? (
-                <p className="text-center text-muted-foreground py-20">
+                <p className="text-center text-muted-foreground py-20" role="status">
                   No unique items found
                 </p>
               ) : (
@@ -592,12 +652,18 @@ export default function Dashboard() {
             <TabsContent value="exchange">
               {isLoading ? (
                 <ExchangeGridSkeleton />
+              ) : activeError && !exchangeData ? (
+                <ApiErrorFallback
+                  error={activeError}
+                  onRetry={() => refetchExchange()}
+                  title="Failed to load exchange pairs"
+                />
               ) : exchangePairs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-20">
+                <p className="text-center text-muted-foreground py-20" role="status">
                   No exchange pairs found
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" role="list" aria-label="Exchange pairs">
                   {exchangePairs.map((pair) => (
                     <ExchangePairCard
                       key={pair.id}
@@ -611,42 +677,50 @@ export default function Dashboard() {
 
             {/* ============ ARBITRAGE TAB ============ */}
             <TabsContent value="arbitrage">
-              <ArbitrageTab
-                realm={realm}
-                league={effectiveLeague}
-              />
+              <ErrorBoundary fallbackTitle="Arbitrage Calculator">
+                <ArbitrageTab
+                  realm={realm}
+                  league={effectiveLeague}
+                />
+              </ErrorBoundary>
             </TabsContent>
 
             {/* ============ WATCHLIST TAB ============ */}
             <TabsContent value="watchlist">
-              <WatchlistTab
-                realm={realm}
-                league={effectiveLeague}
-                onItemClick={openDetail}
-              />
+              <ErrorBoundary fallbackTitle="Watchlist">
+                <WatchlistTab
+                  realm={realm}
+                  league={effectiveLeague}
+                  onItemClick={openDetail}
+                />
+              </ErrorBoundary>
             </TabsContent>
           </Tabs>
         )}
       </main>
 
       {/* ============ ITEM DETAIL DIALOG ============ */}
-      <DetailDialog
-        item={detailItem}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        realm={realm}
-        league={effectiveLeague}
-        referenceCurrency={referenceCurrency}
-      />
+      <ErrorBoundary fallbackTitle="Item Details">
+        <DetailDialog
+          item={detailItem}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          realm={realm}
+          league={effectiveLeague}
+          referenceCurrency={referenceCurrency}
+        />
+      </ErrorBoundary>
 
       {/* ============ PAIR DETAIL DIALOG ============ */}
-      <PairDetailDialog
-        pair={detailPair}
-        open={pairDetailOpen}
-        onOpenChange={setPairDetailOpen}
-        realm={realm}
-        league={effectiveLeague}
-      />
+      <ErrorBoundary fallbackTitle="Pair Details">
+        <PairDetailDialog
+          pair={detailPair}
+          open={pairDetailOpen}
+          onOpenChange={setPairDetailOpen}
+          realm={realm}
+          league={effectiveLeague}
+        />
+      </ErrorBoundary>
 
       {/* ============ ITEM COMPARISON DIALOG ============ */}
       <ComparisonDialog

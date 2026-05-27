@@ -1,5 +1,8 @@
 // ============================================================================
-// PoE2 Market Dashboard — Shared Types
+// PoE2 Market Dashboard — Shared Types (Single Source of Truth)
+//
+// ALL type definitions live here. poe2api.ts imports from this file.
+// No duplicate type definitions across the codebase.
 // ============================================================================
 
 export interface Realm {
@@ -10,6 +13,8 @@ export interface Realm {
 export interface League {
   name: string;
   displayName: string;
+  startAt: string | null;
+  endAt: string | null;
   active: boolean;
 }
 
@@ -32,6 +37,10 @@ export interface PoeItem {
   dailyStats: DailyStat[] | null;
   lowConfidence: boolean;
   listingCount: number | null;
+  baseType: string | null;
+  links: number | null;
+  variant: string | null;
+  levelRequired: number | null;
 }
 
 export interface PoeItemHistoryPoint {
@@ -101,8 +110,21 @@ export interface SnapshotHistoryPoint {
   itemCount: number;
 }
 
+// Types previously in poe2api.ts — now consolidated here
+
+export interface ExchangeSnapshot {
+  pairs: ExchangePair[];
+  referenceCurrency: string;
+  timestamp: string;
+}
+
+export interface LandingSplashInfo {
+  topItems: PoeItem[];
+  topCurrencies: PoeItem[];
+}
+
 // ============================================================================
-// Fetch helper (through proxy routes)
+// Fetch helper (through proxy routes) — CLIENT-SIDE ONLY
 // ============================================================================
 export async function fetchApi<T>(path: string, params?: Record<string, string>): Promise<T> {
   const url = new URL(path, window.location.origin);

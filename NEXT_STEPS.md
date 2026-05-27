@@ -1,8 +1,8 @@
 # PoE2 Market Dashboard — Next Steps
 
-## Current Status (v0.2)
+## Current Status (v0.3)
 
-Working dashboard with all core features:
+Working dashboard with all core features + stability/resilience improvements:
 - **6 tabs**: Overview, Currencies, Uniques, Exchange, Arbitrage, Watchlist
 - Realm & League selection
 - Currency cards with sparklines and % change
@@ -31,6 +31,12 @@ Working dashboard with all core features:
 - Search with debounce (300ms)
 - Prefetch on hover for detail views
 - React.memo on card components
+- **NEW: Error Boundaries** — component-level error isolation with retry
+- **NEW: API Error Fallback** — friendly error UI for failed API calls with retry button
+- **NEW: Retry with Exponential Backoff** — React Query configured with 3 retries + backoff
+- **NEW: Currency Virtualization** — virtual grid for 30+ currencies via @tanstack/react-virtual
+- **NEW: ARIA Labels** — screen reader support for navigation, tabs, grids, buttons
+- **NEW: Type Consolidation** — single source of truth in types.ts, poe2api.ts imports from it
 
 ---
 
@@ -54,7 +60,13 @@ Working dashboard with all core features:
 | 4.2 | Light/Dark Theme | ✅ Done — next-themes toggle |
 | 4.3 | PWA | ✅ Done — manifest, SW, offline banner, icons |
 | — | Skeleton Loading | ✅ Done — Shimmer UI for all tabs |
-| — | SEO Improvements | ✅ Partial — Metadata, OG, sitemap, robots |
+| — | SEO Improvements | ✅ Done — Metadata, OG, sitemap, robots |
+| — | Error Boundaries | ✅ Done — Component-level error isolation |
+| — | API Fallback UI | ✅ Done — ApiErrorFallback + retry button |
+| — | Retry + Backoff | ✅ Done — 3 retries with exponential backoff |
+| — | Currency Virtualization | ✅ Done — VirtualCurrencyGrid for 30+ items |
+| — | ARIA Labels / a11y | ✅ Partial — Labels on tabs, grids, buttons, alerts |
+| — | Type Consolidation | ✅ Done — Single source of truth in types.ts |
 
 ---
 
@@ -64,13 +76,11 @@ Working dashboard with all core features:
 |---------|--------|
 | **Telegram/Discord Bot** (4.4) | Out of scope for Next.js dashboard. Requires a separate Node.js service. Not planned for this repo. |
 | **Full SSR/ISR** | Current page is fully client-rendered ("use client"). True ISR would require significant refactoring: splitting into server/client components, prefetching data server-side. The pragmatic SEO improvements (metadata, sitemap, OG tags) are already in place. Full SSR/ISR is a major architectural change. |
-| **Tests (comprehensive)** | Basic test setup with Jest + React Testing Library is now in place with unit tests for `types.ts` (fmt, fmtChange, export), `store.ts` (favorites, comparison, alerts, pair comparison), and `poe2api.ts` (type validation). Integration tests for components and E2E tests (Playwright/Cypress) are still needed. |
+| **Comprehensive Tests** | Basic test setup with Jest + React Testing Library is now in place with unit tests for `types.ts` (fmt, fmtChange, export), `store.ts` (favorites, comparison, alerts, pair comparison), and `poe2api.ts` (type validation). Integration tests for components and E2E tests (Playwright/Cypress) are still needed. |
 | **Advanced arbitrage refinements** | The current slippage model uses a square-root impact model which is a reasonable approximation. Real-world improvements would include: order-book depth analysis, real-time graph updates via WebSocket, time-decay weighting, cross-league arbitrage. These require significant backend infrastructure. |
-| **Performance: Virtual scrolling for currencies** | Currency grid currently renders all items. For leagues with 100+ currencies, virtual scrolling (react-window/react-virtual) would improve performance. Uniques table already uses virtualization. |
-| **Accessibility (a11y)** | No formal a11y audit done. Keyboard navigation exists for pagination, but screen reader support, ARIA labels, and focus management need attention. |
-| **Internationalization (i18n)** | All UI text is in English. next-intl is installed but not configured. |
-| **Error boundaries** | No React error boundaries. A single component crash could break the entire dashboard. |
-| **Rate limiting / API fallbacks** | No client-side rate limiting. If poe2scout API is down or rate-limited, there's no fallback UI beyond the error state. Could add retry logic with exponential backoff. |
+| **Full Accessibility (a11y) Audit** | ARIA labels have been added for major interactive elements (tabs, buttons, grids, alerts). A formal WCAG 2.1 AA audit is still recommended. Remaining gaps: focus management in dialogs, skip-to-content link, color contrast verification, screen reader testing. |
+| **Internationalization (i18n)** | All UI text is in English. next-intl is installed but not configured. This is a significant effort requiring message extraction, locale files, and routing changes. |
+| **Performance: Bundle size** | Many unused dependencies in package.json (prisma, next-auth, mdxeditor, etc.) from the project template. Removing them would reduce build size and improve load times. |
 
 ---
 
@@ -78,13 +88,35 @@ Working dashboard with all core features:
 
 1. **`usePriceAlerts` hook in page.tsx**: The hook is called with `effectiveLeagueRaw` before it's declared in some code paths. This works because of hoisting but is confusing. Consider restructuring.
 
-2. **Duplicate type definitions**: Types are defined in both `src/lib/types.ts` and `src/lib/poe2api.ts`. Consider consolidating into a single source of truth.
+2. ~~**Duplicate type definitions**: Types are defined in both `src/lib/types.ts` and `src/lib/poe2api.ts`.~~ ✅ FIXED — Types consolidated into `types.ts`, `poe2api.ts` imports from it.
 
 3. **`start.bat` Windows compatibility**: The `package.json` start script uses `bun` and Unix-style env vars. The `start.bat` now uses `npx next start` as a portable alternative.
 
 4. **Bundle size**: Many unused dependencies in package.json (prisma, next-auth, mdxeditor, etc.) from the project template. Consider removing them to reduce build size.
 
 5. **Candlestick chart rendering**: The custom CandlestickShape in DetailDialog uses a fixed `chartHeight` value which may not match the actual rendered height. Consider using Recharts' internal scale or a ref-based approach.
+
+6. **VirtualCurrencyGrid column layout**: The virtual currency grid uses a simplified layout approach. For complex responsive grid layouts with virtualization, a more sophisticated approach (like react-window with Grid layout) may be needed for very large datasets (200+).
+
+---
+
+## New Files Added in v0.3
+
+| File | Purpose |
+|------|---------|
+| `src/components/dashboard/error-boundary.tsx` | React Error Boundary with retry UI |
+| `src/components/dashboard/api-error-fallback.tsx` | Friendly error state for failed API calls |
+| `src/components/dashboard/virtual-currency-grid.tsx` | Virtualized grid for 30+ currencies |
+| `src/hooks/use-api-with-retry.ts` | Fetch with retry, exponential backoff, rate limiting |
+
+## Modified Files in v0.3
+
+| File | Changes |
+|------|---------|
+| `src/app/page.tsx` | Added Error Boundaries, virtual currencies, API error fallback, ARIA labels, retry config |
+| `src/lib/types.ts` | Added ExchangeSnapshot, LandingSplashInfo; added missing PoeItem fields (baseType, links, variant, levelRequired) |
+| `src/lib/poe2api.ts` | Removed duplicate type definitions, now imports from types.ts |
+| `NEXT_STEPS.md` | Updated to reflect v0.3 status |
 
 ---
 
