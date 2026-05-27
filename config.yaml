@@ -1,0 +1,80 @@
+# PoE2 Flipper Configuration
+# All tunable parameters live here. Agents must NOT hardcode values that belong in config.
+
+data:
+  primary_provider: "poe2scout"
+  fallback_provider: "official"
+  poe2scout_base_url: "https://api.poe2scout.com/api"
+  cache_ttl_prices_minutes: 5
+  cache_ttl_history_hours: 24
+  cache_ttl_metadata_hours: 1
+  rate_limit_per_second: 1
+  historical_retention_days: 90
+
+league:
+  league_name: "vaal"
+  realm: "poe2/pc"
+  league_start_date: "2025-01-15T00:00:00Z"
+  phase_early_days: 7
+  phase_mid_days: 35
+  base_currency: "exalted"
+
+fees:
+  gold_to_chaos_rate_source: "market"   # "market" (observed) or "fixed"
+  fixed_gold_to_chaos_rate: null        # only if source is "fixed"
+  unknown_item_gold_cost: 200           # fallback for items not in gold_cost_table
+  # Per-unit gold costs are in gold_cost_table.py, not here
+
+filters:
+  min_volume_24h: 50
+  max_volatility: 0.4
+  max_spread_formula: "2 * gold_fee_fraction + 0.05"  # evaluated at runtime
+  exclude_volatile_illiquid: false
+
+scoring:
+  momentum_negative_threshold: -0.01
+  volatility_reference: 0.05
+  phase_multiplier_early: 1.2
+  phase_multiplier_mid: 1.0
+  phase_multiplier_late: 0.9
+
+forecasting:
+  sarima_seasonal_period: null  # auto-detect
+  lightgbm_retrain_interval_hours: 6
+  lightgbm_mape_trigger: 0.15
+  forecast_horizon_hours: 24
+  confidence_level: 0.05  # 5% = 95% one-sided CI
+
+anomaly:
+  bonferroni_alpha: 0.01
+  alert_score_threshold: 0.4
+  rsi_period: 14
+  rsi_overbought: 70
+  rsi_oversold: 30
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  stl_residual_threshold_mad: 2
+  momentum_sustained_periods: 3
+
+clustering:
+  n_clusters: 3
+  recluster_interval_hours: 1
+
+portfolio:
+  method: "risk_parity"  # "risk_parity" or "min_variance"
+  correlation_shock_threshold: 0.5
+  correlation_shock_position_reduction: 0.5
+  ledoit_wolf_shrinkage: true
+  rebalance_interval_hours: 24
+
+events:
+  default_expiry_hours: 48
+  event_score_penalty: 0.5
+
+storage_value:
+  buy_threshold: 1.03
+  sell_threshold: 0.97
+  liquidity_normalization: 10.0
+
+vendor_recipes: []  # user-defined recipes
