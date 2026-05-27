@@ -435,7 +435,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <ArrowLeftRight className="h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-xs text-muted-foreground">{tp("Scanned Pairs|Scanned Pair|Scanned Pairs|Scanned Pairs", eligiblePairs, {})}</p>
+              <p className="text-xs text-muted-foreground">{tp(t("_pl_scannedPairs"), eligiblePairs, {})}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1" role="status" aria-live="polite">
               {eligiblePairs}
@@ -462,7 +462,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-400" aria-hidden="true" />
               <p className="text-xs text-muted-foreground">
-                {tp("Opportunities Found|Opportunity Found|Opportunities Found|Opportunities Found", cycles.length, {})}
+                {tp(t("_pl_opportunitiesFound"), cycles.length, {})}
               </p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1 text-emerald-400" role="status" aria-live="polite">

@@ -104,7 +104,7 @@ interface I18nContextValue {
   setLocale: (locale: Locale) => void;
   /** Simple translation with interpolation: t("key", { "0": value }) */
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
-  /** Plural translation: tp("items|предмет|предмета|предметов", count, { ... }) */
+  /** Plural translation: tp(t("_pl_items"), count, { ... }) — template comes from locale _pl_* keys */
   tp: (template: string, count: number, params?: Record<string, string | number>) => string;
   /** Whether the locale has been hydrated from localStorage */
   hydrated: boolean;

@@ -61,7 +61,7 @@ export function Pagination({
         )}
         {totalItems != null && (
           <span className="text-xs text-muted-foreground">
-            {totalItems.toLocaleString()} {tp("items|item|items", totalItems, {})}
+            {totalItems.toLocaleString()} {tp(t("_pl_items"), totalItems, {})}
           </span>
         )}
       </div>
