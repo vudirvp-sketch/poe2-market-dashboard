@@ -1,4 +1,4 @@
-const CACHE_NAME = 'poe2-market-v2';
+const CACHE_NAME = 'poe2-market-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -7,10 +7,19 @@ const STATIC_ASSETS = [
   '/logo.svg',
 ];
 
-// Install: cache static assets
+// Install: cache static assets (ignore individual failures)
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // Use addAll with a fallback: cache what we can, skip what fails
+      Promise.allSettled(
+        STATIC_ASSETS.map((url) =>
+          cache.add(url).catch(() => {
+            // Silently skip assets that fail to fetch (e.g. favicon.ico in dev)
+          })
+        )
+      )
+    )
   );
   self.skipWaiting();
 });
@@ -29,6 +38,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+
   // API requests: stale-while-revalidate
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -40,23 +52,25 @@ self.addEventListener('fetch', (event) => {
             }
             return response;
           })
-          .catch(() => cache.match(event.request))
+          .catch(() => cache.match(event.request).then((r) => r || new Response('Offline', { status: 503 })))
       )
     );
     return;
   }
 
-  // Static assets: cache-first
+  // Static assets: cache-first, but never crash on failure
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      });
+      return fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => new Response('Not found', { status: 404 }));
     })
   );
 });

@@ -70,7 +70,7 @@ const CURRENCY_VIRTUAL_THRESHOLD = 30;
 // ============================================================================
 export function Dashboard() {
   // --- Selection state ---
-  // FIX: Default realm changed from "pc" to "poe2" to match API URL path
+  // Default realm is "poe2" to match API URL path segment
   const [realm, setRealm] = useState("poe2");
   const [league, setLeague] = useState("");
   const [tab, setTab] = useState("overview");
@@ -125,15 +125,26 @@ export function Dashboard() {
     enabled: !!realm,
   });
 
-  // Helper: effectiveLeague without useMemo for the hook (must be computed before useMemo)
-  const effectiveLeagueRaw = useMemo(() => {
+  // Compute the effective league: user selection > active league > first league
+  const effectiveLeague = useMemo(() => {
     if (league && leagues?.some((l) => l.name === league)) return league;
     const active = leagues?.find((l) => l.active);
     return active?.name || leagues?.[0]?.name || "";
   }, [league, leagues]);
 
-  // Alias for rest of component
-  const effectiveLeague = effectiveLeagueRaw;
+  // FIX: Auto-select the first league when leagues load and no league is
+  // explicitly selected.  Without this the Radix Select stays empty because
+  // `value=""` is invalid, and the "Select a realm and league" placeholder
+  // never goes away even though effectiveLeague resolves to a name.
+  useEffect(() => {
+    if (!league && leagues && leagues.length > 0) {
+      const autoLeague =
+        leagues.find((l) => l.active)?.name || leagues[0].name;
+      if (autoLeague) {
+        setLeague(autoLeague);
+      }
+    }
+  }, [league, leagues]);
 
   // Reference currencies
   const { data: referenceCurrencies } = useQuery({
@@ -155,7 +166,7 @@ export function Dashboard() {
   });
 
   // --- Price alerts hook (auto-checks in background) ---
-  usePriceAlerts({ realm, league: effectiveLeagueRaw });
+  usePriceAlerts({ realm, league: effectiveLeague });
 
   // Currencies
   const {

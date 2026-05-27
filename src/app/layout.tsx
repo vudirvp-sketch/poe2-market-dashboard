@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import { Providers } from "@/components/providers";
-import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -100,11 +98,8 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <Providers>
-          {children}
-          <Toaster richColors />
-        </Providers>
-        {/* Service Worker Registration — using next/script to avoid React hydration warning */}
+        {children}
+        {/* Service Worker Registration */}
         <Script id="sw-register" strategy="afterInteractive">
           {`if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {

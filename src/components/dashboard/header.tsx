@@ -53,8 +53,8 @@ interface HeaderProps {
 const LOCALE_LABELS: Record<Locale, string> = {
   en: "EN",
   ru: "RU",
-  zh: "\u4E2D",
-  ko: "\uD55C",
+  zh: "\u4e2d",
+  ko: "\ud55c",
 };
 
 export function Header({
@@ -141,9 +141,6 @@ export function Header({
     setLocale(next);
   }, [locale, setLocale]);
 
-  // Realm display is now handled by the API mapping in poe2api.ts
-  // Just use r.displayName directly (already mapped from realm_api_id)
-
   // FIX: Sort leagues — active first, then alphabetically
   const sortedLeagues = leagues
     ? [...leagues].sort((a, b) => {
@@ -152,6 +149,11 @@ export function Header({
         return a.displayName.localeCompare(b.displayName);
       })
     : [];
+
+  // FIX: Radix Select does not accept empty string as `value`.
+  // Pass undefined when there is no effective league selected so the
+  // component renders the placeholder text instead of crashing.
+  const leagueSelectValue = effectiveLeague || undefined;
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
@@ -164,15 +166,15 @@ export function Header({
 
         {/* Realm select */}
         <Select
-          value={realm}
+          value={realm || undefined}
           onValueChange={(v) => onRealmChange(v)}
         >
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder={t("realm")} />
           </SelectTrigger>
-          <SelectContent key={realmsLoading ? "loading" : "loaded"}>
+          <SelectContent>
             {realmsLoading ? (
-              <SelectItem value="loading" disabled>
+              <SelectItem value="__loading__" disabled>
                 {t("loading")}
               </SelectItem>
             ) : (
@@ -186,16 +188,29 @@ export function Header({
         </Select>
 
         {/* League select */}
-        <Select value={effectiveLeague} onValueChange={onLeagueChange}>
+        <Select
+          value={leagueSelectValue}
+          onValueChange={onLeagueChange}
+        >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t("league")} />
           </SelectTrigger>
-          <SelectContent key={sortedLeagues.map(l => l.name).join(',') || 'empty'}>
-            {sortedLeagues.map((l) => (
-              <SelectItem key={l.name} value={l.name}>
-                {l.displayName} {!l.active && `(${t("inactive")})`}
+          <SelectContent>
+            {leaguesLoading ? (
+              <SelectItem value="__loading__" disabled>
+                {t("loading")}
               </SelectItem>
-            ))}
+            ) : sortedLeagues.length === 0 ? (
+              <SelectItem value="__empty__" disabled>
+                —
+              </SelectItem>
+            ) : (
+              sortedLeagues.map((l) => (
+                <SelectItem key={l.name} value={l.name}>
+                  {l.displayName} {!l.active && `(${t("inactive")})`}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 
@@ -292,7 +307,7 @@ export function Header({
           </div>
         )}
 
-        {/* Language toggle — cycles ru → en → zh → ko → ru */}
+        {/* Language toggle — cycles ru -> en -> zh -> ko -> ru */}
         <Button
           variant="ghost"
           size="sm"
