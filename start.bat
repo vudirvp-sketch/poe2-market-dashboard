@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
@@ -67,6 +68,10 @@ if "%1"=="--skip-build" (
     if !ERRORLEVEL! neq 0 (
         echo.
         echo [ERROR] Build failed! Check the errors above.
+        echo.
+        echo [TIP] If you see TypeScript errors, you can try running with:
+        echo       start.bat --skip-build
+        echo       and then use 'npm run dev' for development mode instead.
         echo.
         pause
         exit /b 1

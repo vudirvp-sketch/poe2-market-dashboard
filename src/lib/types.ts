@@ -8,6 +8,8 @@
 export interface Realm {
   name: string;
   displayName: string;
+  /** The default/current league name for this realm (from API) */
+  defaultLeague?: string;
 }
 
 export interface League {
@@ -16,6 +18,17 @@ export interface League {
   startAt: string | null;
   endAt: string | null;
   active: boolean;
+  /** Base currency API ID for this league (e.g. "exalted") */
+  baseCurrencyApiId?: string;
+  /** Base currency display name */
+  baseCurrencyText?: string;
+  /** Default reference currency for this league */
+  defaultCurrency?: {
+    apiId: string;
+    text: string;
+    iconUrl: string | null;
+    relativePrice: number;
+  };
 }
 
 export interface PoeItem {

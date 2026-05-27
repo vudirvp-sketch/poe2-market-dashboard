@@ -2,9 +2,15 @@
 // PoE2 Scout API — Server-side fetch functions + in-memory cache
 // Base URL: https://poe2scout.com/api
 //
-// v2 FIX: API returns PascalCase fields. All fetch functions now map
-// PascalCase API responses to the camelCase types defined in ./types.ts
-// so the frontend works correctly.
+// v3 FIXES:
+// 1. API returns PascalCase for Leagues/Items/etc., snake_case for Realms
+// 2. Category=all returns EMPTY results from API — when category is "all",
+//    we fetch all categories separately and merge results
+// 3. League IsCurrent is always false in API — we use default_league_value
+//    from the Realm to mark the active league
+// 4. CurrencyPairHistory API returns nested structure {history, meta} not a flat array
+// 5. ItemHistory API returns {price_history, has_more} not a flat array
+// 6. DailyStatsHistory API returns {daily_stats, has_more} not a flat array
 // ============================================================================
 
 import type {
@@ -225,9 +231,9 @@ interface RawSnapshotPairCurrencyItem {
 }
 
 interface RawSnapshotPairData {
-  ValueTraded: number;
-  RelativePrice: number;
-  StockValue: number;
+  ValueTraded: string;
+  RelativePrice: string;
+  StockValue: string;
   VolumeTraded: number;
   HighestStock: number;
 }
@@ -235,7 +241,7 @@ interface RawSnapshotPairData {
 interface RawSnapshotPair {
   CurrencyExchangeSnapshotPairId: number;
   CurrencyExchangeSnapshotId: number;
-  Volume: number;
+  Volume: string; // FIX v3: Volume is a string in API response (e.g. "1683.00000000")
   BaseCurrencyApiId: string;
   BaseCurrencyText: string;
   CurrencyOne: RawSnapshotPairCurrencyItem;
@@ -272,24 +278,47 @@ interface RawReferenceCurrency {
   RelativePrice: number;
 }
 
-interface RawCurrencyPairHistoryPoint {
-  Time: string;
-  RelativePrice: number;
-  Volume: number;
+// FIX v3: CurrencyPairHistory returns PascalCase {History: [...], Meta, BaseCurrencyApiId}
+interface RawCurrencyPairHistoryResponse {
+  History: Array<{
+    Epoch: number;
+    Data: {
+      CurrencyOneData: RawSnapshotPairData;
+      CurrencyTwoData: RawSnapshotPairData;
+    };
+  }>;
+  Meta: { HasMore: boolean };
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+}
+
+// FIX v3: ItemHistory returns PascalCase {PriceHistory: [...], HasMore}
+interface RawItemHistoryResponse {
+  PriceHistory: RawItemHistoryPoint[];
+  HasMore: boolean;
 }
 
 interface RawItemHistoryPoint {
-  Time: string;
   Price: number;
+  Time: string;
   Quantity: number;
 }
 
+// FIX v3: DailyStatsHistory returns PascalCase {DailyStats: [...], HasMore, BaseCurrencyApiId}
+interface RawDailyStatsHistoryResponse {
+  DailyStats: RawDailyStat[];
+  HasMore: boolean;
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+}
+
 interface RawDailyStat {
-  Day: string;
+  Time: string;
   Open: number;
   High: number;
   Low: number;
   Close: number;
+  Average: number;
   Volume: number;
 }
 
@@ -363,7 +392,7 @@ function computeVolume24h(logs: (RawPriceLogEntry | null)[] | undefined): number
 }
 
 /** Map raw currency item to PoeItem */
-function mapCurrencyItem(raw: RawCurrencyCategory, item: RawCurrencyItem, referencePrice?: number): PoeItem {
+function mapCurrencyItem(item: RawCurrencyItem, referencePrice?: number): PoeItem {
   const changePercent = computeChangePercent(item.PriceLogs);
   const sevenDayChange = compute7dChangePercent(item.PriceLogs);
   const volume = computeVolume24h(item.PriceLogs);
@@ -446,6 +475,10 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
 
 /** Map raw snapshot pair to ExchangePair */
 function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
+  // FIX v3: ValueTraded, RelativePrice, StockValue are strings in API response
+  const relPrice = parseFloat(raw.CurrencyOneData.RelativePrice) || 0;
+  const volTraded = raw.CurrencyOneData.VolumeTraded ?? 0;
+
   return {
     id: String(raw.CurrencyExchangeSnapshotPairId),
     currency1Id: raw.CurrencyOne.ApiId,
@@ -454,9 +487,9 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     currency2Id: raw.CurrencyTwo.ApiId,
     currency2Name: raw.CurrencyTwo.Text,
     currency2IconUrl: raw.CurrencyTwo.IconUrl,
-    price: raw.CurrencyOneData.RelativePrice,
-    relativePrice: raw.CurrencyOneData.RelativePrice,
-    volume: raw.CurrencyOneData.VolumeTraded,
+    price: relPrice,
+    relativePrice: relPrice,
+    volume: volTraded,
     change: null,
     changePercent: null,
     history: null,
@@ -473,6 +506,8 @@ export async function getRealms(): Promise<Realm[]> {
     // e.g., "pc" for PoE1, "poe2" for PoE2 (not "poe2/poe2")
     name: r.realm_api_id === "poe2" ? "poe2" : r.realm_api_id,
     displayName: r.game_api_id === "poe2" ? "PoE2" : `PoE1 ${r.realm_api_id.toUpperCase()}`,
+    // FIX v3: Pass default_league_value so frontend can auto-select the active league
+    defaultLeague: r.default_league_value || undefined,
   }));
 }
 
@@ -482,14 +517,43 @@ export async function getRealmFilters(realm: string): Promise<unknown> {
 
 // --- Leagues ---
 export async function getLeagues(realm: string): Promise<League[]> {
-  // FIX: For PoE2, the realm URL path is just "poe2", not "poe2/poe2"
   const raw = await cachedFetch<RawLeague[]>(`${BASE_URL}/${encodeURIComponent(realm)}/Leagues`);
+
+  // FIX v3: API IsCurrent is always false. We determine the active league
+  // by getting the realm's default_league_value and matching it.
+  let defaultLeagueValue = "";
+  try {
+    const realms = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
+    const matchingRealm = realms.find((r) =>
+      r.realm_api_id === realm || (realm === "poe2" && r.game_api_id === "poe2")
+    );
+    if (matchingRealm) {
+      defaultLeagueValue = matchingRealm.default_league_value;
+    }
+  } catch {
+    // If realms fetch fails, fall back to IsCurrent
+  }
+
   return raw.map((l) => ({
     name: l.Value,
     displayName: l.Value,
     startAt: null,
     endAt: null,
-    active: l.IsCurrent,
+    // FIX v3: Mark league as active if it matches the realm's default_league_value
+    active: defaultLeagueValue
+      ? l.Value === defaultLeagueValue
+      : l.IsCurrent,
+    // FIX v3: Pass base currency info from league for reference currency
+    baseCurrencyApiId: l.BaseCurrencyApiId,
+    baseCurrencyText: l.BaseCurrencyText,
+    defaultCurrency: l.DefaultCurrency
+      ? {
+          apiId: l.DefaultCurrency.ApiId,
+          text: l.DefaultCurrency.Text,
+          iconUrl: l.DefaultCurrency.IconUrl,
+          relativePrice: l.DefaultCurrency.RelativePrice,
+        }
+      : undefined,
   }));
 }
 
@@ -623,11 +687,12 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
   };
 }
 
+// FIX v3: ItemHistory API returns {price_history: [...], has_more}
 export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168, referenceCurrency?: string): Promise<PoeItemHistoryPoint[]> {
   let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
   if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
-  const raw = await cachedFetch<RawItemHistoryPoint[]>(url);
-  return raw.map((p) => ({
+  const raw = await cachedFetch<RawItemHistoryResponse>(url);
+  return (raw.PriceHistory ?? []).map((p) => ({
     timestamp: p.Time,
     price: p.Price,
     priceChaos: p.Price,
@@ -636,12 +701,13 @@ export async function getItemHistory(realm: string, league: string, itemId: stri
   }));
 }
 
+// FIX v3: DailyStatsHistory API returns {daily_stats: [...], has_more}
 export async function getItemDailyStats(realm: string, league: string, itemId: string, dayCount = 30, referenceCurrency?: string): Promise<DailyStat[]> {
   let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`;
   if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
-  const raw = await cachedFetch<RawDailyStat[]>(url);
-  return raw.map((d) => ({
-    day: d.Day,
+  const raw = await cachedFetch<RawDailyStatsHistoryResponse>(url);
+  return (raw.DailyStats ?? []).map((d) => ({
+    day: d.Time,
     open: d.Open,
     high: d.High,
     low: d.Low,
@@ -651,6 +717,8 @@ export async function getItemDailyStats(realm: string, league: string, itemId: s
 }
 
 // --- Uniques (paginated) ---
+// FIX v3: Category=all returns EMPTY results from the API.
+// When category is "all", we fetch ALL unique categories and merge results.
 export async function getUniquesByCategory(
   realm: string,
   league: string,
@@ -660,6 +728,12 @@ export async function getUniquesByCategory(
   search = "",
   referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
+
+  // FIX v3: When category is "all", fetch all categories and merge
+  if (category === "all") {
+    return getUniquesAllCategories(realm, league, page, perPage, search, referenceCurrency);
+  }
+
   const params = new URLSearchParams({
     Category: category,
     Page: String(page),
@@ -672,10 +746,8 @@ export async function getUniquesByCategory(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
   );
 
-  const refPrice = referenceCurrency ? undefined : undefined; // TODO: lookup reference price
-
   return {
-    items: raw.Items.map((item) => mapUniqueItem(item, refPrice)),
+    items: raw.Items.map((item) => mapUniqueItem(item)),
     page: raw.CurrentPage,
     perPage: perPage,
     totalItems: raw.Total,
@@ -683,7 +755,72 @@ export async function getUniquesByCategory(
   };
 }
 
+/**
+ * Fetch uniques across ALL categories since Category=all returns empty.
+ * Fetches first page of each category, then merges and paginates client-side.
+ */
+async function getUniquesAllCategories(
+  realm: string,
+  league: string,
+  page = 1,
+  perPage = 50,
+  search = "",
+  referenceCurrency?: string
+): Promise<PaginatedResponse<PoeItem>> {
+  // First, get the list of unique categories
+  const categoriesRaw = await cachedFetch<RawCategoriesResponse>(
+    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
+  );
+
+  const uniqueCats = categoriesRaw.UniqueCategories ?? [];
+
+  // Fetch page 1 of each unique category in parallel
+  const fetches = uniqueCats.map((cat) => {
+    const params = new URLSearchParams({
+      Category: cat.ApiId,
+      Page: "1",
+      PerPage: String(perPage),
+    });
+    if (search) params.set("Search", search);
+    if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
+
+    return cachedFetch<RawPaginatedResponse<RawUniqueItem>>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
+    ).catch(() => null);
+  });
+
+  const results = await Promise.all(fetches);
+
+  // Merge all items
+  const allItems: PoeItem[] = [];
+  let totalItems = 0;
+
+  for (const result of results) {
+    if (!result) continue;
+    totalItems += result.Total;
+    allItems.push(...result.Items.map((item) => mapUniqueItem(item)));
+  }
+
+  // Sort by price descending (most expensive first)
+  allItems.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+
+  // Client-side pagination
+  const startIdx = (page - 1) * perPage;
+  const pageItems = allItems.slice(startIdx, startIdx + perPage);
+  const totalPages = Math.max(1, Math.ceil(allItems.length / perPage));
+
+  return {
+    items: pageItems,
+    page,
+    perPage,
+    totalItems: allItems.length,
+    totalPages,
+  };
+}
+
 // --- Currencies ---
+// FIX v3: Category=all returns EMPTY results from the API.
+// When category is "all", we fetch ALL currency categories and merge results.
 export async function getCurrenciesByCategory(
   realm: string,
   league: string,
@@ -692,6 +829,12 @@ export async function getCurrenciesByCategory(
   perPage = 50,
   referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
+
+  // FIX v3: When category is "all", fetch all categories and merge
+  if (category === "all") {
+    return getCurrenciesAllCategories(realm, league, page, perPage, referenceCurrency);
+  }
+
   const params = new URLSearchParams({
     Category: category,
     Page: String(page),
@@ -704,7 +847,7 @@ export async function getCurrenciesByCategory(
   );
 
   return {
-    items: raw.Items.map((item) => mapCurrencyItem({} as RawCurrencyCategory, item)),
+    items: raw.Items.map((item) => mapCurrencyItem(item)),
     page: raw.CurrentPage,
     perPage: perPage,
     totalItems: raw.Total,
@@ -712,13 +855,73 @@ export async function getCurrenciesByCategory(
   };
 }
 
+/**
+ * Fetch currencies across ALL categories since Category=all returns empty.
+ * Fetches first page of each category, then merges and paginates client-side.
+ */
+async function getCurrenciesAllCategories(
+  realm: string,
+  league: string,
+  page = 1,
+  perPage = 50,
+  referenceCurrency?: string
+): Promise<PaginatedResponse<PoeItem>> {
+  // Get the list of currency categories
+  const categoriesRaw = await cachedFetch<RawCategoriesResponse>(
+    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
+  );
+
+  const currencyCats = categoriesRaw.CurrencyCategories ?? [];
+
+  // Fetch page 1 of each currency category in parallel
+  const fetches = currencyCats.map((cat) => {
+    const params = new URLSearchParams({
+      Category: cat.ApiId,
+      Page: "1",
+      PerPage: String(perPage),
+    });
+    if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
+
+    return cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
+    ).catch(() => null);
+  });
+
+  const results = await Promise.all(fetches);
+
+  // Merge all items
+  const allItems: PoeItem[] = [];
+
+  for (const result of results) {
+    if (!result) continue;
+    allItems.push(...result.Items.map((item) => mapCurrencyItem(item)));
+  }
+
+  // Sort by price descending
+  allItems.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+
+  // Client-side pagination
+  const startIdx = (page - 1) * perPage;
+  const pageItems = allItems.slice(startIdx, startIdx + perPage);
+  const totalPages = Math.max(1, Math.ceil(allItems.length / perPage));
+
+  return {
+    items: pageItems,
+    page,
+    perPage,
+    totalItems: allItems.length,
+    totalPages,
+  };
+}
+
 export async function getCurrency(realm: string, league: string, apiId: string): Promise<PoeItem> {
   const raw = await cachedFetch<RawCurrencyItem>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/${apiId}`
   );
-  return mapCurrencyItem({} as RawCurrencyCategory, raw);
+  return mapCurrencyItem(raw);
 }
 
+// FIX v3: CurrencyPairHistory returns nested {history, meta} structure
 export async function getCurrencyPairHistory(
   realm: string,
   league: string,
@@ -726,13 +929,16 @@ export async function getCurrencyPairHistory(
   id2: string,
   limit = 168
 ): Promise<ExchangePairHistoryPoint[]> {
-  const raw = await cachedFetch<RawCurrencyPairHistoryPoint[]>(
+  const raw = await cachedFetch<RawCurrencyPairHistoryResponse>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/Pairs/${id1}/${id2}/History?Limit=${limit}`
   );
-  return raw.map((p) => ({
-    timestamp: p.Time,
-    relativePrice: p.RelativePrice,
-    volume: p.Volume,
+
+  // The API returns {History: [{Epoch, Data: {CurrencyOneData: {RelativePrice (string!), VolumeTraded (number), ...}, CurrencyTwoData: {...}}}], ...}
+  // We extract from CurrencyOneData as the primary direction
+  return (raw.History ?? []).map((point) => ({
+    timestamp: new Date(point.Epoch * 1000).toISOString(),
+    relativePrice: parseFloat(point.Data?.CurrencyOneData?.RelativePrice ?? "0") || 0,
+    volume: point.Data?.CurrencyOneData?.VolumeTraded ?? 0,
   }));
 }
 
