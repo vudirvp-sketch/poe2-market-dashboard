@@ -52,3 +52,7 @@ examples/
 Caddyfile
 upload/
 skills/
+
+# Playwright
+/playwright-report/
+/test-results/

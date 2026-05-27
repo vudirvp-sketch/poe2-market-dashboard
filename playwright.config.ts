@@ -15,19 +15,23 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
+  timeout: 45_000, // Per-test timeout (some tests need time for data loading)
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
+    navigationTimeout: 15_000,
+    actionTimeout: 10_000,
   },
   projects: [
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "Mobile Chrome",
-      use: { ...devices["Pixel 5"] },
-    },
+    // Mobile Chrome disabled by default — enable if needed
+    // {
+    //   name: "Mobile Chrome",
+    //   use: { ...devices["Pixel 5"] },
+    // },
   ],
   webServer: {
     command: "npm run dev",

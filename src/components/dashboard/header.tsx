@@ -79,6 +79,10 @@ export function Header({
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
+  // Avoid hydration mismatch: theme is undefined during SSR, so we delay
+  // rendering theme-dependent UI until after the component has mounted.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [timeAgo, setTimeAgo] = useState<string>("");
   const [localSearch, setLocalSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -154,7 +158,7 @@ export function Header({
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder={t("realm")} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent key={realmsLoading ? "loading" : "loaded"}>
             {realmsLoading ? (
               <SelectItem value="loading" disabled>
                 {t("loading")}
@@ -174,7 +178,7 @@ export function Header({
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t("league")} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent key={leagues?.map(l => l.name).join(',') || 'empty'}>
             {leagues?.map((l) => (
               <SelectItem key={l.name} value={l.name}>
                 {l.displayName} {!l.active && `(${t("inactive")})`}
@@ -289,20 +293,27 @@ export function Header({
           <span className="text-xs">{LOCALE_LABELS[locale]}</span>
         </Button>
 
-        {/* Theme toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-9"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === "dark" ? t("switchToLightMode") : t("switchToDarkMode")}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4" aria-hidden="true" />
-          ) : (
-            <Moon className="h-4 w-4" aria-hidden="true" />
-          )}
-        </Button>
+        {/* Theme toggle — rendered after mount to avoid hydration mismatch */}
+        {mounted ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={theme === "dark" ? t("switchToLightMode") : t("switchToDarkMode")}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Moon className="h-4 w-4" aria-hidden="true" />
+            )}
+          </Button>
+        ) : (
+          // Placeholder button with same dimensions to prevent layout shift
+          <Button variant="ghost" size="sm" className="h-9" disabled aria-hidden="true" tabIndex={-1}>
+            <Sun className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </header>
   );
