@@ -22,7 +22,12 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange
+      >
         <I18nProvider>
           <StoreRehydrator>{children}</StoreRehydrator>
         </I18nProvider>
@@ -38,13 +43,10 @@ export function Providers({ children }: { children: ReactNode }) {
  */
 function StoreRehydrator({ children }: { children: ReactNode }) {
   const rehydrate = useDashboardStore((s) => s.rehydrate);
-  const hydrated = useDashboardStore((s) => s._hydrated);
 
   useEffect(() => {
     rehydrate();
   }, [rehydrate]);
 
-  // Optionally: you could show a loading skeleton until hydrated,
-  // but for this app the flash is negligible so we just render immediately.
   return <>{children}</>;
 }

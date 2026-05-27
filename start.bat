@@ -75,11 +75,18 @@ if not exist "node_modules\" (
 )
 
 REM ----------------------------------------------------------
-REM Step 4: Build project if needed
+REM Step 4: Build project (ALWAYS rebuild to avoid stale builds)
 REM ----------------------------------------------------------
-if not exist ".next\BUILD_ID" (
-    echo [INFO] Build not found or incomplete. Building project...
-    echo This may take a few minutes on first run...
+REM Always rebuild because code may have changed since last build.
+REM If you want to skip rebuild, pass --skip-build as argument.
+REM ============================================================
+
+if "%1"=="--skip-build" (
+    echo [INFO] Skipping build (--skip-build flag provided).
+    echo.
+) else (
+    echo [INFO] Building project...
+    echo This ensures you have the latest code compiled.
     echo.
     call npm run build
     if %ERRORLEVEL% neq 0 (
@@ -92,20 +99,11 @@ if not exist ".next\BUILD_ID" (
     echo.
     echo [OK] Build completed successfully.
     echo.
-) else (
-    echo [OK] Build already exists.
-    echo.
 )
 
 REM ----------------------------------------------------------
 REM Step 5: Start the server
 REM ----------------------------------------------------------
-REM NOTE: "output: standalone" has been REMOVED from next.config.ts
-REM because it breaks `next start` for local development.
-REM Now we can safely use `next start` directly.
-REM If you need standalone for Docker, add it back and use:
-REM   node .next\standalone\server.js
-REM ============================================================
 
 echo ============================================================
 echo   Starting PoE2 Market Dashboard...

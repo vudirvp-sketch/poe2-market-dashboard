@@ -28,18 +28,80 @@ const BASE_URL = "https://poe2scout.com/api";
 const cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 60_000; // 60 seconds
 
+// ---------- Fetch with timeout + retry ----------
+const FETCH_TIMEOUT = 15_000; // 15 seconds
+const FETCH_RETRIES = 2;
+
+/**
+ * Fetch with AbortController timeout and automatic retry.
+ * This prevents ETIMEDOUT errors from hanging the server indefinitely
+ * and causing "failed to pipe response" errors in API routes.
+ */
+async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSignal): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  // Link external signal if provided
+  if (signal) {
+    signal.addEventListener("abort", () => controller.abort());
+  }
+
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      next: { revalidate: 60 },
+    });
+    return res;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function cachedFetch<T>(url: string): Promise<T> {
   const hit = cache.get(url);
   if (hit && Date.now() - hit.ts < CACHE_TTL) {
     return hit.data as T;
   }
-  const res = await fetch(url, { next: { revalidate: 60 } });
-  if (!res.ok) {
-    throw new Error(`API ${res.status}: ${res.statusText} — ${url}`);
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, FETCH_TIMEOUT);
+
+      if (!res.ok) {
+        throw new Error(`API ${res.status}: ${res.statusText} — ${url}`);
+      }
+
+      const data = (await res.json()) as T;
+      cache.set(url, { data, ts: Date.now() });
+      return data;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+
+      // Don't retry on 4xx errors (client errors)
+      if (lastError.message.startsWith("API 4")) {
+        throw lastError;
+      }
+
+      // Don't retry on abort (timeout) — just fail fast
+      if (lastError.name === "AbortError") {
+        throw new Error(
+          `API request timed out after ${FETCH_TIMEOUT / 1000}s — ${url}. ` +
+          `The poe2scout.com server may be unreachable from your network. ` +
+          `Try using a VPN or check your internet connection.`
+        );
+      }
+
+      // Wait before retrying (exponential backoff)
+      if (attempt < FETCH_RETRIES) {
+        const delay = Math.min(500 * Math.pow(2, attempt), 3000);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
   }
-  const data = (await res.json()) as T;
-  cache.set(url, { data, ts: Date.now() });
-  return data;
+
+  throw lastError ?? new Error(`Failed to fetch ${url} after ${FETCH_RETRIES + 1} attempts`);
 }
 
 // ============================================================================
