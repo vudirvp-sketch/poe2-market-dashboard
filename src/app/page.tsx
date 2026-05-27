@@ -70,7 +70,8 @@ const CURRENCY_VIRTUAL_THRESHOLD = 30;
 // ============================================================================
 export default function Dashboard() {
   // --- Selection state ---
-  const [realm, setRealm] = useState("pc");
+  // FIX: Default realm changed from "pc" to "poe2" to match API URL path
+  const [realm, setRealm] = useState("poe2");
   const [league, setLeague] = useState("");
   const [tab, setTab] = useState("overview");
   const [search, setSearch] = useState("");

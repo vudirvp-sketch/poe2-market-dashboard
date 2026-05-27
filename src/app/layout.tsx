@@ -91,6 +91,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        suppressHydrationWarning
       >
         {/* Skip-to-content link for a11y (WCAG 2.1 AA) */}
         <a

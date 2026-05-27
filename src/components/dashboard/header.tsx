@@ -141,6 +141,18 @@ export function Header({
     setLocale(next);
   }, [locale, setLocale]);
 
+  // Realm display is now handled by the API mapping in poe2api.ts
+  // Just use r.displayName directly (already mapped from realm_api_id)
+
+  // FIX: Sort leagues — active first, then alphabetically
+  const sortedLeagues = leagues
+    ? [...leagues].sort((a, b) => {
+        if (a.active && !b.active) return -1;
+        if (!a.active && b.active) return 1;
+        return a.displayName.localeCompare(b.displayName);
+      })
+    : [];
+
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
       <div className="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
@@ -178,8 +190,8 @@ export function Header({
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t("league")} />
           </SelectTrigger>
-          <SelectContent key={leagues?.map(l => l.name).join(',') || 'empty'}>
-            {leagues?.map((l) => (
+          <SelectContent key={sortedLeagues.map(l => l.name).join(',') || 'empty'}>
+            {sortedLeagues.map((l) => (
               <SelectItem key={l.name} value={l.name}>
                 {l.displayName} {!l.active && `(${t("inactive")})`}
               </SelectItem>
