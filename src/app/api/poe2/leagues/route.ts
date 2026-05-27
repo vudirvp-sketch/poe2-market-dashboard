@@ -16,7 +16,12 @@ export async function GET(req: NextRequest) {
     const message = e instanceof Error ? e.message : "Unknown error";
     const status = message.includes("timed out") ? 504 : 502;
     return NextResponse.json(
-      { error: message, hint: message.includes("unreachable") ? "Try using a VPN to access poe2scout.com" : undefined },
+      {
+        error: message,
+        hint: message.includes("unreachable") || message.includes("Cannot reach")
+          ? "The poe2scout.com API is unreachable. Try: 1) Set POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local, 2) Use a VPN"
+          : undefined,
+      },
       { status }
     );
   }

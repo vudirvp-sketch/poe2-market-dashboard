@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -67,6 +66,10 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "PoE2 Market",
   },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -82,11 +85,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/icon-192.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
@@ -99,14 +97,6 @@ export default function RootLayout({
           Skip to main content
         </a>
         {children}
-        {/* Service Worker Registration */}
-        <Script id="sw-register" strategy="afterInteractive">
-          {`if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').catch(function() {});
-              });
-            }`}
-        </Script>
       </body>
     </html>
   );

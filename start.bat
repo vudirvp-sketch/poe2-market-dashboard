@@ -35,9 +35,23 @@ if !ERRORLEVEL! neq 0 (
 echo [OK] npm found.
 echo.
 
+REM ---- Check .env.local ----
+if not exist ".env.local" (
+    echo [INFO] .env.local not found. Creating with default settings...
+    echo # PoE2 API Base URL - change this if poe2scout.com is unreachable> .env.local
+    echo POE2_API_BASE_URL=https://poe2scout.com/api>> .env.local
+    echo.
+    echo [OK] .env.local created. If the API returns 502 errors, edit this file
+    echo       and try: POE2_API_BASE_URL=https://api.poe2scout.com/api
+    echo.
+) else (
+    echo [OK] .env.local found.
+    echo.
+)
+
 REM ---- Kill any existing Next.js server on port 3000 ----
 echo [INFO] Checking for existing server on port 3000...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
     echo [INFO] Found process %%a on port 3000. Terminating...
     taskkill /PID %%a /F >nul 2>&1
     timeout /t 1 /nobreak >nul
@@ -68,6 +82,21 @@ if not exist "node_modules\" (
 
 REM ---- Build project ----
 REM Use --skip-build flag to skip:  start.bat --skip-build
+REM Use --dev flag for dev mode:    start.bat --dev
+if "%~1"=="--dev" (
+    echo [INFO] Starting in DEVELOPMENT mode (--dev flag)...
+    echo.
+    echo ============================================================
+    echo   Starting PoE2 Market Dashboard (DEV MODE)...
+    echo   Open your browser: http://localhost:3000
+    echo.
+    echo   Press Ctrl+C to stop the server.
+    echo ============================================================
+    echo.
+    call npm run dev
+    goto :end
+)
+
 if "%~1"=="--skip-build" (
     echo [INFO] Skipping build --skip-build flag provided.
     echo.
@@ -80,9 +109,9 @@ if "%~1"=="--skip-build" (
         echo.
         echo [ERROR] Build failed! Check the errors above.
         echo.
-        echo [TIP] If you see TypeScript errors, you can try running with:
-        echo       start.bat --skip-build
-        echo       and then use npm run dev for development mode instead.
+        echo [TIP] You can try:
+        echo       1. start.bat --dev       (development mode, no build needed)
+        echo       2. start.bat --skip-build (skip build, use existing .next)
         echo.
         pause
         exit /b 1
@@ -97,7 +126,8 @@ if not exist ".next\" (
     echo.
     echo [ERROR] .next directory not found after build!
     echo This means the build did not complete properly.
-    echo Try running npm run build manually to see errors.
+    echo Try running: npm run build
+    echo Or use: start.bat --dev
     echo.
     pause
     exit /b 1
@@ -107,6 +137,9 @@ REM ---- Start the server ----
 echo ============================================================
 echo   Starting PoE2 Market Dashboard...
 echo   Open your browser: http://localhost:3000
+echo.
+echo   If you see 502 errors, try editing .env.local:
+echo     POE2_API_BASE_URL=https://api.poe2scout.com/api
 echo.
 echo   Press Ctrl+C to stop the server.
 echo ============================================================
@@ -120,6 +153,7 @@ REM the entire process tree including child node processes.
 REM We also kill port 3000 at the start of this script.
 call npm run start
 
+:end
 REM If next start exits unexpectedly, keep the window open
 echo.
 echo [INFO] Server has stopped.

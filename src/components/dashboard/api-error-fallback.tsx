@@ -1,10 +1,11 @@
 // ============================================================================
 // API Error Fallback — Reusable error state component for failed API calls
 // Shows a friendly error message with retry button instead of blank screen
+// v2: Detects 502 errors and shows VPN/proxy troubleshooting hints
 // ============================================================================
 "use client";
 
-import { AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
+import { AlertTriangle, RefreshCw, WifiOff, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 
@@ -45,6 +46,13 @@ export function ApiErrorFallback({
   // Detect rate-limit
   const isRateLimited = errorMessage.includes("429");
 
+  // Detect 502/server errors (API unreachable)
+  const isServerDown =
+    errorMessage.includes("502") ||
+    errorMessage.includes("unreachable") ||
+    errorMessage.includes("Cannot reach") ||
+    errorMessage.includes("timed out");
+
   if (compact) {
     return (
       <div
@@ -84,6 +92,8 @@ export function ApiErrorFallback({
     >
       {isOffline ? (
         <WifiOff className="h-12 w-12 text-amber-500 mb-4" />
+      ) : isServerDown ? (
+        <ShieldAlert className="h-12 w-12 text-amber-500 mb-4" />
       ) : (
         <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
       )}
@@ -93,6 +103,8 @@ export function ApiErrorFallback({
             ? t("connectionLost")
             : isRateLimited
             ? t("tooManyRequests")
+            : isServerDown
+            ? "API Server Unreachable"
             : t("failedToLoadData"))}
       </h3>
       <p className="text-sm text-muted-foreground mb-4 max-w-md">
@@ -100,6 +112,8 @@ export function ApiErrorFallback({
           ? t("connectionLostDesc")
           : isRateLimited
           ? t("tooManyRequestsDesc")
+          : isServerDown
+          ? "The poe2scout.com API could not be reached. This may be due to regional network restrictions. Try: 1) Edit .env.local and set POE2_API_BASE_URL=https://api.poe2scout.com/api, 2) Use a VPN, 3) Restart the server after making changes."
           : t("failedToLoadDataDesc")}
       </p>
       {onRetry && (
@@ -116,7 +130,7 @@ export function ApiErrorFallback({
           {isRetrying ? t("retrying") : t("tryAgain")}
         </Button>
       )}
-      {/* Show error details in development */}
+      {/* Show error details */}
       {errorMessage && (
         <details className="mt-4 text-left max-w-md w-full">
           <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">

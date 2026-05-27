@@ -10,7 +10,17 @@ import dynamic from "next/dynamic";
 // SSR for the main page content.
 const ClientApp = dynamic(
   () => import("@/components/client-app"),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading PoE2 Market Dashboard...</p>
+        </div>
+      </div>
+    ),
+  }
 );
 
 export default function Page() {

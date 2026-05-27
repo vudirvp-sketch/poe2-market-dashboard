@@ -1,16 +1,20 @@
 // ============================================================================
 // PoE2 Scout API — Server-side fetch functions + in-memory cache
-// Base URL: https://poe2scout.com/api
+// Base URL: configurable via POE2_API_BASE_URL env var (default: https://poe2scout.com/api)
 //
-// v3 FIXES:
-// 1. API returns PascalCase for Leagues/Items/etc., snake_case for Realms
-// 2. Category=all returns EMPTY results from API — when category is "all",
+// v4 FIXES:
+// 1. API base URL is now configurable via POE2_API_BASE_URL environment variable
+//    so users behind blocked networks can use api.poe2scout.com or a local proxy
+// 2. Added User-Agent header to avoid being blocked by bot detection
+// 3. Improved error messages with actionable hints
+// 4. API returns PascalCase for Leagues/Items/etc., snake_case for Realms
+// 5. Category=all returns EMPTY results from API — when category is "all",
 //    we fetch all categories separately and merge results
-// 3. League IsCurrent is always false in API — we use default_league_value
+// 6. League IsCurrent is always false in API — we use default_league_value
 //    from the Realm to mark the active league
-// 4. CurrencyPairHistory API returns nested structure {history, meta} not a flat array
-// 5. ItemHistory API returns {price_history, has_more} not a flat array
-// 6. DailyStatsHistory API returns {daily_stats, has_more} not a flat array
+// 7. CurrencyPairHistory API returns nested structure {history, meta} not a flat array
+// 8. ItemHistory API returns {price_history, has_more} not a flat array
+// 9. DailyStatsHistory API returns {daily_stats, has_more} not a flat array
 // ============================================================================
 
 import type {
@@ -28,14 +32,15 @@ import type {
   ReferenceCurrency,
 } from "./types";
 
-const BASE_URL = "https://poe2scout.com/api";
+// ---------- Configurable API Base URL ----------
+const BASE_URL = process.env.POE2_API_BASE_URL || "https://poe2scout.com/api";
 
 // ---------- Simple in-memory cache (60s TTL) ----------
 const cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 60_000; // 60 seconds
 
 // ---------- Fetch with timeout + retry ----------
-const FETCH_TIMEOUT = 15_000; // 15 seconds
+const FETCH_TIMEOUT = 20_000; // 20 seconds (increased from 15)
 const FETCH_RETRIES = 2;
 
 /**
@@ -55,6 +60,11 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
   try {
     const res = await fetch(url, {
       signal: controller.signal,
+      headers: {
+        // Some CDNs/reverse-proxies block requests without a User-Agent
+        "User-Agent": "PoE2-Market-Dashboard/1.0",
+        "Accept": "application/json",
+      },
       next: { revalidate: 60 },
     });
     return res;
@@ -76,6 +86,19 @@ async function cachedFetch<T>(url: string): Promise<T> {
       const res = await fetchWithTimeout(url, FETCH_TIMEOUT);
 
       if (!res.ok) {
+        // Provide helpful error messages for common status codes
+        if (res.status === 403) {
+          throw new Error(
+            `API 403 Forbidden — ${url}. Your IP may be blocked by poe2scout.com. ` +
+            `Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local ` +
+            `or use a VPN.`
+          );
+        }
+        if (res.status === 429) {
+          throw new Error(
+            `API 429 Rate Limited — ${url}. Too many requests. Wait a moment and try again.`
+          );
+        }
         throw new Error(`API ${res.status}: ${res.statusText} — ${url}`);
       }
 
@@ -95,7 +118,18 @@ async function cachedFetch<T>(url: string): Promise<T> {
         throw new Error(
           `API request timed out after ${FETCH_TIMEOUT / 1000}s — ${url}. ` +
           `The poe2scout.com server may be unreachable from your network. ` +
-          `Try using a VPN or check your internet connection.`
+          `Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local ` +
+          `or use a VPN.`
+        );
+      }
+
+      // Network errors (ECONNREFUSED, ENOTFOUND, etc.)
+      if (lastError.message.includes("ECONNREFUSED") || lastError.message.includes("ENOTFOUND") || lastError.message.includes("fetch failed")) {
+        throw new Error(
+          `Cannot reach poe2scout.com API — ${url}. ` +
+          `Error: ${lastError.message}. ` +
+          `Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local ` +
+          `or use a VPN to access poe2scout.com.`
         );
       }
 
@@ -241,7 +275,7 @@ interface RawSnapshotPairData {
 interface RawSnapshotPair {
   CurrencyExchangeSnapshotPairId: number;
   CurrencyExchangeSnapshotId: number;
-  Volume: string; // FIX v3: Volume is a string in API response (e.g. "1683.00000000")
+  Volume: string; // Volume is a string in API response (e.g. "1683.00000000")
   BaseCurrencyApiId: string;
   BaseCurrencyText: string;
   CurrencyOne: RawSnapshotPairCurrencyItem;
@@ -278,7 +312,7 @@ interface RawReferenceCurrency {
   RelativePrice: number;
 }
 
-// FIX v3: CurrencyPairHistory returns PascalCase {History: [...], Meta, BaseCurrencyApiId}
+// CurrencyPairHistory returns PascalCase {History: [...], Meta, BaseCurrencyApiId}
 interface RawCurrencyPairHistoryResponse {
   History: Array<{
     Epoch: number;
@@ -292,7 +326,7 @@ interface RawCurrencyPairHistoryResponse {
   BaseCurrencyText: string;
 }
 
-// FIX v3: ItemHistory returns PascalCase {PriceHistory: [...], HasMore}
+// ItemHistory returns PascalCase {PriceHistory: [...], HasMore}
 interface RawItemHistoryResponse {
   PriceHistory: RawItemHistoryPoint[];
   HasMore: boolean;
@@ -304,7 +338,7 @@ interface RawItemHistoryPoint {
   Quantity: number;
 }
 
-// FIX v3: DailyStatsHistory returns PascalCase {DailyStats: [...], HasMore, BaseCurrencyApiId}
+// DailyStatsHistory returns PascalCase {DailyStats: [...], HasMore, BaseCurrencyApiId}
 interface RawDailyStatsHistoryResponse {
   DailyStats: RawDailyStat[];
   HasMore: boolean;
@@ -475,7 +509,7 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
 
 /** Map raw snapshot pair to ExchangePair */
 function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
-  // FIX v3: ValueTraded, RelativePrice, StockValue are strings in API response
+  // ValueTraded, RelativePrice, StockValue are strings in API response
   const relPrice = parseFloat(raw.CurrencyOneData.RelativePrice) || 0;
   const volTraded = raw.CurrencyOneData.VolumeTraded ?? 0;
 
@@ -498,15 +532,22 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
 
 // ===================== API FUNCTIONS (mapped) =====================
 
+// --- Health check (for debugging connectivity) ---
+export async function getHealth(): Promise<{ status: string; apiBaseUrl: string }> {
+  try {
+    const data = await cachedFetch<{ status: string }>(`${BASE_URL}/health/live`);
+    return { status: data.status || "ok", apiBaseUrl: BASE_URL };
+  } catch {
+    return { status: "unreachable", apiBaseUrl: BASE_URL };
+  }
+}
+
 // --- Realms ---
 export async function getRealms(): Promise<Realm[]> {
   const raw = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
   return raw.map((r) => ({
-    // FIX: Use realm_api_id as the name because it's the URL path segment
-    // e.g., "pc" for PoE1, "poe2" for PoE2 (not "poe2/poe2")
     name: r.realm_api_id === "poe2" ? "poe2" : r.realm_api_id,
     displayName: r.game_api_id === "poe2" ? "PoE2" : `PoE1 ${r.realm_api_id.toUpperCase()}`,
-    // FIX v3: Pass default_league_value so frontend can auto-select the active league
     defaultLeague: r.default_league_value || undefined,
   }));
 }
@@ -519,7 +560,7 @@ export async function getRealmFilters(realm: string): Promise<unknown> {
 export async function getLeagues(realm: string): Promise<League[]> {
   const raw = await cachedFetch<RawLeague[]>(`${BASE_URL}/${encodeURIComponent(realm)}/Leagues`);
 
-  // FIX v3: API IsCurrent is always false. We determine the active league
+  // API IsCurrent is always false. We determine the active league
   // by getting the realm's default_league_value and matching it.
   let defaultLeagueValue = "";
   try {
@@ -539,11 +580,11 @@ export async function getLeagues(realm: string): Promise<League[]> {
     displayName: l.Value,
     startAt: null,
     endAt: null,
-    // FIX v3: Mark league as active if it matches the realm's default_league_value
+    // Mark league as active if it matches the realm's default_league_value
     active: defaultLeagueValue
       ? l.Value === defaultLeagueValue
       : l.IsCurrent,
-    // FIX v3: Pass base currency info from league for reference currency
+    // Pass base currency info from league for reference currency
     baseCurrencyApiId: l.BaseCurrencyApiId,
     baseCurrencyText: l.BaseCurrencyText,
     defaultCurrency: l.DefaultCurrency
@@ -687,7 +728,7 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
   };
 }
 
-// FIX v3: ItemHistory API returns {price_history: [...], has_more}
+// ItemHistory API returns {PriceHistory: [...], HasMore}
 export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168, referenceCurrency?: string): Promise<PoeItemHistoryPoint[]> {
   let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
   if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
@@ -701,7 +742,7 @@ export async function getItemHistory(realm: string, league: string, itemId: stri
   }));
 }
 
-// FIX v3: DailyStatsHistory API returns {daily_stats: [...], has_more}
+// DailyStatsHistory API returns {DailyStats: [...], HasMore}
 export async function getItemDailyStats(realm: string, league: string, itemId: string, dayCount = 30, referenceCurrency?: string): Promise<DailyStat[]> {
   let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`;
   if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
@@ -717,7 +758,7 @@ export async function getItemDailyStats(realm: string, league: string, itemId: s
 }
 
 // --- Uniques (paginated) ---
-// FIX v3: Category=all returns EMPTY results from the API.
+// Category=all returns EMPTY results from the API.
 // When category is "all", we fetch ALL unique categories and merge results.
 export async function getUniquesByCategory(
   realm: string,
@@ -729,7 +770,7 @@ export async function getUniquesByCategory(
   referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
 
-  // FIX v3: When category is "all", fetch all categories and merge
+  // When category is "all", fetch all categories and merge
   if (category === "all") {
     return getUniquesAllCategories(realm, league, page, perPage, search, referenceCurrency);
   }
@@ -819,7 +860,7 @@ async function getUniquesAllCategories(
 }
 
 // --- Currencies ---
-// FIX v3: Category=all returns EMPTY results from the API.
+// Category=all returns EMPTY results from the API.
 // When category is "all", we fetch ALL currency categories and merge results.
 export async function getCurrenciesByCategory(
   realm: string,
@@ -830,7 +871,7 @@ export async function getCurrenciesByCategory(
   referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
 
-  // FIX v3: When category is "all", fetch all categories and merge
+  // When category is "all", fetch all categories and merge
   if (category === "all") {
     return getCurrenciesAllCategories(realm, league, page, perPage, referenceCurrency);
   }
@@ -921,7 +962,7 @@ export async function getCurrency(realm: string, league: string, apiId: string):
   return mapCurrencyItem(raw);
 }
 
-// FIX v3: CurrencyPairHistory returns nested {history, meta} structure
+// CurrencyPairHistory returns nested {history, meta} structure
 export async function getCurrencyPairHistory(
   realm: string,
   league: string,
@@ -933,16 +974,9 @@ export async function getCurrencyPairHistory(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/Pairs/${id1}/${id2}/History?Limit=${limit}`
   );
 
-  // The API returns {History: [{Epoch, Data: {CurrencyOneData: {RelativePrice (string!), VolumeTraded (number), ...}, CurrencyTwoData: {...}}}], ...}
-  // We extract from CurrencyOneData as the primary direction
   return (raw.History ?? []).map((point) => ({
     timestamp: new Date(point.Epoch * 1000).toISOString(),
     relativePrice: parseFloat(point.Data?.CurrencyOneData?.RelativePrice ?? "0") || 0,
     volume: point.Data?.CurrencyOneData?.VolumeTraded ?? 0,
   }));
-}
-
-// --- Health ---
-export async function getHealth(): Promise<{ status: string }> {
-  return cachedFetch<{ status: string }>(`${BASE_URL}/health/live`);
 }
