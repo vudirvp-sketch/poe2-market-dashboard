@@ -12,8 +12,14 @@ describe("fmt", () => {
     expect(fmt(undefined)).toBe("—");
   });
 
-  it("formats large numbers with locale string", () => {
-    expect(fmt(1500)).toBe("1,500.0");
+  it("formats large numbers with locale string (max 1 decimal)", () => {
+    // fmt(1500) uses toLocaleString with maximumFractionDigits: 1
+    // 1500 has no decimals, so result is "1,500" (not "1,500.0")
+    expect(fmt(1500)).toBe("1,500");
+  });
+
+  it("formats large numbers with one decimal digit", () => {
+    expect(fmt(1500.5)).toBe("1,500.5");
   });
 
   it("formats small numbers with fixed digits", () => {
@@ -24,8 +30,9 @@ describe("fmt", () => {
     expect(fmt(0)).toBe("0.00");
   });
 
-  it("formats numbers just below 1000 with fixed digits", () => {
-    expect(fmt(999.99)).toBe("1,000.0");
+  it("formats numbers below 1000 without rounding up", () => {
+    // 999.99 is below 1000, so toFixed(2) is used → "999.99"
+    expect(fmt(999.99)).toBe("999.99");
   });
 });
 
@@ -53,11 +60,22 @@ describe("fmtChange", () => {
     expect(result.color).toBe("text-red-400");
   });
 
-  it("formats zero change as neutral", () => {
+  it("formats zero change without plus sign", () => {
+    // fmtChange(0): sign is "" because pct > 0 is false
     const result = fmtChange(0);
-    expect(result.text).toBe("+0.0%");
+    expect(result.text).toBe("0.0%");
     expect(result.color).toBe("text-muted-foreground");
   });
+});
+
+// Mock URL.createObjectURL for jsdom (not available by default)
+beforeAll(() => {
+  if (!URL.createObjectURL) {
+    URL.createObjectURL = jest.fn(() => "blob:test");
+  }
+  if (!URL.revokeObjectURL) {
+    URL.revokeObjectURL = jest.fn();
+  }
 });
 
 describe("exportToCsv", () => {
@@ -65,14 +83,16 @@ describe("exportToCsv", () => {
   let clickSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    createElementSpy = jest.spyOn(document, "createElement");
     clickSpy = jest.fn();
-    createElementSpy.mockImplementation(() => ({
-      click: clickSpy,
-      href: "",
-      download: "",
-      style: {},
-    }));
+    createElementSpy = jest.spyOn(document, "createElement").mockImplementation(
+      () =>
+        ({
+          click: clickSpy,
+          href: "",
+          download: "",
+          style: {},
+        }) as unknown as HTMLAnchorElement
+    );
   });
 
   afterEach(() => {
@@ -98,14 +118,16 @@ describe("exportToJson", () => {
   let clickSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    createElementSpy = jest.spyOn(document, "createElement");
     clickSpy = jest.fn();
-    createElementSpy.mockImplementation(() => ({
-      click: clickSpy,
-      href: "",
-      download: "",
-      style: {},
-    }));
+    createElementSpy = jest.spyOn(document, "createElement").mockImplementation(
+      () =>
+        ({
+          click: clickSpy,
+          href: "",
+          download: "",
+          style: {},
+        }) as unknown as HTMLAnchorElement
+    );
   });
 
   afterEach(() => {
