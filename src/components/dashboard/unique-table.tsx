@@ -3,7 +3,7 @@
 // ============================================================================
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,6 +12,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useState, memo } from "react";
 import { Shield, Star, ArrowUpDown, ArrowUp, ArrowDown, GitCompare } from "lucide-react";
 import { Sparkline } from "./sparkline";
@@ -193,6 +194,17 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
     getSortedRowModel: getSortedRowModel(),
   });
 
+  // Virtualizer for large list performance
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rows = table.getRowModel().rows;
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 44,
+    overscan: 10,
+  });
+
   // Prefetch detail on row hover
   const handleRowMouseEnter = useCallback(
     (item: PoeItem) => {
@@ -215,13 +227,13 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
 
   return (
     <div className="rounded-md border border-border overflow-hidden">
-      <div className="overflow-x-auto">
+      <div ref={parentRef} className="overflow-auto" style={{ maxHeight: "70vh" }}>
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="border-b border-border bg-muted/30"
+                className="border-b border-border bg-muted/80 backdrop-blur-sm"
               >
                 {headerGroup.headers.map((header) => (
                   <th
@@ -248,32 +260,43 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
               </tr>
             ))}
           </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
-                onClick={() => onItemClick(row.original)}
-                onMouseEnter={() => handleRowMouseEnter(row.original)}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={`py-2 px-3 ${
-                      cell.column.id === "name"
-                        ? ""
-                        : cell.column.id === "trend"
-                        ? "text-center"
-                        : cell.column.id === "compare"
-                        ? "text-center"
-                        : "text-right"
-                    }`}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
+          <tbody style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const row = rows[virtualRow.index];
+              return (
+                <tr
+                  key={row.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
+                  onClick={() => onItemClick(row.original)}
+                  onMouseEnter={() => handleRowMouseEnter(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={`py-2 px-3 ${
+                        cell.column.id === "name"
+                          ? ""
+                          : cell.column.id === "trend"
+                          ? "text-center"
+                          : cell.column.id === "compare"
+                          ? "text-center"
+                          : "text-right"
+                      }`}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

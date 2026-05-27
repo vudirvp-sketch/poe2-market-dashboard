@@ -1,7 +1,23 @@
 // ============================================================================
-// PoE2 Market Dashboard — Zustand Store (Favorites + Comparison)
+// PoE2 Market Dashboard — Zustand Store (Favorites + Comparison + Alerts)
 // ============================================================================
 import { create } from "zustand";
+
+// ---------- Price Alert type ----------
+export interface PriceAlert {
+  itemId: string;
+  itemName: string;
+  condition: "above" | "below";
+  threshold: number;
+  enabled: boolean;
+}
+
+// ---------- Pair Comparison IDs ----------
+export interface PairComparisonId {
+  currency1Id: string;
+  currency2Id: string;
+  label: string; // e.g. "Chaos Orb / Divine Orb"
+}
 
 interface DashboardStore {
   // Favorites / Watchlist
@@ -11,14 +27,28 @@ interface DashboardStore {
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
 
-  // Comparison
+  // Comparison (items)
   comparisonIds: string[];
   addToComparison: (id: string) => void;
   removeFromComparison: (id: string) => void;
   clearComparison: () => void;
   isInComparison: (id: string) => boolean;
+
+  // Pair Comparison (exchange pairs)
+  pairComparisonIds: PairComparisonId[];
+  addPairToComparison: (pair: PairComparisonId) => void;
+  removePairFromComparison: (key: string) => void;
+  clearPairComparison: () => void;
+
+  // Price Alerts
+  alerts: PriceAlert[];
+  addAlert: (alert: PriceAlert) => void;
+  removeAlert: (itemId: string) => void;
+  updateAlert: (itemId: string, updates: Partial<PriceAlert>) => void;
+  getAlertsForItem: (itemId: string) => PriceAlert[];
 }
 
+// ---------- localStorage helpers ----------
 function loadFavorites(): string[] {
   if (typeof window === "undefined") return [];
   try {
@@ -33,6 +63,44 @@ function saveFavorites(ids: string[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem("poe2-favorites", JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
+
+function loadAlerts(): PriceAlert[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem("poe2-alerts");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAlerts(alerts: PriceAlert[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("poe2-alerts", JSON.stringify(alerts));
+  } catch {
+    // ignore
+  }
+}
+
+function loadPairComparison(): PairComparisonId[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem("poe2-pair-comparison");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePairComparison(pairs: PairComparisonId[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("poe2-pair-comparison", JSON.stringify(pairs));
   } catch {
     // ignore
   }
@@ -87,4 +155,65 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   clearComparison: () => set({ comparisonIds: [] }),
 
   isInComparison: (id) => get().comparisonIds.includes(id),
+
+  // ---- Pair Comparison ----
+  pairComparisonIds: loadPairComparison(),
+
+  addPairToComparison: (pair) => {
+    const pairs = get().pairComparisonIds;
+    const key = `${pair.currency1Id}_${pair.currency2Id}`;
+    const exists = pairs.some(
+      (p) => `${p.currency1Id}_${p.currency2Id}` === key
+    );
+    if (!exists && pairs.length < 4) {
+      const next = [...pairs, pair];
+      set({ pairComparisonIds: next });
+      savePairComparison(next);
+    }
+  },
+
+  removePairFromComparison: (key) => {
+    const next = get().pairComparisonIds.filter(
+      (p) => `${p.currency1Id}_${p.currency2Id}` !== key
+    );
+    set({ pairComparisonIds: next });
+    savePairComparison(next);
+  },
+
+  clearPairComparison: () => {
+    set({ pairComparisonIds: [] });
+    savePairComparison([]);
+  },
+
+  // ---- Price Alerts ----
+  alerts: loadAlerts(),
+
+  addAlert: (alert) => {
+    const alerts = get().alerts;
+    // Replace existing alert for same item + condition
+    const next = [
+      ...alerts.filter(
+        (a) => !(a.itemId === alert.itemId && a.condition === alert.condition)
+      ),
+      alert,
+    ];
+    set({ alerts: next });
+    saveAlerts(next);
+  },
+
+  removeAlert: (itemId) => {
+    const next = get().alerts.filter((a) => a.itemId !== itemId);
+    set({ alerts: next });
+    saveAlerts(next);
+  },
+
+  updateAlert: (itemId, updates) => {
+    const next = get().alerts.map((a) =>
+      a.itemId === itemId ? { ...a, ...updates } : a
+    );
+    set({ alerts: next });
+    saveAlerts(next);
+  },
+
+  getAlertsForItem: (itemId) => get().alerts.filter((a) => a.itemId === itemId),
 }));

@@ -11,6 +11,8 @@ import {
   Loader2,
   AlertTriangle,
   GitCompare,
+  Bell,
+  Zap,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +27,11 @@ import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { WatchlistTab } from "@/components/dashboard/watchlist-tab";
 import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
+import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dialog";
 import { Pagination } from "@/components/dashboard/pagination";
+import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
+import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
+import { OfflineBanner } from "@/components/dashboard/offline-banner";
 
 import {
   fetchApi,
@@ -44,6 +50,7 @@ import type {
   ReferenceCurrency,
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { usePriceAlerts } from "@/hooks/use-price-alerts";
 
 // ============================================================================
 // Main Dashboard
@@ -73,6 +80,12 @@ export default function Dashboard() {
   // --- Comparison dialog ---
   const [comparisonOpen, setComparisonOpen] = useState(false);
 
+  // --- Pair comparison dialog ---
+  const [pairComparisonOpen, setPairComparisonOpen] = useState(false);
+
+  // --- Price alert dialog ---
+  const [alertOpen, setAlertOpen] = useState(false);
+
   // --- Auto-refresh ---
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -81,7 +94,10 @@ export default function Dashboard() {
   const [referenceCurrency, setReferenceCurrency] = useState("");
 
   // --- Comparison store ---
-  const { comparisonIds } = useDashboardStore();
+  const { comparisonIds, pairComparisonIds, alerts } = useDashboardStore();
+
+  // --- Price alerts hook (auto-checks in background) ---
+  usePriceAlerts({ realm, league: effectiveLeagueRaw });
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -95,12 +111,15 @@ export default function Dashboard() {
     enabled: !!realm,
   });
 
-  // Auto-select first active league
-  const effectiveLeague = useMemo(() => {
+  // Helper: effectiveLeague without useMemo for the hook (must be computed before useMemo)
+  const effectiveLeagueRaw = useMemo(() => {
     if (league && leagues?.some((l) => l.name === league)) return league;
     const active = leagues?.find((l) => l.active);
     return active?.name || leagues?.[0]?.name || "";
   }, [league, leagues]);
+
+  // Alias for rest of component
+  const effectiveLeague = effectiveLeagueRaw;
 
   // Reference currencies
   const { data: referenceCurrencies } = useQuery({
@@ -114,7 +133,7 @@ export default function Dashboard() {
     enabled: !!effectiveLeague,
   });
 
-  // All items (for comparison resolution + overview)
+  // All items (for comparison resolution + overview + alerts)
   const { data: allItems } = useQuery({
     queryKey: ["allItems", realm, effectiveLeague],
     queryFn: () => fetchApi<PoeItem[]>("/api/poe2/items", { realm, league: effectiveLeague }),
@@ -407,13 +426,27 @@ export default function Dashboard() {
                 <TabsTrigger value="exchange" className="gap-1.5">
                   <ArrowLeftRight className="h-4 w-4" /> Exchange
                 </TabsTrigger>
+                <TabsTrigger value="arbitrage" className="gap-1.5">
+                  <Zap className="h-4 w-4" /> Arbitrage
+                </TabsTrigger>
                 <TabsTrigger value="watchlist" className="gap-1.5">
                   <Star className="h-4 w-4" /> Watchlist
                 </TabsTrigger>
               </TabsList>
 
               <div className="flex items-center gap-2">
-                {/* Comparison badge button */}
+                {/* Price Alerts button */}
+                <Button
+                  variant={alerts.length > 0 ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={() => setAlertOpen(true)}
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                  {alerts.length > 0 ? `Alerts (${alerts.length})` : "Alerts"}
+                </Button>
+
+                {/* Item Comparison button */}
                 {comparisonIds.length > 0 && (
                   <Button
                     variant={comparisonIds.length >= 2 ? "default" : "outline"}
@@ -424,6 +457,20 @@ export default function Dashboard() {
                   >
                     <GitCompare className="h-3.5 w-3.5" />
                     Compare ({comparisonIds.length})
+                  </Button>
+                )}
+
+                {/* Pair Comparison button */}
+                {pairComparisonIds.length > 0 && (
+                  <Button
+                    variant={pairComparisonIds.length >= 2 ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => setPairComparisonOpen(true)}
+                    disabled={pairComparisonIds.length < 2}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                    Pair Compare ({pairComparisonIds.length})
                   </Button>
                 )}
 
@@ -561,6 +608,14 @@ export default function Dashboard() {
               )}
             </TabsContent>
 
+            {/* ============ ARBITRAGE TAB ============ */}
+            <TabsContent value="arbitrage">
+              <ArbitrageTab
+                realm={realm}
+                league={effectiveLeague}
+              />
+            </TabsContent>
+
             {/* ============ WATCHLIST TAB ============ */}
             <TabsContent value="watchlist">
               <WatchlistTab
@@ -592,7 +647,7 @@ export default function Dashboard() {
         league={effectiveLeague}
       />
 
-      {/* ============ COMPARISON DIALOG ============ */}
+      {/* ============ ITEM COMPARISON DIALOG ============ */}
       <ComparisonDialog
         open={comparisonOpen}
         onOpenChange={setComparisonOpen}
@@ -601,6 +656,26 @@ export default function Dashboard() {
         referenceCurrency={referenceCurrency}
         allItems={allItems}
       />
+
+      {/* ============ PAIR COMPARISON DIALOG ============ */}
+      <PairComparisonDialog
+        open={pairComparisonOpen}
+        onOpenChange={setPairComparisonOpen}
+        realm={realm}
+        league={effectiveLeague}
+      />
+
+      {/* ============ PRICE ALERT DIALOG ============ */}
+      <PriceAlertDialog
+        open={alertOpen}
+        onOpenChange={setAlertOpen}
+        realm={realm}
+        league={effectiveLeague}
+        allItems={allItems}
+      />
+
+      {/* ============ OFFLINE BANNER (PWA) ============ */}
+      <OfflineBanner />
     </div>
   );
 }
