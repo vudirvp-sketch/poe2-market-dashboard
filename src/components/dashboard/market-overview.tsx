@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi, exportToCsv, exportToJson } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
 import { useState, useMemo } from "react";
 
@@ -37,6 +38,7 @@ interface MarketOverviewProps {
 }
 
 export function MarketOverview({ realm, league, onItemClick }: MarketOverviewProps) {
+  const { t } = useI18n();
   const [topTimeframe, setTopTimeframe] = useState<"24h" | "7d">("24h");
 
   // Snapshot history for volume trend
@@ -125,7 +127,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
-              <p className="text-xs text-muted-foreground">Total Volume (24h)</p>
+              <p className="text-xs text-muted-foreground">{t("totalVolume24h")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
               {totalVolume >= 1000000
@@ -140,7 +142,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-primary" />
-              <p className="text-xs text-muted-foreground">Tracked Items</p>
+              <p className="text-xs text-muted-foreground">{t("trackedItems")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
               {trackedItems.toLocaleString()}
@@ -151,7 +153,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
-              <p className="text-xs text-muted-foreground">Exchange Pairs</p>
+              <p className="text-xs text-muted-foreground">{t("exchangePairs")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
               {pairs?.length ?? 0}
@@ -165,7 +167,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-1">
-              <Activity className="h-4 w-4" /> Market Volume Trend (7 days)
+              <Activity className="h-4 w-4" /> {t("marketVolumeTrend")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -225,7 +227,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
       {/* Top Gainers / Losers */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium">Top Movers</h3>
+          <h3 className="text-sm font-medium">{t("topMovers")}</h3>
           <div className="flex gap-1">
             <Button
               variant={topTimeframe === "24h" ? "default" : "outline"}
@@ -233,7 +235,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
               className="h-7 text-xs"
               onClick={() => setTopTimeframe("24h")}
             >
-              24h
+              {t("timeframe24h")}
             </Button>
             <Button
               variant={topTimeframe === "7d" ? "default" : "outline"}
@@ -241,7 +243,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
               className="h-7 text-xs"
               onClick={() => setTopTimeframe("7d")}
             >
-              7d
+              {t("timeframe7d")}
             </Button>
           </div>
         </div>
@@ -250,12 +252,12 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-emerald-400 flex items-center gap-1">
-                <TrendingUp className="h-4 w-4" /> Top Gainers
+                <TrendingUp className="h-4 w-4" /> {t("topGainers")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
               {topGainers.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data</p>
+                <p className="text-xs text-muted-foreground">{t("noData")}</p>
               ) : (
                 topGainers.map((item, idx) => {
                   const pct =
@@ -300,12 +302,12 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-red-400 flex items-center gap-1">
-                <TrendingDown className="h-4 w-4" /> Top Losers
+                <TrendingDown className="h-4 w-4" /> {t("topLosers")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1.5">
               {topLosers.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No data</p>
+                <p className="text-xs text-muted-foreground">{t("noData")}</p>
               ) : (
                 topLosers.map((item, idx) => {
                   const pct =

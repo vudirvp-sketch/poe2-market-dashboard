@@ -77,8 +77,8 @@ if not exist "node_modules\" (
 REM ----------------------------------------------------------
 REM Step 4: Build project if needed
 REM ----------------------------------------------------------
-if not exist ".next\" (
-    echo [INFO] .next build not found. Building project...
+if not exist ".next\BUILD_ID" (
+    echo [INFO] Build not found or incomplete. Building project...
     echo This may take a few minutes on first run...
     echo.
     call npm run build

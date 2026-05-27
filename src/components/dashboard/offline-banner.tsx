@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { WifiOff, X } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useI18n } from '@/lib/i18n';
 
 export function OfflineBanner() {
+  const { t } = useI18n();
   const { isOnline } = useOnlineStatus();
   const [dismissed, setDismissed] = useState(false);
   const [wasOffline, setWasOffline] = useState(false);
@@ -31,13 +33,13 @@ export function OfflineBanner() {
       <div className="flex items-center gap-2">
         <WifiOff className="h-5 w-5 shrink-0" />
         <span className="text-sm font-medium">
-          You are offline. Showing cached data.
+          {t("offlineMessage")}
         </span>
       </div>
       <button
         onClick={() => setDismissed(true)}
         className="shrink-0 rounded-md p-1 hover:bg-amber-600/30 transition-colors"
-        aria-label="Dismiss offline banner"
+        aria-label={t("dismissOffline")}
       >
         <X className="h-4 w-4" />
       </button>

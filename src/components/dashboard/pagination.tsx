@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useI18n } from "@/lib/i18n";
 
 interface PaginationProps {
   page: number;
@@ -32,6 +33,7 @@ export function Pagination({
   onPerPageChange,
   perPageOptions = [25, 50, 100],
 }: PaginationProps) {
+  const { t } = useI18n();
   if (totalPages <= 1 && !onPerPageChange) return null;
 
   return (
@@ -39,7 +41,7 @@ export function Pagination({
       <div className="flex items-center gap-2">
         {onPerPageChange && (
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Per page:</span>
+            <span className="text-xs text-muted-foreground">{t("perPage")}</span>
             <Select
               value={String(perPage)}
               onValueChange={(v) => onPerPageChange(Number(v))}
@@ -59,7 +61,7 @@ export function Pagination({
         )}
         {totalItems != null && (
           <span className="text-xs text-muted-foreground">
-            {totalItems.toLocaleString()} items
+            {totalItems.toLocaleString()} {t("items")}
           </span>
         )}
       </div>
@@ -73,7 +75,7 @@ export function Pagination({
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <span className="text-sm text-muted-foreground min-w-[80px] text-center">
-          Page {page} of {totalPages}
+          {t("pageOf", { "0": page, "1": totalPages })}
         </span>
         <Button
           variant="outline"

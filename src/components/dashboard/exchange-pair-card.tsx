@@ -9,6 +9,7 @@ import { Coins, ArrowLeftRight, GitCompare } from "lucide-react";
 import { fmt, fmtChange } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 
 interface ExchangePairCardProps {
   pair: ExchangePair;
@@ -19,6 +20,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
   pair,
   onClick,
 }: ExchangePairCardProps) {
+  const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
   const { pairComparisonIds, addPairToComparison, removePairFromComparison } =
     useDashboardStore();
@@ -54,7 +56,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
           inComparison ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         } transition-opacity`}
         onClick={handleCompareClick}
-        title={inComparison ? "Remove from comparison" : "Add to comparison"}
+        title={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
           className={`h-4 w-4 ${
@@ -103,7 +105,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             </span>
           </div>
           <span className="text-xs text-muted-foreground">
-            Vol: {pair.volume?.toLocaleString() ?? "—"}
+            {t("vol")}: {pair.volume?.toLocaleString() ?? "—"}
           </span>
         </div>
       </CardContent>

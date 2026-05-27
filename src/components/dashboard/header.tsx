@@ -13,6 +13,7 @@ import {
   Moon,
   Clock,
   Download,
+  Globe,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import type { Realm, League, ReferenceCurrency } from "@/lib/types";
 import { useTheme } from "next-themes";
+import { useI18n } from "@/lib/i18n";
 
 interface HeaderProps {
   realms: Realm[] | undefined;
@@ -69,6 +71,7 @@ export function Header({
   onExport,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const { t, locale, setLocale } = useI18n();
   const [timeAgo, setTimeAgo] = useState<string>("");
   const [localSearch, setLocalSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,11 +109,11 @@ export function Header({
       const seconds = Math.floor(
         (Date.now() - lastUpdated.getTime()) / 1000
       );
-      if (seconds < 60) setTimeAgo(`${seconds}s ago`);
-      else setTimeAgo(`${Math.floor(seconds / 60)}m ago`);
+      if (seconds < 60) setTimeAgo(t("secondsAgo", { "0": seconds }));
+      else setTimeAgo(t("minutesAgo", { "0": Math.floor(seconds / 60) }));
     }, 1000);
     return () => clearInterval(interval);
-  }, [lastUpdated]);
+  }, [lastUpdated, t]);
 
   // Cleanup debounce on unmount
   useEffect(() => {
@@ -125,7 +128,7 @@ export function Header({
         {/* Logo */}
         <div className="flex items-center gap-2 mr-4">
           <Activity className="h-6 w-6 text-primary" />
-          <h1 className="text-lg font-bold tracking-tight">PoE2 Market</h1>
+          <h1 className="text-lg font-bold tracking-tight">{t("appTitle")}</h1>
         </div>
 
         {/* Realm select */}
@@ -134,12 +137,12 @@ export function Header({
           onValueChange={(v) => onRealmChange(v)}
         >
           <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Realm" />
+            <SelectValue placeholder={t("realm")} />
           </SelectTrigger>
           <SelectContent>
             {realmsLoading ? (
               <SelectItem value="loading" disabled>
-                Loading...
+                {t("loading")}
               </SelectItem>
             ) : (
               realms?.map((r) => (
@@ -154,12 +157,12 @@ export function Header({
         {/* League select */}
         <Select value={effectiveLeague} onValueChange={onLeagueChange}>
           <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="League" />
+            <SelectValue placeholder={t("league")} />
           </SelectTrigger>
           <SelectContent>
             {leagues?.map((l) => (
               <SelectItem key={l.name} value={l.name}>
-                {l.displayName} {!l.active && "(inactive)"}
+                {l.displayName} {!l.active && `(${t("inactive")})`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -174,10 +177,10 @@ export function Header({
             }
           >
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Base Currency" />
+              <SelectValue placeholder={t("baseCurrency")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_default">Default</SelectItem>
+              <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
               {referenceCurrencies.map((c) => (
                 <SelectItem key={c.apiId} value={c.apiId}>
                   {c.text}
@@ -191,7 +194,7 @@ export function Header({
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search items..."
+            placeholder={t("searchPlaceholder")}
             value={localSearch}
             onChange={(e) => handleSearchInput(e.target.value)}
             className="pl-9 h-9"
@@ -214,13 +217,13 @@ export function Header({
           className="h-9"
         >
           <Clock className="h-4 w-4 mr-1" />
-          {autoRefresh ? "60s" : "Auto"}
+          {autoRefresh ? "60s" : t("autoRefresh")}
         </Button>
 
         {/* Refresh */}
         <Button variant="outline" size="sm" onClick={onRefresh} className="h-9">
           <RefreshCw className="h-4 w-4 mr-1" />
-          Refresh
+          {t("refresh")}
         </Button>
 
         {/* Last updated */}
@@ -240,7 +243,7 @@ export function Header({
               onClick={() => onExport("csv")}
             >
               <Download className="h-3.5 w-3.5 mr-1" />
-              CSV
+              {t("exportCsv")}
             </Button>
             <Button
               variant="ghost"
@@ -249,10 +252,22 @@ export function Header({
               onClick={() => onExport("json")}
             >
               <Download className="h-3.5 w-3.5 mr-1" />
-              JSON
+              {t("exportJson")}
             </Button>
           </div>
         )}
+
+        {/* Language toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 gap-1"
+          onClick={() => setLocale(locale === "ru" ? "en" : "ru")}
+          title={t("language")}
+        >
+          <Globe className="h-4 w-4" />
+          <span className="text-xs">{locale === "ru" ? "RU" : "EN"}</span>
+        </Button>
 
         {/* Theme toggle */}
         <Button

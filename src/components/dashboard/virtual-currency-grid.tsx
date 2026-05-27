@@ -13,6 +13,7 @@ import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
   league?: string;
   referenceCurrency?: string;
 }) {
+  const { t } = useI18n();
   const chg = fmtChange(item.changePercent);
   const sparkData =
     item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) || [];
@@ -100,7 +102,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
           e.stopPropagation();
           toggleFavorite(item.id);
         }}
-        aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+        aria-label={fav ? t("removeFromFavorites") : t("addToFavorites")}
       >
         <Star
           className={`h-4 w-4 ${
@@ -117,7 +119,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
           inComparison ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         } transition-opacity`}
         onClick={handleCompareClick}
-        aria-label={inComparison ? "Remove from comparison" : "Add to comparison"}
+        aria-label={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
           className={`h-4 w-4 ${
@@ -168,7 +170,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
         </div>
         {item.volume != null && (
           <p className="text-xs text-muted-foreground mt-1">
-            Vol: {item.volume.toLocaleString()}
+            {t("vol")}: {item.volume.toLocaleString()}
           </p>
         )}
         {item.lowConfidence && (
@@ -176,7 +178,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
             variant="outline"
             className="mt-1 text-[10px] px-1 py-0"
           >
-            Low Confidence
+            {t("lowConfidence")}
           </Badge>
         )}
       </CardContent>

@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { fmt, fetchApi } from "@/lib/types";
 import type { ExchangePairHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 import type { PairComparisonId } from "@/lib/store";
 import { useMemo } from "react";
 
@@ -55,6 +56,7 @@ export function PairComparisonDialog({
 }: PairComparisonDialogProps) {
   const { pairComparisonIds, removePairFromComparison, clearPairComparison } =
     useDashboardStore();
+  const { t } = useI18n();
 
   // Fetch history for each compared pair
   const histories = useQuery({
@@ -158,7 +160,7 @@ export function PairComparisonDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GitCompare className="h-5 w-5 text-primary" />
-            Exchange Pair Comparison
+            {t("exchangePairComparison")}
           </DialogTitle>
         </DialogHeader>
 
@@ -194,7 +196,7 @@ export function PairComparisonDialog({
           })}
           {pairComparisonIds.length < 2 && (
             <span className="text-xs text-muted-foreground">
-              Select at least 2 pairs to compare
+              {t("selectAtLeast2Pairs")}
             </span>
           )}
           <Button
@@ -204,7 +206,7 @@ export function PairComparisonDialog({
             onClick={clearPairComparison}
           >
             <Trash2 className="h-3 w-3 mr-1" />
-            Clear all
+            {t("clearAll")}
           </Button>
         </div>
 
@@ -213,13 +215,13 @@ export function PairComparisonDialog({
           <div className="flex items-center justify-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <span className="ml-2 text-sm text-muted-foreground">
-              Loading comparison data...
+              {t("loadingComparison")}
             </span>
           </div>
         ) : chartData.length > 1 && seriesMeta.length >= 2 ? (
           <div className="mt-4">
             <h4 className="text-sm font-medium mb-2">
-              Price Change Comparison (% from start)
+              {t("priceChangeComparison")}
             </h4>
             <div className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -282,10 +284,10 @@ export function PairComparisonDialog({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="py-2 px-3 text-left">Pair</th>
-                    <th className="py-2 px-3 text-right">Current Price</th>
-                    <th className="py-2 px-3 text-right">Start Price</th>
-                    <th className="py-2 px-3 text-right">Change</th>
+                    <th className="py-2 px-3 text-left">{t("pair")}</th>
+                    <th className="py-2 px-3 text-right">{t("currentPrice")}</th>
+                    <th className="py-2 px-3 text-right">{t("startPrice")}</th>
+                    <th className="py-2 px-3 text-right">{t("change")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -345,10 +347,10 @@ export function PairComparisonDialog({
           <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
             <GitCompare className="h-10 w-10 mb-3" />
             <p className="text-sm">
-              Add exchange pairs to comparison from the Exchange Pairs tab
+              {t("addPairsToCompare")}
             </p>
             <p className="text-xs mt-1">
-              You need at least 2 pairs with history data
+              {t("needAtLeast2Pairs")}
             </p>
           </div>
         )}

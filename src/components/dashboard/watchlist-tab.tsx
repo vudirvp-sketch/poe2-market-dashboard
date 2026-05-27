@@ -11,6 +11,7 @@ import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 
 interface WatchlistTabProps {
   realm: string;
@@ -19,6 +20,7 @@ interface WatchlistTabProps {
 }
 
 export function WatchlistTab({ realm, league, onItemClick }: WatchlistTabProps) {
+  const { t } = useI18n();
   const { favorites, removeFavorite, isFavorite } = useDashboardStore();
 
   // Fetch all items and filter client-side by favorites
@@ -34,8 +36,8 @@ export function WatchlistTab({ realm, league, onItemClick }: WatchlistTabProps) 
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <Star className="h-12 w-12 mb-4" />
-        <p className="text-lg mb-1">No favorites yet</p>
-        <p className="text-sm">Click the star icon on any item to add it to your watchlist</p>
+        <p className="text-lg mb-1">{t("noFavorites")}</p>
+        <p className="text-sm">{t("noFavoritesDesc")}</p>
       </div>
     );
   }
@@ -52,8 +54,8 @@ export function WatchlistTab({ realm, league, onItemClick }: WatchlistTabProps) 
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <Star className="h-12 w-12 mb-4" />
-        <p className="text-lg mb-1">Favorited items not found in current league</p>
-        <p className="text-sm">Try switching leagues or add new favorites</p>
+        <p className="text-lg mb-1">{t("favoritedNotFound")}</p>
+        <p className="text-sm">{t("favoritedNotFoundDesc")}</p>
       </div>
     );
   }

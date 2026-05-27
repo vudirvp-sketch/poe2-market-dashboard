@@ -19,6 +19,7 @@ import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface UniqueTableProps {
@@ -30,6 +31,7 @@ interface UniqueTableProps {
 }
 
 export function UniqueTable({ items, onItemClick, realm, league, referenceCurrency }: UniqueTableProps) {
+  const { t } = useI18n();
   const [sorting, setSorting] = useState<SortingState>([]);
   const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison } =
     useDashboardStore();
@@ -40,7 +42,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
       {
         accessorKey: "name",
         header: ({ column }) => (
-          <SortHeader column={column}>Item</SortHeader>
+          <SortHeader column={column}>{t("item")}</SortHeader>
         ),
         cell: ({ row }) => {
           const item = row.original;
@@ -84,7 +86,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         accessorKey: "relativePrice",
         header: ({ column }) => (
           <SortHeader column={column} align="right">
-            Price
+            {t("price")}
           </SortHeader>
         ),
         cell: ({ row }) => (
@@ -97,7 +99,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         accessorKey: "changePercent",
         header: ({ column }) => (
           <SortHeader column={column} align="right">
-            Change
+            {t("change")}
           </SortHeader>
         ),
         cell: ({ row }) => {
@@ -109,7 +111,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         accessorKey: "sevenDayPriceChangePercent",
         header: ({ column }) => (
           <SortHeader column={column} align="right">
-            7d
+            {t("sevenDay")}
           </SortHeader>
         ),
         cell: ({ row }) => {
@@ -121,7 +123,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         accessorKey: "volume",
         header: ({ column }) => (
           <SortHeader column={column} align="right">
-            Volume
+            {t("volume")}
           </SortHeader>
         ),
         cell: ({ row }) => (
@@ -134,7 +136,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
       },
       {
         id: "trend",
-        header: "Trend",
+        header: t("trend"),
         cell: ({ row }) => {
           const item = row.original;
           const sparkData =
@@ -173,7 +175,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                 if (inComp) removeFromComparison(item.id);
                 else addToComparison(item.id);
               }}
-              title={inComp ? "Remove from comparison" : "Add to comparison"}
+              title={inComp ? t("removeFromComparison") : t("addToComparison")}
             >
               <GitCompare className="h-3.5 w-3.5" />
             </button>
@@ -182,7 +184,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         enableSorting: false,
       },
     ],
-    [isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison]
+    [isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison, t]
   );
 
   const table = useReactTable({

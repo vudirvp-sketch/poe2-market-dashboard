@@ -11,6 +11,7 @@ import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface CurrencyCardProps {
@@ -28,6 +29,7 @@ export const CurrencyCard = memo(function CurrencyCard({
   league,
   referenceCurrency,
 }: CurrencyCardProps) {
+  const { t } = useI18n();
   const chg = fmtChange(item.changePercent);
   const sparkData =
     item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) || [];
@@ -95,7 +97,7 @@ export const CurrencyCard = memo(function CurrencyCard({
           inComparison ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         } transition-opacity`}
         onClick={handleCompareClick}
-        title={inComparison ? "Remove from comparison" : "Add to comparison"}
+        title={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
           className={`h-4 w-4 ${
@@ -146,7 +148,7 @@ export const CurrencyCard = memo(function CurrencyCard({
         </div>
         {item.volume != null && (
           <p className="text-xs text-muted-foreground mt-1">
-            Vol: {item.volume.toLocaleString()}
+            {t("vol")}: {item.volume.toLocaleString()}
           </p>
         )}
         {item.lowConfidence && (
@@ -154,7 +156,7 @@ export const CurrencyCard = memo(function CurrencyCard({
             variant="outline"
             className="mt-1 text-[10px] px-1 py-0"
           >
-            Low Confidence
+            {t("lowConfidence")}
           </Badge>
         )}
       </CardContent>

@@ -25,6 +25,7 @@ import {
 import { fmt, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { useMemo } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface PairDetailDialogProps {
   pair: ExchangePair | null;
@@ -41,6 +42,7 @@ export function PairDetailDialog({
   realm,
   league,
 }: PairDetailDialogProps) {
+  const { t } = useI18n();
   const { data: pairHistory, isLoading } = useQuery({
     queryKey: ["pairHistory", realm, league, pair?.currency1Id, pair?.currency2Id],
     queryFn: () =>
@@ -83,23 +85,23 @@ export function PairDetailDialog({
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
             <div className="rounded-lg bg-muted/50 p-2">
-              <p className="text-[10px] text-muted-foreground">Current</p>
+              <p className="text-[10px] text-muted-foreground">{t("current")}</p>
               <p className="text-sm font-bold font-mono">{fmt(pair.relativePrice)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
-              <p className="text-[10px] text-muted-foreground">Min</p>
+              <p className="text-[10px] text-muted-foreground">{t("min")}</p>
               <p className="text-sm font-bold font-mono">{fmt(stats.min)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
-              <p className="text-[10px] text-muted-foreground">Max</p>
+              <p className="text-[10px] text-muted-foreground">{t("max")}</p>
               <p className="text-sm font-bold font-mono">{fmt(stats.max)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
-              <p className="text-[10px] text-muted-foreground">Average</p>
+              <p className="text-[10px] text-muted-foreground">{t("average")}</p>
               <p className="text-sm font-bold font-mono">{fmt(stats.avg)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
-              <p className="text-[10px] text-muted-foreground">Spread</p>
+              <p className="text-[10px] text-muted-foreground">{t("spread")}</p>
               <p className="text-sm font-bold font-mono">{fmt(stats.spread)}</p>
             </div>
           </div>
@@ -114,7 +116,7 @@ export function PairDetailDialog({
           <div className="mt-4 space-y-4">
             <div>
               <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                <ArrowLeftRight className="h-4 w-4" /> Relative Price Over Time
+                <ArrowLeftRight className="h-4 w-4" /> {t("relativePriceOverTime")}
               </h4>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -145,7 +147,7 @@ export function PairDetailDialog({
                         fontSize: "12px",
                       }}
                       labelFormatter={(v: string) => new Date(v).toLocaleString()}
-                      formatter={(value: number) => [fmt(value), "Price"]}
+                      formatter={(value: number) => [fmt(value), t("priceLabel")]}
                     />
                     <Area
                       type="monotone"
@@ -160,7 +162,7 @@ export function PairDetailDialog({
             </div>
             <div>
               <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                <Activity className="h-4 w-4" /> Volume
+                <Activity className="h-4 w-4" /> {t("volume")}
               </h4>
               <div className="h-[100px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -183,7 +185,7 @@ export function PairDetailDialog({
           </div>
         ) : (
           <p className="text-center text-muted-foreground py-10">
-            No pair history available
+            {t("noPairHistory")}
           </p>
         )}
       </DialogContent>

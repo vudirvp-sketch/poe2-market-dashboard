@@ -31,6 +31,7 @@ import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint, DailyStat } from "@/lib/types";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 
 interface DetailDialogProps {
   item: PoeItem | null;
@@ -51,6 +52,7 @@ export function DetailDialog({
 }: DetailDialogProps) {
   const [chartMode, setChartMode] = useState<"hourly" | "daily">("hourly");
   const { isFavorite, toggleFavorite } = useDashboardStore();
+  const { t } = useI18n();
 
   // Hourly price history
   const { data: detailHistory, isLoading: detailHistoryLoading } = useQuery({
@@ -120,13 +122,13 @@ export function DetailDialog({
           {/* Key metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Price</p>
+              <p className="text-xs text-muted-foreground">{t("priceLabel")}</p>
               <p className="text-lg font-bold font-mono">
                 {fmt(item.relativePrice ?? item.priceChaos)}
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">24h Change</p>
+              <p className="text-xs text-muted-foreground">{t("change24h")}</p>
               <p
                 className={`text-lg font-bold font-mono ${fmtChange(item.changePercent).color}`}
               >
@@ -134,7 +136,7 @@ export function DetailDialog({
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">7d Change</p>
+              <p className="text-xs text-muted-foreground">{t("change7d")}</p>
               <p
                 className={`text-lg font-bold font-mono ${fmtChange(item.sevenDayPriceChangePercent).color}`}
               >
@@ -142,7 +144,7 @@ export function DetailDialog({
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Volume</p>
+              <p className="text-xs text-muted-foreground">{t("volume")}</p>
               <p className="text-lg font-bold font-mono">
                 {item.volume?.toLocaleString() ?? "—"}
               </p>
@@ -156,14 +158,14 @@ export function DetailDialog({
               size="sm"
               onClick={() => setChartMode("hourly")}
             >
-              Hourly
+              {t("hourly")}
             </Button>
             <Button
               variant={chartMode === "daily" ? "default" : "outline"}
               size="sm"
               onClick={() => setChartMode("daily")}
             >
-              Daily (Candlestick)
+              {t("dailyCandlestick")}
             </Button>
           </div>
 
@@ -178,7 +180,7 @@ export function DetailDialog({
                 {/* Price history AreaChart */}
                 <div>
                   <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4" /> Price History
+                    <TrendingUp className="h-4 w-4" /> {t("priceHistory")}
                   </h4>
                   <div className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -231,7 +233,7 @@ export function DetailDialog({
                           labelFormatter={(v: string) =>
                             new Date(v).toLocaleString()
                           }
-                          formatter={(value: number) => [fmt(value), "Price"]}
+                          formatter={(value: number) => [fmt(value), t("priceLabel")]}
                         />
                         <Area
                           type="monotone"
@@ -248,7 +250,7 @@ export function DetailDialog({
                 {/* Volume chart */}
                 <div>
                   <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                    <Activity className="h-4 w-4" /> Trading Volume
+                    <Activity className="h-4 w-4" /> {t("tradingVolume")}
                   </h4>
                   <div className="h-[120px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -281,10 +283,7 @@ export function DetailDialog({
                           labelFormatter={(v: string) =>
                             new Date(v).toLocaleString()
                           }
-                          formatter={(value: number) => [
-                            value.toLocaleString(),
-                            "Volume",
-                          ]}
+                          formatter={(value: number) => [value.toLocaleString(), t("volume")]}
                         />
                         <Bar
                           dataKey="volume"
@@ -298,7 +297,7 @@ export function DetailDialog({
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-10">
-                No history data available
+                {t("noHistory")}
               </p>
             )
           ) : // Daily candlestick mode
@@ -311,7 +310,7 @@ export function DetailDialog({
               {/* Candlestick chart using ComposedChart */}
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" /> Daily Candlestick
+                  <TrendingUp className="h-4 w-4" /> {t("dailyCandlestickTitle")}
                 </h4>
                 <div className="h-[300px]">
                   <CandlestickChart data={dailyStats} />
@@ -321,7 +320,7 @@ export function DetailDialog({
               {/* Daily volume */}
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <Activity className="h-4 w-4" /> Daily Volume
+                  <Activity className="h-4 w-4" /> {t("dailyVolume")}
                 </h4>
                 <div className="h-[120px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -351,10 +350,7 @@ export function DetailDialog({
                           borderRadius: "8px",
                           fontSize: "12px",
                         }}
-                        formatter={(value: number) => [
-                          value.toLocaleString(),
-                          "Volume",
-                        ]}
+                        formatter={(value: number) => [value.toLocaleString(), t("volume")]}
                       />
                       <Bar
                         dataKey="volume"
@@ -368,7 +364,7 @@ export function DetailDialog({
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-10">
-              No daily stats available
+              {t("noDailyStats")}
             </p>
           )}
         </>

@@ -60,6 +60,7 @@ import type {
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
+import { useI18n } from "@/lib/i18n";
 
 // Virtualization threshold: use virtual grid when more than this many currencies
 const CURRENCY_VIRTUAL_THRESHOLD = 30;
@@ -107,6 +108,9 @@ export default function Dashboard() {
 
   // --- Comparison store ---
   const { comparisonIds, pairComparisonIds, alerts } = useDashboardStore();
+
+  // --- i18n ---
+  const { t } = useI18n();
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -434,7 +438,7 @@ export default function Dashboard() {
         {!effectiveLeague ? (
           <div className="flex flex-col items-center justify-center py-32 text-muted-foreground" role="status">
             <AlertTriangle className="h-12 w-12 mb-4" aria-hidden="true" />
-            <p className="text-lg">Select a realm and league to begin</p>
+            <p className="text-lg">{t("selectRealmLeague")}</p>
           </div>
         ) : (
           <Tabs
@@ -448,23 +452,23 @@ export default function Dashboard() {
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <TabsList aria-label="Dashboard sections">
-                <TabsTrigger value="overview" className="gap-1.5" aria-label="Market Overview">
-                  <BarChart3 className="h-4 w-4" aria-hidden="true" /> Overview
+                <TabsTrigger value="overview" className="gap-1.5" aria-label={t("tabOverview")}>
+                  <BarChart3 className="h-4 w-4" aria-hidden="true" /> {t("tabOverview")}
                 </TabsTrigger>
-                <TabsTrigger value="currencies" className="gap-1.5" aria-label="Currencies">
-                  <Coins className="h-4 w-4" aria-hidden="true" /> Currencies
+                <TabsTrigger value="currencies" className="gap-1.5" aria-label={t("tabCurrencies")}>
+                  <Coins className="h-4 w-4" aria-hidden="true" /> {t("tabCurrencies")}
                 </TabsTrigger>
-                <TabsTrigger value="uniques" className="gap-1.5" aria-label="Unique Items">
-                  <Shield className="h-4 w-4" aria-hidden="true" /> Uniques
+                <TabsTrigger value="uniques" className="gap-1.5" aria-label={t("tabUniques")}>
+                  <Shield className="h-4 w-4" aria-hidden="true" /> {t("tabUniques")}
                 </TabsTrigger>
-                <TabsTrigger value="exchange" className="gap-1.5" aria-label="Currency Exchange">
-                  <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Exchange
+                <TabsTrigger value="exchange" className="gap-1.5" aria-label={t("tabExchange")}>
+                  <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> {t("tabExchange")}
                 </TabsTrigger>
-                <TabsTrigger value="arbitrage" className="gap-1.5" aria-label="Arbitrage Calculator">
-                  <Zap className="h-4 w-4" aria-hidden="true" /> Arbitrage
+                <TabsTrigger value="arbitrage" className="gap-1.5" aria-label={t("tabArbitrage")}>
+                  <Zap className="h-4 w-4" aria-hidden="true" /> {t("tabArbitrage")}
                 </TabsTrigger>
-                <TabsTrigger value="watchlist" className="gap-1.5" aria-label="Watchlist">
-                  <Star className="h-4 w-4" aria-hidden="true" /> Watchlist
+                <TabsTrigger value="watchlist" className="gap-1.5" aria-label={t("tabWatchlist")}>
+                  <Star className="h-4 w-4" aria-hidden="true" /> {t("tabWatchlist")}
                 </TabsTrigger>
               </TabsList>
 
@@ -475,10 +479,10 @@ export default function Dashboard() {
                   size="sm"
                   className="h-8 gap-1.5"
                   onClick={() => setAlertOpen(true)}
-                  aria-label={`Price alerts${alerts.length > 0 ? ` (${alerts.length} active)` : ""}`}
+                  aria-label={alerts.length > 0 ? t("alertsCount", { "0": alerts.length }) : t("alerts")}
                 >
                   <Bell className="h-3.5 w-3.5" aria-hidden="true" />
-                  {alerts.length > 0 ? `Alerts (${alerts.length})` : "Alerts"}
+                  {alerts.length > 0 ? t("alertsCount", { "0": alerts.length }) : t("alerts")}
                 </Button>
 
                 {/* Item Comparison button */}
@@ -489,10 +493,10 @@ export default function Dashboard() {
                     className="h-8 gap-1.5"
                     onClick={() => setComparisonOpen(true)}
                     disabled={comparisonIds.length < 2}
-                    aria-label={`Compare items (${comparisonIds.length} selected)`}
+                    aria-label={t("compare", { "0": comparisonIds.length })}
                   >
                     <GitCompare className="h-3.5 w-3.5" aria-hidden="true" />
-                    Compare ({comparisonIds.length})
+                    {t("compare", { "0": comparisonIds.length })}
                   </Button>
                 )}
 
@@ -504,10 +508,10 @@ export default function Dashboard() {
                     className="h-8 gap-1.5"
                     onClick={() => setPairComparisonOpen(true)}
                     disabled={pairComparisonIds.length < 2}
-                    aria-label={`Compare pairs (${pairComparisonIds.length} selected)`}
+                    aria-label={t("pairCompare", { "0": pairComparisonIds.length })}
                   >
                     <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    Pair Compare ({pairComparisonIds.length})
+                    {t("pairCompare", { "0": pairComparisonIds.length })}
                   </Button>
                 )}
 
@@ -522,7 +526,7 @@ export default function Dashboard() {
                       aria-pressed={categoryFilter === "all"}
                       tabIndex={0}
                     >
-                      All
+                      {t("all")}
                     </Badge>
                     {currentCategories.map((cat) => (
                       <Badge
@@ -563,11 +567,11 @@ export default function Dashboard() {
                 <ApiErrorFallback
                   error={activeError}
                   onRetry={() => refetchCurrencies()}
-                  title="Failed to load currencies"
+                  title={t("failedToLoadData")}
                 />
               ) : !currenciesData?.items?.length ? (
                 <p className="text-center text-muted-foreground py-20" role="status">
-                  No currencies found
+                  {t("noCurrencies")}
                 </p>
               ) : (
                 <>
@@ -617,11 +621,11 @@ export default function Dashboard() {
                 <ApiErrorFallback
                   error={activeError}
                   onRetry={() => refetchUniques()}
-                  title="Failed to load unique items"
+                  title={t("failedToLoadData")}
                 />
               ) : !uniquesData?.items?.length ? (
                 <p className="text-center text-muted-foreground py-20" role="status">
-                  No unique items found
+                  {t("noUniques")}
                 </p>
               ) : (
                 <>
@@ -656,11 +660,11 @@ export default function Dashboard() {
                 <ApiErrorFallback
                   error={activeError}
                   onRetry={() => refetchExchange()}
-                  title="Failed to load exchange pairs"
+                  title={t("failedToLoadData")}
                 />
               ) : exchangePairs.length === 0 ? (
                 <p className="text-center text-muted-foreground py-20" role="status">
-                  No exchange pairs found
+                  {t("noExchangePairs")}
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" role="list" aria-label="Exchange pairs">

@@ -36,6 +36,7 @@ import {
 import { fmt } from "@/lib/types";
 import type { PoeItem } from "@/lib/types";
 import { useDashboardStore, type PriceAlert } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 
 interface PriceAlertDialogProps {
   open: boolean;
@@ -54,6 +55,7 @@ export function PriceAlertDialog({
 }: PriceAlertDialogProps) {
   const { alerts, addAlert, removeAlert, updateAlert, favorites } =
     useDashboardStore();
+  const { t } = useI18n();
 
   // ---- Notification permission state ----
   const [notiPermission, setNotiPermission] = useState<
@@ -145,11 +147,10 @@ export function PriceAlertDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BellRing className="h-5 w-5 text-primary" />
-            Price Alerts
+            {t("priceAlerts")}
           </DialogTitle>
           <DialogDescription>
-            Set price thresholds on favorited items and get browser notifications
-            when they are crossed.
+            {t("priceAlertsDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,15 +160,14 @@ export function PriceAlertDialog({
             <Bell className="h-5 w-5 text-amber-500 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">
-                Browser notifications are blocked
+                {t("notificationsBlocked")}
               </p>
               <p className="text-xs text-muted-foreground">
-                You need to grant notification permission to receive price
-                alerts.
+                {t("notificationsBlockedDesc")}
               </p>
             </div>
             <Button size="sm" variant="outline" onClick={requestPermission}>
-              Enable Notifications
+              {t("enableNotifications")}
             </Button>
           </div>
         )}
@@ -177,10 +177,10 @@ export function PriceAlertDialog({
             <Bell className="h-5 w-5 text-red-500 shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium">
-                Browser notifications not supported
+                {t("notificationsNotSupported")}
               </p>
               <p className="text-xs text-muted-foreground">
-                Your browser does not support the Notification API.
+                {t("notificationsNotSupportedDesc")}
               </p>
             </div>
           </div>
@@ -189,16 +189,15 @@ export function PriceAlertDialog({
         {/* Current Alerts List */}
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-muted-foreground">
-            Active Alerts
+            {t("activeAlerts")}
           </h4>
 
           {alerts.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No price alerts set</p>
+              <p className="text-sm">{t("noAlerts")}</p>
               <p className="text-xs mt-1">
-                Add an alert below to get notified when prices cross your
-                thresholds
+                {t("noAlertsDesc")}
               </p>
             </div>
           ) : (
@@ -243,14 +242,14 @@ export function PriceAlertDialog({
                           }
                           className="text-[10px] px-1.5 py-0 h-4"
                         >
-                          {alert.condition === "above" ? "▲ Above" : "▼ Below"}
+                          {alert.condition === "above" ? `▲ ${t("above")}` : `▼ ${t("below")}`}
                         </Badge>
                         <span className="text-xs font-mono">
                           {fmt(alert.threshold)}
                         </span>
                         {currentPrice != null && (
                           <span className="text-xs text-muted-foreground">
-                            (now: {fmt(currentPrice)})
+                            ({t("now")}: {fmt(currentPrice)})
                           </span>
                         )}
                       </div>
@@ -260,7 +259,7 @@ export function PriceAlertDialog({
                     <button
                       onClick={() => handleToggleAlert(alert)}
                       className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
-                      title={alert.enabled ? "Disable alert" : "Enable alert"}
+                      title={alert.enabled ? t("disableAlert") : t("enableAlert")}
                     >
                       {alert.enabled ? (
                         <Power className="h-4 w-4 text-emerald-400" />
@@ -273,7 +272,7 @@ export function PriceAlertDialog({
                     <button
                       onClick={() => handleDeleteAlert(alert.itemId)}
                       className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
-                      title="Remove alert"
+                      title={t("removeAlert")}
                     >
                       <Trash2 className="h-4 w-4 text-red-400" />
                     </button>
@@ -288,12 +287,12 @@ export function PriceAlertDialog({
         <div className="space-y-3 pt-2 border-t border-border">
           <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1">
             <Plus className="h-3.5 w-3.5" />
-            Add Alert
+            {t("addAlert")}
           </h4>
 
           {favoritedItems.length === 0 ? (
             <p className="text-xs text-muted-foreground py-2">
-              You need to favorite items first before setting alerts.
+              {t("needFavoritesFirst")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -303,7 +302,7 @@ export function PriceAlertDialog({
                 onValueChange={setSelectedItemId}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a favorited item..." />
+                  <SelectValue placeholder={t("selectFavoritedItem")} />
                 </SelectTrigger>
                 <SelectContent>
                   {favoritedItems.map((item) => (
@@ -333,8 +332,8 @@ export function PriceAlertDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="above">▲ Above</SelectItem>
-                    <SelectItem value="below">▼ Below</SelectItem>
+                    <SelectItem value="above">▲ {t("above")}</SelectItem>
+                    <SelectItem value="below">▼ {t("below")}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -342,7 +341,7 @@ export function PriceAlertDialog({
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="Threshold price"
+                  placeholder={t("thresholdPrice")}
                   value={thresholdInput}
                   onChange={(e) => setThresholdInput(e.target.value)}
                   className="flex-1"
@@ -367,7 +366,7 @@ export function PriceAlertDialog({
                 ) : (
                   <Plus className="h-4 w-4 mr-1" />
                 )}
-                Add Alert
+                {t("addAlert")}
               </Button>
             </div>
           )}
@@ -383,7 +382,7 @@ export function PriceAlertDialog({
             className="text-xs"
           >
             <Send className="h-3.5 w-3.5 mr-1" />
-            Test Notification
+            {t("testNotification")}
           </Button>
 
           {notiPermission === "default" && (
@@ -394,7 +393,7 @@ export function PriceAlertDialog({
               className="text-xs"
             >
               <Bell className="h-3.5 w-3.5 mr-1" />
-              Enable Notifications
+              {t("enableNotifications")}
             </Button>
           )}
         </div>

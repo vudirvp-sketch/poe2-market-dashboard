@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fmt, fetchApi } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 import type { ExchangePair } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -339,6 +340,7 @@ function findArbitrageCycles(
 // ---------------------------------------------------------------------------
 
 export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
+  const { t } = useI18n();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // --- Settings state ---
@@ -419,12 +421,10 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
         <div>
           <p className="text-sm font-medium text-amber-500">
-            Arbitrage opportunities are theoretical
+            {t("arbitrageTheoretical")}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Market prices change rapidly. Slippage is estimated using a
-            square-root impact model. Actual results may vary. Always verify
-            current rates before trading.
+            {t("arbitrageTheoreticalDesc")}
           </p>
         </div>
       </div>
@@ -435,13 +435,13 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <ArrowLeftRight className="h-5 w-5 text-primary" />
-              <p className="text-xs text-muted-foreground">Scanned Pairs</p>
+              <p className="text-xs text-muted-foreground">{t("scannedPairs")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
               {eligiblePairs}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              of {pairs?.length ?? 0} total (volume &ge; {MIN_VOLUME})
+              {t("ofTotal", { "0": pairs?.length ?? 0, "1": MIN_VOLUME })}
             </p>
           </CardContent>
         </Card>
@@ -449,11 +449,11 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-primary" />
-              <p className="text-xs text-muted-foreground">Currencies</p>
+              <p className="text-xs text-muted-foreground">{t("currencies")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">{currencies}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              unique tokens in graph
+              {t("uniqueTokensInGraph")}
             </p>
           </CardContent>
         </Card>
@@ -462,14 +462,14 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-400" />
               <p className="text-xs text-muted-foreground">
-                Opportunities Found
+                {t("opportunitiesFound")}
               </p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1 text-emerald-400">
               {cycles.length}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              cycles with positive net profit
+              {t("cyclesWithPositiveNetProfit")}
             </p>
           </CardContent>
         </Card>
@@ -479,7 +479,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium flex items-center gap-1.5">
           <Search className="h-4 w-4" />
-          Arbitrage Opportunities
+          {t("arbitrageOpportunities")}
         </h3>
         <div className="flex items-center gap-2">
           <Button
@@ -489,7 +489,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
             onClick={() => setShowSettings(!showSettings)}
           >
             <Settings2 className="h-3.5 w-3.5" />
-            Settings
+            {t("settings")}
           </Button>
           <Button
             variant="outline"
@@ -503,7 +503,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
                 isRefreshing ? "animate-spin" : ""
               }`}
             />
-            Refresh
+            {t("refresh")}
           </Button>
         </div>
       </div>
@@ -515,15 +515,13 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
             <div className="flex items-center gap-2 mb-3">
               <Info className="h-4 w-4 text-muted-foreground" />
               <p className="text-xs text-muted-foreground">
-                Adjust these parameters to model realistic trading conditions.
-                Slippage uses a square-root impact model based on trade size vs.
-                pair volume.
+                {t("adjustSettings")}
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Trading Fee (bps)
+                  {t("tradingFeeBps")}
                 </label>
                 <Input
                   type="number"
@@ -535,12 +533,12 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
                   className="h-8 text-sm"
                 />
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  PoE has no explicit fees (0). Set 0 by default.
+                  {t("poeNoFees")}
                 </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Base Slippage (bps)
+                  {t("baseSlippageBps")}
                 </label>
                 <Input
                   type="number"
@@ -552,12 +550,12 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
                   className="h-8 text-sm"
                 />
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Base slippage per trade. 10 = 0.1%.
+                  {t("baseSlippageDesc")}
                 </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1">
-                  Trade Size (for profit estimate)
+                  {t("tradeSizeForProfit")}
                 </label>
                 <Input
                   type="number"
@@ -568,7 +566,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
                   className="h-8 text-sm"
                 />
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Currency amount to estimate net profit for.
+                  {t("tradeSizeDesc")}
                 </p>
               </div>
             </div>
@@ -580,23 +578,21 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
       {cycles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <CircleDot className="h-12 w-12 mb-4" />
-          <p className="text-lg mb-1">No arbitrage opportunities detected</p>
+          <p className="text-lg mb-1">{t("noArbitrage")}</p>
           <p className="text-sm text-center max-w-md">
-            This is normal — efficient markets rarely have exploitable cycles.
-            Try refreshing later or check a different league. You can also
-            adjust slippage/fee settings.
+            {t("noArbitrageDesc")}
           </p>
         </div>
       ) : (
         <div className="rounded-lg border overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[1fr_60px_80px_80px_80px_100px] sm:grid-cols-[1fr_60px_90px_90px_90px_120px] bg-muted/50 px-4 py-2.5 text-xs font-medium text-muted-foreground">
-            <div>Route</div>
-            <div className="text-center">Len</div>
-            <div className="text-right">Net Profit</div>
-            <div className="text-right">Gross</div>
-            <div className="text-right">Slippage</div>
-            <div className="text-right">Max Vol</div>
+            <div>{t("route")}</div>
+            <div className="text-center">{t("len")}</div>
+            <div className="text-right">{t("netProfit")}</div>
+            <div className="text-right">{t("gross")}</div>
+            <div className="text-right">{t("slippage")}</div>
+            <div className="text-right">{t("maxVol")}</div>
           </div>
 
           {/* Table rows */}
@@ -656,7 +652,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
                         }`}
                       >
                         {estimatedNet > 0 ? "+" : ""}
-                        {estimatedNet.toFixed(2)} net
+                        {estimatedNet.toFixed(2)} {t("net")}
                       </p>
                     )}
                   </div>
@@ -691,10 +687,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
       {/* Footer note */}
       {cycles.length > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          Showing top {Math.min(cycles.length, MAX_OPPORTUNITIES)} opportunities
-          sorted by net profit. Cycle length limited to {MAX_CYCLE_LENGTH} edges.
-          Pairs with volume &lt; {MIN_VOLUME} are excluded. Slippage: square-root
-          model ({baseSlippageBps} bps base). Fee: {feeBps} bps.
+          {t("showingTopOpportunities", { "0": Math.min(cycles.length, MAX_OPPORTUNITIES), "1": MAX_CYCLE_LENGTH, "2": MIN_VOLUME, "3": baseSlippageBps, "4": feeBps })}
         </p>
       )}
     </div>

@@ -6,6 +6,7 @@
 
 import { AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 interface ApiErrorFallbackProps {
   /** Error message or object */
@@ -27,6 +28,7 @@ export function ApiErrorFallback({
   title,
   compact,
 }: ApiErrorFallbackProps) {
+  const { t } = useI18n();
   const errorMessage =
     error instanceof Error
       ? error.message
@@ -52,10 +54,10 @@ export function ApiErrorFallback({
         <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
         <span className="text-xs text-muted-foreground flex-1">
           {isOffline
-            ? "Network error — check your connection"
+            ? t("networkError")
             : isRateLimited
-            ? "Rate limited — please wait a moment"
-            : "Failed to load data"}
+            ? t("rateLimited")
+            : t("failedToLoadData")}
         </span>
         {onRetry && (
           <Button
@@ -68,7 +70,7 @@ export function ApiErrorFallback({
             <RefreshCw
               className={`h-3 w-3 ${isRetrying ? "animate-spin" : ""}`}
             />
-            Retry
+            {t("retry")}
           </Button>
         )}
       </div>
@@ -88,17 +90,17 @@ export function ApiErrorFallback({
       <h3 className="text-lg font-semibold mb-2">
         {title ||
           (isOffline
-            ? "Connection lost"
+            ? t("connectionLost")
             : isRateLimited
-            ? "Too many requests"
-            : "Failed to load data")}
+            ? t("tooManyRequests")
+            : t("failedToLoadData"))}
       </h3>
       <p className="text-sm text-muted-foreground mb-4 max-w-md">
         {isOffline
-          ? "Unable to reach the server. Please check your internet connection and try again."
+          ? t("connectionLostDesc")
           : isRateLimited
-          ? "The API is receiving too many requests. Please wait a moment before trying again."
-          : "There was an error loading data from the server. This might be a temporary issue."}
+          ? t("tooManyRequestsDesc")
+          : t("failedToLoadDataDesc")}
       </p>
       {onRetry && (
         <Button
@@ -111,14 +113,14 @@ export function ApiErrorFallback({
           <RefreshCw
             className={`h-3.5 w-3.5 ${isRetrying ? "animate-spin" : ""}`}
           />
-          {isRetrying ? "Retrying..." : "Try again"}
+          {isRetrying ? t("retrying") : t("tryAgain")}
         </Button>
       )}
       {/* Show error details in development */}
       {errorMessage && (
         <details className="mt-4 text-left max-w-md w-full">
           <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-            Technical details
+            {t("technicalDetails")}
           </summary>
           <pre className="mt-2 text-xs bg-muted/50 rounded-lg p-3 overflow-auto max-h-[100px] text-red-400">
             {errorMessage}

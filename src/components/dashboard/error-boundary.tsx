@@ -7,6 +7,7 @@
 import React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { I18nContext } from "@/lib/i18n";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -23,6 +24,9 @@ export class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
+  static contextType = I18nContext;
+  declare context: React.ContextType<typeof I18nContext>;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -47,6 +51,8 @@ export class ErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
+      const i18n = this.context;
+      const t = i18n?.t ?? ((key: string) => key);
       const title = this.props.fallbackTitle || "Component";
       return (
         <div
@@ -56,16 +62,15 @@ export class ErrorBoundary extends React.Component<
         >
           <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
           <h3 className="text-lg font-semibold mb-2">
-            {title} encountered an error
+            {t("encounteredError", { "0": title })}
           </h3>
           <p className="text-sm text-muted-foreground mb-4 max-w-md">
-            Something went wrong while rendering this section. The rest of the
-            dashboard is still functional. You can try reloading this section.
+            {t("errorBoundaryDesc")}
           </p>
           {this.state.error && (
             <details className="mb-4 text-left max-w-md w-full">
               <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                Error details
+                {t("errorDetails")}
               </summary>
               <pre className="mt-2 text-xs bg-muted/50 rounded-lg p-3 overflow-auto max-h-[150px] text-red-400">
                 {this.state.error.message}
@@ -79,7 +84,7 @@ export class ErrorBoundary extends React.Component<
             className="gap-1.5"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Retry
+            {t("retry")}
           </Button>
         </div>
       );
