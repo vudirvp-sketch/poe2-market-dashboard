@@ -29,6 +29,7 @@ import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { useMemo } from "react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 // Colors for up to 4 comparison lines
 const COLORS = ["#8b5cf6", "#f59e0b", "#34d399", "#f87171"];
@@ -61,6 +62,7 @@ export function ComparisonDialog({
   const { comparisonIds, removeFromComparison, clearComparison } =
     useDashboardStore();
   const { t } = useI18n();
+  const reducedMotion = useReducedMotion();
 
   // Resolve item metadata from allItems
   const comparedItems = useMemo(() => {
@@ -283,6 +285,7 @@ export function ComparisonDialog({
                       strokeWidth={2}
                       dot={false}
                       activeDot={{ r: 4 }}
+                      isAnimationActive={!reducedMotion}
                     />
                   ))}
                 </LineChart>

@@ -26,6 +26,7 @@ import { fmt, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface PairDetailDialogProps {
   pair: ExchangePair | null;
@@ -43,6 +44,7 @@ export function PairDetailDialog({
   league,
 }: PairDetailDialogProps) {
   const { t } = useI18n();
+  const reducedMotion = useReducedMotion();
   const { data: pairHistory, isLoading } = useQuery({
     queryKey: ["pairHistory", realm, league, pair?.currency1Id, pair?.currency2Id],
     queryFn: () =>
@@ -155,6 +157,7 @@ export function PairDetailDialog({
                       stroke="#f59e0b"
                       fill="url(#pairGrad)"
                       strokeWidth={2}
+                      isAnimationActive={!reducedMotion}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -177,7 +180,7 @@ export function PairDetailDialog({
                         fontSize: "12px",
                       }}
                     />
-                    <Bar dataKey="volume" fill="#6366f1" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="volume" fill="#6366f1" radius={[2, 2, 0, 0]} isAnimationActive={!reducedMotion} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -33,7 +33,7 @@ export function Pagination({
   onPerPageChange,
   perPageOptions = [25, 50, 100],
 }: PaginationProps) {
-  const { t } = useI18n();
+  const { t, tp } = useI18n();
   if (totalPages <= 1 && !onPerPageChange) return null;
 
   return (
@@ -61,7 +61,7 @@ export function Pagination({
         )}
         {totalItems != null && (
           <span className="text-xs text-muted-foreground">
-            {totalItems.toLocaleString()} {t("items")}
+            {totalItems.toLocaleString()} {tp("items|item|items", totalItems, {})}
           </span>
         )}
       </div>

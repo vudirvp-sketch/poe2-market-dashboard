@@ -208,10 +208,20 @@ const en = {
   language: "Language",
   english: "English",
   russian: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439",
+  chinese: "\u4E2D\u6587",
+  korean: "\uD55C\uAD6D\uC5B4",
 
   // Timeframes
   timeframe24h: "24h",
   timeframe7d: "7d",
+
+  // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
+  _pl_alertsCount: "Alerts ({0})|Alert ({0})|Alerts ({0})",
+  _pl_items: "items|item|items",
+  _pl_scannedPairs: "Scanned Pairs|Scanned Pair|Scanned Pairs",
+  _pl_opportunitiesFound: "Opportunities Found|Opportunity Found|Opportunities Found",
+  _pl_compare: "Compare ({0})|Compare ({0})|Compare ({0})",
+  _pl_pairCompare: "Pair Compare ({0})|Pair Compare ({0})|Pair Compare ({0})",
 } as const;
 
 export default en;

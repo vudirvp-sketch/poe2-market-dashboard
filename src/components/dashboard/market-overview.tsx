@@ -30,6 +30,7 @@ import { fmt, fmtChange, fetchApi, exportToCsv, exportToJson } from "@/lib/types
 import { useI18n } from "@/lib/i18n";
 import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
 import { useState, useMemo } from "react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface MarketOverviewProps {
   realm: string;
@@ -40,6 +41,7 @@ interface MarketOverviewProps {
 export function MarketOverview({ realm, league, onItemClick }: MarketOverviewProps) {
   const { t } = useI18n();
   const [topTimeframe, setTopTimeframe] = useState<"24h" | "7d">("24h");
+  const reducedMotion = useReducedMotion();
 
   // Snapshot history for volume trend
   const { data: snapshotHistory, isLoading: snapshotLoading } = useQuery({
@@ -216,6 +218,7 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
                     stroke="#6366f1"
                     fill="url(#volGrad)"
                     strokeWidth={2}
+                    isAnimationActive={!reducedMotion}
                   />
                 </AreaChart>
               </ResponsiveContainer>

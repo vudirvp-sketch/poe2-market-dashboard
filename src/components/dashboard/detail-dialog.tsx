@@ -32,6 +32,7 @@ import type { PoeItem, PoeItemHistoryPoint, DailyStat } from "@/lib/types";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface DetailDialogProps {
   item: PoeItem | null;
@@ -53,6 +54,7 @@ export function DetailDialog({
   const [chartMode, setChartMode] = useState<"hourly" | "daily">("hourly");
   const { isFavorite, toggleFavorite } = useDashboardStore();
   const { t } = useI18n();
+  const reducedMotion = useReducedMotion();
 
   // Hourly price history
   const { data: detailHistory, isLoading: detailHistoryLoading } = useQuery({
@@ -241,6 +243,7 @@ export function DetailDialog({
                           stroke="#8b5cf6"
                           fill="url(#priceGrad)"
                           strokeWidth={2}
+                          isAnimationActive={!reducedMotion}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -289,6 +292,7 @@ export function DetailDialog({
                           dataKey="volume"
                           fill="#6366f1"
                           radius={[2, 2, 0, 0]}
+                          isAnimationActive={!reducedMotion}
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -476,6 +480,7 @@ function CandlestickChart({ data }: { data: DailyStat[] }) {
           strokeWidth={1}
           dot={false}
           strokeOpacity={0.5}
+          isAnimationActive={!reducedMotion}
         />
       </ComposedChart>
     </ResponsiveContainer>

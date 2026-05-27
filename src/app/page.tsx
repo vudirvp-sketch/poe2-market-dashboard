@@ -483,7 +483,7 @@ export default function Dashboard() {
                 >
                   <Bell className="h-3.5 w-3.5" aria-hidden="true" />
                   {alerts.length > 0
-                    ? tp("alerts|оповещение|оповещения|оповещений", alerts.length, { "0": alerts.length })
+                    ? tp(t("_pl_alertsCount"), alerts.length, { "0": alerts.length })
                     : t("alerts")}
                 </Button>
 
@@ -498,7 +498,7 @@ export default function Dashboard() {
                     aria-label={t("compare", { "0": comparisonIds.length })}
                   >
                     <GitCompare className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tp("compare|Сравнить|Сравнить|Сравнить", comparisonIds.length, { "0": comparisonIds.length })}
+                    {tp(t("_pl_compare"), comparisonIds.length, { "0": comparisonIds.length })}
                   </Button>
                 )}
 
@@ -513,7 +513,7 @@ export default function Dashboard() {
                     aria-label={t("pairCompare", { "0": pairComparisonIds.length })}
                   >
                     <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tp("pairCompare|Сравнить пары|Сравнить пары|Сравнить пары", pairComparisonIds.length, { "0": pairComparisonIds.length })}
+                    {tp(t("_pl_pairCompare"), pairComparisonIds.length, { "0": pairComparisonIds.length })}
                   </Button>
                 )}
 

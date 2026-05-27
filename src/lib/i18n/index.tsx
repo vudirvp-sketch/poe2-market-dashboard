@@ -15,11 +15,13 @@ import {
 } from "react";
 import en, { type TranslationKeys } from "./locales/en";
 import ru from "./locales/ru";
+import zh from "./locales/zh";
+import ko from "./locales/ko";
 
-export type Locale = "en" | "ru";
+export type Locale = "en" | "ru" | "zh" | "ko";
 export type { TranslationKeys };
 
-const messages: Record<Locale, Record<TranslationKeys, string>> = { en, ru };
+const messages: Record<Locale, Record<TranslationKeys, string>> = { en, ru, zh, ko };
 
 const LOCALE_STORAGE_KEY = "poe2-locale";
 const DEFAULT_LOCALE: Locale = "ru";
@@ -50,6 +52,9 @@ function getInitialLocale(): Locale {
  *   21  -> form 0  ("предмет")
  *   22-24 -> form 1 ("предмета")
  *   etc.
+ *
+ * Chinese/Korean: always return 0 (no inflection).
+ * English/default: 1 -> singular (0), other -> plural (1).
  */
 function getPluralIndex(locale: Locale, count: number): number {
   if (locale === "ru") {
@@ -61,6 +66,10 @@ function getPluralIndex(locale: Locale, count: number): number {
     if (mod10 >= 2 && mod10 <= 4) return 1;
     return 2;
   }
+  if (locale === "zh" || locale === "ko") {
+    // Chinese and Korean do not inflect nouns for count
+    return 0;
+  }
   // English / default: 1 -> singular (0), other -> plural (1)
   return count === 1 ? 0 : 1;
 }
@@ -70,6 +79,7 @@ function getPluralIndex(locale: Locale, count: number): number {
  * Pipe-separated: key is the lookup key, then plural forms follow.
  * For English: "items|item|items"  (2 forms)
  * For Russian: "items|предмет|предмета|предметов"  (3 forms)
+ * For Chinese/Korean: "items|物品|物品|物品"  (all same)
  */
 function resolvePlural(
   locale: Locale,
@@ -102,6 +112,8 @@ interface I18nContextValue {
 
 export const I18nContext = createContext<I18nContextValue | null>(null);
 
+const VALID_LOCALES: Locale[] = ["en", "ru", "zh", "ko"];
+
 export function I18nProvider({ children }: { children: ReactNode }) {
   // Always start with DEFAULT_LOCALE for consistent SSR/hydration
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
@@ -111,9 +123,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-      if (stored === "en" || stored === "ru") {
+      if (stored && (VALID_LOCALES as string[]).includes(stored)) {
         if (stored !== DEFAULT_LOCALE) {
-          setLocaleState(stored);
+          setLocaleState(stored as Locale);
         }
       }
     } catch {

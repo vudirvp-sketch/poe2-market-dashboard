@@ -340,7 +340,7 @@ function findArbitrageCycles(
 // ---------------------------------------------------------------------------
 
 export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
-  const { t } = useI18n();
+  const { t, tp } = useI18n();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // --- Settings state ---
@@ -435,7 +435,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
               <ArrowLeftRight className="h-5 w-5 text-primary" />
-              <p className="text-xs text-muted-foreground">{t("scannedPairs")}</p>
+              <p className="text-xs text-muted-foreground">{tp("Scanned Pairs|Scanned Pair|Scanned Pairs|Scanned Pairs", eligiblePairs, {})}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
               {eligiblePairs}
@@ -462,7 +462,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-400" />
               <p className="text-xs text-muted-foreground">
-                {t("opportunitiesFound")}
+                {tp("Opportunities Found|Opportunity Found|Opportunities Found|Opportunities Found", cycles.length, {})}
               </p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1 text-emerald-400">

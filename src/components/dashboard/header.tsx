@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import type { Realm, League, ReferenceCurrency } from "@/lib/types";
 import { useTheme } from "next-themes";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Locale } from "@/lib/i18n";
 
 interface HeaderProps {
   realms: Realm[] | undefined;
@@ -50,6 +50,13 @@ interface HeaderProps {
   onExport?: (format: "csv" | "json") => void;
 }
 
+const LOCALE_LABELS: Record<Locale, string> = {
+  en: "EN",
+  ru: "RU",
+  zh: "\u4E2D",
+  ko: "\uD55C",
+};
+
 export function Header({
   realms,
   leagues,
@@ -71,7 +78,7 @@ export function Header({
   onExport,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
-  const { t, locale, setLocale } = useI18n();
+  const { t, tp, locale, setLocale } = useI18n();
   const [timeAgo, setTimeAgo] = useState<string>("");
   const [localSearch, setLocalSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -121,6 +128,14 @@ export function Header({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // Cycle through locales
+  const LOCALE_ORDER: Locale[] = ["ru", "en", "zh", "ko"];
+  const cycleLocale = useCallback(() => {
+    const idx = LOCALE_ORDER.indexOf(locale);
+    const next = LOCALE_ORDER[(idx + 1) % LOCALE_ORDER.length];
+    setLocale(next);
+  }, [locale, setLocale]);
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
@@ -203,6 +218,7 @@ export function Header({
             <button
               onClick={handleClearSearch}
               className="absolute right-2.5 top-2.5"
+              aria-label="Clear search"
             >
               <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
             </button>
@@ -215,13 +231,14 @@ export function Header({
           size="sm"
           onClick={onAutoRefreshToggle}
           className="h-9"
+          aria-label={autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"}
         >
           <Clock className="h-4 w-4 mr-1" />
           {autoRefresh ? "60s" : t("autoRefresh")}
         </Button>
 
         {/* Refresh */}
-        <Button variant="outline" size="sm" onClick={onRefresh} className="h-9">
+        <Button variant="outline" size="sm" onClick={onRefresh} className="h-9" aria-label={t("refresh")}>
           <RefreshCw className="h-4 w-4 mr-1" />
           {t("refresh")}
         </Button>
@@ -241,6 +258,7 @@ export function Header({
               size="sm"
               className="h-9 text-xs"
               onClick={() => onExport("csv")}
+              aria-label="Export CSV"
             >
               <Download className="h-3.5 w-3.5 mr-1" />
               {t("exportCsv")}
@@ -250,6 +268,7 @@ export function Header({
               size="sm"
               className="h-9 text-xs"
               onClick={() => onExport("json")}
+              aria-label="Export JSON"
             >
               <Download className="h-3.5 w-3.5 mr-1" />
               {t("exportJson")}
@@ -257,16 +276,17 @@ export function Header({
           </div>
         )}
 
-        {/* Language toggle */}
+        {/* Language toggle — cycles ru → en → zh → ko → ru */}
         <Button
           variant="ghost"
           size="sm"
           className="h-9 gap-1"
-          onClick={() => setLocale(locale === "ru" ? "en" : "ru")}
+          onClick={cycleLocale}
           title={t("language")}
+          aria-label={t("language")}
         >
           <Globe className="h-4 w-4" />
-          <span className="text-xs">{locale === "ru" ? "RU" : "EN"}</span>
+          <span className="text-xs">{LOCALE_LABELS[locale]}</span>
         </Button>
 
         {/* Theme toggle */}
@@ -275,6 +295,7 @@ export function Header({
           size="sm"
           className="h-9"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
           {theme === "dark" ? (
             <Sun className="h-4 w-4" />
