@@ -69,7 +69,7 @@ if not exist "node_modules\" (
 REM ---- Build project ----
 REM Use --skip-build flag to skip:  start.bat --skip-build
 if "%~1"=="--skip-build" (
-    echo [INFO] Skipping build ^(--skip-build flag provided^).
+    echo [INFO] Skipping build --skip-build flag provided.
     echo.
 ) else (
     echo [INFO] Building project...
@@ -82,7 +82,7 @@ if "%~1"=="--skip-build" (
         echo.
         echo [TIP] If you see TypeScript errors, you can try running with:
         echo       start.bat --skip-build
-        echo       and then use 'npm run dev' for development mode instead.
+        echo       and then use npm run dev for development mode instead.
         echo.
         pause
         exit /b 1
@@ -97,7 +97,7 @@ if not exist ".next\" (
     echo.
     echo [ERROR] .next directory not found after build!
     echo This means the build did not complete properly.
-    echo Try running 'npm run build' manually to see errors.
+    echo Try running npm run build manually to see errors.
     echo.
     pause
     exit /b 1
@@ -114,8 +114,8 @@ echo.
 
 set NODE_ENV=production
 
-REM Start the server — cleanup is handled automatically:
-REM When this CMD window closes (X button), Windows terminates
+REM Start the server - cleanup is handled automatically:
+REM When this CMD window closes, Windows terminates
 REM the entire process tree including child node processes.
 REM We also kill port 3000 at the start of this script.
 call npm run start
