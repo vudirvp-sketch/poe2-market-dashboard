@@ -57,6 +57,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         } transition-opacity`}
         onClick={handleCompareClick}
         title={inComparison ? t("removeFromComparison") : t("addToComparison")}
+        aria-label={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
           className={`h-4 w-4 ${

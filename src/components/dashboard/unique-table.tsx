@@ -54,6 +54,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                   e.stopPropagation();
                   toggleFavorite(item.id);
                 }}
+                aria-label={isFavorite(item.id) ? t("removeFromFavorites") : t("addToFavorites")}
               >
                 <Star
                   className={`h-3.5 w-3.5 ${
@@ -176,6 +177,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                 else addToComparison(item.id);
               }}
               title={inComp ? t("removeFromComparison") : t("addToComparison")}
+              aria-label={inComp ? t("removeFromComparison") : t("addToComparison")}
             >
               <GitCompare className="h-3.5 w-3.5" />
             </button>

@@ -213,6 +213,14 @@ const zh: Record<TranslationKeys, string> = {
   chinese: "\u4E2D\u6587",
   korean: "\uD55C\uAD6D\uC5B4",
 
+  // Accessibility (WCAG 2.1 AA)
+  switchLanguage: "\u5207\u6362\u8BED\u8A00",
+  switchToLightMode: "\u5207\u6362\u5230\u6D45\u8272\u6A21\u5F0F",
+  switchToDarkMode: "\u5207\u6362\u5230\u6DF1\u8272\u6A21\u5F0F",
+  refreshData: "\u5237\u65B0\u6570\u636E",
+  disableAutoRefresh: "\u7981\u7528\u81EA\u52A8\u5237\u65B0",
+  enableAutoRefresh: "\u542F\u7528\u81EA\u52A8\u5237\u65B0",
+
   // Timeframes
   timeframe24h: "24\u5C0F\u65F6",
   timeframe7d: "7\u5929",

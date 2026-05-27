@@ -434,10 +434,10 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         <Card className="rounded-lg">
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
-              <ArrowLeftRight className="h-5 w-5 text-primary" />
+              <ArrowLeftRight className="h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-xs text-muted-foreground">{tp("Scanned Pairs|Scanned Pair|Scanned Pairs|Scanned Pairs", eligiblePairs, {})}</p>
             </div>
-            <p className="text-2xl font-bold font-mono mt-1">
+            <p className="text-2xl font-bold font-mono mt-1" role="status" aria-live="polite">
               {eligiblePairs}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -448,10 +448,10 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         <Card className="rounded-lg">
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" />
+              <Coins className="h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-xs text-muted-foreground">{t("currencies")}</p>
             </div>
-            <p className="text-2xl font-bold font-mono mt-1">{currencies}</p>
+            <p className="text-2xl font-bold font-mono mt-1" role="status" aria-live="polite">{currencies}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t("uniqueTokensInGraph")}
             </p>
@@ -460,12 +460,12 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         <Card className="rounded-lg">
           <CardContent className="py-4 px-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-400" />
+              <TrendingUp className="h-5 w-5 text-emerald-400" aria-hidden="true" />
               <p className="text-xs text-muted-foreground">
                 {tp("Opportunities Found|Opportunity Found|Opportunities Found|Opportunities Found", cycles.length, {})}
               </p>
             </div>
-            <p className="text-2xl font-bold font-mono mt-1 text-emerald-400">
+            <p className="text-2xl font-bold font-mono mt-1 text-emerald-400" role="status" aria-live="polite">
               {cycles.length}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">

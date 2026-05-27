@@ -260,6 +260,7 @@ export function PriceAlertDialog({
                       onClick={() => handleToggleAlert(alert)}
                       className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
                       title={alert.enabled ? t("disableAlert") : t("enableAlert")}
+                      aria-label={alert.enabled ? t("disableAlert") : t("enableAlert")}
                     >
                       {alert.enabled ? (
                         <Power className="h-4 w-4 text-emerald-400" />
@@ -273,6 +274,7 @@ export function PriceAlertDialog({
                       onClick={() => handleDeleteAlert(alert.itemId)}
                       className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
                       title={t("removeAlert")}
+                      aria-label={t("removeAlert")}
                     >
                       <Trash2 className="h-4 w-4 text-red-400" />
                     </button>

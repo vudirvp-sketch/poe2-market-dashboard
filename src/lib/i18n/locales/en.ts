@@ -211,6 +211,14 @@ const en = {
   chinese: "\u4E2D\u6587",
   korean: "\uD55C\uAD6D\uC5B4",
 
+  // Accessibility (WCAG 2.1 AA)
+  switchLanguage: "Switch language",
+  switchToLightMode: "Switch to light mode",
+  switchToDarkMode: "Switch to dark mode",
+  refreshData: "Refresh data",
+  disableAutoRefresh: "Disable auto-refresh",
+  enableAutoRefresh: "Enable auto-refresh",
+
   // Timeframes
   timeframe24h: "24h",
   timeframe7d: "7d",

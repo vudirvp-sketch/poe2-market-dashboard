@@ -3,7 +3,7 @@
 // ============================================================================
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart,
@@ -55,6 +55,17 @@ export function DetailDialog({
   const { isFavorite, toggleFavorite } = useDashboardStore();
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
+
+  // Ref-based chart height measurement for candlestick chart (Task 6.11)
+  const candlestickContainerRef = useRef<HTMLDivElement>(null);
+  const [candlestickChartHeight, setCandlestickChartHeight] = useState(300);
+
+  useEffect(() => {
+    if (candlestickContainerRef.current) {
+      const height = candlestickContainerRef.current.clientHeight;
+      if (height > 0) setCandlestickChartHeight(height);
+    }
+  }, [chartMode, open]);
 
   // Hourly price history
   const { data: detailHistory, isLoading: detailHistoryLoading } = useQuery({
@@ -109,6 +120,7 @@ export function DetailDialog({
               <button
                 className="ml-auto"
                 onClick={() => toggleFavorite(item.id)}
+                aria-label={fav ? t("removeFromFavorites") : t("addToFavorites")}
               >
                 <Star
                   className={`h-5 w-5 ${
@@ -316,8 +328,8 @@ export function DetailDialog({
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
                   <TrendingUp className="h-4 w-4" /> {t("dailyCandlestickTitle")}
                 </h4>
-                <div className="h-[300px]">
-                  <CandlestickChart data={dailyStats} />
+                <div ref={candlestickContainerRef} className="h-[300px]">
+                  <CandlestickChart data={dailyStats} chartHeight={candlestickChartHeight} />
                 </div>
               </div>
 
@@ -380,7 +392,7 @@ export function DetailDialog({
 // ============================================================================
 // Custom Candlestick Chart using Recharts ComposedChart
 // ============================================================================
-function CandlestickChart({ data }: { data: DailyStat[] }) {
+function CandlestickChart({ data, chartHeight = 300 }: { data: DailyStat[]; chartHeight?: number }) {
   // For proper candlestick rendering, we use custom shapes
   const chartData = data.map((d) => ({
     ...d,
@@ -399,13 +411,13 @@ function CandlestickChart({ data }: { data: DailyStat[] }) {
     const { x = 0, width = 0, payload } = props;
     if (!payload) return null;
 
-    const chartHeight = 250; // approximate inner height
+    const computedChartHeight = chartHeight - 30; // approximate inner height minus axes padding
     const allPrices = data.flatMap((d) => [d.high, d.low]);
     const minPrice = Math.min(...allPrices);
     const maxPrice = Math.max(...allPrices);
     const range = maxPrice - minPrice || 1;
 
-    const yScale = (val: number) => chartHeight - ((val - minPrice) / range) * chartHeight;
+    const yScale = (val: number) => computedChartHeight - ((val - minPrice) / range) * computedChartHeight;
     const barWidth = Math.min(width * 0.6, 12);
     const centerX = x + width / 2;
 

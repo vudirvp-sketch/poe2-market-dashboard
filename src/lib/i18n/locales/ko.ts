@@ -213,6 +213,14 @@ const ko: Record<TranslationKeys, string> = {
   chinese: "\u4E2D\u6587",
   korean: "\uD55C\uAD6D\uC5B4",
 
+  // Accessibility (WCAG 2.1 AA)
+  switchLanguage: "\uC5B8\uC5B4 \uBCC0\uACBD",
+  switchToLightMode: "\uC77C\uBCF8 \uBAA8\uB4DC\uB85C \uC804\uD658",
+  switchToDarkMode: "\uC5B4\uB450\uC6B4 \uBAA8\uB4DC\uB85C \uC804\uD658",
+  refreshData: "\uB370\uC774\uD130 \uC0C8\uB85C\uACE0\uCE68",
+  disableAutoRefresh: "\uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uBE44\uD65C\uC131\uD654",
+  enableAutoRefresh: "\uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uD65C\uC131\uD654",
+
   // Timeframes
   timeframe24h: "24\uC2DC",
   timeframe7d: "7\uC77C",

@@ -81,6 +81,7 @@ export const CurrencyCard = memo(function CurrencyCard({
           e.stopPropagation();
           toggleFavorite(item.id);
         }}
+        aria-label={fav ? t("removeFromFavorites") : t("addToFavorites")}
       >
         <Star
           className={`h-4 w-4 ${
@@ -98,6 +99,7 @@ export const CurrencyCard = memo(function CurrencyCard({
         } transition-opacity`}
         onClick={handleCompareClick}
         title={inComparison ? t("removeFromComparison") : t("addToComparison")}
+        aria-label={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
           className={`h-4 w-4 ${

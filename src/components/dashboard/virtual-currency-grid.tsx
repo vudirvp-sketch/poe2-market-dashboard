@@ -1,10 +1,11 @@
 // ============================================================================
 // Virtualized Currency Grid — Renders currency cards with virtualization
 // for leagues with 100+ currencies. Uses @tanstack/react-virtual.
+// Task 6.12: Responsive columns via ResizeObserver (was hardcoded before).
 // ============================================================================
 "use client";
 
-import { useRef, useCallback, memo } from "react";
+import { useRef, useCallback, memo, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Coins, Star, GitCompare } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,8 @@ interface VirtualCurrencyGridProps {
 const CARD_HEIGHT = 160;
 // Gap between cards
 const GAP = 12;
+// Minimum card width in px for responsive column calculation
+const MIN_CARD_WIDTH = 280;
 
 // ---------------------------------------------------------------------------
 // Inner Card Component (memoized for virtual list performance)
@@ -94,6 +97,14 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
       className="cursor-pointer hover:border-primary/50 transition-colors group relative"
       onClick={() => onClick(item)}
       onMouseEnter={handleMouseEnter}
+      role="gridcell"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(item);
+        }
+      }}
     >
       {/* Star (favorite) button */}
       <button
@@ -110,6 +121,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
               ? "fill-yellow-400 text-yellow-400"
               : "text-muted-foreground hover:text-yellow-400"
           }`}
+          aria-hidden="true"
         />
       </button>
 
@@ -127,6 +139,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
               ? "text-primary"
               : "text-muted-foreground hover:text-primary"
           }`}
+          aria-hidden="true"
         />
       </button>
 
@@ -139,7 +152,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
               className="w-8 h-8 object-contain shrink-0"
             />
           ) : (
-            <Coins className="w-8 h-8 text-muted-foreground shrink-0" />
+            <Coins className="w-8 h-8 text-muted-foreground shrink-0" aria-hidden="true" />
           )}
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm font-semibold truncate">
@@ -187,7 +200,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
 });
 
 // ---------------------------------------------------------------------------
-// Main Virtualized Grid Component
+// Main Virtualized Grid Component — with responsive columns (Task 6.12)
 // ---------------------------------------------------------------------------
 
 export function VirtualCurrencyGrid({
@@ -199,65 +212,118 @@ export function VirtualCurrencyGrid({
 }: VirtualCurrencyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Calculate the number of columns based on container width
-  // We'll use CSS grid and let the virtualizer handle row-level rendering
-  const COLUMN_MIN_WIDTH = 220; // minimum card width in px
+  // Responsive column count based on container width via ResizeObserver
+  const [columns, setColumns] = useState(4);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const virtualizer = useVirtualizer({
-    count: items.length,
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateColumns = (width: number) => {
+      setColumns(Math.max(1, Math.floor(width / MIN_CARD_WIDTH)));
+    };
+
+    // Initial measurement
+    updateColumns(el.clientWidth);
+
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0].contentRect.width;
+      updateColumns(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Calculate the number of rows (each row has `columns` cards)
+  const rowCount = Math.ceil(items.length / columns);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => CARD_HEIGHT + GAP,
     overscan: 5,
   });
+
+  // Keyboard navigation: arrow keys to move focus between grid cells
+  const handleGridKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const gridcells = containerRef.current?.querySelectorAll('[role="gridcell"]');
+      if (!gridcells || !gridcells.length) return;
+
+      const currentIdx = Array.from(gridcells).indexOf(target);
+      if (currentIdx === -1) return;
+
+      let nextIdx = -1;
+      if (e.key === "ArrowRight") nextIdx = currentIdx + 1;
+      else if (e.key === "ArrowLeft") nextIdx = currentIdx - 1;
+      else if (e.key === "ArrowDown") nextIdx = currentIdx + columns;
+      else if (e.key === "ArrowUp") nextIdx = currentIdx - columns;
+
+      if (nextIdx >= 0 && nextIdx < gridcells.length) {
+        e.preventDefault();
+        (gridcells[nextIdx] as HTMLElement).focus();
+      }
+    },
+    [columns]
+  );
 
   return (
     <div
       ref={parentRef}
       className="overflow-auto"
       style={{ maxHeight: "75vh" }}
-      role="list"
-      aria-label="Currency items grid"
     >
       <div
+        ref={containerRef}
         style={{
-          height: `${virtualizer.getTotalSize()}px`,
+          height: `${rowVirtualizer.getTotalSize()}px`,
           width: "100%",
           position: "relative",
         }}
+        role="grid"
+        aria-label="Currency items grid"
+        onKeyDown={handleGridKeyDown}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(auto-fill, minmax(${COLUMN_MIN_WIDTH}px, 1fr))`,
-            gap: `${GAP}px`,
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualItem) => {
-            const item = items[virtualItem.index];
-            return (
-              <div
-                key={item.id}
-                style={{
-                  transform: `translateY(${virtualItem.start - virtualItem.index * (CARD_HEIGHT + GAP) + virtualItem.index * (CARD_HEIGHT + GAP)}px)`,
-                  height: `${CARD_HEIGHT}px`,
-                }}
-                role="listitem"
-              >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const startIdx = virtualRow.index * columns;
+          const rowItems = items.slice(startIdx, startIdx + columns);
+
+          return (
+            <div
+              key={virtualRow.index}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: `${virtualRow.size}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+                display: "grid",
+                gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                gap: `${GAP}px`,
+              }}
+              role="row"
+            >
+              {rowItems.map((item) => (
                 <VirtualCurrencyCard
+                  key={item.id}
                   item={item}
                   onClick={onItemClick}
                   realm={realm}
                   league={league}
                   referenceCurrency={referenceCurrency}
                 />
-              </div>
-            );
-          })}
-        </div>
+              ))}
+              {/* Fill empty cells in the last row to maintain consistent grid */}
+              {rowItems.length < columns &&
+                Array.from({ length: columns - rowItems.length }).map((_, i) => (
+                  <div key={`empty-${i}`} role="gridcell" />
+                ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

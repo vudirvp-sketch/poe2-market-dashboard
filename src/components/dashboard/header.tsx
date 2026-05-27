@@ -231,21 +231,21 @@ export function Header({
           size="sm"
           onClick={onAutoRefreshToggle}
           className="h-9"
-          aria-label={autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"}
+          aria-label={autoRefresh ? t("disableAutoRefresh") : t("enableAutoRefresh")}
         >
-          <Clock className="h-4 w-4 mr-1" />
+          <Clock className="h-4 w-4 mr-1" aria-hidden="true" />
           {autoRefresh ? "60s" : t("autoRefresh")}
         </Button>
 
         {/* Refresh */}
-        <Button variant="outline" size="sm" onClick={onRefresh} className="h-9" aria-label={t("refresh")}>
-          <RefreshCw className="h-4 w-4 mr-1" />
+        <Button variant="outline" size="sm" onClick={onRefresh} className="h-9" aria-label={t("refreshData")}>
+          <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
           {t("refresh")}
         </Button>
 
         {/* Last updated */}
         {lastUpdated && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground" aria-live="polite" role="status">
             {timeAgo}
           </span>
         )}
@@ -258,9 +258,9 @@ export function Header({
               size="sm"
               className="h-9 text-xs"
               onClick={() => onExport("csv")}
-              aria-label="Export CSV"
+              aria-label={t("exportCsv")}
             >
-              <Download className="h-3.5 w-3.5 mr-1" />
+              <Download className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
               {t("exportCsv")}
             </Button>
             <Button
@@ -268,9 +268,9 @@ export function Header({
               size="sm"
               className="h-9 text-xs"
               onClick={() => onExport("json")}
-              aria-label="Export JSON"
+              aria-label={t("exportJson")}
             >
-              <Download className="h-3.5 w-3.5 mr-1" />
+              <Download className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
               {t("exportJson")}
             </Button>
           </div>
@@ -282,10 +282,10 @@ export function Header({
           size="sm"
           className="h-9 gap-1"
           onClick={cycleLocale}
-          title={t("language")}
-          aria-label={t("language")}
+          title={t("switchLanguage")}
+          aria-label={t("switchLanguage")}
         >
-          <Globe className="h-4 w-4" />
+          <Globe className="h-4 w-4" aria-hidden="true" />
           <span className="text-xs">{LOCALE_LABELS[locale]}</span>
         </Button>
 
@@ -295,12 +295,12 @@ export function Header({
           size="sm"
           className="h-9"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={theme === "dark" ? t("switchToLightMode") : t("switchToDarkMode")}
         >
           {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
+            <Sun className="h-4 w-4" aria-hidden="true" />
           ) : (
-            <Moon className="h-4 w-4" />
+            <Moon className="h-4 w-4" aria-hidden="true" />
           )}
         </Button>
       </div>

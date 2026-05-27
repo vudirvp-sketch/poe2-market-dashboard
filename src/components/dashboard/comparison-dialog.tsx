@@ -201,8 +201,9 @@ export function ComparisonDialog({
               <button
                 onClick={() => removeFromComparison(item.id)}
                 className="ml-1 hover:bg-muted rounded p-0.5"
+                aria-label={t("removeFromComparison")}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
             </Badge>
           ))}
@@ -216,8 +217,9 @@ export function ComparisonDialog({
             size="sm"
             className="h-6 text-xs text-muted-foreground ml-auto"
             onClick={clearComparison}
+            aria-label={t("clearAll")}
           >
-            <Trash2 className="h-3 w-3 mr-1" />
+            <Trash2 className="h-3 w-3 mr-1" aria-hidden="true" />
             {t("clearAll")}
           </Button>
         </div>
@@ -346,9 +348,9 @@ export function ComparisonDialog({
                           className={`py-2 px-3 text-right font-mono ${
                             changePct != null
                               ? changePct > 0
-                                ? "text-emerald-400"
+                                ? "text-emerald-500 dark:text-emerald-400"
                                 : changePct < 0
-                                ? "text-red-400"
+                                ? "text-red-500 dark:text-red-400"
                                 : ""
                               : ""
                           }`}
