@@ -256,6 +256,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
       fetchApi<ExchangePair[]>("/api/poe2/exchange", {
         realm: realm ?? "",
         league: league ?? "",
+        action: "pairs",
       }),
     enabled: !!realm && !!league,
     staleTime: 60_000,

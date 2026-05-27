@@ -20,7 +20,7 @@ if !ERRORLEVEL! neq 0 (
 )
 
 for /f "tokens=*" %%v in ('node -v') do set NODE_VERSION=%%v
-echo [OK] Node.js found: %NODE_VERSION%
+echo [OK] Node.js found: !NODE_VERSION!
 echo.
 
 REM ---- Check npm ----
@@ -38,11 +38,10 @@ echo.
 REM ---- Check .env.local ----
 if not exist ".env.local" (
     echo [INFO] .env.local not found. Creating with default settings...
-    echo # PoE2 API Base URL - change this if poe2scout.com is unreachable> .env.local
-    echo POE2_API_BASE_URL=https://poe2scout.com/api>> .env.local
+    echo # PoE2 API Base URL> .env.local
+    echo POE2_API_BASE_URL=https://api.poe2scout.com/api>> .env.local
     echo.
-    echo [OK] .env.local created. If the API returns 502 errors, edit this file
-    echo       and try: POE2_API_BASE_URL=https://api.poe2scout.com/api
+    echo [OK] .env.local created with api.poe2scout.com
     echo.
 ) else (
     echo [OK] .env.local found.
@@ -62,7 +61,7 @@ echo.
 REM ---- Install dependencies if needed ----
 if not exist "node_modules\" (
     echo [INFO] node_modules not found. Installing dependencies...
-    echo This may take a few minutes on first run...
+    echo This may take a few minutes on first run
     echo.
     call npm install
     if !ERRORLEVEL! neq 0 (
@@ -81,13 +80,13 @@ if not exist "node_modules\" (
 )
 
 REM ---- Build project ----
-REM Use --skip-build flag to skip:  start.bat --skip-build
-REM Use --dev flag for dev mode:    start.bat --dev
+REM Use --skip-build flag to skip: start.bat --skip-build
+REM Use --dev flag for dev mode: start.bat --dev
 if "%~1"=="--dev" (
-    echo [INFO] Starting in DEVELOPMENT mode (--dev flag)...
+    echo [INFO] Starting in DEVELOPMENT mode ^(--dev flag^)
     echo.
     echo ============================================================
-    echo   Starting PoE2 Market Dashboard (DEV MODE)...
+    echo   Starting PoE2 Market Dashboard ^ DEV MODE
     echo   Open your browser: http://localhost:3000
     echo.
     echo   Press Ctrl+C to stop the server.
@@ -98,7 +97,7 @@ if "%~1"=="--dev" (
 )
 
 if "%~1"=="--skip-build" (
-    echo [INFO] Skipping build --skip-build flag provided.
+    echo [INFO] Skipping build ^(--skip-build flag^)
     echo.
 ) else (
     echo [INFO] Building project...
@@ -110,8 +109,8 @@ if "%~1"=="--skip-build" (
         echo [ERROR] Build failed! Check the errors above.
         echo.
         echo [TIP] You can try:
-        echo       1. start.bat --dev       (development mode, no build needed)
-        echo       2. start.bat --skip-build (skip build, use existing .next)
+        echo       1. start.bat --dev       - development mode, no build needed
+        echo       2. start.bat --skip-build - skip build, use existing .next
         echo.
         pause
         exit /b 1

@@ -1,6 +1,6 @@
 // ============================================================================
 // PoE2 Scout API — Server-side fetch functions + in-memory cache
-// Base URL: configurable via POE2_API_BASE_URL env var (default: https://poe2scout.com/api)
+// Base URL: configurable via POE2_API_BASE_URL env var (default: https://api.poe2scout.com/api)
 //
 // v4 FIXES:
 // 1. API base URL is now configurable via POE2_API_BASE_URL environment variable
@@ -33,7 +33,7 @@ import type {
 } from "./types";
 
 // ---------- Configurable API Base URL ----------
-const BASE_URL = process.env.POE2_API_BASE_URL || "https://poe2scout.com/api";
+const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
 
 // ---------- Simple in-memory cache (60s TTL) ----------
 const cache = new Map<string, { data: unknown; ts: number }>();
