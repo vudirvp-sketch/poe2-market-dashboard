@@ -1,9 +1,9 @@
 // ============================================================================
-// Header Component (realm/league select, search, refresh, auto-refresh, theme, base currency)
+// Header Component (realm/league select, search with debounce, refresh, auto-refresh, theme, base currency)
 // ============================================================================
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Search,
   RefreshCw,
@@ -70,6 +70,35 @@ export function Header({
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const [timeAgo, setTimeAgo] = useState<string>("");
+  const [localSearch, setLocalSearch] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync external search changes (e.g. clear button) back to local
+  useEffect(() => {
+    if (search !== localSearch) {
+      setLocalSearch(search);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  // Debounced search handler — 300ms delay
+  const handleSearchInput = useCallback(
+    (value: string) => {
+      setLocalSearch(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        onSearchChange(value);
+      }, 300);
+    },
+    [onSearchChange]
+  );
+
+  // Clear search immediately
+  const handleClearSearch = useCallback(() => {
+    setLocalSearch("");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    onSearchChange("");
+  }, [onSearchChange]);
 
   useEffect(() => {
     if (!lastUpdated) return;
@@ -82,6 +111,13 @@ export function Header({
     }, 1000);
     return () => clearInterval(interval);
   }, [lastUpdated]);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
@@ -151,18 +187,18 @@ export function Header({
           </Select>
         )}
 
-        {/* Search */}
+        {/* Search (debounced) */}
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search items..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={(e) => handleSearchInput(e.target.value)}
             className="pl-9 h-9"
           />
-          {search && (
+          {localSearch && (
             <button
-              onClick={() => onSearchChange("")}
+              onClick={handleClearSearch}
               className="absolute right-2.5 top-2.5"
             >
               <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />

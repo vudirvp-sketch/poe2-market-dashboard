@@ -1,9 +1,9 @@
 // ============================================================================
-// Unique Items Table with sorting (@tanstack/react-table)
+// Unique Items Table with sorting + Compare button + Prefetch on hover
 // ============================================================================
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -12,21 +12,27 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { useState } from "react";
-import { Shield, Star, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, memo } from "react";
+import { Shield, Star, ArrowUpDown, ArrowUp, ArrowDown, GitCompare } from "lucide-react";
 import { Sparkline } from "./sparkline";
-import { fmt, fmtChange } from "@/lib/types";
-import type { PoeItem } from "@/lib/types";
+import { fmt, fmtChange, fetchApi } from "@/lib/types";
+import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface UniqueTableProps {
   items: PoeItem[];
   onItemClick: (item: PoeItem) => void;
+  realm?: string;
+  league?: string;
+  referenceCurrency?: string;
 }
 
-export function UniqueTable({ items, onItemClick }: UniqueTableProps) {
+export function UniqueTable({ items, onItemClick, realm, league, referenceCurrency }: UniqueTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { isFavorite, toggleFavorite } = useDashboardStore();
+  const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison } =
+    useDashboardStore();
+  const queryClient = useQueryClient();
 
   const columns = useMemo<ColumnDef<PoeItem>[]>(
     () => [
@@ -148,8 +154,34 @@ export function UniqueTable({ items, onItemClick }: UniqueTableProps) {
         },
         enableSorting: false,
       },
+      {
+        id: "compare",
+        header: "",
+        cell: ({ row }) => {
+          const item = row.original;
+          const inComp = isInComparison(item.id);
+          return (
+            <button
+              className={`shrink-0 p-1 rounded transition-colors ${
+                inComp
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-primary"
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (inComp) removeFromComparison(item.id);
+                else addToComparison(item.id);
+              }}
+              title={inComp ? "Remove from comparison" : "Add to comparison"}
+            >
+              <GitCompare className="h-3.5 w-3.5" />
+            </button>
+          );
+        },
+        enableSorting: false,
+      },
     ],
-    [isFavorite, toggleFavorite]
+    [isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison]
   );
 
   const table = useReactTable({
@@ -160,6 +192,26 @@ export function UniqueTable({ items, onItemClick }: UniqueTableProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
+
+  // Prefetch detail on row hover
+  const handleRowMouseEnter = useCallback(
+    (item: PoeItem) => {
+      if (!realm || !league) return;
+      queryClient.prefetchQuery({
+        queryKey: ["itemHistory", realm, league, item.id, referenceCurrency],
+        queryFn: () =>
+          fetchApi<PoeItemHistoryPoint[]>("/api/poe2/items", {
+            realm,
+            league,
+            action: "history",
+            itemId: item.id,
+            logCount: "168",
+            referenceCurrency: referenceCurrency || "",
+          }),
+      });
+    },
+    [queryClient, realm, league, referenceCurrency]
+  );
 
   return (
     <div className="rounded-md border border-border overflow-hidden">
@@ -181,6 +233,8 @@ export function UniqueTable({ items, onItemClick }: UniqueTableProps) {
                         ? "text-left"
                         : header.id === "trend"
                         ? "text-center w-[100px]"
+                        : header.id === "compare"
+                        ? "w-[40px]"
                         : "text-right"
                     }`}
                     onClick={header.column.getToggleSortingHandler()}
@@ -200,6 +254,7 @@ export function UniqueTable({ items, onItemClick }: UniqueTableProps) {
                 key={row.id}
                 className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
                 onClick={() => onItemClick(row.original)}
+                onMouseEnter={() => handleRowMouseEnter(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <td
@@ -208,6 +263,8 @@ export function UniqueTable({ items, onItemClick }: UniqueTableProps) {
                       cell.column.id === "name"
                         ? ""
                         : cell.column.id === "trend"
+                        ? "text-center"
+                        : cell.column.id === "compare"
                         ? "text-center"
                         : "text-right"
                     }`}

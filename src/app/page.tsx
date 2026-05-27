@@ -10,9 +10,11 @@ import {
   BarChart3,
   Loader2,
   AlertTriangle,
+  GitCompare,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 import { Header } from "@/components/dashboard/header";
 import { CurrencyCard } from "@/components/dashboard/currency-card";
@@ -22,6 +24,7 @@ import { DetailDialog } from "@/components/dashboard/detail-dialog";
 import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { WatchlistTab } from "@/components/dashboard/watchlist-tab";
+import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
 import { Pagination } from "@/components/dashboard/pagination";
 
 import {
@@ -40,6 +43,7 @@ import type {
   PaginatedResponse,
   ReferenceCurrency,
 } from "@/lib/types";
+import { useDashboardStore } from "@/lib/store";
 
 // ============================================================================
 // Main Dashboard
@@ -66,12 +70,18 @@ export default function Dashboard() {
   const [detailPair, setDetailPair] = useState<ExchangePair | null>(null);
   const [pairDetailOpen, setPairDetailOpen] = useState(false);
 
+  // --- Comparison dialog ---
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+
   // --- Auto-refresh ---
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // --- Base currency ---
   const [referenceCurrency, setReferenceCurrency] = useState("");
+
+  // --- Comparison store ---
+  const { comparisonIds } = useDashboardStore();
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -101,6 +111,13 @@ export default function Dashboard() {
         league: effectiveLeague,
         action: "reference",
       }),
+    enabled: !!effectiveLeague,
+  });
+
+  // All items (for comparison resolution + overview)
+  const { data: allItems } = useQuery({
+    queryKey: ["allItems", realm, effectiveLeague],
+    queryFn: () => fetchApi<PoeItem[]>("/api/poe2/items", { realm, league: effectiveLeague }),
     enabled: !!effectiveLeague,
   });
 
@@ -395,30 +412,46 @@ export default function Dashboard() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Category filter buttons (only for currencies/uniques) */}
-              {(tab === "currencies" || tab === "uniques") && (
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge
-                    variant={categoryFilter === "all" ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => setCategoryFilter("all")}
+              <div className="flex items-center gap-2">
+                {/* Comparison badge button */}
+                {comparisonIds.length > 0 && (
+                  <Button
+                    variant={comparisonIds.length >= 2 ? "default" : "outline"}
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => setComparisonOpen(true)}
+                    disabled={comparisonIds.length < 2}
                   >
-                    All
-                  </Badge>
-                  {currentCategories.map((cat) => (
+                    <GitCompare className="h-3.5 w-3.5" />
+                    Compare ({comparisonIds.length})
+                  </Button>
+                )}
+
+                {/* Category filter buttons (only for currencies/uniques) */}
+                {(tab === "currencies" || tab === "uniques") && (
+                  <div className="flex flex-wrap gap-1.5">
                     <Badge
-                      key={cat.name}
-                      variant={
-                        categoryFilter === cat.name ? "default" : "outline"
-                      }
+                      variant={categoryFilter === "all" ? "default" : "outline"}
                       className="cursor-pointer"
-                      onClick={() => setCategoryFilter(cat.name)}
+                      onClick={() => setCategoryFilter("all")}
                     >
-                      {cat.displayName}
+                      All
                     </Badge>
-                  ))}
-                </div>
-              )}
+                    {currentCategories.map((cat) => (
+                      <Badge
+                        key={cat.name}
+                        variant={
+                          categoryFilter === cat.name ? "default" : "outline"
+                        }
+                        className="cursor-pointer"
+                        onClick={() => setCategoryFilter(cat.name)}
+                      >
+                        {cat.displayName}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ============ OVERVIEW TAB ============ */}
@@ -448,6 +481,9 @@ export default function Dashboard() {
                         key={item.id}
                         item={item}
                         onClick={openDetail}
+                        realm={realm}
+                        league={effectiveLeague}
+                        referenceCurrency={referenceCurrency}
                       />
                     ))}
                   </div>
@@ -482,6 +518,9 @@ export default function Dashboard() {
                   <UniqueTable
                     items={uniquesData.items}
                     onItemClick={openDetail}
+                    realm={realm}
+                    league={effectiveLeague}
+                    referenceCurrency={referenceCurrency}
                   />
                   <Pagination
                     page={uniquesPage}
@@ -551,6 +590,16 @@ export default function Dashboard() {
         onOpenChange={setPairDetailOpen}
         realm={realm}
         league={effectiveLeague}
+      />
+
+      {/* ============ COMPARISON DIALOG ============ */}
+      <ComparisonDialog
+        open={comparisonOpen}
+        onOpenChange={setComparisonOpen}
+        realm={realm}
+        league={effectiveLeague}
+        referenceCurrency={referenceCurrency}
+        allItems={allItems}
       />
     </div>
   );

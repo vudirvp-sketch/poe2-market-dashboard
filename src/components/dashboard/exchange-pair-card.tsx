@@ -1,8 +1,9 @@
 // ============================================================================
-// Exchange Pair Card + Currency Pair Detail
+// Exchange Pair Card (React.memo)
 // ============================================================================
 "use client";
 
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Coins, ArrowLeftRight } from "lucide-react";
 import { fmt, fmtChange } from "@/lib/types";
@@ -13,7 +14,10 @@ interface ExchangePairCardProps {
   onClick: (pair: ExchangePair) => void;
 }
 
-export function ExchangePairCard({ pair, onClick }: ExchangePairCardProps) {
+export const ExchangePairCard = memo(function ExchangePairCard({
+  pair,
+  onClick,
+}: ExchangePairCardProps) {
   const chg = fmtChange(pair.changePercent);
   return (
     <Card
@@ -64,4 +68,4 @@ export function ExchangePairCard({ pair, onClick }: ExchangePairCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
