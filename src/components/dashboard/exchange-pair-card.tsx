@@ -1,5 +1,6 @@
 // ============================================================================
 // Exchange Pair Card (React.memo)
+// WCAG 2.1 AA: aria-hidden on decorative icons, role, keyboard nav
 // ============================================================================
 "use client";
 
@@ -49,6 +50,14 @@ export const ExchangePairCard = memo(function ExchangePairCard({
     <Card
       className="hover:border-primary/50 transition-colors cursor-pointer group relative"
       onClick={() => onClick(pair)}
+      role="listitem"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(pair);
+        }
+      }}
     >
       {/* Compare button */}
       <button
@@ -56,7 +65,6 @@ export const ExchangePairCard = memo(function ExchangePairCard({
           inComparison ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         } transition-opacity`}
         onClick={handleCompareClick}
-        title={inComparison ? t("removeFromComparison") : t("addToComparison")}
         aria-label={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
@@ -65,6 +73,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
               ? "text-primary"
               : "text-muted-foreground hover:text-primary"
           }`}
+          aria-hidden="true"
         />
       </button>
 
@@ -78,11 +87,11 @@ export const ExchangePairCard = memo(function ExchangePairCard({
                 className="w-5 h-5 object-contain"
               />
             ) : (
-              <Coins className="w-5 h-5 text-muted-foreground" />
+              <Coins className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
             )}
             <span className="font-medium text-sm">{pair.currency1Name}</span>
           </div>
-          <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+          <ArrowLeftRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">{pair.currency2Name}</span>
             {pair.currency2IconUrl ? (
@@ -92,7 +101,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
                 className="w-5 h-5 object-contain"
               />
             ) : (
-              <Coins className="w-5 h-5 text-muted-foreground" />
+              <Coins className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
             )}
           </div>
         </div>
@@ -106,7 +115,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             </span>
           </div>
           <span className="text-xs text-muted-foreground">
-            {t("vol")}: {pair.volume?.toLocaleString() ?? "—"}
+            {t("vol")}: {pair.volume?.toLocaleString() ?? "\u2014"}
           </span>
         </div>
       </CardContent>

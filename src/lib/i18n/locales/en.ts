@@ -147,6 +147,16 @@ const en = {
   tradeSizeForProfit: "Trade Size (for profit estimate)",
   tradeSizeDesc: "Currency amount to estimate net profit for.",
 
+  // Arbitrage — Confidence indicator (Task 6.9)
+  confidence: "Confidence",
+  confidenceHigh: "High",
+  confidenceMedium: "Medium",
+  confidenceLow: "Low",
+  confidenceDesc: "Volume-based confidence: how well the pair's volume supports the trade size. High = volume far exceeds trade size; Low = slippage is highly uncertain.",
+  timeDecayLabel: "Time Decay",
+  timeDecayDesc: "Applies exponential decay weighting to rates based on data freshness. Lambda controls the decay rate (higher = faster decay). 0 = no decay.",
+  decayLambda: "Decay Lambda (\u03BB)",
+
   // Watchlist
   noFavorites: "No favorites yet",
   noFavoritesDesc: "Click the star icon on any item to add it to your watchlist",

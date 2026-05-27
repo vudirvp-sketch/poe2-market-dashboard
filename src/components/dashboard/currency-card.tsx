@@ -1,5 +1,6 @@
 // ============================================================================
 // Currency Card component (React.memo + Compare button + Prefetch on hover)
+// WCAG 2.1 AA: role, tabIndex, aria-hidden on decorative icons, keyboard nav
 // ============================================================================
 "use client";
 
@@ -73,6 +74,14 @@ export const CurrencyCard = memo(function CurrencyCard({
       className="cursor-pointer hover:border-primary/50 transition-colors group relative"
       onClick={() => onClick(item)}
       onMouseEnter={handleMouseEnter}
+      role="listitem"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(item);
+        }
+      }}
     >
       {/* Star (favorite) button */}
       <button
@@ -89,6 +98,7 @@ export const CurrencyCard = memo(function CurrencyCard({
               ? "fill-yellow-400 text-yellow-400"
               : "text-muted-foreground hover:text-yellow-400"
           }`}
+          aria-hidden="true"
         />
       </button>
 
@@ -98,7 +108,6 @@ export const CurrencyCard = memo(function CurrencyCard({
           inComparison ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         } transition-opacity`}
         onClick={handleCompareClick}
-        title={inComparison ? t("removeFromComparison") : t("addToComparison")}
         aria-label={inComparison ? t("removeFromComparison") : t("addToComparison")}
       >
         <GitCompare
@@ -107,6 +116,7 @@ export const CurrencyCard = memo(function CurrencyCard({
               ? "text-primary"
               : "text-muted-foreground hover:text-primary"
           }`}
+          aria-hidden="true"
         />
       </button>
 
@@ -119,7 +129,7 @@ export const CurrencyCard = memo(function CurrencyCard({
               className="w-8 h-8 object-contain shrink-0"
             />
           ) : (
-            <Coins className="w-8 h-8 text-muted-foreground shrink-0" />
+            <Coins className="w-8 h-8 text-muted-foreground shrink-0" aria-hidden="true" />
           )}
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm font-semibold truncate">

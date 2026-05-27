@@ -1,5 +1,6 @@
 // ============================================================================
 // Unique Items Table with sorting + Compare button + Prefetch on hover
+// WCAG 2.1 AA: aria-hidden on decorative icons, keyboard row navigation
 // ============================================================================
 "use client";
 
@@ -62,6 +63,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-muted-foreground hover:text-yellow-400"
                   }`}
+                  aria-hidden="true"
                 />
               </button>
               {item.iconUrl ? (
@@ -71,7 +73,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                   className="w-6 h-6 object-contain"
                 />
               ) : (
-                <Shield className="w-6 h-6 text-muted-foreground" />
+                <Shield className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
               )}
               <div>
                 <span className="font-medium">{item.name}</span>
@@ -131,7 +133,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
           <span className="font-mono text-muted-foreground">
             {row.original.volume != null
               ? row.original.volume.toLocaleString()
-              : "—"}
+              : "\u2014"}
           </span>
         ),
       },
@@ -176,10 +178,9 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                 if (inComp) removeFromComparison(item.id);
                 else addToComparison(item.id);
               }}
-              title={inComp ? t("removeFromComparison") : t("addToComparison")}
               aria-label={inComp ? t("removeFromComparison") : t("addToComparison")}
             >
-              <GitCompare className="h-3.5 w-3.5" />
+              <GitCompare className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           );
         },
@@ -230,9 +231,9 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
   );
 
   return (
-    <div className="rounded-md border border-border overflow-hidden">
+    <div className="rounded-md border border-border overflow-hidden" role="region" aria-label="Unique items table">
       <div ref={parentRef} className="overflow-auto" style={{ maxHeight: "70vh" }}>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" role="table">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
@@ -254,6 +255,13 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                         : "text-right"
                     }`}
                     onClick={header.column.getToggleSortingHandler()}
+                    aria-sort={
+                      header.column.getIsSorted() === "asc"
+                        ? "ascending"
+                        : header.column.getIsSorted() === "desc"
+                        ? "descending"
+                        : undefined
+                    }
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -281,6 +289,14 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                   className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
                   onClick={() => onItemClick(row.original)}
                   onMouseEnter={() => handleRowMouseEnter(row.original)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onItemClick(row.original);
+                    }
+                  }}
+                  role="row"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
@@ -328,7 +344,7 @@ function SortHeader({
     >
       {children}
       {column.getCanSort() && (
-        <span className="inline-flex">
+        <span className="inline-flex" aria-hidden="true">
           {sorted === "asc" ? (
             <ArrowUp className="h-3.5 w-3.5" />
           ) : sorted === "desc" ? (

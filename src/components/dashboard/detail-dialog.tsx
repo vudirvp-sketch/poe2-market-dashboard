@@ -1,9 +1,11 @@
 // ============================================================================
 // Detail Dialog — Item detail with price/volume charts + candlestick toggle
+// Task 6.11 fix: improved chartHeight measurement using ResizeObserver on
+// the actual SVG plot area instead of hardcoded offset
 // ============================================================================
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart,
@@ -56,15 +58,63 @@ export function DetailDialog({
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
 
-  // Ref-based chart height measurement for candlestick chart (Task 6.11)
+  // Task 6.11: Accurate chart height measurement via ResizeObserver
+  // Instead of hardcoded `chartHeight - 30`, we observe the actual rendered
+  // SVG container and derive the plot area height from it.
   const candlestickContainerRef = useRef<HTMLDivElement>(null);
-  const [candlestickChartHeight, setCandlestickChartHeight] = useState(300);
+  const [candlestickChartHeight, setCandlestickChartHeight] = useState(270);
+  // Track the actual chart plot area using a ResizeObserver on the Recharts SVG
+  const chartSvgRef = useRef<SVGSVGElement | null>(null);
 
+  // Measure the actual chart area after render
   useEffect(() => {
-    if (candlestickContainerRef.current) {
-      const height = candlestickContainerRef.current.clientHeight;
-      if (height > 0) setCandlestickChartHeight(height);
-    }
+    if (!open || chartMode !== "daily" || !candlestickContainerRef.current) return;
+
+    // The ResponsiveContainer creates a wrapper div; we need the SVG inside it
+    const measureChart = () => {
+      const container = candlestickContainerRef.current;
+      if (!container) return;
+
+      // Try to find the SVG rendered by ResponsiveContainer
+      const svg = container.querySelector(".recharts-surface") as SVGSVGElement | null;
+      if (svg) {
+        chartSvgRef.current = svg;
+        // The plot area height = SVG height - top margin - bottom margin (X axis)
+        // Recharts default margins are typically { top: 5, right: 5, bottom: 5, left: 5 }
+        // But with XAxis visible, bottom is ~30px. We use the actual SVG clientHeight.
+        const svgHeight = svg.clientHeight || svg.getBoundingClientRect().height;
+        if (svgHeight > 0) {
+          // Subtract typical axis/padding height: XAxis (~30px) + top padding (~5px)
+          const plotAreaHeight = svgHeight - 35;
+          if (plotAreaHeight > 50) {
+            setCandlestickChartHeight(plotAreaHeight);
+          }
+        }
+      } else {
+        // Fallback: use container height minus estimated axis/padding
+        const containerHeight = container.clientHeight;
+        if (containerHeight > 0) {
+          const plotAreaHeight = containerHeight - 50; // XAxis + padding
+          if (plotAreaHeight > 50) {
+            setCandlestickChartHeight(plotAreaHeight);
+          }
+        }
+      }
+    };
+
+    // Delay measurement to allow Recharts to render
+    const timer = setTimeout(measureChart, 100);
+
+    // Also observe container resize for responsive updates
+    const observer = new ResizeObserver(() => {
+      measureChart();
+    });
+    observer.observe(container);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [chartMode, open]);
 
   // Hourly price history
@@ -160,7 +210,7 @@ export function DetailDialog({
             <div className="rounded-lg bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground">{t("volume")}</p>
               <p className="text-lg font-bold font-mono">
-                {item.volume?.toLocaleString() ?? "—"}
+                {item.volume?.toLocaleString() ?? "\u2014"}
               </p>
             </div>
           </div>
@@ -186,15 +236,15 @@ export function DetailDialog({
           {/* Charts */}
           {chartMode === "hourly" ? (
             detailHistoryLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-10" role="status" aria-live="polite">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
               </div>
             ) : detailHistory && detailHistory.length > 1 ? (
               <div className="mt-4 space-y-4">
                 {/* Price history AreaChart */}
                 <div>
                   <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                    <TrendingUp className="h-4 w-4" /> {t("priceHistory")}
+                    <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("priceHistory")}
                   </h4>
                   <div className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -265,7 +315,7 @@ export function DetailDialog({
                 {/* Volume chart */}
                 <div>
                   <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                    <Activity className="h-4 w-4" /> {t("tradingVolume")}
+                    <Activity className="h-4 w-4" aria-hidden="true" /> {t("tradingVolume")}
                   </h4>
                   <div className="h-[120px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -312,31 +362,31 @@ export function DetailDialog({
                 </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-10">
+              <p className="text-center text-muted-foreground py-10" role="status">
                 {t("noHistory")}
               </p>
             )
           ) : // Daily candlestick mode
           dailyLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-10" role="status" aria-live="polite">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
             </div>
           ) : dailyStats && dailyStats.length > 0 ? (
             <div className="mt-4 space-y-4">
               {/* Candlestick chart using ComposedChart */}
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" /> {t("dailyCandlestickTitle")}
+                  <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("dailyCandlestickTitle")}
                 </h4>
                 <div ref={candlestickContainerRef} className="h-[300px]">
-                  <CandlestickChart data={dailyStats} chartHeight={candlestickChartHeight} />
+                  <CandlestickChart data={dailyStats} chartHeight={candlestickChartHeight} reducedMotion={reducedMotion} />
                 </div>
               </div>
 
               {/* Daily volume */}
               <div>
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <Activity className="h-4 w-4" /> {t("dailyVolume")}
+                  <Activity className="h-4 w-4" aria-hidden="true" /> {t("dailyVolume")}
                 </h4>
                 <div className="h-[120px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -372,6 +422,7 @@ export function DetailDialog({
                         dataKey="volume"
                         fill="#6366f1"
                         radius={[2, 2, 0, 0]}
+                        isAnimationActive={!reducedMotion}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -379,7 +430,7 @@ export function DetailDialog({
               </div>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-10">
+            <p className="text-center text-muted-foreground py-10" role="status">
               {t("noDailyStats")}
             </p>
           )}
@@ -391,8 +442,9 @@ export function DetailDialog({
 
 // ============================================================================
 // Custom Candlestick Chart using Recharts ComposedChart
+// Task 6.11: chartHeight is now measured dynamically via ResizeObserver
 // ============================================================================
-function CandlestickChart({ data, chartHeight = 300 }: { data: DailyStat[]; chartHeight?: number }) {
+function CandlestickChart({ data, chartHeight = 270, reducedMotion = false }: { data: DailyStat[]; chartHeight?: number; reducedMotion?: boolean }) {
   // For proper candlestick rendering, we use custom shapes
   const chartData = data.map((d) => ({
     ...d,
@@ -406,17 +458,18 @@ function CandlestickChart({ data, chartHeight = 300 }: { data: DailyStat[]; char
     isUp: d.close >= d.open,
   }));
 
-  // Custom candlestick shape
+  // Compute Y-axis scale from data for accurate y-positioning
+  const allPrices = data.flatMap((d) => [d.high, d.low]);
+  const minPrice = Math.min(...allPrices);
+  const maxPrice = Math.max(...allPrices);
+  const range = maxPrice - minPrice || 1;
+
+  // Custom candlestick shape — uses measured chartHeight for Y-coordinate mapping
   const CandlestickShape = (props: { x?: number; y?: number; width?: number; height?: number; payload?: typeof chartData[0] }) => {
     const { x = 0, width = 0, payload } = props;
     if (!payload) return null;
 
-    const computedChartHeight = chartHeight - 30; // approximate inner height minus axes padding
-    const allPrices = data.flatMap((d) => [d.high, d.low]);
-    const minPrice = Math.min(...allPrices);
-    const maxPrice = Math.max(...allPrices);
-    const range = maxPrice - minPrice || 1;
-
+    const computedChartHeight = Math.max(chartHeight, 100); // Use the dynamically measured height
     const yScale = (val: number) => computedChartHeight - ((val - minPrice) / range) * computedChartHeight;
     const barWidth = Math.min(width * 0.6, 12);
     const centerX = x + width / 2;

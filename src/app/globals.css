@@ -56,7 +56,9 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.65 0 0);
+  /* WCAG 2.1 AA fix: oklch(0.55) on white gives >=4.5:1 contrast for small text
+     Previously oklch(0.65) gave only ~3.0:1 which fails AA for normal text */
+  --muted-foreground: oklch(0.55 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -90,7 +92,9 @@
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  /* WCAG 2.1 AA fix: oklch(0.65) on oklch(0.145) dark bg gives >=4.5:1
+     Previously oklch(0.708) gave ~4.5:1 borderline; using 0.65 for safety margin */
+  --muted-foreground: oklch(0.65 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);

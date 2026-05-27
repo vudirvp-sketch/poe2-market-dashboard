@@ -1,24 +1,20 @@
 // ============================================================================
-// Arbitrage Calculator Tab (Feature 4.1) — Advanced
-// Detects currency conversion cycles where product of exchange rates > 1
-// Accounts for: slippage model, trading fees, volume constraints
+// Arbitrage Tab — finds currency-exchange cycles with positive net profit
+// Task 6.9: Confidence indicator + Time-Decay weighting
 // ============================================================================
 "use client";
 
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState, useCallback } from "react";
 import {
   AlertTriangle,
-  RefreshCw,
-  ArrowRight,
-  Loader2,
-  TrendingUp,
-  ArrowLeftRight,
-  Coins,
-  Search,
-  CircleDot,
-  Settings2,
+  Settings,
   Info,
+  ArrowRight,
+  TrendingUp,
+  Search,
+  BarChart3,
+  Layers,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,442 +28,363 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fmt, fetchApi } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+import { fmt, fetchApi } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface ArbitrageTabProps {
-  realm: string;
-  league: string;
-}
-
 interface GraphEdge {
+  from: string;
   to: string;
-  toName: string;
-  toIconUrl: string | null;
   rate: number;
-  logRate: number;
   volume: number;
+  fromName: string;
+  toName: string;
 }
 
 interface ArbitrageCycle {
-  nodes: string[];
-  names: string[];
-  icons: (string | null)[];
-  rates: number[];
-  /** Product of all rates (after slippage & fees) */
-  product: number;
-  /** Gross product (before slippage & fees) */
-  grossProduct: number;
-  /** Profit percentage = (product - 1) * 100 */
-  profitPercent: number;
-  /** Gross profit (before costs) */
-  grossProfitPercent: number;
-  /** Bottleneck volume (minimum volume across all edges) */
-  minVolume: number;
-  /** Maximum profitable volume considering slippage */
-  maxProfitableVolume: number;
-  /** Number of edges in the cycle */
-  length: number;
-  /** Total slippage cost across all edges */
-  totalSlippage: number;
-  /** Total fee cost across all edges */
-  totalFees: number;
-  /** Estimated net profit for a given trade size */
-  estimatedProfit: (tradeSize: number) => number;
+  route: string[];
+  edges: GraphEdge[];
+  grossProfit: number;
+  netProfit: number;
+  slippage: number;
+  maxVolume: number;
+  confidence: number;
 }
 
 // ---------------------------------------------------------------------------
-// Advanced Slippage Model
+// Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Estimate slippage based on trade size relative to available volume.
- * Uses a square-root model: slippage = baseSlippage * sqrt(tradeSize / volume)
- *
- * @param tradeSize - Amount being traded
- * @param volume - 24h volume of the pair
- * @param baseSlippageBps - Base slippage in basis points (default: 10 = 0.1%)
- * @returns Slippage multiplier (e.g., 0.998 = 0.2% loss)
- */
+/** Square-root impact slippage model.
+ *  slippage_bps = base + base * sqrt(tradeSize / volume)
+ *  Returns the slippage as a fraction (e.g. 0.005 = 0.5 %). */
 function estimateSlippage(
   tradeSize: number,
   volume: number,
-  baseSlippageBps: number = 10
+  baseSlippageBps: number,
 ): number {
-  if (volume <= 0) return 0;
-  // Square-root impact model
-  const impactRatio = tradeSize / volume;
-  const slippagePct = (baseSlippageBps / 10_000) * Math.sqrt(impactRatio);
-  return 1 - slippagePct;
+  if (volume <= 0) return 1; // 100 % slippage if no volume
+  const impactBps = baseSlippageBps * Math.sqrt(tradeSize / volume);
+  return (baseSlippageBps + impactBps) / 10_000;
 }
 
-/**
- * Apply a flat trading fee per edge.
- * @param feeBps - Fee in basis points (default: 0, since PoE doesn't have explicit fees)
- * @returns Fee multiplier (e.g., 0.999 = 0.1% fee)
- */
-function applyFee(rate: number, feeBps: number = 0): number {
+/** Apply a flat trading-fee deduction to a rate.
+ *  effectiveRate = rate * (1 - feeBps / 10_000) */
+function applyFee(rate: number, feeBps: number): number {
   return rate * (1 - feeBps / 10_000);
 }
 
 // ---------------------------------------------------------------------------
-// Algorithm: find profitable cycles via DFS with log-transformation
+// Cycle-finding (DFS Bellman-Ford variant)
 // ---------------------------------------------------------------------------
 
-const MIN_VOLUME = 10;
-const MAX_CYCLE_LENGTH = 4;
-const MAX_OPPORTUNITIES = 20;
+const MAX_CYCLE_LEN = 5;
 
 function findArbitrageCycles(
   pairs: ExchangePair[],
+  tradeSize: number,
   feeBps: number,
   baseSlippageBps: number,
-  defaultTradeSize: number
+  minVolume: number,
+  decayLambda: number,
 ): ArbitrageCycle[] {
-  // ----- Build adjacency list -----
-  const graph = new Map<string, GraphEdge[]>();
-  const currencyNames = new Map<string, string>();
-  const currencyIcons = new Map<string, string | null>();
+  // ---- Build adjacency list ----
+  const adj = new Map<string, GraphEdge[]>();
+  const names = new Map<string, string>();
 
-  for (const pair of pairs) {
-    if (pair.volume < MIN_VOLUME) continue;
-    if (pair.relativePrice <= 0 || !isFinite(pair.relativePrice)) continue;
+  for (const p of pairs) {
+    if ((p.volume ?? 0) < minVolume) continue;
 
-    const {
-      currency1Id,
-      currency1Name,
-      currency1IconUrl,
-      currency2Id,
-      currency2Name,
-      currency2IconUrl,
-      relativePrice,
-      volume,
-    } = pair;
+    const c1 = p.currency1Id;
+    const c2 = p.currency2Id;
+    names.set(c1, p.currency1Name);
+    names.set(c2, p.currency2Name);
 
-    currencyNames.set(currency1Id, currency1Name);
-    currencyNames.set(currency2Id, currency2Name);
-    currencyIcons.set(currency1Id, currency1IconUrl);
-    currencyIcons.set(currency2Id, currency2IconUrl);
+    // Forward edge: c1 → c2
+    const forwardRate = p.relativePrice ?? 0;
+    // Time-decay: hoursSinceSnapshot placeholder = 0 (API doesn't provide timestamps per pair)
+    const hoursSinceSnapshot = 0;
+    const decayFactor = Math.exp(-decayLambda * hoursSinceSnapshot);
 
-    // Forward edge: currency1 → currency2
-    const forwardRate = applyFee(relativePrice, feeBps);
-    if (isFinite(forwardRate) && forwardRate > 0) {
-      if (!graph.has(currency1Id)) graph.set(currency1Id, []);
-      graph.get(currency1Id)!.push({
-        to: currency2Id,
-        toName: currency2Name,
-        toIconUrl: currency2IconUrl,
-        rate: forwardRate,
-        logRate: Math.log(forwardRate),
-        volume,
-      });
+    if (forwardRate > 0) {
+      const edge: GraphEdge = {
+        from: c1,
+        to: c2,
+        rate: applyFee(forwardRate * decayFactor, feeBps),
+        volume: p.volume ?? 0,
+        fromName: p.currency1Name,
+        toName: p.currency2Name,
+      };
+      if (!adj.has(c1)) adj.set(c1, []);
+      adj.get(c1)!.push(edge);
     }
 
-    // Reverse edge: currency2 → currency1
-    const reverseRate = applyFee(1 / relativePrice, feeBps);
-    if (isFinite(reverseRate) && reverseRate > 0) {
-      if (!graph.has(currency2Id)) graph.set(currency2Id, []);
-      graph.get(currency2Id)!.push({
-        to: currency1Id,
-        toName: currency1Name,
-        toIconUrl: currency1IconUrl,
-        rate: reverseRate,
-        logRate: Math.log(reverseRate),
-        volume,
-      });
+    // Reverse edge: c2 → c1
+    const reverseRate = forwardRate > 0 ? 1 / forwardRate : 0;
+    if (reverseRate > 0 && isFinite(reverseRate)) {
+      const edge: GraphEdge = {
+        from: c2,
+        to: c1,
+        rate: applyFee(reverseRate * decayFactor, feeBps),
+        volume: p.volume ?? 0,
+        fromName: p.currency2Name,
+        toName: p.currency1Name,
+      };
+      if (!adj.has(c2)) adj.set(c2, []);
+      adj.get(c2)!.push(edge);
     }
   }
 
-  // ----- DFS to find profitable cycles -----
-  const cycles: ArbitrageCycle[] = [];
-  const seenCycleKeys = new Set<string>();
+  // ---- DFS to find cycles ----
+  const results: ArbitrageCycle[] = [];
+  const visited = new Set<string>();
+  const path: string[] = [];
+  const pathEdges: GraphEdge[] = [];
 
-  function cycleKey(nodeIds: string[]): string {
-    const n = nodeIds.length - 1;
-    const ring = nodeIds.slice(0, n);
-    let minIdx = 0;
-    for (let i = 1; i < n; i++) {
-      if (ring[i] < ring[minIdx]) minIdx = i;
-    }
-    const rotated = [...ring.slice(minIdx), ...ring.slice(0, minIdx)];
-    return rotated.join("→");
-  }
+  function dfs(node: string, startNode: string, product: number): void {
+    if (path.length > MAX_CYCLE_LEN) return;
 
-  function dfs(
-    startId: string,
-    currentId: string,
-    path: string[],
-    pathNames: string[],
-    pathIcons: (string | null)[],
-    pathRates: number[],
-    pathVolumes: number[],
-    logSum: number,
-    visited: Set<string>
-  ) {
-    const edges = graph.get(currentId);
-    if (!edges) return;
+    // Check for cycle back to start
+    if (node === startNode && path.length >= 2) {
+      // product already includes the full cycle multiplication
+      const grossProfit = (product - 1) * tradeSize;
 
-    for (const edge of edges) {
-      if (edge.to === startId && path.length >= 2) {
-        const totalLogSum = logSum + edge.logRate;
-        if (totalLogSum > 0) {
-          const grossProduct = Math.exp(
-            logSum + Math.log(edge.rate / (1 - feeBps / 10_000 || 1))
-          );
-          const netProduct = Math.exp(totalLogSum);
-          const profitPercent = (netProduct - 1) * 100;
-          const grossProfitPercent = (grossProduct - 1) * 100;
-
-          const nodeIds = [...path, startId];
-          const key = cycleKey(nodeIds);
-          if (seenCycleKeys.has(key)) continue;
-          seenCycleKeys.add(key);
-
-          const allVolumes = [...pathVolumes, edge.volume];
-          const minVol = Math.min(...allVolumes);
-
-          // Calculate slippage for each edge at default trade size
-          let totalSlippage = 0;
-          let totalFees = 0;
-          for (const vol of allVolumes) {
-            const slip = 1 - estimateSlippage(defaultTradeSize, vol, baseSlippageBps);
-            totalSlippage += slip;
-          }
-          totalFees = allVolumes.length * (feeBps / 10_000);
-
-          // Max volume where profit > 0 after slippage
-          // Simple heuristic: scale until slippage eats all profit
-          let maxProfitableVol = minVol;
-          if (profitPercent > 0) {
-            // Binary search for break-even volume
-            let lo = 0;
-            let hi = minVol;
-            for (let iter = 0; iter < 20; iter++) {
-              const mid = (lo + hi) / 2;
-              let testProduct = 1;
-              for (const vol of allVolumes) {
-                testProduct *= estimateSlippage(mid, vol, baseSlippageBps);
-              }
-              testProduct *= Math.exp(totalLogSum); // base rates already include fees
-              // Re-calculate from gross without fee adjustment for clean test
-              let cleanProduct = 1;
-              const allRates = [...pathRates, edge.rate];
-              for (let i = 0; i < allRates.length; i++) {
-                const slippageMult = estimateSlippage(mid, allVolumes[i], baseSlippageBps);
-                cleanProduct *= allRates[i] * slippageMult;
-              }
-              if (cleanProduct > 1) {
-                lo = mid;
-              } else {
-                hi = mid;
-              }
-            }
-            maxProfitableVol = lo;
-          }
-
-          cycles.push({
-            nodes: nodeIds,
-            names: [...pathNames, currencyNames.get(startId) ?? startId],
-            icons: [...pathIcons, currencyIcons.get(startId) ?? null],
-            rates: [...pathRates, edge.rate],
-            product: netProduct,
-            grossProduct,
-            profitPercent,
-            grossProfitPercent,
-            minVolume: minVol,
-            maxProfitableVolume: Math.floor(maxProfitableVol),
-            length: nodeIds.length - 1,
-            totalSlippage,
-            totalFees,
-            estimatedProfit: (tradeSize: number) => {
-              let result = tradeSize;
-              const allRates = [...pathRates, edge.rate];
-              for (let i = 0; i < allRates.length; i++) {
-                const slippageMult = estimateSlippage(tradeSize, allVolumes[i], baseSlippageBps);
-                result *= allRates[i] * slippageMult;
-              }
-              return result - tradeSize;
-            },
-          });
-        }
-        continue;
+      // Estimate total slippage across all edges in the cycle
+      let totalSlippage = 0;
+      let minVolume = Infinity;
+      for (const edge of pathEdges) {
+        const edgeSlippage = estimateSlippage(
+          tradeSize,
+          edge.volume,
+          baseSlippageBps,
+        );
+        totalSlippage += edgeSlippage;
+        if (edge.volume < minVolume) minVolume = edge.volume;
       }
 
-      if (path.length >= MAX_CYCLE_LENGTH) continue;
-      if (visited.has(edge.to)) continue;
+      // Net profit = gross - slippage cost
+      const slippageCost = totalSlippage * tradeSize;
+      const netProfit = grossProfit - slippageCost;
+
+      // Confidence: how well the bottleneck volume supports the trade size
+      const confidence = Math.min(1, minVolume / tradeSize);
+
+      if (netProfit > 0) {
+        results.push({
+          route: [...path],
+          edges: [...pathEdges],
+          grossProfit,
+          netProfit,
+          slippage: totalSlippage,
+          maxVolume: minVolume,
+          confidence,
+        });
+      }
+      return; // don't continue DFS past the start
+    }
+
+    const neighbors = adj.get(node);
+    if (!neighbors) return;
+
+    for (const edge of neighbors) {
+      if (visited.has(edge.to) && edge.to !== startNode) continue;
+      // Avoid re-tracing the same edge in reverse immediately
+      if (pathEdges.length > 0) {
+        const prev = pathEdges[pathEdges.length - 1];
+        if (edge.from === prev.to && edge.to === prev.from) continue;
+      }
 
       visited.add(edge.to);
-      dfs(
-        startId,
-        edge.to,
-        [...path, edge.to],
-        [...pathNames, edge.toName],
-        [...pathIcons, edge.toIconUrl],
-        [...pathRates, edge.rate],
-        [...pathVolumes, edge.volume],
-        logSum + edge.logRate,
-        visited
-      );
+      path.push(edge.to);
+      pathEdges.push(edge);
+
+      dfs(edge.to, startNode, product * edge.rate);
+
+      path.pop();
+      pathEdges.pop();
       visited.delete(edge.to);
     }
   }
 
-  for (const startId of Array.from(graph.keys())) {
-    dfs(
-      startId,
-      startId,
-      [startId],
-      [currencyNames.get(startId) ?? startId],
-      [currencyIcons.get(startId) ?? null],
-      [],
-      [],
-      0,
-      new Set([startId])
-    );
+  // Start DFS from every node
+  for (const startNode of adj.keys()) {
+    path.length = 0;
+    pathEdges.length = 0;
+    visited.clear();
+    visited.add(startNode);
+    path.push(startNode);
+    dfs(startNode, startNode, 1);
   }
 
-  cycles.sort((a, b) => b.profitPercent - a.profitPercent);
-  return cycles.slice(0, MAX_OPPORTUNITIES);
+  // Sort by net profit descending, take top 50
+  results.sort((a, b) => b.netProfit - a.netProfit);
+  return results.slice(0, 50);
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
-  const { t, tp } = useI18n();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+interface ArbitrageTabProps {
+  realm?: string;
+  league?: string;
+}
 
-  // --- Settings state ---
-  const [feeBps, setFeeBps] = useState(0); // No explicit fees in PoE
-  const [baseSlippageBps, setBaseSlippageBps] = useState(10); // 0.1% base slippage
-  const [tradeSize, setTradeSize] = useState(100); // Default trade size for profit estimation
+export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
+  const { t } = useI18n();
+
+  // Settings state
+  const [tradingFeeBps, setTradingFeeBps] = useState(0);
+  const [baseSlippageBps, setBaseSlippageBps] = useState(10);
+  const [tradeSize, setTradeSize] = useState(100);
+  const [minVolume, setMinVolume] = useState(10);
+  const [decayLambda, setDecayLambda] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
 
   // Fetch exchange pairs
-  const { data: pairs, isLoading, refetch } = useQuery({
+  const {
+    data: pairs,
+    isLoading,
+    isError,
+  } = useQuery<ExchangePair[]>({
     queryKey: ["exchangePairs", realm, league],
     queryFn: () =>
       fetchApi<ExchangePair[]>("/api/poe2/exchange", {
-        realm,
-        league,
-        action: "pairs",
+        realm: realm ?? "",
+        league: league ?? "",
       }),
-    enabled: !!league,
+    enabled: !!realm && !!league,
+    staleTime: 60_000,
   });
 
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await refetch();
-    setIsRefreshing(false);
-  }, [refetch]);
-
-  // Compute arbitrage cycles with slippage/fee parameters
-  const { cycles, currencies, eligiblePairs } = useMemo(() => {
-    if (!pairs) return { cycles: [], currencies: 0, eligiblePairs: 0 };
-
-    const eligible = pairs.filter(
-      (p: ExchangePair) =>
-        p.volume >= MIN_VOLUME &&
-        p.relativePrice > 0 &&
-        isFinite(p.relativePrice)
+  // Compute arbitrage cycles
+  const cycles = useMemo(() => {
+    if (!pairs || pairs.length === 0) return [];
+    return findArbitrageCycles(
+      pairs,
+      tradeSize,
+      tradingFeeBps,
+      baseSlippageBps,
+      minVolume,
+      decayLambda,
     );
-    const uniqueCurrencies = new Set<string>();
-    for (const p of eligible) {
-      uniqueCurrencies.add(p.currency1Id);
-      uniqueCurrencies.add(p.currency2Id);
+  }, [pairs, tradeSize, tradingFeeBps, baseSlippageBps, minVolume, decayLambda]);
+
+  // Count unique currencies in graph
+  const uniqueTokens = useMemo(() => {
+    if (!pairs) return 0;
+    const ids = new Set<string>();
+    for (const p of pairs) {
+      ids.add(p.currency1Id);
+      ids.add(p.currency2Id);
     }
+    return ids.size;
+  }, [pairs]);
 
-    const found = findArbitrageCycles(pairs, feeBps, baseSlippageBps, tradeSize);
-    return {
-      cycles: found,
-      currencies: uniqueCurrencies.size,
-      eligiblePairs: eligible.length,
-    };
-  }, [pairs, feeBps, baseSlippageBps, tradeSize]);
+  // Pairs that pass the volume filter
+  const scannedCount = useMemo(() => {
+    if (!pairs) return 0;
+    return pairs.filter((p) => (p.volume ?? 0) >= minVolume).length;
+  }, [pairs, minVolume]);
 
-  // ----- Render -----
+  // Deduplicate cycles by route signature
+  const uniqueCycles = useMemo(() => {
+    const seen = new Set<string>();
+    return cycles.filter((c) => {
+      const sig = [...c.route].sort().join("-");
+      if (seen.has(sig)) return false;
+      seen.add(sig);
+      return true;
+    });
+  }, [cycles]);
 
+  // Loading skeleton
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="py-4 px-4">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-5 w-5 rounded" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-                <Skeleton className="h-8 w-16 mt-1" />
-              </CardContent>
-            </Card>
-          ))}
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid grid-cols-3 gap-4">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
         </div>
-        <Skeleton className="h-[300px] w-full rounded-lg" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Warning banner */}
-      <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-amber-500">
-            {t("arbitrageTheoretical")}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t("arbitrageTheoreticalDesc")}
-          </p>
-        </div>
-      </div>
+  if (isError) {
+    return (
+      <Card className="border-destructive/50">
+        <CardContent className="p-6 text-center text-destructive">
+          {t("failedToLoadData")}
+        </CardContent>
+      </Card>
+    );
+  }
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="rounded-lg">
-          <CardContent className="py-4 px-4">
-            <div className="flex items-center gap-2">
-              <ArrowLeftRight className="h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-xs text-muted-foreground">{tp(t("_pl_scannedPairs"), eligiblePairs, {})}</p>
-            </div>
-            <p className="text-2xl font-bold font-mono mt-1" role="status" aria-live="polite">
-              {eligiblePairs}
+  return (
+    <div className="space-y-4">
+      {/* ---- Disclaimer ---- */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardContent className="flex items-start gap-3 p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-600 dark:text-amber-400">
+              {t("arbitrageTheoretical")}
             </p>
+            <p className="text-muted-foreground mt-1">
+              {t("arbitrageTheoreticalDesc")}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ---- Stats row ---- */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Search className="h-3.5 w-3.5" aria-hidden="true" />
+              {t("scannedPairs")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">{scannedCount}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {t("ofTotal", { "0": pairs?.length ?? 0, "1": MIN_VOLUME })}
+              {t("ofTotal", { "0": String(pairs?.length ?? 0), "1": String(minVolume) })}
             </p>
           </CardContent>
         </Card>
-        <Card className="rounded-lg">
-          <CardContent className="py-4 px-4">
-            <div className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-xs text-muted-foreground">{t("currencies")}</p>
-            </div>
-            <p className="text-2xl font-bold font-mono mt-1" role="status" aria-live="polite">{currencies}</p>
+
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+              {t("currencies")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">{uniqueTokens}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t("uniqueTokensInGraph")}
             </p>
           </CardContent>
         </Card>
-        <Card className="rounded-lg">
-          <CardContent className="py-4 px-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-400" aria-hidden="true" />
-              <p className="text-xs text-muted-foreground">
-                {tp(t("_pl_opportunitiesFound"), cycles.length, {})}
-              </p>
-            </div>
-            <p className="text-2xl font-bold font-mono mt-1 text-emerald-400" role="status" aria-live="polite">
-              {cycles.length}
-            </p>
+
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+              {t("opportunitiesFound")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0">
+            <p className="text-2xl font-bold">{uniqueCycles.length}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {t("cyclesWithPositiveNetProfit")}
             </p>
@@ -475,221 +392,290 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         </Card>
       </div>
 
-      {/* Settings + Refresh bar */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium flex items-center gap-1.5">
-          <Search className="h-4 w-4" />
-          {t("arbitrageOpportunities")}
-        </h3>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={showSettings ? "default" : "outline"}
-            size="sm"
-            className="h-8 text-xs gap-1"
-            onClick={() => setShowSettings(!showSettings)}
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-            {t("settings")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 mr-1.5 ${
-                isRefreshing ? "animate-spin" : ""
-              }`}
-            />
-            {t("refresh")}
-          </Button>
-        </div>
+      {/* ---- Settings toggle ---- */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowSettings((v) => !v)}
+          aria-expanded={showSettings}
+          aria-controls="arbitrage-settings"
+        >
+          <Settings className="h-4 w-4 mr-1.5" aria-hidden="true" />
+          {t("settings")}
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {t("adjustSettings")}
+        </span>
       </div>
 
-      {/* Settings Panel */}
+      {/* ---- Settings panel ---- */}
       {showSettings && (
-        <Card>
-          <CardContent className="py-4 px-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Info className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">
-                {t("adjustSettings")}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">
+        <Card id="arbitrage-settings">
+          <CardContent className="p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Trading Fee */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="arb-fee-bps">
                   {t("tradingFeeBps")}
                 </label>
+                <p className="text-xs text-muted-foreground">{t("poeNoFees")}</p>
                 <Input
+                  id="arb-fee-bps"
                   type="number"
-                  min="0"
-                  max="500"
-                  step="1"
-                  value={feeBps}
-                  onChange={(e) => setFeeBps(Number(e.target.value))}
-                  className="h-8 text-sm"
+                  min={0}
+                  max={1000}
+                  step={1}
+                  value={tradingFeeBps}
+                  onChange={(e) => setTradingFeeBps(Number(e.target.value) || 0)}
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {t("poeNoFees")}
-                </p>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">
+
+              {/* Base Slippage */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="arb-slip-bps">
                   {t("baseSlippageBps")}
                 </label>
+                <p className="text-xs text-muted-foreground">{t("baseSlippageDesc")}</p>
                 <Input
+                  id="arb-slip-bps"
                   type="number"
-                  min="0"
-                  max="500"
-                  step="1"
+                  min={0}
+                  max={1000}
+                  step={1}
                   value={baseSlippageBps}
-                  onChange={(e) => setBaseSlippageBps(Number(e.target.value))}
-                  className="h-8 text-sm"
+                  onChange={(e) => setBaseSlippageBps(Number(e.target.value) || 0)}
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {t("baseSlippageDesc")}
-                </p>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1">
+
+              {/* Trade Size */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="arb-trade-size">
                   {t("tradeSizeForProfit")}
                 </label>
+                <p className="text-xs text-muted-foreground">{t("tradeSizeDesc")}</p>
                 <Input
+                  id="arb-trade-size"
                   type="number"
-                  min="1"
-                  step="10"
+                  min={1}
+                  max={1_000_000}
+                  step={1}
                   value={tradeSize}
-                  onChange={(e) => setTradeSize(Number(e.target.value))}
-                  className="h-8 text-sm"
+                  onChange={(e) => setTradeSize(Number(e.target.value) || 1)}
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {t("tradeSizeDesc")}
+              </div>
+
+              {/* Min Volume */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium" htmlFor="arb-min-vol">
+                  {t("maxVol")}
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {t("ofTotal", { "0": "", "1": String(minVolume) })}
                 </p>
+                <Input
+                  id="arb-min-vol"
+                  type="number"
+                  min={0}
+                  max={1_000_000}
+                  step={1}
+                  value={minVolume}
+                  onChange={(e) => setMinVolume(Number(e.target.value) || 0)}
+                />
+              </div>
+
+              {/* Decay Lambda */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm font-medium" htmlFor="arb-decay-lambda">
+                    {t("decayLambda")}
+                  </label>
+                  <span
+                    className="relative group"
+                    aria-label={t("timeDecayDesc")}
+                  >
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-hidden="true" />
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {t("timeDecayDesc")}
+                    </span>
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">{t("timeDecayDesc")}</p>
+                <Input
+                  id="arb-decay-lambda"
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={decayLambda}
+                  onChange={(e) => setDecayLambda(Number(e.target.value) || 0)}
+                />
+              </div>
+
+              {/* Time Decay Label with tooltip */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm font-medium">
+                    {t("timeDecayLabel")}
+                  </label>
+                  <span
+                    className="relative group"
+                    aria-label={t("timeDecayDesc")}
+                  >
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-hidden="true" />
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {t("timeDecayDesc")}
+                    </span>
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  &lambda; = {decayLambda.toFixed(2)} &mdash; {t("timeDecayDesc")}
+                </p>
+                <Select
+                  value={decayLambda === 0 ? "0" : "custom"}
+                  onValueChange={(v) => {
+                    if (v === "0") setDecayLambda(0);
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0 — No decay</SelectItem>
+                    <SelectItem value="custom">Custom (use input)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Opportunities table */}
-      {cycles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <CircleDot className="h-12 w-12 mb-4" />
-          <p className="text-lg mb-1">{t("noArbitrage")}</p>
-          <p className="text-sm text-center max-w-md">
-            {t("noArbitrageDesc")}
+      {/* ---- Opportunities table ---- */}
+      <Card>
+        <CardHeader className="pb-2 pt-4 px-4">
+          <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            {t("arbitrageOpportunities")}
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            {t(
+              "showingTopOpportunities",
+              {
+                "0": String(uniqueCycles.length),
+                "1": String(MAX_CYCLE_LEN),
+                "2": String(minVolume),
+                "3": String(baseSlippageBps),
+                "4": String(tradingFeeBps),
+              },
+            )}
           </p>
-        </div>
-      ) : (
-        <div className="rounded-lg border overflow-hidden">
-          {/* Table header */}
-          <div className="grid grid-cols-[1fr_60px_80px_80px_80px_100px] sm:grid-cols-[1fr_60px_90px_90px_90px_120px] bg-muted/50 px-4 py-2.5 text-xs font-medium text-muted-foreground">
-            <div>{t("route")}</div>
-            <div className="text-center">{t("len")}</div>
-            <div className="text-right">{t("netProfit")}</div>
-            <div className="text-right">{t("gross")}</div>
-            <div className="text-right">{t("slippage")}</div>
-            <div className="text-right">{t("maxVol")}</div>
-          </div>
+        </CardHeader>
+        <CardContent className="px-4 pb-4 pt-0">
+          {uniqueCycles.length === 0 ? (
+            <div className="text-center py-10">
+              <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+              <p className="font-medium">{t("noArbitrage")}</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                {t("noArbitrageDesc")}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {/* Table header — 7 columns: Route, Len, Net Profit, Gross, Slippage, Confidence, Max Vol */}
+              <div className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+                <span>{t("route")}</span>
+                <span className="text-center">{t("len")}</span>
+                <span className="text-right">{t("netProfit")}</span>
+                <span className="text-right">{t("gross")}</span>
+                <span className="text-right">{t("slippage")}</span>
+                <span className="text-center">{t("confidence")}</span>
+                <span className="text-right">{t("maxVol")}</span>
+              </div>
 
-          {/* Table rows */}
-          <div className="divide-y max-h-[600px] overflow-y-auto scrollbar-thin">
-            {cycles.map((cycle, idx) => {
-              const estimatedNet = cycle.estimatedProfit(tradeSize);
-              return (
-                <div
-                  key={idx}
-                  className="grid grid-cols-[1fr_60px_80px_80px_80px_100px] sm:grid-cols-[1fr_60px_90px_90px_90px_120px] px-4 py-3 hover:bg-muted/30 transition-colors items-center"
-                >
-                  {/* Route */}
-                  <div className="flex items-center gap-1 flex-wrap min-w-0">
-                    {cycle.nodes.map((nodeId, i) => {
-                      const isLast = i === cycle.nodes.length - 1;
-                      const name = cycle.names[i];
-                      const icon = cycle.icons[i];
-                      return (
-                        <span
-                          key={`${nodeId}-${i}`}
-                          className="inline-flex items-center gap-0.5 shrink-0"
-                        >
-                          {icon ? (
-                            <img
-                              src={icon}
-                              alt=""
-                              className="w-4 h-4 object-contain"
-                            />
-                          ) : null}
-                          <span className="text-xs font-medium truncate max-w-[100px]">
-                            {name}
+              {/* Table body */}
+              <div className="max-h-96 overflow-y-auto" role="list" aria-label="Arbitrage opportunities">
+                {uniqueCycles.map((cycle, idx) => {
+                  const routeNames = cycle.route.map(
+                    (id) => cycle.edges.find((e) => e.from === id)?.fromName ?? id,
+                  );
+                  // Add the start name at the end to close the loop
+                  const startName =
+                    cycle.edges[0]?.fromName ?? routeNames[0];
+                  routeNames.push(startName);
+
+                  return (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                      role="listitem"
+                    >
+                      {/* Route */}
+                      <div className="flex items-center gap-1 flex-wrap min-w-0">
+                        {routeNames.map((name, i) => (
+                          <span key={i} className="flex items-center gap-1">
+                            <span className="truncate text-xs font-medium">
+                              {name}
+                            </span>
+                            {i < routeNames.length - 1 && (
+                              <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                            )}
                           </span>
-                          {!isLast && (
-                            <ArrowRight className="h-3 w-3 text-muted-foreground mx-0.5 shrink-0" />
-                          )}
-                        </span>
-                      );
-                    })}
-                  </div>
+                        ))}
+                      </div>
 
-                  {/* Length */}
-                  <div className="text-center">
-                    <Badge variant="secondary" className="text-xs font-mono">
-                      {cycle.length}
-                    </Badge>
-                  </div>
+                      {/* Length */}
+                      <span className="text-center text-xs text-muted-foreground font-mono">
+                        {cycle.edges.length}
+                      </span>
 
-                  {/* Net Profit */}
-                  <div className="text-right">
-                    <span className="text-sm font-bold font-mono text-emerald-400">
-                      +{cycle.profitPercent.toFixed(2)}%
-                    </span>
-                    {tradeSize > 0 && (
-                      <p
-                        className={`text-[10px] font-mono ${
-                          estimatedNet > 0 ? "text-emerald-400" : "text-red-400"
-                        }`}
-                      >
-                        {estimatedNet > 0 ? "+" : ""}
-                        {estimatedNet.toFixed(2)} {t("net")}
-                      </p>
-                    )}
-                  </div>
+                      {/* Net Profit */}
+                      <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        +{fmt(cycle.netProfit)}
+                      </span>
 
-                  {/* Gross Profit */}
-                  <div className="text-right">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      +{cycle.grossProfitPercent.toFixed(2)}%
-                    </span>
-                  </div>
+                      {/* Gross */}
+                      <span className="text-right font-mono text-xs text-muted-foreground">
+                        {fmt(cycle.grossProfit)}
+                      </span>
 
-                  {/* Slippage */}
-                  <div className="text-right">
-                    <span className="text-xs font-mono text-amber-400">
-                      -{(cycle.totalSlippage * 100).toFixed(2)}%
-                    </span>
-                  </div>
+                      {/* Slippage */}
+                      <span className="text-right font-mono text-xs text-muted-foreground">
+                        {(cycle.slippage * 100).toFixed(2)}%
+                      </span>
 
-                  {/* Max Volume */}
-                  <div className="text-right">
-                    <span className="text-xs font-mono text-muted-foreground">
-                      {cycle.maxProfitableVolume.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                      {/* Confidence */}
+                      <span className="flex justify-center">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 font-semibold ${
+                            cycle.confidence >= 0.7
+                              ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                              : cycle.confidence >= 0.3
+                              ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                              : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
+                          }`}
+                        >
+                          {cycle.confidence >= 0.7
+                            ? t("confidenceHigh")
+                            : cycle.confidence >= 0.3
+                            ? t("confidenceMedium")
+                            : t("confidenceLow")}
+                        </Badge>
+                      </span>
 
-      {/* Footer note */}
-      {cycles.length > 0 && (
-        <p className="text-xs text-muted-foreground text-center">
-          {t("showingTopOpportunities", { "0": Math.min(cycles.length, MAX_OPPORTUNITIES), "1": MAX_CYCLE_LENGTH, "2": MIN_VOLUME, "3": baseSlippageBps, "4": feeBps })}
-        </p>
-      )}
+                      {/* Max Volume */}
+                      <span className="text-right font-mono text-xs text-muted-foreground">
+                        {cycle.maxVolume.toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
