@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
+import { profitColor, profitBg } from "@/lib/flipper-helpers";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 
 // ---------------------------------------------------------------------------
@@ -50,20 +51,8 @@ interface RecipesResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers (profitColor and profitBg moved to @/lib/flipper-helpers.ts)
 // ---------------------------------------------------------------------------
-
-function profitColor(profit: number): string {
-  if (profit > 0) return "text-emerald-600 dark:text-emerald-400";
-  if (profit < 0) return "text-red-600 dark:text-red-400";
-  return "text-muted-foreground";
-}
-
-function profitBg(isProfitable: boolean): string {
-  return isProfitable
-    ? "border-emerald-500/30 bg-emerald-500/5"
-    : "border-red-500/30 bg-red-500/5";
-}
 
 // ---------------------------------------------------------------------------
 // Component Props

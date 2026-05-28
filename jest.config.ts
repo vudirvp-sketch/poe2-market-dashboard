@@ -14,6 +14,7 @@ const config: Config = {
     "<rootDir>/.next/",
     "<rootDir>/src/__tests__/test-utils.tsx",
     "<rootDir>/src/__mocks__/",
+    "<rootDir>/e2e/",
   ],
   transform: {
     "^.+\\.(ts|tsx)$": "ts-jest",

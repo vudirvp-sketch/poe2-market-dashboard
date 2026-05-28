@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
 import type { FlipperPhaseResponse } from "@/lib/types";
+import { computeSentiment, scoreColor, classifySentiment } from "@/lib/flipper-helpers";
 
 // ---------------------------------------------------------------------------
 // Inline types for API responses (subset of fields we use)
@@ -65,26 +66,7 @@ interface FlipperStickyBarProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function scoreColor(score: number): string {
-  if (score >= 0.7) return "text-emerald-600 dark:text-emerald-400";
-  if (score >= 0.4) return "text-amber-600 dark:text-amber-400";
-  return "text-red-600 dark:text-red-400";
-}
-
-/** Compute aggregated market sentiment from all flip momentums.
- *  Returns a value in [-1, 1] range representing bearish → bullish. */
-function computeSentiment(opportunities: FlipOpportunity[]): number {
-  if (opportunities.length === 0) return 0;
-  // Weighted average momentum (weighted by score to emphasize high-quality flips)
-  let totalWeight = 0;
-  let weightedSum = 0;
-  for (const opp of opportunities) {
-    const weight = Math.max(opp.score, 0.01);
-    weightedSum += opp.momentum * weight;
-    totalWeight += weight;
-  }
-  return totalWeight > 0 ? weightedSum / totalWeight : 0;
-}
+// scoreColor and computeSentiment moved to @/lib/flipper-helpers.ts for testability
 
 // ---------------------------------------------------------------------------
 // Component
@@ -217,9 +199,9 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
               {t("stickyBarSentiment")}:
             </span>
             <div className="flex items-center gap-0.5">
-              {sentiment > 0.005 ? (
+              {classifySentiment(sentiment) === "bullish" ? (
                 <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
-              ) : sentiment < -0.005 ? (
+              ) : classifySentiment(sentiment) === "bearish" ? (
                 <TrendingDown className="h-3 w-3 text-red-500" aria-hidden="true" />
               ) : (
                 <Minus className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
@@ -227,16 +209,16 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
               <Badge
                 variant="outline"
                 className={
-                  sentiment > 0.005
+                  classifySentiment(sentiment) === "bullish"
                     ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px] px-1.5 py-0 font-semibold"
-                    : sentiment < -0.005
+                    : classifySentiment(sentiment) === "bearish"
                       ? "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10 text-[10px] px-1.5 py-0 font-semibold"
                       : "border-muted-foreground/30 text-muted-foreground bg-muted/10 text-[10px] px-1.5 py-0 font-semibold"
                 }
               >
-                {sentiment > 0.005
+                {classifySentiment(sentiment) === "bullish"
                   ? t("stickyBarBullish")
-                  : sentiment < -0.005
+                  : classifySentiment(sentiment) === "bearish"
                     ? t("stickyBarBearish")
                     : t("stickyBarNeutral")}
               </Badge>
