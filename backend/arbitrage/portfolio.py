@@ -447,6 +447,7 @@ class PortfolioOptimizer:
         log_returns: np.ndarray,
         previous_corr: np.ndarray | None = None,
         periods_per_year: int = 365,
+        method_override: str | None = None,
     ) -> PortfolioAllocation:
         """Compute portfolio allocation.
 
@@ -457,6 +458,8 @@ class PortfolioOptimizer:
                 (for correlation shock detection). If None, no shock detection.
             periods_per_year: Number of return periods per year for
                 annualization.
+            method_override: If provided, use this method instead of the
+                config default. Valid values: "risk_parity", "min_variance".
 
         Returns:
             PortfolioAllocation with weights, risk, method, and warnings.
@@ -475,7 +478,7 @@ class PortfolioOptimizer:
         if log_returns.ndim == 1:
             log_returns = log_returns.reshape(-1, 1)
 
-        method = self._portfolio_cfg.method
+        method = method_override if method_override in ("risk_parity", "min_variance") else self._portfolio_cfg.method
         correlation_warning = False
 
         if method == "risk_parity":

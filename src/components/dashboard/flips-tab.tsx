@@ -22,6 +22,7 @@ import {
   Minus,
   ChevronRight,
   Search,
+  Database,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +43,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useI18n, type TranslationKeys } from "@/lib/i18n";
-import { fetchApi, fmt } from "@/lib/types";
+import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 
 // ---------------------------------------------------------------------------
@@ -239,6 +240,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps)
     retry: 1,
   });
 
+  // ---- Determine if error is due to insufficient data vs backend offline ----
+  const insufficientData =
+    flipsError && getFlipperErrorType(flipsError) === "backend_insufficient_data";
+
   // ---- Filter and sort opportunities ----
   const filteredOpportunities = useMemo(() => {
     if (!flipsData?.opportunities) return [];
@@ -370,7 +375,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps)
         )}
       </div>
 
-      {/* ---- Backend unavailable ---- */}
+      {/* ---- Backend unavailable (offline) ---- */}
       {!backendOnline && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent className="flex items-start gap-3 p-4">
@@ -385,6 +390,23 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps)
               <code className="text-xs mt-2 block bg-muted px-2 py-1 rounded">
                 uvicorn backend.main:app --reload --port 8000
               </code>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ---- Backend online but insufficient data ---- */}
+      {backendOnline && insufficientData && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Database className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-600 dark:text-amber-400">
+                {t("flipperBackendInsufficientDataTitle")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("flipperBackendInsufficientDataDesc")}
+              </p>
             </div>
           </CardContent>
         </Card>

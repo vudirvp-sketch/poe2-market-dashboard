@@ -56,3 +56,19 @@ skills/
 # Playwright
 /playwright-report/
 /test-results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist-python/
+*.egg
+
+# Database files (development)
+*.db
+*.db-journal
+
+# Patch artifacts
+*.patch

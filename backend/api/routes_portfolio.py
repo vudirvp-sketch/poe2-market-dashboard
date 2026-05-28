@@ -66,7 +66,7 @@ def _get_phase_detector() -> PhaseDetector:
 # Helper: build portfolio allocation from live data
 # ---------------------------------------------------------------------------
 
-async def _build_portfolio(config: AppConfig) -> PortfolioAllocation:
+async def _build_portfolio(config: AppConfig, method_override: str | None = None) -> PortfolioAllocation:
     """Fetch live data and compute portfolio allocation.
 
     This orchestrates:
@@ -165,6 +165,7 @@ async def _build_portfolio(config: AppConfig) -> PortfolioAllocation:
         log_returns=log_returns_matrix,
         previous_corr=_previous_corr,
         periods_per_year=365,  # daily returns
+        method_override=method_override,
     )
 
     # Store current correlation matrix for next comparison
@@ -272,12 +273,17 @@ async def get_portfolio():
 
 
 @router.post("/rebalance")
-async def rebalance_portfolio():
-    """Force portfolio recalculation regardless of rebalance interval."""
+async def rebalance_portfolio(method: str | None = Query(default=None)):
+    """Force portfolio recalculation regardless of rebalance interval.
+
+    Args:
+        method: Optional method override ("risk_parity" or "min_variance").
+            If not provided, uses the config default.
+    """
     global _last_allocation
 
     config = get_settings()
-    _last_allocation = await _build_portfolio(config)
+    _last_allocation = await _build_portfolio(config, method_override=method)
 
     if _last_allocation is None:
         raise HTTPException(status_code=503, detail="Portfolio rebalance failed")

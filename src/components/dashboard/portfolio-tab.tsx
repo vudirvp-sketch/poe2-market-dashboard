@@ -11,7 +11,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, useCallback, useEffect, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Briefcase,
@@ -25,6 +25,7 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  Database,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +54,7 @@ import {
   ZAxis,
 } from "recharts";
 import { useI18n, type TranslationKeys } from "@/lib/i18n";
-import { fetchApi } from "@/lib/types";
+import { fetchApi, getFlipperErrorType } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -176,6 +177,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
   const queryClient = useQueryClient();
 
   // Method selector state
+  const [selectedMethod, setSelectedMethod] = useState<string>("risk_parity");
   const [showMethodExplanation, setShowMethodExplanation] = useState(false);
 
   // ---- Backend health check is done at dashboard level ----
@@ -195,6 +197,10 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
     retry: 1,
   });
 
+  // ---- Determine if error is due to insufficient data vs backend offline ----
+  const insufficientData =
+    portfolioError && getFlipperErrorType(portfolioError) === "backend_insufficient_data";
+
   // ---- Fetch efficient frontier (only for min_variance) ----
   const {
     data: frontierData,
@@ -207,10 +213,13 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
     retry: 1,
   });
 
-  // ---- Rebalance mutation ----
+  // ---- Rebalance mutation (supports method override) ----
   const rebalanceMutation = useMutation({
-    mutationFn: () =>
-      fetch("/api/flipper/portfolio/rebalance", { method: "POST" }).then(
+    mutationFn: (method?: string) => {
+      const url = method
+        ? `/api/flipper/portfolio/rebalance?method=${encodeURIComponent(method)}`
+        : "/api/flipper/portfolio/rebalance";
+      return fetch(url, { method: "POST" }).then(
         async (res) => {
           if (!res.ok) {
             const text = await res.text();
@@ -218,12 +227,29 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
           }
           return res.json();
         },
-      ),
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["flipper-portfolio"] });
       queryClient.invalidateQueries({ queryKey: ["flipper-portfolio-frontier"] });
     },
   });
+
+  // ---- Sync selected method with backend data ----
+  useEffect(() => {
+    if (portfolioData?.method && (portfolioData.method === "risk_parity" || portfolioData.method === "min_variance")) {
+      setSelectedMethod(portfolioData.method);
+    }
+  }, [portfolioData?.method]);
+
+  // ---- Handle method change ----
+  const handleMethodChange = useCallback(
+    (newMethod: string) => {
+      setSelectedMethod(newMethod);
+      rebalanceMutation.mutate(newMethod);
+    },
+    [rebalanceMutation],
+  );
 
   // ---- Derived data ----
   const sortedWeights = useMemo(() => {
@@ -332,7 +358,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
         )}
       </div>
 
-      {/* ---- Backend unavailable ---- */}
+      {/* ---- Backend unavailable (offline) ---- */}
       {!backendOnline && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent className="flex items-start gap-3 p-4">
@@ -352,6 +378,23 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
         </Card>
       )}
 
+      {/* ---- Backend online but insufficient data ---- */}
+      {backendOnline && insufficientData && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Database className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-600 dark:text-amber-400">
+                {t("flipperBackendInsufficientDataTitle")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("flipperBackendInsufficientDataDesc")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ---- Portfolio data ---- */}
       {backendOnline && (
         <>
@@ -364,9 +407,28 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
-                <p className="text-xl font-bold">
-                  {portfolioData ? methodLabel(portfolioData.method, t) : "—"}
-                </p>
+                {portfolioData ? (
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={selectedMethod}
+                      onValueChange={handleMethodChange}
+                      disabled={rebalanceMutation.isPending}
+                    >
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="risk_parity">{t("portfolioRiskParityTitle")}</SelectItem>
+                        <SelectItem value="min_variance">{t("portfolioMinVarianceTitle")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {rebalanceMutation.isPending && (
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" aria-hidden="true" />
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xl font-bold">—</p>
+                )}
               </CardContent>
             </Card>
 
@@ -442,8 +504,8 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
             </CardContent>
           </Card>
 
-          {/* ---- Error state ---- */}
-          {portfolioError && (
+          {/* ---- Error state (generic / non-insufficient-data) ---- */}
+          {portfolioError && !insufficientData && (
             <Card className="border-red-500/30 bg-red-500/5">
               <CardContent className="text-center py-10">
                 <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
@@ -800,7 +862,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
             <CardContent className="px-4 pb-4 pt-0 space-y-3">
               <Button
                 className="gap-1.5"
-                onClick={() => rebalanceMutation.mutate()}
+                onClick={() => rebalanceMutation.mutate(undefined)}
                 disabled={rebalanceMutation.isPending}
                 aria-label={t("portfolioRebalance")}
               >

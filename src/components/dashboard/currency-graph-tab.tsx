@@ -22,6 +22,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Database,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
-import { fetchApi, fmt } from "@/lib/types";
+import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -311,6 +312,10 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }
     return map;
   }, [currenciesData]);
 
+  // ---- Determine if error is due to insufficient data vs backend offline ----
+  const insufficientData =
+    pricesError && getFlipperErrorType(pricesError) === "backend_insufficient_data";
+
   // ---- Compute cycle edges for highlighting ----
   const cycleEdges = useMemo(() => {
     const edges = new Set<string>();
@@ -551,7 +556,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }
         )}
       </div>
 
-      {/* ---- Backend unavailable ---- */}
+      {/* ---- Backend unavailable (offline) ---- */}
       {!backendOnline && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent className="flex items-start gap-3 p-4">
@@ -571,10 +576,27 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }
         </Card>
       )}
 
+      {/* ---- Backend online but insufficient data ---- */}
+      {backendOnline && insufficientData && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Database className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-600 dark:text-amber-400">
+                {t("flipperBackendInsufficientDataTitle")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("flipperBackendInsufficientDataDesc")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {backendOnline && (
         <>
-          {/* ---- Error state ---- */}
-          {pricesError && (
+          {/* ---- Error state (generic / non-insufficient-data) ---- */}
+          {pricesError && !insufficientData && (
             <Card className="border-red-500/30 bg-red-500/5">
               <CardContent className="text-center py-10">
                 <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />

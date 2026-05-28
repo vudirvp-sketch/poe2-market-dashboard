@@ -162,6 +162,59 @@ export interface LandingSplashInfo {
 }
 
 // ============================================================================
+// Flipper proxy error types
+// ============================================================================
+
+/** Error type discriminant returned by the flipper proxy (503 responses) */
+export type FlipperErrorType = "backend_offline" | "backend_insufficient_data";
+
+/**
+ * Custom error thrown by `fetchApi` when a flipper endpoint returns 503.
+ * Carries the `error_type` field so UI code can distinguish:
+ *   - "backend_offline"         → backend process not running (connection refused)
+ *   - "backend_insufficient_data" → backend running but lacks enough data
+ */
+export class FlipperApiError extends Error {
+  /** HTTP status code (typically 503) */
+  public readonly status: number;
+  /** Discriminant: "backend_offline" or "backend_insufficient_data" */
+  public readonly errorType: FlipperErrorType | undefined;
+  /** Raw detail string from the backend (if any) */
+  public readonly detail: string | undefined;
+
+  constructor(status: number, body: string) {
+    super(`API ${status}: ${body}`);
+    this.name = "FlipperApiError";
+    this.status = status;
+
+    // Try to parse the JSON body for structured fields
+    try {
+      const parsed = JSON.parse(body);
+      this.errorType = parsed.error_type;
+      this.detail = parsed.detail ?? parsed.error;
+    } catch {
+      // Body was not JSON — leave errorType undefined
+    }
+  }
+}
+
+/**
+ * Inspect an unknown error thrown by a flipper query and return the
+ * `FlipperErrorType` if it was a `FlipperApiError`, or `undefined` otherwise.
+ */
+export function getFlipperErrorType(error: unknown): FlipperErrorType | undefined {
+  if (error instanceof FlipperApiError) {
+    return error.errorType;
+  }
+  // Fallback: try to parse the error message for the error_type field
+  if (error instanceof Error) {
+    const match = error.message.match(/"error_type"\s*:\s*"(\w+)"/);
+    if (match) return match[1] as FlipperErrorType;
+  }
+  return undefined;
+}
+
+// ============================================================================
 // Fetch helper (through proxy routes) — CLIENT-SIDE ONLY
 // ============================================================================
 export async function fetchApi<T>(path: string, params?: Record<string, string>): Promise<T> {
@@ -174,7 +227,7 @@ export async function fetchApi<T>(path: string, params?: Record<string, string>)
   const res = await fetch(url.toString());
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
+    throw new FlipperApiError(res.status, body);
   }
   return res.json() as Promise<T>;
 }

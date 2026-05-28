@@ -241,6 +241,8 @@ const en = {
   flipperBackendOffline: "Backend offline",
   flipperBackendOfflineTitle: "Flipper backend is not running",
   flipperBackendOfflineDesc: "Start the FastAPI backend to enable advanced flip scoring, triangular arbitrage, and more.",
+  flipperBackendInsufficientDataTitle: "Insufficient data for this feature",
+  flipperBackendInsufficientDataDesc: "The backend is online but does not have enough historical data yet. Try again later when more price points have been collected (typically requires at least 2 currencies with 5+ price points each).",
   flipperEventActive: "Active event affecting market",
   flipperAffectedCurrencies: "Affected currencies",
   flipperScoredFlips: "Scored Flips",
@@ -403,6 +405,8 @@ const en = {
   portfolioRebalanceError: "Rebalance failed. Check if the backend is running.",
   portfolioRebalanceSuccess: "Portfolio rebalanced successfully!",
   portfolioLastRebalance: "Last rebalance",
+  portfolioMethodSwitch: "Switching method will trigger a rebalance with the selected strategy.",
+  portfolioMethodSwitching: "Switching method...",
 
   // ---- Phase Badge ----
   phaseEarly: "EARLY",

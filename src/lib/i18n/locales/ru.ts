@@ -239,6 +239,8 @@ const ru: Record<TranslationKeys, string> = {
   flipperBackendOffline: "Бэкенд офлайн",
   flipperBackendOfflineTitle: "Flipper-бэкенд не запущен",
   flipperBackendOfflineDesc: "Запустите FastAPI-бэкенд для доступа к продвинутому скорингу флипов, треугольному арбитражу и другим функциям.",
+  flipperBackendInsufficientDataTitle: "Недостаточно данных для этой функции",
+  flipperBackendInsufficientDataDesc: "Бэкенд работает, но пока не собрал достаточно исторических данных. Попробуйте позже, когда будет собрано больше ценовых точек (обычно требуется минимум 2 валюты с 5+ точками каждая).",
   flipperEventActive: "Активное событие влияет на рынок",
   flipperAffectedCurrencies: "Затронутые валюты",
   flipperScoredFlips: "Оценённые флипы",
@@ -401,6 +403,8 @@ const ru: Record<TranslationKeys, string> = {
   portfolioRebalanceError: "Ребалансировка не удалась. Проверьте, запущен ли бэкенд.",
   portfolioRebalanceSuccess: "Портфель успешно ребалансирован!",
   portfolioLastRebalance: "Последняя ребалансировка",
+  portfolioMethodSwitch: "Переключение метода вызовет ребалансировку с выбранной стратегией.",
+  portfolioMethodSwitching: "Переключение метода...",
 
   // ---- Phase Badge ----
   phaseEarly: "РАННЯЯ",

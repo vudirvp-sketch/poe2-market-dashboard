@@ -243,6 +243,8 @@ const zh: Record<TranslationKeys, string> = {
   flipperBackendOffline: "后端离线",
   flipperBackendOfflineTitle: "Flipper 后端未运行",
   flipperBackendOfflineDesc: "启动 FastAPI 后端以启用高级翻转评分、三角套利等功能。",
+  flipperBackendInsufficientDataTitle: "此功能数据不足",
+  flipperBackendInsufficientDataDesc: "后端已在线，但尚未收集到足够的历史数据。请稍后再试，当收集到更多价格点时即可使用（通常需要至少2种货币，每种5+个价格点）。",
   flipperEventActive: "活跃事件影响市场",
   flipperAffectedCurrencies: "受影响货币",
   flipperScoredFlips: "评分翻转",
@@ -401,6 +403,8 @@ const zh: Record<TranslationKeys, string> = {
   portfolioRebalanceError: "重新平衡失败。请检查后端是否运行。",
   portfolioRebalanceSuccess: "投资组合重新平衡成功！",
   portfolioLastRebalance: "上次平衡",
+  portfolioMethodSwitch: "切换方法将触发使用所选策略重新平衡。",
+  portfolioMethodSwitching: "正在切换方法...",
 
   // ---- Phase Badge ----
   phaseEarly: "早期",

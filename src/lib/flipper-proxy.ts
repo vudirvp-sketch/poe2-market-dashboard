@@ -49,14 +49,38 @@ export async function proxyToFlipper(
     }
 
     const res = await fetch(url.toString(), fetchOptions);
+
+    // ── Backend responded, but with 503 (insufficient data, etc.) ──
+    // Pass through the backend's JSON body and tag it so the frontend
+    // can distinguish "backend offline" from "backend online but
+    // insufficient data".
+    if (res.status === 503) {
+      let data: Record<string, unknown>;
+      try {
+        data = await res.json();
+      } catch {
+        data = { detail: "Service Unavailable" };
+      }
+      return NextResponse.json(
+        {
+          ...data,
+          error_type: "backend_insufficient_data",
+        },
+        { status: 503 },
+      );
+    }
+
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
   } catch (e: unknown) {
+    // ── Connection refused / timeout / network error ──
+    // The backend process is not running at all.
     const message =
       e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(
       {
         error: "Flipper backend unavailable",
+        error_type: "backend_offline",
         detail: message,
         hint: "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000",
       },

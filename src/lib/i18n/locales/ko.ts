@@ -243,6 +243,8 @@ const ko: Record<TranslationKeys, string> = {
   flipperBackendOffline: "백엔드 오프라인",
   flipperBackendOfflineTitle: "Flipper 백엔드가 실행 중이 아닙니다",
   flipperBackendOfflineDesc: "고급 플립 점수 책정, 삼각 차익거래 등을 활성화하려면 FastAPI 백엔드를 시작하세요.",
+  flipperBackendInsufficientDataTitle: "이 기능에 대한 데이터가 부족합니다",
+  flipperBackendInsufficientDataDesc: "백엔드는 온라인 상태이지만 아직 충분한 과거 데이터를 수집하지 못했습니다. 더 많은 가격 데이터가 수집되면 나중에 다시 시도하세요 (일반적으로 최소 2개 통화, 각각 5+ 가격 포인트 필요).",
   flipperEventActive: "시장에 영향을 미치는 활성 이벤트",
   flipperAffectedCurrencies: "영향받은 통화",
   flipperScoredFlips: "점수된 플립",
@@ -401,6 +403,8 @@ const ko: Record<TranslationKeys, string> = {
   portfolioRebalanceError: "리밸런스 실패. 백엔드가 실행 중인지 확인하세요.",
   portfolioRebalanceSuccess: "포트폴리오가 성공적으로 리밸런스되었습니다!",
   portfolioLastRebalance: "마지막 리밸런스",
+  portfolioMethodSwitch: "방법을 전환하면 선택한 전략으로 리밸런스가 트리거됩니다.",
+  portfolioMethodSwitching: "방법 전환 중...",
 
   // ---- Phase Badge ----
   phaseEarly: "초기",
