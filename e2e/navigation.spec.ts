@@ -48,6 +48,7 @@ test.describe("Tab Navigation", () => {
       "exchange",
       "arbitrage",
       "flips",
+      "recipes",
       "forecast",
       "portfolio",
       "graph",

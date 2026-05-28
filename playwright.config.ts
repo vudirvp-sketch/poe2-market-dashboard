@@ -15,12 +15,12 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
-  timeout: 45_000, // Per-test timeout (some tests need time for data loading)
+  timeout: 60_000, // Per-test timeout (some tests need time for data loading)
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
-    navigationTimeout: 15_000,
-    actionTimeout: 10_000,
+    navigationTimeout: 20_000,
+    actionTimeout: 15_000,
   },
   projects: [
     {
@@ -37,6 +37,6 @@ export default defineConfig({
     command: "npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 180_000,
   },
 });

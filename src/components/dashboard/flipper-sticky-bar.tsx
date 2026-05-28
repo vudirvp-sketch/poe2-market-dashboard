@@ -1,12 +1,17 @@
 // ============================================================================
 // FlipperStickyBar — Compact bar showing key market metrics when the
 // flipper backend is online. Displayed below the header per spec §2.3.
+//
+// Enhanced with:
+//   - Market sentiment indicator (aggregated momentum across all pairs)
+//   - Flip opportunity count badge
+//   - Correlation shock alert
 // ============================================================================
 "use client";
 
 import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
@@ -40,6 +45,14 @@ interface TriangularResponse {
   total: number;
 }
 
+interface PortfolioData {
+  method: "risk_parity" | "min_variance";
+  weights: Record<string, number>;
+  expected_risk: number;
+  correlation_warning: boolean;
+  last_rebalance: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
@@ -56,6 +69,21 @@ function scoreColor(score: number): string {
   if (score >= 0.7) return "text-emerald-600 dark:text-emerald-400";
   if (score >= 0.4) return "text-amber-600 dark:text-amber-400";
   return "text-red-600 dark:text-red-400";
+}
+
+/** Compute aggregated market sentiment from all flip momentums.
+ *  Returns a value in [-1, 1] range representing bearish → bullish. */
+function computeSentiment(opportunities: FlipOpportunity[]): number {
+  if (opportunities.length === 0) return 0;
+  // Weighted average momentum (weighted by score to emphasize high-quality flips)
+  let totalWeight = 0;
+  let weightedSum = 0;
+  for (const opp of opportunities) {
+    const weight = Math.max(opp.score, 0.01);
+    weightedSum += opp.momentum * weight;
+    totalWeight += weight;
+  }
+  return totalWeight > 0 ? weightedSum / totalWeight : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,11 +122,24 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
     retry: 1,
   });
 
+  // ---- Portfolio data (for correlation shock) ----
+  const { data: portfolioData } = useQuery<PortfolioData>({
+    queryKey: ["flipper-sticky-portfolio"],
+    queryFn: () => fetchApi<PortfolioData>("/api/flipper/portfolio"),
+    enabled: backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
   // ---- Derived data ----
   const bestFlip = flipsData?.opportunities?.[0] ?? null;
   const bestCycle = triangularData?.cycles?.[0] ?? null;
-
+  const flipCount = flipsData?.total ?? 0;
   const momentum = bestFlip?.momentum ?? 0;
+  const correlationShock = portfolioData?.correlation_warning ?? false;
+
+  // Market sentiment from all flip opportunities
+  const sentiment = computeSentiment(flipsData?.opportunities ?? []);
 
   // Don't render if backend is offline
   if (!backendOnline) return null;
@@ -125,6 +166,18 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
               <span className="text-muted-foreground">{t("stickyBarNoFlips")}</span>
             )}
           </div>
+
+          {/* Flip Count Badge */}
+          {flipCount > 0 && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Badge
+                variant="outline"
+                className="border-blue-500/50 text-blue-600 dark:text-blue-400 bg-blue-500/10 text-[10px] px-1.5 py-0 font-semibold"
+              >
+                {t("stickyBarFlipCount", { "0": flipCount })}
+              </Badge>
+            </div>
+          )}
 
           {/* 24h Trend */}
           <div className="flex items-center gap-1.5 shrink-0">
@@ -158,6 +211,38 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
             )}
           </div>
 
+          {/* Market Sentiment */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-muted-foreground font-medium">
+              {t("stickyBarSentiment")}:
+            </span>
+            <div className="flex items-center gap-0.5">
+              {sentiment > 0.005 ? (
+                <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
+              ) : sentiment < -0.005 ? (
+                <TrendingDown className="h-3 w-3 text-red-500" aria-hidden="true" />
+              ) : (
+                <Minus className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+              )}
+              <Badge
+                variant="outline"
+                className={
+                  sentiment > 0.005
+                    ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px] px-1.5 py-0 font-semibold"
+                    : sentiment < -0.005
+                      ? "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10 text-[10px] px-1.5 py-0 font-semibold"
+                      : "border-muted-foreground/30 text-muted-foreground bg-muted/10 text-[10px] px-1.5 py-0 font-semibold"
+                }
+              >
+                {sentiment > 0.005
+                  ? t("stickyBarBullish")
+                  : sentiment < -0.005
+                    ? t("stickyBarBearish")
+                    : t("stickyBarNeutral")}
+              </Badge>
+            </div>
+          </div>
+
           {/* Best Arb */}
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="text-muted-foreground font-medium">
@@ -179,6 +264,19 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
               <span className="text-muted-foreground">{t("stickyBarNoCycles")}</span>
             )}
           </div>
+
+          {/* Correlation Shock Alert */}
+          {correlationShock && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Badge
+                variant="outline"
+                className="border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10 text-[10px] px-1.5 py-0 font-semibold animate-pulse"
+              >
+                <AlertTriangle className="h-3 w-3 mr-0.5 inline" aria-hidden="true" />
+                {t("stickyBarCorrelationShock")}
+              </Badge>
+            </div>
+          )}
 
           {/* Phase Badge */}
           {phaseData?.phase && (

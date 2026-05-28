@@ -35,8 +35,8 @@ test.describe("Accessibility Checks", () => {
 
     const tabs = tabList.locator('[role="tab"]');
     const tabCount = await tabs.count();
-    // 10 tabs: Overview, Currencies, Uniques, Exchange, Arbitrage, Flips, Forecast, Portfolio, Graph, Watchlist
-    expect(tabCount).toBe(10);
+    // 11 tabs: Overview, Currencies, Uniques, Exchange, Arbitrage, Flips, Recipes, Forecast, Portfolio, Graph, Watchlist
+    expect(tabCount).toBe(11);
   });
 
   test("dialog focus trapping works", async ({ page }) => {

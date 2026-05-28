@@ -12,6 +12,7 @@ import {
   GitCompare,
   Bell,
   Zap,
+  FlaskConical,
   LineChart,
   TrendingUp,
   Briefcase,
@@ -36,6 +37,7 @@ import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
+import { RecipesTab } from "@/components/dashboard/recipes-tab";
 import { ForecastTab } from "@/components/dashboard/forecast-tab";
 import { PortfolioTab } from "@/components/dashboard/portfolio-tab";
 import { CurrencyGraphTab } from "@/components/dashboard/currency-graph-tab";
@@ -545,6 +547,9 @@ export function Dashboard() {
                 <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
                   <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
                 </TabsTrigger>
+                <TabsTrigger value="recipes" className="gap-1.5" aria-label={t("tabRecipes")}>
+                  <FlaskConical className="h-4 w-4" aria-hidden="true" /> {t("tabRecipes")}
+                </TabsTrigger>
                 <TabsTrigger value="forecast" className="gap-1.5" aria-label={t("tabForecast")}>
                   <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabForecast")}
                 </TabsTrigger>
@@ -784,6 +789,13 @@ export function Dashboard() {
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle="Flips">
                 <FlipsTab backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ RECIPES TAB ============ */}
+            <TabsContent value="recipes">
+              <ErrorBoundary fallbackTitle="Recipes">
+                <RecipesTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
