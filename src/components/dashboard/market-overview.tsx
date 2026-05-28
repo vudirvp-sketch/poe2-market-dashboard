@@ -32,13 +32,19 @@ import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
 import { useState, useMemo } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
+interface HeatmapItem {
+  currency: string;
+  change_24h: number;
+}
+
 interface MarketOverviewProps {
   realm: string;
   league: string;
   onItemClick: (item: PoeItem) => void;
+  backendOnline?: boolean;
 }
 
-export function MarketOverview({ realm, league, onItemClick }: MarketOverviewProps) {
+export function MarketOverview({ realm, league, onItemClick, backendOnline }: MarketOverviewProps) {
   const { t } = useI18n();
   const [topTimeframe, setTopTimeframe] = useState<"24h" | "7d">("24h");
   const reducedMotion = useReducedMotion();
@@ -120,6 +126,27 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
       </div>
     );
   }
+
+  // ---- Heatmap data (flipper backend) ----
+  const { data: heatmapData } = useQuery<HeatmapItem[]>({
+    queryKey: ["flipper-heatmap"],
+    queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap"),
+    enabled: !!backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // Heatmap color helper: green for positive, red for negative, intensity ∝ magnitude
+  const heatmapCellStyle = (change: number): React.CSSProperties => {
+    const maxAbs = 10; // clamp at ±10%
+    const clamped = Math.max(-maxAbs, Math.min(maxAbs, change));
+    const intensity = Math.abs(clamped) / maxAbs;
+    if (clamped >= 0) {
+      return { backgroundColor: `rgba(34, 197, 94, ${0.15 + intensity * 0.55})` };
+    } else {
+      return { backgroundColor: `rgba(239, 68, 68, ${0.15 + intensity * 0.55})` };
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -222,6 +249,38 @@ export function MarketOverview({ realm, league, onItemClick }: MarketOverviewPro
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Price Heatmap */}
+      {backendOnline && heatmapData && heatmapData.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t("overviewHeatmap")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-1.5">
+              {heatmapData.map((item) => (
+                <div
+                  key={item.currency}
+                  className="flex flex-col items-center justify-center rounded px-2 py-1 min-w-[60px]"
+                  style={heatmapCellStyle(item.change_24h)}
+                >
+                  <span className="text-[10px] font-semibold">{item.currency}</span>
+                  <span
+                    className={`text-[10px] font-mono ${
+                      item.change_24h >= 0
+                        ? "text-emerald-700 dark:text-emerald-300"
+                        : "text-red-700 dark:text-red-300"
+                    }`}
+                  >
+                    {item.change_24h >= 0 ? "+" : ""}
+                    {item.change_24h.toFixed(2)}%
+                  </span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

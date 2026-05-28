@@ -435,6 +435,16 @@ const zh: Record<TranslationKeys, string> = {
   graphNodeConnections: "连接数",
   graphNodeCluster: "集群",
 
+  // ---- Sticky Bar ----
+  stickyBarBestFlip: "最佳翻转",
+  stickyBarTrend24h: "24小时趋势",
+  stickyBarBestArb: "最佳套利",
+  stickyBarNoFlips: "无翻转",
+  stickyBarNoCycles: "无循环",
+
+  // ---- Overview Heatmap ----
+  overviewHeatmap: "价格热力图 (24小时)",
+
   // ---- Plural keys (Chinese: all forms identical) ----
   _pl_alertsCount: "提醒 ({0})|提醒 ({0})|提醒 ({0})",
   _pl_items: "项|项|项",

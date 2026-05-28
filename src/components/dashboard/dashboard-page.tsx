@@ -41,6 +41,7 @@ import { PortfolioTab } from "@/components/dashboard/portfolio-tab";
 import { CurrencyGraphTab } from "@/components/dashboard/currency-graph-tab";
 import { EventsSidebar } from "@/components/dashboard/events-sidebar";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
+import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 import { ApiErrorFallback } from "@/components/dashboard/api-error-fallback";
 
@@ -505,6 +506,8 @@ export function Dashboard() {
         onEventsClick={() => setEventsSidebarOpen(true)}
       />
 
+      <FlipperStickyBar backendOnline={flipperBackendOnline} />
+
       {/* Main content — id for skip-to-content a11y link */}
       <main id="main-content" className="max-w-[1600px] mx-auto px-4 py-4" role="main">
         {!effectiveLeague ? (
@@ -641,6 +644,7 @@ export function Dashboard() {
                   realm={realm}
                   league={effectiveLeague}
                   onItemClick={openDetail}
+                  backendOnline={flipperBackendOnline}
                 />
               </ErrorBoundary>
             </TabsContent>

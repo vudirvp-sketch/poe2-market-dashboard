@@ -437,6 +437,16 @@ const en = {
   graphNodeConnections: "Connections",
   graphNodeCluster: "Cluster",
 
+  // ---- Sticky Bar ----
+  stickyBarBestFlip: "Best Flip",
+  stickyBarTrend24h: "24h Trend",
+  stickyBarBestArb: "Best Arb",
+  stickyBarNoFlips: "No flips",
+  stickyBarNoCycles: "No cycles",
+
+  // ---- Overview Heatmap ----
+  overviewHeatmap: "Price Heatmap (24h)",
+
   // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
   _pl_alertsCount: "Alerts ({0})|Alert ({0})|Alerts ({0})",
   _pl_items: "items|item|items",

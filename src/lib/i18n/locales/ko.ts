@@ -435,6 +435,16 @@ const ko: Record<TranslationKeys, string> = {
   graphNodeConnections: "연결 수",
   graphNodeCluster: "클러스터",
 
+  // ---- Sticky Bar ----
+  stickyBarBestFlip: "최고 플립",
+  stickyBarTrend24h: "24시 동향",
+  stickyBarBestArb: "최고 차익",
+  stickyBarNoFlips: "플립 없음",
+  stickyBarNoCycles: "사이클 없음",
+
+  // ---- Overview Heatmap ----
+  overviewHeatmap: "가격 히트맵 (24시)",
+
   // ---- Plural keys (Korean: all forms identical) ----
   _pl_alertsCount: "알림 ({0})|알림 ({0})|알림 ({0})",
   _pl_items: "개|개|개",
