@@ -8,11 +8,16 @@ Provides:
     GET /api/phase              — current league phase
     GET /api/currencies         — currency metadata
     GET /api/prices             — all exchange rates with fee info
+    GET /api/prices/heatmap     — 24h price change heatmap data
     GET /api/prices/{pair}      — price for a specific pair
     GET /api/arbitrage/flips    — scored flip opportunities
     GET /api/arbitrage/triangular — triangular arbitrage cycles
     GET /api/forecast/{currency} — price forecast for a currency
+    GET /api/anomalies          — anomaly detection across currencies
+    GET /api/storage-value/{currency} — projected value and hold/sell decision
     GET /api/portfolio          — portfolio allocation
+    GET /api/portfolio/frontier — efficient frontier data
+    GET /api/recipes            — vendor recipe arbitrage
     POST /api/events            — create a manual event flag
     GET /api/events             — list active events
     GET /api/health             — health check
@@ -48,7 +53,14 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: initialize resources on startup, clean up on shutdown."""
+    """Application lifespan: initialize resources on startup, clean up on shutdown.
+
+    Phase 2 (Spec Section 1):
+    - Initialize HistoricalStore and connect it to EventManager
+    - Load persisted events from SQLite into EventManager
+    - Prune expired events from both memory and SQLite
+    - Reset PhaseDetector if a major_patch event exists
+    """
     logger.info("PoE2 Flipper backend starting up...")
     config = get_settings()
     logger.info(
@@ -58,10 +70,26 @@ async def lifespan(app: FastAPI):
         config.league.base_currency,
     )
 
-    # Check for any active major_patch events that should reset phase
+    # --- Phase 2: Initialize HistoricalStore ---
+    from backend.data.historical import get_historical_store
+    historical_store = get_historical_store(config)
+    await historical_store.init()
+    logger.info("HistoricalStore initialized")
+
+    # --- Phase 2: Load persisted events from SQLite ---
     from backend.economy.events import get_event_manager
     from backend.economy.lifecycle import PhaseDetector
     manager = get_event_manager(config)
+
+    # 1. Load persisted events from SQLite into EventManager
+    loaded = await manager.load_from_store(historical_store)
+    logger.info("Loaded %d persisted events from SQLite", loaded)
+
+    # 2. Prune expired events from both memory and SQLite
+    manager._prune_expired()
+    await historical_store.prune_expired_events()
+
+    # 3. Reset PhaseDetector if needed (same logic as before, now works after restart)
     if manager.has_major_patch_event():
         patch_ts = manager.get_latest_major_patch_timestamp()
         if patch_ts:
@@ -73,12 +101,14 @@ async def lifespan(app: FastAPI):
             )
 
     yield
-    # Cleanup: close provider HTTP clients
+
+    # Cleanup: close provider HTTP clients and HistoricalStore
     from backend.api.routes_prices import _provider as prices_provider
     from backend.api.routes_arbitrage import _provider as arb_provider
     for prov in [prices_provider, arb_provider]:
         if prov is not None:
             await prov.close()
+    await historical_store.close()
     logger.info("PoE2 Flipper backend shut down.")
 
 
@@ -89,7 +119,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="PoE2 Flipper API",
     description="Backend API for PoE2 currency analysis and arbitrage detection",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -113,6 +143,25 @@ app.include_router(arbitrage_router)
 app.include_router(forecast_router)
 app.include_router(portfolio_router)
 app.include_router(events_router)
+
+# Phase 2: Register new routers (will be created below)
+try:
+    from backend.api.routes_anomalies import router as anomalies_router
+    app.include_router(anomalies_router)
+except ImportError:
+    logger.debug("Anomalies router not available yet")
+
+try:
+    from backend.api.routes_storage_value import router as storage_value_router
+    app.include_router(storage_value_router)
+except ImportError:
+    logger.debug("Storage value router not available yet")
+
+try:
+    from backend.api.routes_recipes import router as recipes_router
+    app.include_router(recipes_router)
+except ImportError:
+    logger.debug("Recipes router not available yet")
 
 
 # ---------------------------------------------------------------------------

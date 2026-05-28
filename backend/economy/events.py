@@ -1,7 +1,7 @@
 """
 Event Manager — manual event flagging and effect propagation.
 
-From PoE2_Flipper_Implementation_Spec.md §6:
+From PoE2_Flipper_Implementation_Spec.md Section 6:
 
 Events are flagged manually by the user. When an event is active:
 1. SARIMA forecasts: labeled low_confidence=True
@@ -11,8 +11,11 @@ Events are flagged manually by the user. When an event is active:
 4. Phase reset: major_patch events reset the PhaseDetector reference date
 5. Event expiry: events expire after 48h by default (configurable)
 
-This module provides the EventManager singleton that stores events in memory,
-handles auto-expiry, and provides query interfaces for other subsystems.
+Phase 2 enhancement (Spec Section 1):
+- Events are dual-written: in-memory dict (fast reads) + SQLite (persistence).
+- On startup, events are loaded from SQLite via load_from_store().
+- On create/deactivate/delete: both in-memory and SQLite are updated.
+- Expired events are pruned from both stores.
 """
 
 from __future__ import annotations
@@ -21,10 +24,13 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from backend.config import AppConfig, get_settings
 from backend.models.currency import EventType, MarketEvent
+
+if TYPE_CHECKING:
+    from backend.data.historical import HistoricalStore
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +81,10 @@ class StoredEvent:
 # ---------------------------------------------------------------------------
 
 class EventManager:
-    """In-memory event storage with auto-expiry and subsystem query interfaces.
+    """In-memory event storage with SQLite dual-write and auto-expiry.
 
-    This is a singleton-style class. Use get_event_manager() to obtain the
-    shared instance.
+    Phase 2 (Spec Section 1): Events are dual-written to both an in-memory
+    dict (for fast reads) and SQLite (for persistence across restarts).
 
     Thread safety note: This implementation is designed for single-process
     use (FastAPI with uvicorn). For multi-worker deployments, replace the
@@ -88,9 +94,67 @@ class EventManager:
     def __init__(self, config: AppConfig | None = None):
         self._config = config or get_settings()
         self._events: dict[str, StoredEvent] = {}
+        self._store: HistoricalStore | None = None  # set via load_from_store
 
     # ---------------------------------------------------------------
-    # CRUD Operations
+    # Persistence: load from SQLite on startup
+    # ---------------------------------------------------------------
+
+    async def load_from_store(self, store: HistoricalStore) -> int:
+        """Load persisted events from SQLite into memory.
+
+        Called once on startup before any other operations.
+        Does NOT clear existing in-memory events — merges instead.
+
+        Args:
+            store: The HistoricalStore instance to read from.
+
+        Returns:
+            Number of events loaded from SQLite.
+        """
+        self._store = store
+        loaded = 0
+        try:
+            persisted = await store.read_active_events()
+            for event_dict in persisted:
+                event_id = event_dict["event_id"]
+                # Skip if already in memory (e.g. from an earlier init)
+                if event_id in self._events:
+                    continue
+
+                # Reconstruct StoredEvent from persisted dict
+                event_type = EventType(event_dict["event_type"])
+                created_at = event_dict.get("created_at")
+                expires_at = event_dict.get("expires_at")
+
+                # Parse ISO timestamps
+                if isinstance(created_at, str):
+                    created_at = datetime.fromisoformat(created_at)
+                if isinstance(expires_at, str):
+                    expires_at = datetime.fromisoformat(expires_at)
+
+                event = StoredEvent(
+                    event_id=event_id,
+                    event_type=event_type,
+                    description=event_dict.get("description", ""),
+                    affected_currencies=event_dict.get("affected_currencies", []),
+                    timestamp=created_at or datetime.now(timezone.utc),
+                    expires_at=expires_at,
+                    is_active=event_dict.get("is_active", True),
+                    created_at=created_at or datetime.now(timezone.utc),
+                )
+                self._events[event_id] = event
+                loaded += 1
+
+            if loaded > 0:
+                logger.info("Loaded %d persisted events from SQLite", loaded)
+        except Exception as e:
+            logger.error("Failed to load events from SQLite: %s", e)
+
+        return loaded
+
+    # ---------------------------------------------------------------
+    # CRUD Operations (dual-write: memory + SQLite)
     # ---------------------------------------------------------------
 
     def create_event(
@@ -102,6 +166,8 @@ class EventManager:
         expires_at: datetime | None = None,
     ) -> StoredEvent:
         """Create a new event and store it.
+
+        Dual-writes to in-memory dict AND SQLite (if store is available).
 
         Args:
             event_type: Type of event (major_patch, minor_patch, etc.)
@@ -134,7 +200,20 @@ class EventManager:
             created_at=now,
         )
 
+        # In-memory write (fast)
         self._events[event_id] = event
+
+        # SQLite write (async, fire-and-forget via task if possible)
+        if self._store is not None:
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.ensure_future(self._store.write_event(event))
+                else:
+                    loop.run_until_complete(self._store.write_event(event))
+            except Exception as e:
+                logger.error("Failed to persist event %s to SQLite: %s", event_id, e)
 
         logger.info(
             "Event created: [%s] %s — %s (expires: %s)",
@@ -175,11 +254,26 @@ class EventManager:
     def delete_event(self, event_id: str) -> bool:
         """Delete an event by ID.
 
+        Removes from both in-memory and SQLite.
+
         Returns:
             True if the event was found and deleted, False otherwise.
         """
         if event_id in self._events:
             del self._events[event_id]
+
+            # Also delete from SQLite
+            if self._store is not None:
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.ensure_future(self._store.delete_event(event_id))
+                    else:
+                        loop.run_until_complete(self._store.delete_event(event_id))
+                except Exception as e:
+                    logger.error("Failed to delete event %s from SQLite: %s", event_id, e)
+
             logger.info("Event deleted: %s", event_id)
             return True
         return False
@@ -187,12 +281,27 @@ class EventManager:
     def deactivate_event(self, event_id: str) -> bool:
         """Mark an event as inactive without deleting it.
 
+        Updates both in-memory and SQLite.
+
         Returns:
             True if the event was found and deactivated, False otherwise.
         """
         event = self._events.get(event_id)
         if event is not None:
             event.is_active = False
+
+            # Also deactivate in SQLite
+            if self._store is not None:
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.ensure_future(self._store.deactivate_event(event_id))
+                    else:
+                        loop.run_until_complete(self._store.deactivate_event(event_id))
+                except Exception as e:
+                    logger.error("Failed to deactivate event %s in SQLite: %s", event_id, e)
+
             logger.info("Event deactivated: %s", event_id)
             return True
         return False
@@ -367,8 +476,10 @@ class EventManager:
     def _prune_expired(self) -> int:
         """Remove expired events from storage.
 
+        Also prunes from SQLite if the store is available.
+
         Returns:
-            Number of events pruned
+            Number of events pruned from memory
         """
         now = datetime.now(timezone.utc)
         expired_ids = []
@@ -381,7 +492,19 @@ class EventManager:
             del self._events[eid]
 
         if expired_ids:
-            logger.info("Pruned %d expired events", len(expired_ids))
+            logger.info("Pruned %d expired events from memory", len(expired_ids))
+
+            # Also prune from SQLite
+            if self._store is not None:
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        asyncio.ensure_future(self._store.prune_expired_events())
+                    else:
+                        loop.run_until_complete(self._store.prune_expired_events())
+                except Exception as e:
+                    logger.error("Failed to prune expired events from SQLite: %s", e)
 
         return len(expired_ids)
 

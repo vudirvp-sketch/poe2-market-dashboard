@@ -77,4 +77,38 @@ storage_value:
   sell_threshold: 0.97
   liquidity_normalization: 10.0
 
-vendor_recipes: []  # user-defined recipes
+scheduler:
+  enabled: true
+  price_snapshot_interval_minutes: 30     # Write current prices to SQLite
+  reclustering_interval_hours: 1          # Re-run currency clustering
+  model_retrain_interval_hours: 6         # LightGBM retraining check
+  model_persistence_interval_minutes: 30  # Save LightGBM models to disk
+  event_pruning_interval_minutes: 15      # Prune expired events
+
+vendor_recipes:
+  - name: "Chaos Orb from Chaos Shards"
+    inputs:
+      - item: "chaos_shard"
+        quantity: 3
+    output:
+      item: "chaos_orb"
+      quantity: 1
+    notes: "Vendoring 3 Chaos Shards yields 1 Chaos Orb"
+
+  - name: "Regal Orb from Regal Shards"
+    inputs:
+      - item: "regal_shard"
+        quantity: 3
+    output:
+      item: "regal_orb"
+      quantity: 1
+    notes: "Vendoring 3 Regal Shards yields 1 Regal Orb"
+
+  - name: "Exalted Orb from Exalted Shards"
+    inputs:
+      - item: "exalted_shard"
+        quantity: 3
+    output:
+      item: "exalted_orb"
+      quantity: 1
+    notes: "UNVERIFIED — verify in-game before enabling"

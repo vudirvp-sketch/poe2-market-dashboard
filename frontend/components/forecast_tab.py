@@ -35,6 +35,7 @@ def render_forecast_tab(
     anomaly_alerts: list[dict] | None = None,
     currency: str = "",
     price_history: list[dict] | None = None,
+    storage_value_data: dict | None = None,
 ) -> None:
     """Render the Forecast tab.
 
@@ -44,6 +45,7 @@ def render_forecast_tab(
         anomaly_alerts: List of anomaly alert dicts
         currency: Currently selected currency
         price_history: Historical price data points
+        storage_value_data: Response from /api/storage-value/{currency} (Phase 2)
     """
     # --- Currency selector ---
     st.subheader("Price Forecasts")
@@ -74,11 +76,15 @@ def render_forecast_tab(
     with st.expander("STL Decomposition", expanded=False):
         _render_stl_decomposition(stl_data, currency)
 
-    # --- Anomaly Table ---
+    # --- Anomaly Table (Phase 2: now with real data) ---
     if anomaly_alerts:
         _render_anomaly_table(anomaly_alerts)
     else:
         st.caption("No active anomaly alerts.")
+
+    # --- Storage Value / Hold-Sell Decision (Phase 2, Spec Section 9) ---
+    if storage_value_data:
+        _render_storage_value(storage_value_data)
 
 
 def _render_price_chart(
@@ -331,3 +337,54 @@ def _render_anomaly_table(anomaly_alerts: list[dict]) -> None:
         use_container_width=True,
         hide_index=True,
     )
+
+
+def _render_storage_value(sv_data: dict) -> None:
+    """Render the Storage Value / Hold-Sell Decision panel.
+
+    Phase 2 (Spec Section 9.3): Shows projected value, decision,
+    risk discount, and key inputs for the hold/sell analysis.
+    """
+    st.subheader("Storage Value — Hold/Sell Decision")
+
+    decision = sv_data.get("decision", "NEUTRAL")
+    decision_color = COLOR_GREEN if decision == "BUY/HOLD" else COLOR_RED if decision == "SELL/CONVERT" else COLOR_GRAY
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(
+            "Projected Value",
+            f"{sv_data.get('projected_price', 0):.4f}",
+            delta=f"{sv_data.get('ratio', 0) - 1:.2%}" if sv_data.get('ratio') else None,
+        )
+
+    with col2:
+        st.markdown(
+            f"<div style='text-align:center;padding:1em 0'>"
+            f"<span style='font-size:1.5em;font-weight:bold;color:{decision_color}'>{decision}</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    with col3:
+        st.metric(
+            "Risk Discount",
+            f"{sv_data.get('risk_discount', 0):.2%}",
+        )
+
+    # Additional details
+    inputs = sv_data.get("inputs", {})
+    with st.expander("Storage Value Details", expanded=False):
+        detail_cols = st.columns(3)
+        with detail_cols[0]:
+            st.metric("Current Price", f"{sv_data.get('current_price', 0):.4f}")
+            st.metric("Adjusted Price", f"{sv_data.get('adjusted_price', 0):.4f}")
+        with detail_cols[1]:
+            st.metric("Net Value After Fees", f"{sv_data.get('net_value_after_fees', 0):.4f}")
+            st.metric("Ratio (net/current)", f"{sv_data.get('ratio', 0):.4f}")
+        with detail_cols[2]:
+            st.metric("Momentum", f"{inputs.get('momentum', 0):.6f}")
+            st.metric("Volatility", f"{inputs.get('volatility', 0):.6f}")
+            st.metric("Gold Fee Fraction", f"{inputs.get('gold_fee_fraction', 0):.4f}")
+            st.metric("Horizon (hours)", f"{inputs.get('horizon_hours', 24)}")

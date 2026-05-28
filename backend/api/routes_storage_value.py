@@ -1,0 +1,129 @@
+"""
+API routes for storage value computation (Hold/Sell Decision).
+
+Phase 2 (Spec Section 9): Endpoint for computing projected value
+and hold/sell decision for a currency using the formulas from
+PoE2_Flipper_Canonical_Formulas.md Section 6.
+
+Endpoints:
+    GET /api/storage-value/{currency} — projected value and hold/sell decision
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, Query
+
+from backend.config import get_settings
+from backend.data.providers.poe2scout import Poe2ScoutProvider
+from backend.economy.momentum import PriceMomentumTracker
+from backend.economy.gold_costs import compute_gold_fee_fraction
+from backend.predictors.storage_value import project_value
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api", tags=["storage-value"])
+
+
+@router.get("/storage-value/{currency}")
+async def get_storage_value(
+    currency: str,
+    horizon_hours: int = Query(default=24, ge=1, le=168, description="Projection horizon in hours"),
+):
+    """Compute projected value and hold/sell decision for a currency.
+
+    Uses the canonical formulas from PoE2_Flipper_Canonical_Formulas.md Section 6:
+    - Price projection: current_price * exp(momentum * horizon_hours)
+    - Risk discount: exp(-volatility * z * sqrt(horizon_hours))
+    - Liquidity adjustment: (0.9 + liq_factor * 0.1)
+    - After fees: adjusted * (1 - gold_fee_fraction)
+    - Decision: BUY/HOLD, SELL/CONVERT, or NEUTRAL
+
+    Args:
+        currency: Currency API ID (e.g. "divine", "chaos")
+        horizon_hours: How far ahead to project (1-168 hours, default 24)
+    """
+    config = get_settings()
+
+    # Get provider
+    from backend.api.routes_prices import _get_provider
+    provider = _get_provider()
+
+    # Fetch price history for momentum/volatility
+    history = await provider.get_historical_prices(currency, days=7)
+
+    if not history or len(history) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Insufficient price history for {currency}. Need at least 2 data points."
+        )
+
+    # Compute momentum and volatility
+    tracker = PriceMomentumTracker(window_size=len(history))
+    for point in history:
+        tracker.update(point.price)
+    metrics = tracker.compute()
+
+    # Current price
+    current_price = history[-1].price
+    if current_price <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Current price for {currency} is zero or negative."
+        )
+
+    # Liquidity score from volume
+    volumes = [p.volume for p in history if p.volume > 0]
+    total_volume = sum(volumes) if volumes else 0
+    liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
+
+    # Gold fee fraction
+    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+    try:
+        gold_fee_fraction = compute_gold_fee_fraction(
+            currency, 1.0,
+            gold_to_chaos_rate,
+            current_price,  # approximation: 1 unit at current price
+            config.fees.unknown_item_gold_cost,
+        )
+    except Exception:
+        gold_fee_fraction = 0.0
+
+    # Compute storage value
+    import numpy as np
+
+    result = project_value(
+        current_price=current_price,
+        log_momentum=metrics.momentum,
+        volatility=metrics.volatility,
+        liquidity_score=liquidity_score,
+        horizon_hours=horizon_hours,
+        confidence_level=config.forecasting.confidence_level,
+        gold_fee_fraction=gold_fee_fraction,
+        currency=currency,
+        liquidity_normalization=config.storage_value.liquidity_normalization,
+        buy_threshold=config.storage_value.buy_threshold,
+        sell_threshold=config.storage_value.sell_threshold,
+    )
+
+    return {
+        "currency": result.currency,
+        "current_price": result.current_price,
+        "projected_price": round(result.projected_price, 6),
+        "risk_discount": round(result.risk_discount, 6),
+        "adjusted_price": round(result.adjusted_price, 6),
+        "net_value_after_fees": round(result.net_value_after_fees, 6),
+        "ratio": round(result.ratio, 6),
+        "decision": result.decision.value,
+        "inputs": {
+            "momentum": round(metrics.momentum, 6),
+            "volatility": round(metrics.volatility, 6),
+            "acceleration": round(metrics.acceleration, 6),
+            "liquidity_score": round(liquidity_score, 4),
+            "gold_fee_fraction": round(gold_fee_fraction, 6),
+            "horizon_hours": horizon_hours,
+            "confidence_level": config.forecasting.confidence_level,
+        },
+    }

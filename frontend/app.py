@@ -561,6 +561,8 @@ def main():
         flips_data = fetch_api("/api/arbitrage/flips", params={"limit": 200})
         phase_data = fetch_api("/api/phase")
         tri_data = fetch_api("/api/arbitrage/triangular")
+        # Phase 2: Fetch heatmap data for real overview
+        heatmap_data = fetch_api("/api/prices/heatmap")
 
     # Check if backend is available
     backend_available = prices_data is not None
@@ -573,6 +575,7 @@ def main():
 
         opportunities = flips_data.get("opportunities", []) if flips_data else []
         triangular = tri_data.get("opportunities", []) if tri_data else []
+        heatmap_data_api = heatmap_data  # Save for overview tab
 
         # Get event status from the flips response (Milestone 9)
         if flips_data and "event_status" in flips_data:
@@ -608,6 +611,7 @@ def main():
         opportunities = direct_data.get("opportunities", [])
         triangular = direct_data.get("triangular", [])
         gold_to_chaos_rate = direct_data.get("gold_to_chaos_rate", 0.001)
+        heatmap_data_api = None  # No heatmap data in direct mode
 
         # Event summary from direct data
         if direct_data.get("active_event"):
@@ -687,6 +691,7 @@ def main():
             top_flips=top_flips,
             gold_to_chaos_rate=gold_to_chaos_rate,
             cluster_assignments=cluster_assignments,
+            heatmap_data=heatmap_data_api,  # Phase 2: real heatmap data
         )
 
     with tab_flips:
@@ -735,12 +740,29 @@ def main():
                         "price": rate.get("raw_rate", 0),
                     })
 
+        # Phase 2: Fetch anomaly data from API
+        anomaly_alerts = None
+        try:
+            anomaly_resp_data = fetch_api(f"/api/anomalies?currency={selected_currency}")
+            if anomaly_resp_data:
+                anomaly_alerts = anomaly_resp_data.get("anomalies", [])
+        except Exception:
+            anomaly_alerts = None
+
+        # Phase 2: Fetch storage value data
+        storage_value_data = None
+        try:
+            storage_value_data = fetch_api(f"/api/storage-value/{selected_currency}")
+        except Exception:
+            storage_value_data = None
+
         render_forecast_tab(
             forecast_data=forecast_data,
             stl_data=stl_data,
-            anomaly_alerts=None,
+            anomaly_alerts=anomaly_alerts,
             currency=selected_currency,
             price_history=price_history_for_chart if price_history_for_chart else None,
+            storage_value_data=storage_value_data,  # Phase 2
         )
 
     with tab_portfolio:

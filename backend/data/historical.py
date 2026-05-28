@@ -4,6 +4,7 @@ Historical price store using SQLite.
 Tables:
 - price_snapshots: (timestamp, league, currency, price_chaos, volume_24h, bid, ask)
 - gold_chaos_rates: (timestamp, league, rate)
+- events: (event_id, event_type, description, affected_currencies, created_at, expires_at, is_active, deactivated_at)
 
 Write: every time current prices are fetched successfully.
 Read: for any model that needs history.
@@ -12,6 +13,7 @@ Retention: configurable, default 90 days. Older records pruned on startup.
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,6 +54,20 @@ CREATE TABLE IF NOT EXISTS gold_chaos_rates (
 
 CREATE INDEX IF NOT EXISTS idx_gold_chaos_rates_ts
     ON gold_chaos_rates(timestamp);
+
+CREATE TABLE IF NOT EXISTS events (
+    event_id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    description TEXT,
+    affected_currencies TEXT,
+    created_at TEXT NOT NULL,
+    expires_at TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    deactivated_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_active
+    ON events(is_active, expires_at);
 """
 
 
@@ -84,7 +100,7 @@ class HistoricalStore:
         return self._db
 
     # ------------------------------------------------------------------
-    # Writes
+    # Price Writes
     # ------------------------------------------------------------------
 
     async def write_price_snapshot(
@@ -114,7 +130,7 @@ class HistoricalStore:
         rate: float,
         timestamp: datetime | None = None,
     ) -> None:
-        """Write an observed gold→chaos conversion rate."""
+        """Write an observed gold->chaos conversion rate."""
         db = await self._ensure_db()
         ts = (timestamp or datetime.now(timezone.utc)).isoformat()
         await db.execute(
@@ -155,7 +171,7 @@ class HistoricalStore:
         await db.commit()
 
     # ------------------------------------------------------------------
-    # Reads
+    # Price Reads
     # ------------------------------------------------------------------
 
     async def get_price_history(
@@ -221,7 +237,7 @@ class HistoricalStore:
     async def get_gold_chaos_rates(
         self, league: str, days: int = 7
     ) -> list[dict]:
-        """Get historical gold→chaos rates for a league."""
+        """Get historical gold->chaos rates for a league."""
         db = await self._ensure_db()
         cursor = await db.execute(
             """SELECT timestamp, league, rate
@@ -233,6 +249,139 @@ class HistoricalStore:
         )
         rows = await cursor.fetchall()
         return [{"timestamp": row[0], "league": row[1], "rate": row[2]} for row in rows]
+
+    # ------------------------------------------------------------------
+    # Event Persistence (Phase 2, Spec Section 1)
+    # ------------------------------------------------------------------
+
+    async def write_event(self, event: "StoredEvent") -> None:
+        """Persist an event to SQLite.
+
+        Args:
+            event: A StoredEvent instance from backend.economy.events
+        """
+        db = await self._ensure_db()
+        affected_json = json.dumps(event.affected_currencies)
+        expires_iso = event.expires_at.isoformat() if event.expires_at else None
+        created_iso = event.created_at.isoformat() if event.created_at else datetime.now(timezone.utc).isoformat()
+        deactivated_iso = None
+
+        await db.execute(
+            """INSERT OR REPLACE INTO events
+               (event_id, event_type, description, affected_currencies,
+                created_at, expires_at, is_active, deactivated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                event.event_id,
+                event.event_type.value,
+                event.description,
+                affected_json,
+                created_iso,
+                expires_iso,
+                1 if event.is_active else 0,
+                deactivated_iso,
+            ),
+        )
+        await db.commit()
+
+    async def write_events_batch(self, events: list["StoredEvent"]) -> None:
+        """Batch persist events to SQLite."""
+        db = await self._ensure_db()
+        rows = []
+        for event in events:
+            affected_json = json.dumps(event.affected_currencies)
+            expires_iso = event.expires_at.isoformat() if event.expires_at else None
+            created_iso = event.created_at.isoformat() if event.created_at else datetime.now(timezone.utc).isoformat()
+            deactivated_iso = None
+            rows.append((
+                event.event_id,
+                event.event_type.value,
+                event.description,
+                affected_json,
+                created_iso,
+                expires_iso,
+                1 if event.is_active else 0,
+                deactivated_iso,
+            ))
+
+        await db.executemany(
+            """INSERT OR REPLACE INTO events
+               (event_id, event_type, description, affected_currencies,
+                created_at, expires_at, is_active, deactivated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            rows,
+        )
+        await db.commit()
+
+    async def read_active_events(self) -> list[dict]:
+        """Load all non-expired, non-deactivated events from SQLite.
+
+        Returns:
+            List of dicts with event fields suitable for reconstructing StoredEvent objects.
+        """
+        db = await self._ensure_db()
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        cursor = await db.execute(
+            """SELECT event_id, event_type, description, affected_currencies,
+                      created_at, expires_at, is_active, deactivated_at
+               FROM events
+               WHERE is_active = 1
+                 AND (expires_at IS NULL OR expires_at > ?)
+               ORDER BY created_at DESC""",
+            (now_iso,),
+        )
+        rows = await cursor.fetchall()
+
+        results = []
+        for row in rows:
+            affected = json.loads(row[3]) if row[3] else []
+            results.append({
+                "event_id": row[0],
+                "event_type": row[1],
+                "description": row[2],
+                "affected_currencies": affected,
+                "created_at": row[4],
+                "expires_at": row[5],
+                "is_active": bool(row[6]),
+                "deactivated_at": row[7],
+            })
+        return results
+
+    async def deactivate_event(self, event_id: str) -> None:
+        """Mark event as inactive in SQLite."""
+        db = await self._ensure_db()
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.execute(
+            """UPDATE events SET is_active = 0, deactivated_at = ?
+               WHERE event_id = ?""",
+            (now_iso, event_id),
+        )
+        await db.commit()
+
+    async def delete_event(self, event_id: str) -> None:
+        """Remove event from store."""
+        db = await self._ensure_db()
+        await db.execute("DELETE FROM events WHERE event_id = ?", (event_id,))
+        await db.commit()
+
+    async def prune_expired_events(self) -> int:
+        """Delete events past their expiry. Call on startup.
+
+        Returns:
+            Number of events pruned.
+        """
+        db = await self._ensure_db()
+        now_iso = datetime.now(timezone.utc).isoformat()
+        cursor = await db.execute(
+            "DELETE FROM events WHERE expires_at IS NOT NULL AND expires_at <= ?",
+            (now_iso,),
+        )
+        deleted = cursor.rowcount
+        await db.commit()
+        if deleted > 0:
+            logger.info("Pruned %d expired events from SQLite", deleted)
+        return deleted
 
     # ------------------------------------------------------------------
     # Maintenance

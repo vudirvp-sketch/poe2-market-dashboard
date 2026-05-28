@@ -111,6 +111,16 @@ class EventsConfig(BaseModel):
     event_score_penalty: float = 0.5
 
 
+class SchedulerConfig(BaseModel):
+    """Configuration for the background data scheduler (Phase 2, Spec Section 7)."""
+    enabled: bool = True
+    price_snapshot_interval_minutes: int = 30
+    reclustering_interval_hours: int = 1
+    model_retrain_interval_hours: int = 6
+    model_persistence_interval_minutes: int = 30
+    event_pruning_interval_minutes: int = 15
+
+
 class StorageValueConfig(BaseModel):
     buy_threshold: float = 1.03
     sell_threshold: float = 0.97
@@ -130,6 +140,7 @@ class AppConfig(BaseModel):
     portfolio: PortfolioConfig = PortfolioConfig()
     events: EventsConfig = EventsConfig()
     storage_value: StorageValueConfig = StorageValueConfig()
+    scheduler: SchedulerConfig = SchedulerConfig()
     vendor_recipes: list[dict] = []
 
 
