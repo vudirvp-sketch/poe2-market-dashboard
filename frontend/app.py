@@ -164,8 +164,15 @@ def _load_data_directly() -> dict:
 
     This is a fallback for when the FastAPI backend is not running.
     It uses asyncio to run the async provider methods synchronously.
+
+    Key improvements over previous version:
+    - Fetches currencies with price_logs from all categories (paginated)
+    - Computes real momentum/volatility from price history via PriceMomentumTracker
+    - Derives rates from relative_price (more reliable than volume-based)
+    - Proper spread estimation based on volume
     """
     import asyncio
+    import numpy as np
     from backend.config import get_settings
     from backend.data.providers.poe2scout import Poe2ScoutProvider
     from backend.data.cache import get_cache
@@ -187,7 +194,7 @@ def _load_data_directly() -> dict:
     event_manager = get_event_manager(config)
 
     async def _fetch():
-        # Get exchange rates
+        # Get exchange rates from SnapshotPairs
         rates_result = await cache.get_or_fetch(
             "prices", provider.name(), "get_exchange_rates",
             provider.get_exchange_rates, config.league.league_name,
@@ -197,12 +204,11 @@ def _load_data_directly() -> dict:
         # Get phase info
         phase_info = detector.get_phase_info()
 
-        # Get metadata
-        metadata_result = await cache.get_or_fetch(
-            "metadata", provider.name(), "get_currency_metadata",
-            provider.get_currency_metadata, config.league.league_name,
+        # Get all currencies with price_logs from all categories
+        # This provides real price history for momentum/volatility computation
+        all_currencies = await provider.get_all_currencies_with_prices(
+            config.league.league_name
         )
-        currencies = metadata_result.value if metadata_result.value else []
 
         # Gold rate
         gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
@@ -211,7 +217,7 @@ def _load_data_directly() -> dict:
             if observed is not None:
                 gold_to_chaos_rate = observed
 
-        return rates, phase_info, currencies, gold_to_chaos_rate
+        return rates, phase_info, all_currencies, gold_to_chaos_rate
 
     try:
         loop = asyncio.get_event_loop()
@@ -219,9 +225,9 @@ def _load_data_directly() -> dict:
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(asyncio.run, _fetch())
-                rates, phase_info, currencies, gold_to_chaos_rate = future.result(timeout=30)
+                rates, phase_info, all_currencies, gold_to_chaos_rate = future.result(timeout=60)
         else:
-            rates, phase_info, currencies, gold_to_chaos_rate = loop.run_until_complete(_fetch())
+            rates, phase_info, all_currencies, gold_to_chaos_rate = loop.run_until_complete(_fetch())
     except Exception as e:
         logger.error("Direct data loading failed: %s", e)
         return {
@@ -244,6 +250,47 @@ def _load_data_directly() -> dict:
         "max_hold_time": phase_info.max_hold_time,
     }
 
+    # Build a lookup of currency api_id → price_logs for momentum computation
+    currency_price_logs: dict[str, list[dict]] = {}
+    currency_current_price: dict[str, float | None] = {}
+    currency_icon_urls: dict[str, str | None] = {}
+    for curr in all_currencies:
+        api_id = curr.get("api_id", "")
+        if api_id:
+            currency_price_logs[api_id] = curr.get("price_logs", [])
+            currency_current_price[api_id] = curr.get("current_price")
+            currency_icon_urls[api_id] = curr.get("icon_url")
+
+    # Compute momentum and volatility for each currency using PriceMomentumTracker
+    momentum_data: dict[str, dict] = {}  # api_id → {momentum, volatility, acceleration}
+    for api_id, price_logs in currency_price_logs.items():
+        if len(price_logs) < 2:
+            momentum_data[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+            continue
+        try:
+            # Sort by time and extract prices
+            sorted_logs = sorted(
+                [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
+                key=lambda l: l["time"],
+            )
+            prices = [l["price"] for l in sorted_logs]
+            if len(prices) < 2:
+                momentum_data[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+                continue
+
+            tracker = PriceMomentumTracker(window_size=24)
+            for p in prices:
+                tracker.update(p)
+            result = tracker.compute()
+            momentum_data[api_id] = {
+                "momentum": result.momentum,
+                "volatility": result.volatility,
+                "acceleration": result.acceleration,
+            }
+        except Exception as e:
+            logger.debug("Momentum computation failed for %s: %s", api_id, e)
+            momentum_data[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+
     # Build rates list
     rates_list = []
     for key, rate in rates.items():
@@ -258,10 +305,11 @@ def _load_data_directly() -> dict:
             "gold_fee_actual": 0,
         })
 
-    # Build flip opportunities with event penalties
+    # Build flip opportunities with real momentum/volatility and event penalties
     phase_multiplier = get_phase_multiplier(phase_info.phase, config)
     max_volume = max((r.volume_traded for r in rates.values() if r.volume_traded > 0), default=1)
 
+    # Build prices_in_chaos using rates derived from relative_price
     prices_in_chaos = {config.league.base_currency: 1.0}
     for key, rate in rates.items():
         if rate.currency_from == config.league.base_currency:
@@ -269,7 +317,13 @@ def _load_data_directly() -> dict:
         elif rate.currency_to == config.league.base_currency and rate.raw_rate > 0:
             prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
 
-    # Run currency clustering
+    # Also use current_price from all_currencies for more accurate prices
+    for api_id, curr_price in currency_current_price.items():
+        if curr_price is not None and curr_price > 0:
+            # current_price is in base_currency (Exalted) terms
+            prices_in_chaos[api_id] = curr_price
+
+    # Run currency clustering with real price histories
     cluster_labels: dict[str, ClusterLabel] = {}
     try:
         cluster_price_histories: dict[str, list[float]] = {}
@@ -277,21 +331,35 @@ def _load_data_directly() -> dict:
         cluster_prices_now: dict[str, float] = {}
         cluster_prices_24h_ago: dict[str, float] = {}
 
+        # Use price_logs from all_currencies for clustering features
+        for curr in all_currencies:
+            api_id = curr.get("api_id", "")
+            if not api_id:
+                continue
+            logs = curr.get("price_logs", [])
+            prices_from_logs = [l["price"] for l in logs if l.get("price") is not None]
+            cluster_price_histories[api_id] = prices_from_logs
+            cluster_volumes[api_id] = float(curr.get("current_quantity") or 0)
+            cluster_prices_now[api_id] = curr.get("current_price") or prices_in_chaos.get(api_id, 0)
+
+            # Estimate 24h_ago price from price_logs
+            if len(prices_from_logs) >= 2:
+                cluster_prices_24h_ago[api_id] = prices_from_logs[0]
+            else:
+                cluster_prices_24h_ago[api_id] = cluster_prices_now[api_id]
+
+        # Also include currencies from rates that weren't in all_currencies
         for key, rate in rates.items():
             for curr in (rate.currency_from, rate.currency_to):
                 if curr not in cluster_price_histories:
                     cluster_price_histories[curr] = []
-                    cluster_volumes[curr] = 0.0
-                    cluster_prices_now[curr] = 0.0
-                    cluster_prices_24h_ago[curr] = 0.0
-            for curr in (rate.currency_from, rate.currency_to):
-                vol = float(rate.volume_traded)
-                if vol > cluster_volumes.get(curr, 0):
-                    cluster_volumes[curr] = vol
-
-        for curr in cluster_volumes:
-            cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
-            cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+                    cluster_volumes[curr] = float(rate.volume_traded)
+                    cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
+                    cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+                else:
+                    vol = float(rate.volume_traded)
+                    if vol > cluster_volumes.get(curr, 0):
+                        cluster_volumes[curr] = vol
 
         if len(cluster_price_histories) >= 3:
             clusterer = CurrencyClusterer(config)
@@ -300,7 +368,8 @@ def _load_data_directly() -> dict:
                 cluster_prices_now, cluster_prices_24h_ago,
             )
             cluster_labels = {c.currency: c.cluster for c in output.clusters}
-    except Exception:
+    except Exception as e:
+        logger.debug("Clustering failed: %s", e)
         cluster_labels = {}
 
     opportunities = []
@@ -323,21 +392,32 @@ def _load_data_directly() -> dict:
             gold_fee_actual = 0.0
 
         mid_price = rate.raw_rate
-        spread_est = 0.02
+        # Estimate spread from volume: higher volume → tighter spread
+        vol = float(rate.volume_traded)
+        if vol > 1000:
+            spread_est = 0.01
+        elif vol > 100:
+            spread_est = 0.02
+        else:
+            spread_est = 0.05
         bid = mid_price * (1 - spread_est / 2)
         ask = mid_price * (1 + spread_est / 2)
 
-        momentum = 0.0
-        volatility = fee_fraction
+        # Use real momentum/volatility from price_logs (not hardcoded!)
+        curr_momentum = momentum_data.get(rate.currency_from, {}).get("momentum", 0.0)
+        curr_volatility = momentum_data.get(rate.currency_from, {}).get("volatility", 0.0)
+        # If volatility is 0 (no history), use fee_fraction as a conservative estimate
+        if curr_volatility <= 0:
+            curr_volatility = fee_fraction if fee_fraction > 0 else 0.01
 
         score = compute_opportunity_score(
             bid=bid, ask=ask, mid_price=mid_price,
             volume_24h=float(rate.volume_traded),
             max_volume=float(max_volume),
-            volatility=volatility,
+            volatility=curr_volatility,
             gold_fee_fraction=fee_fraction,
             phase_multiplier=phase_multiplier,
-            momentum=momentum,
+            momentum=curr_momentum,
             momentum_neg_threshold=config.scoring.momentum_negative_threshold,
             vol_reference=config.scoring.volatility_reference,
         )
@@ -363,8 +443,8 @@ def _load_data_directly() -> dict:
             gold_fee_fraction=fee_fraction,
             gold_fee_actual=gold_fee_actual,
             volume_24h=float(rate.volume_traded),
-            momentum=momentum,
-            volatility=volatility,
+            momentum=curr_momentum,
+            volatility=curr_volatility,
             cluster=cluster,
             bid=bid, ask=ask, mid_price=mid_price,
         )

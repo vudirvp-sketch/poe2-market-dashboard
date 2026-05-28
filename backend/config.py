@@ -34,11 +34,17 @@ class DataConfig(BaseModel):
 
 class LeagueConfig(BaseModel):
     league_name: str = "vaal"
-    realm: str = "poe2/pc"
+    realm: str = "poe2"  # POE2Scout API realm path segment: "poe2" (NOT "poe2/pc")
     league_start_date: str = "2025-01-15T00:00:00Z"
     phase_early_days: int = 7
     phase_mid_days: int = 35
     base_currency: str = "exalted"
+    # Known POE2 currency categories for ByCategory pagination
+    currency_categories: list[str] = Field(default_factory=lambda: [
+        "currency", "fragments", "runes", "essences", "ultimatum",
+        "expedition", "ritual", "vaultkeys", "breach", "abyss",
+        "uncutgems", "lineagesupportgems", "delirium", "incursion", "idol",
+    ])
 
     @property
     def league_start_datetime(self) -> datetime:

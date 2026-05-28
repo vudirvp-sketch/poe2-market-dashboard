@@ -99,15 +99,15 @@ class PairDataDetails(ApiModel):
     value_traded: Decimal = Decimal("0")
     relative_price: Decimal = Decimal("0")
     stock_value: Decimal = Decimal("0")
-    volume_traded: int = 0
-    highest_stock: int = 0
+    volume_traded: int | float = 0  # API sometimes returns string/int/float
+    highest_stock: int | float = 0
 
 
 class SnapshotPair(ApiModel):
     """A single trading pair in an exchange snapshot."""
     currency_exchange_snapshot_pair_id: int = 0
     currency_exchange_snapshot_id: int = 0
-    volume: Decimal = Decimal("0")
+    volume: Decimal | str = Decimal("0")  # API returns decimal string
     base_currency_api_id: str = "exalted"
     base_currency_text: str = "Exalted Orb"
     currency_one: Optional[CurrencyItem] = None
@@ -119,16 +119,16 @@ class SnapshotPair(ApiModel):
 class ExchangeSnapshot(ApiModel):
     """Top-level exchange snapshot summary."""
     epoch: int = 0
-    volume: Decimal = Decimal("0")
-    market_cap: Decimal = Decimal("0")
+    volume: Decimal | str = Decimal("0")  # API returns decimal string
+    market_cap: Decimal | str = Decimal("0")
     base_currency_api_id: str = "exalted"
     base_currency_text: str = "Exalted Orb"
 
 
 class SnapshotHistoryPoint(ApiModel):
     epoch: int = 0
-    market_cap: Decimal = Decimal("0")
-    volume: Decimal = Decimal("0")
+    market_cap: Decimal | str = Decimal("0")
+    volume: Decimal | str = Decimal("0")
 
 
 class SnapshotHistoryMeta(ApiModel):
@@ -169,13 +169,13 @@ class PairHistoryResponse(ApiModel):
 # ---------------------------------------------------------------------------
 
 class DailyStatsPoint(ApiModel):
-    time: str = ""       # date string
+    time: str = ""       # date string "YYYY-MM-DD"
     open: float = 0.0
     high: float = 0.0
     low: float = 0.0
     close: float = 0.0
     average: float = 0.0
-    volume: int = 0
+    volume: int | float = 0  # API may return int or float
 
 
 class DailyStatsResponse(ApiModel):
