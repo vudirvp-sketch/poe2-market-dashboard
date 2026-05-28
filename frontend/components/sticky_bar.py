@@ -1,7 +1,7 @@
 """
 Sticky Bar — top alert bar for the PoE2 Flipper dashboard.
 
-From spec §7.1, the sticky bar shows:
+From spec section 7.1, the sticky bar shows:
 - Best flip opportunity (max score)
 - 24h trend (sparkline + direction arrow)
 - Active hype/anomaly alert (if any)
@@ -26,6 +26,7 @@ from frontend.utils.formatters import (
     phase_color,
     phase_emoji,
     direction_arrow,
+    event_type_display,
     COLOR_GREEN,
     COLOR_RED,
     COLOR_BLUE,
@@ -152,11 +153,23 @@ def render_sticky_bar(
         if active_event:
             event_type = active_event.get("event_type", "other")
             desc = active_event.get("description", "")
+            total_events = active_event.get("total_active_events", 1)
+            event_label, event_icon = event_type_display(event_type)
+
+            # Truncate description for display
+            short_desc = desc[:40] + "..." if len(desc) > 40 else desc
+
+            # Pulsing warning style
+            extra_badge = ""
+            if total_events > 1:
+                extra_badge = f" <span style='background:{COLOR_ORANGE};color:#fff;border-radius:8px;padding:0 6px;font-size:0.7em'>+{total_events - 1}</span>"
+
             st.markdown(
                 f"<div style='text-align:center'>"
-                f"<span style='font-size:0.85em;color:{COLOR_ORANGE}'>⚠️ Event Active</span><br>"
-                f"<span style='font-weight:bold;color:{COLOR_ORANGE}'>{event_type.replace('_', ' ').title()}</span><br>"
-                f"<span style='font-size:0.75em;color:{COLOR_GRAY}'>{desc[:40]}</span>"
+                f"<span style='font-size:0.85em;color:{COLOR_ORANGE}'>{event_icon} Event Active</span><br>"
+                f"<span style='font-weight:bold;color:{COLOR_ORANGE}'>{event_label}</span>"
+                f"{extra_badge}<br>"
+                f"<span style='font-size:0.75em;color:{COLOR_GRAY}'>{short_desc}</span>"
                 f"</div>",
                 unsafe_allow_html=True,
             )

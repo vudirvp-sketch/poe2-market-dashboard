@@ -11,6 +11,10 @@ Provides:
     GET /api/prices/{pair}      — price for a specific pair
     GET /api/arbitrage/flips    — scored flip opportunities
     GET /api/arbitrage/triangular — triangular arbitrage cycles
+    GET /api/forecast/{currency} — price forecast for a currency
+    GET /api/portfolio          — portfolio allocation
+    POST /api/events            — create a manual event flag
+    GET /api/events             — list active events
     GET /api/health             — health check
 """
 
@@ -27,6 +31,7 @@ from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
 from backend.api.routes_forecast import router as forecast_router
 from backend.api.routes_portfolio import router as portfolio_router
+from backend.api.routes_events import router as events_router
 from backend.config import get_settings
 
 # Configure logging
@@ -52,6 +57,21 @@ async def lifespan(app: FastAPI):
         config.league.realm,
         config.league.base_currency,
     )
+
+    # Check for any active major_patch events that should reset phase
+    from backend.economy.events import get_event_manager
+    from backend.economy.lifecycle import PhaseDetector
+    manager = get_event_manager(config)
+    if manager.has_major_patch_event():
+        patch_ts = manager.get_latest_major_patch_timestamp()
+        if patch_ts:
+            detector = PhaseDetector(config.league.league_start_datetime, config)
+            detector.reset_for_major_patch(patch_ts)
+            logger.info(
+                "PhaseDetector reset for major patch event at %s",
+                patch_ts.isoformat(),
+            )
+
     yield
     # Cleanup: close provider HTTP clients
     from backend.api.routes_prices import _provider as prices_provider
@@ -92,6 +112,7 @@ app.include_router(prices_router)
 app.include_router(arbitrage_router)
 app.include_router(forecast_router)
 app.include_router(portfolio_router)
+app.include_router(events_router)
 
 
 # ---------------------------------------------------------------------------
@@ -102,9 +123,16 @@ app.include_router(portfolio_router)
 async def health_check():
     """Simple health check endpoint."""
     config = get_settings()
+
+    # Include event status in health check
+    from backend.economy.events import get_event_manager
+    manager = get_event_manager(config)
+    event_summary = manager.get_active_event_summary()
+
     return {
         "status": "ok",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "league": config.league.league_name,
         "base_currency": config.league.base_currency,
+        "active_events": event_summary["total_active_events"] if event_summary else 0,
     }

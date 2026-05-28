@@ -22,6 +22,7 @@ from backend.economy.lifecycle import PhaseDetector
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
+from backend.economy.events import get_event_manager, EventManager
 from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
@@ -71,11 +72,13 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     2. Compute momentum/volatility for each currency
     3. Compute gold fee fractions (direction-dependent)
     4. Score each opportunity
-    5. Apply quick filter
+    5. Apply event penalties (Milestone 9)
+    6. Apply quick filter
     """
     provider = _get_provider()
     cache = get_cache()
     detector = _get_phase_detector()
+    event_manager = get_event_manager(config)
 
     # 1. Fetch exchange rates
     rates_result = await cache.get_or_fetch(
@@ -93,7 +96,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         return []
 
     # 2. Fetch historical data for momentum calculation
-    # Use ByCategory endpoint which includes price_logs
     metadata_result = await cache.get_or_fetch(
         "metadata",
         provider.name(),
@@ -137,72 +139,57 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     )
 
     # 6. Build price-in-chaos mapping
-    # Use the base currency as reference; if base is "exalted",
-    # we derive prices from the exchange rates
     prices_in_chaos: dict[str, float] = {config.league.base_currency: 1.0}
     for key, rate in rates.items():
         if rate.currency_from == config.league.base_currency:
-            # e.g. exalted → chaos: raw_rate = how many chaos per 1 exalted
             if rate.currency_to not in prices_in_chaos:
                 prices_in_chaos[rate.currency_to] = rate.raw_rate
         elif rate.currency_to == config.league.base_currency:
-            # e.g. chaos → exalted: raw_rate = how many exalted per 1 chaos
-            # so 1 chaos = raw_rate exalted → 1 chaos in exalted terms
             if rate.currency_from not in prices_in_chaos:
                 prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate if rate.raw_rate > 0 else 0.0
 
-    # If we have chaos in the prices, convert everything to chaos
     if "chaos" in prices_in_chaos and config.league.base_currency != "chaos":
         exalted_to_chaos = prices_in_chaos.get("chaos", 1.0)
         for k in list(prices_in_chaos.keys()):
             if k != "chaos":
                 prices_in_chaos[k] = prices_in_chaos[k] * exalted_to_chaos
 
-    # 7. Run currency clustering (Milestone 6: §5)
-    # Build clustering inputs from the data we already have
+    # 7. Run currency clustering (Milestone 6: section 5)
     clusterer = CurrencyClusterer(config)
     cluster_labels: dict[str, ClusterLabel] = {}
 
     try:
-        # Prepare clustering inputs
         cluster_price_histories: dict[str, list[float]] = {}
         cluster_volumes: dict[str, float] = {}
         cluster_prices_now: dict[str, float] = {}
         cluster_prices_24h_ago: dict[str, float] = {}
 
-        # Collect unique currencies from both sides of each pair
         for key, rate in rates.items():
             for curr in (rate.currency_from, rate.currency_to):
                 if curr not in cluster_price_histories:
                     cluster_price_histories[curr] = currency_price_history.get(curr, [])
-                    # Use volume from whichever pair involves this currency
                     cluster_volumes[curr] = 0.0
                     cluster_prices_now[curr] = 0.0
                     cluster_prices_24h_ago[curr] = 0.0
 
-            # Accumulate volume per currency (use max volume across pairs)
             for curr in (rate.currency_from, rate.currency_to):
                 vol = float(rate.volume_traded)
                 if vol > cluster_volumes.get(curr, 0):
                     cluster_volumes[curr] = vol
 
-        # Derive prices_now and prices_24h_ago from the price histories
         for curr, history in cluster_price_histories.items():
             if history:
                 cluster_prices_now[curr] = history[-1]
                 cluster_prices_24h_ago[curr] = history[0] if len(history) > 1 else history[-1]
             else:
-                # Fallback: use prices_in_chaos if available
                 cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
                 cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
 
-        # Only cluster if we have enough currencies
         if len(cluster_price_histories) >= 3:
             cluster_labels = clusterer.fit(
                 cluster_price_histories, cluster_volumes,
                 cluster_prices_now, cluster_prices_24h_ago,
             )
-            # Convert ClusterResult to dict
             cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
             logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
         else:
@@ -215,25 +202,21 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         cluster_labels = {}
 
     # 8. Score each pair as a flip opportunity
+    # MILESTONE 9: Apply event effects to scoring
     opportunities: list[FlipOpportunity] = []
 
     for key, rate in rates.items():
-        # Compute momentum and volatility from price history
         history = currency_price_history.get(rate.currency_from, [])
         tracker = PriceMomentumTracker(window_size=24)
         for price in history:
             tracker.update(price)
         momentum_result = tracker.compute()
 
-        # Estimate bid/ask from the rate (1% estimated spread if no order book)
-        # In a real system, these come from the order book.
         mid_price = rate.raw_rate
-        # Use a spread proportional to volatility
         spread_estimate = max(0.01, momentum_result.volatility * 2)
         bid = mid_price * (1 - spread_estimate / 2)
         ask = mid_price * (1 + spread_estimate / 2)
 
-        # Compute gold fee fraction (direction-dependent)
         price_to_chaos = prices_in_chaos.get(rate.currency_to, 0)
         trade_value = rate.raw_rate * price_to_chaos
 
@@ -254,7 +237,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             fee_fraction = 0.0
             gold_fee_actual = 0.0
 
-        # Score
         score = compute_opportunity_score(
             bid=bid,
             ask=ask,
@@ -269,8 +251,24 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             vol_reference=config.scoring.volatility_reference,
         )
 
-        # Determine cluster label (use clustering result, fallback to MODERATE)
-        # Check both sides of the pair; use the "from" currency's cluster
+        # MILESTONE 9: Apply event penalty
+        # From spec section 6: if affected_currencies is specified, those
+        # currencies are excluded from flip scoring. If not specified,
+        # all currencies get a temporary event_penalty on their scores.
+        event_penalty = event_manager.get_event_score_penalty(rate.currency_from)
+        if event_penalty == 0.0:
+            # Currency is excluded entirely — skip
+            continue
+        score = score * event_penalty
+        score = min(max(score, 0.0), 1.0)
+
+        # Also check the 'to' currency
+        event_penalty_to = event_manager.get_event_score_penalty(rate.currency_to)
+        if event_penalty_to == 0.0:
+            continue
+        score = score * event_penalty_to
+        score = min(max(score, 0.0), 1.0)
+
         currency_key = rate.currency_from
         cluster = cluster_labels.get(currency_key, ClusterLabel.MODERATE)
 
@@ -289,11 +287,9 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             mid_price=mid_price,
         )
 
-        # Apply quick filter
         if quick_filter(opp, phase_info.phase, fee_fraction, config):
             opportunities.append(opp)
 
-    # Sort by score descending
     opportunities.sort(key=lambda o: o.score, reverse=True)
     return opportunities
 
@@ -310,19 +306,19 @@ async def get_flip_opportunities(
 ):
     """Return scored flip opportunities for the configured league.
 
-    Each opportunity includes: currency pair, score, spread after fees,
-    gold fee (actual gold amount), volume, momentum, volatility, cluster.
+    Event effects (Milestone 9):
+    - Currencies affected by active events are excluded or penalized.
+    - The response includes event_status indicating if events are active.
     """
     config = get_settings()
+    event_manager = get_event_manager(config)
+
     opportunities = await _build_flip_opportunities(config)
 
-    # Apply filters
     filtered = [
         o for o in opportunities
         if o.score >= min_score and o.volume_24h >= min_volume
     ]
-
-    # Limit results
     filtered = filtered[:limit]
 
     return {
@@ -345,6 +341,11 @@ async def get_flip_opportunities(
             }
             for o in filtered
         ],
+        "event_status": {
+            "any_active": event_manager.is_event_active(),
+            "affected_currencies": list(event_manager.get_affected_currencies()),
+            "summary": event_manager.get_active_event_summary(),
+        },
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -353,16 +354,11 @@ async def get_flip_opportunities(
 async def get_triangular_arbitrage(
     min_profit_pct: float = Query(0.1, ge=0.0, description="Min profit % to report"),
 ):
-    """Return detected triangular arbitrage cycles.
-
-    Uses Bellman-Ford negative cycle detection with direction-dependent
-    gold fee calculations.
-    """
+    """Return detected triangular arbitrage cycles."""
     config = get_settings()
     provider = _get_provider()
     cache = get_cache()
 
-    # Fetch exchange rates
     rates_result = await cache.get_or_fetch(
         "prices",
         provider.name(),
@@ -375,16 +371,13 @@ async def get_triangular_arbitrage(
 
     rates_dict = rates_result.value
 
-    # Build the rates dict in the format expected by find_triangular_arbitrage
     rates_for_bf: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
 
-    # Build gold cost and price dicts
     gold_cost_dict = get_api_id_to_gold_cost()
     prices_in_chaos: dict[str, float] = {}
 
-    # Derive prices from exchange rates (simplified)
     base = config.league.base_currency
     prices_in_chaos[base] = 1.0
     for key, rate in rates_dict.items():
@@ -393,14 +386,12 @@ async def get_triangular_arbitrage(
         elif rate.currency_to == base and rate.raw_rate > 0:
             prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
 
-    # Gold-to-chaos rate
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
     if config.fees.gold_to_chaos_rate_source == "market":
         observed = await provider.get_gold_chaos_rate(config.league.league_name)
         if observed is not None:
             gold_to_chaos_rate = observed
 
-    # Run Bellman-Ford
     opportunities = find_triangular_arbitrage(
         rates=rates_for_bf,
         gold_cost_per_unit=gold_cost_dict,

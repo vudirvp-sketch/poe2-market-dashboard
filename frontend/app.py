@@ -1,5 +1,5 @@
 """
-PoE2 Flipper — Streamlit Dashboard (Milestone 4: Basic Dashboard)
+PoE2 Flipper — Streamlit Dashboard
 
 This is the main entry point for the frontend. Run with:
     streamlit run frontend/app.py
@@ -7,9 +7,15 @@ This is the main entry point for the frontend. Run with:
 Tabs:
     - Overview: heatmap + scatter + phase badge + top-5 flips
     - Flips: sortable/filterable flip opportunities table with detail panel
+    - Currency Graph: network visualization with cycle highlighting
+    - Forecasts: price charts + predictions + STL decomposition
+    - Portfolio: allocation weights + risk metrics
 
-The app communicates with the FastAPI backend (backend/main.py) for live data.
-If the backend is unavailable, it shows an error message with retry instructions.
+Milestone 9 additions:
+    - Events sidebar for manual event flagging
+    - Active event display in sticky bar
+    - Event effects propagated to scoring and forecasting
+    - UI polish: progressive disclosure, pagination, currency icons
 """
 
 from __future__ import annotations
@@ -35,7 +41,8 @@ from frontend.components.flips_tab import render_flips_tab
 from frontend.components.graph_tab import render_graph_tab
 from frontend.components.forecast_tab import render_forecast_tab
 from frontend.components.portfolio_tab import render_portfolio_tab
-from frontend.utils.formatters import fmt_number
+from frontend.components.events_sidebar import render_events_sidebar
+from frontend.utils.formatters import fmt_number, fmt_event_status
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +54,7 @@ st.set_page_config(
     page_title="PoE2 Flipper",
     page_icon="💰",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",  # Changed: sidebar now holds event controls
 )
 
 # Dark theme styling
@@ -89,6 +96,21 @@ st.markdown(
     .stTabs [aria-selected="true"] {
         background-color: #334155;
         color: #f8fafc;
+    }
+
+    /* Event alert banner */
+    .event-banner {
+        background: linear-gradient(90deg, #7c2d12, #92400e);
+        padding: 0.5em 1em;
+        border-radius: 6px;
+        margin-bottom: 0.5em;
+    }
+
+    /* Progressive disclosure hint */
+    .detail-hint {
+        font-size: 0.85em;
+        color: #64748b;
+        font-style: italic;
     }
     </style>
     """,
@@ -151,6 +173,7 @@ def _load_data_directly() -> dict:
     from backend.economy.momentum import PriceMomentumTracker
     from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
     from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
+    from backend.economy.events import get_event_manager
     from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
     from backend.arbitrage.quick_filter import quick_filter
     from backend.arbitrage.triangular import find_triangular_arbitrage
@@ -161,6 +184,7 @@ def _load_data_directly() -> dict:
     provider = Poe2ScoutProvider(config)
     cache = get_cache(config)
     detector = PhaseDetector(config.league.league_start_datetime, config)
+    event_manager = get_event_manager(config)
 
     async def _fetch():
         # Get exchange rates
@@ -192,12 +216,9 @@ def _load_data_directly() -> dict:
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            # Streamlit is already running an event loop; create a new one
             import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(
-                    asyncio.run, _fetch()
-                )
+                future = executor.submit(asyncio.run, _fetch())
                 rates, phase_info, currencies, gold_to_chaos_rate = future.result(timeout=30)
         else:
             rates, phase_info, currencies, gold_to_chaos_rate = loop.run_until_complete(_fetch())
@@ -210,6 +231,7 @@ def _load_data_directly() -> dict:
             "opportunities": [],
             "triangular": [],
             "gold_to_chaos_rate": None,
+            "active_event": None,
         }
 
     # Build phase info dict
@@ -236,11 +258,10 @@ def _load_data_directly() -> dict:
             "gold_fee_actual": 0,
         })
 
-    # Build flip opportunities
+    # Build flip opportunities with event penalties
     phase_multiplier = get_phase_multiplier(phase_info.phase, config)
     max_volume = max((r.volume_traded for r in rates.values() if r.volume_traded > 0), default=1)
 
-    # Prices in chaos (simplified)
     prices_in_chaos = {config.league.base_currency: 1.0}
     for key, rate in rates.items():
         if rate.currency_from == config.league.base_currency:
@@ -248,7 +269,7 @@ def _load_data_directly() -> dict:
         elif rate.currency_to == config.league.base_currency and rate.raw_rate > 0:
             prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
 
-    # Run currency clustering (Milestone 6)
+    # Run currency clustering
     cluster_labels: dict[str, ClusterLabel] = {}
     try:
         cluster_price_histories: dict[str, list[float]] = {}
@@ -268,7 +289,6 @@ def _load_data_directly() -> dict:
                 if vol > cluster_volumes.get(curr, 0):
                     cluster_volumes[curr] = vol
 
-        # Derive prices from exchange rates for clustering
         for curr in cluster_volumes:
             cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
             cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
@@ -302,15 +322,13 @@ def _load_data_directly() -> dict:
             fee_fraction = 0.0
             gold_fee_actual = 0.0
 
-        # Estimate bid/ask
         mid_price = rate.raw_rate
         spread_est = 0.02
         bid = mid_price * (1 - spread_est / 2)
         ask = mid_price * (1 + spread_est / 2)
 
-        # Momentum from history (simplified: use 0 if no data)
         momentum = 0.0
-        volatility = fee_fraction  # proxy
+        volatility = fee_fraction
 
         score = compute_opportunity_score(
             bid=bid, ask=ask, mid_price=mid_price,
@@ -324,7 +342,17 @@ def _load_data_directly() -> dict:
             vol_reference=config.scoring.volatility_reference,
         )
 
-        # Use clustering result if available
+        # MILESTONE 9: Apply event penalty
+        event_penalty = event_manager.get_event_score_penalty(rate.currency_from)
+        if event_penalty == 0.0:
+            continue  # excluded
+        score = score * event_penalty
+        event_penalty_to = event_manager.get_event_score_penalty(rate.currency_to)
+        if event_penalty_to == 0.0:
+            continue
+        score = score * event_penalty_to
+        score = min(max(score, 0.0), 1.0)
+
         currency_key = rate.currency_from
         cluster = cluster_labels.get(currency_key, ClusterLabel.MODERATE)
 
@@ -395,12 +423,16 @@ def _load_data_directly() -> dict:
     except Exception:
         pass
 
+    # Get active event summary for the sticky bar
+    active_event = event_manager.get_active_event_summary()
+
     return {
         "phase_info": phase_dict,
         "rates": rates_list,
         "opportunities": opportunities,
         "triangular": tri_list,
         "gold_to_chaos_rate": gold_to_chaos_rate,
+        "active_event": active_event,
     }
 
 
@@ -415,7 +447,34 @@ def main():
     st.title("💰 PoE2 Flipper")
     st.caption("Currency Analysis & Arbitrage Dashboard — Path of Exile 2")
 
-    # Data loading with spinner
+    # ------------------------------------------------------------------
+    # Sidebar: Event Management (Milestone 9)
+    # ------------------------------------------------------------------
+    active_event = None
+
+    with st.sidebar:
+        st.markdown("### 🎛️ Controls")
+        active_event = render_events_sidebar(API_BASE_URL)
+
+        # Data refresh control
+        st.markdown("---")
+        st.markdown("### 🔄 Data")
+        if st.button("Force Refresh", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+
+        # Event status indicator
+        if active_event:
+            st.markdown("---")
+            event_status = fmt_event_status(
+                True,
+                active_event.get("affected_currencies", []),
+            )
+            st.warning(f"⚠️ {event_status}")
+
+    # ------------------------------------------------------------------
+    # Data Loading
+    # ------------------------------------------------------------------
     with st.spinner("Loading market data..."):
         # Try FastAPI backend first
         prices_data = fetch_api("/api/prices")
@@ -434,6 +493,18 @@ def main():
 
         opportunities = flips_data.get("opportunities", []) if flips_data else []
         triangular = tri_data.get("opportunities", []) if tri_data else []
+
+        # Get event status from the flips response (Milestone 9)
+        if flips_data and "event_status" in flips_data:
+            event_status = flips_data["event_status"]
+            if event_status.get("any_active") and not active_event:
+                active_event = event_status.get("summary")
+
+        # If no active event from sidebar, try the events summary API
+        if not active_event:
+            events_summary = fetch_api("/api/events/summary")
+            if events_summary and events_summary.get("any_event_active"):
+                active_event = events_summary.get("event")
     else:
         # Fallback: load data directly via backend modules
         st.warning(
@@ -458,6 +529,38 @@ def main():
         triangular = direct_data.get("triangular", [])
         gold_to_chaos_rate = direct_data.get("gold_to_chaos_rate", 0.001)
 
+        # Event summary from direct data
+        if direct_data.get("active_event"):
+            active_event = direct_data["active_event"]
+
+    # ------------------------------------------------------------------
+    # Event Banner (Milestone 9) — prominent alert if events active
+    # ------------------------------------------------------------------
+    if active_event:
+        from frontend.utils.formatters import event_type_display, event_severity_color
+
+        event_type = active_event.get("event_type", "other")
+        event_label, event_icon = event_type_display(event_type)
+        desc = active_event.get("description", "")
+        severity_color = event_severity_color(event_type)
+        total = active_event.get("total_active_events", 1)
+
+        banner_extra = ""
+        if total > 1:
+            banner_extra = f" (+{total - 1} more active)"
+
+        st.markdown(
+            f"<div class='event-banner'>"
+            f"<span style='font-size:1.1em'>{event_icon} <b>{event_label}</b>{banner_extra}</span><br>"
+            f"<span style='font-size:0.9em'>{desc}</span><br>"
+            f"<span style='font-size:0.8em;color:#fbbf24'>"
+            f"Forecasts: low confidence | Holt-Winters: suspended | "
+            f"Some currencies may be excluded from scoring"
+            f"</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
     # ------------------------------------------------------------------
     # Sticky Bar
     # ------------------------------------------------------------------
@@ -474,7 +577,7 @@ def main():
         best_flip=best_flip,
         trend_24h=trend_24h,
         best_triangular=best_tri,
-        active_event=None,  # events module not yet implemented
+        active_event=active_event,
         phase_info=phase_info,
         gold_to_chaos_rate=gold_to_chaos_rate,
     )
@@ -482,13 +585,11 @@ def main():
     # ------------------------------------------------------------------
     # Tabs
     # ------------------------------------------------------------------
-    # Build cluster assignments dict for graph tab
     cluster_assignments = {}
     if opportunities:
         for opp in opportunities:
             curr = opp.get("currency", "")
             cluster = opp.get("cluster", "moderate")
-            # Use both sides of the pair
             parts = curr.split("/")
             for p in parts:
                 if p and p not in cluster_assignments:
@@ -525,7 +626,6 @@ def main():
         )
 
     with tab_forecast:
-        # Currency selector for forecast
         available_currencies = list(set(
             opp.get("currency", "").split("/")[0]
             for opp in (opportunities or [])
@@ -540,6 +640,7 @@ def main():
             selected_currency = "exalted"
 
         # Fetch forecast data from API
+        # Milestone 9: event status is auto-detected by the forecast endpoint
         forecast_data = fetch_api(f"/api/forecast/{selected_currency}")
         stl_data = fetch_api(f"/api/forecast/{selected_currency}/stl")
 
@@ -557,13 +658,12 @@ def main():
         render_forecast_tab(
             forecast_data=forecast_data,
             stl_data=stl_data,
-            anomaly_alerts=None,  # Will be populated when anomaly API is available
+            anomaly_alerts=None,
             currency=selected_currency,
             price_history=price_history_for_chart if price_history_for_chart else None,
         )
 
     with tab_portfolio:
-        # Fetch portfolio data from API
         portfolio_data = fetch_api("/api/portfolio")
 
         # Handle rebalance trigger
@@ -588,8 +688,9 @@ def main():
     # Footer
     # ------------------------------------------------------------------
     st.markdown("---")
+    event_note = " | ⚠️ Events active" if active_event else ""
     st.caption(
-        f"PoE2 Flipper v0.1 | Data from [POE2Scout](https://poe2scout.com/) | "
+        f"PoE2 Flipper v0.2 (M9){event_note} | Data from [POE2Scout](https://poe2scout.com/) | "
         f"Last refresh: {datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}"
     )
 

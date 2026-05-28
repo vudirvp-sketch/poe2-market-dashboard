@@ -17,6 +17,7 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings, AppConfig
 from backend.data.cache import get_cache
 from backend.data.providers.poe2scout import Poe2ScoutProvider
+from backend.economy.events import get_event_manager, EventManager
 from backend.predictors.time_series import ForecastEngine
 from backend.models.currency import ForecastResult
 
@@ -54,16 +55,32 @@ def _get_forecast_engine(config: AppConfig | None = None) -> ForecastEngine:
 async def get_forecast(
     currency: str,
     horizon: int = Query(24, ge=1, le=168, description="Forecast horizon in periods"),
-    is_event_active: bool = Query(False, description="Whether an event flag is active"),
+    is_event_active: bool | None = Query(
+        None,
+        description="Override: whether an event flag is active. "
+                    "If not provided, auto-detected from EventManager.",
+    ),
 ):
     """Return price forecasts from all available models for a currency.
 
     Models: SARIMA, Holt-Winters, LightGBM.
     Includes 95% confidence intervals and model agreement check.
+
+    Event effects (Milestone 9):
+    - SARIMA: low_confidence=True when event active
+    - Holt-Winters: disabled when event active
+    - LightGBM: is_event_active feature set to True
+    - If is_event_active query param is not provided, auto-detected
+      from the EventManager based on whether this currency is affected.
     """
     config = get_settings()
     provider = _get_provider()
     cache = get_cache()
+    event_manager = get_event_manager(config)
+
+    # Auto-detect event status if not explicitly provided
+    if is_event_active is None:
+        is_event_active = event_manager.is_event_active(currency)
 
     # Fetch historical price data for this currency
     hist_result = await cache.get_or_fetch(
@@ -125,12 +142,16 @@ async def get_forecast(
     has_disagreement = any(r.disagreement for r in results.values())
     has_low_confidence = any(r.low_confidence for r in results.values())
 
+    # Note: Holt-Winters is automatically disabled when event is active
+    # (handled inside ForecastEngine), so it simply won't appear in results
+
     return {
         "currency": currency,
         "horizon": horizon,
         "models": forecast_data,
         "disagreement": has_disagreement,
         "low_confidence": has_low_confidence,
+        "is_event_active": is_event_active,
         "data_points": len(prices),
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }

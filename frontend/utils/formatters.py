@@ -70,8 +70,32 @@ def fmt_spread(value: float) -> str:
     return f"+{value * 100:.2f}%"
 
 
+def fmt_timestamp(iso_str: str | None) -> str:
+    """Format an ISO timestamp for display."""
+    if not iso_str:
+        return "—"
+    try:
+        # Extract just the date and time part
+        if "T" in iso_str:
+            parts = iso_str.split("T")
+            date_part = parts[0]
+            time_part = parts[1][:8] if len(parts) > 1 else ""
+            return f"{date_part} {time_part}"
+        return iso_str[:19]
+    except Exception:
+        return iso_str[:19] if len(iso_str) > 19 else iso_str
+
+
+def fmt_currency_with_icon(currency_name: str, icon_url: str | None = None) -> str:
+    """Format a currency name with an optional icon."""
+    display_name = currency_name.replace("_", " ").title()
+    if icon_url:
+        return f"<img src='{icon_url}' style='height:16px;width:16px;vertical-align:middle;margin-right:4px'>{display_name}"
+    return display_name
+
+
 # ---------------------------------------------------------------------------
-# Color mapping (from spec §7.7)
+# Color mapping (from spec section 7.7)
 # ---------------------------------------------------------------------------
 
 # Spec colors
@@ -134,7 +158,7 @@ def direction_arrow(value: float) -> str:
     return "➡️"
 
 
-def cluster_display(cluster: str) -> str:
+def cluster_display(cluster: str) -> tuple[str, str]:
     """Return a display-friendly cluster label with color."""
     labels = {
         "stable": ("Stable", COLOR_GREEN),
@@ -142,3 +166,59 @@ def cluster_display(cluster: str) -> str:
         "volatile_illiquid": ("Volatile/Illiquid", COLOR_RED),
     }
     return labels.get(cluster, (cluster.title(), COLOR_GRAY))
+
+
+# ---------------------------------------------------------------------------
+# Event display helpers (Milestone 9)
+# ---------------------------------------------------------------------------
+
+def event_type_display(event_type: str) -> tuple[str, str]:
+    """Return a display-friendly event type label with icon.
+
+    Returns:
+        Tuple of (label, icon_emoji)
+    """
+    mapping = {
+        "major_patch": ("Major Patch", "🔴"),
+        "minor_patch": ("Minor Patch", "🟡"),
+        "streamer_hype": ("Streamer Hype", "🟠"),
+        "other": ("Other Event", "⚪"),
+    }
+    return mapping.get(event_type, (event_type.replace("_", " ").title(), "⚠️"))
+
+
+def event_severity_color(event_type: str) -> str:
+    """Return a color based on event severity.
+
+    Major patches are most severe (red), streamer hype is moderate (orange),
+    minor patches and other events are less severe (yellow/gray).
+    """
+    severity = {
+        "major_patch": COLOR_RED,
+        "minor_patch": COLOR_ORANGE,
+        "streamer_hype": COLOR_ORANGE,
+        "other": COLOR_GRAY,
+    }
+    return severity.get(event_type, COLOR_GRAY)
+
+
+def fmt_event_status(any_active: bool, affected_currencies: list[str] | None = None) -> str:
+    """Format event status for display in the overview.
+
+    Args:
+        any_active: Whether any event is currently active
+        affected_currencies: List of affected currency API IDs
+
+    Returns:
+        Human-readable status string
+    """
+    if not any_active:
+        return "No active events"
+
+    if affected_currencies:
+        curr_list = ", ".join(c.replace("_", " ").title() for c in affected_currencies[:5])
+        if len(affected_currencies) > 5:
+            curr_list += f" +{len(affected_currencies) - 5} more"
+        return f"Events active — affecting: {curr_list}"
+
+    return "Events active — all currencies affected"
