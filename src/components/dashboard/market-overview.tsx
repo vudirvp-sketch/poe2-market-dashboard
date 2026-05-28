@@ -82,6 +82,17 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     enabled: !!league,
   });
 
+  // ---- Heatmap data (flipper backend) ----
+  // IMPORTANT: This hook MUST be called before any early returns to satisfy
+  // React's Rules of Hooks (hooks must always be called in the same order).
+  const { data: heatmapData } = useQuery<HeatmapItem[]>({
+    queryKey: ["flipper-heatmap"],
+    queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap"),
+    enabled: !!backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
   const isLoading = snapshotLoading || itemsLoading || pairsLoading;
 
   // Top movers
@@ -126,15 +137,6 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
       </div>
     );
   }
-
-  // ---- Heatmap data (flipper backend) ----
-  const { data: heatmapData } = useQuery<HeatmapItem[]>({
-    queryKey: ["flipper-heatmap"],
-    queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap"),
-    enabled: !!backendOnline,
-    staleTime: 60_000,
-    retry: 1,
-  });
 
   // Heatmap color helper: green for positive, red for negative, intensity ∝ magnitude
   const heatmapCellStyle = (change: number): React.CSSProperties => {
