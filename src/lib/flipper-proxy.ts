@@ -39,7 +39,7 @@ export async function proxyToFlipper(
       method,
       headers: {
         Accept: "application/json",
-        "Content-Type": body ? "application/json" : "",
+        ...(body ? { "Content-Type": "application/json" } : {}),
       },
       signal: AbortSignal.timeout(30_000),
     };

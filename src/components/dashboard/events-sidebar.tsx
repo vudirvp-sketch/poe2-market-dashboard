@@ -239,7 +239,7 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
       affected_currencies: currencies,
       expiry_hours: expiryHours,
     });
-  }, [description, affectedCurrencies, eventType, createMutation, t]);
+  }, [description, affectedCurrencies, eventType, expiryHours, createMutation, t]);
 
   // ---- Compute impact summary ----
   const allAffectedCurrencies = eventsData?.events?.flatMap(
