@@ -8,7 +8,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -182,7 +182,7 @@ interface FlipsTabProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function FlipsTab({ backendOnline }: FlipsTabProps) {
+export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps) {
   const { t } = useI18n();
 
   // Filter state
@@ -791,4 +791,4 @@ export function FlipsTab({ backendOnline }: FlipsTabProps) {
       </Dialog>
     </div>
   );
-}
+});

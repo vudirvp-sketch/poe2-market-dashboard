@@ -6,7 +6,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -291,10 +291,10 @@ interface ArbitrageTabProps {
   realm?: string;
   league?: string;
   /** Whether the flipper backend is online (checked at dashboard level) */
-  backendOnline?: boolean;
+  backendOnline: boolean;
 }
 
-export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }: ArbitrageTabProps) {
+export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendOnline }: ArbitrageTabProps) {
   const { t } = useI18n();
 
   // Mode toggle
@@ -312,19 +312,18 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
   const [flipMinScore, setFlipMinScore] = useState(0);
   const [flipMinVolume, setFlipMinVolume] = useState(0);
 
-  // ---- Backend health check ----
-  // If backendOnline is provided as prop (from dashboard level), use it;
-  // otherwise, fall back to local health check for standalone usage.
-  const { data: healthData } = useQuery<FlipperHealthResponse>({
+  // backendOnline is now a required prop — the dashboard-level health check
+  // is the single source of truth. No local fallback.
+
+  // ---- Phase info for the stats card (flipper mode) ----
+  const { data: phaseData } = useQuery<FlipperHealthResponse>({
     queryKey: ["flipper-health"],
     queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
     staleTime: 30_000,
     refetchInterval: 30_000,
     retry: false,
-    enabled: backendOnlineProp === undefined, // only fetch locally if not provided as prop
+    enabled: mode === "flipper" && backendOnline,
   });
-
-  const backendOnline = backendOnlineProp ?? (!healthData ? false : healthData?.status === "ok");
 
   // ---- Fetch exchange pairs (client-side mode) ----
   const {
@@ -812,20 +811,20 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                   </p>
                 </div>
               ) : (
-                <div className="space-y-0">
+                <div className="space-y-0" role="table" aria-label={t("arbitrageOpportunities")}>
                   {/* Table header */}
-                  <div className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                    <span>{t("route")}</span>
-                    <span className="text-center">{t("len")}</span>
-                    <span className="text-right">{t("netProfit")}</span>
-                    <span className="text-right">{t("gross")}</span>
-                    <span className="text-right">{t("slippage")}</span>
-                    <span className="text-center">{t("confidence")}</span>
-                    <span className="text-right">{t("maxVol")}</span>
+                  <div className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                    <span role="columnheader">{t("route")}</span>
+                    <span className="text-center" role="columnheader">{t("len")}</span>
+                    <span className="text-right" role="columnheader">{t("netProfit")}</span>
+                    <span className="text-right" role="columnheader">{t("gross")}</span>
+                    <span className="text-right" role="columnheader">{t("slippage")}</span>
+                    <span className="text-center" role="columnheader">{t("confidence")}</span>
+                    <span className="text-right" role="columnheader">{t("maxVol")}</span>
                   </div>
 
                   {/* Table body */}
-                  <div className="max-h-96 overflow-y-auto" role="list" aria-label="Arbitrage opportunities">
+                  <div className="max-h-96 overflow-y-auto" role="rowgroup">
                     {uniqueCycles.map((cycle, idx) => {
                       const routeNames = cycle.route.map(
                         (id) => cycle.edges.find((e) => e.from === id)?.fromName ?? id,
@@ -838,9 +837,9 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                         <div
                           key={idx}
                           className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
-                          role="listitem"
+                          role="row"
                         >
-                          <div className="flex items-center gap-1 flex-wrap min-w-0">
+                          <div className="flex items-center gap-1 flex-wrap min-w-0" role="cell">
                             {routeNames.map((name, i) => (
                               <span key={i} className="flex items-center gap-1">
                                 <span className="truncate text-xs font-medium">
@@ -853,23 +852,23 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                             ))}
                           </div>
 
-                          <span className="text-center text-xs text-muted-foreground font-mono">
+                          <span className="text-center text-xs text-muted-foreground font-mono" role="cell">
                             {cycle.edges.length}
                           </span>
 
-                          <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400" role="cell">
                             +{fmt(cycle.netProfit)}
                           </span>
 
-                          <span className="text-right font-mono text-xs text-muted-foreground">
+                          <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                             {fmt(cycle.grossProfit)}
                           </span>
 
-                          <span className="text-right font-mono text-xs text-muted-foreground">
+                          <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                             {(cycle.slippage * 100).toFixed(2)}%
                           </span>
 
-                          <span className="flex justify-center">
+                          <span className="flex justify-center" role="cell">
                             <Badge
                               variant="outline"
                               className={`text-[10px] px-1.5 py-0 font-semibold ${
@@ -888,7 +887,7 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                             </Badge>
                           </span>
 
-                          <span className="text-right font-mono text-xs text-muted-foreground">
+                          <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                             {cycle.maxVolume.toLocaleString()}
                           </span>
                         </div>
@@ -948,7 +947,7 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
                 <p className="text-2xl font-bold capitalize">
-                  {healthData?.league ?? "—"}
+                  {phaseData?.league ?? "—"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t("flipperPhaseDesc")}
@@ -1021,34 +1020,34 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                   </p>
                 </div>
               ) : (
-                <div className="space-y-0">
+                <div className="space-y-0" role="table" aria-label={t("flipperFlipOpportunities")}>
                   {/* Table header */}
-                  <div className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                    <span>{t("flipperCurrency")}</span>
-                    <span className="text-center">{t("flipperScore")}</span>
-                    <span className="text-right">{t("flipperSpread")}</span>
-                    <span className="text-right">{t("flipperGoldFee")}</span>
-                    <span className="text-right">{t("flipperMomentum")}</span>
-                    <span className="text-right">{t("flipperVolatility")}</span>
-                    <span className="text-center">{t("flipperCluster")}</span>
-                    <span className="text-right">{t("flipperVolume")}</span>
+                  <div className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                    <span role="columnheader">{t("flipperCurrency")}</span>
+                    <span className="text-center" role="columnheader">{t("flipperScore")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperSpread")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperGoldFee")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperMomentum")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperVolatility")}</span>
+                    <span className="text-center" role="columnheader">{t("flipperCluster")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperVolume")}</span>
                   </div>
 
                   {/* Table body */}
-                  <div className="max-h-96 overflow-y-auto" role="list" aria-label="Flip opportunities">
+                  <div className="max-h-96 overflow-y-auto" role="rowgroup">
                     {flipsData.opportunities.map((opp, idx) => (
                       <div
                         key={idx}
                         className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
-                        role="listitem"
+                        role="row"
                       >
                         {/* Currency pair */}
-                        <span className="text-xs font-medium truncate">
+                        <span className="text-xs font-medium truncate" role="cell">
                           {opp.currency}
                         </span>
 
                         {/* Score */}
-                        <span className="flex justify-center">
+                        <span className="flex justify-center" role="cell">
                           <Badge
                             variant="outline"
                             className={`text-[10px] px-1.5 py-0 font-semibold ${
@@ -1064,12 +1063,12 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                         </span>
 
                         {/* Spread after fees */}
-                        <span className="text-right font-mono text-xs text-muted-foreground">
+                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {(opp.spread_after_fees * 100).toFixed(2)}%
                         </span>
 
                         {/* Gold fee */}
-                        <span className="text-right font-mono text-xs text-muted-foreground">
+                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {opp.gold_fee_actual.toFixed(0)}g
                         </span>
 
@@ -1080,18 +1079,18 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                             : opp.momentum < 0
                             ? "text-red-600 dark:text-red-400"
                             : "text-muted-foreground"
-                        }`}>
+                        }`} role="cell">
                           {opp.momentum > 0 ? "+" : ""}
                           {opp.momentum.toFixed(4)}
                         </span>
 
                         {/* Volatility */}
-                        <span className="text-right font-mono text-xs text-muted-foreground">
+                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {opp.volatility.toFixed(4)}
                         </span>
 
                         {/* Cluster */}
-                        <span className="flex justify-center">
+                        <span className="flex justify-center" role="cell">
                           <Badge
                             variant="outline"
                             className={`text-[10px] px-1.5 py-0 font-semibold ${
@@ -1107,7 +1106,7 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                         </span>
 
                         {/* Volume */}
-                        <span className="text-right font-mono text-xs text-muted-foreground">
+                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {opp.volume_24h.toLocaleString()}
                         </span>
                       </div>
@@ -1143,26 +1142,26 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                   </p>
                 </div>
               ) : (
-                <div className="space-y-0">
+                <div className="space-y-0" role="table" aria-label={t("flipperTriangularTitle")}>
                   {/* Table header */}
-                  <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                    <span>{t("flipperCycle")}</span>
-                    <span className="text-right">{t("flipperNetProfitPct")}</span>
-                    <span className="text-right">{t("flipperGoldFees")}</span>
-                    <span className="text-center">{t("confidence")}</span>
-                    <span className="text-right">{t("flipperTotalVolume")}</span>
+                  <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                    <span role="columnheader">{t("flipperCycle")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperNetProfitPct")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperGoldFees")}</span>
+                    <span className="text-center" role="columnheader">{t("confidence")}</span>
+                    <span className="text-right" role="columnheader">{t("flipperTotalVolume")}</span>
                   </div>
 
                   {/* Table body */}
-                  <div className="max-h-64 overflow-y-auto" role="list" aria-label="Triangular arbitrage">
+                  <div className="max-h-64 overflow-y-auto" role="rowgroup">
                     {triData.opportunities.map((tri, idx) => (
                       <div
                         key={idx}
                         className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
-                        role="listitem"
+                        role="row"
                       >
                         {/* Cycle */}
-                        <div className="flex items-center gap-1 flex-wrap min-w-0">
+                        <div className="flex items-center gap-1 flex-wrap min-w-0" role="cell">
                           {tri.cycle.map((c, i) => (
                             <span key={i} className="flex items-center gap-1">
                               <span className="truncate text-xs font-medium">{c}</span>
@@ -1174,17 +1173,17 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                         </div>
 
                         {/* Net profit % */}
-                        <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400" role="cell">
                           +{tri.net_profit_pct.toFixed(2)}%
                         </span>
 
                         {/* Gold fees */}
-                        <span className="text-right font-mono text-xs text-muted-foreground">
+                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {tri.step_fees_gold.reduce((a, b) => a + b, 0).toFixed(0)}g
                         </span>
 
                         {/* Confidence */}
-                        <span className="flex justify-center">
+                        <span className="flex justify-center" role="cell">
                           <Badge
                             variant="outline"
                             className={`text-[10px] px-1.5 py-0 font-semibold ${
@@ -1204,7 +1203,7 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
                         </span>
 
                         {/* Total volume */}
-                        <span className="text-right font-mono text-xs text-muted-foreground">
+                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {tri.total_volume.toLocaleString()}
                         </span>
                       </div>
@@ -1218,4 +1217,4 @@ export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }
       )}
     </div>
   );
-}
+});

@@ -10,7 +10,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -129,7 +129,7 @@ interface EventsSidebarProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSidebarProps) {
+export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSidebarProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -500,4 +500,4 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
       </SheetContent>
     </Sheet>
   );
-}
+});

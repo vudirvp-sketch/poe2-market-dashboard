@@ -10,7 +10,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Network,
@@ -253,7 +253,7 @@ interface CurrencyGraphTabProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function CurrencyGraphTab({ backendOnline }: CurrencyGraphTabProps) {
+export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }: CurrencyGraphTabProps) {
   const { t } = useI18n();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -929,4 +929,4 @@ export function CurrencyGraphTab({ backendOnline }: CurrencyGraphTabProps) {
       </Dialog>
     </div>
   );
-}
+});

@@ -4,7 +4,7 @@
 // ============================================================================
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -159,7 +159,7 @@ interface ForecastTabProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function ForecastTab({ backendOnline }: ForecastTabProps) {
+export const ForecastTab = memo(function ForecastTab({ backendOnline }: ForecastTabProps) {
   const { t } = useI18n();
 
   // Selected currency
@@ -690,4 +690,4 @@ export function ForecastTab({ backendOnline }: ForecastTabProps) {
       </Card>
     </div>
   );
-}
+});

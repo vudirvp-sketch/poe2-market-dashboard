@@ -11,7 +11,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Briefcase,
@@ -165,7 +165,7 @@ interface PortfolioTabProps {
 // Component
 // ---------------------------------------------------------------------------
 
-export function PortfolioTab({ backendOnline }: PortfolioTabProps) {
+export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: PortfolioTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -788,4 +788,4 @@ export function PortfolioTab({ backendOnline }: PortfolioTabProps) {
       )}
     </div>
   );
-}
+});
