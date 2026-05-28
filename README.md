@@ -2,6 +2,8 @@
 
 A unified Path of Exile 2 market intelligence dashboard combining real-time market data browsing with advanced flipper analytics — all in a single Next.js application.
 
+> **Migration complete:** The original Streamlit frontend (`frontend/`) has been fully merged into the Next.js application. All flipper analytics features (Flips, Portfolio, Currency Graph, Events sidebar) are now native React components. The Streamlit and Plotly dependencies have been removed from `requirements.txt`.
+
 ## Architecture
 
 ```
@@ -58,12 +60,12 @@ npm run dev
 
 Open http://localhost:3000
 
-### Backend-only (without flipper features)
+### Frontend-only (without flipper backend)
 ```bash
 npm install
 npm run dev
 ```
-Market data tabs (Overview, Currencies, Uniques, Exchange, Watchlist) work without the backend. Flipper tabs show a graceful "backend offline" message.
+Market data tabs (Overview, Currencies, Uniques, Exchange, Watchlist) work without the backend. Flipper tabs show a graceful "backend offline" message with instructions to start the backend.
 
 ## Project Structure
 
@@ -125,6 +127,7 @@ Edit `config.yaml` to customize flipper behavior:
 | `/api/recipes` | GET | Vendor recipe arbitrage |
 | `/api/events` | GET | List active events |
 | `/api/events` | POST | Create a manual event flag |
+| `/api/events/{id}/deactivate` | POST | Deactivate an event |
 
 ## Tech Stack
 
@@ -136,6 +139,13 @@ Edit `config.yaml` to customize flipper behavior:
 ```bash
 npm run dev       # Start Next.js dev server
 npm run build     # Production build
-npm run test      # Run tests
+npm run test      # Run unit tests
 npm run lint      # Lint check
 ```
+
+## Graceful Degradation
+
+All flipper-dependent tabs (Arbitrage flipper mode, Flips, Forecast, Portfolio, Currency Graph) check the backend health endpoint on mount. When the FastAPI backend is offline:
+- A clear "Flipper Backend Offline" message is displayed with the command to start it
+- Non-flipper tabs (Overview, Currencies, Uniques, Exchange, Watchlist) continue to work normally
+- Each tab is wrapped in an `ErrorBoundary` to prevent cascading failures
