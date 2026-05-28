@@ -26,7 +26,7 @@ from backend.config import AppConfig, get_settings
 from backend.data.providers.base import BaseDataProvider
 from backend.data.schemas import (
     CurrencyByCategoryResponse,
-    CurrencyInfo as CurrencyInfoModel,
+    CurrencyItem as CurrencyInfoModel,
     CurrencyItemExtended,
     ExchangeSnapshot,
     LeagueInfo,
