@@ -4,6 +4,16 @@ setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
 
+REM ============================================================
+REM  Global error trap — keep window open on any crash so the
+REM  user can read the error instead of the window vanishing.
+REM ============================================================
+if not defined _TRAP_SET (
+    set _TRAP_SET=1
+    cmd /k "%~f0" %*
+    exit /b
+)
+
 echo ============================================================
 echo   PoE2 Market Dashboard - Launcher
 echo ============================================================
@@ -57,14 +67,14 @@ if !UVICORN_AVAILABLE! equ 0 (
         python -m pip show uvicorn >nul 2>&1
         if !ERRORLEVEL! equ 0 (
             set UVICORN_AVAILABLE=1
-            echo [OK] uvicorn found (via python -m^).
+            echo [OK] uvicorn found via python -m.
         )
     )
 )
 
 if !UVICORN_AVAILABLE! equ 0 (
     echo [WARN] uvicorn not found. The Flipper backend will not start.
-    echo        Advanced features (scoring, triangular arb, forecasts) will be unavailable.
+    echo        Advanced features ^(scoring, triangular arb, forecasts^) will be unavailable.
     echo        Install with: pip install uvicorn fastapi
     echo.
 )
@@ -111,17 +121,19 @@ if !UVICORN_AVAILABLE! equ 1 (
     timeout /t 2 /nobreak >nul
 
     REM Verify backend started
+    set _BACKEND_OK=0
     netstat -aon 2>nul | findstr :8000 | findstr LISTENING >nul 2>&1
     if !ERRORLEVEL! equ 0 (
+        set _BACKEND_OK=1
         echo [OK] Flipper backend started on http://localhost:8000
     )
-    if !ERRORLEVEL! neq 0 (
+    if !_BACKEND_OK! equ 0 (
         echo [WARN] Flipper backend may not have started. Check flipper-backend.log
     )
     echo.
 )
 if !UVICORN_AVAILABLE! equ 0 (
-    echo [SKIP] Flipper backend not started (uvicorn not available^).
+    echo [SKIP] Flipper backend not started ^(uvicorn not available^).
     echo.
 )
 
@@ -247,7 +259,7 @@ echo.
 echo   Flipper backend: http://localhost:8000
 echo.
 echo   IMPORTANT: If you see 404 errors in browser after a rebuild:
-echo     1. Hard-refresh: Ctrl+Shift+R (or Ctrl+F5)
+echo     1. Hard-refresh: Ctrl+Shift+R ^(^or Ctrl+F5^)
 echo     2. Clear browser cache: Ctrl+Shift+Delete
 echo     3. Or open DevTools ^> Application ^> Storage ^> Clear site data
 echo.
@@ -271,7 +283,7 @@ REM ---- Cleanup: kill the Flipper backend ----
 echo.
 echo [INFO] Cleaning up...
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :8000 ^| findstr LISTENING 2^>nul') do (
-    echo [INFO] Terminating Flipper backend (PID %%a^)...
+    echo [INFO] Terminating Flipper backend ^PID %%a^...
     taskkill /PID %%a /F >nul 2>&1
 )
 
