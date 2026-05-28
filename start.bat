@@ -7,6 +7,9 @@ cd /d "%~dp0"
 REM ============================================================
 REM  Global error trap — keep window open on any crash so the
 REM  user can read the error instead of the window vanishing.
+REM  NOTE: This file MUST use CRLF line endings. Unix LF will
+REM  cause CMD to mis-parse setlocal/if blocks, producing
+REM  'd', 'EM', 'tlocal' errors.
 REM ============================================================
 if not defined _TRAP_SET (
     set _TRAP_SET=1
