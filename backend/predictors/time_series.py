@@ -56,10 +56,25 @@ def check_stationarity(
     If the series is non-stationary, difference it and test again.
     d=0 if stationary, d=1 if first difference is stationary,
     d=2 if second difference is stationary (warn: may be unsuitable).
+
+    Edge case: a constant series (all values identical) is trivially
+    stationary with d=0. statsmodels adfuller raises ValueError for
+    constant input, so we handle it explicitly.
     """
     from statsmodels.tsa.stattools import adfuller
 
-    result = adfuller(series, autolag='AIC')
+    # Handle constant series: ADF test raises ValueError for constant input.
+    # A constant series is trivially stationary (no unit root possible).
+    if np.max(series) == np.min(series):
+        return True, 0.0, 0
+
+    try:
+        result = adfuller(series, autolag='AIC')
+    except ValueError:
+        # Catch any other ValueError from ADF (e.g., degenerate input)
+        logger.warning("ADF test raised ValueError; treating series as stationary with d=0.")
+        return True, 0.0, 0
+
     p_value = result[1]
 
     if p_value <= significance:
@@ -67,14 +82,32 @@ def check_stationarity(
 
     # Difference once and test again
     diff1 = np.diff(series)
-    result1 = adfuller(diff1, autolag='AIC')
+
+    # Check if first difference is constant
+    if np.max(diff1) == np.min(diff1):
+        return False, p_value, 1
+
+    try:
+        result1 = adfuller(diff1, autolag='AIC')
+    except ValueError:
+        return False, p_value, 1
+
     p1 = result1[1]
     if p1 <= significance:
         return False, p_value, 1
 
     # Difference twice
     diff2 = np.diff(diff1)
-    result2 = adfuller(diff2, autolag='AIC')
+
+    # Check if second difference is constant
+    if len(diff2) == 0 or np.max(diff2) == np.min(diff2):
+        return False, p_value, 2
+
+    try:
+        result2 = adfuller(diff2, autolag='AIC')
+    except ValueError:
+        return False, p_value, 2
+
     p2 = result2[1]
     if p2 <= significance:
         return False, p_value, 2

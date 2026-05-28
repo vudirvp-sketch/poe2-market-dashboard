@@ -34,6 +34,7 @@ from frontend.components.overview_tab import render_overview_tab
 from frontend.components.flips_tab import render_flips_tab
 from frontend.components.graph_tab import render_graph_tab
 from frontend.components.forecast_tab import render_forecast_tab
+from frontend.components.portfolio_tab import render_portfolio_tab
 from frontend.utils.formatters import fmt_number
 
 logger = logging.getLogger(__name__)
@@ -493,8 +494,8 @@ def main():
                 if p and p not in cluster_assignments:
                     cluster_assignments[p] = cluster
 
-    tab_overview, tab_flips, tab_graph, tab_forecast = st.tabs(
-        ["📊 Overview", "🔄 Flip Opportunities", "🕸️ Currency Graph", "📈 Forecasts"]
+    tab_overview, tab_flips, tab_graph, tab_forecast, tab_portfolio = st.tabs(
+        ["📊 Overview", "🔄 Flip Opportunities", "🕸️ Currency Graph", "📈 Forecasts", "💼 Portfolio"]
     )
 
     with tab_overview:
@@ -559,6 +560,28 @@ def main():
             anomaly_alerts=None,  # Will be populated when anomaly API is available
             currency=selected_currency,
             price_history=price_history_for_chart if price_history_for_chart else None,
+        )
+
+    with tab_portfolio:
+        # Fetch portfolio data from API
+        portfolio_data = fetch_api("/api/portfolio")
+
+        # Handle rebalance trigger
+        if st.session_state.get("portfolio_rebalance_trigger"):
+            try:
+                with httpx.Client(timeout=15.0) as client:
+                    resp = client.post(f"{API_BASE_URL}/api/portfolio/rebalance")
+                    if resp.status_code == 200:
+                        portfolio_data = resp.json()
+                        st.success("Portfolio rebalanced successfully!")
+            except Exception as e:
+                logger.error("Rebalance failed: %s", e)
+                st.error(f"Rebalance failed: {e}")
+            st.session_state["portfolio_rebalance_trigger"] = False
+
+        render_portfolio_tab(
+            portfolio_data=portfolio_data,
+            phase_info=phase_info,
         )
 
     # ------------------------------------------------------------------

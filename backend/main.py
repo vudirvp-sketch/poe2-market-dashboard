@@ -26,6 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
 from backend.api.routes_forecast import router as forecast_router
+from backend.api.routes_portfolio import router as portfolio_router
 from backend.config import get_settings
 
 # Configure logging
@@ -90,6 +91,7 @@ app.add_middleware(
 app.include_router(prices_router)
 app.include_router(arbitrage_router)
 app.include_router(forecast_router)
+app.include_router(portfolio_router)
 
 
 # ---------------------------------------------------------------------------
