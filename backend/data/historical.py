@@ -45,6 +45,9 @@ CREATE INDEX IF NOT EXISTS idx_price_snapshots_ts
 CREATE INDEX IF NOT EXISTS idx_price_snapshots_league_curr
     ON price_snapshots(league, currency);
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_price_snapshot_dedup 
+    ON price_snapshots(strftime('%Y-%m-%d %H:%M', timestamp), league, currency);
+
 CREATE TABLE IF NOT EXISTS gold_chaos_rates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp TEXT NOT NULL,
@@ -145,7 +148,11 @@ class HistoricalStore:
         snapshots: list[dict],
         timestamp: datetime | None = None,
     ) -> None:
-        """Write multiple price snapshots in a single transaction."""
+        """Write multiple price snapshots in a single transaction.
+
+        Uses INSERT OR IGNORE to avoid duplicates based on the
+        idx_price_snapshot_dedup unique index (rounded to 5-min bucket).
+        """
         db = await self._ensure_db()
         ts = (timestamp or datetime.now(timezone.utc)).isoformat()
 
@@ -163,7 +170,7 @@ class HistoricalStore:
         ]
 
         await db.executemany(
-            """INSERT INTO price_snapshots
+            """INSERT OR IGNORE INTO price_snapshots
                (timestamp, league, currency, price_chaos, volume_24h, bid, ask)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             rows,

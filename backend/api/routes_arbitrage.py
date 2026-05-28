@@ -392,6 +392,11 @@ async def get_triangular_arbitrage(
         if observed is not None:
             gold_to_chaos_rate = observed
 
+    # Phase 2 (Spec §11): Build pair_volumes dict from exchange rates
+    pair_volumes: dict[tuple[str, str], float] = {}
+    for key, rate in rates_dict.items():
+        pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
+
     opportunities = find_triangular_arbitrage(
         rates=rates_for_bf,
         gold_cost_per_unit=gold_cost_dict,
@@ -399,6 +404,8 @@ async def get_triangular_arbitrage(
         gold_to_chaos_rate=gold_to_chaos_rate,
         min_profit_pct=min_profit_pct,
         fallback_gold_cost=config.fees.unknown_item_gold_cost,
+        pair_volumes=pair_volumes,
+        snapshot_time=datetime.now(timezone.utc),
     )
 
     return {

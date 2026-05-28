@@ -225,6 +225,41 @@ async def get_all_prices():
             "timestamp": rate.timestamp.isoformat() if rate.timestamp else None,
         })
 
+    # Phase 2 (Spec §13): Write price snapshots to HistoricalStore
+    try:
+        from backend.data.historical import get_historical_store
+        historical_store = get_historical_store(config)
+        # Build snapshots from current rates
+        base = config.league.base_currency
+        prices_in_chaos: dict[str, float] = {base: 1.0}
+        for key, rate in rates.items():
+            if rate.currency_from == base:
+                prices_in_chaos[rate.currency_to] = rate.raw_rate
+            elif rate.currency_to == base and rate.raw_rate > 0:
+                prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
+
+        snapshots = []
+        for api_id, price in prices_in_chaos.items():
+            snapshots.append({
+                "currency": api_id,
+                "price_chaos": price,
+                "volume_24h": None,
+                "bid": None,
+                "ask": None,
+            })
+        if snapshots:
+            await historical_store.write_price_snapshots_batch(
+                config.league.league_name, snapshots
+            )
+
+        # Also write gold→chaos rate
+        if gold_to_chaos_rate:
+            await historical_store.write_gold_chaos_rate(
+                config.league.league_name, gold_to_chaos_rate
+            )
+    except Exception as e:
+        logger.debug("HistoricalStore write failed (non-critical): %s", e)
+
     return {
         "league": config.league.league_name,
         "phase": phase_info.phase.value,

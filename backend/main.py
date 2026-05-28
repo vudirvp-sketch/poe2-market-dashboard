@@ -100,7 +100,30 @@ async def lifespan(app: FastAPI):
                 patch_ts.isoformat(),
             )
 
+    # --- Phase 2: Start Background Scheduler (Spec Section 7) ---
+    scheduler = None
+    try:
+        from backend.scheduler import DataScheduler
+        from backend.api.routes_prices import _get_provider as _get_prices_provider
+        scheduler_provider = _get_prices_provider()
+        scheduler = DataScheduler(
+            provider=scheduler_provider,
+            historical_store=historical_store,
+            event_manager=manager,
+            config=config,
+        )
+        scheduler.start()
+    except Exception as e:
+        logger.warning("Scheduler failed to start: %s", e)
+
     yield
+
+    # --- Phase 2: Shutdown Scheduler ---
+    if scheduler is not None:
+        try:
+            scheduler.shutdown(wait=False)
+        except Exception as e:
+            logger.warning("Scheduler shutdown error: %s", e)
 
     # Cleanup: close provider HTTP clients and HistoricalStore
     from backend.api.routes_prices import _provider as prices_provider

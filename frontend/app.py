@@ -537,6 +537,34 @@ def main():
         st.markdown("### 🎛️ Controls")
         active_event = render_events_sidebar(API_BASE_URL)
 
+        # Phase 2 (Spec §10): Gold→Chaos Rate user input
+        st.markdown("---")
+        st.markdown("### 💰 Gold Rate")
+        default_gold_rate = 0.001
+        # Try to fetch current rate from backend
+        try:
+            health_data = fetch_api("/api/health")
+            if health_data:
+                # We'll use the config default or the API-provided rate
+                pass
+        except Exception:
+            pass
+
+        gold_rate_input = st.number_input(
+            "Gold→Chaos Rate",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.001,
+            step=0.0001,
+            format="%.4f",
+            key="gold_to_chaos_rate_input",
+            help="How many Chaos Orbs one gold coin is worth. Default: 0.001 (1000 gold ≈ 1 Chaos). "
+                 "Adjust this to recalculate fees with a different gold value.",
+        )
+
+        # Store the user-adjusted rate in session state for other components
+        st.session_state["gold_to_chaos_rate_override"] = gold_rate_input
+
         # Data refresh control
         st.markdown("---")
         st.markdown("### 🔄 Data")
@@ -600,36 +628,20 @@ def main():
             if events_summary and events_summary.get("any_event_active"):
                 active_event = events_summary.get("event")
     else:
-        # Fallback: load data directly via backend modules
-        st.warning(
-            "⚠️ Backend API not available at `{}`. "
-            "Using direct backend module import (slower, no caching). "
-            "Start the backend with: `uvicorn backend.main:app --reload`".format(API_BASE_URL)
+        # Phase 2 (Spec §15): Direct backend import fallback cleanup
+        # Previously this created a second Poe2ScoutProvider instance,
+        # duplicating HTTP clients and cache. Now we simply show an error
+        # and ask the user to start the FastAPI backend.
+        st.error(
+            "⚠️ Backend API is not available at `{}`. "
+            "The dashboard requires the FastAPI backend to be running. "
+            "Start it with: `uvicorn backend.main:app --reload`".format(API_BASE_URL)
         )
-        with st.spinner("Loading data directly from POE2Scout API..."):
-            direct_data = _load_data_directly()
-
-        if "error" in direct_data:
-            st.error(f"Failed to load data: {direct_data['error']}")
-            st.info(
-                "Make sure you have internet access and the POE2Scout API is reachable. "
-                "Try refreshing the page."
-            )
-            return
-
-        rates_data = direct_data.get("rates", [])
-        phase_info = direct_data.get("phase_info")
-        opportunities = direct_data.get("opportunities", [])
-        triangular = direct_data.get("triangular", [])
-        gold_to_chaos_rate = direct_data.get("gold_to_chaos_rate", 0.001)
-        heatmap_data_api = None  # No heatmap data in direct mode
-
-        # Phase 2 (Spec §4): Use icon URLs from direct backend load
-        icon_urls = direct_data.get("icon_urls", {})
-
-        # Event summary from direct data
-        if direct_data.get("active_event"):
-            active_event = direct_data["active_event"]
+        st.info(
+            "The direct backend import fallback has been removed to avoid "
+            "duplicate HTTP client and cache instances. Please start the backend API server."
+        )
+        return
 
     # ------------------------------------------------------------------
     # Event Banner (Milestone 9) — prominent alert if events active
@@ -671,13 +683,16 @@ def main():
         momenta = [o.get("momentum", 0) for o in opportunities[:20]]
         trend_24h = sum(momenta) / len(momenta) if momenta else None
 
+    # Use user-adjusted gold rate if available, otherwise use API-provided rate
+    effective_gold_rate = st.session_state.get("gold_to_chaos_rate_override", gold_to_chaos_rate)
+
     render_sticky_bar(
         best_flip=best_flip,
         trend_24h=trend_24h,
         best_triangular=best_tri,
         active_event=active_event,
         phase_info=phase_info,
-        gold_to_chaos_rate=gold_to_chaos_rate,
+        gold_to_chaos_rate=effective_gold_rate,
     )
 
     # ------------------------------------------------------------------

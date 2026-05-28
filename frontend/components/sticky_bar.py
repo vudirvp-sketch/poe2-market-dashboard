@@ -42,6 +42,7 @@ def render_sticky_bar(
     active_event: dict | None = None,
     phase_info: dict | None = None,
     gold_to_chaos_rate: float | None = None,
+    show_gold_rate_input: bool = False,
 ) -> None:
     """Render the top sticky bar with key metrics and alerts.
 
@@ -52,6 +53,7 @@ def render_sticky_bar(
         active_event: Dict with 'event_type', 'description' if an event is active
         phase_info: Dict with 'phase', 'recommended_strategy', 'reference_currency'
         gold_to_chaos_rate: Current gold-to-chaos conversion rate
+        show_gold_rate_input: If True, show a number_input for adjusting the gold rate
     """
     # Build columns for the bar
     col_count = 5

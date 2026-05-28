@@ -518,10 +518,12 @@ class LightGBMForecaster:
         self,
         config: AppConfig | None = None,
         feature_config: LightGBMFeatureConfig | None = None,
+        model_store=None,  # ModelStore instance (Phase 2, Spec §7.5)
     ):
         cfg = config or get_settings()
         self._fc_cfg = cfg.forecasting
         self._feature_config = feature_config or LightGBMFeatureConfig()
+        self._currency: str = ""  # set by caller or from model_store loading
 
         self._model_median = None  # point forecast model
         self._model_lower = None   # 5th percentile model
@@ -530,6 +532,15 @@ class LightGBMForecaster:
         self._last_trained_at: datetime | None = None
         self._training_mape: float | None = None
         self._retraining_triggered: bool = False
+
+        # Phase 2 (Spec §7.5): Model persistence via ModelStore
+        self._model_store = model_store
+        if self._model_store is None:
+            try:
+                from backend.predictors.model_store import get_model_store
+                self._model_store = get_model_store()
+            except ImportError:
+                self._model_store = None
 
     @property
     def last_trained_at(self) -> datetime | None:
@@ -643,6 +654,23 @@ class LightGBMForecaster:
         self._training_mape = compute_mape(y, y_pred)
         self._last_trained_at = datetime.now(timezone.utc)
 
+        # Phase 2 (Spec §7.5): Persist trained models to ModelStore
+        if self._model_store is not None and self._currency:
+            for model_type, model_obj in [
+                ("median", self._model_median),
+                ("lower", self._model_lower),
+                ("upper", self._model_upper),
+            ]:
+                self._model_store.register_in_memory(
+                    self._currency, model_type, model_obj,
+                    {
+                        "trained_at": self._last_trained_at.isoformat(),
+                        "mape": self._training_mape if model_type == "median" else None,
+                        "n_samples": len(df),
+                        "n_features": X.shape[1],
+                    },
+                )
+
         logger.info(
             "LightGBM trained: %d samples, MAPE=%.4f",
             len(df), self._training_mape,
@@ -676,6 +704,23 @@ class LightGBMForecaster:
         """
         if self._should_retrain(current_time):
             self.train(log_prices, volumes, timestamps, is_event_active)
+
+        if self._model_median is None:
+            # Phase 2 (Spec §7.5): Try loading from ModelStore
+            if self._model_store is not None and self._currency:
+                loaded = self._model_store.load_all_models_for_currency(self._currency)
+                self._model_median, median_meta = loaded.get("median", (None, None))
+                self._model_lower, _ = loaded.get("lower", (None, None))
+                self._model_upper, _ = loaded.get("upper", (None, None))
+                if self._model_median is not None and median_meta:
+                    self._last_trained_at = datetime.fromisoformat(
+                        median_meta.get("trained_at", "")
+                    ) if median_meta.get("trained_at") else None
+                    self._training_mape = median_meta.get("mape")
+                    logger.info(
+                        "LightGBM: loaded persisted model for %s (trained: %s, MAPE: %s)",
+                        self._currency, self._last_trained_at, self._training_mape,
+                    )
 
         if self._model_median is None:
             logger.warning("LightGBM: no trained model available.")

@@ -19,6 +19,7 @@ If simulated profit < 0.1%, discard (numerical artifact).
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 import numpy as np
@@ -29,6 +30,55 @@ from backend.models.currency import TriangularOpportunity
 logger = logging.getLogger(__name__)
 
 
+def _compute_confidence(
+    cycle_names: list[str],
+    total_volume: float,
+    snapshot_time: datetime | None = None,
+) -> float:
+    """Compute confidence score for a detected arbitrage cycle.
+
+    Phase 2 (Spec §11.2): Confidence is based on:
+    1. Data freshness: how recent is the snapshot (max 1.0 if <5min old, decays)
+    2. Volume: higher volume = more reliable rate
+    3. Cycle length: shorter cycles are more likely to fill
+
+    Formula:
+        freshness = max(0.0, 1.0 - (minutes_since_snapshot / 60.0))
+        volume_score = min(1.0, log1p(total_volume) / log1p(1000))
+        length_penalty = 1.0 / len(cycle_names)
+        confidence = freshness * volume_score * length_penalty * 3  # normalize
+        confidence = min(1.0, confidence)
+
+    Args:
+        cycle_names: List of currency names in the cycle (including closing node)
+        total_volume: Min volume across edges (bottleneck)
+        snapshot_time: When the snapshot data was taken (None = assume fresh)
+
+    Returns:
+        Confidence score between 0.0 and 1.0
+    """
+    # 1. Data freshness
+    freshness = 1.0  # assume fresh if no timestamp provided
+    if snapshot_time is not None:
+        now = datetime.now(timezone.utc)
+        if snapshot_time.tzinfo is None:
+            snapshot_time = snapshot_time.replace(tzinfo=timezone.utc)
+        minutes_since = (now - snapshot_time).total_seconds() / 60.0
+        freshness = max(0.0, 1.0 - (minutes_since / 60.0))
+
+    # 2. Volume score
+    volume_score = min(1.0, np.log1p(total_volume) / np.log1p(1000))
+
+    # 3. Cycle length penalty (3-node = 0.33, 4-node = 0.25)
+    length_penalty = 1.0 / len(cycle_names)
+
+    # 4. Combine with normalization so a 3-node cycle with fresh, high-volume data ≈ 1.0
+    confidence = freshness * volume_score * length_penalty * 3.0
+    confidence = min(1.0, confidence)
+
+    return confidence
+
+
 def find_triangular_arbitrage(
     rates: dict[tuple[str, str], float],
     gold_cost_per_unit: dict[str, int],
@@ -36,6 +86,8 @@ def find_triangular_arbitrage(
     gold_to_chaos_rate: float,
     min_profit_pct: float = 0.1,
     fallback_gold_cost: int = 200,
+    pair_volumes: dict[tuple[str, str], float] | None = None,
+    snapshot_time: datetime | None = None,
 ) -> list[TriangularOpportunity]:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
@@ -62,6 +114,8 @@ def find_triangular_arbitrage(
     curr_to_idx = {c: i for i, c in enumerate(currencies)}
 
     # Build edge list with weights (direction-dependent fees)
+    # Phase 2 (Spec §11): Also track volume for each edge
+    volumes_map = pair_volumes or {}  # (from, to) -> volume_traded
     edges = []
     for (u, v), raw_rate in rates.items():
         # §8.1: Compute fee fraction for receiving currency v
@@ -80,7 +134,8 @@ def find_triangular_arbitrage(
         if eff_rate <= 0:
             continue
         weight = -np.log(eff_rate)
-        edges.append((curr_to_idx[u], curr_to_idx[v], weight, eff_rate, fee_fraction))
+        edge_volume = volumes_map.get((u, v), 0.0)
+        edges.append((curr_to_idx[u], curr_to_idx[v], weight, eff_rate, fee_fraction, edge_volume))
 
     if n == 0 or len(edges) == 0:
         return []
@@ -98,7 +153,7 @@ def find_triangular_arbitrage(
         # §8.2: Relax edges V-1 times
         for _ in range(n - 1):
             updated = False
-            for u, v, w, _, _ in edges:
+            for u, v, w, *_ in edges:
                 if dist[u] + w < dist[v]:
                     dist[v] = dist[u] + w
                     pred[v] = u
@@ -107,7 +162,7 @@ def find_triangular_arbitrage(
                 break
 
         # Check for negative cycles
-        for u, v, w, _, _ in edges:
+        for u, v, w, *_ in edges:
             if dist[u] != INF and dist[u] + w < dist[v]:
                 # Extract the cycle (§8.2)
                 # Walk back V steps via predecessor to ensure we're in the cycle
@@ -156,8 +211,8 @@ def find_triangular_arbitrage(
                 step_rates = []
                 step_fees_gold = []
                 step_fees_fraction = []
+                step_volumes = []
                 valid = True
-                total_volume = float('inf')
 
                 for i in range(len(cycle_names) - 1):
                     pair = (cycle_names[i], cycle_names[i + 1])
@@ -182,6 +237,10 @@ def find_triangular_arbitrage(
                     step_fees_gold.append(gold_fee)
                     step_fees_fraction.append(fee_frac)
 
+                    # Phase 2 (Spec §11): Track volume per edge
+                    edge_vol = volumes_map.get(pair, 0.0)
+                    step_volumes.append(edge_vol)
+
                 if not valid:
                     continue
 
@@ -191,16 +250,19 @@ def find_triangular_arbitrage(
                 if profit_pct < min_profit_pct:
                     continue  # numerical artifact
 
-                # Compute total volume (bottleneck = min volume across edges)
-                # Use a simple heuristic: min volume across edges
-                for i in range(len(cycle_names) - 1):
-                    pair = (cycle_names[i], cycle_names[i + 1])
-                    # We don't have volume in rates dict directly;
-                    # this would need to be passed in. For now, use 0.
-                    pass
+                # Phase 2 (Spec §11.1): Compute total volume (bottleneck = min across edges)
+                total_volume = 0.0
+                if step_volumes and any(v > 0 for v in step_volumes):
+                    # Use min of non-zero volumes as bottleneck
+                    nonzero_vols = [v for v in step_volumes if v > 0]
+                    total_volume = min(nonzero_vols) if nonzero_vols else 0.0
 
-                # Confidence based on data freshness
-                confidence = min(1.0, len(cycle_names) / 5.0)  # rough heuristic
+                # Phase 2 (Spec §11.2): Compute confidence from data freshness and volume
+                confidence = _compute_confidence(
+                    cycle_names=cycle_names,
+                    total_volume=total_volume,
+                    snapshot_time=snapshot_time,
+                )
 
                 results.append(TriangularOpportunity(
                     cycle=cycle_names,
@@ -208,7 +270,7 @@ def find_triangular_arbitrage(
                     step_rates=step_rates,
                     step_fees_gold=step_fees_gold,
                     step_fees_fraction=step_fees_fraction,
-                    total_volume=0.0,  # TODO: compute from actual volume data
+                    total_volume=total_volume,
                     confidence=confidence,
                 ))
 

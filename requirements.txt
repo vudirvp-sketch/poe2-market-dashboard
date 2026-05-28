@@ -16,3 +16,4 @@ plotly>=5.22
 streamlit>=1.35
 aiosqlite>=0.20
 pyyaml>=6.0
+apscheduler>=3.10
