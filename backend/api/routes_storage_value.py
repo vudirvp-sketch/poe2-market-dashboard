@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
@@ -92,8 +93,6 @@ async def get_storage_value(
         gold_fee_fraction = 0.0
 
     # Compute storage value
-    import numpy as np
-
     result = project_value(
         current_price=current_price,
         log_momentum=metrics.momentum,

@@ -34,6 +34,170 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# §5 Efficient Frontier (Spec Section 5)
+# ---------------------------------------------------------------------------
+
+def compute_efficient_frontier(
+    log_returns: np.ndarray,
+    n_points: int = 50,
+) -> tuple[np.ndarray, np.ndarray, list[np.ndarray]]:
+    """Compute the efficient frontier for a set of assets.
+
+    From PoE2_Flipper_Implementation_Spec.md §5.1:
+        For each target return level (from min to max of individual asset returns):
+        1. Solve: minimize w^T Σ w  subject to:
+           - w^T μ = target_return
+           - sum(w) = 1
+           - w >= 0.01
+        2. Record (target_return, sqrt(w^T Σ w), w)
+
+    Args:
+        log_returns: T×N matrix of log-returns (T periods, N assets).
+        n_points: Number of points on the frontier (default 50).
+
+    Returns:
+        Tuple of (frontier_returns, frontier_risks, frontier_weights).
+    """
+    if log_returns.size == 0 or log_returns.shape[1] < 2:
+        return np.array([]), np.array([]), []
+
+    # Estimate expected returns (simple historical mean)
+    mu = np.mean(log_returns, axis=0)
+
+    # Ledoit-Wolf covariance for robust estimation
+    try:
+        from sklearn.covariance import LedoitWolf
+        lw = LedoitWolf().fit(log_returns)
+        cov = lw.covariance_
+    except Exception:
+        cov = np.cov(log_returns, rowvar=False, ddof=1)
+        if cov.ndim == 0:
+            cov = np.array([[float(cov)]])
+
+    n = len(mu)
+    target_returns = np.linspace(float(mu.min()), float(mu.max()), n_points)
+
+    frontier_returns = []
+    frontier_risks = []
+    frontier_weights = []
+
+    for target in target_returns:
+        constraints = [
+            {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
+            {"type": "eq", "fun": lambda w, t=target: float(w @ mu - t)},
+        ]
+        bounds = [(0.01, 1.0)] * n
+        w0 = np.ones(n) / n
+
+        result = minimize(
+            lambda w: float(w @ cov @ w),
+            w0,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints,
+            options={"maxiter": 500, "ftol": 1e-10},
+        )
+
+        if result.success:
+            frontier_returns.append(target)
+            frontier_risks.append(float(np.sqrt(result.x @ cov @ result.x)))
+            frontier_weights.append(result.x)
+
+    return np.array(frontier_returns), np.array(frontier_risks), frontier_weights
+
+
+def compute_efficient_frontier_chart_data(
+    log_returns: np.ndarray,
+    current_weights: np.ndarray | None = None,
+    currency_names: list[str] | None = None,
+    n_points: int = 50,
+    periods_per_year: int = 365,
+) -> dict:
+    """Compute efficient frontier data suitable for frontend charting.
+
+    From Spec §5.2: Returns dict with:
+        - frontier: {returns: [...], risks: [...]}
+        - current_portfolio: {return: float, risk: float}
+        - individual_assets: [{name, return, risk, weight}, ...]
+
+    Annualization (Spec §5.5):
+        Risk axis: daily_vol * sqrt(365)
+        Return axis: daily_return * 365
+
+    Args:
+        log_returns: T×N matrix of log-returns.
+        current_weights: Current portfolio weights (N,). If None, uses equal weights.
+        currency_names: Names for each asset.
+        n_points: Number of frontier points.
+        periods_per_year: For annualization (default 365 for daily).
+
+    Returns:
+        Dict with frontier, current_portfolio, individual_assets.
+    """
+    if log_returns.size == 0 or log_returns.shape[1] < 2:
+        return {
+            "frontier": {"returns": [], "risks": []},
+            "current_portfolio": {"return": 0.0, "risk": 0.0},
+            "individual_assets": [],
+        }
+
+    # Ensure 2D
+    if log_returns.ndim == 1:
+        log_returns = log_returns.reshape(-1, 1)
+
+    n = log_returns.shape[1]
+    names = currency_names or [f"asset_{i}" for i in range(n)]
+    weights = current_weights if current_weights is not None else np.ones(n) / n
+
+    # Compute frontier
+    frontier_ret, frontier_risk, _ = compute_efficient_frontier(log_returns, n_points)
+
+    # Annualize frontier values
+    ann_factor = np.sqrt(periods_per_year)
+    annualized_frontier_returns = frontier_ret * periods_per_year
+    annualized_frontier_risks = frontier_risk * ann_factor
+
+    # Compute Ledoit-Wolf covariance for current portfolio metrics
+    try:
+        from sklearn.covariance import LedoitWolf
+        lw = LedoitWolf().fit(log_returns)
+        cov = lw.covariance_
+    except Exception:
+        cov = np.cov(log_returns, rowvar=False, ddof=1)
+        if cov.ndim == 0:
+            cov = np.array([[float(cov)]])
+
+    mu = np.mean(log_returns, axis=0)
+
+    # Current portfolio metrics (annualized)
+    current_return = float(weights @ mu) * periods_per_year
+    current_risk = float(np.sqrt(weights @ cov @ weights)) * ann_factor
+
+    # Individual asset metrics (annualized)
+    individual_assets = []
+    asset_vols = np.sqrt(np.diag(cov))
+    for i in range(n):
+        individual_assets.append({
+            "name": names[i],
+            "return": float(mu[i]) * periods_per_year,
+            "risk": float(asset_vols[i]) * ann_factor,
+            "weight": float(weights[i]),
+        })
+
+    return {
+        "frontier": {
+            "returns": [float(r) for r in annualized_frontier_returns],
+            "risks": [float(r) for r in annualized_frontier_risks],
+        },
+        "current_portfolio": {
+            "return": round(current_return, 6),
+            "risk": round(current_risk, 6),
+        },
+        "individual_assets": individual_assets,
+    }
+
+
+# ---------------------------------------------------------------------------
 # §10.1 Risk Parity
 # ---------------------------------------------------------------------------
 

@@ -36,6 +36,7 @@ def render_forecast_tab(
     currency: str = "",
     price_history: list[dict] | None = None,
     storage_value_data: dict | None = None,
+    icon_urls: dict[str, str | None] | None = None,
 ) -> None:
     """Render the Forecast tab.
 
@@ -49,6 +50,16 @@ def render_forecast_tab(
     """
     # --- Currency selector ---
     st.subheader("Price Forecasts")
+
+    # Phase 2 (Spec §4): Show icon next to currency name if available
+    icon_map = icon_urls or {}
+    icon_url = icon_map.get(currency)
+    if icon_url:
+        st.markdown(
+            f"<img src='{icon_url}' style='height:20px;width:20px;vertical-align:middle;margin-right:6px'>"
+            f"<span style='font-size:1.1em;font-weight:bold'>{currency.replace('_', ' ').title()}</span>",
+            unsafe_allow_html=True,
+        )
 
     # Show available data info
     if forecast_data:

@@ -513,6 +513,7 @@ def _load_data_directly() -> dict:
         "triangular": tri_list,
         "gold_to_chaos_rate": gold_to_chaos_rate,
         "active_event": active_event,
+        "icon_urls": currency_icon_urls,  # Phase 2 (Spec §4)
     }
 
 
@@ -563,6 +564,8 @@ def main():
         tri_data = fetch_api("/api/arbitrage/triangular")
         # Phase 2: Fetch heatmap data for real overview
         heatmap_data = fetch_api("/api/prices/heatmap")
+        # Phase 2 (Spec §4): Fetch currency icons
+        currencies_data = fetch_api("/api/currencies")
 
     # Check if backend is available
     backend_available = prices_data is not None
@@ -576,6 +579,14 @@ def main():
         opportunities = flips_data.get("opportunities", []) if flips_data else []
         triangular = tri_data.get("opportunities", []) if tri_data else []
         heatmap_data_api = heatmap_data  # Save for overview tab
+
+        # Phase 2 (Spec §4): Build icon_url lookup from /api/currencies
+        icon_urls: dict[str, str | None] = {}
+        if currencies_data and "currencies" in currencies_data:
+            for c in currencies_data["currencies"]:
+                api_id = c.get("api_id", "")
+                if api_id:
+                    icon_urls[api_id] = c.get("icon_url")
 
         # Get event status from the flips response (Milestone 9)
         if flips_data and "event_status" in flips_data:
@@ -612,6 +623,9 @@ def main():
         triangular = direct_data.get("triangular", [])
         gold_to_chaos_rate = direct_data.get("gold_to_chaos_rate", 0.001)
         heatmap_data_api = None  # No heatmap data in direct mode
+
+        # Phase 2 (Spec §4): Use icon URLs from direct backend load
+        icon_urls = direct_data.get("icon_urls", {})
 
         # Event summary from direct data
         if direct_data.get("active_event"):
@@ -692,6 +706,7 @@ def main():
             gold_to_chaos_rate=gold_to_chaos_rate,
             cluster_assignments=cluster_assignments,
             heatmap_data=heatmap_data_api,  # Phase 2: real heatmap data
+            icon_urls=icon_urls,  # Phase 2 (Spec §4)
         )
 
     with tab_flips:
@@ -699,6 +714,7 @@ def main():
             opportunities=opportunities,
             phase_info=phase_info,
             gold_to_chaos_rate=gold_to_chaos_rate,
+            icon_urls=icon_urls,  # Phase 2 (Spec §4)
         )
 
     with tab_graph:
@@ -708,6 +724,7 @@ def main():
             triangular=triangular,
             cluster_assignments=cluster_assignments,
             gold_to_chaos_rate=gold_to_chaos_rate,
+            icon_urls=icon_urls,  # Phase 2 (Spec §4)
         )
 
     with tab_forecast:
@@ -763,6 +780,7 @@ def main():
             currency=selected_currency,
             price_history=price_history_for_chart if price_history_for_chart else None,
             storage_value_data=storage_value_data,  # Phase 2
+            icon_urls=icon_urls,  # Phase 2 (Spec §4)
         )
 
     with tab_portfolio:
@@ -784,6 +802,7 @@ def main():
         render_portfolio_tab(
             portfolio_data=portfolio_data,
             phase_info=phase_info,
+            icon_urls=icon_urls,  # Phase 2 (Spec §4)
         )
 
     # ------------------------------------------------------------------

@@ -28,6 +28,8 @@ from backend.arbitrage.portfolio import (
     detect_correlation_shock,
     annualized_portfolio_volatility,
     PortfolioOptimizer,
+    compute_efficient_frontier,
+    compute_efficient_frontier_chart_data,
 )
 from backend.models.currency import PortfolioAllocation
 from backend.config import AppConfig, PortfolioConfig
@@ -641,3 +643,137 @@ class TestEdgeCases:
         marginal = cov @ weights
         risk_contrib = weights * marginal
         np.testing.assert_almost_equal(risk_contrib[0], risk_contrib[1], decimal=4)
+
+
+# ===========================================================================
+# 8. Efficient Frontier (Spec Section 5)
+# ===========================================================================
+
+class TestEfficientFrontier:
+    """Test efficient frontier computation.
+
+    From PoE2_Flipper_Implementation_Spec.md §5.6:
+        - Test that frontier returns are monotonically increasing
+        - Test that frontier risks are convex (parabolic shape)
+        - Test that current portfolio lies on or below the frontier
+        - Test with 3 assets + known covariance
+    """
+
+    def test_basic_frontier_computation(self):
+        """Efficient frontier should produce valid points with 3 assets."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 3) * np.array([0.01, 0.03, 0.05])
+
+        frontier_ret, frontier_risk, frontier_weights = compute_efficient_frontier(
+            log_returns, n_points=20
+        )
+
+        # Should have at least some points
+        assert len(frontier_ret) > 0
+        assert len(frontier_risk) == len(frontier_ret)
+        assert len(frontier_weights) == len(frontier_ret)
+
+    def test_returns_monotonically_increasing(self):
+        """Frontier returns should be monotonically increasing."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 3) * np.array([0.01, 0.03, 0.05])
+
+        frontier_ret, frontier_risk, _ = compute_efficient_frontier(
+            log_returns, n_points=20
+        )
+
+        if len(frontier_ret) > 1:
+            # Returns should be non-decreasing (they are by construction from linspace)
+            for i in range(1, len(frontier_ret)):
+                assert frontier_ret[i] >= frontier_ret[i - 1] - 1e-10
+
+    def test_weights_sum_to_one(self):
+        """All frontier portfolio weights should sum to 1."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 3) * np.array([0.01, 0.03, 0.05])
+
+        _, _, frontier_weights = compute_efficient_frontier(
+            log_returns, n_points=20
+        )
+
+        for w in frontier_weights:
+            np.testing.assert_almost_equal(np.sum(w), 1.0, decimal=4)
+
+    def test_all_weights_positive(self):
+        """All frontier weights should be positive (long-only)."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 3) * np.array([0.01, 0.03, 0.05])
+
+        _, _, frontier_weights = compute_efficient_frontier(
+            log_returns, n_points=20
+        )
+
+        for w in frontier_weights:
+            assert np.all(w >= 0.01 - 1e-6)
+
+    def test_current_portfolio_below_or_on_frontier(self):
+        """Current portfolio should lie on or below the efficient frontier."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 3) * np.array([0.01, 0.03, 0.05])
+
+        # Equal-weight portfolio
+        current_weights = np.ones(3) / 3
+
+        chart_data = compute_efficient_frontier_chart_data(
+            log_returns=log_returns,
+            current_weights=current_weights,
+            currency_names=["a", "b", "c"],
+            n_points=20,
+            periods_per_year=365,
+        )
+
+        # Current portfolio should exist
+        current_port = chart_data["current_portfolio"]
+        assert current_port["risk"] > 0
+
+        # Current portfolio return should be <= max frontier return
+        frontier = chart_data["frontier"]
+        if frontier["returns"]:
+            assert current_port["return"] <= max(frontier["returns"]) + 1e-6
+
+    def test_chart_data_structure(self):
+        """compute_efficient_frontier_chart_data should return correct structure."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 3) * np.array([0.01, 0.03, 0.05])
+
+        chart_data = compute_efficient_frontier_chart_data(
+            log_returns=log_returns,
+            currency_names=["exalted", "chaos", "divine"],
+            n_points=20,
+        )
+
+        assert "frontier" in chart_data
+        assert "current_portfolio" in chart_data
+        assert "individual_assets" in chart_data
+        assert "returns" in chart_data["frontier"]
+        assert "risks" in chart_data["frontier"]
+
+        # Individual assets should have 3 entries
+        assert len(chart_data["individual_assets"]) == 3
+        for asset in chart_data["individual_assets"]:
+            assert "name" in asset
+            assert "return" in asset
+            assert "risk" in asset
+            assert "weight" in asset
+
+    def test_empty_data(self):
+        """Empty log-returns should return empty frontier."""
+        frontier_ret, frontier_risk, frontier_weights = compute_efficient_frontier(
+            np.array([]), n_points=10
+        )
+        assert len(frontier_ret) == 0
+
+    def test_single_asset(self):
+        """Single asset should return empty frontier (need >= 2 assets)."""
+        rng = np.random.RandomState(42)
+        log_returns = rng.randn(100, 1) * 0.02
+
+        frontier_ret, frontier_risk, frontier_weights = compute_efficient_frontier(
+            log_returns, n_points=10
+        )
+        assert len(frontier_ret) == 0

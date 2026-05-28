@@ -18,12 +18,15 @@ from typing import Optional
 import plotly.graph_objects as go
 import streamlit as st
 
+from frontend.utils.formatters import fmt_currency_with_icon
+
 logger = logging.getLogger(__name__)
 
 
 def render_portfolio_tab(
     portfolio_data: Optional[dict] = None,
     phase_info: Optional[dict] = None,
+    icon_urls: Optional[dict] = None,
 ) -> None:
     """Render the Portfolio tab.
 
@@ -168,10 +171,14 @@ def render_portfolio_tab(
     st.markdown("### Allocation Details")
 
     # Build table data
+    # Phase 2 (Spec §4): Show icons next to currency names in allocation table
+    icon_map = icon_urls or {}
     table_data = []
     for curr, w in sorted_weights.items():
+        icon_url_val = icon_map.get(curr)
+        curr_display = fmt_currency_with_icon(curr, icon_url_val)
         table_data.append({
-            "Currency": curr,
+            "Currency": curr_display,
             "Weight": f"{w:.2%}",
             "Weight (raw)": f"{w:.6f}",
         })
@@ -256,10 +263,90 @@ def render_portfolio_tab(
     # ------------------------------------------------------------------
     if method == "min_variance":
         with st.expander("📊 Efficient Frontier (Min-Variance)"):
-            st.info(
-                "Efficient frontier visualization requires computing optimal "
-                "portfolios across a range of target returns. This is a "
-                "computationally intensive operation and will be available in "
-                "a future update. Currently, only the global minimum variance "
-                "portfolio is computed."
-            )
+            # Phase 2 (Spec §5.4): Real efficient frontier visualization
+            # Fetch frontier data from API
+            try:
+                import httpx
+                api_base = st.secrets.get("POE2_FLIPPER_API_URL", "http://localhost:8000")
+                with httpx.Client(timeout=30.0) as client:
+                    resp = client.get(f"{api_base}/api/portfolio/frontier", params={"n_points": 30})
+                    if resp.status_code == 200:
+                        frontier_data = resp.json()
+                    else:
+                        frontier_data = None
+            except Exception:
+                frontier_data = None
+
+            if frontier_data and frontier_data.get("frontier", {}).get("returns"):
+                frontier = frontier_data["frontier"]
+                current_port = frontier_data.get("current_portfolio", {})
+                individual = frontier_data.get("individual_assets", [])
+
+                fig = go.Figure()
+
+                # Efficient frontier curve
+                fig.add_trace(go.Scatter(
+                    x=frontier["risks"],
+                    y=frontier["returns"],
+                    mode="lines",
+                    name="Efficient Frontier",
+                    line=dict(color="#3b82f6", width=2),
+                ))
+
+                # Individual assets
+                if individual:
+                    asset_risks = [a["risk"] for a in individual]
+                    asset_returns = [a["return"] for a in individual]
+                    asset_names = [a["name"] for a in individual]
+                    fig.add_trace(go.Scatter(
+                        x=asset_risks,
+                        y=asset_returns,
+                        mode="markers",
+                        name="Individual Assets",
+                        marker=dict(size=10, color="#f97316"),
+                        text=asset_names,
+                        hovertemplate="<b>%{text}</b><br>Risk: %{x:.4f}<br>Return: %{y:.4f}<extra></extra>",
+                    ))
+
+                # Current portfolio
+                if current_port:
+                    fig.add_trace(go.Scatter(
+                        x=[current_port.get("risk", 0)],
+                        y=[current_port.get("return", 0)],
+                        mode="markers",
+                        name="Current Portfolio",
+                        marker=dict(size=14, color="#22c55e", symbol="star"),
+                        hovertemplate="Current Portfolio<br>Risk: %{x:.4f}<br>Return: %{y:.4f}<extra></extra>",
+                    ))
+
+                fig.update_layout(
+                    xaxis_title="Risk (Annualized Volatility)",
+                    yaxis_title="Expected Return (Annualized)",
+                    title="Efficient Frontier",
+                    template="plotly_dark",
+                    height=450,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1,
+                    ),
+                    margin=dict(l=60, r=30, t=50, b=50),
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Disclaimer (Spec §5.1 note)
+                st.caption(
+                    "⚠️ Expected returns are based on historical mean and are noisy. "
+                    "The frontier shape is informative even if absolute return estimates "
+                    "are unreliable. Use as a relative guide, not a prediction."
+                )
+            else:
+                st.info(
+                    "Efficient frontier data unavailable. This may be due to "
+                    "insufficient historical data or the backend API being unreachable. "
+                    "Ensure the backend is running and provides data for at least "
+                    "2 currencies with >= 5 price points."
+                )

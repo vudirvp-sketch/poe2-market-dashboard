@@ -25,6 +25,7 @@ from frontend.utils.formatters import (
     fmt_rate,
     fmt_momentum,
     fmt_spread,
+    fmt_currency_with_icon,
     score_color,
     momentum_color,
     cluster_display,
@@ -40,6 +41,7 @@ def render_flips_tab(
     opportunities: list[dict],
     phase_info: dict | None = None,
     gold_to_chaos_rate: float | None = None,
+    icon_urls: dict[str, str | None] | None = None,
 ) -> None:
     """Render the Flip Opportunities tab with filters and table.
 
@@ -151,8 +153,14 @@ def render_flips_tab(
     df_data = []
     for o in filtered:
         cluster_label, _ = cluster_display(o.get("cluster", "moderate"))
+        # Phase 2 (Spec §4): Get icon URL for the first currency in the pair
+        currency_name = o.get("currency", "—")
+        curr_parts = currency_name.split("/")
+        first_curr = curr_parts[0] if curr_parts else currency_name
+        icon_url_val = (icon_urls or {}).get(first_curr)
         df_data.append({
-            "Currency": o.get("currency", "—"),
+            "Icon": icon_url_val or "",
+            "Currency": currency_name,
             "Score": o.get("score", 0),
             "Score %": fmt_score(o.get("score", 0)),
             "Spread (after fees)": fmt_spread(o.get("spread_after_fees", 0)),
@@ -216,16 +224,23 @@ def render_flips_tab(
 
     # Display columns (hide raw sort columns)
     display_cols = [
-        "Currency", "Score %", "Spread (after fees)", "Gold Fee", "Fee %",
+        "Icon", "Currency", "Score %", "Spread (after fees)", "Gold Fee", "Fee %",
         "Volume (24h)", "Momentum", "Volatility", "Cluster", "Bid", "Ask", "Mid",
     ]
 
-    # Color-code the score column
+    # Color-code the score column; Phase 2 (Spec §4): Icon column config
     st.dataframe(
         page_df[display_cols],
         use_container_width=True,
         hide_index=True,
         height=min(600, len(page_df) * 35 + 40),
+        column_config={
+            "Icon": st.column_config.ImageColumn(
+                "Icon",
+                help="Currency icon",
+                width="small",
+            ),
+        },
     )
 
     # ------------------------------------------------------------------

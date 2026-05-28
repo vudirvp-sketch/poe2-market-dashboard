@@ -27,6 +27,7 @@ from frontend.utils.formatters import (
     fmt_pct,
     fmt_number,
     fmt_gold,
+    fmt_currency_with_icon,
     score_color,
     phase_color,
     phase_emoji,
@@ -45,6 +46,7 @@ def render_overview_tab(
     gold_to_chaos_rate: float | None = None,
     cluster_assignments: dict[str, str] | None = None,
     heatmap_data: dict | None = None,
+    icon_urls: dict[str, str | None] | None = None,
 ) -> None:
     """Render the Overview tab with heatmap, scatter, phase badge, and top flips.
 
@@ -77,7 +79,7 @@ def render_overview_tab(
     # ------------------------------------------------------------------
     # Top-5 Flips Cards
     # ------------------------------------------------------------------
-    _render_top_flips(top_flips or [])
+    _render_top_flips(top_flips or [], icon_urls or {})
 
 
 # ---------------------------------------------------------------------------
@@ -374,7 +376,7 @@ def _render_scatter(rates_data: list[dict], cluster_assignments: dict[str, str] 
 # Top-5 Flips Cards
 # ---------------------------------------------------------------------------
 
-def _render_top_flips(top_flips: list[dict]) -> None:
+def _render_top_flips(top_flips: list[dict], icon_urls: dict[str, str | None]) -> None:
     """Render compact cards for the top-5 flip opportunities."""
     st.subheader("Top Flip Opportunities")
 
@@ -394,6 +396,12 @@ def _render_top_flips(top_flips: list[dict]) -> None:
             gold_fee = flip.get("gold_fee_actual", 0)
             momentum = flip.get("momentum", 0)
 
+            # Phase 2 (Spec §4): Show icon for the first currency in the pair
+            curr_parts = currency.split("/")
+            first_curr = curr_parts[0] if curr_parts else currency
+            icon_url = icon_urls.get(first_curr)
+            currency_html = fmt_currency_with_icon(currency, icon_url)
+
             # Determine card border color from score
             border = score_color(score)
             momentum_dir = "↑" if momentum > 0 else "↓" if momentum < 0 else "→"
@@ -403,7 +411,7 @@ def _render_top_flips(top_flips: list[dict]) -> None:
                 f"""
                 <div style='background:#1e2533;padding:0.8em;border-radius:8px;
                             border-top:3px solid {border};height:100%'>
-                    <div style='font-weight:bold;font-size:1em;margin-bottom:0.3em'>{currency}</div>
+                    <div style='font-weight:bold;font-size:1em;margin-bottom:0.3em'>{currency_html}</div>
                     <div style='color:{border};font-size:1.3em;font-weight:bold'>
                         {fmt_score(score)}
                     </div>

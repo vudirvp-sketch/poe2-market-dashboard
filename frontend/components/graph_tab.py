@@ -26,6 +26,7 @@ from frontend.utils.formatters import (
     fmt_number,
     fmt_pct,
     fmt_gold,
+    fmt_currency_with_icon,
     score_color,
     COLOR_GREEN,
     COLOR_RED,
@@ -53,6 +54,7 @@ def render_graph_tab(
     triangular: list[dict] | None = None,
     cluster_assignments: dict[str, str] | None = None,
     gold_to_chaos_rate: float | None = None,
+    icon_urls: dict[str, str | None] | None = None,
 ) -> None:
     """Render the Currency Graph tab with an interactive network visualization.
 
@@ -68,6 +70,9 @@ def render_graph_tab(
     if not rates_data:
         st.info("No exchange rate data available for graph visualization.")
         return
+
+    # Phase 2 (Spec §4): icon URL lookup
+    icon_map = icon_urls or {}
 
     # ------------------------------------------------------------------
     # Build the graph
@@ -204,11 +209,13 @@ def render_graph_tab(
         size = node_sizes.get(n, MIN_NODE_SIZE)
         node_size_list.append(size)
 
-        # Hover text
+        # Hover text — Phase 2 (Spec §4): include icon in hover if available
         vol = currency_volumes.get(n, 0)
         degree = G.degree(n)
+        icon_url = icon_map.get(n)
+        node_label = fmt_currency_with_icon(n, icon_url) if icon_url else f"<b>{n}</b>"
         node_text.append(
-            f"<b>{n}</b><br>"
+            f"{node_label}<br>"
             f"Cluster: {cluster.replace('_', ' ').title()}<br>"
             f"Volume: {fmt_number(vol)}<br>"
             f"Connections: {degree}"

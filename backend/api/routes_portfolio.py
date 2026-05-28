@@ -23,7 +23,7 @@ from backend.economy.lifecycle import PhaseDetector
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
-from backend.arbitrage.portfolio import PortfolioOptimizer
+from backend.arbitrage.portfolio import PortfolioOptimizer, compute_efficient_frontier_chart_data
 from backend.models.currency import (
     PortfolioAllocation,
     LeaguePhase,
@@ -245,3 +245,108 @@ async def rebalance_portfolio():
         if _last_allocation.last_rebalance
         else None,
     }
+
+
+@router.get("/frontier")
+async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200)):
+    """Return efficient frontier data for min-variance method.
+
+    Phase 2 (Spec Section 5.3): Computes the efficient frontier by solving
+    min-variance optimization across a range of target returns, then returns
+    risk vs. return data for Plotly visualization.
+
+    Annualized values (Spec §5.5):
+        Risk axis: daily_vol * sqrt(365)
+        Return axis: daily_return * 365
+
+    Args:
+        n_points: Number of points on the frontier (default 50, max 200).
+    """
+    config = get_settings()
+    provider = _get_provider()
+    cache = get_cache()
+
+    # Fetch exchange rates
+    rates_result = await cache.get_or_fetch(
+        "prices",
+        provider.name(),
+        "get_exchange_rates",
+        provider.get_exchange_rates,
+        config.league.league_name,
+    )
+    if rates_result.value is None:
+        raise HTTPException(status_code=503, detail="Exchange rate data unavailable")
+
+    # Fetch metadata for currency list
+    metadata_result = await cache.get_or_fetch(
+        "metadata",
+        provider.name(),
+        "get_currency_metadata",
+        provider.get_currency_metadata,
+        config.league.league_name,
+    )
+    currencies = metadata_result.value if metadata_result.value else []
+
+    # Build price histories
+    currency_price_history: dict[str, list[float]] = {}
+    for curr in currencies:
+        hist_result = await cache.get_or_fetch(
+            "history",
+            provider.name(),
+            "get_historical_prices",
+            provider.get_historical_prices,
+            curr.api_id,
+            7,
+        )
+        if hist_result.value:
+            currency_price_history[curr.api_id] = [
+                p.price for p in hist_result.value
+            ]
+
+    # Filter to eligible currencies
+    min_history_length = 5
+    eligible_currencies = {
+        api_id: prices
+        for api_id, prices in currency_price_history.items()
+        if len(prices) >= min_history_length
+    }
+
+    if len(eligible_currencies) < 2:
+        raise HTTPException(
+            status_code=503,
+            detail="Insufficient data for efficient frontier computation "
+                   f"(need >= 2 currencies with >= {min_history_length} price points, "
+                   f"got {len(eligible_currencies)})",
+        )
+
+    # Build aligned log-returns matrix
+    min_len = min(len(p) for p in eligible_currencies.values())
+    currency_names = sorted(eligible_currencies.keys())
+
+    log_returns_list = []
+    for name in currency_names:
+        prices = eligible_currencies[name][-min_len:]
+        prices_arr = np.array(prices, dtype=float)
+        prices_safe = np.maximum(prices_arr, 1e-10)
+        log_prices = np.log(prices_safe)
+        log_ret = np.diff(log_prices)
+        log_returns_list.append(log_ret)
+
+    log_returns_matrix = np.column_stack(log_returns_list)
+
+    # Get current portfolio weights if available
+    current_weights = None
+    if _last_allocation is not None:
+        weight_list = [_last_allocation.weights.get(name, 0.0) for name in currency_names]
+        current_weights = np.array(weight_list)
+
+    # Compute frontier
+    frontier_data = compute_efficient_frontier_chart_data(
+        log_returns=log_returns_matrix,
+        current_weights=current_weights,
+        currency_names=currency_names,
+        n_points=n_points,
+        periods_per_year=365,
+    )
+
+    return frontier_data

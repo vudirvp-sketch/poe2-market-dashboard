@@ -13,6 +13,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
+import numpy as np
+
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
@@ -57,7 +59,7 @@ async def get_anomalies(
         currencies = list(currency_set)
 
     # Run anomaly detection for each currency
-    detector = AnomalyDetector(config=config.anomaly)
+    detector = AnomalyDetector(config=config)
     alerts = []
 
     for curr in currencies:
@@ -66,8 +68,8 @@ async def get_anomalies(
             if len(history) < 30:
                 continue
 
-            prices = [p.price for p in history]
-            alert = detector.detect(prices, currency=curr)
+            prices = np.array([p.price for p in history])
+            alert = detector.detect(currency=curr, price_series=prices)
 
             if alert is not None and alert.alert_score >= min_alert_score:
                 alerts.append({
