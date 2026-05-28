@@ -1,0 +1,34 @@
+INFO:     Started server process [12516]
+INFO:     Waiting for application startup.
+2026-05-29 01:57:37,796 [INFO] backend.main: PoE2 Flipper backend starting up...
+2026-05-29 01:57:37,802 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
+2026-05-29 01:57:37,910 [INFO] backend.main: HistoricalStore initialized
+2026-05-29 01:57:37,910 [INFO] backend.main: Loaded 0 persisted events from SQLite
+2026-05-29 01:57:37,941 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 01:57:37,941 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Added job "Collect gold\u2192chaos rate" to job store "default"
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
+2026-05-29 01:57:37,942 [INFO] apscheduler.scheduler: Scheduler started
+2026-05-29 01:57:37,943 [INFO] backend.scheduler: Scheduler: started with 4 jobs (price=30m, gold=30m, prune=15m, model=30m)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:60007 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60007 - "GET /api/phase HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60011 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+2026-05-29 01:58:23,199 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
+2026-05-29 01:58:23,203 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
+2026-05-29 01:58:23,809 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/ReferenceCurrencies "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:64134 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
+2026-05-29 01:58:23,950 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
+2026-05-29 01:58:23,956 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
+2026-05-29 01:58:24,821 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+2026-05-29 01:58:24,888 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/ReferenceCurrencies "HTTP/1.1 200 OK"
+2026-05-29 01:58:25,842 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+2026-05-29 01:58:26,404 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+2026-05-29 01:58:26,862 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:58298 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58298 - "GET /api/events?active_only=true HTTP/1.1" 200 OK

@@ -202,9 +202,11 @@ export function Header({
     : [];
 
   // FIX: Radix Select does not accept empty string as `value`.
-  // Pass undefined when there is no effective league selected so the
-  // component renders the placeholder text instead of crashing.
-  const leagueSelectValue = effectiveLeague || undefined;
+  // Use a sentinel value "__none__" instead of `undefined` to avoid the
+  // uncontrolled→controlled switch warning. Radix treats `value={undefined}`
+  // as uncontrolled, then when effectiveLeague resolves to a string it
+  // becomes controlled, triggering the React warning.
+  const leagueSelectValue = effectiveLeague || "__none__";
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
@@ -252,15 +254,21 @@ export function Header({
                 {t("loading")}
               </SelectItem>
             ) : sortedLeagues.length === 0 ? (
-              <SelectItem value="__empty__" disabled>
-                —
+              <SelectItem value="__none__" disabled>
+                {t("league")}
               </SelectItem>
             ) : (
-              sortedLeagues.map((l) => (
-                <SelectItem key={l.name} value={l.name}>
-                  {l.displayName} {!l.active && `(${t("inactive")})`}
+              <>
+                {/* Hidden placeholder item for the sentinel value */}
+                <SelectItem value="__none__" disabled className="hidden">
+                  {t("league")}
                 </SelectItem>
-              ))
+                {sortedLeagues.map((l) => (
+                  <SelectItem key={l.name} value={l.name}>
+                    {l.displayName} {!l.active && `(${t("inactive")})`}
+                  </SelectItem>
+                ))}
+              </>
             )}
           </SelectContent>
         </Select>
