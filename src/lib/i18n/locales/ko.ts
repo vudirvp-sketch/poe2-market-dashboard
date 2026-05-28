@@ -301,6 +301,27 @@ const ko: Record<TranslationKeys, string> = {
   forecastIndicators: "Indicators",
   forecastConfirmed: "Confirmed",
 
+  // Flips Tab
+  tabFlips: "\uD50C\uB9BD",
+  flipsTotalOpportunities: "\uC804\uCCB4 \uAE30\uD68C",
+  flipsAvgScore: "\uD3C9\uADE0 \uC810\uC218",
+  flipsBestPair: "\uCD5C\uACE0 \uD398\uC5B4",
+  flipsBestScore: "\uCD5C\uACE0 \uC810\uC218",
+  flipsClusterFilter: "\uD074\uB7EC\uC2A4\uD130",
+  flipsClusterStable: "\uC548\uC815",
+  flipsClusterModerate: "\uC911\uAC04",
+  flipsClusterVolatile: "\uBCC0\uB3D9",
+  flipsSearchCurrency: "\uD1B5\uD654 \uAC80\uC0C9...",
+  flipsDetailedOpportunities: "\uC0C1\uC138 \uD50C\uB9BD \uAE30\uD68C",
+  flipsNoOpportunities: "\uD544\uD130 \uC870\uAC74\uC5D0 \uB9DE\uB294 \uD50C\uB9BD \uAE30\uD68C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4",
+  flipsNoOpportunitiesDesc: "\uD544\uD130\uB97C \uC870\uC815\uD558\uAC70\uB098 \uC2DC\uC7A5 \uC870\uAC74\uC774 \uBCC0\uACBD\uB418\uBA74 \uB098\uC911\uC5D0 \uB2E4\uC2DC \uD655\uC778\uD558\uC138\uC694.",
+  flipsGoldFeePct: "\uC218\uC218\uB8CC %",
+  flipsFeeFraction: "\uC218\uC218\uB8CC \uBE44\uC728",
+  flipsBid: "\uB9E4\uC218",
+  flipsAsk: "\uB3C4",
+  flipsMid: "\uC911\uAC04",
+  flipsDetailTitle: "\uD50C\uB9BD \uC0C1\uC138: {0}",
+
   // ---- Plural keys (Korean: all forms identical) ----
   _pl_alertsCount: "\uC54C\uB9BC ({0})|\uC54C\uB9BC ({0})|\uC54C\uB9BC ({0})",
   _pl_items: "\uAC1C|\uAC1C|\uAC1C",

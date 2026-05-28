@@ -301,6 +301,27 @@ const zh: Record<TranslationKeys, string> = {
   forecastIndicators: "Indicators",
   forecastConfirmed: "Confirmed",
 
+  // Flips Tab
+  tabFlips: "\u7FFB\u8F6C",
+  flipsTotalOpportunities: "\u603B\u673A\u4F1A",
+  flipsAvgScore: "\u5E73\u5747\u8BC4\u5206",
+  flipsBestPair: "\u6700\u4F73\u4EA4\u6613\u5BF9",
+  flipsBestScore: "\u6700\u4F73\u8BC4\u5206",
+  flipsClusterFilter: "\u96C6\u7FA4",
+  flipsClusterStable: "\u7A33\u5B9A",
+  flipsClusterModerate: "\u4E2D\u7B49",
+  flipsClusterVolatile: "\u6CE2\u52A8",
+  flipsSearchCurrency: "\u641C\u7D22\u8D27\u5E01...",
+  flipsDetailedOpportunities: "\u8BE6\u7EC6\u7FFB\u8F6C\u673A\u4F1A",
+  flipsNoOpportunities: "\u6CA1\u6709\u7B26\u5408\u7B5B\u9009\u6761\u4EF6\u7684\u7FFB\u8F6C\u673A\u4F1A",
+  flipsNoOpportunitiesDesc: "\u8BF7\u5C1D\u8BD5\u8C03\u6574\u7B5B\u9009\u6761\u4EF6\uFF0C\u6216\u7A0D\u540E\u518D\u67E5\u770B\u5E02\u573A\u53D8\u5316\u3002",
+  flipsGoldFeePct: "\u8D39\u7387 %",
+  flipsFeeFraction: "\u8D39\u7528\u6BD4\u4F8B",
+  flipsBid: "\u4E70\u4EF7",
+  flipsAsk: "\u5356\u4EF7",
+  flipsMid: "\u4E2D\u4EF7",
+  flipsDetailTitle: "\u7FFB\u8F6C\u8BE6\u60C5: {0}",
+
   // ---- Plural keys (Chinese: all forms identical) ----
   _pl_alertsCount: "\u63D0\u9192 ({0})|\u63D0\u9192 ({0})|\u63D0\u9192 ({0})",
   _pl_items: "\u9879|\u9879|\u9879",

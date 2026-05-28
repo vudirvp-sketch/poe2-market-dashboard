@@ -13,6 +13,7 @@ import {
   Bell,
   Zap,
   LineChart,
+  TrendingUp,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dia
 import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
+import { FlipsTab } from "@/components/dashboard/flips-tab";
 import { ForecastTab } from "@/components/dashboard/forecast-tab";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
@@ -481,6 +483,9 @@ export function Dashboard() {
                 <TabsTrigger value="arbitrage" className="gap-1.5" aria-label={t("tabArbitrage")}>
                   <Zap className="h-4 w-4" aria-hidden="true" /> {t("tabArbitrage")}
                 </TabsTrigger>
+                <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
+                  <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
+                </TabsTrigger>
                 <TabsTrigger value="forecast" className="gap-1.5" aria-label={t("tabForecast")}>
                   <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabForecast")}
                 </TabsTrigger>
@@ -705,6 +710,13 @@ export function Dashboard() {
                   realm={realm}
                   league={effectiveLeague}
                 />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ FLIPS TAB ============ */}
+            <TabsContent value="flips">
+              <ErrorBoundary fallbackTitle="Flips">
+                <FlipsTab />
               </ErrorBoundary>
             </TabsContent>
 

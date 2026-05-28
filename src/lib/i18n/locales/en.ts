@@ -299,6 +299,27 @@ const en = {
   timeframe24h: "24h",
   timeframe7d: "7d",
 
+  // Flips Tab
+  tabFlips: "Flips",
+  flipsTotalOpportunities: "Total Opportunities",
+  flipsAvgScore: "Avg Score",
+  flipsBestPair: "Best Pair",
+  flipsBestScore: "Best Score",
+  flipsClusterFilter: "Cluster",
+  flipsClusterStable: "Stable",
+  flipsClusterModerate: "Moderate",
+  flipsClusterVolatile: "Volatile",
+  flipsSearchCurrency: "Search currency...",
+  flipsDetailedOpportunities: "Detailed Flip Opportunities",
+  flipsNoOpportunities: "No flip opportunities match filters",
+  flipsNoOpportunitiesDesc: "Try adjusting the filters above or check back later when market conditions change.",
+  flipsGoldFeePct: "Fee %",
+  flipsFeeFraction: "Fee Fraction",
+  flipsBid: "Bid",
+  flipsAsk: "Ask",
+  flipsMid: "Mid",
+  flipsDetailTitle: "Flip Detail: {0}",
+
   // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
   _pl_alertsCount: "Alerts ({0})|Alert ({0})|Alerts ({0})",
   _pl_items: "items|item|items",
