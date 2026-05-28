@@ -10,9 +10,9 @@ const nextConfig: NextConfig = {
   // Use `next lint` CLI options or eslint.config.js instead.
   // Previously: eslint: { ignoreDuringBuilds: true } — REMOVED
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // ignoreBuildErrors removed — all TypeScript errors have been fixed.
+  // If new TS errors appear during development, fix them rather than re-enabling this.
+  typescript: {},
   reactStrictMode: false,
   images: {
     remotePatterns: [

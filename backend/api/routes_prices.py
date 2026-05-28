@@ -181,9 +181,80 @@ async def get_all_prices():
             logger.debug("Momentum computation failed for %s: %s", api_id, e)
             momentum_lookup[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
 
-    # Build response with fee calculations + momentum/volatility
+    # Build response with fee calculations + momentum/volatility + cluster
     from backend.economy.gold_costs import compute_fee_breakdown
     from backend.economy.gold_cost_table import get_gold_cost_per_unit
+    from backend.predictors.clustering import CurrencyClusterer
+    from backend.models.currency import ClusterLabel
+
+    # Run currency clustering for cluster labels (reuse all_currencies data)
+    cluster_labels: dict[str, ClusterLabel] = {}
+    try:
+        cluster_price_histories: dict[str, list[float]] = {}
+        cluster_volumes: dict[str, float] = {}
+        cluster_prices_now: dict[str, float] = {}
+        cluster_prices_24h_ago: dict[str, float] = {}
+
+        # Build prices_in_chaos for clustering fallback
+        prices_in_chaos: dict[str, float] = {config.league.base_currency: 1.0}
+        for key, rate in rates.items():
+            if rate.currency_from == config.league.base_currency:
+                if rate.currency_to not in prices_in_chaos:
+                    prices_in_chaos[rate.currency_to] = rate.raw_rate
+            elif rate.currency_to == config.league.base_currency and rate.raw_rate > 0:
+                if rate.currency_from not in prices_in_chaos:
+                    prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
+
+        # Accumulate volume per currency from rates
+        for key, rate in rates.items():
+            for curr in (rate.currency_from, rate.currency_to):
+                if curr not in cluster_price_histories:
+                    cluster_price_histories[curr] = []
+                    cluster_volumes[curr] = 0.0
+                    cluster_prices_now[curr] = 0.0
+                    cluster_prices_24h_ago[curr] = 0.0
+                vol = float(rate.volume_traded)
+                if vol > cluster_volumes.get(curr, 0):
+                    cluster_volumes[curr] = vol
+
+        # Reuse already-fetched all_currencies for price histories
+        for curr in all_currencies:
+            api_id = curr.get("api_id", "")
+            price_logs = curr.get("price_logs", [])
+            if api_id and api_id in cluster_price_histories and price_logs:
+                sorted_logs = sorted(
+                    [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
+                    key=lambda l: l["time"],
+                )
+                prices = [l["price"] for l in sorted_logs]
+                if len(prices) >= 2:
+                    cluster_price_histories[api_id] = prices
+                    cluster_prices_now[api_id] = prices[-1]
+                    cluster_prices_24h_ago[api_id] = prices[0]
+
+        # Fill remaining prices from prices_in_chaos fallback
+        for curr in cluster_price_histories:
+            if cluster_prices_now[curr] == 0:
+                cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
+            if cluster_prices_24h_ago[curr] == 0:
+                cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+
+        if len(cluster_price_histories) >= 3:
+            clusterer = CurrencyClusterer(config)
+            output = clusterer.fit(
+                cluster_price_histories, cluster_volumes,
+                cluster_prices_now, cluster_prices_24h_ago,
+            )
+            cluster_labels = {c.currency: c.cluster for c in output.clusters}
+            logger.info("Prices clustering completed: %d currencies assigned", len(cluster_labels))
+        else:
+            logger.warning(
+                "Only %d currencies for clustering (need >=3), using MODERATE default",
+                len(cluster_price_histories),
+            )
+    except Exception as e:
+        logger.error("Clustering in prices route failed: %s", e)
+        cluster_labels = {}
 
     pairs_data = []
     for key, rate in rates.items():
@@ -210,6 +281,10 @@ async def get_all_prices():
         from_momentum = momentum_lookup.get(rate.currency_from, {})
         to_momentum = momentum_lookup.get(rate.currency_to, {})
 
+        # Cluster label for currency_from
+        from_cluster = cluster_labels.get(rate.currency_from, ClusterLabel.MODERATE).value
+        to_cluster = cluster_labels.get(rate.currency_to, ClusterLabel.MODERATE).value
+
         pairs_data.append({
             "pair": key,
             "currency_from": rate.currency_from,
@@ -222,6 +297,8 @@ async def get_all_prices():
             "volatility": round(from_momentum.get("volatility", 0.0), 6),
             "momentum": round(from_momentum.get("momentum", 0.0), 6),
             "acceleration": round(from_momentum.get("acceleration", 0.0), 6),
+            "cluster_from": from_cluster,
+            "cluster_to": to_cluster,
             "timestamp": rate.timestamp.isoformat() if rate.timestamp else None,
         })
 

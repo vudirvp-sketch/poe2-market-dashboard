@@ -330,7 +330,7 @@ function SortHeader({
   children,
   align = "left",
 }: {
-  column: { getIsSorted: () => false | "asc" | "desc"; getCanSort: () => boolean; getToggleSortingHandler: () => (e: unknown) => void };
+  column: { getIsSorted: () => false | "asc" | "desc"; getCanSort: () => boolean; getToggleSortingHandler: () => ((e: unknown) => void) | undefined };
   children: React.ReactNode;
   align?: "left" | "right";
 }) {

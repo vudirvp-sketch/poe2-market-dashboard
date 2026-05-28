@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import type { Realm, League, ReferenceCurrency } from "@/lib/types";
 import { useTheme } from "next-themes";
-import { useI18n, type Locale } from "@/lib/i18n";
+import { useI18n, type Locale, type TranslationKeys } from "@/lib/i18n";
 
 // ---------------------------------------------------------------------------
 // Phase info type (from /api/flipper/phase)
@@ -95,7 +95,7 @@ function phaseBadgeClass(phase: string): string {
   }
 }
 
-function phaseLabel(phase: string, t: (key: string) => string): string {
+function phaseLabel(phase: string, t: (key: TranslationKeys) => string): string {
   switch (phase?.toLowerCase()) {
     case "early": return t("phaseEarly");
     case "mid": return t("phaseMid");

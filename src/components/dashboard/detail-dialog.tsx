@@ -106,10 +106,11 @@ export function DetailDialog({
     const timer = setTimeout(measureChart, 100);
 
     // Also observe container resize for responsive updates
+    const container = candlestickContainerRef.current;
     const observer = new ResizeObserver(() => {
       measureChart();
     });
-    observer.observe(container);
+    if (container) observer.observe(container);
 
     return () => {
       clearTimeout(timer);

@@ -11,7 +11,7 @@ import { Header } from "@/components/dashboard/header";
 // ---------------------------------------------------------------------------
 const baseProps = {
   realms: [{ name: "pc", displayName: "PC" }],
-  leagues: [{ name: "Standard", displayName: "Standard", active: true }],
+  leagues: [{ name: "Standard", displayName: "Standard", active: true, startAt: null, endAt: null }],
   realmsLoading: false,
   leaguesLoading: false,
   realm: "pc",

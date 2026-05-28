@@ -52,12 +52,17 @@ import {
   Legend,
   ZAxis,
 } from "recharts";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+interface CorrelationMatrix {
+  currencies: string[];
+  matrix: number[][];
+}
 
 interface PortfolioData {
   method: "risk_parity" | "min_variance";
@@ -65,6 +70,7 @@ interface PortfolioData {
   expected_risk: number;
   correlation_warning: boolean;
   last_rebalance: string | null;
+  correlation_matrix: CorrelationMatrix | null;
 }
 
 interface FrontierPoint {
@@ -124,7 +130,7 @@ function textColorForBg(corr: number): string {
   return "text-foreground";
 }
 
-function methodLabel(method: string, t: (key: string) => string): string {
+function methodLabel(method: string, t: (key: TranslationKeys) => string): string {
   switch (method) {
     case "risk_parity":
       return t("portfolioRiskParityTitle");
@@ -139,7 +145,7 @@ function methodLabel(method: string, t: (key: string) => string): string {
 // Custom chart tooltip
 // ---------------------------------------------------------------------------
 
-function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Array<{ payload: { name: string; weight: number } }>; t: (key: string) => string }) {
+function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Array<{ payload: { name: string; weight: number } }>; t: (key: TranslationKeys) => string }) {
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
   return (
@@ -570,17 +576,60 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
                 <p className="text-xs text-muted-foreground mb-3">
                   {t("portfolioCorrelationNote")}
                 </p>
-                {/* Note: the backend does not currently expose the full correlation
-                    matrix via the portfolio endpoint. When it becomes available,
-                    replace this placeholder with real data. For now we show a
-                    visual indicator that this section is reserved for the matrix. */}
-                <div className="rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">
-                  <Shield className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" aria-hidden="true" />
-                  <p>{t("portfolioCorrelationPlaceholder")}</p>
-                  <p className="text-xs mt-1 max-w-md mx-auto">
-                    {t("portfolioCorrelationPlaceholderDesc")}
-                  </p>
-                </div>
+                {portfolioData?.correlation_matrix?.matrix ? (
+                  <div className="overflow-x-auto">
+                    <table className="text-xs border-collapse" role="table" aria-label={t("portfolioCorrelationMatrix")}>
+                      <thead>
+                        <tr>
+                          <th className="p-1 border border-border bg-muted/50 sticky left-0 z-10 min-w-[60px]" aria-label="Row header" />
+                          {portfolioData.correlation_matrix.currencies.map((cur) => (
+                            <th
+                              key={cur}
+                              className="p-1 border border-border bg-muted/50 text-center font-medium text-muted-foreground min-w-[50px] max-w-[70px] truncate"
+                              title={cur}
+                            >
+                              {cur.length > 6 ? cur.slice(0, 5) + "…" : cur}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {portfolioData.correlation_matrix.currencies.map((rowCur, i) => (
+                          <tr key={rowCur}>
+                            <th
+                              className="p-1 border border-border bg-muted/50 text-left font-medium text-muted-foreground sticky left-0 z-10 max-w-[80px] truncate"
+                              title={rowCur}
+                            >
+                              {rowCur.length > 8 ? rowCur.slice(0, 7) + "…" : rowCur}
+                            </th>
+                            {portfolioData.correlation_matrix!.matrix[i]?.map((corr, j) => {
+                              const bgStyle = { backgroundColor: correlationToColor(corr) };
+                              const textClass = textColorForBg(corr);
+                              return (
+                                <td
+                                  key={`${i}-${j}`}
+                                  className={`p-1 border border-border text-center font-mono ${textClass}`}
+                                  style={bgStyle}
+                                  title={`${rowCur} × ${portfolioData.correlation_matrix!.currencies[j]}: ${corr.toFixed(4)}`}
+                                >
+                                  {i === j ? "1.00" : corr.toFixed(2)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border p-6 text-center text-sm text-muted-foreground">
+                    <Shield className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" aria-hidden="true" />
+                    <p>{t("portfolioCorrelationPlaceholder")}</p>
+                    <p className="text-xs mt-1 max-w-md mx-auto">
+                      {t("portfolioCorrelationPlaceholderDesc")}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

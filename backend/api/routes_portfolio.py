@@ -210,6 +210,24 @@ async def get_portfolio():
     if _last_allocation is None:
         raise HTTPException(status_code=503, detail="Portfolio data unavailable")
 
+    # Build correlation matrix from stored data
+    correlation_matrix = None
+    currency_names = sorted(_last_allocation.weights.keys())
+    if _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
+        try:
+            corr_rows = []
+            for i in range(len(currency_names)):
+                row = []
+                for j in range(len(currency_names)):
+                    row.append(round(float(_previous_corr[i, j]), 4))
+                corr_rows.append(row)
+            correlation_matrix = {
+                "currencies": currency_names,
+                "matrix": corr_rows,
+            }
+        except Exception as e:
+            logger.debug("Failed to serialize correlation matrix: %s", e)
+
     return {
         "method": _last_allocation.method,
         "weights": {
@@ -220,6 +238,7 @@ async def get_portfolio():
         "last_rebalance": _last_allocation.last_rebalance.isoformat()
         if _last_allocation.last_rebalance
         else None,
+        "correlation_matrix": correlation_matrix,
     }
 
 
@@ -234,6 +253,24 @@ async def rebalance_portfolio():
     if _last_allocation is None:
         raise HTTPException(status_code=503, detail="Portfolio rebalance failed")
 
+    # Build correlation matrix from stored data
+    correlation_matrix = None
+    currency_names = sorted(_last_allocation.weights.keys())
+    if _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
+        try:
+            corr_rows = []
+            for i in range(len(currency_names)):
+                row = []
+                for j in range(len(currency_names)):
+                    row.append(round(float(_previous_corr[i, j]), 4))
+                corr_rows.append(row)
+            correlation_matrix = {
+                "currencies": currency_names,
+                "matrix": corr_rows,
+            }
+        except Exception as e:
+            logger.debug("Failed to serialize correlation matrix: %s", e)
+
     return {
         "method": _last_allocation.method,
         "weights": {
@@ -244,6 +281,7 @@ async def rebalance_portfolio():
         "last_rebalance": _last_allocation.last_rebalance.isoformat()
         if _last_allocation.last_rebalance
         else None,
+        "correlation_matrix": correlation_matrix,
     }
 
 

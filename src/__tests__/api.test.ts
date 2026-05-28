@@ -10,7 +10,7 @@ import {
   PaginatedResponse,
   ReferenceCurrency,
   SnapshotHistoryPoint,
-} from "@/lib/poe2api";
+} from "@/lib/types";
 
 describe("API Types", () => {
   it("Realm type compiles with required fields", () => {

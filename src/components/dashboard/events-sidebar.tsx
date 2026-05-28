@@ -43,7 +43,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -81,7 +81,7 @@ interface CreateEventResponse {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function eventTypeDisplay(type: string, t: (key: string) => string): { label: string; color: string } {
+function eventTypeDisplay(type: string, t: (key: TranslationKeys) => string): { label: string; color: string } {
   switch (type) {
     case "major_patch":
       return { label: t("eventsTypeMajorPatch"), color: "border-red-500 text-red-600 dark:text-red-400 bg-red-500/10" };
@@ -98,7 +98,7 @@ function eventTypeDisplay(type: string, t: (key: string) => string): { label: st
   }
 }
 
-function formatExpiry(expiresAt: string | null, t: (key: string) => string): string {
+function formatExpiry(expiresAt: string | null, t: (key: TranslationKeys) => string): string {
   if (!expiresAt) return t("eventsNever");
   const expiry = new Date(expiresAt);
   const now = new Date();

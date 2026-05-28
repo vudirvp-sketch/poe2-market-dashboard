@@ -41,7 +41,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { fetchApi, fmt } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 
@@ -124,7 +124,7 @@ function scoreBg(score: number): string {
   return "bg-red-500/10 border-red-500/50";
 }
 
-function clusterLabel(cluster: string, t: (key: string) => string): string {
+function clusterLabel(cluster: string, t: (key: TranslationKeys) => string): string {
   switch (cluster) {
     case "stable":
       return t("flipsClusterStable");

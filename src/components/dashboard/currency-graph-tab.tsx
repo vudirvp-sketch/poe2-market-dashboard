@@ -57,6 +57,8 @@ interface PriceRate {
   gold_fee_actual: number;
   volatility: number;
   momentum: number;
+  cluster_from?: string;
+  cluster_to?: string;
 }
 
 interface PricesResponse {
@@ -328,14 +330,23 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }
 
     const currencyVolumes = new Map<string, number>();
     const currencyDegree = new Map<string, number>();
+    const currencyCluster = new Map<string, string>();
 
-    // Accumulate volume and degree per currency
+    // Accumulate volume, degree, and cluster per currency
     for (const rate of pricesData.rates) {
       if (!rate.currency_from || !rate.currency_to || rate.raw_rate <= 0) continue;
       currencyVolumes.set(rate.currency_from, (currencyVolumes.get(rate.currency_from) ?? 0) + rate.volume_traded);
       currencyVolumes.set(rate.currency_to, (currencyVolumes.get(rate.currency_to) ?? 0) + rate.volume_traded);
       currencyDegree.set(rate.currency_from, (currencyDegree.get(rate.currency_from) ?? 0) + 1);
       currencyDegree.set(rate.currency_to, (currencyDegree.get(rate.currency_to) ?? 0) + 1);
+
+      // Use cluster_from/cluster_to from API, falling back to volatility-based heuristic
+      if (rate.cluster_from) {
+        currencyCluster.set(rate.currency_from, rate.cluster_from);
+      }
+      if (rate.cluster_to) {
+        currencyCluster.set(rate.currency_to, rate.cluster_to);
+      }
     }
 
     const nodes: GraphNode[] = [];
@@ -346,7 +357,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }
         label: id,
         volume: vol,
         degree: currencyDegree.get(id) ?? 0,
-        cluster: "moderate", // default, clustering info not available from prices endpoint
+        cluster: currencyCluster.get(id) ?? "moderate",
         x: 0,
         y: 0,
         iconUrl: iconLookup.get(id) ?? null,

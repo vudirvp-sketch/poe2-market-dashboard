@@ -30,8 +30,8 @@ Browser → Next.js (port 3000)
 - **Arbitrage** — Client-side simple arbitrage + backend-powered flipper mode
 - **Flips** — Detailed scored flip opportunities with cluster filtering, sorting, and storage value integration
 - **Forecasts** — Price forecasts, anomaly detection, storage value decisions
-- **Portfolio** — Risk parity / min-variance portfolio allocation with efficient frontier
-- **Currency Graph** — Network visualization of currency trade pairs with cycle highlighting
+- **Portfolio** — Risk parity / min-variance portfolio allocation with correlation matrix and efficient frontier
+- **Currency Graph** — Network visualization of currency trade pairs with cycle highlighting and real-time cluster classification
 - **Events** — Flag market events that affect scoring (sidebar)
 
 ### Cross-cutting
@@ -114,14 +114,14 @@ Edit `config.yaml` to customize flipper behavior:
 | `/api/health` | GET | Health check |
 | `/api/phase` | GET | League phase info (EARLY/MID/LATE) |
 | `/api/currencies` | GET | Currency metadata + icons |
-| `/api/prices` | GET | All exchange rates with fee info |
+| `/api/prices` | GET | All exchange rates with fee info + cluster labels |
 | `/api/prices/heatmap` | GET | 24h price change heatmap |
 | `/api/arbitrage/flips` | GET | Scored flip opportunities |
 | `/api/arbitrage/triangular` | GET | Triangular arbitrage cycles |
 | `/api/forecast/{currency}` | GET | Price forecast for a currency |
 | `/api/anomalies` | GET | Anomaly detection results |
 | `/api/storage-value/{currency}` | GET | Hold/sell decision |
-| `/api/portfolio` | GET | Portfolio allocation + risk metrics |
+| `/api/portfolio` | GET | Portfolio allocation + risk metrics + correlation matrix |
 | `/api/portfolio/frontier` | GET | Efficient frontier data |
 | `/api/portfolio/rebalance` | POST | Rebalance portfolio |
 | `/api/recipes` | GET | Vendor recipe arbitrage |
