@@ -1,6 +1,8 @@
 // ============================================================================
 // Arbitrage Tab — finds currency-exchange cycles with positive net profit
 // Task 6.9: Confidence indicator + Time-Decay weighting
+// Phase 2: Flipper mode toggle — integrates FastAPI backend scoring,
+//           triangular arbitrage, event status, gold fees, clusters
 // ============================================================================
 "use client";
 
@@ -15,6 +17,10 @@ import {
   Search,
   BarChart3,
   Layers,
+  Zap,
+  Circle,
+  Server,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +39,7 @@ import { fmt, fetchApi } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
-// Types
+// Types — Client-side arbitrage
 // ---------------------------------------------------------------------------
 
 interface GraphEdge {
@@ -56,7 +62,64 @@ interface ArbitrageCycle {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Types — Flipper backend
+// ---------------------------------------------------------------------------
+
+interface FlipOpportunity {
+  currency: string;
+  score: number;
+  spread_after_fees: number;
+  gold_fee_fraction: number;
+  gold_fee_actual: number;
+  volume_24h: number;
+  momentum: number;
+  volatility: number;
+  cluster: string;
+  bid: number;
+  ask: number;
+  mid_price: number;
+}
+
+interface FlipEventStatus {
+  any_active: boolean;
+  affected_currencies: string[];
+  summary: Record<string, unknown> | null;
+}
+
+interface FlipsResponse {
+  league: string;
+  total: number;
+  opportunities: FlipOpportunity[];
+  event_status: FlipEventStatus;
+  fetched_at: string;
+}
+
+interface TriangularCycle {
+  cycle: string[];
+  net_profit_pct: number;
+  step_rates: number[];
+  step_fees_gold: number[];
+  step_fees_fraction: number[];
+  total_volume: number;
+  confidence: number;
+}
+
+interface TriangularResponse {
+  league: string;
+  total: number;
+  opportunities: TriangularCycle[];
+  fetched_at: string;
+}
+
+interface FlipperHealthResponse {
+  status: string;
+  timestamp: string;
+  league?: string;
+  active_events?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers — Client-side
 // ---------------------------------------------------------------------------
 
 /** Square-root impact slippage model.
@@ -79,7 +142,7 @@ function applyFee(rate: number, feeBps: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Cycle-finding (DFS Bellman-Ford variant)
+// Cycle-finding (DFS Bellman-Ford variant) — Client-side
 // ---------------------------------------------------------------------------
 
 const MAX_CYCLE_LEN = 5;
@@ -229,6 +292,8 @@ function findArbitrageCycles(
 // Component
 // ---------------------------------------------------------------------------
 
+type ArbitrageMode = "client" | "flipper";
+
 interface ArbitrageTabProps {
   realm?: string;
   league?: string;
@@ -236,6 +301,9 @@ interface ArbitrageTabProps {
 
 export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
   const { t } = useI18n();
+
+  // Mode toggle
+  const [mode, setMode] = useState<ArbitrageMode>("client");
 
   // Settings state
   const [tradingFeeBps, setTradingFeeBps] = useState(0);
@@ -245,11 +313,26 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
   const [decayLambda, setDecayLambda] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Fetch exchange pairs
+  // Flipper filter state
+  const [flipMinScore, setFlipMinScore] = useState(0);
+  const [flipMinVolume, setFlipMinVolume] = useState(0);
+
+  // ---- Backend health check ----
+  const { data: healthData, isError: healthError } = useQuery<FlipperHealthResponse>({
+    queryKey: ["flipper-health"],
+    queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    retry: false,
+  });
+
+  const backendOnline = !healthError && healthData?.status === "ok";
+
+  // ---- Fetch exchange pairs (client-side mode) ----
   const {
     data: pairs,
-    isLoading,
-    isError,
+    isLoading: pairsLoading,
+    isError: pairsError,
   } = useQuery<ExchangePair[]>({
     queryKey: ["exchangePairs", realm, league],
     queryFn: () =>
@@ -258,11 +341,43 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         league: league ?? "",
         action: "pairs",
       }),
-    enabled: !!realm && !!league,
+    enabled: !!realm && !!league && mode === "client",
     staleTime: 60_000,
   });
 
-  // Compute arbitrage cycles
+  // ---- Flipper: scored flips ----
+  const {
+    data: flipsData,
+    isLoading: flipsLoading,
+    isError: flipsError,
+    refetch: refetchFlips,
+  } = useQuery<FlipsResponse>({
+    queryKey: ["flipper-flips", flipMinScore, flipMinVolume],
+    queryFn: () =>
+      fetchApi<FlipsResponse>("/api/flipper/flips", {
+        min_score: String(flipMinScore),
+        min_volume: String(flipMinVolume),
+      }),
+    enabled: mode === "flipper" && backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // ---- Flipper: triangular arbitrage ----
+  const {
+    data: triData,
+    isLoading: triLoading,
+    isError: triError,
+    refetch: refetchTri,
+  } = useQuery<TriangularResponse>({
+    queryKey: ["flipper-triangular"],
+    queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
+    enabled: mode === "flipper" && backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // Compute arbitrage cycles (client-side)
   const cycles = useMemo(() => {
     if (!pairs || pairs.length === 0) return [];
     return findArbitrageCycles(
@@ -303,6 +418,17 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
     });
   }, [cycles]);
 
+  // Determine loading state based on mode
+  const isLoading =
+    mode === "client"
+      ? pairsLoading
+      : flipsLoading || triLoading;
+
+  const isError =
+    mode === "client"
+      ? pairsError
+      : flipsError;
+
   // Loading skeleton
   if (isLoading) {
     return (
@@ -318,7 +444,7 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
     );
   }
 
-  if (isError) {
+  if (isError && mode === "client") {
     return (
       <Card className="border-destructive/50">
         <CardContent className="p-6 text-center text-destructive">
@@ -330,6 +456,87 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
 
   return (
     <div className="space-y-4">
+      {/* ---- Mode Toggle + Backend Status ---- */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5 rounded-lg border bg-muted/50 p-1">
+          <button
+            onClick={() => setMode("client")}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              mode === "client"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={mode === "client"}
+          >
+            {t("arbitrageModeClient")}
+          </button>
+          <button
+            onClick={() => setMode("flipper")}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+              mode === "flipper"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            aria-pressed={mode === "flipper"}
+          >
+            <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+            {t("arbitrageModeFlipper")}
+          </button>
+        </div>
+
+        {/* Backend status indicator */}
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Circle
+            className={`h-2.5 w-2.5 ${
+              backendOnline
+                ? "fill-emerald-500 text-emerald-500"
+                : "fill-red-500 text-red-500"
+            }`}
+            aria-hidden="true"
+          />
+          <Server className="h-3 w-3" aria-hidden="true" />
+          {backendOnline
+            ? t("flipperBackendOnline")
+            : t("flipperBackendOffline")}
+        </div>
+
+        {/* Refresh button (flipper mode) */}
+        {mode === "flipper" && backendOnline && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={() => {
+              refetchFlips();
+              refetchTri();
+            }}
+            aria-label={t("refreshData")}
+          >
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+          </Button>
+        )}
+      </div>
+
+      {/* ---- Backend unavailable warning (flipper mode) ---- */}
+      {mode === "flipper" && !backendOnline && (
+        <Card className="border-red-500/30 bg-red-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-red-600 dark:text-red-400">
+                {t("flipperBackendOfflineTitle")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("flipperBackendOfflineDesc")}
+              </p>
+              <code className="text-xs mt-2 block bg-muted px-2 py-1 rounded">
+                uvicorn backend.main:app --reload --port 8000
+              </code>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ---- Disclaimer ---- */}
       <Card className="border-amber-500/30 bg-amber-500/5">
         <CardContent className="flex items-start gap-3 p-4">
@@ -345,338 +552,672 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
         </CardContent>
       </Card>
 
-      {/* ---- Stats row ---- */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <Search className="h-3.5 w-3.5" aria-hidden="true" />
-              {t("scannedPairs")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-2xl font-bold">{scannedCount}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t("ofTotal", { "0": String(pairs?.length ?? 0), "1": String(minVolume) })}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <Layers className="h-3.5 w-3.5" aria-hidden="true" />
-              {t("currencies")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-2xl font-bold">{uniqueTokens}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t("uniqueTokensInGraph")}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-              {t("opportunitiesFound")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0">
-            <p className="text-2xl font-bold">{uniqueCycles.length}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t("cyclesWithPositiveNetProfit")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ---- Settings toggle ---- */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSettings((v) => !v)}
-          aria-expanded={showSettings}
-          aria-controls="arbitrage-settings"
-        >
-          <Settings className="h-4 w-4 mr-1.5" aria-hidden="true" />
-          {t("settings")}
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          {t("adjustSettings")}
-        </span>
-      </div>
-
-      {/* ---- Settings panel ---- */}
-      {showSettings && (
-        <Card id="arbitrage-settings">
-          <CardContent className="p-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Trading Fee */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="arb-fee-bps">
-                  {t("tradingFeeBps")}
-                </label>
-                <p className="text-xs text-muted-foreground">{t("poeNoFees")}</p>
-                <Input
-                  id="arb-fee-bps"
-                  type="number"
-                  min={0}
-                  max={1000}
-                  step={1}
-                  value={tradingFeeBps}
-                  onChange={(e) => setTradingFeeBps(Number(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* Base Slippage */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="arb-slip-bps">
-                  {t("baseSlippageBps")}
-                </label>
-                <p className="text-xs text-muted-foreground">{t("baseSlippageDesc")}</p>
-                <Input
-                  id="arb-slip-bps"
-                  type="number"
-                  min={0}
-                  max={1000}
-                  step={1}
-                  value={baseSlippageBps}
-                  onChange={(e) => setBaseSlippageBps(Number(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* Trade Size */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="arb-trade-size">
-                  {t("tradeSizeForProfit")}
-                </label>
-                <p className="text-xs text-muted-foreground">{t("tradeSizeDesc")}</p>
-                <Input
-                  id="arb-trade-size"
-                  type="number"
-                  min={1}
-                  max={1_000_000}
-                  step={1}
-                  value={tradeSize}
-                  onChange={(e) => setTradeSize(Number(e.target.value) || 1)}
-                />
-              </div>
-
-              {/* Min Volume */}
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="arb-min-vol">
-                  {t("maxVol")}
-                </label>
-                <p className="text-xs text-muted-foreground">
-                  {t("ofTotal", { "0": "", "1": String(minVolume) })}
+      {/* ---- Event status banner (flipper mode) ---- */}
+      {mode === "flipper" && flipsData?.event_status?.any_active && (
+        <Card className="border-orange-500/30 bg-orange-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Info className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-orange-600 dark:text-orange-400">
+                {t("flipperEventActive")}
+              </p>
+              {flipsData.event_status.affected_currencies.length > 0 && (
+                <p className="text-muted-foreground mt-1">
+                  {t("flipperAffectedCurrencies")}:{" "}
+                  {flipsData.event_status.affected_currencies.join(", ")}
                 </p>
-                <Input
-                  id="arb-min-vol"
-                  type="number"
-                  min={0}
-                  max={1_000_000}
-                  step={1}
-                  value={minVolume}
-                  onChange={(e) => setMinVolume(Number(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* Decay Lambda */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm font-medium" htmlFor="arb-decay-lambda">
-                    {t("decayLambda")}
-                  </label>
-                  <span
-                    className="relative group"
-                    aria-label={t("timeDecayDesc")}
-                  >
-                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-hidden="true" />
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {t("timeDecayDesc")}
-                    </span>
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">{t("timeDecayDesc")}</p>
-                <Input
-                  id="arb-decay-lambda"
-                  type="number"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={decayLambda}
-                  onChange={(e) => setDecayLambda(Number(e.target.value) || 0)}
-                />
-              </div>
-
-              {/* Time Decay Label with tooltip */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm font-medium">
-                    {t("timeDecayLabel")}
-                  </label>
-                  <span
-                    className="relative group"
-                    aria-label={t("timeDecayDesc")}
-                  >
-                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-hidden="true" />
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {t("timeDecayDesc")}
-                    </span>
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  &lambda; = {decayLambda.toFixed(2)} &mdash; {t("timeDecayDesc")}
-                </p>
-                <Select
-                  value={decayLambda === 0 ? "0" : "custom"}
-                  onValueChange={(v) => {
-                    if (v === "0") setDecayLambda(0);
-                  }}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0 — No decay</SelectItem>
-                    <SelectItem value="custom">Custom (use input)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* ---- Opportunities table ---- */}
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-            <BarChart3 className="h-4 w-4" aria-hidden="true" />
-            {t("arbitrageOpportunities")}
-          </CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t(
-              "showingTopOpportunities",
-              {
-                "0": String(uniqueCycles.length),
-                "1": String(MAX_CYCLE_LEN),
-                "2": String(minVolume),
-                "3": String(baseSlippageBps),
-                "4": String(tradingFeeBps),
-              },
-            )}
-          </p>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 pt-0">
-          {uniqueCycles.length === 0 ? (
-            <div className="text-center py-10">
-              <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
-              <p className="font-medium">{t("noArbitrage")}</p>
-              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                {t("noArbitrageDesc")}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-0">
-              {/* Table header — 7 columns: Route, Len, Net Profit, Gross, Slippage, Confidence, Max Vol */}
-              <div className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                <span>{t("route")}</span>
-                <span className="text-center">{t("len")}</span>
-                <span className="text-right">{t("netProfit")}</span>
-                <span className="text-right">{t("gross")}</span>
-                <span className="text-right">{t("slippage")}</span>
-                <span className="text-center">{t("confidence")}</span>
-                <span className="text-right">{t("maxVol")}</span>
-              </div>
+      {/* ============================================================ */}
+      {/* CLIENT-SIDE MODE                                            */}
+      {/* ============================================================ */}
+      {mode === "client" && (
+        <>
+          {/* ---- Stats row ---- */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("scannedPairs")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <p className="text-2xl font-bold">{scannedCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("ofTotal", { "0": String(pairs?.length ?? 0), "1": String(minVolume) })}
+                </p>
+              </CardContent>
+            </Card>
 
-              {/* Table body */}
-              <div className="max-h-96 overflow-y-auto" role="list" aria-label="Arbitrage opportunities">
-                {uniqueCycles.map((cycle, idx) => {
-                  const routeNames = cycle.route.map(
-                    (id) => cycle.edges.find((e) => e.from === id)?.fromName ?? id,
-                  );
-                  // Add the start name at the end to close the loop
-                  const startName =
-                    cycle.edges[0]?.fromName ?? routeNames[0];
-                  routeNames.push(startName);
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("currencies")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <p className="text-2xl font-bold">{uniqueTokens}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("uniqueTokensInGraph")}
+                </p>
+              </CardContent>
+            </Card>
 
-                  return (
-                    <div
-                      key={idx}
-                      className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
-                      role="listitem"
-                    >
-                      {/* Route */}
-                      <div className="flex items-center gap-1 flex-wrap min-w-0">
-                        {routeNames.map((name, i) => (
-                          <span key={i} className="flex items-center gap-1">
-                            <span className="truncate text-xs font-medium">
-                              {name}
-                            </span>
-                            {i < routeNames.length - 1 && (
-                              <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
-                            )}
-                          </span>
-                        ))}
-                      </div>
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("opportunitiesFound")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <p className="text-2xl font-bold">{uniqueCycles.length}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("cyclesWithPositiveNetProfit")}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-                      {/* Length */}
-                      <span className="text-center text-xs text-muted-foreground font-mono">
-                        {cycle.edges.length}
-                      </span>
+          {/* ---- Settings toggle ---- */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSettings((v) => !v)}
+              aria-expanded={showSettings}
+              aria-controls="arbitrage-settings"
+            >
+              <Settings className="h-4 w-4 mr-1.5" aria-hidden="true" />
+              {t("settings")}
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {t("adjustSettings")}
+            </span>
+          </div>
 
-                      {/* Net Profit */}
-                      <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        +{fmt(cycle.netProfit)}
-                      </span>
+          {/* ---- Settings panel ---- */}
+          {showSettings && (
+            <Card id="arbitrage-settings">
+              <CardContent className="p-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Trading Fee */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium" htmlFor="arb-fee-bps">
+                      {t("tradingFeeBps")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">{t("poeNoFees")}</p>
+                    <Input
+                      id="arb-fee-bps"
+                      type="number"
+                      min={0}
+                      max={1000}
+                      step={1}
+                      value={tradingFeeBps}
+                      onChange={(e) => setTradingFeeBps(Number(e.target.value) || 0)}
+                    />
+                  </div>
 
-                      {/* Gross */}
-                      <span className="text-right font-mono text-xs text-muted-foreground">
-                        {fmt(cycle.grossProfit)}
-                      </span>
+                  {/* Base Slippage */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium" htmlFor="arb-slip-bps">
+                      {t("baseSlippageBps")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">{t("baseSlippageDesc")}</p>
+                    <Input
+                      id="arb-slip-bps"
+                      type="number"
+                      min={0}
+                      max={1000}
+                      step={1}
+                      value={baseSlippageBps}
+                      onChange={(e) => setBaseSlippageBps(Number(e.target.value) || 0)}
+                    />
+                  </div>
 
-                      {/* Slippage */}
-                      <span className="text-right font-mono text-xs text-muted-foreground">
-                        {(cycle.slippage * 100).toFixed(2)}%
-                      </span>
+                  {/* Trade Size */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium" htmlFor="arb-trade-size">
+                      {t("tradeSizeForProfit")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">{t("tradeSizeDesc")}</p>
+                    <Input
+                      id="arb-trade-size"
+                      type="number"
+                      min={1}
+                      max={1_000_000}
+                      step={1}
+                      value={tradeSize}
+                      onChange={(e) => setTradeSize(Number(e.target.value) || 1)}
+                    />
+                  </div>
 
-                      {/* Confidence */}
-                      <span className="flex justify-center">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-1.5 py-0 font-semibold ${
-                            cycle.confidence >= 0.7
-                              ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                              : cycle.confidence >= 0.3
-                              ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
-                              : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
-                          }`}
-                        >
-                          {cycle.confidence >= 0.7
-                            ? t("confidenceHigh")
-                            : cycle.confidence >= 0.3
-                            ? t("confidenceMedium")
-                            : t("confidenceLow")}
-                        </Badge>
-                      </span>
+                  {/* Min Volume */}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium" htmlFor="arb-min-vol">
+                      {t("maxVol")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {t("ofTotal", { "0": "", "1": String(minVolume) })}
+                    </p>
+                    <Input
+                      id="arb-min-vol"
+                      type="number"
+                      min={0}
+                      max={1_000_000}
+                      step={1}
+                      value={minVolume}
+                      onChange={(e) => setMinVolume(Number(e.target.value) || 0)}
+                    />
+                  </div>
 
-                      {/* Max Volume */}
-                      <span className="text-right font-mono text-xs text-muted-foreground">
-                        {cycle.maxVolume.toLocaleString()}
+                  {/* Decay Lambda */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium" htmlFor="arb-decay-lambda">
+                        {t("decayLambda")}
+                      </label>
+                      <span
+                        className="relative group"
+                        aria-label={t("timeDecayDesc")}
+                      >
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-hidden="true" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                          {t("timeDecayDesc")}
+                        </span>
                       </span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    <p className="text-xs text-muted-foreground">{t("timeDecayDesc")}</p>
+                    <Input
+                      id="arb-decay-lambda"
+                      type="number"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={decayLambda}
+                      onChange={(e) => setDecayLambda(Number(e.target.value) || 0)}
+                    />
+                  </div>
+
+                  {/* Time Decay Label with tooltip */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium">
+                        {t("timeDecayLabel")}
+                      </label>
+                      <span
+                        className="relative group"
+                        aria-label={t("timeDecayDesc")}
+                      >
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" aria-hidden="true" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                          {t("timeDecayDesc")}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      &lambda; = {decayLambda.toFixed(2)} &mdash; {t("timeDecayDesc")}
+                    </p>
+                    <Select
+                      value={decayLambda === 0 ? "0" : "custom"}
+                      onValueChange={(v) => {
+                        if (v === "0") setDecayLambda(0);
+                      }}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">0 — No decay</SelectItem>
+                        <SelectItem value="custom">Custom (use input)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+
+          {/* ---- Opportunities table ---- */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <BarChart3 className="h-4 w-4" aria-hidden="true" />
+                {t("arbitrageOpportunities")}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t(
+                  "showingTopOpportunities",
+                  {
+                    "0": String(uniqueCycles.length),
+                    "1": String(MAX_CYCLE_LEN),
+                    "2": String(minVolume),
+                    "3": String(baseSlippageBps),
+                    "4": String(tradingFeeBps),
+                  },
+                )}
+              </p>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0">
+              {uniqueCycles.length === 0 ? (
+                <div className="text-center py-10">
+                  <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+                  <p className="font-medium">{t("noArbitrage")}</p>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                    {t("noArbitrageDesc")}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-0">
+                  {/* Table header */}
+                  <div className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+                    <span>{t("route")}</span>
+                    <span className="text-center">{t("len")}</span>
+                    <span className="text-right">{t("netProfit")}</span>
+                    <span className="text-right">{t("gross")}</span>
+                    <span className="text-right">{t("slippage")}</span>
+                    <span className="text-center">{t("confidence")}</span>
+                    <span className="text-right">{t("maxVol")}</span>
+                  </div>
+
+                  {/* Table body */}
+                  <div className="max-h-96 overflow-y-auto" role="list" aria-label="Arbitrage opportunities">
+                    {uniqueCycles.map((cycle, idx) => {
+                      const routeNames = cycle.route.map(
+                        (id) => cycle.edges.find((e) => e.from === id)?.fromName ?? id,
+                      );
+                      const startName =
+                        cycle.edges[0]?.fromName ?? routeNames[0];
+                      routeNames.push(startName);
+
+                      return (
+                        <div
+                          key={idx}
+                          className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                          role="listitem"
+                        >
+                          <div className="flex items-center gap-1 flex-wrap min-w-0">
+                            {routeNames.map((name, i) => (
+                              <span key={i} className="flex items-center gap-1">
+                                <span className="truncate text-xs font-medium">
+                                  {name}
+                                </span>
+                                {i < routeNames.length - 1 && (
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                                )}
+                              </span>
+                            ))}
+                          </div>
+
+                          <span className="text-center text-xs text-muted-foreground font-mono">
+                            {cycle.edges.length}
+                          </span>
+
+                          <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            +{fmt(cycle.netProfit)}
+                          </span>
+
+                          <span className="text-right font-mono text-xs text-muted-foreground">
+                            {fmt(cycle.grossProfit)}
+                          </span>
+
+                          <span className="text-right font-mono text-xs text-muted-foreground">
+                            {(cycle.slippage * 100).toFixed(2)}%
+                          </span>
+
+                          <span className="flex justify-center">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 font-semibold ${
+                                cycle.confidence >= 0.7
+                                  ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                  : cycle.confidence >= 0.3
+                                  ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                                  : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
+                              }`}
+                            >
+                              {cycle.confidence >= 0.7
+                                ? t("confidenceHigh")
+                                : cycle.confidence >= 0.3
+                                ? t("confidenceMedium")
+                                : t("confidenceLow")}
+                            </Badge>
+                          </span>
+
+                          <span className="text-right font-mono text-xs text-muted-foreground">
+                            {cycle.maxVolume.toLocaleString()}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {/* ============================================================ */}
+      {/* FLIPPER MODE                                                */}
+      {/* ============================================================ */}
+      {mode === "flipper" && (
+        <>
+          {/* ---- Stats row ---- */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("flipperScoredFlips")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <p className="text-2xl font-bold">{flipsData?.total ?? "—"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("flipperScoredFlipsDesc")}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("flipperTriangularCycles")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <p className="text-2xl font-bold">{triData?.total ?? "—"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("flipperTriangularCyclesDesc")}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t("flipperPhase")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <p className="text-2xl font-bold capitalize">
+                  {healthData?.league ?? "—"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("flipperPhaseDesc")}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ---- Flipper filters ---- */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="flip-min-score">
+                {t("flipperMinScore")}
+              </label>
+              <Input
+                id="flip-min-score"
+                type="number"
+                min={0}
+                max={1}
+                step={0.1}
+                value={flipMinScore}
+                onChange={(e) => setFlipMinScore(Number(e.target.value) || 0)}
+                className="w-20 h-8 text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-muted-foreground" htmlFor="flip-min-vol">
+                {t("flipperMinVolume")}
+              </label>
+              <Input
+                id="flip-min-vol"
+                type="number"
+                min={0}
+                step={10}
+                value={flipMinVolume}
+                onChange={(e) => setFlipMinVolume(Number(e.target.value) || 0)}
+                className="w-20 h-8 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* ---- Scored Flip Opportunities ---- */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <TrendingUp className="h-4 w-4" aria-hidden="true" />
+                {t("flipperFlipOpportunities")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0">
+              {!backendOnline ? (
+                <div className="text-center py-10">
+                  <Server className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+                  <p className="font-medium">{t("flipperBackendOfflineTitle")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("flipperBackendOfflineDesc")}
+                  </p>
+                </div>
+              ) : flipsError ? (
+                <div className="text-center py-10">
+                  <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+                  <p className="font-medium">{t("failedToLoadData")}</p>
+                </div>
+              ) : !flipsData?.opportunities?.length ? (
+                <div className="text-center py-10">
+                  <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+                  <p className="font-medium">{t("noArbitrage")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("noArbitrageDesc")}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-0">
+                  {/* Table header */}
+                  <div className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+                    <span>{t("flipperCurrency")}</span>
+                    <span className="text-center">{t("flipperScore")}</span>
+                    <span className="text-right">{t("flipperSpread")}</span>
+                    <span className="text-right">{t("flipperGoldFee")}</span>
+                    <span className="text-right">{t("flipperMomentum")}</span>
+                    <span className="text-right">{t("flipperVolatility")}</span>
+                    <span className="text-center">{t("flipperCluster")}</span>
+                    <span className="text-right">{t("flipperVolume")}</span>
+                  </div>
+
+                  {/* Table body */}
+                  <div className="max-h-96 overflow-y-auto" role="list" aria-label="Flip opportunities">
+                    {flipsData.opportunities.map((opp, idx) => (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                        role="listitem"
+                      >
+                        {/* Currency pair */}
+                        <span className="text-xs font-medium truncate">
+                          {opp.currency}
+                        </span>
+
+                        {/* Score */}
+                        <span className="flex justify-center">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1.5 py-0 font-semibold ${
+                              opp.score >= 0.7
+                                ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                : opp.score >= 0.4
+                                ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                                : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
+                            }`}
+                          >
+                            {opp.score.toFixed(2)}
+                          </Badge>
+                        </span>
+
+                        {/* Spread after fees */}
+                        <span className="text-right font-mono text-xs text-muted-foreground">
+                          {(opp.spread_after_fees * 100).toFixed(2)}%
+                        </span>
+
+                        {/* Gold fee */}
+                        <span className="text-right font-mono text-xs text-muted-foreground">
+                          {opp.gold_fee_actual.toFixed(0)}g
+                        </span>
+
+                        {/* Momentum */}
+                        <span className={`text-right font-mono text-xs ${
+                          opp.momentum > 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : opp.momentum < 0
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-muted-foreground"
+                        }`}>
+                          {opp.momentum > 0 ? "+" : ""}
+                          {opp.momentum.toFixed(4)}
+                        </span>
+
+                        {/* Volatility */}
+                        <span className="text-right font-mono text-xs text-muted-foreground">
+                          {opp.volatility.toFixed(4)}
+                        </span>
+
+                        {/* Cluster */}
+                        <span className="flex justify-center">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1.5 py-0 font-semibold ${
+                              opp.cluster === "SAFE"
+                                ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                : opp.cluster === "RISKY"
+                                ? "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
+                                : "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                            }`}
+                          >
+                            {opp.cluster}
+                          </Badge>
+                        </span>
+
+                        {/* Volume */}
+                        <span className="text-right font-mono text-xs text-muted-foreground">
+                          {opp.volume_24h.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ---- Triangular Arbitrage ---- */}
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                <Layers className="h-4 w-4" aria-hidden="true" />
+                {t("flipperTriangularTitle")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0">
+              {!backendOnline ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  {t("flipperBackendOfflineTitle")}
+                </div>
+              ) : triError ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  {t("failedToLoadData")}
+                </div>
+              ) : !triData?.opportunities?.length ? (
+                <div className="text-center py-6">
+                  <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
+                  <p className="text-sm text-muted-foreground">
+                    {t("flipperNoTriangular")}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-0">
+                  {/* Table header */}
+                  <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+                    <span>{t("flipperCycle")}</span>
+                    <span className="text-right">{t("flipperNetProfitPct")}</span>
+                    <span className="text-right">{t("flipperGoldFees")}</span>
+                    <span className="text-center">{t("confidence")}</span>
+                    <span className="text-right">{t("flipperTotalVolume")}</span>
+                  </div>
+
+                  {/* Table body */}
+                  <div className="max-h-64 overflow-y-auto" role="list" aria-label="Triangular arbitrage">
+                    {triData.opportunities.map((tri, idx) => (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                        role="listitem"
+                      >
+                        {/* Cycle */}
+                        <div className="flex items-center gap-1 flex-wrap min-w-0">
+                          {tri.cycle.map((c, i) => (
+                            <span key={i} className="flex items-center gap-1">
+                              <span className="truncate text-xs font-medium">{c}</span>
+                              {i < tri.cycle.length - 1 && (
+                                <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                              )}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Net profit % */}
+                        <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          +{tri.net_profit_pct.toFixed(2)}%
+                        </span>
+
+                        {/* Gold fees */}
+                        <span className="text-right font-mono text-xs text-muted-foreground">
+                          {tri.step_fees_gold.reduce((a, b) => a + b, 0).toFixed(0)}g
+                        </span>
+
+                        {/* Confidence */}
+                        <span className="flex justify-center">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1.5 py-0 font-semibold ${
+                              tri.confidence >= 0.7
+                                ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                : tri.confidence >= 0.3
+                                ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                                : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
+                            }`}
+                          >
+                            {tri.confidence >= 0.7
+                              ? t("confidenceHigh")
+                              : tri.confidence >= 0.3
+                              ? t("confidenceMedium")
+                              : t("confidenceLow")}
+                          </Badge>
+                        </span>
+
+                        {/* Total volume */}
+                        <span className="text-right font-mono text-xs text-muted-foreground">
+                          {tri.total_volume.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -35,11 +35,44 @@ if !ERRORLEVEL! neq 0 (
 echo [OK] npm found.
 echo.
 
+REM ---- Check for Python / uvicorn (optional) ----
+set PYTHON_AVAILABLE=0
+set UVICORN_AVAILABLE=0
+
+where python >nul 2>&1
+if !ERRORLEVEL! equ 0 (
+    set PYTHON_AVAILABLE=1
+    echo [OK] Python found.
+)
+
+where uvicorn >nul 2>&1
+if !ERRORLEVEL! equ 0 (
+    set UVICORN_AVAILABLE=1
+    echo [OK] uvicorn found.
+) else (
+    if !PYTHON_AVAILABLE! equ 1 (
+        python -m pip show uvicorn >nul 2>&1
+        if !ERRORLEVEL! equ 0 (
+            set UVICORN_AVAILABLE=1
+            echo [OK] uvicorn found (via python -m).
+        )
+    )
+)
+
+if !UVICORN_AVAILABLE! equ 0 (
+    echo [WARN] uvicorn not found. The Flipper backend will not start.
+    echo        Advanced features (scoring, triangular arb, forecasts) will be unavailable.
+    echo        Install with: pip install uvicorn fastapi
+    echo.
+)
+
 REM ---- Check .env.local ----
 if not exist ".env.local" (
     echo [INFO] .env.local not found. Creating with default settings...
     echo # PoE2 API Base URL> .env.local
     echo POE2_API_BASE_URL=https://api.poe2scout.com/api>> .env.local
+    echo # Flipper backend URL>> .env.local
+    echo FLIPPER_API_URL=http://localhost:8000>> .env.local
     echo.
     echo [OK] .env.local created with api.poe2scout.com
     echo.
@@ -48,7 +81,7 @@ if not exist ".env.local" (
     echo.
 )
 
-REM ---- Kill any existing Next.js server on port 3000 ----
+REM ---- Kill any existing servers on ports 3000 and 8000 ----
 echo [INFO] Checking for existing server on port 3000...
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING 2^>nul') do (
     echo [INFO] Found process %%a on port 3000. Terminating...
@@ -56,7 +89,36 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTE
     timeout /t 1 /nobreak >nul
 )
 echo [OK] Port 3000 is free.
+
+echo [INFO] Checking for existing server on port 8000...
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :8000 ^| findstr LISTENING 2^>nul') do (
+    echo [INFO] Found process %%a on port 8000. Terminating...
+    taskkill /PID %%a /F >nul 2>&1
+    timeout /t 1 /nobreak >nul
+)
+echo [OK] Port 8000 is free.
 echo.
+
+REM ---- Start FastAPI backend (if uvicorn available) ----
+set FLIPPER_PID=0
+
+if !UVICORN_AVAILABLE! equ 1 (
+    echo [INFO] Starting FastAPI Flipper backend on port 8000...
+    start /b uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+    timeout /t 2 /nobreak >nul
+
+    REM Verify backend started
+    netstat -aon 2>nul | findstr :8000 | findstr LISTENING >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        echo [OK] Flipper backend started on http://localhost:8000
+    ) else (
+        echo [WARN] Flipper backend may not have started. Check flipper-backend.log
+    )
+    echo.
+) else (
+    echo [SKIP] Flipper backend not started (uvicorn not available).
+    echo.
+)
 
 REM ---- Install dependencies if needed ----
 if not exist "node_modules\" (
@@ -87,15 +149,30 @@ REM Use --clean flag to clean .next before build: start.bat --clean
 if "%~1"=="--dev" (
     echo [INFO] Starting in DEVELOPMENT mode ^(--dev flag^)
     echo.
+
+    REM Start FastAPI with --reload in dev mode
+    if !UVICORN_AVAILABLE! equ 1 (
+        echo [INFO] Restarting Flipper backend with --reload for dev mode...
+        for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :8000 ^| findstr LISTENING 2^>nul') do (
+            taskkill /PID %%a /F >nul 2>&1
+        )
+        timeout /t 1 /nobreak >nul
+        start /b uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+        timeout /t 2 /nobreak >nul
+        echo [OK] Flipper backend restarted with --reload
+        echo.
+    )
+
     echo ============================================================
     echo   Starting PoE2 Market Dashboard - DEV MODE
     echo   Open your browser: http://localhost:3000
     echo.
+    echo   Flipper backend: http://localhost:8000
     echo   Press Ctrl+C to stop the server.
     echo ============================================================
     echo.
     call npm run dev
-    goto :end
+    goto :cleanup
 )
 
 REM ---- Clean .next directory ----
@@ -157,6 +234,8 @@ echo ============================================================
 echo   Starting PoE2 Market Dashboard...
 echo   Open your browser: http://localhost:3000
 echo.
+echo   Flipper backend: http://localhost:8000
+echo.
 echo   IMPORTANT: If you see 404 errors in browser after a rebuild:
 echo     1. Hard-refresh: Ctrl+Shift+R (or Ctrl+F5)
 echo     2. Clear browser cache: Ctrl+Shift+Delete
@@ -177,7 +256,15 @@ REM the entire process tree including child node processes.
 REM We also kill port 3000 at the start of this script.
 call npm run start
 
-:end
+:cleanup
+REM ---- Cleanup: kill the Flipper backend ----
+echo.
+echo [INFO] Cleaning up...
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :8000 ^| findstr LISTENING 2^>nul') do (
+    echo [INFO] Terminating Flipper backend (PID %%a^)...
+    taskkill /PID %%a /F >nul 2>&1
+)
+
 REM If next start exits unexpectedly, keep the window open
 echo.
 echo [INFO] Server has stopped.
