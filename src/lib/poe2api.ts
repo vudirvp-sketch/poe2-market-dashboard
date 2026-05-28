@@ -40,8 +40,8 @@ const cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 60_000; // 60 seconds
 
 // ---------- Fetch with timeout + retry ----------
-const FETCH_TIMEOUT = 20_000; // 20 seconds (increased from 15)
-const FETCH_RETRIES = 2;
+const FETCH_TIMEOUT = 30_000; // 30 seconds (increased from 20 to reduce ECONNRESET)
+const FETCH_RETRIES = 3; // Increased from 2 to give more chances on transient errors
 
 /**
  * Fetch with AbortController timeout and automatic retry.
@@ -123,7 +123,17 @@ async function cachedFetch<T>(url: string): Promise<T> {
         );
       }
 
-      // Network errors (ECONNREFUSED, ENOTFOUND, etc.)
+      // ECONNRESET is a transient error — the remote server reset the connection.
+      // This is common when api.poe2scout.com is under load or when the network
+      // is unstable. Unlike ECONNREFUSED (server not listening), ECONNRESET means
+      // the server WAS reachable but dropped the connection. Retry with backoff.
+      const isTransientNetworkError =
+        lastError.message.includes("ECONNRESET") ||
+        lastError.message.includes("EPIPE") ||
+        lastError.message.includes("socket hang up") ||
+        lastError.message.includes("ETIMEDOUT");
+
+      // Non-recoverable network errors (server not reachable at all)
       if (lastError.message.includes("ECONNREFUSED") || lastError.message.includes("ENOTFOUND") || lastError.message.includes("fetch failed")) {
         throw new Error(
           `Cannot reach poe2scout.com API — ${url}. ` +
@@ -133,7 +143,20 @@ async function cachedFetch<T>(url: string): Promise<T> {
         );
       }
 
-      // Wait before retrying (exponential backoff)
+      // If this is a transient error, log and retry with exponential backoff + jitter
+      if (isTransientNetworkError) {
+        const baseDelay = 500 * Math.pow(2, attempt);
+        const jitter = Math.random() * 500; // 0–500ms random jitter
+        const delay = Math.min(baseDelay + jitter, 5000);
+        console.warn(
+          `[poe2api] Transient network error on attempt ${attempt + 1}/${FETCH_RETRIES + 1}: ` +
+          `${lastError.message}. Retrying in ${Math.round(delay)}ms...`
+        );
+        await new Promise((r) => setTimeout(r, delay));
+        continue; // Skip the generic backoff below
+      }
+
+      // Wait before retrying (exponential backoff) for other errors
       if (attempt < FETCH_RETRIES) {
         const delay = Math.min(500 * Math.pow(2, attempt), 3000);
         await new Promise((r) => setTimeout(r, delay));

@@ -41,6 +41,10 @@ _provider: Poe2ScoutProvider | None = None
 _phase_detector: PhaseDetector | None = None
 _last_allocation: PortfolioAllocation | None = None
 _previous_corr: np.ndarray | None = None
+# _current_corr stores the serialized correlation matrix from the latest
+# _build_portfolio call. Unlike _previous_corr (used for shock detection),
+# this is always available after a successful build — even on the first request.
+_current_corr: dict | None = None
 
 
 def _get_provider() -> Poe2ScoutProvider:
@@ -164,11 +168,29 @@ async def _build_portfolio(config: AppConfig) -> PortfolioAllocation:
     )
 
     # Store current correlation matrix for next comparison
+    # AND build the serialized version for the API response (so it's
+    # available on the very first request, not just after the second).
     try:
-        _previous_corr = np.corrcoef(log_returns_matrix, rowvar=False)
-        if _previous_corr.ndim == 0:
-            _previous_corr = np.array([[1.0]])
-    except Exception:
+        corr_matrix = np.corrcoef(log_returns_matrix, rowvar=False)
+        if corr_matrix.ndim == 0:
+            corr_matrix = np.array([[1.0]])
+        _previous_corr = corr_matrix
+
+        # Build serialized correlation matrix for the response
+        if corr_matrix.shape[0] == len(currency_names):
+            corr_rows = []
+            for i in range(len(currency_names)):
+                row = []
+                for j in range(len(currency_names)):
+                    row.append(round(float(corr_matrix[i, j]), 4))
+                corr_rows.append(row)
+            global _current_corr
+            _current_corr = {
+                "currencies": currency_names,
+                "matrix": corr_rows,
+            }
+    except Exception as e:
+        logger.debug("Failed to compute/serialize correlation matrix: %s", e)
         _previous_corr = None
 
     return allocation
@@ -210,10 +232,17 @@ async def get_portfolio():
     if _last_allocation is None:
         raise HTTPException(status_code=503, detail="Portfolio data unavailable")
 
-    # Build correlation matrix from stored data
+    # Build correlation matrix: prefer _current_corr (always available after
+    # a successful build), fall back to recomputing from _previous_corr.
+    # This ensures the matrix is returned even on the first request.
     correlation_matrix = None
     currency_names = sorted(_last_allocation.weights.keys())
-    if _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
+
+    # Try _current_corr first (available on first request too)
+    if _current_corr is not None and _current_corr.get("currencies") == currency_names:
+        correlation_matrix = _current_corr
+    elif _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
+        # Fallback: recompute from _previous_corr (legacy path)
         try:
             corr_rows = []
             for i in range(len(currency_names)):
@@ -253,10 +282,14 @@ async def rebalance_portfolio():
     if _last_allocation is None:
         raise HTTPException(status_code=503, detail="Portfolio rebalance failed")
 
-    # Build correlation matrix from stored data
+    # Build correlation matrix: prefer _current_corr (set by _build_portfolio),
+    # fall back to recomputing from _previous_corr.
     correlation_matrix = None
     currency_names = sorted(_last_allocation.weights.keys())
-    if _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
+
+    if _current_corr is not None and _current_corr.get("currencies") == currency_names:
+        correlation_matrix = _current_corr
+    elif _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
         try:
             corr_rows = []
             for i in range(len(currency_names)):
