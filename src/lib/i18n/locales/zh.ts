@@ -352,6 +352,8 @@ const zh: Record<TranslationKeys, string> = {
   eventsExpiryHint: "事件自动过期的时间（1–168小时）。",
   eventsCreateButton: "创建事件",
   eventsCreating: "创建中...",
+  eventsNever: "永不过期",
+  eventsExpired: "已过期",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "投资组合",

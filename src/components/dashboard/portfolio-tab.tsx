@@ -131,12 +131,12 @@ function textColorForBg(corr: number): string {
   return "text-foreground";
 }
 
-function methodLabel(method: string): string {
+function methodLabel(method: string, t: (key: string) => string): string {
   switch (method) {
     case "risk_parity":
-      return "Risk Parity";
+      return t("portfolioRiskParityTitle");
     case "min_variance":
-      return "Min Variance";
+      return t("portfolioMinVarianceTitle");
     default:
       return method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   }
@@ -146,14 +146,14 @@ function methodLabel(method: string): string {
 // Custom chart tooltip
 // ---------------------------------------------------------------------------
 
-function WeightTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; weight: number } }> }) {
+function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Array<{ payload: { name: string; weight: number } }>; t: (key: string) => string }) {
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
   return (
     <div className="bg-popover border border-border rounded-md px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold">{data.name}</p>
       <p className="text-muted-foreground">
-        Weight: {(data.weight * 100).toFixed(2)}%
+        {t("portfolioWeight")}: {(data.weight * 100).toFixed(2)}%
       </p>
     </div>
   );
@@ -280,7 +280,7 @@ export function PortfolioTab() {
       x: frontierData.current_portfolio.risk,
       y: frontierData.current_portfolio.return,
       z: 200,
-      name: "Current Portfolio",
+      name: t("portfolioCurrentPortfolio"),
     }];
   }, [frontierData]);
 
@@ -365,7 +365,7 @@ export function PortfolioTab() {
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
                 <p className="text-xl font-bold">
-                  {portfolioData ? methodLabel(portfolioData.method) : "—"}
+                  {portfolioData ? methodLabel(portfolioData.method, t) : "—"}
                 </p>
               </CardContent>
             </Card>
@@ -498,7 +498,7 @@ export function PortfolioTab() {
                         tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                         domain={[0, "auto"]}
                       />
-                      <Tooltip content={<WeightTooltip />} />
+                      <Tooltip content={<WeightTooltip t={t} />} />
                       <Bar dataKey="weight" radius={[4, 4, 0, 0]}>
                         {barChartData.map((entry) => {
                           const opacity = 0.3 + 0.7 * (entry.weight / Math.max(maxWeight, 0.01));
@@ -693,10 +693,10 @@ export function PortfolioTab() {
                                 <div className="bg-popover border border-border rounded-md px-3 py-2 text-xs shadow-lg">
                                   <p className="font-semibold">{data.name}</p>
                                   <p className="text-muted-foreground">
-                                    Risk: {data.risk?.toFixed?.(4) ?? data.x?.toFixed(4)}
+                                    {t("portfolioRiskAxis")}: {data.risk?.toFixed?.(4) ?? data.x?.toFixed(4)}
                                   </p>
                                   <p className="text-muted-foreground">
-                                    Return: {data.return?.toFixed?.(4) ?? data.y?.toFixed(4)}
+                                    {t("portfolioReturnAxis")}: {data.return?.toFixed?.(4) ?? data.y?.toFixed(4)}
                                   </p>
                                 </div>
                               );
@@ -710,7 +710,7 @@ export function PortfolioTab() {
                             stroke="#3b82f6"
                             strokeWidth={2}
                             dot={false}
-                            name="Efficient Frontier"
+                            name={t("portfolioEfficientFrontier")}
                           />
                           {/* Individual assets */}
                           {individualAssetsData.length > 0 && (

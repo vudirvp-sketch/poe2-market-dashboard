@@ -352,6 +352,8 @@ const ko: Record<TranslationKeys, string> = {
   eventsExpiryHint: "이벤트 자동 만료까지의 시간 (1–168시간).",
   eventsCreateButton: "이벤트 만들기",
   eventsCreating: "만드는 중...",
+  eventsNever: "없음",
+  eventsExpired: "만료됨",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "포트폴리오",

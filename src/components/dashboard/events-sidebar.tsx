@@ -69,6 +69,7 @@ interface CreateEventPayload {
   event_type: string;
   description: string;
   affected_currencies: string[];
+  expiry_hours: number;
 }
 
 interface CreateEventResponse {
@@ -87,29 +88,29 @@ interface HealthResponse {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function eventTypeDisplay(type: string): { label: string; color: string } {
+function eventTypeDisplay(type: string, t: (key: string) => string): { label: string; color: string } {
   switch (type) {
     case "major_patch":
-      return { label: "Major Patch", color: "border-red-500 text-red-600 dark:text-red-400 bg-red-500/10" };
+      return { label: t("eventsTypeMajorPatch"), color: "border-red-500 text-red-600 dark:text-red-400 bg-red-500/10" };
     case "minor_patch":
-      return { label: "Minor Patch", color: "border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-500/10" };
+      return { label: t("eventsTypeMinorPatch"), color: "border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-500/10" };
     case "league_start":
-      return { label: "League Start", color: "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" };
+      return { label: t("eventsTypeLeagueStart"), color: "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" };
     case "economy_shift":
-      return { label: "Economy Shift", color: "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10" };
+      return { label: t("eventsTypeEconomyShift"), color: "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10" };
     case "streamer_hype":
-      return { label: "Streamer Hype", color: "border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-500/10" };
+      return { label: t("eventsTypeStreamerHype"), color: "border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-500/10" };
     default:
-      return { label: "Other", color: "border-muted-foreground text-muted-foreground bg-muted" };
+      return { label: t("eventsTypeOther"), color: "border-muted-foreground text-muted-foreground bg-muted" };
   }
 }
 
-function formatExpiry(expiresAt: string | null): string {
-  if (!expiresAt) return "Never";
+function formatExpiry(expiresAt: string | null, t: (key: string) => string): string {
+  if (!expiresAt) return t("eventsNever");
   const expiry = new Date(expiresAt);
   const now = new Date();
   const diffMs = expiry.getTime() - now.getTime();
-  if (diffMs <= 0) return "Expired";
+  if (diffMs <= 0) return t("eventsExpired");
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   if (diffHours > 24) {
@@ -163,21 +164,17 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
   // ---- Create event mutation ----
   const createMutation = useMutation({
     mutationFn: (payload: CreateEventPayload) =>
-      fetchApi<CreateEventResponse>("/api/flipper/events", {
-        // fetchApi doesn't support POST body natively, so we use fetch directly
-      } as never).then(() => {
-        // We need a direct POST call since fetchApi only does GET
-        return fetch("/api/flipper/events", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).then(async (res) => {
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(text);
-          }
-          return res.json();
-        });
+      // Use fetch directly for POST — fetchApi only supports GET
+      fetch("/api/flipper/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text);
+        }
+        return res.json() as Promise<CreateEventResponse>;
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["flipper-events"] });
@@ -247,6 +244,7 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
       event_type: eventType,
       description: description.trim(),
       affected_currencies: currencies,
+      expiry_hours: expiryHours,
     });
   }, [description, affectedCurrencies, eventType, createMutation, t]);
 
@@ -341,7 +339,7 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
             ) : (
               <div className="space-y-3">
                 {eventsData.events.map((event) => {
-                  const display = eventTypeDisplay(event.event_type);
+                  const display = eventTypeDisplay(event.event_type, t);
                   return (
                     <Card
                       key={event.event_id}
@@ -357,7 +355,7 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
                           </Badge>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
                             <Calendar className="h-3 w-3" aria-hidden="true" />
-                            {formatExpiry(event.expires_at)}
+                            {formatExpiry(event.expires_at, t)}
                           </span>
                         </div>
                         <p className="text-sm leading-snug">

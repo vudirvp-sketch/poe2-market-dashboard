@@ -345,11 +345,8 @@ export function CurrencyGraphTab() {
     }
 
     const nodes: GraphNode[] = [];
-    const maxVol = Math.max(...Array.from(currencyVolumes.values()), 1);
 
     for (const [id, vol] of currencyVolumes) {
-      const normalized = vol / maxVol;
-      const size = MIN_NODE_SIZE + normalized * (MAX_NODE_SIZE - MIN_NODE_SIZE);
       nodes.push({
         id,
         label: id,
@@ -359,8 +356,6 @@ export function CurrencyGraphTab() {
         x: 0,
         y: 0,
         iconUrl: iconLookup.get(id) ?? null,
-        // Store size for rendering
-        ...( { _size: size } as Record<string, unknown> ),
       });
     }
 
@@ -473,7 +468,7 @@ export function CurrencyGraphTab() {
 
   // ---- Compute node sizes ----
   const nodeSizes = useMemo(() => {
-    const maxVol = Math.max(...filteredGraphData.nodes.map((n) => n.volume), 1);
+    const maxVol = filteredGraphData.nodes.reduce((max, n) => Math.max(max, n.volume), 1);
     const sizes = new Map<string, number>();
     for (const n of filteredGraphData.nodes) {
       const normalized = n.volume / maxVol;
@@ -484,7 +479,7 @@ export function CurrencyGraphTab() {
 
   // ---- Edge width computation ----
   const maxEdgeVolume = useMemo(
-    () => Math.max(...filteredGraphData.edges.map((e) => e.volume), 1),
+    () => filteredGraphData.edges.reduce((max, e) => Math.max(max, e.volume), 1),
     [filteredGraphData],
   );
 

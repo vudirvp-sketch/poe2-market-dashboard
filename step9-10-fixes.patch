@@ -1,0 +1,342 @@
+diff --git a/src/components/dashboard/currency-graph-tab.tsx b/src/components/dashboard/currency-graph-tab.tsx
+index 93a200b..8850ad5 100644
+--- a/src/components/dashboard/currency-graph-tab.tsx
++++ b/src/components/dashboard/currency-graph-tab.tsx
+@@ -345,11 +345,8 @@ export function CurrencyGraphTab() {
+     }
+ 
+     const nodes: GraphNode[] = [];
+-    const maxVol = Math.max(...Array.from(currencyVolumes.values()), 1);
+ 
+     for (const [id, vol] of currencyVolumes) {
+-      const normalized = vol / maxVol;
+-      const size = MIN_NODE_SIZE + normalized * (MAX_NODE_SIZE - MIN_NODE_SIZE);
+       nodes.push({
+         id,
+         label: id,
+@@ -359,8 +356,6 @@ export function CurrencyGraphTab() {
+         x: 0,
+         y: 0,
+         iconUrl: iconLookup.get(id) ?? null,
+-        // Store size for rendering
+-        ...( { _size: size } as Record<string, unknown> ),
+       });
+     }
+ 
+@@ -473,7 +468,7 @@ export function CurrencyGraphTab() {
+ 
+   // ---- Compute node sizes ----
+   const nodeSizes = useMemo(() => {
+-    const maxVol = Math.max(...filteredGraphData.nodes.map((n) => n.volume), 1);
++    const maxVol = filteredGraphData.nodes.reduce((max, n) => Math.max(max, n.volume), 1);
+     const sizes = new Map<string, number>();
+     for (const n of filteredGraphData.nodes) {
+       const normalized = n.volume / maxVol;
+@@ -484,7 +479,7 @@ export function CurrencyGraphTab() {
+ 
+   // ---- Edge width computation ----
+   const maxEdgeVolume = useMemo(
+-    () => Math.max(...filteredGraphData.edges.map((e) => e.volume), 1),
++    () => filteredGraphData.edges.reduce((max, e) => Math.max(max, e.volume), 1),
+     [filteredGraphData],
+   );
+ 
+diff --git a/src/components/dashboard/events-sidebar.tsx b/src/components/dashboard/events-sidebar.tsx
+index 6d3408b..3b169db 100644
+--- a/src/components/dashboard/events-sidebar.tsx
++++ b/src/components/dashboard/events-sidebar.tsx
+@@ -69,6 +69,7 @@ interface CreateEventPayload {
+   event_type: string;
+   description: string;
+   affected_currencies: string[];
++  expiry_hours: number;
+ }
+ 
+ interface CreateEventResponse {
+@@ -87,29 +88,29 @@ interface HealthResponse {
+ // Helpers
+ // ---------------------------------------------------------------------------
+ 
+-function eventTypeDisplay(type: string): { label: string; color: string } {
++function eventTypeDisplay(type: string, t: (key: string) => string): { label: string; color: string } {
+   switch (type) {
+     case "major_patch":
+-      return { label: "Major Patch", color: "border-red-500 text-red-600 dark:text-red-400 bg-red-500/10" };
++      return { label: t("eventsTypeMajorPatch"), color: "border-red-500 text-red-600 dark:text-red-400 bg-red-500/10" };
+     case "minor_patch":
+-      return { label: "Minor Patch", color: "border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-500/10" };
++      return { label: t("eventsTypeMinorPatch"), color: "border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-500/10" };
+     case "league_start":
+-      return { label: "League Start", color: "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" };
++      return { label: t("eventsTypeLeagueStart"), color: "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" };
+     case "economy_shift":
+-      return { label: "Economy Shift", color: "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10" };
++      return { label: t("eventsTypeEconomyShift"), color: "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10" };
+     case "streamer_hype":
+-      return { label: "Streamer Hype", color: "border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-500/10" };
++      return { label: t("eventsTypeStreamerHype"), color: "border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-500/10" };
+     default:
+-      return { label: "Other", color: "border-muted-foreground text-muted-foreground bg-muted" };
++      return { label: t("eventsTypeOther"), color: "border-muted-foreground text-muted-foreground bg-muted" };
+   }
+ }
+ 
+-function formatExpiry(expiresAt: string | null): string {
+-  if (!expiresAt) return "Never";
++function formatExpiry(expiresAt: string | null, t: (key: string) => string): string {
++  if (!expiresAt) return t("eventsNever");
+   const expiry = new Date(expiresAt);
+   const now = new Date();
+   const diffMs = expiry.getTime() - now.getTime();
+-  if (diffMs <= 0) return "Expired";
++  if (diffMs <= 0) return t("eventsExpired");
+   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+   const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+   if (diffHours > 24) {
+@@ -163,21 +164,17 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
+   // ---- Create event mutation ----
+   const createMutation = useMutation({
+     mutationFn: (payload: CreateEventPayload) =>
+-      fetchApi<CreateEventResponse>("/api/flipper/events", {
+-        // fetchApi doesn't support POST body natively, so we use fetch directly
+-      } as never).then(() => {
+-        // We need a direct POST call since fetchApi only does GET
+-        return fetch("/api/flipper/events", {
+-          method: "POST",
+-          headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify(payload),
+-        }).then(async (res) => {
+-          if (!res.ok) {
+-            const text = await res.text();
+-            throw new Error(text);
+-          }
+-          return res.json();
+-        });
++      // Use fetch directly for POST — fetchApi only supports GET
++      fetch("/api/flipper/events", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify(payload),
++      }).then(async (res) => {
++        if (!res.ok) {
++          const text = await res.text();
++          throw new Error(text);
++        }
++        return res.json() as Promise<CreateEventResponse>;
+       }),
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ["flipper-events"] });
+@@ -247,6 +244,7 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
+       event_type: eventType,
+       description: description.trim(),
+       affected_currencies: currencies,
++      expiry_hours: expiryHours,
+     });
+   }, [description, affectedCurrencies, eventType, createMutation, t]);
+ 
+@@ -341,7 +339,7 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
+             ) : (
+               <div className="space-y-3">
+                 {eventsData.events.map((event) => {
+-                  const display = eventTypeDisplay(event.event_type);
++                  const display = eventTypeDisplay(event.event_type, t);
+                   return (
+                     <Card
+                       key={event.event_id}
+@@ -357,7 +355,7 @@ export function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSideb
+                           </Badge>
+                           <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                             <Calendar className="h-3 w-3" aria-hidden="true" />
+-                            {formatExpiry(event.expires_at)}
++                            {formatExpiry(event.expires_at, t)}
+                           </span>
+                         </div>
+                         <p className="text-sm leading-snug">
+diff --git a/src/components/dashboard/flips-tab.tsx b/src/components/dashboard/flips-tab.tsx
+index c9c9604..0f2927a 100644
+--- a/src/components/dashboard/flips-tab.tsx
++++ b/src/components/dashboard/flips-tab.tsx
+@@ -131,14 +131,14 @@ function scoreBg(score: number): string {
+   return "bg-red-500/10 border-red-500/50";
+ }
+ 
+-function clusterLabel(cluster: string): string {
++function clusterLabel(cluster: string, t: (key: string) => string): string {
+   switch (cluster) {
+     case "stable":
+-      return "Stable";
++      return t("flipsClusterStable");
+     case "moderate":
+-      return "Moderate";
++      return t("flipsClusterModerate");
+     case "volatile_illiquid":
+-      return "Volatile";
++      return t("flipsClusterVolatile");
+     default:
+       return cluster;
+   }
+@@ -569,7 +569,7 @@ export function FlipsTab() {
+               <>
+                 {/* Table header */}
+                 <div className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+-                  <span><SortHeader field="score" label={t("flipperCurrency")} /></span>
++                  <span>{t("flipperCurrency")}</span>
+                   <span className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
+                   <span className="text-right"><SortHeader field="spread_after_fees" label={t("flipperSpread")} /></span>
+                   <span className="text-right">{t("flipsGoldFeePct")}</span>
+@@ -640,7 +640,7 @@ export function FlipsTab() {
+                           variant="outline"
+                           className={`text-[10px] px-1.5 py-0 font-semibold ${clusterBadgeClass(opp.cluster)}`}
+                         >
+-                          {clusterLabel(opp.cluster)}
++                          {clusterLabel(opp.cluster, t)}
+                         </Badge>
+                       </span>
+ 
+@@ -734,7 +734,7 @@ export function FlipsTab() {
+                     variant="outline"
+                     className={`text-xs px-2 py-0.5 font-semibold ${clusterBadgeClass(selectedFlip.cluster)}`}
+                   >
+-                    {clusterLabel(selectedFlip.cluster)}
++                    {clusterLabel(selectedFlip.cluster, t)}
+                   </Badge>
+                 </div>
+               </div>
+diff --git a/src/components/dashboard/portfolio-tab.tsx b/src/components/dashboard/portfolio-tab.tsx
+index 95b1da4..ade1507 100644
+--- a/src/components/dashboard/portfolio-tab.tsx
++++ b/src/components/dashboard/portfolio-tab.tsx
+@@ -131,12 +131,12 @@ function textColorForBg(corr: number): string {
+   return "text-foreground";
+ }
+ 
+-function methodLabel(method: string): string {
++function methodLabel(method: string, t: (key: string) => string): string {
+   switch (method) {
+     case "risk_parity":
+-      return "Risk Parity";
++      return t("portfolioRiskParityTitle");
+     case "min_variance":
+-      return "Min Variance";
++      return t("portfolioMinVarianceTitle");
+     default:
+       return method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+   }
+@@ -146,14 +146,14 @@ function methodLabel(method: string): string {
+ // Custom chart tooltip
+ // ---------------------------------------------------------------------------
+ 
+-function WeightTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: { name: string; weight: number } }> }) {
++function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Array<{ payload: { name: string; weight: number } }>; t: (key: string) => string }) {
+   if (!active || !payload?.length) return null;
+   const data = payload[0].payload;
+   return (
+     <div className="bg-popover border border-border rounded-md px-3 py-2 text-xs shadow-lg">
+       <p className="font-semibold">{data.name}</p>
+       <p className="text-muted-foreground">
+-        Weight: {(data.weight * 100).toFixed(2)}%
++        {t("portfolioWeight")}: {(data.weight * 100).toFixed(2)}%
+       </p>
+     </div>
+   );
+@@ -280,7 +280,7 @@ export function PortfolioTab() {
+       x: frontierData.current_portfolio.risk,
+       y: frontierData.current_portfolio.return,
+       z: 200,
+-      name: "Current Portfolio",
++      name: t("portfolioCurrentPortfolio"),
+     }];
+   }, [frontierData]);
+ 
+@@ -365,7 +365,7 @@ export function PortfolioTab() {
+               </CardHeader>
+               <CardContent className="px-4 pb-4 pt-0">
+                 <p className="text-xl font-bold">
+-                  {portfolioData ? methodLabel(portfolioData.method) : "—"}
++                  {portfolioData ? methodLabel(portfolioData.method, t) : "—"}
+                 </p>
+               </CardContent>
+             </Card>
+@@ -498,7 +498,7 @@ export function PortfolioTab() {
+                         tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                         domain={[0, "auto"]}
+                       />
+-                      <Tooltip content={<WeightTooltip />} />
++                      <Tooltip content={<WeightTooltip t={t} />} />
+                       <Bar dataKey="weight" radius={[4, 4, 0, 0]}>
+                         {barChartData.map((entry) => {
+                           const opacity = 0.3 + 0.7 * (entry.weight / Math.max(maxWeight, 0.01));
+@@ -693,10 +693,10 @@ export function PortfolioTab() {
+                                 <div className="bg-popover border border-border rounded-md px-3 py-2 text-xs shadow-lg">
+                                   <p className="font-semibold">{data.name}</p>
+                                   <p className="text-muted-foreground">
+-                                    Risk: {data.risk?.toFixed?.(4) ?? data.x?.toFixed(4)}
++                                    {t("portfolioRiskAxis")}: {data.risk?.toFixed?.(4) ?? data.x?.toFixed(4)}
+                                   </p>
+                                   <p className="text-muted-foreground">
+-                                    Return: {data.return?.toFixed?.(4) ?? data.y?.toFixed(4)}
++                                    {t("portfolioReturnAxis")}: {data.return?.toFixed?.(4) ?? data.y?.toFixed(4)}
+                                   </p>
+                                 </div>
+                               );
+@@ -710,7 +710,7 @@ export function PortfolioTab() {
+                             stroke="#3b82f6"
+                             strokeWidth={2}
+                             dot={false}
+-                            name="Efficient Frontier"
++                            name={t("portfolioEfficientFrontier")}
+                           />
+                           {/* Individual assets */}
+                           {individualAssetsData.length > 0 && (
+diff --git a/src/lib/i18n/locales/en.ts b/src/lib/i18n/locales/en.ts
+index 8768e50..cdef63a 100644
+--- a/src/lib/i18n/locales/en.ts
++++ b/src/lib/i18n/locales/en.ts
+@@ -354,6 +354,8 @@ const en = {
+   eventsExpiryHint: "How long until the event auto-expires (1\u2013168 hours).",
+   eventsCreateButton: "Create Event",
+   eventsCreating: "Creating...",
++  eventsNever: "Never",
++  eventsExpired: "Expired",
+ 
+   // ---- Portfolio Tab ----
+   tabPortfolio: "Portfolio",
+diff --git a/src/lib/i18n/locales/ko.ts b/src/lib/i18n/locales/ko.ts
+index 94f0bab..9f4bc93 100644
+--- a/src/lib/i18n/locales/ko.ts
++++ b/src/lib/i18n/locales/ko.ts
+@@ -352,6 +352,8 @@ const ko: Record<TranslationKeys, string> = {
+   eventsExpiryHint: "이벤트 자동 만료까지의 시간 (1–168시간).",
+   eventsCreateButton: "이벤트 만들기",
+   eventsCreating: "만드는 중...",
++  eventsNever: "없음",
++  eventsExpired: "만료됨",
+ 
+   // ---- Portfolio Tab ----
+   tabPortfolio: "포트폴리오",
+diff --git a/src/lib/i18n/locales/ru.ts b/src/lib/i18n/locales/ru.ts
+index 047226d..20cce04 100644
+--- a/src/lib/i18n/locales/ru.ts
++++ b/src/lib/i18n/locales/ru.ts
+@@ -352,6 +352,8 @@ const ru: Record<TranslationKeys, string> = {
+   eventsExpiryHint: "\u0412\u0440\u0435\u043C\u044F \u0434\u043E \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0433\u043E \u0438\u0441\u0442\u0435\u0447\u0435\u043D\u0438\u044F \u0441\u043E\u0431\u044B\u0442\u0438\u044F (1\u2013168 \u0447\u0430\u0441\u043E\u0432).",
+   eventsCreateButton: "\u0421\u043E\u0437\u0434\u0430\u0442\u044C \u0441\u043E\u0431\u044B\u0442\u0438\u0435",
+   eventsCreating: "\u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435...",
++  eventsNever: "\u041D\u0438\u043A\u043E\u0433\u0434\u0430",
++  eventsExpired: "\u0418\u0441\u0442\u0435\u043A\u043B\u043E",
+ 
+   // ---- Portfolio Tab ----
+   tabPortfolio: "Портфель",
+diff --git a/src/lib/i18n/locales/zh.ts b/src/lib/i18n/locales/zh.ts
+index 4639cff..c6cd72f 100644
+--- a/src/lib/i18n/locales/zh.ts
++++ b/src/lib/i18n/locales/zh.ts
+@@ -352,6 +352,8 @@ const zh: Record<TranslationKeys, string> = {
+   eventsExpiryHint: "事件自动过期的时间（1–168小时）。",
+   eventsCreateButton: "创建事件",
+   eventsCreating: "创建中...",
++  eventsNever: "永不过期",
++  eventsExpired: "已过期",
+ 
+   // ---- Portfolio Tab ----
+   tabPortfolio: "投资组合",

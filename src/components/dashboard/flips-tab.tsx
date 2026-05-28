@@ -131,14 +131,14 @@ function scoreBg(score: number): string {
   return "bg-red-500/10 border-red-500/50";
 }
 
-function clusterLabel(cluster: string): string {
+function clusterLabel(cluster: string, t: (key: string) => string): string {
   switch (cluster) {
     case "stable":
-      return "Stable";
+      return t("flipsClusterStable");
     case "moderate":
-      return "Moderate";
+      return t("flipsClusterModerate");
     case "volatile_illiquid":
-      return "Volatile";
+      return t("flipsClusterVolatile");
     default:
       return cluster;
   }
@@ -569,7 +569,7 @@ export function FlipsTab() {
               <>
                 {/* Table header */}
                 <div className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                  <span><SortHeader field="score" label={t("flipperCurrency")} /></span>
+                  <span>{t("flipperCurrency")}</span>
                   <span className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
                   <span className="text-right"><SortHeader field="spread_after_fees" label={t("flipperSpread")} /></span>
                   <span className="text-right">{t("flipsGoldFeePct")}</span>
@@ -640,7 +640,7 @@ export function FlipsTab() {
                           variant="outline"
                           className={`text-[10px] px-1.5 py-0 font-semibold ${clusterBadgeClass(opp.cluster)}`}
                         >
-                          {clusterLabel(opp.cluster)}
+                          {clusterLabel(opp.cluster, t)}
                         </Badge>
                       </span>
 
@@ -734,7 +734,7 @@ export function FlipsTab() {
                     variant="outline"
                     className={`text-xs px-2 py-0.5 font-semibold ${clusterBadgeClass(selectedFlip.cluster)}`}
                   >
-                    {clusterLabel(selectedFlip.cluster)}
+                    {clusterLabel(selectedFlip.cluster, t)}
                   </Badge>
                 </div>
               </div>

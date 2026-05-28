@@ -354,6 +354,8 @@ const en = {
   eventsExpiryHint: "How long until the event auto-expires (1\u2013168 hours).",
   eventsCreateButton: "Create Event",
   eventsCreating: "Creating...",
+  eventsNever: "Never",
+  eventsExpired: "Expired",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "Portfolio",
