@@ -1,11 +1,16 @@
 /**
  * i18n tests — verify language switching works correctly.
  * Default locale is "ru" (Russian). The language switcher cycles: ru → en → zh → ko → ru.
+ *
+ * API routes are mocked via installApiMocks() so the realm/league selectors
+ * are populated even when the PoE2Scout API is unreachable.
  */
 import { test, expect } from "@playwright/test";
+import { installApiMocks, selectRealmAndLeague } from "./fixtures";
 
 test.describe("Internationalization (i18n)", () => {
   test.beforeEach(async ({ page }) => {
+    await installApiMocks(page);
     await page.goto("/");
     // Wait for full hydration
     await page.waitForTimeout(2000);
@@ -35,24 +40,7 @@ test.describe("Internationalization (i18n)", () => {
     expect(labelAfter).toBeTruthy();
 
     // Select realm/league to make tabs visible, then check tab text
-    const realmSelect = page.locator('button[role="combobox"]').first();
-    await realmSelect.click();
-    const firstOption = page.locator('[role="option"]').first();
-    const optCount = await firstOption.count();
-    if (optCount > 0) {
-      await firstOption.click();
-      await page.waitForTimeout(1500);
-
-      // Select a league
-      const leagueSelect = page.locator('button[role="combobox"]').nth(1);
-      await leagueSelect.click();
-      const firstLeague = page.locator('[role="option"]').first();
-      const leagueOptCount = await firstLeague.count();
-      if (leagueOptCount > 0) {
-        await firstLeague.click();
-        await page.waitForTimeout(2000);
-      }
-    }
+    await selectRealmAndLeague(page);
   });
 
   test("language cycling works through all locales", async ({ page }) => {

@@ -1,10 +1,15 @@
 /**
  * Smoke tests — verify the page loads correctly and core UI elements are present.
+ *
+ * API routes are mocked via installApiMocks() so tests are reliable even
+ * when the PoE2Scout API is unreachable from the test environment.
  */
 import { test, expect } from "@playwright/test";
+import { installApiMocks } from "./fixtures";
 
 test.describe("Smoke Tests", () => {
   test.beforeEach(async ({ page }) => {
+    await installApiMocks(page);
     await page.goto("/");
   });
 

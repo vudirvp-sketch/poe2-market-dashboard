@@ -1,36 +1,24 @@
 /**
  * Navigation tests — verify tab switching and content area changes.
  * These tests first select a realm and league to make tabs visible.
+ *
+ * API routes are mocked via installApiMocks() so the realm/league selectors
+ * are populated even when the PoE2Scout API is unreachable.
  */
 import { test, expect } from "@playwright/test";
+import { installApiMocks, selectRealmAndLeague } from "./fixtures";
 
 test.describe("Tab Navigation", () => {
   test.beforeEach(async ({ page }) => {
+    // Install API mocks BEFORE navigation so initial data fetches get mock responses
+    await installApiMocks(page);
+
     await page.goto("/");
-    // Wait for hydration and data to load
-    await page.waitForTimeout(2000);
+    // Wait for hydration and mock data to load
+    await page.waitForTimeout(1500);
 
-    // Select a realm to make league select work
-    const realmSelect = page.locator('button[role="combobox"]').first();
-    await expect(realmSelect).toBeVisible({ timeout: 10000 });
-    await realmSelect.click();
-
-    const firstRealmOption = page.locator('[role="option"]').first();
-    const realmOptCount = await firstRealmOption.count();
-    if (realmOptCount > 0) {
-      await firstRealmOption.click();
-      await page.waitForTimeout(1500);
-
-      // Select a league
-      const leagueSelect = page.locator('button[role="combobox"]').nth(1);
-      await leagueSelect.click();
-      const firstLeagueOption = page.locator('[role="option"]').first();
-      const leagueOptCount = await firstLeagueOption.count();
-      if (leagueOptCount > 0) {
-        await firstLeagueOption.click();
-        await page.waitForTimeout(2000);
-      }
-    }
+    // Select realm + league using the shared helper
+    await selectRealmAndLeague(page);
   });
 
   test("tabs are visible after league selection", async ({ page }) => {
