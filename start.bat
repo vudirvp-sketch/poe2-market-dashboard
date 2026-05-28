@@ -49,12 +49,15 @@ where uvicorn >nul 2>&1
 if !ERRORLEVEL! equ 0 (
     set UVICORN_AVAILABLE=1
     echo [OK] uvicorn found.
-) else (
+)
+
+REM Check uvicorn via python -m only if not found directly AND python is available
+if !UVICORN_AVAILABLE! equ 0 (
     if !PYTHON_AVAILABLE! equ 1 (
         python -m pip show uvicorn >nul 2>&1
         if !ERRORLEVEL! equ 0 (
             set UVICORN_AVAILABLE=1
-            echo [OK] uvicorn found (via python -m).
+            echo [OK] uvicorn found (via python -m^).
         )
     )
 )
@@ -111,12 +114,14 @@ if !UVICORN_AVAILABLE! equ 1 (
     netstat -aon 2>nul | findstr :8000 | findstr LISTENING >nul 2>&1
     if !ERRORLEVEL! equ 0 (
         echo [OK] Flipper backend started on http://localhost:8000
-    ) else (
+    )
+    if !ERRORLEVEL! neq 0 (
         echo [WARN] Flipper backend may not have started. Check flipper-backend.log
     )
     echo.
-) else (
-    echo [SKIP] Flipper backend not started (uvicorn not available).
+)
+if !UVICORN_AVAILABLE! equ 0 (
+    echo [SKIP] Flipper backend not started (uvicorn not available^).
     echo.
 )
 
@@ -181,41 +186,46 @@ REM This is the #1 fix for "Failed to load resource: 404" errors.
 if "%~1"=="--skip-build" (
     echo [INFO] Skipping build and cleanup ^(--skip-build flag^)
     echo.
-) else (
-    echo [INFO] Cleaning .next directory to prevent stale builds...
-    if exist ".next\" (
-        rmdir /s /q ".next" 2>nul
-        if exist ".next\" (
-            echo [WARN] Could not fully remove .next - some files may be locked.
-            echo         Try closing any running Next.js server first.
-        ) else (
-            echo [OK] .next directory cleaned.
-        )
-    ) else (
-        echo [OK] .next directory does not exist - clean start.
-    )
-    echo.
-
-    REM ---- Build project ----
-    echo [INFO] Building project...
-    echo This ensures you have the latest code compiled.
-    echo.
-    call npm run build
-    if !ERRORLEVEL! neq 0 (
-        echo.
-        echo [ERROR] Build failed! Check the errors above.
-        echo.
-        echo [TIP] You can try:
-        echo       1. start.bat --dev       - development mode, no build needed
-        echo       2. start.bat --skip-build - skip build, use existing .next
-        echo.
-        pause
-        exit /b 1
-    )
-    echo.
-    echo [OK] Build completed successfully.
-    echo.
+    goto :build_done
 )
+
+echo [INFO] Cleaning .next directory to prevent stale builds...
+if exist ".next\" (
+    rmdir /s /q ".next" 2>nul
+    if exist ".next\" (
+        echo [WARN] Could not fully remove .next - some files may be locked.
+        echo         Try closing any running Next.js server first.
+    )
+    if not exist ".next\" (
+        echo [OK] .next directory cleaned.
+    )
+)
+if not exist ".next\" (
+    echo [OK] .next directory does not exist - clean start.
+)
+echo.
+
+REM ---- Build project ----
+echo [INFO] Building project...
+echo This ensures you have the latest code compiled.
+echo.
+call npm run build
+if !ERRORLEVEL! neq 0 (
+    echo.
+    echo [ERROR] Build failed! Check the errors above.
+    echo.
+    echo [TIP] You can try:
+    echo       1. start.bat --dev       - development mode, no build needed
+    echo       2. start.bat --skip-build - skip build, use existing .next
+    echo.
+    pause
+    exit /b 1
+)
+echo.
+echo [OK] Build completed successfully.
+echo.
+
+:build_done
 
 REM ---- Verify .next directory exists ----
 if not exist ".next\" (
