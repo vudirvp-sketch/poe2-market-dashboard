@@ -39,6 +39,7 @@ def render_overview_tab(
     phase_info: dict | None = None,
     top_flips: list[dict] | None = None,
     gold_to_chaos_rate: float | None = None,
+    cluster_assignments: dict[str, str] | None = None,
 ) -> None:
     """Render the Overview tab with heatmap, scatter, phase badge, and top flips.
 
@@ -49,6 +50,7 @@ def render_overview_tab(
         phase_info: Dict with phase, days_since_reference, recommended_strategy, etc.
         top_flips: List of top flip opportunity dicts (sorted by score desc)
         gold_to_chaos_rate: Current gold-to-chaos rate
+        cluster_assignments: Dict mapping currency name -> cluster label string
     """
     # ------------------------------------------------------------------
     # Phase Badge Section
@@ -64,7 +66,7 @@ def render_overview_tab(
         _render_heatmap(rates_data)
 
     with right_col:
-        _render_scatter(rates_data)
+        _render_scatter(rates_data, cluster_assignments)
 
     # ------------------------------------------------------------------
     # Top-5 Flips Cards
@@ -213,18 +215,23 @@ def _render_heatmap(rates_data: list[dict]) -> None:
 # Scatter Plot: Liquidity vs Volatility
 # ---------------------------------------------------------------------------
 
-def _render_scatter(rates_data: list[dict]) -> None:
+def _render_scatter(rates_data: list[dict], cluster_assignments: dict[str, str] | None = None) -> None:
     """Render a scatter plot of liquidity vs volatility, colored by cluster.
 
-    At this milestone, cluster labels are not yet computed (that's M6),
-    so all currencies are shown as 'moderate'. The scatter still visualizes
-    the liquidity-volatility landscape.
+    Uses cluster assignments from the CurrencyClusterer if available.
+    Falls back to 'moderate' if no clustering data is provided.
+
+    Args:
+        rates_data: List of exchange rate dicts.
+        cluster_assignments: Dict mapping currency name -> cluster label string.
     """
     st.subheader("Liquidity vs Volatility")
 
     if not rates_data:
         st.info("No rate data available for scatter plot.")
         return
+
+    cluster_map = cluster_assignments or {}
 
     # Build dataframe
     rows = []
@@ -235,12 +242,17 @@ def _render_scatter(rates_data: list[dict]) -> None:
 
         # Use fee_fraction as volatility proxy (higher fee = higher effective vol)
         # and volume as liquidity proxy
+        # Determine cluster: check both currencies in the pair
+        curr_from = r.get("currency_from", "")
+        curr_to = r.get("currency_to", "")
+        cluster = cluster_map.get(curr_from, cluster_map.get(curr_to, "moderate"))
+
         rows.append({
             "pair": pair_name,
             "volume": volume,
             "liquidity": np.log1p(volume),  # log-scaled for visualization
             "volatility": fee_frac * 100,  # scale for readability
-            "cluster": "moderate",  # placeholder until M6
+            "cluster": cluster,
         })
 
     df = pd.DataFrame(rows)

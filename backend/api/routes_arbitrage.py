@@ -25,6 +25,7 @@ from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_t
 from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
+from backend.predictors.clustering import CurrencyClusterer
 from backend.models.currency import (
     FlipOpportunity,
     LeaguePhase,
@@ -157,7 +158,63 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             if k != "chaos":
                 prices_in_chaos[k] = prices_in_chaos[k] * exalted_to_chaos
 
-    # 7. Score each pair as a flip opportunity
+    # 7. Run currency clustering (Milestone 6: §5)
+    # Build clustering inputs from the data we already have
+    clusterer = CurrencyClusterer(config)
+    cluster_labels: dict[str, ClusterLabel] = {}
+
+    try:
+        # Prepare clustering inputs
+        cluster_price_histories: dict[str, list[float]] = {}
+        cluster_volumes: dict[str, float] = {}
+        cluster_prices_now: dict[str, float] = {}
+        cluster_prices_24h_ago: dict[str, float] = {}
+
+        # Collect unique currencies from both sides of each pair
+        for key, rate in rates.items():
+            for curr in (rate.currency_from, rate.currency_to):
+                if curr not in cluster_price_histories:
+                    cluster_price_histories[curr] = currency_price_history.get(curr, [])
+                    # Use volume from whichever pair involves this currency
+                    cluster_volumes[curr] = 0.0
+                    cluster_prices_now[curr] = 0.0
+                    cluster_prices_24h_ago[curr] = 0.0
+
+            # Accumulate volume per currency (use max volume across pairs)
+            for curr in (rate.currency_from, rate.currency_to):
+                vol = float(rate.volume_traded)
+                if vol > cluster_volumes.get(curr, 0):
+                    cluster_volumes[curr] = vol
+
+        # Derive prices_now and prices_24h_ago from the price histories
+        for curr, history in cluster_price_histories.items():
+            if history:
+                cluster_prices_now[curr] = history[-1]
+                cluster_prices_24h_ago[curr] = history[0] if len(history) > 1 else history[-1]
+            else:
+                # Fallback: use prices_in_chaos if available
+                cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
+                cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+
+        # Only cluster if we have enough currencies
+        if len(cluster_price_histories) >= 3:
+            cluster_labels = clusterer.fit(
+                cluster_price_histories, cluster_volumes,
+                cluster_prices_now, cluster_prices_24h_ago,
+            )
+            # Convert ClusterResult to dict
+            cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
+            logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
+        else:
+            logger.warning(
+                "Only %d currencies for clustering (need >=3), using MODERATE default",
+                len(cluster_price_histories),
+            )
+    except Exception as e:
+        logger.error("Clustering failed, using MODERATE default: %s", e)
+        cluster_labels = {}
+
+    # 8. Score each pair as a flip opportunity
     opportunities: list[FlipOpportunity] = []
 
     for key, rate in rates.items():
@@ -212,6 +269,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             vol_reference=config.scoring.volatility_reference,
         )
 
+        # Determine cluster label (use clustering result, fallback to MODERATE)
+        # Check both sides of the pair; use the "from" currency's cluster
+        currency_key = rate.currency_from
+        cluster = cluster_labels.get(currency_key, ClusterLabel.MODERATE)
+
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
@@ -221,7 +283,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             volume_24h=float(rate.volume_traded),
             momentum=momentum_result.momentum,
             volatility=momentum_result.volatility,
-            cluster=ClusterLabel.MODERATE,  # clustering not yet implemented
+            cluster=cluster,
             bid=bid,
             ask=ask,
             mid_price=mid_price,

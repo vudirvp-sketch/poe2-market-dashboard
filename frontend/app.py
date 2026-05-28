@@ -32,6 +32,7 @@ if str(_project_root) not in sys.path:
 from frontend.components.sticky_bar import render_sticky_bar
 from frontend.components.overview_tab import render_overview_tab
 from frontend.components.flips_tab import render_flips_tab
+from frontend.components.graph_tab import render_graph_tab
 from frontend.utils.formatters import fmt_number
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,7 @@ def _load_data_directly() -> dict:
     from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
     from backend.arbitrage.quick_filter import quick_filter
     from backend.arbitrage.triangular import find_triangular_arbitrage
+    from backend.predictors.clustering import CurrencyClusterer
     from backend.models.currency import FlipOpportunity, ClusterLabel
 
     config = get_settings()
@@ -244,6 +246,41 @@ def _load_data_directly() -> dict:
         elif rate.currency_to == config.league.base_currency and rate.raw_rate > 0:
             prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
 
+    # Run currency clustering (Milestone 6)
+    cluster_labels: dict[str, ClusterLabel] = {}
+    try:
+        cluster_price_histories: dict[str, list[float]] = {}
+        cluster_volumes: dict[str, float] = {}
+        cluster_prices_now: dict[str, float] = {}
+        cluster_prices_24h_ago: dict[str, float] = {}
+
+        for key, rate in rates.items():
+            for curr in (rate.currency_from, rate.currency_to):
+                if curr not in cluster_price_histories:
+                    cluster_price_histories[curr] = []
+                    cluster_volumes[curr] = 0.0
+                    cluster_prices_now[curr] = 0.0
+                    cluster_prices_24h_ago[curr] = 0.0
+            for curr in (rate.currency_from, rate.currency_to):
+                vol = float(rate.volume_traded)
+                if vol > cluster_volumes.get(curr, 0):
+                    cluster_volumes[curr] = vol
+
+        # Derive prices from exchange rates for clustering
+        for curr in cluster_volumes:
+            cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
+            cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+
+        if len(cluster_price_histories) >= 3:
+            clusterer = CurrencyClusterer(config)
+            output = clusterer.fit(
+                cluster_price_histories, cluster_volumes,
+                cluster_prices_now, cluster_prices_24h_ago,
+            )
+            cluster_labels = {c.currency: c.cluster for c in output.clusters}
+    except Exception:
+        cluster_labels = {}
+
     opportunities = []
     for key, rate in rates.items():
         price_to_chaos = prices_in_chaos.get(rate.currency_to, 0)
@@ -285,6 +322,10 @@ def _load_data_directly() -> dict:
             vol_reference=config.scoring.volatility_reference,
         )
 
+        # Use clustering result if available
+        currency_key = rate.currency_from
+        cluster = cluster_labels.get(currency_key, ClusterLabel.MODERATE)
+
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
@@ -294,7 +335,7 @@ def _load_data_directly() -> dict:
             volume_24h=float(rate.volume_traded),
             momentum=momentum,
             volatility=volatility,
-            cluster=ClusterLabel.MODERATE,
+            cluster=cluster,
             bid=bid, ask=ask, mid_price=mid_price,
         )
 
@@ -439,7 +480,21 @@ def main():
     # ------------------------------------------------------------------
     # Tabs
     # ------------------------------------------------------------------
-    tab_overview, tab_flips = st.tabs(["📊 Overview", "🔄 Flip Opportunities"])
+    # Build cluster assignments dict for graph tab
+    cluster_assignments = {}
+    if opportunities:
+        for opp in opportunities:
+            curr = opp.get("currency", "")
+            cluster = opp.get("cluster", "moderate")
+            # Use both sides of the pair
+            parts = curr.split("/")
+            for p in parts:
+                if p and p not in cluster_assignments:
+                    cluster_assignments[p] = cluster
+
+    tab_overview, tab_flips, tab_graph = st.tabs(
+        ["📊 Overview", "🔄 Flip Opportunities", "🕸️ Currency Graph"]
+    )
 
     with tab_overview:
         top_flips = opportunities[:5] if opportunities else []
@@ -448,12 +503,22 @@ def main():
             phase_info=phase_info,
             top_flips=top_flips,
             gold_to_chaos_rate=gold_to_chaos_rate,
+            cluster_assignments=cluster_assignments,
         )
 
     with tab_flips:
         render_flips_tab(
             opportunities=opportunities,
             phase_info=phase_info,
+            gold_to_chaos_rate=gold_to_chaos_rate,
+        )
+
+    with tab_graph:
+        render_graph_tab(
+            rates_data=rates_data,
+            opportunities=opportunities,
+            triangular=triangular,
+            cluster_assignments=cluster_assignments,
             gold_to_chaos_rate=gold_to_chaos_rate,
         )
 
