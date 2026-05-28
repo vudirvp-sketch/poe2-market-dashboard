@@ -14,6 +14,8 @@ import {
   Zap,
   LineChart,
   TrendingUp,
+  Briefcase,
+  Network,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,8 @@ import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
 import { ForecastTab } from "@/components/dashboard/forecast-tab";
+import { PortfolioTab } from "@/components/dashboard/portfolio-tab";
+import { CurrencyGraphTab } from "@/components/dashboard/currency-graph-tab";
 import { EventsSidebar } from "@/components/dashboard/events-sidebar";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
@@ -557,6 +561,12 @@ export function Dashboard() {
                 <TabsTrigger value="forecast" className="gap-1.5" aria-label={t("tabForecast")}>
                   <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabForecast")}
                 </TabsTrigger>
+                <TabsTrigger value="portfolio" className="gap-1.5" aria-label={t("tabPortfolio")}>
+                  <Briefcase className="h-4 w-4" aria-hidden="true" /> {t("tabPortfolio")}
+                </TabsTrigger>
+                <TabsTrigger value="graph" className="gap-1.5" aria-label={t("tabGraph")}>
+                  <Network className="h-4 w-4" aria-hidden="true" /> {t("tabGraph")}
+                </TabsTrigger>
                 <TabsTrigger value="watchlist" className="gap-1.5" aria-label={t("tabWatchlist")}>
                   <Star className="h-4 w-4" aria-hidden="true" /> {t("tabWatchlist")}
                 </TabsTrigger>
@@ -792,6 +802,20 @@ export function Dashboard() {
             <TabsContent value="forecast">
               <ErrorBoundary fallbackTitle="Forecasts">
                 <ForecastTab />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ PORTFOLIO TAB ============ */}
+            <TabsContent value="portfolio">
+              <ErrorBoundary fallbackTitle="Portfolio">
+                <PortfolioTab />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ CURRENCY GRAPH TAB ============ */}
+            <TabsContent value="graph">
+              <ErrorBoundary fallbackTitle="Currency Graph">
+                <CurrencyGraphTab />
               </ErrorBoundary>
             </TabsContent>
 
