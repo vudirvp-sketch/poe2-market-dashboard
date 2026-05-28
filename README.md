@@ -1,1 +1,1 @@
-# poe2-market-dashboard
+Here are all the generated files.

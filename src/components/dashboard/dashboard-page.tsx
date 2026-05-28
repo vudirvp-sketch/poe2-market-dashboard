@@ -35,6 +35,7 @@ import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
 import { ForecastTab } from "@/components/dashboard/forecast-tab";
+import { EventsSidebar } from "@/components/dashboard/events-sidebar";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 import { ApiErrorFallback } from "@/components/dashboard/api-error-fallback";
@@ -68,6 +69,27 @@ import { useI18n } from "@/lib/i18n";
 
 // Virtualization threshold: use virtual grid when more than this many currencies
 const CURRENCY_VIRTUAL_THRESHOLD = 30;
+
+// ---------------------------------------------------------------------------
+// Flipper-backend types (dashboard-level health & phase)
+// ---------------------------------------------------------------------------
+interface FlipperHealthResponse {
+  status: string;
+  timestamp: string;
+  league?: string;
+  active_events?: number;
+}
+
+interface FlipperPhaseResponse {
+  phase: string;
+  days_since_ref: number;
+  league: string;
+}
+
+interface FlipperEventsSummary {
+  events: { event_id: string }[];
+  total: number;
+}
 
 // ============================================================================
 // Main Dashboard
@@ -111,11 +133,53 @@ export function Dashboard() {
   // --- Base currency ---
   const [referenceCurrency, setReferenceCurrency] = useState("");
 
+  // --- Events sidebar ---
+  const [eventsSidebarOpen, setEventsSidebarOpen] = useState(false);
+
   // --- Comparison store ---
   const { comparisonIds, pairComparisonIds, alerts } = useDashboardStore();
 
   // --- i18n ---
   const { t, tp } = useI18n();
+
+  // ============================================================================
+  // Flipper backend health check (dashboard-level, shared across components)
+  // ============================================================================
+  const { data: flipperHealthData, isError: flipperHealthError } = useQuery<FlipperHealthResponse>({
+    queryKey: ["flipper-health"],
+    queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    retry: false,
+  });
+
+  const flipperBackendOnline = !flipperHealthError && flipperHealthData?.status === "ok";
+
+  // ============================================================================
+  // Flipper phase info (for header phase badge)
+  // ============================================================================
+  const { data: flipperPhaseData } = useQuery<FlipperPhaseResponse>({
+    queryKey: ["flipper-phase"],
+    queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
+    enabled: flipperBackendOnline,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    retry: 1,
+  });
+
+  // ============================================================================
+  // Flipper events count (for header events button indicator)
+  // ============================================================================
+  const { data: flipperEventsData } = useQuery<FlipperEventsSummary>({
+    queryKey: ["flipper-events-count"],
+    queryFn: () => fetchApi<FlipperEventsSummary>("/api/flipper/events", { active_only: "true" }),
+    enabled: flipperBackendOnline,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    retry: 1,
+  });
+
+  const activeEventsCount = flipperEventsData?.total ?? 0;
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -423,7 +487,7 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header — now with flipper backend status, phase badge, events button */}
       <Header
         realms={realms}
         leagues={leagues}
@@ -447,6 +511,10 @@ export function Dashboard() {
         referenceCurrency={referenceCurrency}
         onReferenceCurrencyChange={setReferenceCurrency}
         onExport={showExport ? handleExport : undefined}
+        flipperBackendOnline={flipperBackendOnline}
+        phaseInfo={flipperPhaseData ?? null}
+        activeEventsCount={activeEventsCount}
+        onEventsClick={() => setEventsSidebarOpen(true)}
       />
 
       {/* Main content — id for skip-to-content a11y link */}
@@ -789,6 +857,13 @@ export function Dashboard() {
         realm={realm}
         league={effectiveLeague}
         allItems={allItems}
+      />
+
+      {/* ============ EVENTS SIDEBAR (Sheet) ============ */}
+      <EventsSidebar
+        open={eventsSidebarOpen}
+        onOpenChange={setEventsSidebarOpen}
+        backendOnline={flipperBackendOnline}
       />
 
       {/* ============ OFFLINE BANNER (PWA) ============ */}

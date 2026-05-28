@@ -1,3 +1,7 @@
+// ============================================================================
+// English locale — CANONICAL source of truth for translation keys
+// All new keys for Events Sidebar + Header Update are appended
+// ============================================================================
 const en = {
   // App
   appTitle: "PoE2 Market",
@@ -290,7 +294,7 @@ const en = {
   forecastHorizon: "Horizon",
   forecastAnomalyTitle: "Anomaly Alerts",
   forecastAnomalyDesc: "{0} anomalies detected across {1} currencies",
-  forecastNoAnomalies: "No anomalies detected — market looks stable",
+  forecastNoAnomalies: "No anomalies detected \u2014 market looks stable",
   forecastAlertScore: "Score",
   forecastIndicators: "Indicators",
   forecastConfirmed: "Confirmed",
@@ -319,6 +323,37 @@ const en = {
   flipsAsk: "Ask",
   flipsMid: "Mid",
   flipsDetailTitle: "Flip Detail: {0}",
+
+  // ---- Events Sidebar ----
+  eventsTitle: "Events",
+  eventsDescription: "Flag market events that affect currency scoring and trading recommendations. Active events apply penalties to flip scores.",
+  eventsButtonLabel: "Events",
+  eventsActiveTitle: "Active Events",
+  eventsNoActive: "No active events",
+  eventsImpactSummary: "{0} active event(s) affecting market",
+  eventsAffectedCurrencies: "Affected currencies",
+  eventsScoringPenalty: "Scoring penalty is applied to affected currencies.",
+  eventsAffects: "Affects",
+  eventsDeactivate: "Deactivate",
+  eventsDelete: "Delete",
+  eventsCreateTitle: "Flag New Event",
+  eventsEventType: "Event Type",
+  eventsTypeMajorPatch: "Major Patch",
+  eventsTypeMinorPatch: "Minor Patch",
+  eventsTypeLeagueStart: "League Start",
+  eventsTypeEconomyShift: "Economy Shift",
+  eventsTypeStreamerHype: "Streamer Hype",
+  eventsTypeOther: "Other",
+  eventsDescriptionLabel: "Description",
+  eventsDescriptionPlaceholder: "e.g. Patch 0.3.0 released with new currency items",
+  eventsDescriptionRequired: "Description is required",
+  eventsAffectedLabel: "Affected Currencies (comma-separated API IDs)",
+  eventsAffectedPlaceholder: "e.g. divine, exalted, chaos",
+  eventsAffectedHint: "Leave empty to apply penalty to all currencies.",
+  eventsExpiryLabel: "Expiry (hours)",
+  eventsExpiryHint: "How long until the event auto-expires (1\u2013168 hours).",
+  eventsCreateButton: "Create Event",
+  eventsCreating: "Creating...",
 
   // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
   _pl_alertsCount: "Alerts ({0})|Alert ({0})|Alerts ({0})",

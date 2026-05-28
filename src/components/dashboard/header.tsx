@@ -1,5 +1,6 @@
 // ============================================================================
 // Header Component (realm/league select, search with debounce, refresh, auto-refresh, theme, base currency)
+// Updated: Phase badge + Events button + Backend status indicator
 // ============================================================================
 "use client";
 
@@ -14,9 +15,13 @@ import {
   Clock,
   Download,
   Globe,
+  Bell,
+  Circle,
+  Server,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -27,6 +32,15 @@ import {
 import type { Realm, League, ReferenceCurrency } from "@/lib/types";
 import { useTheme } from "next-themes";
 import { useI18n, type Locale } from "@/lib/i18n";
+
+// ---------------------------------------------------------------------------
+// Phase info type (from /api/flipper/phase)
+// ---------------------------------------------------------------------------
+interface PhaseInfo {
+  phase: string;
+  days_since_ref: number;
+  league: string;
+}
 
 interface HeaderProps {
   realms: Realm[] | undefined;
@@ -48,6 +62,14 @@ interface HeaderProps {
   referenceCurrency?: string;
   onReferenceCurrencyChange?: (currency: string) => void;
   onExport?: (format: "csv" | "json") => void;
+  /** Whether the flipper backend is online */
+  flipperBackendOnline?: boolean;
+  /** Phase info from /api/flipper/phase */
+  phaseInfo?: PhaseInfo | null;
+  /** Number of active events (for the indicator dot) */
+  activeEventsCount?: number;
+  /** Callback when the Events button is clicked */
+  onEventsClick?: () => void;
 }
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -56,6 +78,31 @@ const LOCALE_LABELS: Record<Locale, string> = {
   zh: "\u4e2d",
   ko: "\ud55c",
 };
+
+// ---------------------------------------------------------------------------
+// Phase badge helpers
+// ---------------------------------------------------------------------------
+function phaseBadgeClass(phase: string): string {
+  switch (phase?.toLowerCase()) {
+    case "early":
+      return "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10";
+    case "mid":
+      return "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10";
+    case "late":
+      return "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10";
+    default:
+      return "border-muted-foreground/30 text-muted-foreground bg-muted";
+  }
+}
+
+function phaseLabel(phase: string): string {
+  switch (phase?.toLowerCase()) {
+    case "early": return "EARLY";
+    case "mid": return "MID";
+    case "late": return "LATE";
+    default: return phase?.toUpperCase() ?? "?";
+  }
+}
 
 export function Header({
   realms,
@@ -76,6 +123,10 @@ export function Header({
   referenceCurrency,
   onReferenceCurrencyChange,
   onExport,
+  flipperBackendOnline,
+  phaseInfo,
+  activeEventsCount,
+  onEventsClick,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
@@ -214,6 +265,31 @@ export function Header({
           </SelectContent>
         </Select>
 
+        {/* Phase badge — shown when flipper backend is online and phase data is available */}
+        {flipperBackendOnline && phaseInfo && (
+          <Badge
+            variant="outline"
+            className={`text-[10px] px-2 py-0.5 font-bold ${phaseBadgeClass(phaseInfo.phase)}`}
+          >
+            {phaseLabel(phaseInfo.phase)}
+          </Badge>
+        )}
+
+        {/* Backend status indicator — small circle next to league selector */}
+        {flipperBackendOnline !== undefined && (
+          <div className="flex items-center gap-1" title={flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}>
+            <Circle
+              className={`h-2.5 w-2.5 ${
+                flipperBackendOnline
+                  ? "fill-emerald-500 text-emerald-500"
+                  : "fill-red-500 text-red-500"
+              }`}
+              aria-hidden="true"
+            />
+            <Server className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+          </div>
+        )}
+
         {/* Reference Currency select */}
         {referenceCurrencies && referenceCurrencies.length > 0 && onReferenceCurrencyChange && (
           <Select
@@ -306,6 +382,21 @@ export function Header({
             </Button>
           </div>
         )}
+
+        {/* Events button — with dot indicator if events are active */}
+        <Button
+          variant={activeEventsCount && activeEventsCount > 0 ? "default" : "ghost"}
+          size="sm"
+          className="h-9 gap-1.5 relative"
+          onClick={onEventsClick}
+          aria-label={t("eventsButtonLabel")}
+        >
+          <Bell className="h-4 w-4" aria-hidden="true" />
+          {activeEventsCount && activeEventsCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-background" />
+          )}
+          {t("eventsButtonLabel")}
+        </Button>
 
         {/* Language toggle — cycles ru -> en -> zh -> ko -> ru */}
         <Button
