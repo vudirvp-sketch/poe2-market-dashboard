@@ -33,6 +33,7 @@ from frontend.components.sticky_bar import render_sticky_bar
 from frontend.components.overview_tab import render_overview_tab
 from frontend.components.flips_tab import render_flips_tab
 from frontend.components.graph_tab import render_graph_tab
+from frontend.components.forecast_tab import render_forecast_tab
 from frontend.utils.formatters import fmt_number
 
 logger = logging.getLogger(__name__)
@@ -492,8 +493,8 @@ def main():
                 if p and p not in cluster_assignments:
                     cluster_assignments[p] = cluster
 
-    tab_overview, tab_flips, tab_graph = st.tabs(
-        ["📊 Overview", "🔄 Flip Opportunities", "🕸️ Currency Graph"]
+    tab_overview, tab_flips, tab_graph, tab_forecast = st.tabs(
+        ["📊 Overview", "🔄 Flip Opportunities", "🕸️ Currency Graph", "📈 Forecasts"]
     )
 
     with tab_overview:
@@ -520,6 +521,44 @@ def main():
             triangular=triangular,
             cluster_assignments=cluster_assignments,
             gold_to_chaos_rate=gold_to_chaos_rate,
+        )
+
+    with tab_forecast:
+        # Currency selector for forecast
+        available_currencies = list(set(
+            opp.get("currency", "").split("/")[0]
+            for opp in (opportunities or [])
+        ))
+        if available_currencies:
+            selected_currency = st.selectbox(
+                "Select currency for forecast",
+                options=sorted(available_currencies),
+                key="forecast_currency_select",
+            )
+        else:
+            selected_currency = "exalted"
+
+        # Fetch forecast data from API
+        forecast_data = fetch_api(f"/api/forecast/{selected_currency}")
+        stl_data = fetch_api(f"/api/forecast/{selected_currency}/stl")
+
+        # Build price history from rates data for the chart background
+        price_history_for_chart = []
+        if rates_data and isinstance(rates_data, list):
+            for rate in rates_data:
+                pair = rate.get("pair", "")
+                if selected_currency in pair:
+                    price_history_for_chart.append({
+                        "timestamp": rate.get("timestamp", ""),
+                        "price": rate.get("raw_rate", 0),
+                    })
+
+        render_forecast_tab(
+            forecast_data=forecast_data,
+            stl_data=stl_data,
+            anomaly_alerts=None,  # Will be populated when anomaly API is available
+            currency=selected_currency,
+            price_history=price_history_for_chart if price_history_for_chart else None,
         )
 
     # ------------------------------------------------------------------
