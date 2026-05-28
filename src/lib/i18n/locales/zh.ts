@@ -402,6 +402,11 @@ const zh: Record<TranslationKeys, string> = {
   portfolioRebalanceSuccess: "投资组合重新平衡成功！",
   portfolioLastRebalance: "上次平衡",
 
+  // ---- Phase Badge ----
+  phaseEarly: "早期",
+  phaseMid: "中期",
+  phaseLate: "后期",
+
   // ---- Currency Graph Tab ----
   graphCurrencies: "货币数",
   graphTradePairs: "交易对",

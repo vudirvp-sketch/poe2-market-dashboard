@@ -114,13 +114,6 @@ interface PhaseResponse {
   max_hold_time: string;
 }
 
-interface HealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
-}
-
 interface CurrencyOption {
   api_id: string;
   text: string;
@@ -154,25 +147,26 @@ const POPULAR_CURRENCIES: CurrencyOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Component Props
+// ---------------------------------------------------------------------------
+
+interface ForecastTabProps {
+  /** Whether the flipper backend is online (checked at dashboard level) */
+  backendOnline: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function ForecastTab() {
+export function ForecastTab({ backendOnline }: ForecastTabProps) {
   const { t } = useI18n();
 
   // Selected currency
   const [selectedCurrency, setSelectedCurrency] = useState("divine");
 
-  // ---- Backend health check ----
-  const { data: healthData, isError: healthError } = useQuery<HealthResponse>({
-    queryKey: ["flipper-health-forecast"],
-    queryFn: () => fetchApi<HealthResponse>("/api/flipper/health"),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: false,
-  });
-
-  const backendOnline = !healthError && healthData?.status === "ok";
+  // ---- Backend health check is done at dashboard level ----
+  // backendOnline is passed as prop
 
   // ---- Phase info ----
   const { data: phaseData } = useQuery<PhaseResponse>({
@@ -507,12 +501,12 @@ export function ForecastTab() {
                       </p>
                       {model.low_confidence && (
                         <p className="text-amber-600 dark:text-amber-400">
-                          ⚠ {t("forecastModelLowConfidence")}
+                          {t("forecastModelLowConfidence")}
                         </p>
                       )}
                       {model.disagreement && (
                         <p className="text-red-600 dark:text-red-400">
-                          ⚠ {t("forecastModelDisagreement")}
+                          {t("forecastModelDisagreement")}
                         </p>
                       )}
                     </div>

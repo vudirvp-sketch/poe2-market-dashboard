@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
 import { fmt, fetchApi } from "@/lib/types";
-import type { ExchangePair } from "@/lib/types";
+import type { ExchangePair, FlipperHealthResponse } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types — Client-side arbitrage
@@ -109,13 +109,6 @@ interface TriangularResponse {
   total: number;
   opportunities: TriangularCycle[];
   fetched_at: string;
-}
-
-interface FlipperHealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -297,9 +290,11 @@ type ArbitrageMode = "client" | "flipper";
 interface ArbitrageTabProps {
   realm?: string;
   league?: string;
+  /** Whether the flipper backend is online (checked at dashboard level) */
+  backendOnline?: boolean;
 }
 
-export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
+export function ArbitrageTab({ realm, league, backendOnline: backendOnlineProp }: ArbitrageTabProps) {
   const { t } = useI18n();
 
   // Mode toggle
@@ -318,15 +313,18 @@ export function ArbitrageTab({ realm, league }: ArbitrageTabProps) {
   const [flipMinVolume, setFlipMinVolume] = useState(0);
 
   // ---- Backend health check ----
-  const { data: healthData, isError: healthError } = useQuery<FlipperHealthResponse>({
+  // If backendOnline is provided as prop (from dashboard level), use it;
+  // otherwise, fall back to local health check for standalone usage.
+  const { data: healthData } = useQuery<FlipperHealthResponse>({
     queryKey: ["flipper-health"],
     queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
     staleTime: 30_000,
     refetchInterval: 30_000,
     retry: false,
+    enabled: backendOnlineProp === undefined, // only fetch locally if not provided as prop
   });
 
-  const backendOnline = !healthError && healthData?.status === "ok";
+  const backendOnline = backendOnlineProp ?? (!healthData ? false : healthData?.status === "ok");
 
   // ---- Fetch exchange pairs (client-side mode) ----
   const {

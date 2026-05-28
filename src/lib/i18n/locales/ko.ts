@@ -402,6 +402,11 @@ const ko: Record<TranslationKeys, string> = {
   portfolioRebalanceSuccess: "포트폴리오가 성공적으로 리밸런스되었습니다!",
   portfolioLastRebalance: "마지막 리밸런스",
 
+  // ---- Phase Badge ----
+  phaseEarly: "초기",
+  phaseMid: "중기",
+  phaseLate: "후기",
+
   // ---- Currency Graph Tab ----
   graphCurrencies: "통화 수",
   graphTradePairs: "거래 쌍",

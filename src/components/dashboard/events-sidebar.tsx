@@ -77,13 +77,6 @@ interface CreateEventResponse {
   message: string;
 }
 
-interface HealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

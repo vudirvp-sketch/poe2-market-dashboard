@@ -95,11 +95,11 @@ function phaseBadgeClass(phase: string): string {
   }
 }
 
-function phaseLabel(phase: string): string {
+function phaseLabel(phase: string, t: (key: string) => string): string {
   switch (phase?.toLowerCase()) {
-    case "early": return "EARLY";
-    case "mid": return "MID";
-    case "late": return "LATE";
+    case "early": return t("phaseEarly");
+    case "mid": return t("phaseMid");
+    case "late": return t("phaseLate");
     default: return phase?.toUpperCase() ?? "?";
   }
 }
@@ -271,7 +271,7 @@ export function Header({
             variant="outline"
             className={`text-[10px] px-2 py-0.5 font-bold ${phaseBadgeClass(phaseInfo.phase)}`}
           >
-            {phaseLabel(phaseInfo.phase)}
+            {phaseLabel(phaseInfo.phase, t)}
           </Badge>
         )}
 

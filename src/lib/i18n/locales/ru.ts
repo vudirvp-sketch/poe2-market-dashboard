@@ -402,6 +402,11 @@ const ru: Record<TranslationKeys, string> = {
   portfolioRebalanceSuccess: "Портфель успешно ребалансирован!",
   portfolioLastRebalance: "Последняя ребалансировка",
 
+  // ---- Phase Badge ----
+  phaseEarly: "РАННЯЯ",
+  phaseMid: "СРЕДНЯЯ",
+  phaseLate: "ПОЗДНЯЯ",
+
   // ---- Currency Graph Tab ----
   graphCurrencies: "Валюты",
   graphTradePairs: "Торговые пары",

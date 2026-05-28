@@ -90,13 +90,6 @@ interface CurrenciesResponse {
   currencies: CurrencyMetadata[];
 }
 
-interface HealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
-}
-
 // Graph node/edge internal types
 interface GraphNode {
   id: string;
@@ -248,10 +241,19 @@ function runForceLayout(
 }
 
 // ---------------------------------------------------------------------------
+// Component Props
+// ---------------------------------------------------------------------------
+
+interface CurrencyGraphTabProps {
+  /** Whether the flipper backend is online (checked at dashboard level) */
+  backendOnline: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function CurrencyGraphTab() {
+export function CurrencyGraphTab({ backendOnline }: CurrencyGraphTabProps) {
   const { t } = useI18n();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -261,16 +263,8 @@ export function CurrencyGraphTab() {
   const [focusCurrency, setFocusCurrency] = useState<string>("all");
   const [zoom, setZoom] = useState(1);
 
-  // ---- Backend health check ----
-  const { data: healthData, isError: healthError } = useQuery<HealthResponse>({
-    queryKey: ["flipper-health-graph"],
-    queryFn: () => fetchApi<HealthResponse>("/api/flipper/health"),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: false,
-  });
-
-  const backendOnline = !healthError && healthData?.status === "ok";
+  // ---- Backend health check is done at dashboard level ----
+  // backendOnline is passed as prop
 
   // ---- Fetch prices ----
   const {
@@ -726,7 +720,7 @@ export function CurrencyGraphTab() {
                             {"\n"}Effective: {fmt(edge.effectiveRate)}
                             {"\n"}Fee: {(edge.feeFraction * 100).toFixed(2)}%
                             {"\n"}Volume: {edge.volume.toLocaleString()}
-                            {edge.isCycleEdge ? "\n🔄 ARB CYCLE" : ""}
+                            {edge.isCycleEdge ? "\n[ARB CYCLE]" : ""}
                           </title>
                         </line>
                       );

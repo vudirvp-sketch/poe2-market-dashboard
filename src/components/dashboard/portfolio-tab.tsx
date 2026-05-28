@@ -89,13 +89,6 @@ interface FrontierData {
   current_portfolio: CurrentPortfolio | null;
 }
 
-interface HealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -160,26 +153,27 @@ function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Arr
 }
 
 // ---------------------------------------------------------------------------
+// Component Props
+// ---------------------------------------------------------------------------
+
+interface PortfolioTabProps {
+  /** Whether the flipper backend is online (checked at dashboard level) */
+  backendOnline: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function PortfolioTab() {
+export function PortfolioTab({ backendOnline }: PortfolioTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
   // Method selector state
   const [showMethodExplanation, setShowMethodExplanation] = useState(false);
 
-  // ---- Backend health check ----
-  const { data: healthData, isError: healthError } = useQuery<HealthResponse>({
-    queryKey: ["flipper-health-portfolio"],
-    queryFn: () => fetchApi<HealthResponse>("/api/flipper/health"),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: false,
-  });
-
-  const backendOnline = !healthError && healthData?.status === "ok";
+  // ---- Backend health check is done at dashboard level ----
+  // backendOnline is passed as prop
 
   // ---- Fetch portfolio data ----
   const {

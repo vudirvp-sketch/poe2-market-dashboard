@@ -123,6 +123,31 @@ export interface SnapshotHistoryPoint {
   itemCount: number;
 }
 
+// ============================================================================
+// Flipper backend shared types (used across dashboard-page, tabs, sidebar)
+// ============================================================================
+
+/** Response shape from GET /api/flipper/health */
+export interface FlipperHealthResponse {
+  status: string;
+  timestamp: string;
+  league?: string;
+  active_events?: number;
+}
+
+/** Response shape from GET /api/flipper/phase */
+export interface FlipperPhaseResponse {
+  phase: string;
+  days_since_ref: number;
+  league: string;
+}
+
+/** Summary shape from GET /api/flipper/events?active_only=true (count only) */
+export interface FlipperEventsSummary {
+  events: { event_id: string }[];
+  total: number;
+}
+
 // Types previously in poe2api.ts — now consolidated here
 
 export interface ExchangeSnapshot {

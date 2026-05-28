@@ -78,13 +78,6 @@ interface FlipsResponse {
   fetched_at: string;
 }
 
-interface HealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
-}
-
 interface StorageValueResponse {
   currency: string;
   current_price: number;
@@ -177,10 +170,19 @@ function decisionBadgeClass(decision: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Component Props
+// ---------------------------------------------------------------------------
+
+interface FlipsTabProps {
+  /** Whether the flipper backend is online (checked at dashboard level) */
+  backendOnline: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function FlipsTab() {
+export function FlipsTab({ backendOnline }: FlipsTabProps) {
   const { t } = useI18n();
 
   // Filter state
@@ -201,16 +203,8 @@ export function FlipsTab() {
   const [selectedFlip, setSelectedFlip] = useState<FlipOpportunity | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // ---- Backend health check ----
-  const { data: healthData, isError: healthError } = useQuery<HealthResponse>({
-    queryKey: ["flipper-health-flips"],
-    queryFn: () => fetchApi<HealthResponse>("/api/flipper/health"),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: false,
-  });
-
-  const backendOnline = !healthError && healthData?.status === "ok";
+  // ---- Backend health check is done at dashboard level ----
+  // backendOnline is passed as prop
 
   // ---- Fetch flip opportunities ----
   const {
@@ -566,27 +560,27 @@ export function FlipsTab() {
                 </p>
               </div>
             ) : (
-              <>
+              <div role="table" aria-label={t("flipsDetailedOpportunities")}>
                 {/* Table header */}
-                <div className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                  <span>{t("flipperCurrency")}</span>
-                  <span className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
-                  <span className="text-right"><SortHeader field="spread_after_fees" label={t("flipperSpread")} /></span>
-                  <span className="text-right">{t("flipsGoldFeePct")}</span>
-                  <span className="text-right"><SortHeader field="gold_fee_actual" label={t("flipperGoldFee")} /></span>
-                  <span className="text-right"><SortHeader field="momentum" label={t("flipperMomentum")} /></span>
-                  <span className="text-right"><SortHeader field="volatility" label={t("flipperVolatility")} /></span>
-                  <span className="text-center">{t("flipperCluster")}</span>
-                  <span />
+                <div role="row" className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+                  <span role="columnheader">{t("flipperCurrency")}</span>
+                  <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
+                  <span role="columnheader" className="text-right"><SortHeader field="spread_after_fees" label={t("flipperSpread")} /></span>
+                  <span role="columnheader" className="text-right">{t("flipsGoldFeePct")}</span>
+                  <span role="columnheader" className="text-right"><SortHeader field="gold_fee_actual" label={t("flipperGoldFee")} /></span>
+                  <span role="columnheader" className="text-right"><SortHeader field="momentum" label={t("flipperMomentum")} /></span>
+                  <span role="columnheader" className="text-right"><SortHeader field="volatility" label={t("flipperVolatility")} /></span>
+                  <span role="columnheader" className="text-center">{t("flipperCluster")}</span>
+                  <span role="columnheader" />
                 </div>
 
                 {/* Table body */}
-                <div className="max-h-[500px] overflow-y-auto" role="list" aria-label="Flip opportunities">
-                  {paginatedOpportunities.map((opp, idx) => (
+                <div className="max-h-[500px] overflow-y-auto" role="rowgroup" aria-label="Flip opportunities">
+                  {paginatedOpportunities.map((opp) => (
                     <div
-                      key={idx}
+                      key={opp.currency}
                       className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
-                      role="listitem"
+                      role="row"
                       onClick={() => openDetail(opp)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -664,7 +658,7 @@ export function FlipsTab() {
                     />
                   </div>
                 )}
-              </>
+              </div>
             )}
           </CardContent>
         </Card>

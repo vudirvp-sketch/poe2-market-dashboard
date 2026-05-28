@@ -404,6 +404,11 @@ const en = {
   portfolioRebalanceSuccess: "Portfolio rebalanced successfully!",
   portfolioLastRebalance: "Last rebalance",
 
+  // ---- Phase Badge ----
+  phaseEarly: "EARLY",
+  phaseMid: "MID",
+  phaseLate: "LATE",
+
   // ---- Currency Graph Tab ----
   graphCurrencies: "Currencies",
   graphTradePairs: "Trade Pairs",

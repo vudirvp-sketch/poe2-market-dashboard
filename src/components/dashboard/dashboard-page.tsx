@@ -66,6 +66,9 @@ import type {
   ItemCategory,
   PaginatedResponse,
   ReferenceCurrency,
+  FlipperHealthResponse,
+  FlipperPhaseResponse,
+  FlipperEventsSummary,
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
@@ -74,26 +77,7 @@ import { useI18n } from "@/lib/i18n";
 // Virtualization threshold: use virtual grid when more than this many currencies
 const CURRENCY_VIRTUAL_THRESHOLD = 30;
 
-// ---------------------------------------------------------------------------
-// Flipper-backend types (dashboard-level health & phase)
-// ---------------------------------------------------------------------------
-interface FlipperHealthResponse {
-  status: string;
-  timestamp: string;
-  league?: string;
-  active_events?: number;
-}
 
-interface FlipperPhaseResponse {
-  phase: string;
-  days_since_ref: number;
-  league: string;
-}
-
-interface FlipperEventsSummary {
-  events: { event_id: string }[];
-  total: number;
-}
 
 // ============================================================================
 // Main Dashboard
@@ -787,6 +771,7 @@ export function Dashboard() {
                 <ArbitrageTab
                   realm={realm}
                   league={effectiveLeague}
+                  backendOnline={flipperBackendOnline}
                 />
               </ErrorBoundary>
             </TabsContent>
@@ -794,28 +779,28 @@ export function Dashboard() {
             {/* ============ FLIPS TAB ============ */}
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle="Flips">
-                <FlipsTab />
+                <FlipsTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ FORECAST TAB ============ */}
             <TabsContent value="forecast">
               <ErrorBoundary fallbackTitle="Forecasts">
-                <ForecastTab />
+                <ForecastTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ PORTFOLIO TAB ============ */}
             <TabsContent value="portfolio">
               <ErrorBoundary fallbackTitle="Portfolio">
-                <PortfolioTab />
+                <PortfolioTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ CURRENCY GRAPH TAB ============ */}
             <TabsContent value="graph">
               <ErrorBoundary fallbackTitle="Currency Graph">
-                <CurrencyGraphTab />
+                <CurrencyGraphTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
