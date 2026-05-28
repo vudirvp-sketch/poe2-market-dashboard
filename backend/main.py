@@ -146,12 +146,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: allow Streamlit frontend (localhost:8501) and any local dev
+# CORS: allow Next.js frontend and local dev
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:8501",
-        "http://127.0.0.1:8501",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
