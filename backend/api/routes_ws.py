@@ -1,9 +1,12 @@
 """
-WebSocket routes for live-updating Storage Value and Forecast data.
+WebSocket routes for live-updating data.
 
 Endpoints:
     WS /ws/storage-value/{currency}  — pushes StorageValueResult every N seconds
     WS /ws/forecast/{currency}       — pushes ForecastResponse every N seconds
+    WS /ws/anomalies                 — pushes anomaly alerts every N seconds
+    WS /ws/flips                     — pushes flip scoring updates every N seconds
+    WS /ws/events                    — pushes event creation/deactivation notifications
 
 The server polls the existing computation logic at a configurable interval
 (default: 30 seconds) and pushes JSON updates to all connected clients.
@@ -427,3 +430,310 @@ async def _heartbeat_loop(websocket: WebSocket) -> None:
         except Exception:
             return
         await asyncio.sleep(HEARTBEAT_INTERVAL_SECONDS)
+
+
+# ---------------------------------------------------------------------------
+# Helper: compute anomalies (reuses routes_anomalies logic)
+# ---------------------------------------------------------------------------
+
+async def _compute_anomalies(min_alert_score: float = 0.4) -> dict | None:
+    """Compute anomaly detection across all currencies."""
+    try:
+        from backend.api.shared import get_provider
+        from backend.predictors.anomaly import AnomalyDetector
+        import numpy as np
+
+        config = get_settings()
+        provider = get_provider()
+
+        rates = await provider.get_exchange_rates(config.league.league_name)
+        currency_set = set()
+        for key, rate in rates.items():
+            currency_set.add(rate.currency_from)
+            currency_set.add(rate.currency_to)
+        currencies = list(currency_set)
+
+        detector = AnomalyDetector(config=config)
+        alerts = []
+
+        for curr in currencies:
+            try:
+                history = await provider.get_historical_prices(curr, days=7)
+                if len(history) < 30:
+                    continue
+                prices = np.array([p.price for p in history])
+                alert = detector.detect(currency=curr, price_series=prices)
+                if alert is not None and alert.alert_score >= min_alert_score:
+                    alerts.append({
+                        "currency": alert.currency,
+                        "alert_score": round(alert.alert_score, 4),
+                        "triggered_indicators": alert.triggered_indicators,
+                        "direction": alert.direction,
+                        "is_confirmed": alert.is_confirmed,
+                        "timestamp": alert.timestamp.isoformat() if hasattr(alert.timestamp, 'isoformat') else str(alert.timestamp),
+                    })
+            except Exception:
+                continue
+
+        return {
+            "anomalies": alerts,
+            "count": len(alerts),
+            "currencies_checked": len(currencies),
+            "min_alert_score": min_alert_score,
+            "data_available": True,
+        }
+    except Exception as e:
+        logger.error("WS: anomaly computation failed: %s", e)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Helper: compute flips (reuses routes_arbitrage logic)
+# ---------------------------------------------------------------------------
+
+async def _compute_flips(min_score: float = 0.0, min_volume: int = 0, limit: int = 50) -> dict | None:
+    """Compute flip opportunities using the same logic as the REST endpoint."""
+    try:
+        from backend.api.routes_arbitrage import _build_flip_opportunities
+        from backend.economy.events import get_event_manager
+
+        config = get_settings()
+        event_manager = get_event_manager(config)
+
+        opportunities = await _build_flip_opportunities(config)
+        filtered = [
+            o for o in opportunities
+            if o.score >= min_score and o.volume_24h >= min_volume
+        ]
+        filtered = filtered[:limit]
+
+        return {
+            "league": config.league.league_name,
+            "total": len(filtered),
+            "opportunities": [
+                {
+                    "currency": o.currency,
+                    "score": round(o.score, 4),
+                    "spread_after_fees": round(o.spread_after_fees, 6),
+                    "gold_fee_fraction": round(o.gold_fee_fraction, 6),
+                    "gold_fee_actual": round(o.gold_fee_actual, 1),
+                    "volume_24h": o.volume_24h,
+                    "momentum": round(o.momentum, 6),
+                    "volatility": round(o.volatility, 6),
+                    "cluster": o.cluster.value,
+                    "bid": round(o.bid, 6),
+                    "ask": round(o.ask, 6),
+                    "mid_price": round(o.mid_price, 6),
+                }
+                for o in filtered
+            ],
+            "event_status": {
+                "any_active": event_manager.is_event_active(),
+                "affected_currencies": list(event_manager.get_affected_currencies()),
+                "summary": event_manager.get_active_event_summary(),
+            },
+            "data_available": True,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logger.error("WS: flips computation failed: %s", e)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Helper: compute events status
+# ---------------------------------------------------------------------------
+
+async def _compute_events() -> dict | None:
+    """Get current events status."""
+    try:
+        from backend.economy.events import get_event_manager
+        from backend.data.historical import get_historical_store
+
+        config = get_settings()
+        event_manager = get_event_manager(config)
+
+        summary = event_manager.get_active_event_summary()
+        affected = list(event_manager.get_affected_currencies())
+        any_active = event_manager.is_event_active()
+
+        # Get recent events from SQLite for full list
+        events_list = []
+        try:
+            historical_store = get_historical_store(config)
+            events = await historical_store.get_events(active_only=False, limit=10)
+            for ev in events:
+                events_list.append({
+                    "event_id": ev.get("event_id", ""),
+                    "event_type": ev.get("event_type", ""),
+                    "description": ev.get("description", ""),
+                    "is_active": ev.get("is_active", False),
+                    "affected_currencies": ev.get("affected_currencies", []),
+                    "created_at": ev.get("created_at", ""),
+                    "expires_at": ev.get("expires_at", ""),
+                })
+        except Exception:
+            pass
+
+        return {
+            "any_active": any_active,
+            "affected_currencies": affected,
+            "summary": summary,
+            "recent_events": events_list,
+            "data_available": True,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logger.error("WS: events computation failed: %s", e)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# WebSocket endpoint: Anomalies
+# ---------------------------------------------------------------------------
+
+@router.websocket("/ws/anomalies")
+async def ws_anomalies(websocket: WebSocket):
+    """WebSocket endpoint that pushes anomaly detection updates.
+
+    Query params:
+        min_alert_score: Minimum alert score to include (default 0.4)
+
+    Messages sent:
+        {"type": "update", "data": {...}, "timestamp": "..."}
+        {"type": "heartbeat"}
+        {"type": "error", "message": "..."}
+    """
+    await websocket.accept()
+    logger.info("WS /ws/anomalies: client connected")
+
+    min_alert_score = 0.4
+    if websocket.query_params.get("min_alert_score"):
+        try:
+            min_alert_score = max(0.0, min(1.0, float(websocket.query_params["min_alert_score"])))
+        except (ValueError, TypeError):
+            pass
+
+    push_task = asyncio.create_task(
+        _push_loop(websocket, "anomalies", "all",
+                   lambda: _compute_anomalies(min_alert_score))
+    )
+    hb_task = asyncio.create_task(_heartbeat_loop(websocket))
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "close":
+                break
+    except WebSocketDisconnect:
+        logger.info("WS /ws/anomalies: client disconnected")
+    except Exception as e:
+        logger.warning("WS /ws/anomalies: connection error: %s", e)
+    finally:
+        push_task.cancel()
+        hb_task.cancel()
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# WebSocket endpoint: Flips
+# ---------------------------------------------------------------------------
+
+@router.websocket("/ws/flips")
+async def ws_flips(websocket: WebSocket):
+    """WebSocket endpoint that pushes flip scoring updates.
+
+    Query params:
+        min_score: Minimum score filter (default 0.0)
+        min_volume: Minimum 24h volume filter (default 0)
+        limit: Max results (default 50)
+
+    Messages sent:
+        {"type": "update", "data": {...}, "timestamp": "..."}
+        {"type": "heartbeat"}
+        {"type": "error", "message": "..."}
+    """
+    await websocket.accept()
+    logger.info("WS /ws/flips: client connected")
+
+    min_score = 0.0
+    min_volume = 0
+    limit = 50
+    try:
+        if websocket.query_params.get("min_score"):
+            min_score = max(0.0, min(1.0, float(websocket.query_params["min_score"])))
+        if websocket.query_params.get("min_volume"):
+            min_volume = max(0, int(websocket.query_params["min_volume"]))
+        if websocket.query_params.get("limit"):
+            limit = max(1, min(200, int(websocket.query_params["limit"])))
+    except (ValueError, TypeError):
+        pass
+
+    push_task = asyncio.create_task(
+        _push_loop(websocket, "flips", "all",
+                   lambda: _compute_flips(min_score, min_volume, limit))
+    )
+    hb_task = asyncio.create_task(_heartbeat_loop(websocket))
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "close":
+                break
+    except WebSocketDisconnect:
+        logger.info("WS /ws/flips: client disconnected")
+    except Exception as e:
+        logger.warning("WS /ws/flips: connection error: %s", e)
+    finally:
+        push_task.cancel()
+        hb_task.cancel()
+        try:
+            await websocket.close()
+        except Exception:
+            pass
+
+
+# ---------------------------------------------------------------------------
+# WebSocket endpoint: Events
+# ---------------------------------------------------------------------------
+
+@router.websocket("/ws/events")
+async def ws_events(websocket: WebSocket):
+    """WebSocket endpoint that pushes event notifications.
+
+    Pushes updates when events are created or deactivated,
+    as well as periodic summaries of active events.
+
+    Messages sent:
+        {"type": "update", "data": {...}, "timestamp": "..."}
+        {"type": "heartbeat"}
+        {"type": "error", "message": "..."}
+    """
+    await websocket.accept()
+    logger.info("WS /ws/events: client connected")
+
+    push_task = asyncio.create_task(
+        _push_loop(websocket, "events", "all",
+                   lambda: _compute_events())
+    )
+    hb_task = asyncio.create_task(_heartbeat_loop(websocket))
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "close":
+                break
+    except WebSocketDisconnect:
+        logger.info("WS /ws/events: client disconnected")
+    except Exception as e:
+        logger.warning("WS /ws/events: connection error: %s", e)
+    finally:
+        push_task.cancel()
+        hb_task.cancel()
+        try:
+            await websocket.close()
+        except Exception:
+            pass

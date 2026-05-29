@@ -486,6 +486,10 @@ const ko: Record<TranslationKeys, string> = {
   recipesMissingTitle: "{0}개 레시피에 가격 데이터 누락",
   recipesMissingDesc: "일부 레시피는 현재 시장 데이터에서 필요한 통화 가격을 사용할 수 없어 평가할 수 없습니다.",
 
+  // ---- Data Available (graceful unavailable) ----
+  dataUnavailableTitle: "데이터를 일시적으로 사용할 수 없습니다",
+  dataUnavailableDesc: "POE2Scout API에 연결할 수 없거나 이 요청에 대한 데이터가 없습니다. 오류가 아닙니다 — 나중에 다시 시도하세요.",
+
   // ---- Overview Heatmap ----
   overviewHeatmap: "가격 히트맵 (24시)",
 

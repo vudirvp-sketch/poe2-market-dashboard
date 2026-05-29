@@ -60,144 +60,161 @@ async def get_forecast(
     if is_event_active is None:
         is_event_active = event_manager.is_event_active(currency)
 
-    # Fetch historical price data for this currency
-    hist_result = await cache.get_or_fetch(
-        "history",
-        provider.name(),
-        "get_historical_prices",
-        provider.get_historical_prices,
-        currency,
-        14,  # 14 days of history
-    )
-
-    # Also try DailyStatsHistory for richer OHLCV data.
-    # DailyStatsHistory gives structured daily OHLCV which is better for
-    # LightGBM feature engineering than raw price logs.  Cached in
-    # the "daily_stats" tier (1h TTL) to avoid redundant API calls.
-    daily_stats_data: dict | None = None
-    # We need the item_id for DailyStatsHistory — look up from metadata
     try:
-        metadata_result = await cache.get_or_fetch(
-            "metadata",
+        # Fetch historical price data for this currency
+        hist_result = await cache.get_or_fetch(
+            "history",
             provider.name(),
-            "get_currency_metadata",
-            provider.get_currency_metadata,
-            config.league.league_name,
-        )
-        if metadata_result.value:
-            for ci in metadata_result.value:
-                if ci.api_id.lower() == currency.lower() and ci.item_id:
-                    ds_result = await cache.get_or_fetch(
-                        "daily_stats",
-                        provider.name(),
-                        "get_daily_stats",
-                        provider.get_daily_stats,
-                        config.league.league_name,
-                        ci.item_id,
-                        30,
-                    )
-                    daily_stats_data = ds_result.value
-                    break
-    except Exception as e:
-        logger.debug("DailyStatsHistory lookup failed for %s: %s", currency, e)
-
-    if hist_result.value is None or len(hist_result.value) == 0:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No historical data available for currency: {currency}",
+            "get_historical_prices",
+            provider.get_historical_prices,
+            currency,
+            14,  # 14 days of history
         )
 
-    price_points = hist_result.value
-
-    # If DailyStatsHistory is available, use it as a supplementary data
-    # source.  Daily OHLCV provides a cleaner, more regular signal than
-    # raw price logs, which is especially beneficial for LightGBM feature
-    # engineering with daily data.
-    daily_stats_prices: list = []
-    if daily_stats_data is not None:
+        # Also try DailyStatsHistory for richer OHLCV data.
+        # DailyStatsHistory gives structured daily OHLCV which is better for
+        # LightGBM feature engineering than raw price logs.  Cached in
+        # the "daily_stats" tier (1h TTL) to avoid redundant API calls.
+        daily_stats_data: dict | None = None
+        # We need the item_id for DailyStatsHistory — look up from metadata
         try:
-            from backend.data.schemas import DailyStatsResponse
-            ds_resp = DailyStatsResponse.model_validate(daily_stats_data)
-            from datetime import datetime as _dt, timezone as _tz
-            for pt in ds_resp.daily_stats:
-                if pt.close and pt.close > 0:
-                    try:
-                        ts = _dt.fromisoformat(pt.time.replace("Z", "+00:00")) if pt.time else _dt.now(_tz.utc)
-                    except (ValueError, TypeError):
-                        ts = _dt.now(_tz.utc)
-                    from backend.models.currency import PricePoint
-                    daily_stats_prices.append(PricePoint(
-                        timestamp=ts,
-                        price=pt.close,
-                        volume=float(pt.volume) if pt.volume else 0.0,
-                    ))
+            metadata_result = await cache.get_or_fetch(
+                "metadata",
+                provider.name(),
+                "get_currency_metadata",
+                provider.get_currency_metadata,
+                config.league.league_name,
+            )
+            if metadata_result.value:
+                for ci in metadata_result.value:
+                    if ci.api_id.lower() == currency.lower() and ci.item_id:
+                        ds_result = await cache.get_or_fetch(
+                            "daily_stats",
+                            provider.name(),
+                            "get_daily_stats",
+                            provider.get_daily_stats,
+                            config.league.league_name,
+                            ci.item_id,
+                            30,
+                        )
+                        daily_stats_data = ds_result.value
+                        break
         except Exception as e:
-            logger.debug("Failed to parse DailyStatsHistory for %s: %s", currency, e)
+            logger.debug("DailyStatsHistory lookup failed for %s: %s", currency, e)
 
-    # Prefer daily stats for forecasting if enough points are available,
-    # otherwise fall back to raw price logs.
-    if len(daily_stats_prices) >= 10:
-        price_points = daily_stats_prices
-        logger.info(
-            "Using DailyStatsHistory (%d points) for %s forecast",
-            len(daily_stats_prices), currency,
+        if hist_result.value is None or len(hist_result.value) == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No historical data available for currency: {currency}",
+            )
+
+        price_points = hist_result.value
+
+        # If DailyStatsHistory is available, use it as a supplementary data
+        # source.  Daily OHLCV provides a cleaner, more regular signal than
+        # raw price logs, which is especially beneficial for LightGBM feature
+        # engineering with daily data.
+        daily_stats_prices: list = []
+        if daily_stats_data is not None:
+            try:
+                from backend.data.schemas import DailyStatsResponse
+                ds_resp = DailyStatsResponse.model_validate(daily_stats_data)
+                from datetime import datetime as _dt, timezone as _tz
+                for pt in ds_resp.daily_stats:
+                    if pt.close and pt.close > 0:
+                        try:
+                            ts = _dt.fromisoformat(pt.time.replace("Z", "+00:00")) if pt.time else _dt.now(_tz.utc)
+                        except (ValueError, TypeError):
+                            ts = _dt.now(_tz.utc)
+                        from backend.models.currency import PricePoint
+                        daily_stats_prices.append(PricePoint(
+                            timestamp=ts,
+                            price=pt.close,
+                            volume=float(pt.volume) if pt.volume else 0.0,
+                        ))
+            except Exception as e:
+                logger.debug("Failed to parse DailyStatsHistory for %s: %s", currency, e)
+
+        # Prefer daily stats for forecasting if enough points are available,
+        # otherwise fall back to raw price logs.
+        if len(daily_stats_prices) >= 10:
+            price_points = daily_stats_prices
+            logger.info(
+                "Using DailyStatsHistory (%d points) for %s forecast",
+                len(daily_stats_prices), currency,
+            )
+
+        # Extract prices and timestamps
+        import numpy as np
+
+        prices = np.array([p.price for p in price_points], dtype=float)
+        volumes = np.array([p.volume for p in price_points], dtype=float)
+        timestamps = [p.timestamp for p in price_points]
+
+        if len(prices) < 10:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Insufficient historical data for {currency} ({len(prices)} points, need >= 10)",
+            )
+
+        # Run forecasts
+        engine = _get_forecast_engine(config)
+        results = engine.forecast(
+            currency=currency,
+            price_series=prices,
+            volumes=volumes,
+            timestamps=timestamps,
+            is_event_active=is_event_active,
         )
 
-    # Extract prices and timestamps
-    import numpy as np
+        # Format response
+        forecast_data = {}
+        for model_name, result in results.items():
+            forecast_data[model_name] = {
+                "currency": result.currency,
+                "model_name": result.model_name,
+                "point_forecast": [round(v, 6) for v in result.point_forecast],
+                "ci_lower": [round(v, 6) for v in result.ci_lower],
+                "ci_upper": [round(v, 6) for v in result.ci_upper],
+                "timestamps": [ts.isoformat() for ts in result.timestamps],
+                "low_confidence": result.low_confidence,
+                "disagreement": result.disagreement,
+                "mape": round(result.mape, 6) if result.mape is not None else None,
+            }
 
-    prices = np.array([p.price for p in price_points], dtype=float)
-    volumes = np.array([p.volume for p in price_points], dtype=float)
-    timestamps = [p.timestamp for p in price_points]
+        # Determine overall status
+        has_disagreement = any(r.disagreement for r in results.values())
+        has_low_confidence = any(r.low_confidence for r in results.values())
 
-    if len(prices) < 10:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Insufficient historical data for {currency} ({len(prices)} points, need >= 10)",
-        )
+        # Note: Holt-Winters is automatically disabled when event is active
+        # (handled inside ForecastEngine), so it simply won't appear in results
 
-    # Run forecasts
-    engine = _get_forecast_engine(config)
-    results = engine.forecast(
-        currency=currency,
-        price_series=prices,
-        volumes=volumes,
-        timestamps=timestamps,
-        is_event_active=is_event_active,
-    )
-
-    # Format response
-    forecast_data = {}
-    for model_name, result in results.items():
-        forecast_data[model_name] = {
-            "currency": result.currency,
-            "model_name": result.model_name,
-            "point_forecast": [round(v, 6) for v in result.point_forecast],
-            "ci_lower": [round(v, 6) for v in result.ci_lower],
-            "ci_upper": [round(v, 6) for v in result.ci_upper],
-            "timestamps": [ts.isoformat() for ts in result.timestamps],
-            "low_confidence": result.low_confidence,
-            "disagreement": result.disagreement,
-            "mape": round(result.mape, 6) if result.mape is not None else None,
+        return {
+            "currency": currency,
+            "horizon": horizon,
+            "models": forecast_data,
+            "disagreement": has_disagreement,
+            "low_confidence": has_low_confidence,
+            "is_event_active": is_event_active,
+            "data_points": len(prices),
+            "data_available": True,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
-
-    # Determine overall status
-    has_disagreement = any(r.disagreement for r in results.values())
-    has_low_confidence = any(r.low_confidence for r in results.values())
-
-    # Note: Holt-Winters is automatically disabled when event is active
-    # (handled inside ForecastEngine), so it simply won't appear in results
-
-    return {
-        "currency": currency,
-        "horizon": horizon,
-        "models": forecast_data,
-        "disagreement": has_disagreement,
-        "low_confidence": has_low_confidence,
-        "is_event_active": is_event_active,
-        "data_points": len(prices),
-        "fetched_at": datetime.now(timezone.utc).isoformat(),
-    }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Forecast handler failed for %s: %s", currency, e)
+        return {
+            "currency": currency,
+            "horizon": horizon,
+            "models": {},
+            "disagreement": False,
+            "low_confidence": False,
+            "is_event_active": is_event_active,
+            "data_points": 0,
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 @router.get("/{currency}/stl")

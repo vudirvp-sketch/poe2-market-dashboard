@@ -486,6 +486,10 @@ const ru: Record<TranslationKeys, string> = {
   recipesMissingTitle: "{0} рецептов не хватает ценовых данных",
   recipesMissingDesc: "Некоторые рецепты невозможно оценить, так как цены требуемых валют недоступны в текущих рыночных данных.",
 
+  // ---- Data Available (graceful unavailable) ----
+  dataUnavailableTitle: "Данные временно недоступны",
+  dataUnavailableDesc: "API POE2Scout может быть недоступен или не имеет данных для этого запроса. Это не ошибка — попробуйте позже.",
+
   // ---- Overview Heatmap ----
   overviewHeatmap: "Тепловая карта цен (24ч)",
 

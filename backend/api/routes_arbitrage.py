@@ -353,7 +353,13 @@ async def get_triangular_arbitrage(
         config.league.league_name,
     )
     if rates_result.value is None:
-        raise HTTPException(status_code=503, detail="Exchange rate data unavailable")
+        return {
+            "league": config.league.league_name,
+            "total": 0,
+            "opportunities": [],
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     rates_dict = rates_result.value
 
@@ -409,5 +415,6 @@ async def get_triangular_arbitrage(
             }
             for o in opportunities
         ],
+        "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }

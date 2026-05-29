@@ -26,6 +26,7 @@ Provides:
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -144,12 +145,16 @@ app = FastAPI(
 )
 
 # CORS: allow Next.js frontend and local dev
+# Configure via CORS_ORIGINS env var (comma-separated). Defaults to localhost:3000.
+_cors_origins_str = os.environ.get(
+    "CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+)
+_cors_origins = [o.strip() for o in _cors_origins_str.split(",") if o.strip()]
+logger.info("CORS origins: %s", _cors_origins)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

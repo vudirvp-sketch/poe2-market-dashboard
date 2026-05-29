@@ -72,6 +72,7 @@ interface ForecastResponse {
   is_event_active: boolean;
   data_points: number;
   fetched_at: string;
+  data_available?: boolean;
 }
 
 interface AnomalyAlert {
@@ -88,6 +89,7 @@ interface AnomaliesResponse {
   count: number;
   currencies_checked: number;
   min_alert_score: number;
+  data_available?: boolean;
 }
 
 interface StorageValueResponse {
@@ -99,6 +101,7 @@ interface StorageValueResponse {
   net_value_after_fees: number;
   ratio: number;
   decision: string;
+  data_available?: boolean;
   inputs: {
     momentum: number;
     volatility: number;
@@ -503,6 +506,16 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
         <CardContent className="px-4 pb-4 pt-0">
           {isLoading ? (
             <Skeleton className="h-[300px] w-full" />
+          ) : forecastData && forecastData.data_available === false ? (
+            <div className="text-center py-10">
+              <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                {t("dataUnavailableTitle")}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                {t("dataUnavailableDesc")}
+              </p>
+            </div>
           ) : forecastError && !liveMode ? (
             <div className="text-center py-10">
               <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
@@ -652,6 +665,16 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
             <div className="text-center py-6 text-sm text-muted-foreground">
               {t("flipperBackendOfflineTitle")}
             </div>
+          ) : storageData && storageData.data_available === false ? (
+            <div className="text-center py-6">
+              <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                {t("dataUnavailableTitle")}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                {t("dataUnavailableDesc")}
+              </p>
+            </div>
           ) : !storageData ? (
             <div className="text-center py-6">
               {isStorageInsufficientData ? (
@@ -754,6 +777,16 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
           ) : !backendOnline ? (
             <div className="text-center py-6 text-sm text-muted-foreground">
               {t("flipperBackendOfflineTitle")}
+            </div>
+          ) : anomaliesData && anomaliesData.data_available === false ? (
+            <div className="text-center py-6">
+              <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                {t("dataUnavailableTitle")}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                {t("dataUnavailableDesc")}
+              </p>
             </div>
           ) : !anomaliesData?.anomalies?.length ? (
             <div className="text-center py-6">

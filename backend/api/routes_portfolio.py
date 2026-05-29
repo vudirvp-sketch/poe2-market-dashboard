@@ -72,12 +72,15 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
         provider.get_exchange_rates,
         config.league.league_name,
     )
-    if rates_result.value is None:
-        raise HTTPException(status_code=503, detail="Exchange rate data unavailable")
+    if rates_result.value is None or not rates_result.value:
+        return PortfolioAllocation(
+            weights={},
+            expected_risk=0.0,
+            method=method_override or config.portfolio.method,
+            correlation_warning=False,
+        )
 
     rates = rates_result.value
-    if not rates:
-        raise HTTPException(status_code=503, detail="No exchange rate data available")
 
     # 2. Fetch historical data for momentum/return calculation
     metadata_result = await cache.get_or_fetch(
@@ -114,11 +117,11 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
     }
 
     if len(eligible_currencies) < 2:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Insufficient data for portfolio construction "
-                   f"(need >= 2 currencies with >= {min_history_length} price points, "
-                   f"got {len(eligible_currencies)})",
+        return PortfolioAllocation(
+            weights={},
+            expected_risk=0.0,
+            method=method_override or config.portfolio.method,
+            correlation_warning=False,
         )
 
     # 5. Build aligned log-returns matrix
@@ -210,10 +213,26 @@ async def get_portfolio():
             if _last_allocation is not None:
                 logger.warning("Portfolio rebuild failed; returning cached allocation.")
             else:
-                raise
+                return {
+                    "method": config.portfolio.method,
+                    "weights": {},
+                    "expected_risk": 0,
+                    "correlation_warning": False,
+                    "data_available": False,
+                    "last_rebalance": None,
+                    "correlation_matrix": None,
+                }
 
     if _last_allocation is None:
-        raise HTTPException(status_code=503, detail="Portfolio data unavailable")
+        return {
+            "method": config.portfolio.method,
+            "weights": {},
+            "expected_risk": 0,
+            "correlation_warning": False,
+            "data_available": False,
+            "last_rebalance": None,
+            "correlation_matrix": None,
+        }
 
     # Build correlation matrix: prefer _current_corr (always available after
     # a successful build), fall back to recomputing from _previous_corr.
@@ -247,6 +266,7 @@ async def get_portfolio():
         },
         "expected_risk": round(_last_allocation.expected_risk, 6),
         "correlation_warning": _last_allocation.correlation_warning,
+        "data_available": True,
         "last_rebalance": _last_allocation.last_rebalance.isoformat()
         if _last_allocation.last_rebalance
         else None,
@@ -268,7 +288,15 @@ async def rebalance_portfolio(method: str | None = Query(default=None)):
     _last_allocation = await _build_portfolio(config, method_override=method)
 
     if _last_allocation is None:
-        raise HTTPException(status_code=503, detail="Portfolio rebalance failed")
+        return {
+            "method": method or config.portfolio.method,
+            "weights": {},
+            "expected_risk": 0,
+            "correlation_warning": False,
+            "data_available": False,
+            "last_rebalance": None,
+            "correlation_matrix": None,
+        }
 
     # Build correlation matrix: prefer _current_corr (set by _build_portfolio),
     # fall back to recomputing from _previous_corr.
@@ -299,6 +327,7 @@ async def rebalance_portfolio(method: str | None = Query(default=None)):
         },
         "expected_risk": round(_last_allocation.expected_risk, 6),
         "correlation_warning": _last_allocation.correlation_warning,
+        "data_available": True,
         "last_rebalance": _last_allocation.last_rebalance.isoformat()
         if _last_allocation.last_rebalance
         else None,
@@ -334,7 +363,7 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
         config.league.league_name,
     )
     if rates_result.value is None:
-        raise HTTPException(status_code=503, detail="Exchange rate data unavailable")
+        return {"data_available": False, "frontier": [], "currencies": []}
 
     # Fetch metadata for currency list
     metadata_result = await cache.get_or_fetch(
@@ -371,12 +400,7 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
     }
 
     if len(eligible_currencies) < 2:
-        raise HTTPException(
-            status_code=503,
-            detail="Insufficient data for efficient frontier computation "
-                   f"(need >= 2 currencies with >= {min_history_length} price points, "
-                   f"got {len(eligible_currencies)})",
-        )
+        return {"data_available": False, "frontier": [], "currencies": []}
 
     # Build aligned log-returns matrix
     min_len = min(len(p) for p in eligible_currencies.values())

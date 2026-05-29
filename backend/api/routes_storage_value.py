@@ -54,90 +54,120 @@ async def get_storage_value(
     provider = get_provider()
     cache = get_cache()
 
-    # Fetch price history for momentum/volatility (via cache — avoids
-    # redundant API calls when the same currency is queried by multiple
-    # tabs simultaneously, e.g. Forecast + Storage Value)
-    hist_result = await cache.get_or_fetch(
-        "history",
-        provider.name(),
-        "get_historical_prices",
-        provider.get_historical_prices,
-        currency,
-        7,
-    )
-
-    if hist_result.value is None or len(hist_result.value) == 0:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Insufficient price history for {currency}. "
-                   f"Need at least 2 data points. "
-                   f"The POE2Scout API may not have historical data for this currency yet.",
-        )
-
-    history = hist_result.value
-
-    # Compute momentum and volatility
-    tracker = PriceMomentumTracker(window_size=len(history))
-    for point in history:
-        tracker.update(point.price)
-    metrics = tracker.compute()
-
-    # Current price
-    current_price = history[-1].price
-    if current_price <= 0:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Current price for {currency} is zero or negative."
-        )
-
-    # Liquidity score from volume
-    volumes = [p.volume for p in history if p.volume > 0]
-    total_volume = sum(volumes) if volumes else 0
-    liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
-
-    # Gold fee fraction
-    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
     try:
-        gold_fee_fraction = compute_gold_fee_fraction(
-            currency, 1.0,
-            gold_to_chaos_rate,
-            current_price,  # approximation: 1 unit at current price
-            config.fees.unknown_item_gold_cost,
+        # Fetch price history for momentum/volatility (via cache — avoids
+        # redundant API calls when the same currency is queried by multiple
+        # tabs simultaneously, e.g. Forecast + Storage Value)
+        hist_result = await cache.get_or_fetch(
+            "history",
+            provider.name(),
+            "get_historical_prices",
+            provider.get_historical_prices,
+            currency,
+            7,
         )
-    except Exception:
-        gold_fee_fraction = 0.0
 
-    # Compute storage value
-    result = project_value(
-        current_price=current_price,
-        log_momentum=metrics.momentum,
-        volatility=metrics.volatility,
-        liquidity_score=liquidity_score,
-        horizon_hours=horizon_hours,
-        confidence_level=config.forecasting.confidence_level,
-        gold_fee_fraction=gold_fee_fraction,
-        currency=currency,
-        liquidity_normalization=config.storage_value.liquidity_normalization,
-        buy_threshold=config.storage_value.buy_threshold,
-        sell_threshold=config.storage_value.sell_threshold,
-    )
+        if hist_result.value is None or len(hist_result.value) == 0:
+            return {
+                "currency": currency,
+                "current_price": 0,
+                "projected_price": 0,
+                "risk_discount": 0,
+                "adjusted_price": 0,
+                "net_value_after_fees": 0,
+                "ratio": 0,
+                "decision": "NEUTRAL",
+                "inputs": {},
+                "data_available": False,
+            }
 
-    return {
-        "currency": result.currency,
-        "current_price": result.current_price,
-        "projected_price": round(result.projected_price, 6),
-        "risk_discount": round(result.risk_discount, 6),
-        "adjusted_price": round(result.adjusted_price, 6),
-        "net_value_after_fees": round(result.net_value_after_fees, 6),
-        "ratio": round(result.ratio, 6),
-        "decision": result.decision.value,
-        "inputs": {
-            "momentum": round(metrics.momentum, 6),
-            "volatility": round(metrics.volatility, 6),
-            "acceleration": round(metrics.acceleration, 6),
-            "liquidity_score": round(liquidity_score, 4),
-            "gold_fee_fraction": round(gold_fee_fraction, 6),
-            "horizon_hours": horizon_hours,
-            "confidence_level": config.forecasting.confidence_level,
-        },
-    }
+        history = hist_result.value
+
+        # Compute momentum and volatility
+        tracker = PriceMomentumTracker(window_size=len(history))
+        for point in history:
+            tracker.update(point.price)
+        metrics = tracker.compute()
+
+        # Current price
+        current_price = history[-1].price
+        if current_price <= 0:
+            return {
+                "currency": currency,
+                "current_price": 0,
+                "projected_price": 0,
+                "risk_discount": 0,
+                "adjusted_price": 0,
+                "net_value_after_fees": 0,
+                "ratio": 0,
+                "decision": "NEUTRAL",
+                "inputs": {},
+                "data_available": False,
+            }
+
+        # Liquidity score from volume
+        volumes = [p.volume for p in history if p.volume > 0]
+        total_volume = sum(volumes) if volumes else 0
+        liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
+
+        # Gold fee fraction
+        gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+        try:
+            gold_fee_fraction = compute_gold_fee_fraction(
+                currency, 1.0,
+                gold_to_chaos_rate,
+                current_price,  # approximation: 1 unit at current price
+                config.fees.unknown_item_gold_cost,
+            )
+        except Exception:
+            gold_fee_fraction = 0.0
+
+        # Compute storage value
+        result = project_value(
+            current_price=current_price,
+            log_momentum=metrics.momentum,
+            volatility=metrics.volatility,
+            liquidity_score=liquidity_score,
+            horizon_hours=horizon_hours,
+            confidence_level=config.forecasting.confidence_level,
+            gold_fee_fraction=gold_fee_fraction,
+            currency=currency,
+            liquidity_normalization=config.storage_value.liquidity_normalization,
+            buy_threshold=config.storage_value.buy_threshold,
+            sell_threshold=config.storage_value.sell_threshold,
+        )
+
+        return {
+            "currency": result.currency,
+            "current_price": result.current_price,
+            "projected_price": round(result.projected_price, 6),
+            "risk_discount": round(result.risk_discount, 6),
+            "adjusted_price": round(result.adjusted_price, 6),
+            "net_value_after_fees": round(result.net_value_after_fees, 6),
+            "ratio": round(result.ratio, 6),
+            "decision": result.decision.value,
+            "data_available": True,
+            "inputs": {
+                "momentum": round(metrics.momentum, 6),
+                "volatility": round(metrics.volatility, 6),
+                "acceleration": round(metrics.acceleration, 6),
+                "liquidity_score": round(liquidity_score, 4),
+                "gold_fee_fraction": round(gold_fee_fraction, 6),
+                "horizon_hours": horizon_hours,
+                "confidence_level": config.forecasting.confidence_level,
+            },
+        }
+    except Exception as e:
+        logger.error("Storage value computation failed for %s: %s", currency, e)
+        return {
+            "currency": currency,
+            "current_price": 0,
+            "projected_price": 0,
+            "risk_discount": 0,
+            "adjusted_price": 0,
+            "net_value_after_fees": 0,
+            "ratio": 0,
+            "decision": "NEUTRAL",
+            "inputs": {},
+            "data_available": False,
+        }

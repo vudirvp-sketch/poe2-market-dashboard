@@ -31,9 +31,11 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import json
 import logging
 import os
 import secrets
+import sqlite3
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -83,9 +85,14 @@ class OAuthTokenManager:
     - Token exchange from authorization code
     - Token refresh
     - Thread-safe token storage
+    - SQLite persistence so tokens survive backend restarts
     """
 
     def __init__(self):
+        self._db_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..", "..", "oauth_tokens.db",
+        )
         self._access_token: str | None = None
         self._refresh_token: str | None = None
         self._token_expires_at: float = 0.0
@@ -93,6 +100,7 @@ class OAuthTokenManager:
         self._client: httpx.AsyncClient | None = None
         # CSRF state storage — set by /auth/start, verified by /auth/callback
         self._pending_state: str | None = None
+        self._load_tokens_from_db()
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -111,9 +119,74 @@ class OAuthTokenManager:
             return False
         return time.time() < self._token_expires_at - 60  # 60s buffer
 
+    # ------------------------------------------------------------------
+    # SQLite persistence
+    # ------------------------------------------------------------------
+
+    def _get_conn(self) -> sqlite3.Connection:
+        """Return a new SQLite connection to the token database."""
+        return sqlite3.connect(self._db_path)
+
+    def _init_db(self) -> None:
+        """Create the oauth_tokens table if it doesn't exist."""
+        conn = self._get_conn()
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS oauth_tokens (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+            """)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _load_tokens_from_db(self) -> None:
+        """Load persisted tokens from SQLite into memory."""
+        self._init_db()
+        try:
+            conn = self._get_conn()
+            try:
+                rows = dict(
+                    conn.execute("SELECT key, value FROM oauth_tokens").fetchall()
+                )
+                self._access_token = rows.get("access_token") or None
+                self._refresh_token = rows.get("refresh_token") or None
+                self._token_expires_at = float(rows.get("token_expires_at", "0"))
+                self._code_verifier = rows.get("code_verifier") or None
+                self._pending_state = rows.get("pending_state") or None
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.debug("Failed to load OAuth tokens from DB: %s", e)
+
+    def _save_tokens_to_db(self) -> None:
+        """Persist current token state to SQLite."""
+        try:
+            conn = self._get_conn()
+            try:
+                data = {
+                    "access_token": self._access_token or "",
+                    "refresh_token": self._refresh_token or "",
+                    "token_expires_at": str(self._token_expires_at),
+                    "code_verifier": self._code_verifier or "",
+                    "pending_state": self._pending_state or "",
+                }
+                for key, value in data.items():
+                    conn.execute(
+                        "INSERT OR REPLACE INTO oauth_tokens (key, value) VALUES (?, ?)",
+                        (key, value),
+                    )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.debug("Failed to save OAuth tokens to DB: %s", e)
+
     def set_pending_state(self, state: str) -> None:
         """Store the OAuth2 state parameter for later CSRF verification."""
         self._pending_state = state
+        self._save_tokens_to_db()
 
     def get_pending_state(self) -> str | None:
         """Return the stored OAuth2 state parameter (or None if not set)."""
@@ -122,6 +195,7 @@ class OAuthTokenManager:
     def clear_pending_state(self) -> None:
         """Clear the stored OAuth2 state after successful verification."""
         self._pending_state = None
+        self._save_tokens_to_db()
 
     def get_authorization_url(self) -> tuple[str, str]:
         """Generate the OAuth2 authorization URL with PKCE.
@@ -195,6 +269,8 @@ class OAuthTokenManager:
         expires_in = token_data.get("expires_in", 3600)
         self._token_expires_at = time.time() + expires_in
 
+        self._save_tokens_to_db()
+
         logger.info(
             "OAuth2: token obtained, expires in %d seconds", expires_in
         )
@@ -231,6 +307,8 @@ class OAuthTokenManager:
             self._refresh_token = token_data.get("refresh_token", self._refresh_token)
             expires_in = token_data.get("expires_in", 3600)
             self._token_expires_at = time.time() + expires_in
+
+            self._save_tokens_to_db()
 
             logger.info("OAuth2: token refreshed, expires in %d seconds", expires_in)
             return True

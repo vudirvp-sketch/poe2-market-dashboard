@@ -70,6 +70,7 @@ interface PortfolioData {
   correlation_warning: boolean;
   last_rebalance: string | null;
   correlation_matrix: CorrelationMatrix | null;
+  data_available?: boolean;
 }
 
 interface FrontierPoint {
@@ -92,6 +93,7 @@ interface FrontierData {
   frontier: FrontierPoint;
   individual_assets: IndividualAsset[];
   current_portfolio: CurrentPortfolio | null;
+  data_available?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -440,6 +442,19 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
               </div>
             </CardContent>
           </Card>
+
+          {/* ---- Data unavailable (graceful) ---- */}
+          {portfolioData && portfolioData.data_available === false && (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="text-center py-10">
+                <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
+                <p className="font-medium text-amber-600 dark:text-amber-400">{t("dataUnavailableTitle")}</p>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                  {t("dataUnavailableDesc")}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* ---- Error state (generic / non-insufficient-data) ---- */}
           {portfolioError && !insufficientData && (

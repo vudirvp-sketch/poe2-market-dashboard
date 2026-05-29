@@ -92,6 +92,7 @@ interface FlipsResponse {
   opportunities: FlipOpportunity[];
   event_status: FlipEventStatus;
   fetched_at: string;
+  data_available?: boolean;
 }
 
 interface TriangularCycle {
@@ -109,6 +110,7 @@ interface TriangularResponse {
   total: number;
   opportunities: TriangularCycle[];
   fetched_at: string;
+  data_available?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -1006,6 +1008,14 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     {t("flipperBackendOfflineDesc")}
                   </p>
                 </div>
+              ) : flipsData && flipsData.data_available === false ? (
+                <div className="text-center py-10">
+                  <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
+                  <p className="font-medium text-amber-600 dark:text-amber-400">{t("dataUnavailableTitle")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {t("dataUnavailableDesc")}
+                  </p>
+                </div>
               ) : flipsError ? (
                 <div className="text-center py-10">
                   <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
@@ -1129,6 +1139,16 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
               {!backendOnline ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">
                   {t("flipperBackendOfflineTitle")}
+                </div>
+              ) : triData && triData.data_available === false ? (
+                <div className="text-center py-6">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    {t("dataUnavailableTitle")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("dataUnavailableDesc")}
+                  </p>
                 </div>
               ) : triError ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">

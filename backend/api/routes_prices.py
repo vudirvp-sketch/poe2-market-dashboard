@@ -63,7 +63,7 @@ async def get_currencies():
     )
 
     if result.value is None:
-        raise HTTPException(status_code=503, detail="Currency metadata unavailable")
+        return {"currencies": [], "stale": True, "data_available": False}
 
     currencies = result.value
     return {
@@ -77,6 +77,7 @@ async def get_currencies():
             for c in currencies
         ],
         "stale": result.stale,
+        "data_available": True,
     }
 
 
@@ -105,7 +106,16 @@ async def get_all_prices():
     )
 
     if rates_result.value is None:
-        raise HTTPException(status_code=503, detail="Price data unavailable")
+        return {
+            "league": config.league.league_name,
+            "phase": "unknown",
+            "rates": [],
+            "gold_to_chaos_rate": config.fees.fixed_gold_to_chaos_rate or 0.001,
+            "base_currency": config.league.base_currency,
+            "stale": True,
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     rates = rates_result.value
 
@@ -290,6 +300,7 @@ async def get_all_prices():
         "gold_to_chaos_rate": gold_to_chaos_rate,
         "base_currency": config.league.base_currency,
         "stale": rates_result.stale,
+        "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 

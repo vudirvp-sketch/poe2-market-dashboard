@@ -40,53 +40,58 @@ async def get_anomalies(
         currency: Optional currency API ID to check. If None, checks all monitored currencies.
         min_alert_score: Minimum alert score to include in results (default 0.4).
     """
-    config = get_settings()
+    try:
+        config = get_settings()
 
-    # Get provider
-    from backend.api.shared import get_provider
-    provider = get_provider()
+        # Get provider
+        from backend.api.shared import get_provider
+        provider = get_provider()
 
-    # Determine which currencies to check
-    if currency:
-        currencies = [currency]
-    else:
-        # Get all currencies from exchange rates
-        rates = await provider.get_exchange_rates(config.league.league_name)
-        currency_set = set()
-        for key, rate in rates.items():
-            currency_set.add(rate.currency_from)
-            currency_set.add(rate.currency_to)
-        currencies = list(currency_set)
+        # Determine which currencies to check
+        if currency:
+            currencies = [currency]
+        else:
+            # Get all currencies from exchange rates
+            rates = await provider.get_exchange_rates(config.league.league_name)
+            currency_set = set()
+            for key, rate in rates.items():
+                currency_set.add(rate.currency_from)
+                currency_set.add(rate.currency_to)
+            currencies = list(currency_set)
 
-    # Run anomaly detection for each currency
-    detector = AnomalyDetector(config=config)
-    alerts = []
+        # Run anomaly detection for each currency
+        detector = AnomalyDetector(config=config)
+        alerts = []
 
-    for curr in currencies:
-        try:
-            history = await provider.get_historical_prices(curr, days=7)
-            if len(history) < 30:
+        for curr in currencies:
+            try:
+                history = await provider.get_historical_prices(curr, days=7)
+                if len(history) < 30:
+                    continue
+
+                prices = np.array([p.price for p in history])
+                alert = detector.detect(currency=curr, price_series=prices)
+
+                if alert is not None and alert.alert_score >= min_alert_score:
+                    alerts.append({
+                        "currency": alert.currency,
+                        "alert_score": round(alert.alert_score, 4),
+                        "triggered_indicators": alert.triggered_indicators,
+                        "direction": alert.direction,
+                        "is_confirmed": alert.is_confirmed,
+                        "timestamp": alert.timestamp.isoformat() if hasattr(alert.timestamp, 'isoformat') else str(alert.timestamp),
+                    })
+            except Exception as e:
+                logger.debug("Anomaly detection failed for %s: %s", curr, e)
                 continue
 
-            prices = np.array([p.price for p in history])
-            alert = detector.detect(currency=curr, price_series=prices)
-
-            if alert is not None and alert.alert_score >= min_alert_score:
-                alerts.append({
-                    "currency": alert.currency,
-                    "alert_score": round(alert.alert_score, 4),
-                    "triggered_indicators": alert.triggered_indicators,
-                    "direction": alert.direction,
-                    "is_confirmed": alert.is_confirmed,
-                    "timestamp": alert.timestamp.isoformat() if hasattr(alert.timestamp, 'isoformat') else str(alert.timestamp),
-                })
-        except Exception as e:
-            logger.debug("Anomaly detection failed for %s: %s", curr, e)
-            continue
-
-    return {
-        "anomalies": alerts,
-        "count": len(alerts),
-        "currencies_checked": len(currencies),
-        "min_alert_score": min_alert_score,
-    }
+        return {
+            "anomalies": alerts,
+            "count": len(alerts),
+            "currencies_checked": len(currencies),
+            "min_alert_score": min_alert_score,
+            "data_available": True,
+        }
+    except Exception as e:
+        logger.error("Anomaly detection handler failed: %s", e)
+        return {"anomalies": [], "count": 0, "currencies_checked": 0, "data_available": False}

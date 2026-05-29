@@ -486,6 +486,10 @@ const zh: Record<TranslationKeys, string> = {
   recipesMissingTitle: "{0} 个配方缺少价格数据",
   recipesMissingDesc: "部分配方无法评估，因为当前市场数据中缺少所需货币的价格。",
 
+  // ---- Data Available (graceful unavailable) ----
+  dataUnavailableTitle: "数据暂时不可用",
+  dataUnavailableDesc: "POE2Scout API 可能无法访问或没有此请求的数据。这不是错误 — 请稍后重试。",
+
   // ---- Overview Heatmap ----
   overviewHeatmap: "价格热力图 (24小时)",
 

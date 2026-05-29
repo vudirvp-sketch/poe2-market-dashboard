@@ -491,6 +491,10 @@ const en = {
   recipesMissingTitle: "{0} recipes have missing price data",
   recipesMissingDesc: "Some recipes cannot be evaluated because the required currency prices are not available in the current market data.",
 
+  // ---- Data Available (graceful unavailable) ----
+  dataUnavailableTitle: "Data currently unavailable",
+  dataUnavailableDesc: "The POE2Scout API may be unreachable or has no data for this request. This is not an error — try again later.",
+
   // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
   _pl_alertsCount: "Alerts ({0})|Alert ({0})|Alerts ({0})",
   _pl_items: "items|item|items",

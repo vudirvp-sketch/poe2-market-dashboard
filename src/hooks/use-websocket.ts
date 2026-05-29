@@ -3,7 +3,8 @@
 // ============================================================================
 //
 // Connects directly to the FastAPI backend's WebSocket endpoints
-// (/ws/storage-value/{currency}, /ws/forecast/{currency}).
+// (/ws/storage-value/{currency}, /ws/forecast/{currency},
+//  /ws/anomalies, /ws/flips, /ws/events).
 //
 // Features:
 //   - Auto-reconnect with exponential backoff
@@ -11,6 +12,7 @@
 //   - Typed message parsing
 //   - Cleanup on unmount
 //   - Configurable push interval awareness
+//   - Generic useFlipperWebSocket for anomalies/flips/events channels
 // ============================================================================
 
 "use client";
@@ -276,4 +278,33 @@ export function useWebSocket<T = Record<string, unknown>>(
     reconnect,
     lastUpdateAt,
   };
+}
+
+// ---------------------------------------------------------------------------
+// useFlipperWebSocket — Generic hook for anomalies, flips, and events channels
+// ---------------------------------------------------------------------------
+//
+// This is a convenience wrapper around useWebSocket for the new channels:
+//   - /ws/anomalies  — real-time anomaly alerts
+//   - /ws/flips      — real-time flip opportunities
+//   - /ws/events     — real-time event status updates
+//
+// Usage:
+//   const { data, status } = useFlipperWebSocket<AnomaliesPayload>("/ws/anomalies");
+//   const { data, status } = useFlipperWebSocket<FlipsPayload>("/ws/flips");
+//   const { data, status } = useFlipperWebSocket<EventsPayload>("/ws/events");
+//
+// The hook accepts the same UseWebSocketOptions as useWebSocket, plus an
+// optional `enabled` flag (default true) so consumers can conditionally
+// activate the connection.
+// ---------------------------------------------------------------------------
+
+export type FlipperChannel = "/ws/anomalies" | "/ws/flips" | "/ws/events";
+
+export function useFlipperWebSocket<T = Record<string, unknown>>(
+  channel: FlipperChannel,
+  options: UseWebSocketOptions = {},
+): UseWebSocketReturn<T> {
+  // Delegate to the generic useWebSocket hook with the channel path
+  return useWebSocket<T>(channel, options);
 }
