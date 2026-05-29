@@ -35,11 +35,14 @@ async def get_storage_value(
     """Compute projected value and hold/sell decision for a currency.
 
     Uses the canonical formulas from PoE2_Flipper_Canonical_Formulas.md Section 6:
-    - Price projection: current_price * exp(momentum * horizon_hours)
+    - Price projection: current_price * min(exp(momentum * horizon_hours), cap)
     - Risk discount: exp(-volatility * z * sqrt(horizon_hours))
     - Liquidity adjustment: (0.9 + liq_factor * 0.1)
     - After fees: adjusted * (1 - gold_fee_fraction)
     - Decision: BUY/HOLD, SELL/CONVERT, or NEUTRAL
+
+    Note: The projection is capped at 1 + 0.10*sqrt(horizon_hours) to prevent
+    unrealistic extrapolation from noisy momentum estimates.
 
     Args:
         currency: Currency API ID (e.g. "divine", "chaos")

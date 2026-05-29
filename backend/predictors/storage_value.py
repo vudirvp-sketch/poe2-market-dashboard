@@ -55,7 +55,21 @@ def project_value(
         net_value_after_fees, ratio, and decision.
     """
     # Step 1: Price projection (Canonical Formulas Section 6.1)
-    projected = current_price * np.exp(log_momentum * horizon_hours)
+    #
+    # Formula: projected = current_price * exp(log_momentum * horizon_hours)
+    #
+    # SAFETY CAP: exp(log_momentum * horizon_hours) can produce absurdly
+    # large projections when momentum is noisy (e.g. from a short window).
+    # At momentum=0.05/hour, 24h projection ≈ 3.3x price — unrealistic.
+    # We cap the projection factor to a horizon-dependent maximum:
+    #   max_factor = 1 + 0.10 * sqrt(horizon_hours)
+    # This allows 1.49x for 24h, 1.69x for 48h, 2.0x for 168h — still
+    # optimistic but bounded. The risk discount and liquidity adjustment
+    # further dampen the final value.
+    raw_factor = np.exp(log_momentum * horizon_hours)
+    max_projection_factor = 1.0 + 0.10 * np.sqrt(horizon_hours)
+    capped_factor = min(raw_factor, max_projection_factor)
+    projected = current_price * capped_factor
 
     # Step 2: Risk discount (Canonical Formulas Section 6.2)
     # z = abs(norm.ppf(confidence_level))
