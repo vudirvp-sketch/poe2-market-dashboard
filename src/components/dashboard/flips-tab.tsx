@@ -9,7 +9,7 @@
 "use client";
 
 import { useState, useMemo, memo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp,
   TrendingDown,
@@ -37,10 +37,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useI18n, type TranslationKeys } from "@/lib/i18n";
+import { useI18n, type TranslationKeys } from "@lib/i18n";
 import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
+import { useFlipperWebSocket } from "@/hooks/use-websocket";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -181,6 +182,18 @@ interface FlipsTabProps {
 
 export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
+
+  // Fix 10 (POE2-FIX-SPEC): Wire WebSocket for live updates
+  useFlipperWebSocket({
+    onFlipsUpdate: () => {
+      queryClient.invalidateQueries({ queryKey: ["flipper-flips-tab"] });
+    },
+    onAnomaly: () => {
+      queryClient.invalidateQueries({ queryKey: ["flipper-anomalies"] });
+    },
+    enabled: backendOnline,
+  });
 
   // Filter state
   const [minScore, setMinScore] = useState(0);

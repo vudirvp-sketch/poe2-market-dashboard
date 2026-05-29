@@ -25,12 +25,14 @@ Provides:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes_prices import router as prices_router
@@ -49,6 +51,42 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Fix 8 (POE2-FIX-SPEC): Health check dependency
+# ---------------------------------------------------------------------------
+
+_provider_healthy = True
+_last_health_check = 0.0
+HEALTH_CHECK_INTERVAL = 60.0  # seconds
+
+
+async def check_provider_health():
+    """Periodic check if poe2scout API is reachable.
+
+    Caches the result for HEALTH_CHECK_INTERVAL seconds to avoid
+    hitting the upstream API on every incoming request.
+    """
+    global _provider_healthy, _last_health_check
+    now = time.monotonic()
+    if now - _last_health_check < HEALTH_CHECK_INTERVAL:
+        if not _provider_healthy:
+            raise HTTPException(status_code=503, detail="Upstream API unreachable")
+        return
+
+    _last_health_check = now
+    try:
+        from backend.api.shared import get_provider
+        provider = get_provider()
+        # Quick connectivity check — fetch exchange rates
+        rates = await provider.get_exchange_rates(get_settings().league.league_name)
+        _provider_healthy = rates is not None and len(rates) > 0
+    except Exception:
+        _provider_healthy = False
+
+    if not _provider_healthy:
+        raise HTTPException(status_code=503, detail="Upstream API unreachable")
+
+
+# ---------------------------------------------------------------------------
 # Lifespan: startup/shutdown logic
 # ---------------------------------------------------------------------------
 
@@ -56,11 +94,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan: initialize resources on startup, clean up on shutdown.
 
-    Phase 2 (Spec Section 1):
-    - Initialize HistoricalStore and connect it to EventManager
-    - Load persisted events from SQLite into EventManager
-    - Prune expired events from both memory and SQLite
-    - Reset PhaseDetector if a major_patch event exists
+    Fix 9 (POE2-FIX-SPEC): startup resilience — if HistoricalStore or
+    scheduler init fails/hangs, the app still starts (degraded mode).
     """
     logger.info("PoE2 Flipper backend starting up...")
     config = get_settings()
@@ -72,34 +107,47 @@ async def lifespan(app: FastAPI):
     )
 
     # --- Phase 2: Initialize HistoricalStore ---
-    from backend.data.historical import get_historical_store
-    historical_store = get_historical_store(config)
-    await historical_store.init()
-    logger.info("HistoricalStore initialized")
+    # Fix 9: startup resilience with timeout
+    historical_store = None
+    try:
+        from backend.data.historical import get_historical_store
+        historical_store = get_historical_store(config)
+        await asyncio.wait_for(historical_store.init(), timeout=10.0)
+        logger.info("HistoricalStore initialized")
+    except asyncio.TimeoutError:
+        logger.error("HistoricalStore init timed out — continuing without history")
+        historical_store = None
+    except Exception as e:
+        logger.error(f"HistoricalStore init failed: {e} — continuing without history")
+        historical_store = None
 
     # --- Phase 2: Load persisted events from SQLite ---
-    from backend.economy.events import get_event_manager
-    from backend.economy.lifecycle import PhaseDetector
-    manager = get_event_manager(config)
+    if historical_store:
+        try:
+            from backend.economy.events import get_event_manager
+            from backend.economy.lifecycle import PhaseDetector
+            manager = get_event_manager(config)
 
-    # 1. Load persisted events from SQLite into EventManager
-    loaded = await manager.load_from_store(historical_store)
-    logger.info("Loaded %d persisted events from SQLite", loaded)
+            # 1. Load persisted events from SQLite into EventManager
+            loaded = await manager.load_from_store(historical_store)
+            logger.info("Loaded %d persisted events from SQLite", loaded)
 
-    # 2. Prune expired events from both memory and SQLite
-    manager._prune_expired()
-    await historical_store.prune_expired_events()
+            # 2. Prune expired events from both memory and SQLite
+            manager._prune_expired()
+            await historical_store.prune_expired_events()
 
-    # 3. Reset PhaseDetector if needed (same logic as before, now works after restart)
-    if manager.has_major_patch_event():
-        patch_ts = manager.get_latest_major_patch_timestamp()
-        if patch_ts:
-            detector = PhaseDetector(config.league.league_start_datetime, config)
-            detector.reset_for_major_patch(patch_ts)
-            logger.info(
-                "PhaseDetector reset for major patch event at %s",
-                patch_ts.isoformat(),
-            )
+            # 3. Reset PhaseDetector if needed (same logic as before, now works after restart)
+            if manager.has_major_patch_event():
+                patch_ts = manager.get_latest_major_patch_timestamp()
+                if patch_ts:
+                    detector = PhaseDetector(config.league.league_start_datetime, config)
+                    detector.reset_for_major_patch(patch_ts)
+                    logger.info(
+                        "PhaseDetector reset for major patch event at %s",
+                        patch_ts.isoformat(),
+                    )
+        except Exception as e:
+            logger.error(f"Event loading failed: {e} — continuing without events")
 
     # --- Phase 2: Start Background Scheduler (Spec Section 7) ---
     scheduler = None
@@ -107,15 +155,31 @@ async def lifespan(app: FastAPI):
         from backend.scheduler import DataScheduler
         from backend.api.shared import get_provider as _get_shared_provider
         scheduler_provider = _get_shared_provider()
-        scheduler = DataScheduler(
-            provider=scheduler_provider,
-            historical_store=historical_store,
-            event_manager=manager,
-            config=config,
-        )
-        scheduler.start()
+        event_manager_for_scheduler = None
+        try:
+            from backend.economy.events import get_event_manager
+            event_manager_for_scheduler = get_event_manager(config)
+        except Exception:
+            pass
+
+        if historical_store and event_manager_for_scheduler:
+            scheduler = DataScheduler(
+                provider=scheduler_provider,
+                historical_store=historical_store,
+                event_manager=event_manager_for_scheduler,
+                config=config,
+            )
+            scheduler.start()
+        else:
+            logger.warning("Scheduler skipped — missing HistoricalStore or EventManager")
     except Exception as e:
         logger.warning("Scheduler failed to start: %s", e)
+
+    # Fix 8: initial health check
+    try:
+        await check_provider_health()
+    except HTTPException:
+        logger.warning("Initial health check: upstream API unreachable (degraded mode)")
 
     yield
 
@@ -127,9 +191,18 @@ async def lifespan(app: FastAPI):
             logger.warning("Scheduler shutdown error: %s", e)
 
     # Cleanup: close shared provider and HistoricalStore
-    from backend.api.shared import close_shared
-    await close_shared()
-    await historical_store.close()
+    try:
+        from backend.api.shared import close_shared
+        await close_shared()
+    except Exception as e:
+        logger.warning("Shared cleanup error: %s", e)
+
+    if historical_store:
+        try:
+            await historical_store.close()
+        except Exception as e:
+            logger.warning("HistoricalStore close error: %s", e)
+
     logger.info("PoE2 Flipper backend shut down.")
 
 
@@ -202,23 +275,42 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
-# Health check
+# Fix 8 (POE2-FIX-SPEC): Health check endpoint with provider status
 # ---------------------------------------------------------------------------
 
 @app.get("/api/health")
 async def health_check():
-    """Simple health check endpoint."""
+    """Health check endpoint with provider status and cache info.
+
+    Fix 8 (POE2-FIX-SPEC): returns provider reachability status so the
+    frontend can distinguish "backend offline" from "no data".
+    """
     config = get_settings()
 
     # Include event status in health check
-    from backend.economy.events import get_event_manager
-    manager = get_event_manager(config)
-    event_summary = manager.get_active_event_summary()
+    event_summary = {}
+    try:
+        from backend.economy.events import get_event_manager
+        manager = get_event_manager(config)
+        event_summary = manager.get_active_event_summary()
+    except Exception:
+        pass
+
+    # Include pipeline cache stats
+    cache_entries = 0
+    try:
+        from backend.data.pipeline_cache import get_pipeline_cache
+        pc = get_pipeline_cache()
+        cache_entries = len(pc._store)
+    except Exception:
+        pass
 
     return {
-        "status": "ok",
+        "status": "ok" if _provider_healthy else "degraded",
+        "provider": "reachable" if _provider_healthy else "unreachable",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "league": config.league.league_name,
         "base_currency": config.league.base_currency,
-        "active_events": event_summary["total_active_events"] if event_summary else 0,
+        "active_events": event_summary.get("total_active_events", 0),
+        "cache_entries": cache_entries,
     }

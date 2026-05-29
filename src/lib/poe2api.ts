@@ -2,7 +2,7 @@
 // PoE2 Scout API — Server-side fetch functions + in-memory cache
 // Base URL: configurable via POE2_API_BASE_URL env var (default: https://api.poe2scout.com/api)
 //
-// v4 FIXES:
+// v5 FIXES (POE2-FIX-SPEC):
 // 1. API base URL is now configurable via POE2_API_BASE_URL environment variable
 //    so users behind blocked networks can use api.poe2scout.com or a local proxy
 // 2. Added User-Agent header to avoid being blocked by bot detection
@@ -15,6 +15,12 @@
 // 7. CurrencyPairHistory API returns nested structure {history, meta} not a flat array
 // 8. ItemHistory API returns {price_history, has_more} not a flat array
 // 9. DailyStatsHistory API returns {daily_stats, has_more} not a flat array
+// 10. Fix 1: unwrapNetworkError — walk AggregateError/cause chain to find
+//     real ETIMEDOUT/ECONNRESET instead of misclassifying as "fetch failed"
+// 11. Fix 2: Stale-while-revalidate cache — serve stale data up to 10 min
+//     while revalidating in background; return very stale data on fetch error
+// 12. Fix 3: Request deduplication — identical concurrent requests share
+//     one in-flight Promise instead of hitting upstream N times
 // ============================================================================
 
 import type {
@@ -35,16 +41,79 @@ import type {
 // ---------- Configurable API Base URL ----------
 const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
 
-// ---------- Simple in-memory cache (60s TTL) ----------
+// ---------- Stale-while-revalidate cache ----------
 const cache = new Map<string, { data: unknown; ts: number }>();
-const CACHE_TTL = 60_000; // 60 seconds
+const CACHE_TTL = 60_000;          // 60s fresh
+const CACHE_STALE_TTL = 600_000;   // 10min — serve stale up to this age
+const MAX_CACHE_SIZE = 500;
 
 // ---------- Fetch with timeout + retry ----------
 const FETCH_TIMEOUT = 30_000; // 30 seconds (increased from 20 to reduce ECONNRESET)
 const FETCH_RETRIES = 3; // Increased from 2 to give more chances on transient errors
 
+// ---------- Request deduplication (Fix 3) ----------
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+// ---------- Background revalidation tracking (Fix 2) ----------
+const revalidationInProgress = new Set<string>();
+
+// ============================================================================
+// Fix 1: unwrapNetworkError — walk AggregateError/cause chain
+// ============================================================================
+
+/** Unwrap nested cause/errors chains to find the real network error code.
+ *
+ * Node.js `fetch()` throws `TypeError: fetch failed` with
+ * `cause: AggregateError` containing nested `Error { code: 'ETIMEDOUT' }`.
+ * Without unwrapping, ETIMEDOUT falls through to the non-recoverable
+ * branch because `lastError.message` is `"fetch failed"`.
+ */
+function unwrapNetworkError(err: unknown): Error {
+  if (!(err instanceof Error)) return new Error(String(err));
+
+  // Walk cause chain
+  let depth = 0;
+  let current: unknown = err;
+  while (current && depth < 5) {
+    if (current instanceof Error) {
+      const msg = current.message || "";
+      // Direct match on transient codes
+      if (
+        msg.includes("ECONNRESET") ||
+        msg.includes("EPIPE") ||
+        msg.includes("socket hang up") ||
+        msg.includes("ETIMEDOUT") ||
+        msg.includes("ECONNREFUSED") ||
+        msg.includes("ENOTFOUND")
+      ) {
+        return current;
+      }
+      // Descend into cause
+      current = (current as any).cause;
+    } else if (typeof current === "object" && current !== null && Array.isArray((current as any).errors)) {
+      // AggregateError — check each sub-error
+      for (const sub of (current as any).errors) {
+        if (sub?.code === "ETIMEDOUT") return new Error("ETIMEDOUT: " + (sub.message || "connection timed out"));
+        if (sub?.code === "ECONNRESET") return new Error("ECONNRESET: " + (sub.message || "connection reset"));
+        if (sub?.code === "ECONNREFUSED") return new Error("ECONNREFUSED");
+        if (sub?.code === "ENOTFOUND") return new Error("ENOTFOUND");
+      }
+      // If no matching sub-error code, return original
+      return err;
+    } else {
+      break;
+    }
+    depth++;
+  }
+  return err;
+}
+
+// ============================================================================
+// Fetch with timeout
+// ============================================================================
+
 /**
- * Fetch with AbortController timeout and automatic retry.
+ * Fetch with AbortController timeout.
  * This prevents ETIMEDOUT errors from hanging the server indefinitely
  * and causing "failed to pipe response" errors in API routes.
  */
@@ -73,15 +142,14 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
   }
 }
 
-async function cachedFetch<T>(url: string): Promise<T> {
-  const hit = cache.get(url);
-  if (hit && Date.now() - hit.ts < CACHE_TTL) {
-    return hit.data as T;
-  }
+// ============================================================================
+// Fix 2: doFetch — actual fetch logic with retry + cache population
+// ============================================================================
 
+async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
   let lastError: Error | null = null;
 
-  for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const res = await fetchWithTimeout(url, FETCH_TIMEOUT);
 
@@ -103,10 +171,19 @@ async function cachedFetch<T>(url: string): Promise<T> {
       }
 
       const data = (await res.json()) as T;
+
+      // Enforce cache size limit
+      if (cache.size > MAX_CACHE_SIZE) {
+        const entries = [...cache.entries()].sort((a, b) => a[1].ts - b[1].ts);
+        for (let i = 0; i < Math.floor(entries.length / 2); i++) {
+          cache.delete(entries[i][0]);
+        }
+      }
       cache.set(url, { data, ts: Date.now() });
       return data;
     } catch (err: unknown) {
-      lastError = err instanceof Error ? err : new Error(String(err));
+      // Fix 1: use unwrapNetworkError to properly classify nested errors
+      lastError = unwrapNetworkError(err);
 
       // Don't retry on 4xx errors (client errors)
       if (lastError.message.startsWith("API 4")) {
@@ -134,7 +211,7 @@ async function cachedFetch<T>(url: string): Promise<T> {
         lastError.message.includes("ETIMEDOUT");
 
       // Non-recoverable network errors (server not reachable at all)
-      if (lastError.message.includes("ECONNREFUSED") || lastError.message.includes("ENOTFOUND") || lastError.message.includes("fetch failed")) {
+      if (lastError.message.includes("ECONNREFUSED") || lastError.message.includes("ENOTFOUND")) {
         throw new Error(
           `Cannot reach poe2scout.com API — ${url}. ` +
           `Error: ${lastError.message}. ` +
@@ -149,7 +226,7 @@ async function cachedFetch<T>(url: string): Promise<T> {
         const jitter = Math.random() * 500; // 0–500ms random jitter
         const delay = Math.min(baseDelay + jitter, 5000);
         console.warn(
-          `[poe2api] Transient network error on attempt ${attempt + 1}/${FETCH_RETRIES + 1}: ` +
+          `[poe2api] Transient network error on attempt ${attempt + 1}/${maxRetries + 1}: ` +
           `${lastError.message}. Retrying in ${Math.round(delay)}ms...`
         );
         await new Promise((r) => setTimeout(r, delay));
@@ -157,14 +234,73 @@ async function cachedFetch<T>(url: string): Promise<T> {
       }
 
       // Wait before retrying (exponential backoff) for other errors
-      if (attempt < FETCH_RETRIES) {
+      if (attempt < maxRetries) {
         const delay = Math.min(500 * Math.pow(2, attempt), 3000);
         await new Promise((r) => setTimeout(r, delay));
       }
     }
   }
 
-  throw lastError ?? new Error(`Failed to fetch ${url} after ${FETCH_RETRIES + 1} attempts`);
+  throw lastError ?? new Error(`Failed to fetch ${url} after ${maxRetries + 1} attempts`);
+}
+
+// ============================================================================
+// Fix 2: background revalidation
+// ============================================================================
+
+async function revalidateInBackground(url: string, maxRetries: number): Promise<void> {
+  if (revalidationInProgress.has(url)) return;
+  revalidationInProgress.add(url);
+  try {
+    await doFetch(url, maxRetries);
+    // doFetch already updates cache
+  } catch {
+    // Silently ignore — stale data still being served
+  } finally {
+    revalidationInProgress.delete(url);
+  }
+}
+
+// ============================================================================
+// cachedFetch — with stale-while-revalidate (Fix 2) + deduplication (Fix 3)
+// ============================================================================
+
+async function cachedFetch<T>(url: string, options?: { maxRetries?: number }): Promise<T> {
+  const maxRetries = options?.maxRetries ?? FETCH_RETRIES;
+
+  const hit = cache.get(url);
+  const now = Date.now();
+
+  // Fresh cache hit
+  if (hit && now - hit.ts < CACHE_TTL) {
+    return hit.data as T;
+  }
+
+  // Stale-but-usable — return immediately, revalidate in background (Fix 2)
+  if (hit && now - hit.ts < CACHE_STALE_TTL) {
+    // Fire-and-forget revalidation
+    revalidateInBackground(url, maxRetries).catch(() => {});
+    return hit.data as T;
+  }
+
+  // Fix 3: Deduplicate in-flight requests
+  const pending = pendingRequests.get(url);
+  if (pending) return pending as Promise<T>;
+
+  // No cache or too stale — must fetch
+  const fetchPromise = doFetch<T>(url, maxRetries)
+    .catch((err) => {
+      // Fix 2: Last resort — return very stale data if available
+      if (hit) {
+        console.warn(`[poe2api] Using very stale cache for ${url} due to fetch error`);
+        return hit.data as T;
+      }
+      throw err;
+    })
+    .finally(() => pendingRequests.delete(url));
+
+  pendingRequests.set(url, fetchPromise);
+  return fetchPromise;
 }
 
 // ============================================================================
@@ -675,11 +811,50 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
   }));
 }
 
+// ============================================================================
+// Fix 5: Enrich ExchangePair with history data
+// ============================================================================
+
 export async function getSnapshotPairs(realm: string, league: string): Promise<ExchangePair[]> {
   const raw = await cachedFetch<RawSnapshotPair[]>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/SnapshotPairs`
   );
-  return raw.map(mapSnapshotPair);
+  const pairs = raw.map(mapSnapshotPair);
+
+  // Enrich top-N pairs by volume with history data
+  const TOP_N = 20;
+  const topPairs = pairs
+    .filter(p => p.volume > 0)
+    .sort((a, b) => b.volume - a.volume)
+    .slice(0, TOP_N);
+
+  if (topPairs.length === 0) return pairs;
+
+  // Fetch history for top pairs in parallel (with concurrency limit)
+  const CONCURRENCY = 5;
+  for (let i = 0; i < topPairs.length; i += CONCURRENCY) {
+    const batch = topPairs.slice(i, i + CONCURRENCY);
+    await Promise.allSettled(
+      batch.map(async (pair) => {
+        try {
+          const history = await getCurrencyPairHistory(realm, league, pair.currency1Id, pair.currency2Id, 168);
+          if (history.length >= 2) {
+            pair.history = history;
+            const oldest = history[0];
+            const newest = history[history.length - 1];
+            if (oldest.relativePrice > 0) {
+              pair.changePercent = ((newest.relativePrice - oldest.relativePrice) / oldest.relativePrice) * 100;
+              pair.change = newest.relativePrice - oldest.relativePrice;
+            }
+          }
+        } catch {
+          // Non-critical enrichment — ignore failures
+        }
+      })
+    );
+  }
+
+  return pairs;
 }
 
 // --- Items ---
@@ -771,10 +946,11 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
 }
 
 // ItemHistory API returns {PriceHistory: [...], HasMore}
+// Fix 1: use maxRetries: 1 for history endpoints — non-critical, fail fast
 export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168, referenceCurrency?: string): Promise<PoeItemHistoryPoint[]> {
   let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
   if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
-  const raw = await cachedFetch<RawItemHistoryResponse>(url);
+  const raw = await cachedFetch<RawItemHistoryResponse>(url, { maxRetries: 1 });
   return (raw.PriceHistory ?? []).map((p) => ({
     timestamp: p.Time,
     price: p.Price,
@@ -788,7 +964,7 @@ export async function getItemHistory(realm: string, league: string, itemId: stri
 export async function getItemDailyStats(realm: string, league: string, itemId: string, dayCount = 30, referenceCurrency?: string): Promise<DailyStat[]> {
   let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`;
   if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
-  const raw = await cachedFetch<RawDailyStatsHistoryResponse>(url);
+  const raw = await cachedFetch<RawDailyStatsHistoryResponse>(url, { maxRetries: 1 });
   return (raw.DailyStats ?? []).map((d) => ({
     day: d.Time,
     open: d.Open,
@@ -1074,6 +1250,7 @@ export async function getCurrency(realm: string, league: string, apiId: string):
 }
 
 // CurrencyPairHistory returns nested {history, meta} structure
+// Fix 1: use maxRetries: 1 for history endpoints — non-critical, fail fast
 export async function getCurrencyPairHistory(
   realm: string,
   league: string,
@@ -1082,7 +1259,8 @@ export async function getCurrencyPairHistory(
   limit = 168
 ): Promise<ExchangePairHistoryPoint[]> {
   const raw = await cachedFetch<RawCurrencyPairHistoryResponse>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/Pairs/${id1}/${id2}/History?Limit=${limit}`
+    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/Pairs/${id1}/${id2}/History?Limit=${limit}`,
+    { maxRetries: 1 }
   );
 
   return (raw.History ?? []).map((point) => ({

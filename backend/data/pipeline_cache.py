@@ -59,21 +59,23 @@ class PipelineCache:
         self._store: dict[str, CachedPipelineResult[Any]] = {}
 
     def get(self, key: str) -> CachedPipelineResult[Any] | None:
-        """Return cached result if still within TTL, otherwise None."""
+        """Return cached result if still within TTL, otherwise mark as stale.
+
+        Fix 4 (POE2-FIX-SPEC): do NOT delete expired entries — keep them
+        as stale fallback.  Callers can decide whether to use stale data
+        when recompute fails.
+        """
         entry = self._store.get(key)
         if entry is None:
             return None
 
         age = time.monotonic() - entry.computed_at
-        if age < self._ttl:
+        if age <= self._ttl:
             return entry
-
-        # Expired — mark as stale (still returnable as fallback) and delete
-        entry.stale = True
-        del self._store[key]
-
-        # Return stale entry so caller can decide to use it
-        return entry
+        else:
+            # DON'T delete — keep as stale fallback
+            entry.stale = True
+            return entry
 
     def put(self, key: str, value: Any) -> None:
         """Store a pipeline result with current timestamp."""

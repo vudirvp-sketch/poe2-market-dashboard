@@ -165,8 +165,8 @@ export interface LandingSplashInfo {
 // Flipper proxy error types
 // ============================================================================
 
-/** Error type discriminant returned by the flipper proxy (503 responses) */
-export type FlipperErrorType = "backend_offline" | "backend_insufficient_data";
+/** Error type discriminant returned by the flipper proxy (503/502 responses) */
+export type FlipperErrorType = "backend_offline" | "backend_insufficient_data" | "upstream_error";
 
 /**
  * Custom error thrown by `fetchApi` when a flipper endpoint returns 503.
@@ -177,10 +177,12 @@ export type FlipperErrorType = "backend_offline" | "backend_insufficient_data";
 export class FlipperApiError extends Error {
   /** HTTP status code (typically 503) */
   public readonly status: number;
-  /** Discriminant: "backend_offline" or "backend_insufficient_data" */
+  /** Discriminant: "backend_offline" or "backend_insufficient_data" or "upstream_error" */
   public readonly errorType: FlipperErrorType | undefined;
   /** Raw detail string from the backend (if any) */
   public readonly detail: string | undefined;
+  /** Actionable hint from the backend (Fix 11 — POE2-FIX-SPEC) */
+  public readonly hint: string | undefined;
 
   constructor(status: number, body: string) {
     super(`API ${status}: ${body}`);
@@ -192,8 +194,15 @@ export class FlipperApiError extends Error {
       const parsed = JSON.parse(body);
       this.errorType = parsed.error_type;
       this.detail = parsed.detail ?? parsed.error;
+      this.hint = parsed.hint;
     } catch {
       // Body was not JSON — leave errorType undefined
+    }
+
+    // Fix 11: classify common status codes
+    if (!this.errorType) {
+      if (status === 503) this.errorType = "backend_offline";
+      else if (status === 502) this.errorType = "upstream_error" as FlipperErrorType;
     }
   }
 }
@@ -226,8 +235,22 @@ export async function fetchApi<T>(path: string, params?: Record<string, string>)
   }
   const res = await fetch(url.toString());
   if (!res.ok) {
-    const body = await res.text();
-    throw new FlipperApiError(res.status, body);
+    let detail = "";
+    let hint = "";
+    try {
+      const body = await res.json();
+      detail = body.error || body.detail || "";
+      hint = body.hint || "";
+    } catch {
+      // Body was not JSON
+    }
+
+    const err = new FlipperApiError(res.status, JSON.stringify({
+      error: detail || res.statusText,
+      hint,
+      error_type: res.status === 503 ? "backend_offline" : res.status === 502 ? "upstream_error" : undefined,
+    }));
+    throw err;
   }
   return res.json() as Promise<T>;
 }

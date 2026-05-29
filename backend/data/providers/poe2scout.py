@@ -24,6 +24,7 @@ import asyncio
 import hashlib
 import logging
 import math
+import time
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -98,14 +99,23 @@ class Poe2ScoutProvider(BaseDataProvider):
             self._realm = raw_realm
         self._league = self._config.league.league_name
         self._rate_limit = self._config.data.rate_limit_per_second
-        self._semaphore = asyncio.Semaphore(max(1, int(self._rate_limit)))
+        # Fix 6 (POE2-FIX-SPEC): increase semaphore from 1 to allow
+        # more concurrency while respecting rate limit
+        self._semaphore = asyncio.Semaphore(max(1, min(int(self._rate_limit * 3), 5)))
         self._last_request_time: float = 0.0
         self._client: httpx.AsyncClient | None = None
 
+        # Fix 6 (POE2-FIX-SPEC): dedicated metadata cache with 1-hour TTL
+        self._metadata_cache: dict[str, tuple[list[CurrencyInfo], float]] = {}
+        self._metadata_cache_ttl = 3600.0  # 1 hour
+
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
+            # Fix 7 (POE2-FIX-SPEC): reduce timeout from 20s to 10s
+            # to prevent timeout cascade: 10s x 3 attempts = 30s (matches
+            # Next.js proxy timeout exactly)
             self._client = httpx.AsyncClient(
-                timeout=20.0,
+                timeout=httpx.Timeout(10.0, connect=5.0),
                 headers={"User-Agent": "PoE2Flipper/0.2"},
             )
         return self._client
@@ -131,7 +141,9 @@ class Poe2ScoutProvider(BaseDataProvider):
         url = f"{self._base_url}/{path}"
         client = await self._get_client()
 
-        max_retries = 3
+        # Fix 7 (POE2-FIX-SPEC): reduce max_retries from 3 to 2
+        # 10s timeout x 3 attempts = 30s (matches proxy timeout)
+        max_retries = 2
         backoff = 1.0
 
         for attempt in range(max_retries + 1):
@@ -389,14 +401,15 @@ class Poe2ScoutProvider(BaseDataProvider):
         currency's value in terms of the base currency (Exalted for PoE2).
         This is more reliable than volume-based rate derivation.
         """
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        # by using effective_league local variable instead of mutating self._league
+        effective_league = league or self._league
         try:
             pairs_data = await self._request(
-                f"{self._league_path()}/SnapshotPairs"
+                f"{self._realm}/Leagues/{effective_league}/SnapshotPairs"
             )
-        finally:
-            self._league = old_league
+        except Exception:
+            pairs_data = None
 
         if pairs_data is None:
             return {}
@@ -480,15 +493,24 @@ class Poe2ScoutProvider(BaseDataProvider):
         POE2Scout organizes currencies into categories (currency, fragments,
         runes, etc.). We iterate through all known categories and paginate
         through each to build a complete currency list.
+
+        Fix 6 (POE2-FIX-SPEC): uses dedicated 1-hour TTL metadata cache
+        to avoid 15-20 sequential API requests on every pipeline run.
         """
-        old_league = self._league
-        self._league = league
+        # Fix 6: check metadata cache first
+        effective_league = league or self._league
+        now = time.monotonic()
+        if effective_league in self._metadata_cache:
+            cached_meta, cached_ts = self._metadata_cache[effective_league]
+            if now - cached_ts < self._metadata_cache_ttl:
+                return cached_meta
+
         result: list[CurrencyInfo] = []
 
         try:
             # First, get categories to know what's available
             cat_data = await self._request(
-                f"{self._league_path()}/Items/Categories"
+                f"{self._realm}/Leagues/{effective_league}/Items/Categories"
             )
             categories: list[str] = []
             if cat_data is not None:
@@ -507,7 +529,7 @@ class Poe2ScoutProvider(BaseDataProvider):
                 page = 1
                 while True:
                     data = await self._request(
-                        f"{self._league_path()}/Currencies/ByCategory",
+                        f"{self._realm}/Leagues/{effective_league}/Currencies/ByCategory",
                         params={
                             "Category": category,
                             "Page": str(page),
@@ -537,9 +559,11 @@ class Poe2ScoutProvider(BaseDataProvider):
                     if page >= resp.pages or not resp.items:
                         break
                     page += 1
-        finally:
-            self._league = old_league
+        except Exception as e:
+            logger.error("get_currency_metadata failed: %s", e)
 
+        # Fix 6: store in metadata cache
+        self._metadata_cache[effective_league] = (result, now)
         return result
 
     async def get_gold_chaos_rate(self, league: str) -> float | None:
@@ -617,14 +641,14 @@ class Poe2ScoutProvider(BaseDataProvider):
         Returns the base currency (Exalted for PoE2) and bridge currencies
         (Chaos rank 1, Divine rank 2) with their relative prices.
         """
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        effective_league = league or self._league
         try:
             data = await self._request(
-                f"{self._league_path()}/ReferenceCurrencies"
+                f"{self._realm}/Leagues/{effective_league}/ReferenceCurrencies"
             )
-        finally:
-            self._league = old_league
+        except Exception:
+            data = None
 
         if data is None:
             return []
@@ -640,17 +664,17 @@ class Poe2ScoutProvider(BaseDataProvider):
         self, league: str, limit: int = 100, end_epoch: int | None = None
     ) -> SnapshotHistoryResponse | None:
         """Get exchange snapshot history."""
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        effective_league = league or self._league
         try:
             params: dict[str, Any] = {"Limit": str(limit)}
             if end_epoch is not None:
                 params["EndEpoch"] = str(end_epoch)
             data = await self._request(
-                f"{self._league_path()}/SnapshotHistory", params=params
+                f"{self._realm}/Leagues/{effective_league}/SnapshotHistory", params=params
             )
-        finally:
-            self._league = old_league
+        except Exception:
+            data = None
 
         if data is None:
             return None
@@ -669,19 +693,19 @@ class Poe2ScoutProvider(BaseDataProvider):
         end_epoch: int | None = None,
     ) -> PairHistoryResponse | None:
         """Get historical data for a specific trading pair."""
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        effective_league = league or self._league
         try:
             params: dict[str, Any] = {"Limit": str(limit)}
             if end_epoch is not None:
                 params["EndEpoch"] = str(end_epoch)
             data = await self._request(
-                f"{self._league_path()}/Currencies/Pairs/"
+                f"{self._realm}/Leagues/{effective_league}/Currencies/Pairs/"
                 f"{currency_one_item_id}/{currency_two_item_id}/History",
                 params=params,
             )
-        finally:
-            self._league = old_league
+        except Exception:
+            data = None
 
         if data is None:
             return None
@@ -702,18 +726,18 @@ class Poe2ScoutProvider(BaseDataProvider):
 
         Returns DailyStatsPoint data: {time, open, high, low, close, average, volume}.
         """
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        effective_league = league or self._league
         try:
             params: dict[str, Any] = {"DayCount": str(day_count)}
             if end_date is not None:
                 params["EndDate"] = end_date
             data = await self._request(
-                f"{self._league_path()}/Items/{item_id}/DailyStatsHistory",
+                f"{self._realm}/Leagues/{effective_league}/Items/{item_id}/DailyStatsHistory",
                 params=params,
             )
-        finally:
-            self._league = old_league
+        except Exception:
+            data = None
 
         if data is None:
             return None
@@ -734,8 +758,8 @@ class Poe2ScoutProvider(BaseDataProvider):
         # Ensure log_count is a multiple of 4
         log_count = max(4, math.ceil(log_count / 4) * 4)
 
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        effective_league = league or self._league
         try:
             params: dict[str, Any] = {"LogCount": str(log_count)}
             if end_time is not None:
@@ -743,11 +767,11 @@ class Poe2ScoutProvider(BaseDataProvider):
             if reference_currency is not None:
                 params["ReferenceCurrency"] = reference_currency
             data = await self._request(
-                f"{self._league_path()}/Items/{item_id}/History",
+                f"{self._realm}/Leagues/{effective_league}/Items/{item_id}/History",
                 params=params,
             )
-        finally:
-            self._league = old_league
+        except Exception:
+            data = None
 
         if data is None:
             return None
@@ -759,14 +783,14 @@ class Poe2ScoutProvider(BaseDataProvider):
         This is a convenience method that paginates through all categories
         and returns currencies with their price_logs for momentum computation.
         """
-        old_league = self._league
-        self._league = league
+        # Fix 6 (POE2-FIX-SPEC): eliminate _league race condition
+        effective_league = league or self._league
         result: list[dict] = []
 
         try:
             # Get categories
             cat_data = await self._request(
-                f"{self._league_path()}/Items/Categories"
+                f"{self._realm}/Leagues/{effective_league}/Items/Categories"
             )
             categories: list[str] = []
             if cat_data is not None:
@@ -783,7 +807,7 @@ class Poe2ScoutProvider(BaseDataProvider):
                 page = 1
                 while True:
                     data = await self._request(
-                        f"{self._league_path()}/Currencies/ByCategory",
+                        f"{self._realm}/Leagues/{effective_league}/Currencies/ByCategory",
                         params={
                             "Category": category,
                             "Page": str(page),
@@ -825,7 +849,7 @@ class Poe2ScoutProvider(BaseDataProvider):
                     if page >= resp.pages or not resp.items:
                         break
                     page += 1
-        finally:
-            self._league = old_league
+        except Exception as e:
+            logger.error("get_all_currencies_with_prices failed: %s", e)
 
         return result

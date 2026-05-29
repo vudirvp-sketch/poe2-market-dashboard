@@ -294,12 +294,24 @@ async def get_flip_opportunities(
 
     # Try pipeline cache first — avoids re-running the expensive
     # _build_flip_opportunities() pipeline on every request.
+    # Fix 4 (POE2-FIX-SPEC): stale-on-failure pattern — if cached is stale,
+    # try recompute; if recompute fails, return stale data as fallback.
     cached = pipeline_cache.get("flip_opportunities")
     if cached is not None and not cached.stale:
         opportunities = cached.value
     else:
-        opportunities = await _build_flip_opportunities(config)
-        pipeline_cache.put("flip_opportunities", opportunities)
+        # Try to recompute
+        try:
+            opportunities = await _build_flip_opportunities(config)
+            pipeline_cache.put("flip_opportunities", opportunities)
+        except Exception as e:
+            logger.warning("Failed to recompute flip_opportunities: %s", e)
+            if cached is not None:
+                logger.info("Returning stale cache for flip_opportunities")
+                opportunities = cached.value
+            else:
+                # No cache at all — propagate error
+                raise
 
     filtered = [
         o for o in opportunities
