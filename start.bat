@@ -139,17 +139,24 @@ set FLIPPER_PID=0
 if !UVICORN_AVAILABLE! equ 1 (
     echo [INFO] Starting FastAPI Flipper backend on port 8000...
     start /b uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
-    timeout /t 2 /nobreak >nul
 
-    REM Verify backend started
+    REM Wait for backend to start with retry loop (up to 15 seconds)
+    REM Using PowerShell HTTP check instead of netstat for reliability.
+    REM netstat can miss a port that was JUST bound (race condition).
     set _BACKEND_OK=0
-    netstat -aon 2>nul | findstr :8000 | findstr LISTENING >nul 2>&1
-    if !ERRORLEVEL! equ 0 (
-        set _BACKEND_OK=1
-        echo [OK] Flipper backend started on http://localhost:8000
+    for /L %%i in (1,1,15) do (
+        if !_BACKEND_OK! equ 0 (
+            timeout /t 1 /nobreak >nul
+            powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8000/api/health' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
+            if !ERRORLEVEL! equ 0 (
+                set _BACKEND_OK=1
+                echo [OK] Flipper backend started on http://localhost:8000 ^(after %%i attempts^)
+            )
+        )
     )
     if !_BACKEND_OK! equ 0 (
-        echo [WARN] Flipper backend may not have started. Check flipper-backend.log
+        echo [WARN] Flipper backend may not have started after 15 seconds. Check flipper-backend.log
+        echo        The backend might still be starting. Try refreshing the page in 10-20 seconds.
     )
     echo.
 )

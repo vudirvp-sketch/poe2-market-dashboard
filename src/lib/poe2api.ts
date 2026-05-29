@@ -754,7 +754,12 @@ export async function getLeagues(realm: string): Promise<League[]> {
   }
 
   return raw.map((l) => ({
-    name: l.Value,
+    // CRITICAL: use ShortName (e.g. "vaal") for API URL paths,
+    // NOT Value (e.g. "Fate of the Vaal"). The POE2Scout API uses
+    // ShortName as the league identifier in all URL paths.
+    // Using Value causes ECONNRESET because the API doesn't recognize
+    // the full display name as a valid league path segment.
+    name: l.ShortName || l.Value,
     displayName: l.Value,
     startAt: null,
     endAt: null,
