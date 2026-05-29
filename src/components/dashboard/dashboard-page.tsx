@@ -37,10 +37,79 @@ import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
-import { RecipesTab } from "@/components/dashboard/recipes-tab";
-import { ForecastTab } from "@/components/dashboard/forecast-tab";
-import { PortfolioTab } from "@/components/dashboard/portfolio-tab";
-import { CurrencyGraphTab } from "@/components/dashboard/currency-graph-tab";
+
+// Heavy tab components — lazy-loaded via next/dynamic to reduce initial bundle size.
+// These tabs use Recharts (forecast, portfolio) or complex force-layout (graph)
+// which add significant JS weight. Users rarely visit all tabs in one session,
+// so deferring these imports improves Time-to-Interactive significantly.
+import dynamic from "next/dynamic";
+
+const RecipesTab = dynamic(
+  () => import("@/components/dashboard/recipes-tab").then((m) => ({ default: m.RecipesTab })),
+  {
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-20 w-full animate-pulse rounded bg-muted" />
+        <div className="grid grid-cols-3 gap-4">
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-64 w-full animate-pulse rounded bg-muted" />
+      </div>
+    ),
+  },
+);
+
+const ForecastTab = dynamic(
+  () => import("@/components/dashboard/forecast-tab").then((m) => ({ default: m.ForecastTab })),
+  {
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-20 w-full animate-pulse rounded bg-muted" />
+        <div className="h-[300px] w-full animate-pulse rounded bg-muted" />
+        <div className="h-48 w-full animate-pulse rounded bg-muted" />
+      </div>
+    ),
+  },
+);
+
+const PortfolioTab = dynamic(
+  () => import("@/components/dashboard/portfolio-tab").then((m) => ({ default: m.PortfolioTab })),
+  {
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-20 w-full animate-pulse rounded bg-muted" />
+        <div className="grid grid-cols-3 gap-4">
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-64 w-full animate-pulse rounded bg-muted" />
+        <div className="h-48 w-full animate-pulse rounded bg-muted" />
+      </div>
+    ),
+  },
+);
+
+const CurrencyGraphTab = dynamic(
+  () => import("@/components/dashboard/currency-graph-tab").then((m) => ({ default: m.CurrencyGraphTab })),
+  {
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-20 w-full animate-pulse rounded bg-muted" />
+        <div className="grid grid-cols-4 gap-4">
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+          <div className="h-24 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-[500px] w-full animate-pulse rounded bg-muted" />
+      </div>
+    ),
+  },
+);
+
 import { EventsSidebar } from "@/components/dashboard/events-sidebar";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";

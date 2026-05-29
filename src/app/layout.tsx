@@ -12,6 +12,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// ---------------------------------------------------------------------------
+// Suppress benign React 19 "script tag" warnings from Next.js route prefetching.
+// Next.js 16 injects <script> tags for route prefetching during render, which
+// triggers React 19's warning: "Encountered a script tag while rendering
+// React component". These are harmless and expected behavior — not a bug.
+// See: https://github.com/vercel/next.js/issues/72213
+// ---------------------------------------------------------------------------
+if (typeof window !== "undefined") {
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const message = typeof args[0] === "string" ? args[0] : "";
+    if (message.includes("Encountered a script tag while rendering React component")) {
+      return; // Suppress known benign warning
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 export const metadata: Metadata = {
   title: {
     default: "PoE2 Market Dashboard — Real-time Prices & Exchange Rates",
