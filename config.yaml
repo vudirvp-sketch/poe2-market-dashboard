@@ -14,7 +14,7 @@ data:
 league:
   league_name: "vaal"
   realm: "poe2"                    # POE2Scout API realm path segment — NOT "poe2/pc" (that's the RealmOption.value, not the path param)
-  league_start_date: "2025-01-15T00:00:00Z"
+  league_start_date: "2026-03-21T00:00:00Z"  # Fate of the Vaal launch date — update when a new league starts
   phase_early_days: 7
   phase_mid_days: 35
   base_currency: "exalted"

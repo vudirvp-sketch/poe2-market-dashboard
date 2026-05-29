@@ -37,6 +37,20 @@ interface HeatmapItem {
   change_24h: number;
 }
 
+// Response shape from /api/poe2/overview
+interface OverviewResponse {
+  topGainers: PoeItem[];
+  topLosers: PoeItem[];
+  topGainers7d: PoeItem[];
+  topLosers7d: PoeItem[];
+  stats: {
+    totalVolume: number;
+    trackedItems: number;
+    exchangePairs: number;
+  };
+  snapshotHistory: SnapshotHistoryPoint[];
+}
+
 interface MarketOverviewProps {
   realm: string;
   league: string;
@@ -49,42 +63,19 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   const [topTimeframe, setTopTimeframe] = useState<"24h" | "7d">("24h");
   const reducedMotion = useReducedMotion();
 
-  // Snapshot history for volume trend
-  const { data: snapshotHistory, isLoading: snapshotLoading } = useQuery({
-    queryKey: ["snapshotHistory", realm, league],
+  // Single aggregated overview query — replaces 3 separate queries
+  // and uses the new /api/poe2/overview endpoint which fetches
+  // currencies+uniques with PriceLogs for proper top movers data.
+  const { data: overview, isLoading: overviewLoading } = useQuery<OverviewResponse>({
+    queryKey: ["overview", realm, league],
     queryFn: () =>
-      fetchApi<SnapshotHistoryPoint[]>("/api/poe2/exchange", {
-        realm,
-        league,
-        action: "history",
-        limit: "168",
-      }),
+      fetchApi<OverviewResponse>("/api/poe2/overview", { realm, league }),
     enabled: !!league,
-  });
-
-  // All items for top gainers/losers
-  const { data: allItems, isLoading: itemsLoading } = useQuery({
-    queryKey: ["allItems", realm, league],
-    queryFn: () =>
-      fetchApi<PoeItem[]>("/api/poe2/items", { realm, league }),
-    enabled: !!league,
-  });
-
-  // Exchange pairs for overview
-  const { data: pairs, isLoading: pairsLoading } = useQuery({
-    queryKey: ["exchangePairs", realm, league],
-    queryFn: () =>
-      fetchApi<ExchangePair[]>("/api/poe2/exchange", {
-        realm,
-        league,
-        action: "pairs",
-      }),
-    enabled: !!league,
+    staleTime: 60_000,
+    retry: 2,
   });
 
   // ---- Heatmap data (flipper backend) ----
-  // IMPORTANT: This hook MUST be called before any early returns to satisfy
-  // React's Rules of Hooks (hooks must always be called in the same order).
   const { data: heatmapData } = useQuery<HeatmapItem[]>({
     queryKey: ["flipper-heatmap"],
     queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap"),
@@ -93,42 +84,21 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     retry: 1,
   });
 
-  const isLoading = snapshotLoading || itemsLoading || pairsLoading;
+  const isLoading = overviewLoading;
 
-  // Top movers
-  const { topGainers, topLosers } = useMemo(() => {
-    if (!allItems) return { topGainers: [], topLosers: [] };
-    const validItems = allItems.filter(
-      (i) =>
-        (topTimeframe === "24h"
-          ? i.changePercent != null
-          : i.sevenDayPriceChangePercent != null) &&
-        i.volume != null &&
-        i.volume > 0
-    );
-    const sorted = [...validItems].sort((a, b) => {
-      const aVal =
-        topTimeframe === "24h"
-          ? a.changePercent ?? 0
-          : a.sevenDayPriceChangePercent ?? 0;
-      const bVal =
-        topTimeframe === "24h"
-          ? b.changePercent ?? 0
-          : b.sevenDayPriceChangePercent ?? 0;
-      return bVal - aVal;
-    });
-    return {
-      topGainers: sorted.slice(0, 10),
-      topLosers: sorted.slice(-10).reverse(),
-    };
-  }, [allItems, topTimeframe]);
+  // Top movers from overview response
+  const topGainers = topTimeframe === "24h"
+    ? overview?.topGainers ?? []
+    : overview?.topGainers7d ?? [];
+
+  const topLosers = topTimeframe === "24h"
+    ? overview?.topLosers ?? []
+    : overview?.topLosers7d ?? [];
 
   // Market stats
-  const totalVolume = useMemo(() => {
-    return allItems?.reduce((sum, i) => sum + (i.volume ?? 0), 0) ?? 0;
-  }, [allItems]);
-
-  const trackedItems = allItems?.length ?? 0;
+  const totalVolume = overview?.stats.totalVolume ?? 0;
+  const trackedItems = overview?.stats.trackedItems ?? 0;
+  const exchangePairsCount = overview?.stats.exchangePairs ?? 0;
 
   if (isLoading) {
     return (
@@ -138,9 +108,9 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     );
   }
 
-  // Heatmap color helper: green for positive, red for negative, intensity ∝ magnitude
+  // Heatmap color helper: green for positive, red for negative, intensity proportional to magnitude
   const heatmapCellStyle = (change: number): React.CSSProperties => {
-    const maxAbs = 10; // clamp at ±10%
+    const maxAbs = 10;
     const clamped = Math.max(-maxAbs, Math.min(maxAbs, change));
     const intensity = Math.abs(clamped) / maxAbs;
     if (clamped >= 0) {
@@ -187,14 +157,14 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
               <p className="text-xs text-muted-foreground">{t("exchangePairs")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
-              {pairs?.length ?? 0}
+              {exchangePairsCount}
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Volume trend chart */}
-      {snapshotHistory && snapshotHistory.length > 1 && (
+      {overview?.snapshotHistory && overview.snapshotHistory.length > 1 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-1">
@@ -204,7 +174,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
           <CardContent>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={snapshotHistory}>
+                <AreaChart data={overview.snapshotHistory}>
                   <defs>
                     <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
