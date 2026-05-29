@@ -75,8 +75,9 @@ export function PairComparisonDialog({
               realm,
               league,
               action: "pairHistory",
-              id1: pair.currency1Id,
-              id2: pair.currency2Id,
+              // Use numeric ItemIds — the CurrencyPairHistory API expects integers
+              id1: String(pair.currency1ItemId),
+              id2: String(pair.currency2ItemId),
               limit: "168",
             }
           );

@@ -519,11 +519,19 @@ interface RawDailyStat {
 // Mapping helpers
 // ============================================================================
 
-/** Compute 24h change percent from price logs */
+/** Compute 24h change percent from price logs
+ *
+ *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
+ *  order (newest entry first, e.g. [null, null, May25, May24, May23]).
+ *  We must sort by timestamp to find the true latest and 24h-ago entries.
+ */
 function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
   const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (validLogs.length < 2) return null;
+
+  // Sort chronologically (oldest first) — API may return newest-first
+  validLogs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
 
   const now = validLogs[validLogs.length - 1];
   const oneDayAgo = new Date(new Date(now.Time).getTime() - 24 * 60 * 60 * 1000);
@@ -543,11 +551,18 @@ function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): nu
   return ((now.Price - closest.Price) / closest.Price) * 100;
 }
 
-/** Compute 7-day change percent from price logs */
+/** Compute 7-day change percent from price logs
+ *
+ *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
+ *  order (newest entry first). We must sort by timestamp first.
+ */
 function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
   const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (validLogs.length < 2) return null;
+
+  // Sort chronologically (oldest first) — API may return newest-first
+  validLogs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
 
   const now = validLogs[validLogs.length - 1];
   const sevenDaysAgo = new Date(new Date(now.Time).getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -566,11 +581,18 @@ function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): 
   return ((now.Price - closest.Price) / closest.Price) * 100;
 }
 
-/** Compute volume from price logs (sum of quantities in last 24h) */
+/** Compute volume from price logs (sum of quantities in last 24h)
+ *
+ *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
+ *  order (newest entry first). We must sort by timestamp first.
+ */
 function computeVolume24h(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
   const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (validLogs.length === 0) return null;
+
+  // Sort chronologically (oldest first) — API may return newest-first
+  validLogs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
 
   const latest = new Date(validLogs[validLogs.length - 1].Time);
   const oneDayAgo = new Date(latest.getTime() - 24 * 60 * 60 * 1000);
@@ -652,11 +674,17 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
   };
 }
 
-/** Map price logs to PoeItemHistoryPoint[] */
+/** Map price logs to PoeItemHistoryPoint[]
+ *
+ *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
+ *  order (newest entry first). We sort chronologically so charts render correctly.
+ */
 function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHistoryPoint[] | null {
   if (!logs || logs.length === 0) return null;
   const valid = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (valid.length === 0) return null;
+  // Sort chronologically (oldest first) — API returns newest-first
+  valid.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
   return valid.map((l) => ({
     timestamp: l.Time,
     price: l.Price,
@@ -677,9 +705,13 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     currency1Id: raw.CurrencyOne.ApiId,
     currency1Name: raw.CurrencyOne.Text,
     currency1IconUrl: raw.CurrencyOne.IconUrl,
+    // Numeric ItemId is required for the CurrencyPairHistory API endpoint
+    // (/Currencies/Pairs/{ItemId1}/{ItemId2}/History expects integers, not ApiId strings)
+    currency1ItemId: raw.CurrencyOne.ItemId,
     currency2Id: raw.CurrencyTwo.ApiId,
     currency2Name: raw.CurrencyTwo.Text,
     currency2IconUrl: raw.CurrencyTwo.IconUrl,
+    currency2ItemId: raw.CurrencyTwo.ItemId,
     price: relPrice,
     relativePrice: relPrice,
     volume: volTraded,
@@ -842,7 +874,8 @@ export async function getSnapshotPairs(realm: string, league: string): Promise<E
     await Promise.allSettled(
       batch.map(async (pair) => {
         try {
-          const history = await getCurrencyPairHistory(realm, league, pair.currency1Id, pair.currency2Id, 168);
+          // Use numeric ItemIds — the CurrencyPairHistory API expects integers
+          const history = await getCurrencyPairHistory(realm, league, pair.currency1ItemId, pair.currency2ItemId, 168);
           if (history.length >= 2) {
             pair.history = history;
             const oldest = history[0];
@@ -1259,10 +1292,15 @@ export async function getCurrency(realm: string, league: string, apiId: string):
 export async function getCurrencyPairHistory(
   realm: string,
   league: string,
-  id1: string,
-  id2: string,
+  id1: string | number,
+  id2: string | number,
   limit = 168
 ): Promise<ExchangePairHistoryPoint[]> {
+  // The POE2Scout CurrencyPairHistory API expects INTEGER ItemIds in the URL
+  // path (/Currencies/Pairs/{ItemId1}/{ItemId2}/History), NOT string ApiIds.
+  // If string ApiIds are passed (e.g. "divine"), the API returns 422.
+  // We accept both string (ApiId) and number (ItemId) for backward compatibility,
+  // but callers should prefer passing numeric ItemIds from ExchangePair.currency1ItemId.
   const raw = await cachedFetch<RawCurrencyPairHistoryResponse>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/Pairs/${id1}/${id2}/History?Limit=${limit}`,
     { maxRetries: 1 }

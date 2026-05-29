@@ -78,9 +78,13 @@ export interface ExchangePair {
   currency1Id: string;
   currency1Name: string;
   currency1IconUrl: string | null;
+  /** Numeric ItemId — required for the CurrencyPairHistory API endpoint */
+  currency1ItemId: number;
   currency2Id: string;
   currency2Name: string;
   currency2IconUrl: string | null;
+  /** Numeric ItemId — required for the CurrencyPairHistory API endpoint */
+  currency2ItemId: number;
   price: number;
   relativePrice: number;
   volume: number;

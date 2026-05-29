@@ -46,14 +46,15 @@ export function PairDetailDialog({
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
   const { data: pairHistory, isLoading } = useQuery({
-    queryKey: ["pairHistory", realm, league, pair?.currency1Id, pair?.currency2Id],
+    queryKey: ["pairHistory", realm, league, pair?.currency1ItemId, pair?.currency2ItemId],
     queryFn: () =>
       fetchApi<ExchangePairHistoryPoint[]>("/api/poe2/currencies", {
         realm,
         league,
         action: "pairHistory",
-        id1: pair!.currency1Id,
-        id2: pair!.currency2Id,
+        // Use numeric ItemIds — the CurrencyPairHistory API expects integers, not ApiId strings
+        id1: String(pair!.currency1ItemId),
+        id2: String(pair!.currency2ItemId),
         limit: "168",
       }),
     enabled: !!pair && open,

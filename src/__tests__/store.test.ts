@@ -205,6 +205,8 @@ describe("DashboardStore", () => {
       useDashboardStore.getState().addPairToComparison({
         currency1Id: "c1",
         currency2Id: "c2",
+        currency1ItemId: 288,
+        currency2ItemId: 291,
         label: "Chaos / Divine",
       });
       expect(useDashboardStore.getState().pairComparisonIds).toHaveLength(1);
@@ -214,11 +216,15 @@ describe("DashboardStore", () => {
       useDashboardStore.getState().addPairToComparison({
         currency1Id: "c1",
         currency2Id: "c2",
+        currency1ItemId: 288,
+        currency2ItemId: 291,
         label: "Chaos / Divine",
       });
       useDashboardStore.getState().addPairToComparison({
         currency1Id: "c1",
         currency2Id: "c2",
+        currency1ItemId: 288,
+        currency2ItemId: 291,
         label: "Chaos / Divine",
       });
       expect(useDashboardStore.getState().pairComparisonIds).toHaveLength(1);
@@ -228,6 +234,8 @@ describe("DashboardStore", () => {
       useDashboardStore.getState().addPairToComparison({
         currency1Id: "c1",
         currency2Id: "c2",
+        currency1ItemId: 288,
+        currency2ItemId: 291,
         label: "Chaos / Divine",
       });
       useDashboardStore.getState().removePairFromComparison("c1_c2");

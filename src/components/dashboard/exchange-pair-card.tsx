@@ -39,6 +39,8 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         addPairToComparison({
           currency1Id: pair.currency1Id,
           currency2Id: pair.currency2Id,
+          currency1ItemId: pair.currency1ItemId,
+          currency2ItemId: pair.currency2ItemId,
           label: `${pair.currency1Name} / ${pair.currency2Name}`,
         });
       }

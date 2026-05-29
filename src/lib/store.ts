@@ -21,6 +21,9 @@ export interface PriceAlert {
 export interface PairComparisonId {
   currency1Id: string;
   currency2Id: string;
+  /** Numeric ItemId — required for the CurrencyPairHistory API endpoint */
+  currency1ItemId: number;
+  currency2ItemId: number;
   label: string; // e.g. "Chaos Orb / Divine Orb"
 }
 

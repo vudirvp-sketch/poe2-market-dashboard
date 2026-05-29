@@ -127,6 +127,8 @@ describe("Store rehydration integration", () => {
         {
           currency1Id: "chaos",
           currency2Id: "divine",
+          currency1ItemId: 288,
+          currency2ItemId: 291,
           label: "Chaos / Divine",
         },
       ];
