@@ -104,8 +104,8 @@ async def lifespan(app: FastAPI):
     scheduler = None
     try:
         from backend.scheduler import DataScheduler
-        from backend.api.routes_prices import _get_provider as _get_prices_provider
-        scheduler_provider = _get_prices_provider()
+        from backend.api.shared import get_provider as _get_shared_provider
+        scheduler_provider = _get_shared_provider()
         scheduler = DataScheduler(
             provider=scheduler_provider,
             historical_store=historical_store,
@@ -125,12 +125,9 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Scheduler shutdown error: %s", e)
 
-    # Cleanup: close provider HTTP clients and HistoricalStore
-    from backend.api.routes_prices import _provider as prices_provider
-    from backend.api.routes_arbitrage import _provider as arb_provider
-    for prov in [prices_provider, arb_provider]:
-        if prov is not None:
-            await prov.close()
+    # Cleanup: close shared provider and HistoricalStore
+    from backend.api.shared import close_shared
+    await close_shared()
     await historical_store.close()
     logger.info("PoE2 Flipper backend shut down.")
 
@@ -183,6 +180,20 @@ try:
     app.include_router(recipes_router)
 except ImportError:
     logger.debug("Recipes router not available yet")
+
+# WebSocket routes for live updates
+try:
+    from backend.api.routes_ws import router as ws_router
+    app.include_router(ws_router)
+except ImportError:
+    logger.debug("WebSocket router not available yet")
+
+# OAuth2 authentication routes
+try:
+    from backend.api.routes_auth import router as auth_router
+    app.include_router(auth_router)
+except ImportError:
+    logger.debug("Auth router not available yet")
 
 
 # ---------------------------------------------------------------------------

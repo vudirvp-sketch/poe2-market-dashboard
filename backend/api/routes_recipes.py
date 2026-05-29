@@ -56,8 +56,8 @@ async def get_profitable_recipes(
         return {"profitable_recipes": [], "all_recipes": [], "count": 0}
 
     # Get provider and current prices
-    from backend.api.routes_prices import _get_provider
-    provider = _get_provider()
+    from backend.api.shared import get_provider
+    provider = get_provider()
 
     # Build price lookup from all currencies
     all_currencies = await provider.get_all_currencies_with_prices(

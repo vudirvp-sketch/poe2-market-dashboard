@@ -20,35 +20,12 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
 from backend.data.cache import get_cache
-from backend.data.providers.poe2scout import Poe2ScoutProvider
-from backend.economy.lifecycle import PhaseDetector
+from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.models.currency import PhaseInfo
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["prices"])
-
-# ---------------------------------------------------------------------------
-# Provider & cache singletons (lazily initialized)
-# ---------------------------------------------------------------------------
-
-_provider: Poe2ScoutProvider | None = None
-_phase_detector: PhaseDetector | None = None
-
-
-def _get_provider() -> Poe2ScoutProvider:
-    global _provider
-    if _provider is None:
-        _provider = Poe2ScoutProvider()
-    return _provider
-
-
-def _get_phase_detector() -> PhaseDetector:
-    global _phase_detector
-    if _phase_detector is None:
-        config = get_settings()
-        _phase_detector = PhaseDetector(config.league.league_start_datetime, config)
-    return _phase_detector
 
 
 # ---------------------------------------------------------------------------
@@ -302,40 +279,9 @@ async def get_all_prices():
             "timestamp": rate.timestamp.isoformat() if rate.timestamp else None,
         })
 
-    # Phase 2 (Spec §13): Write price snapshots to HistoricalStore
-    try:
-        from backend.data.historical import get_historical_store
-        historical_store = get_historical_store(config)
-        # Build snapshots from current rates
-        base = config.league.base_currency
-        prices_in_chaos: dict[str, float] = {base: 1.0}
-        for key, rate in rates.items():
-            if rate.currency_from == base:
-                prices_in_chaos[rate.currency_to] = rate.raw_rate
-            elif rate.currency_to == base and rate.raw_rate > 0:
-                prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
-
-        snapshots = []
-        for api_id, price in prices_in_chaos.items():
-            snapshots.append({
-                "currency": api_id,
-                "price_chaos": price,
-                "volume_24h": None,
-                "bid": None,
-                "ask": None,
-            })
-        if snapshots:
-            await historical_store.write_price_snapshots_batch(
-                config.league.league_name, snapshots
-            )
-
-        # Also write gold→chaos rate
-        if gold_to_chaos_rate:
-            await historical_store.write_gold_chaos_rate(
-                config.league.league_name, gold_to_chaos_rate
-            )
-    except Exception as e:
-        logger.debug("HistoricalStore write failed (non-critical): %s", e)
+    # NOTE: Price snapshot writing to HistoricalStore has been moved to the
+    # scheduler (DataScheduler.collect_price_snapshot) to avoid side effects
+    # in GET requests. The scheduler runs every price_snapshot_interval_minutes.
 
     return {
         "league": config.league.league_name,

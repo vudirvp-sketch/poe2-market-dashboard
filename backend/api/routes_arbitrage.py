@@ -17,8 +17,8 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings, AppConfig
 from backend.data.cache import get_cache
-from backend.data.providers.poe2scout import Poe2ScoutProvider
-from backend.economy.lifecycle import PhaseDetector
+from backend.data.pipeline_cache import get_pipeline_cache
+from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
@@ -36,28 +36,6 @@ from backend.models.currency import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/arbitrage", tags=["arbitrage"])
-
-# ---------------------------------------------------------------------------
-# Shared singletons
-# ---------------------------------------------------------------------------
-
-_provider: Poe2ScoutProvider | None = None
-_phase_detector: PhaseDetector | None = None
-
-
-def _get_provider() -> Poe2ScoutProvider:
-    global _provider
-    if _provider is None:
-        _provider = Poe2ScoutProvider()
-    return _provider
-
-
-def _get_phase_detector() -> PhaseDetector:
-    global _phase_detector
-    if _phase_detector is None:
-        config = get_settings()
-        _phase_detector = PhaseDetector(config.league.league_start_datetime, config)
-    return _phase_detector
 
 
 # ---------------------------------------------------------------------------
@@ -312,8 +290,16 @@ async def get_flip_opportunities(
     """
     config = get_settings()
     event_manager = get_event_manager(config)
+    pipeline_cache = get_pipeline_cache()
 
-    opportunities = await _build_flip_opportunities(config)
+    # Try pipeline cache first — avoids re-running the expensive
+    # _build_flip_opportunities() pipeline on every request.
+    cached = pipeline_cache.get("flip_opportunities")
+    if cached is not None and not cached.stale:
+        opportunities = cached.value
+    else:
+        opportunities = await _build_flip_opportunities(config)
+        pipeline_cache.put("flip_opportunities", opportunities)
 
     filtered = [
         o for o in opportunities

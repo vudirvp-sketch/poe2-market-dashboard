@@ -43,8 +43,8 @@ async def get_anomalies(
     config = get_settings()
 
     # Get provider
-    from backend.api.routes_prices import _get_provider
-    provider = _get_provider()
+    from backend.api.shared import get_provider
+    provider = get_provider()
 
     # Determine which currencies to check
     if currency:

@@ -18,8 +18,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings, AppConfig
 from backend.data.cache import get_cache
-from backend.data.providers.poe2scout import Poe2ScoutProvider
-from backend.economy.lifecycle import PhaseDetector
+from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
@@ -34,32 +33,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 # ---------------------------------------------------------------------------
-# Shared singletons
+# Cached allocation state (not a provider singleton)
 # ---------------------------------------------------------------------------
 
-_provider: Poe2ScoutProvider | None = None
-_phase_detector: PhaseDetector | None = None
 _last_allocation: PortfolioAllocation | None = None
 _previous_corr: np.ndarray | None = None
 # _current_corr stores the serialized correlation matrix from the latest
 # _build_portfolio call. Unlike _previous_corr (used for shock detection),
 # this is always available after a successful build — even on the first request.
 _current_corr: dict | None = None
-
-
-def _get_provider() -> Poe2ScoutProvider:
-    global _provider
-    if _provider is None:
-        _provider = Poe2ScoutProvider()
-    return _provider
-
-
-def _get_phase_detector() -> PhaseDetector:
-    global _phase_detector
-    if _phase_detector is None:
-        config = get_settings()
-        _phase_detector = PhaseDetector(config.league.league_start_datetime, config)
-    return _phase_detector
 
 
 # ---------------------------------------------------------------------------

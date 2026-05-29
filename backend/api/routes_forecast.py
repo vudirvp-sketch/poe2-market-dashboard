@@ -16,35 +16,13 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings, AppConfig
 from backend.data.cache import get_cache
-from backend.data.providers.poe2scout import Poe2ScoutProvider
+from backend.api.shared import get_provider as _get_provider, get_forecast_engine as _get_forecast_engine
 from backend.economy.events import get_event_manager, EventManager
-from backend.predictors.time_series import ForecastEngine
 from backend.models.currency import ForecastResult
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/forecast", tags=["forecast"])
-
-# ---------------------------------------------------------------------------
-# Shared singletons
-# ---------------------------------------------------------------------------
-
-_provider: Poe2ScoutProvider | None = None
-_forecast_engine: ForecastEngine | None = None
-
-
-def _get_provider() -> Poe2ScoutProvider:
-    global _provider
-    if _provider is None:
-        _provider = Poe2ScoutProvider()
-    return _provider
-
-
-def _get_forecast_engine(config: AppConfig | None = None) -> ForecastEngine:
-    global _forecast_engine
-    if _forecast_engine is None or config is not None:
-        _forecast_engine = ForecastEngine(config)
-    return _forecast_engine
 
 
 # ---------------------------------------------------------------------------

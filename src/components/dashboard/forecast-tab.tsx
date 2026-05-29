@@ -40,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { fetchApi } from "@/lib/types";
+import { fetchApi, FlipperApiError } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -182,6 +182,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
     data: forecastData,
     isLoading: forecastLoading,
     isError: forecastError,
+    error: forecastErrorObj,
     refetch: refetchForecast,
   } = useQuery<ForecastResponse>({
     queryKey: ["flipper-forecast", selectedCurrency],
@@ -208,6 +209,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
   const {
     data: storageData,
     isLoading: storageLoading,
+    error: storageErrorObj,
   } = useQuery<StorageValueResponse>({
     queryKey: ["flipper-storage-value", selectedCurrency],
     queryFn: () =>
@@ -216,6 +218,20 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
     staleTime: 60_000,
     retry: 1,
   });
+
+  // Detect 422 insufficient-data errors for better UX
+  const isForecastInsufficientData =
+    forecastErrorObj instanceof FlipperApiError && forecastErrorObj.status === 422;
+  const forecastInsufficientDetail =
+    isForecastInsufficientData && forecastErrorObj instanceof FlipperApiError
+      ? forecastErrorObj.detail
+      : undefined;
+  const isStorageInsufficientData =
+    storageErrorObj instanceof FlipperApiError && storageErrorObj.status === 422;
+  const storageInsufficientDetail =
+    isStorageInsufficientData && storageErrorObj instanceof FlipperApiError
+      ? storageErrorObj.detail
+      : undefined;
 
   // ---- Build chart data from forecast response ----
   const chartData = (() => {
@@ -400,8 +416,19 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
             <Skeleton className="h-[300px] w-full" />
           ) : forecastError ? (
             <div className="text-center py-10">
-              <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
-              <p className="text-sm text-muted-foreground">{t("failedToLoadData")}</p>
+              <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+              {isForecastInsufficientData ? (
+                <>
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    {t("forecastInsufficientDataTitle")}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                    {forecastInsufficientDetail || t("forecastInsufficientDataDesc")}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("failedToLoadData")}</p>
+              )}
             </div>
           ) : !backendOnline ? (
             <div className="text-center py-10">
@@ -537,8 +564,20 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
               {t("flipperBackendOfflineTitle")}
             </div>
           ) : !storageData ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">
-              {t("forecastNoData")}
+            <div className="text-center py-6">
+              {isStorageInsufficientData ? (
+                <>
+                  <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    {t("storageValueInsufficientDataTitle")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                    {storageInsufficientDetail || t("storageValueInsufficientDataDesc")}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("forecastNoData")}</p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

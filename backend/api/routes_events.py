@@ -23,26 +23,12 @@ from pydantic import BaseModel, Field
 
 from backend.config import get_settings, AppConfig
 from backend.economy.events import get_event_manager, EventManager
-from backend.economy.lifecycle import PhaseDetector
+from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.models.currency import EventType
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/events", tags=["events"])
-
-# ---------------------------------------------------------------------------
-# Phase detector singleton (shared with other routes)
-# ---------------------------------------------------------------------------
-
-_phase_detector: PhaseDetector | None = None
-
-
-def _get_phase_detector() -> PhaseDetector:
-    global _phase_detector
-    if _phase_detector is None:
-        config = get_settings()
-        _phase_detector = PhaseDetector(config.league.league_start_datetime, config)
-    return _phase_detector
 
 
 # ---------------------------------------------------------------------------

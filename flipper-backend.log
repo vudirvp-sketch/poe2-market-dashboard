@@ -1,129 +1,18 @@
-INFO:     Started server process [8104]
+INFO:     Started server process [15608]
 INFO:     Waiting for application startup.
-2026-05-29 04:43:10,805 [INFO] backend.main: PoE2 Flipper backend starting up...
-2026-05-29 04:43:10,811 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
-2026-05-29 04:43:10,817 [INFO] backend.main: HistoricalStore initialized
-2026-05-29 04:43:10,817 [INFO] backend.main: Loaded 0 persisted events from SQLite
-2026-05-29 04:43:10,850 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 04:43:10,850 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 04:43:10,850 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 04:43:10,850 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 04:43:10,850 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
-2026-05-29 04:43:10,851 [INFO] apscheduler.scheduler: Added job "Collect gold\u2192chaos rate" to job store "default"
-2026-05-29 04:43:10,851 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
-2026-05-29 04:43:10,851 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
-2026-05-29 04:43:10,851 [INFO] apscheduler.scheduler: Scheduler started
-2026-05-29 04:43:10,851 [INFO] backend.scheduler: Scheduler: started with 4 jobs (price=30m, gold=30m, prune=15m, model=30m)
+2026-05-29 07:00:30,596 [INFO] backend.main: PoE2 Flipper backend starting up...
+2026-05-29 07:00:30,603 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
+2026-05-29 07:00:30,609 [INFO] backend.main: HistoricalStore initialized
+2026-05-29 07:00:30,609 [INFO] backend.main: Loaded 0 persisted events from SQLite
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Added job "Collect gold\u2192chaos rate" to job store "default"
+2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
+2026-05-29 07:00:30,641 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
+2026-05-29 07:00:30,641 [INFO] apscheduler.scheduler: Scheduler started
+2026-05-29 07:00:30,641 [INFO] backend.scheduler: Scheduler: started with 4 jobs (price=30m, gold=30m, prune=15m, model=30m)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:56704 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52499 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52499 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61608 - "GET /api/phase HTTP/1.1" 200 OK
-2026-05-29 04:43:27,182 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:43:27,214 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
-2026-05-29 04:43:27,215 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
-2026-05-29 04:43:27,554 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
-2026-05-29 04:43:27,737 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:43:28,049 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:28,569 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:43:28,753 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:29,054 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:29,647 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/ReferenceCurrencies "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:52498 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-2026-05-29 04:43:29,765 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:49,756 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:43:49,772 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:43:49,920 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:43:49,960 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:49,966 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:50,183 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:50,832 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:50,838 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:51,066 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:43:51,845 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:63650 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63652 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-2026-05-29 04:44:10,848 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:11,030 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:44:11,088 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:11,350 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:11,852 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:11,915 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:12,039 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:44:12,230 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:12,922 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:12,923 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:13,219 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:13,934 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:13,935 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:14,238 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:14,943 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:23,505 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/divine "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:50467 - "GET /api/forecast/divine HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:58225 - "GET /api/forecast/divine HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:58225 - "GET /api/health HTTP/1.1" 200 OK
-2026-05-29 04:44:33,942 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:34,118 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:34,242 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:34,432 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:44:34,960 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:35,020 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:35,156 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:35,319 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
-2026-05-29 04:44:36,029 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:36,034 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:44:36,326 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/divine "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:58227 - "GET /api/storage-value/divine HTTP/1.1" 422 Unprocessable Content
-2026-05-29 04:44:37,043 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:37,332 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/ReferenceCurrencies "HTTP/1.1 200 OK"
-2026-05-29 04:44:38,386 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:38,557 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:65283 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65283 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-2026-05-29 04:44:56,035 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:56,489 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:57,149 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:44:58,162 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:58,392 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:58,560 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:44:58,581 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:58,756 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:44:59,535 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/omen-of-abyssal-favours "HTTP/1.1 200 OK"
-2026-05-29 04:44:59,633 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/ReferenceCurrencies "HTTP/1.1 200 OK"
-INFO:     127.0.0.1:56774 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-2026-05-29 04:45:00,457 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:45:00,643 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:01,465 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-05-29 04:45:01,656 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:02,557 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:18,259 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:45:18,440 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:19,332 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:20,344 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:22,176 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:45:22,353 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:22,570 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:45:22,746 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:23,240 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:23,725 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/soul-core-of-citaqualotl "HTTP/1.1 200 OK"
-2026-05-29 04:45:24,250 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:24,646 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:25,664 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:25,770 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:40,558 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:45:40,745 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:41,632 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:42,642 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:45,674 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:45:45,786 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:45:45,964 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:45,964 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:46,748 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:46,867 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:45:47,871 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:46:02,849 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:46:03,050 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:46:03,927 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-05-29 04:46:07,262 [ERROR] backend.data.providers.poe2scout: Request error on poe2/Leagues/vaal/Currencies/ByCategory: 
-2026-05-29 04:46:07,538 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/omen-of-chaotic-rarity "HTTP/1.1 200 OK"

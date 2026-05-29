@@ -19,7 +19,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
 from backend.data.cache import get_cache
-from backend.data.providers.poe2scout import Poe2ScoutProvider
+from backend.api.shared import get_provider as _get_provider
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction
 from backend.predictors.storage_value import project_value
@@ -50,8 +50,8 @@ async def get_storage_value(
     config = get_settings()
 
     # Get provider and cache
-    from backend.api.routes_prices import _get_provider
-    provider = _get_provider()
+    from backend.api.shared import get_provider
+    provider = get_provider()
     cache = get_cache()
 
     # Fetch price history for momentum/volatility (via cache — avoids
