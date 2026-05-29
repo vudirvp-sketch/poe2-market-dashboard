@@ -264,17 +264,42 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             market_spread = max(0.02, momentum_result.volatility * 3)
 
         # Momentum contribution: expected 24h price movement
-        # momentum is mean of hourly log-returns; exp(momentum * 24) - 1 ≈ 24h % change
+        #
+        # PREVIOUS MODEL (BROKEN): additive — momentum_24h + market_spread.
+        # exp(momentum * 24) is exponential: at momentum=0.05, momentum_24h ≈ 3.3,
+        # completely dominating market_spread (0.02–0.10). This inflated
+        # total_spread → inflated bid/ask gap → inflated spread_after_fees →
+        # inflated scores for trending pairs.
+        #
+        # NEW MODEL: multiplicative with capped momentum_factor.
+        #   total_spread = market_spread * (1 + momentum_factor)
+        # where momentum_factor = clamp(momentum_24h_raw, 0, 1.0)
+        #
+        # This preserves the direction: trending pairs get a wider effective
+        # spread, but the contribution is proportional to market_spread,
+        # not unbounded. A momentum_factor of 1.0 doubles the spread at most.
         if len(history) >= 2 and momentum_result.momentum != 0:
-            momentum_24h = abs(_math.exp(momentum_result.momentum * 24) - 1)
+            momentum_24h_raw = abs(_math.exp(momentum_result.momentum * 24) - 1)
         else:
-            momentum_24h = 0.0
+            momentum_24h_raw = 0.0
 
-        # Total effective spread = market spread + momentum opportunity
-        total_spread = market_spread + momentum_24h
+        # Clamp momentum_factor to [0, 1.0] — at most doubles the market_spread
+        momentum_factor = min(momentum_24h_raw, 1.0)
+
+        # Total effective spread = market spread amplified by momentum
+        total_spread = market_spread * (1.0 + momentum_factor)
 
         bid = mid_price * (1 - total_spread / 2)
         ask = mid_price * (1 + total_spread / 2)
+
+        # Debug: log spread model components for top pairs (only at DEBUG level)
+        logger.debug(
+            "spread_model pair=%s market_spread=%.6f momentum_24h_raw=%.4f "
+            "momentum_factor=%.4f total_spread=%.6f bid=%.6f ask=%.6f mid=%.6f",
+            rate.currency_from + "/" + rate.currency_to,
+            market_spread, momentum_24h_raw, momentum_factor,
+            total_spread, bid, ask, mid_price,
+        )
 
         price_to_chaos = prices_in_chaos.get(rate.currency_to, 0)
         trade_value = rate.raw_rate * price_to_chaos

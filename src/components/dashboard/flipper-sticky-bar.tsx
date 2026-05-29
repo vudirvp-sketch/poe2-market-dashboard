@@ -11,6 +11,7 @@
 
 import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useFlipsQuery, FLIPS_QUERY_KEY } from "@/hooks/use-flips-query";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,6 @@ import { fetchApi } from "@/lib/types";
 import {
   FlipperPhaseResponse,
   FlipOpportunity,
-  FlipsResponse,
   TriangularResponse,
   PortfolioData,
 } from "@/lib/types";
@@ -55,14 +55,9 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
 }: FlipperStickyBarProps) {
   const { t } = useI18n();
 
-  // ---- Best flip (unfiltered — shared cache key with other consumers) ----
-  const { data: flipsData } = useQuery<FlipsResponse>({
-    queryKey: ["flipper-flips"],
-    queryFn: () => fetchApi<FlipsResponse>("/api/flipper/flips"),
+  // ---- Best flip (shared cache key via useFlipsQuery) ----
+  const { data: flipsData } = useFlipsQuery({
     enabled: backendOnline,
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    retry: 1,
   });
 
   // ---- Best triangular arb (shared cache key with ArbitrageTab) ----

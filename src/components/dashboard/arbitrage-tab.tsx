@@ -8,6 +8,7 @@
 
 import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useFlipsQuery, FLIPS_QUERY_KEY } from "@/hooks/use-flips-query";
 import {
   AlertTriangle,
   Settings,
@@ -44,7 +45,6 @@ import type {
   ExchangePair,
   FlipOpportunity,
   FlipEventStatus,
-  FlipsResponse,
   TriangularCycle,
   TriangularResponse,
 } from "@/lib/types";
@@ -308,23 +308,18 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     staleTime: 60_000,
   });
 
-  // ---- Flipper: scored flips ----
+  // ---- Flipper: scored flips (shared query via useFlipsQuery) ----
   const {
     data: flipsData,
     isLoading: flipsLoading,
     isError: flipsError,
     error: flipsErrorObj,
     refetch: refetchFlips,
-  } = useQuery<FlipsResponse>({
-    queryKey: ["flipper-flips", flipMinScore, flipMinVolume],
-    queryFn: () =>
-      fetchApi<FlipsResponse>("/api/flipper/flips", {
-        min_score: String(flipMinScore),
-        min_volume: String(flipMinVolume),
-      }),
+  } = useFlipsQuery({
+    minScore: flipMinScore,
+    minVolume: flipMinVolume,
     enabled: mode === "flipper" && backendOnline,
-    staleTime: 60_000,
-    retry: 1,
+    refetchInterval: false,  // no polling in arbitrage-tab; flips-tab polls
   });
 
   // ---- Flipper: triangular arbitrage ----

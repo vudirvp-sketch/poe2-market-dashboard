@@ -13,6 +13,8 @@
 //   - Cleanup on unmount
 //   - Configurable push interval awareness
 //   - Generic useFlipperWebSocket for anomalies/flips/events channels
+//   - Graceful degradation: respects backendOnline from health polling
+//   - Circuit breaker: pauses reconnects after rapid failures
 // ============================================================================
 
 "use client";
@@ -43,6 +45,13 @@ export interface UseWebSocketOptions {
   reconnectMaxDelay?: number;
   /** Enable/disable the hook (default: true) */
   enabled?: boolean;
+  /**
+   * External backend online signal (from health polling).
+   * When false: WS will disconnect and NOT attempt reconnect.
+   * When true (after being false): WS will reset reconnect counter
+   * and attempt to reconnect.
+   */
+  backendOnline?: boolean;
 }
 
 export interface UseWebSocketReturn<T = Record<string, unknown>> {
@@ -59,6 +68,16 @@ export interface UseWebSocketReturn<T = Record<string, unknown>> {
   /** Timestamp of the last received update */
   lastUpdateAt: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Circuit breaker constants
+// ---------------------------------------------------------------------------
+
+/** Number of rapid failures that trigger the circuit breaker */
+const CIRCUIT_BREAKER_THRESHOLD = 3;
+
+/** Time window (ms) within which N failures trigger the breaker */
+const CIRCUIT_BREAKER_WINDOW_MS = 30_000;
 
 // ---------------------------------------------------------------------------
 // Default backend URL — production-aware WebSocket connection
@@ -135,6 +154,7 @@ export function useWebSocket<T = Record<string, unknown>>(
     reconnectBaseDelay = 1000,
     reconnectMaxDelay = 30000,
     enabled = true,
+    backendOnline,
   } = options;
 
   const [data, setData] = useState<T | null>(null);
@@ -152,6 +172,14 @@ export function useWebSocket<T = Record<string, unknown>>(
   // and should NOT retry — retries just produce console spam.
   const everConnectedRef = useRef(false);
 
+  // Circuit breaker: tracks timestamps of recent failures.
+  // If N failures happen within the window, we stop reconnecting
+  // until backendOnline signals a healthy backend.
+  const failureTimestampsRef = useRef<number[]>([]);
+
+  // Track previous backendOnline value to detect transitions
+  const prevBackendOnlineRef = useRef<boolean | undefined>(backendOnline);
+
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current !== null) {
       clearTimeout(reconnectTimerRef.current);
@@ -162,8 +190,81 @@ export function useWebSocket<T = Record<string, unknown>>(
   // Fix 4.9: Compute WS URL lazily to avoid SSR stale value
   const wsBaseUrl = useMemo(() => resolveWsBaseUrl(), []);
 
+  // ---------------------------------------------------------------------------
+  // Circuit breaker check
+  // ---------------------------------------------------------------------------
+
+  const isCircuitBreakerOpen = useCallback((): boolean => {
+    const now = Date.now();
+    // Prune old timestamps outside the window
+    failureTimestampsRef.current = failureTimestampsRef.current.filter(
+      (ts) => now - ts < CIRCUIT_BREAKER_WINDOW_MS,
+    );
+    return failureTimestampsRef.current.length >= CIRCUIT_BREAKER_THRESHOLD;
+  }, []);
+
+  const recordFailure = useCallback((): void => {
+    failureTimestampsRef.current.push(Date.now());
+  }, []);
+
+  const resetCircuitBreaker = useCallback((): void => {
+    failureTimestampsRef.current = [];
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Graceful degradation: react to backendOnline changes
+  // ---------------------------------------------------------------------------
+  // When backendOnline transitions:
+  //   true → false: close WS, don't try reconnect (backend is down)
+  //   false → true: reset reconnect counter, reset circuit breaker,
+  //                 and attempt to connect (backend came back up)
+
+  useEffect(() => {
+    const prevOnline = prevBackendOnlineRef.current;
+    prevBackendOnlineRef.current = backendOnline;
+
+    // Only act on actual transitions (not the initial undefined)
+    if (prevOnline === undefined) return;
+    if (prevOnline === backendOnline) return;
+
+    if (backendOnline === false) {
+      // Backend went offline — close WS and stop reconnecting
+      clearReconnectTimer();
+      if (wsRef.current) {
+        wsRef.current.onopen = null;
+        wsRef.current.onclose = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onmessage = null;
+        if (
+          wsRef.current.readyState === WebSocket.OPEN ||
+          wsRef.current.readyState === WebSocket.CONNECTING
+        ) {
+          wsRef.current.close(1000, "backend offline");
+        }
+        wsRef.current = null;
+      }
+      setStatus("disconnected");
+      setLastError(null);
+    } else if (backendOnline === true) {
+      // Backend came back online — reset state and reconnect
+      setReconnectCount(0);
+      resetCircuitBreaker();
+      everConnectedRef.current = false; // Allow fresh connection attempt
+    }
+  }, [backendOnline, clearReconnectTimer, resetCircuitBreaker]);
+
+  // ---------------------------------------------------------------------------
+  // Connect function
+  // ---------------------------------------------------------------------------
+
   const connect = useCallback(() => {
     if (!enabled || !mountedRef.current) return;
+
+    // If backendOnline is explicitly false, don't connect
+    if (backendOnline === false) return;
+
+    // If circuit breaker is open, don't attempt connection
+    if (isCircuitBreakerOpen()) return;
 
     // Clean up existing connection
     if (wsRef.current) {
@@ -193,6 +294,7 @@ export function useWebSocket<T = Record<string, unknown>>(
       ws.onopen = () => {
         if (!mountedRef.current) return;
         everConnectedRef.current = true;
+        resetCircuitBreaker(); // Connection succeeded, reset breaker
         setStatus("connected");
         setReconnectCount(0);
         setLastError(null);
@@ -221,6 +323,9 @@ export function useWebSocket<T = Record<string, unknown>>(
         setStatus("disconnected");
         wsRef.current = null;
 
+        // Record this failure for circuit breaker tracking
+        recordFailure();
+
         // FIX: Don't retry if the connection was never established.
         // If we've never successfully connected (everConnectedRef is false)
         // and the close was abnormal (code 1006, !wasClean), the backend
@@ -237,7 +342,9 @@ export function useWebSocket<T = Record<string, unknown>>(
           reconnectCount < maxReconnectAttempts &&
           !event.wasClean &&
           !wasRefused &&
-          everConnectedRef.current;  // Only retry if we had a connection before
+          everConnectedRef.current &&  // Only retry if we had a connection before
+          backendOnline !== false &&   // Don't reconnect if backend is known offline
+          !isCircuitBreakerOpen();     // Don't reconnect if breaker is open
 
         if (shouldReconnect) {
           const delay = Math.min(
@@ -277,18 +384,19 @@ export function useWebSocket<T = Record<string, unknown>>(
     reconnectBaseDelay,
     reconnectMaxDelay,
     reconnectCount,
-    wsBaseUrl, // Fix 4.9: added dependency
+    wsBaseUrl,
+    backendOnline,
+    isCircuitBreakerOpen,
+    recordFailure,
+    resetCircuitBreaker,
   ]);
 
   // Connect on mount / when path changes.
-  // FIX: Only attempt connection when we have a non-empty wsBaseUrl.
-  // When the flipper backend is offline and no reverse proxy is configured,
-  // resolveWsBaseUrl() may return an empty string (SSR guard) or a URL
-  // that we know is unreachable. Guarding against empty baseUrl prevents
-  // the browser from logging "WebSocket connection to '' failed".
+  // FIX: Only attempt connection when we have a non-empty wsBaseUrl
+  // AND the backend is not known to be offline.
   useEffect(() => {
     mountedRef.current = true;
-    if (enabled && wsBaseUrl) {
+    if (enabled && wsBaseUrl && backendOnline !== false) {
       connect();
     }
 
@@ -307,12 +415,23 @@ export function useWebSocket<T = Record<string, unknown>>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, enabled, wsBaseUrl]);
 
+  // Reconnect when backendOnline transitions from false → true
+  // (The useEffect above handles initial mount; this one handles recovery)
+  useEffect(() => {
+    if (backendOnline === true && enabled && wsBaseUrl && prevBackendOnlineRef.current === false) {
+      connect();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backendOnline]);
+
   // Manual reconnect function
   const reconnect = useCallback(() => {
     clearReconnectTimer();
     setReconnectCount(0);
+    resetCircuitBreaker();
+    everConnectedRef.current = false;
     connect();
-  }, [clearReconnectTimer, connect]);
+  }, [clearReconnectTimer, connect, resetCircuitBreaker]);
 
   return {
     data,
@@ -330,6 +449,9 @@ export function useWebSocket<T = Record<string, unknown>>(
 // Fix 10 (POE2-FIX-SPEC): Extended with callback-based invalidation API
 // so tab components can subscribe to WS events and invalidate their
 // React Query cache accordingly.
+//
+// Graceful degradation: now accepts backendOnline from the dashboard
+// level health check, enabling proper WS lifecycle management.
 // ---------------------------------------------------------------------------
 
 export type FlipperChannel = "/ws/anomalies" | "/ws/flips" | "/ws/events";
@@ -340,13 +462,22 @@ export function useFlipperWebSocket<T = Record<string, unknown>>(
     onAnomaly?: () => void;
     // Fix 4.10/4.11: Removed onForecastUpdate — no /ws/forecast connection exists
     enabled?: boolean;
+    /** External backend online signal (from health polling).
+     *  When false: WS connections close and stop reconnecting.
+     *  When true (after false): WS reconnects with reset counters. */
+    backendOnline?: boolean;
   },
   options: UseWebSocketOptions = {},
 ): UseWebSocketReturn<T> {
   // Callback-based API (Fix 10): subscribe to all channels and dispatch
   // callbacks based on message type
   if (typeof channelOrCallbacks === "object") {
-    const { onFlipsUpdate, onAnomaly, enabled = true } = channelOrCallbacks;
+    const {
+      onFlipsUpdate,
+      onAnomaly,
+      enabled = true,
+      backendOnline,
+    } = channelOrCallbacks;
     // We connect to /ws/flips as the primary channel; messages from other
     // channels are dispatched based on message type field.
     // For simplicity, we connect to /ws/flips and /ws/anomalies in parallel.
@@ -357,11 +488,13 @@ export function useFlipperWebSocket<T = Record<string, unknown>>(
     const flipsResult = useWebSocket<{ type?: string }>("/ws/flips", {
       ...options,
       enabled,
+      backendOnline,
       maxReconnectAttempts: 3,
     });
     const anomaliesResult = useWebSocket<{ type?: string }>("/ws/anomalies", {
       ...options,
       enabled,
+      backendOnline,
       maxReconnectAttempts: 3,
     });
 

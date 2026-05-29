@@ -16,6 +16,7 @@
 
 import { useState, useMemo, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useFlipsQuery, useInvalidateFlips, FLIPS_QUERY_KEY } from "@/hooks/use-flips-query";
 import {
   TrendingUp,
   Info,
@@ -72,14 +73,17 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   const queryClient = useQueryClient();
 
   // Fix 10 (POE2-FIX-SPEC): Wire WebSocket for live updates
+  const invalidateFlips = useInvalidateFlips();
+
   useFlipperWebSocket({
     onFlipsUpdate: () => {
-      queryClient.invalidateQueries({ queryKey: ["flipper-flips-tab"] });
+      invalidateFlips();
     },
     onAnomaly: () => {
       queryClient.invalidateQueries({ queryKey: ["flipper-anomalies"] });
     },
     enabled: backendOnline,
+    backendOnline,  // Graceful degradation: react to health-polling signal
   });
 
   // Filter state
@@ -100,27 +104,17 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   const [selectedFlip, setSelectedFlip] = useState<FlipOpportunity | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // ---- Fetch flip opportunities ----
+  // ---- Fetch flip opportunities (shared query via useFlipsQuery) ----
   const {
     data: flipsData,
     isLoading: flipsLoading,
     isError: flipsError,
     error: flipsErrorObj,
     refetch: refetchFlips,
-  } = useQuery<FlipsResponse>({
-    queryKey: ["flipper-flips-tab", minScore, minVolume],
-    queryFn: () =>
-      fetchApi<FlipsResponse>("/api/flipper/flips", {
-        min_score: String(minScore),
-        min_volume: String(minVolume),
-      }),
+  } = useFlipsQuery({
+    minScore,
+    minVolume,
     enabled: backendOnline,
-    staleTime: 60_000,
-    // FIX: Add refetchInterval as polling fallback when WebSocket is not
-    // available (no reverse proxy for WS). This ensures live updates even
-    // if ws://localhost:8000 is unreachable from the browser.
-    refetchInterval: 60_000,
-    retry: 1,
   });
 
   // ---- Storage value for selected flip (detail dialog) ----
