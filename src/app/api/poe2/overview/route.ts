@@ -144,6 +144,10 @@ export async function GET(req: NextRequest) {
 /**
  * Fetch all ByCategory data and compute top movers.
  * This is the expensive operation (15+ API calls) that we cache.
+ *
+ * Fix 4.12: Paginated fetching — instead of only loading the first 250 items,
+ * this now fetches all available pages (up to 10 pages = 2500 items per type).
+ * This ensures items beyond position 250 are included in top movers.
  */
 async function _fetchMoversData(
   realm: string,
@@ -155,15 +159,16 @@ async function _fetchMoversData(
   topLosers7d: PoeItem[];
   totalVolume: number;
 }> {
+  // Fix 4.12: Fetch all pages of currencies and uniques instead of just page 1
   const [currenciesData, uniquesData] = await Promise.all([
-    getCurrenciesByCategory(realm, league, "all", 1, 250).catch(() => ({ items: [] as PoeItem[], page: 1, perPage: 250, totalItems: 0, totalPages: 0 })),
-    getUniquesByCategory(realm, league, "all", 1, 250).catch(() => ({ items: [] as PoeItem[], page: 1, perPage: 250, totalItems: 0, totalPages: 0 })),
+    _fetchAllPages(realm, league, getCurrenciesByCategory),
+    _fetchAllPages(realm, league, getUniquesByCategory),
   ]);
 
   // Merge items with price change data
   const itemsWithChangeData = [
-    ...(currenciesData.items ?? []),
-    ...(uniquesData.items ?? []),
+    ...currenciesData,
+    ...uniquesData,
   ];
 
   // Compute top movers (24h)
@@ -206,6 +211,35 @@ async function _fetchMoversData(
   };
 
   return { topGainers, topLosers, topGainers7d, topLosers7d, totalVolume };
+}
+
+/**
+ * Fix 4.12: Fetch all pages from a ByCategory endpoint.
+ * Loads up to 10 pages (2500 items) to ensure we don't miss items
+ * beyond the first 250.
+ */
+async function _fetchAllPages(
+  realm: string,
+  league: string,
+  fetchFn: (realm: string, league: string, category: string, page: number, perPage: number) => Promise<{ items: PoeItem[]; page: number; perPage: number; totalItems: number; totalPages: number }>,
+): Promise<PoeItem[]> {
+  const allItems: PoeItem[] = [];
+  const perPage = 250;
+  let page = 1;
+  const MAX_PAGES = 10; // Safety: max 10 pages = 2500 items
+
+  try {
+    do {
+      const result = await fetchFn(realm, league, "all", page, perPage);
+      allItems.push(...(result.items ?? []));
+      page++;
+      if (page > result.totalPages) break;
+    } while (page <= MAX_PAGES);
+  } catch {
+    // Return whatever we got so far
+  }
+
+  return allItems;
 }
 
 /**

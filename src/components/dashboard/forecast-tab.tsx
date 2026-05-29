@@ -5,7 +5,7 @@
 // ============================================================================
 "use client";
 
-import { useState, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
@@ -129,7 +129,11 @@ interface CurrencyOption {
 }
 
 // ---------------------------------------------------------------------------
-// Popular currencies for the dropdown
+// Popular currencies for the dropdown — static fallback (Fix 5.5)
+//
+// The primary source is now the /api/flipper/currencies endpoint.
+// POPULAR_CURRENCIES is kept as a fallback when the API is unavailable
+// or the backend is offline.
 // ---------------------------------------------------------------------------
 
 const POPULAR_CURRENCIES: CurrencyOption[] = [
@@ -178,6 +182,30 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
 
   // Live mode toggle — switches between polling (React Query) and WebSocket
   const [liveMode, setLiveMode] = useState(false);
+
+  // Fix 5.5: Load currencies dynamically from the flipper backend API.
+  // Falls back to POPULAR_CURRENCIES when the API is unavailable.
+  const { data: apiCurrencies } = useQuery<CurrencyOption[]>({
+    queryKey: ["flipper-currencies"],
+    queryFn: async () => {
+      try {
+        const data = await fetchApi<Array<{ api_id: string; text: string }>>("/api/flipper/currencies");
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 10 * 60_000, // 10 min — currencies change rarely
+    retry: 1,
+    enabled: backendOnline,
+  });
+
+  // Use API currencies if available, otherwise fall back to hardcoded list
+  const currencyOptions = useMemo(() => {
+    return (apiCurrencies && apiCurrencies.length > 0)
+      ? apiCurrencies
+      : POPULAR_CURRENCIES;
+  }, [apiCurrencies]);
 
   // ---- WebSocket connections for live mode ----
   const {
@@ -342,7 +370,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {POPULAR_CURRENCIES.map((c) => (
+                {currencyOptions.map((c) => (
                   <SelectItem key={c.api_id} value={c.api_id}>
                     {c.text}
                   </SelectItem>

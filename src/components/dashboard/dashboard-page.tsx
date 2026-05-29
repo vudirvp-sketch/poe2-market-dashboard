@@ -258,7 +258,17 @@ export function Dashboard() {
 
   const { data: leagues, isLoading: leaguesLoading } = useQuery({
     queryKey: ["leagues", realm],
-    queryFn: () => fetchApi<League[]>("/api/poe2/leagues", { realm }),
+    queryFn: () => {
+      // Fix 5.4: Pass defaultLeagueValue from realms data to avoid
+      // a redundant /Realms request inside getLeagues()
+      const defaultLeague = realms?.find(
+        (r) => r.name === realm || (realm === "poe2" && r.name === "poe2")
+      )?.defaultLeague;
+      return fetchApi<League[]>("/api/poe2/leagues", {
+        realm,
+        ...(defaultLeague ? { defaultLeagueValue: defaultLeague } : {}),
+      });
+    },
     enabled: !!realm,
   });
 

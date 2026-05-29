@@ -917,22 +917,25 @@ export async function getRealmFilters(realm: string): Promise<unknown> {
 }
 
 // --- Leagues ---
-export async function getLeagues(realm: string): Promise<League[]> {
+// Fix 5.4: Added optional defaultLeagueValue parameter to avoid redundant /Realms request
+export async function getLeagues(realm: string, defaultLeagueValue?: string): Promise<League[]> {
   const raw = await cachedFetch<RawLeague[]>(`${BASE_URL}/${encodeURIComponent(realm)}/Leagues`);
 
   // API IsCurrent is always false. We determine the active league
   // by getting the realm's default_league_value and matching it.
-  let defaultLeagueValue = "";
-  try {
-    const realms = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
-    const matchingRealm = realms.find((r) =>
-      r.realm_api_id === realm || (realm === "poe2" && r.game_api_id === "poe2")
-    );
-    if (matchingRealm) {
-      defaultLeagueValue = matchingRealm.default_league_value;
+  // Fix 5.4: If defaultLeagueValue is provided by the caller, skip the /Realms request
+  if (!defaultLeagueValue) {
+    try {
+      const realms = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
+      const matchingRealm = realms.find((r) =>
+        r.realm_api_id === realm || (realm === "poe2" && r.game_api_id === "poe2")
+      );
+      if (matchingRealm) {
+        defaultLeagueValue = matchingRealm.default_league_value;
+      }
+    } catch {
+      // If realms fetch fails, fall back to IsCurrent
     }
-  } catch {
-    // If realms fetch fails, fall back to IsCurrent
   }
 
   return raw.map((l) => ({

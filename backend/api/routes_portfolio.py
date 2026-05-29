@@ -71,6 +71,48 @@ def _determine_periods_per_year(log_returns: np.ndarray) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Fix 4.14: Extract correlation_matrix serialization into a helper
+# ---------------------------------------------------------------------------
+
+def _build_correlation_matrix_response(
+    currency_names: list[str],
+    current_corr: dict | None,
+    previous_corr: np.ndarray | None,
+) -> dict | None:
+    """Build the correlation_matrix response dict.
+
+    Uses current_corr (pre-serialized from _build_portfolio) if available,
+    falls back to recomputing from previous_corr (raw numpy array).
+    Returns None if neither is available.
+
+    This eliminates the duplicate serialization code that was previously
+    repeated in both get_portfolio() and rebalance_portfolio().
+    """
+    # Try current_corr first (available on first request too)
+    if current_corr is not None and current_corr.get("currencies") == currency_names:
+        return current_corr
+
+    # Fallback: recompute from previous_corr (legacy path)
+    if previous_corr is not None and previous_corr.shape[0] == len(currency_names):
+        try:
+            corr_rows = []
+            for i in range(len(currency_names)):
+                row = []
+                for j in range(len(currency_names)):
+                    row.append(round(float(previous_corr[i, j]), 4))
+                corr_rows.append(row)
+            return {
+                "currencies": currency_names,
+                "matrix": corr_rows,
+                "is_stale": True,
+            }
+        except Exception as e:
+            logger.debug("Failed to serialize correlation matrix: %s", e)
+
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Helper: build portfolio allocation from live data
 # ---------------------------------------------------------------------------
 
@@ -239,30 +281,12 @@ async def get_portfolio():
             "correlation_matrix": None,
         }
 
-    # Build correlation matrix: prefer _current_corr (always available after
-    # a successful build), fall back to recomputing from _previous_corr.
-    # This ensures the matrix is returned even on the first request.
-    correlation_matrix = None
-    currency_names = sorted(_last_allocation.weights.keys())
-
-    # Try _current_corr first (available on first request too)
-    if _current_corr is not None and _current_corr.get("currencies") == currency_names:
-        correlation_matrix = _current_corr
-    elif _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
-        # Fallback: recompute from _previous_corr (legacy path)
-        try:
-            corr_rows = []
-            for i in range(len(currency_names)):
-                row = []
-                for j in range(len(currency_names)):
-                    row.append(round(float(_previous_corr[i, j]), 4))
-                corr_rows.append(row)
-            correlation_matrix = {
-                "currencies": currency_names,
-                "matrix": corr_rows,
-            }
-        except Exception as e:
-            logger.debug("Failed to serialize correlation matrix: %s", e)
+    # Fix 4.14: Use extracted helper for correlation matrix serialization
+    correlation_matrix = _build_correlation_matrix_response(
+        currency_names=sorted(_last_allocation.weights.keys()),
+        current_corr=_current_corr,
+        previous_corr=_previous_corr,
+    )
 
     return {
         "method": _last_allocation.method,
@@ -303,27 +327,12 @@ async def rebalance_portfolio(method: str | None = Query(default=None)):
             "correlation_matrix": None,
         }
 
-    # Build correlation matrix: prefer _current_corr (set by _build_portfolio),
-    # fall back to recomputing from _previous_corr.
-    correlation_matrix = None
-    currency_names = sorted(_last_allocation.weights.keys())
-
-    if _current_corr is not None and _current_corr.get("currencies") == currency_names:
-        correlation_matrix = _current_corr
-    elif _previous_corr is not None and _previous_corr.shape[0] == len(currency_names):
-        try:
-            corr_rows = []
-            for i in range(len(currency_names)):
-                row = []
-                for j in range(len(currency_names)):
-                    row.append(round(float(_previous_corr[i, j]), 4))
-                corr_rows.append(row)
-            correlation_matrix = {
-                "currencies": currency_names,
-                "matrix": corr_rows,
-            }
-        except Exception as e:
-            logger.debug("Failed to serialize correlation matrix: %s", e)
+    # Fix 4.14: Use extracted helper for correlation matrix serialization
+    correlation_matrix = _build_correlation_matrix_response(
+        currency_names=sorted(_last_allocation.weights.keys()),
+        current_corr=_current_corr,
+        previous_corr=_previous_corr,
+    )
 
     return {
         "method": _last_allocation.method,

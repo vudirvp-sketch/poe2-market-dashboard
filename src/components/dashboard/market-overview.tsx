@@ -108,9 +108,29 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     );
   }
 
+  // Fix 4.8: Dynamic heatmap scale based on 95th percentile of absolute changes.
+  // The previous fixed ±10% range masked extreme movements (e.g. +50% looked
+  // identical to +10%). Now the scale adapts to the data distribution.
+  const heatmapScale = useMemo(() => {
+    if (!heatmapData || heatmapData.length === 0) return { min: -10, max: 10 };
+    const validValues = heatmapData
+      .map((item) => item.change_24h)
+      .filter((v) => v != null && isFinite(v));
+    if (validValues.length === 0) return { min: -10, max: 10 };
+    // Sort by absolute value
+    const sorted = [...validValues].sort((a, b) => Math.abs(a) - Math.abs(b));
+    // 95th percentile of absolute values
+    const p95Index = Math.floor(sorted.length * 0.95);
+    const p95Value = Math.abs(sorted[p95Index]);
+    // Ensure minimum range of ±5% so small movements are still visible
+    const range = Math.max(p95Value, 5);
+    return { min: -range, max: range };
+  }, [heatmapData]);
+
   // Heatmap color helper: green for positive, red for negative, intensity proportional to magnitude
+  // Uses the dynamic scale computed above
   const heatmapCellStyle = (change: number): React.CSSProperties => {
-    const maxAbs = 10;
+    const maxAbs = heatmapScale.max;
     const clamped = Math.max(-maxAbs, Math.min(maxAbs, change));
     const intensity = Math.abs(clamped) / maxAbs;
     if (clamped >= 0) {

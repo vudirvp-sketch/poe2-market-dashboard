@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
 import { fmt, fetchApi, getFlipperErrorType } from "@/lib/types";
-import type { ExchangePair, FlipperHealthResponse } from "@/lib/types";
+import type { ExchangePair } from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
 
 // ---------------------------------------------------------------------------
@@ -319,18 +319,12 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
   const [flipMinScore, setFlipMinScore] = useState(0);
   const [flipMinVolume, setFlipMinVolume] = useState(0);
 
-  // backendOnline is now a required prop — the dashboard-level health check
-  // is the single source of truth. No local fallback.
-
-  // ---- Phase info for the stats card (flipper mode) ----
-  const { data: phaseData } = useQuery<FlipperHealthResponse>({
-    queryKey: ["flipper-health"],
-    queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: false,
-    enabled: mode === "flipper" && backendOnline,
-  });
+  // Fix 4.1: Removed duplicate flipper-health useQuery.
+  // The dashboard-level health check (dashboard-page.tsx) already queries
+  // ["flipper-health"] and passes backendOnline as a prop. React Query
+  // deduplicates by key, so the network request was already shared,
+  // but having the same query in two places is a code smell.
+  // The "phase" card now uses the `league` prop instead of phaseData?.league.
 
   // ---- Fetch exchange pairs (client-side mode) ----
   const {
@@ -958,7 +952,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
                 <p className="text-2xl font-bold capitalize">
-                  {phaseData?.league ?? "—"}
+                  {league ?? "—"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t("flipperPhaseDesc")}
