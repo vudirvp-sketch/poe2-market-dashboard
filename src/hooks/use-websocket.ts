@@ -146,6 +146,11 @@ export function useWebSocket<T = Record<string, unknown>>(
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  // Track whether this WebSocket has ever successfully connected.
+  // If the very first connection attempt fails with ECONNREFUSED-style
+  // errors (code 1006, !wasClean), we know the backend is not running
+  // and should NOT retry — retries just produce console spam.
+  const everConnectedRef = useRef(false);
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current !== null) {
@@ -187,6 +192,7 @@ export function useWebSocket<T = Record<string, unknown>>(
 
       ws.onopen = () => {
         if (!mountedRef.current) return;
+        everConnectedRef.current = true;
         setStatus("connected");
         setReconnectCount(0);
         setLastError(null);
@@ -215,18 +221,25 @@ export function useWebSocket<T = Record<string, unknown>>(
         setStatus("disconnected");
         wsRef.current = null;
 
-        // FIX: Don't retry if ECONNREFUSED (code 1006 + !wasClean).
-        // This typically means the backend is offline — retrying is useless
-        // and produces console spam (the bug the user reported).
-        const wasRefused = event.code === 1006 && !event.wasClean;
+        // FIX: Don't retry if the connection was never established.
+        // If we've never successfully connected (everConnectedRef is false)
+        // and the close was abnormal (code 1006, !wasClean), the backend
+        // WebSocket server is not running. Retrying is useless and only
+        // produces console spam ("WebSocket connection to 'ws://...' failed").
+        const wasRefused = !everConnectedRef.current && event.code === 1006 && !event.wasClean;
 
-        // Auto-reconnect with exponential backoff
-        if (
+        // Also stop if this is a clean close — the server intentionally
+        // closed the connection (e.g. restart, shutdown).
+        // Auto-reconnect only makes sense for unexpected disconnections
+        // AFTER a previously working connection.
+        const shouldReconnect =
           autoReconnect &&
           reconnectCount < maxReconnectAttempts &&
           !event.wasClean &&
-          !wasRefused  // Stop retrying on ECONNREFUSED
-        ) {
+          !wasRefused &&
+          everConnectedRef.current;  // Only retry if we had a connection before
+
+        if (shouldReconnect) {
           const delay = Math.min(
             reconnectBaseDelay * Math.pow(2, reconnectCount),
             reconnectMaxDelay,
@@ -245,7 +258,13 @@ export function useWebSocket<T = Record<string, unknown>>(
       };
 
       ws.onerror = () => {
-        // onclose will fire after onerror, so we handle reconnect there
+        // onclose will fire after onerror, so we handle reconnect there.
+        // NOTE: We intentionally do NOT log WebSocket errors to console.
+        // When the flipper backend is offline (no reverse proxy), the browser
+        // itself already logs "WebSocket connection to 'ws://...' failed".
+        // Adding our own console.error here would double the noise.
+        // The `status` / `lastError` state is the proper way for UI code
+        // to detect and display connection problems.
       };
     } catch {
       setStatus("disconnected");
@@ -261,10 +280,15 @@ export function useWebSocket<T = Record<string, unknown>>(
     wsBaseUrl, // Fix 4.9: added dependency
   ]);
 
-  // Connect on mount / when path changes
+  // Connect on mount / when path changes.
+  // FIX: Only attempt connection when we have a non-empty wsBaseUrl.
+  // When the flipper backend is offline and no reverse proxy is configured,
+  // resolveWsBaseUrl() may return an empty string (SSR guard) or a URL
+  // that we know is unreachable. Guarding against empty baseUrl prevents
+  // the browser from logging "WebSocket connection to '' failed".
   useEffect(() => {
     mountedRef.current = true;
-    if (enabled) {
+    if (enabled && wsBaseUrl) {
       connect();
     }
 
@@ -281,7 +305,7 @@ export function useWebSocket<T = Record<string, unknown>>(
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, enabled]);
+  }, [path, enabled, wsBaseUrl]);
 
   // Manual reconnect function
   const reconnect = useCallback(() => {

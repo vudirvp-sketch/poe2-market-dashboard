@@ -86,6 +86,32 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
 
   const isLoading = overviewLoading;
 
+  // Fix 4.8: Dynamic heatmap scale based on 95th percentile of absolute changes.
+  // The previous fixed ±10% range masked extreme movements (e.g. +50% looked
+  // identical to +10%). Now the scale adapts to the data distribution.
+  //
+  // CRITICAL: This useMemo MUST be called before any conditional return.
+  // Previously it was placed after the `if (isLoading) return ...` guard,
+  // which violates the Rules of Hooks — React requires all hooks to be
+  // called in the same order on every render. When isLoading flipped from
+  // true to false, the hook count changed, causing React error #310
+  // (Maximum update depth exceeded).
+  const heatmapScale = useMemo(() => {
+    if (!heatmapData || heatmapData.length === 0) return { min: -10, max: 10 };
+    const validValues = heatmapData
+      .map((item) => item.change_24h)
+      .filter((v) => v != null && isFinite(v));
+    if (validValues.length === 0) return { min: -10, max: 10 };
+    // Sort by absolute value
+    const sorted = [...validValues].sort((a, b) => Math.abs(a) - Math.abs(b));
+    // 95th percentile of absolute values
+    const p95Index = Math.floor(sorted.length * 0.95);
+    const p95Value = Math.abs(sorted[p95Index]);
+    // Ensure minimum range of ±5% so small movements are still visible
+    const range = Math.max(p95Value, 5);
+    return { min: -range, max: range };
+  }, [heatmapData]);
+
   // Top movers from overview response
   const topGainers = topTimeframe === "24h"
     ? overview?.topGainers ?? []
@@ -107,25 +133,6 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
       </div>
     );
   }
-
-  // Fix 4.8: Dynamic heatmap scale based on 95th percentile of absolute changes.
-  // The previous fixed ±10% range masked extreme movements (e.g. +50% looked
-  // identical to +10%). Now the scale adapts to the data distribution.
-  const heatmapScale = useMemo(() => {
-    if (!heatmapData || heatmapData.length === 0) return { min: -10, max: 10 };
-    const validValues = heatmapData
-      .map((item) => item.change_24h)
-      .filter((v) => v != null && isFinite(v));
-    if (validValues.length === 0) return { min: -10, max: 10 };
-    // Sort by absolute value
-    const sorted = [...validValues].sort((a, b) => Math.abs(a) - Math.abs(b));
-    // 95th percentile of absolute values
-    const p95Index = Math.floor(sorted.length * 0.95);
-    const p95Value = Math.abs(sorted[p95Index]);
-    // Ensure minimum range of ±5% so small movements are still visible
-    const range = Math.max(p95Value, 5);
-    return { min: -range, max: range };
-  }, [heatmapData]);
 
   // Heatmap color helper: green for positive, red for negative, intensity proportional to magnitude
   // Uses the dynamic scale computed above
