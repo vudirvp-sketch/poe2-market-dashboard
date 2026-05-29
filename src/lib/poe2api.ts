@@ -840,7 +840,7 @@ export async function getUniquesByCategory(
 
 /**
  * Fetch uniques across ALL categories since Category=all returns empty.
- * Fetches first page of each category, then merges and paginates client-side.
+ * Fetches ALL pages of each category, then merges and paginates client-side.
  */
 async function getUniquesAllCategories(
   realm: string,
@@ -857,31 +857,65 @@ async function getUniquesAllCategories(
 
   const uniqueCats = categoriesRaw.UniqueCategories ?? [];
 
-  // Fetch page 1 of each unique category in parallel
-  const fetches = uniqueCats.map((cat) => {
-    const params = new URLSearchParams({
+  // Fetch ALL pages of each unique category in parallel.
+  // Previously only page 1 was fetched, causing data loss when a category
+  // contained >perPage items.  Now we fetch page 1, check Pages count,
+  // and fetch remaining pages concurrently.
+  const allCategoryFetches = uniqueCats.map(async (cat) => {
+    const pages: RawPaginatedResponse<RawUniqueItem>[] = [];
+
+    // Fetch page 1 first to discover total page count
+    const params1 = new URLSearchParams({
       Category: cat.ApiId,
       Page: "1",
-      PerPage: String(perPage),
+      PerPage: "250",
     });
-    if (search) params.set("Search", search);
-    if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
+    if (search) params1.set("Search", search);
+    if (referenceCurrency) params1.set("ReferenceCurrency", referenceCurrency);
 
-    return cachedFetch<RawPaginatedResponse<RawUniqueItem>>(
-      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
+    const page1 = await cachedFetch<RawPaginatedResponse<RawUniqueItem>>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params1}`
     ).catch(() => null);
+
+    if (!page1) return [];
+    pages.push(page1);
+
+    // Fetch remaining pages if there are more
+    if (page1.Pages > 1) {
+      const extraFetches = [];
+      for (let p = 2; p <= page1.Pages; p++) {
+        const params = new URLSearchParams({
+          Category: cat.ApiId,
+          Page: String(p),
+          PerPage: "250",
+        });
+        if (search) params.set("Search", search);
+        if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
+
+        extraFetches.push(
+          cachedFetch<RawPaginatedResponse<RawUniqueItem>>(
+            `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
+          ).catch(() => null)
+        );
+      }
+      const extraPages = await Promise.all(extraFetches);
+      for (const ep of extraPages) {
+        if (ep) pages.push(ep);
+      }
+    }
+
+    return pages;
   });
 
-  const results = await Promise.all(fetches);
+  const allPages = await Promise.all(allCategoryFetches);
 
   // Merge all items
   const allItems: PoeItem[] = [];
-  let totalItems = 0;
 
-  for (const result of results) {
-    if (!result) continue;
-    totalItems += result.Total;
-    allItems.push(...result.Items.map((item) => mapUniqueItem(item)));
+  for (const pages of allPages) {
+    for (const result of pages) {
+      allItems.push(...result.Items.map((item) => mapUniqueItem(item)));
+    }
   }
 
   // Sort by price descending (most expensive first)
@@ -940,7 +974,7 @@ export async function getCurrenciesByCategory(
 
 /**
  * Fetch currencies across ALL categories since Category=all returns empty.
- * Fetches first page of each category, then merges and paginates client-side.
+ * Fetches ALL pages of each category, then merges and paginates client-side.
  */
 async function getCurrenciesAllCategories(
   realm: string,
@@ -956,28 +990,63 @@ async function getCurrenciesAllCategories(
 
   const currencyCats = categoriesRaw.CurrencyCategories ?? [];
 
-  // Fetch page 1 of each currency category in parallel
-  const fetches = currencyCats.map((cat) => {
-    const params = new URLSearchParams({
+  // Fetch ALL pages of each currency category in parallel.
+  // Previously only page 1 was fetched, causing data loss when a category
+  // contained >perPage items.  Now we fetch page 1, check Pages count,
+  // and fetch remaining pages concurrently.
+  const allCategoryFetches = currencyCats.map(async (cat) => {
+    const pages: RawPaginatedResponse<RawCurrencyItem>[] = [];
+
+    // Fetch page 1 first to discover total page count
+    const params1 = new URLSearchParams({
       Category: cat.ApiId,
       Page: "1",
-      PerPage: String(perPage),
+      PerPage: "250",
     });
-    if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
+    if (referenceCurrency) params1.set("ReferenceCurrency", referenceCurrency);
 
-    return cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
-      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
+    const page1 = await cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params1}`
     ).catch(() => null);
+
+    if (!page1) return [];
+    pages.push(page1);
+
+    // Fetch remaining pages if there are more
+    if (page1.Pages > 1) {
+      const extraFetches = [];
+      for (let p = 2; p <= page1.Pages; p++) {
+        const params = new URLSearchParams({
+          Category: cat.ApiId,
+          Page: String(p),
+          PerPage: "250",
+        });
+        if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
+
+        extraFetches.push(
+          cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
+            `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
+          ).catch(() => null)
+        );
+      }
+      const extraPages = await Promise.all(extraFetches);
+      for (const ep of extraPages) {
+        if (ep) pages.push(ep);
+      }
+    }
+
+    return pages;
   });
 
-  const results = await Promise.all(fetches);
+  const allPages = await Promise.all(allCategoryFetches);
 
   // Merge all items
   const allItems: PoeItem[] = [];
 
-  for (const result of results) {
-    if (!result) continue;
-    allItems.push(...result.Items.map((item) => mapCurrencyItem(item)));
+  for (const pages of allPages) {
+    for (const result of pages) {
+      allItems.push(...result.Items.map((item) => mapCurrencyItem(item)));
+    }
   }
 
   // Sort by price descending

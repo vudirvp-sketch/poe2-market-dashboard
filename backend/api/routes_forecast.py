@@ -92,6 +92,37 @@ async def get_forecast(
         14,  # 14 days of history
     )
 
+    # Also try DailyStatsHistory for richer OHLCV data.
+    # DailyStatsHistory gives structured daily OHLCV which is better for
+    # LightGBM feature engineering than raw price logs.  Cached in
+    # the "daily_stats" tier (1h TTL) to avoid redundant API calls.
+    daily_stats_data: dict | None = None
+    # We need the item_id for DailyStatsHistory — look up from metadata
+    try:
+        metadata_result = await cache.get_or_fetch(
+            "metadata",
+            provider.name(),
+            "get_currency_metadata",
+            provider.get_currency_metadata,
+            config.league.league_name,
+        )
+        if metadata_result.value:
+            for ci in metadata_result.value:
+                if ci.api_id.lower() == currency.lower() and ci.item_id:
+                    ds_result = await cache.get_or_fetch(
+                        "daily_stats",
+                        provider.name(),
+                        "get_daily_stats",
+                        provider.get_daily_stats,
+                        config.league.league_name,
+                        ci.item_id,
+                        30,
+                    )
+                    daily_stats_data = ds_result.value
+                    break
+    except Exception as e:
+        logger.debug("DailyStatsHistory lookup failed for %s: %s", currency, e)
+
     if hist_result.value is None or len(hist_result.value) == 0:
         raise HTTPException(
             status_code=404,
@@ -99,6 +130,40 @@ async def get_forecast(
         )
 
     price_points = hist_result.value
+
+    # If DailyStatsHistory is available, use it as a supplementary data
+    # source.  Daily OHLCV provides a cleaner, more regular signal than
+    # raw price logs, which is especially beneficial for LightGBM feature
+    # engineering with daily data.
+    daily_stats_prices: list = []
+    if daily_stats_data is not None:
+        try:
+            from backend.data.schemas import DailyStatsResponse
+            ds_resp = DailyStatsResponse.model_validate(daily_stats_data)
+            from datetime import datetime as _dt, timezone as _tz
+            for pt in ds_resp.daily_stats:
+                if pt.close and pt.close > 0:
+                    try:
+                        ts = _dt.fromisoformat(pt.time.replace("Z", "+00:00")) if pt.time else _dt.now(_tz.utc)
+                    except (ValueError, TypeError):
+                        ts = _dt.now(_tz.utc)
+                    from backend.models.currency import PricePoint
+                    daily_stats_prices.append(PricePoint(
+                        timestamp=ts,
+                        price=pt.close,
+                        volume=float(pt.volume) if pt.volume else 0.0,
+                    ))
+        except Exception as e:
+            logger.debug("Failed to parse DailyStatsHistory for %s: %s", currency, e)
+
+    # Prefer daily stats for forecasting if enough points are available,
+    # otherwise fall back to raw price logs.
+    if len(daily_stats_prices) >= 10:
+        price_points = daily_stats_prices
+        logger.info(
+            "Using DailyStatsHistory (%d points) for %s forecast",
+            len(daily_stats_prices), currency,
+        )
 
     # Extract prices and timestamps
     import numpy as np

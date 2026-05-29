@@ -5,6 +5,7 @@ Cache key = (provider_name, method_name, args_hash)
 - Current prices: TTL = 5 minutes (configurable)
 - Historical snapshots: TTL = 24 hours
 - Metadata: TTL = 1 hour
+- Daily stats (OHLCV): TTL = 1 hour
 
 On cache miss: fetch from provider, store, return.
 On provider failure: return stale cached value if available (with stale=True flag).
@@ -35,7 +36,7 @@ class CacheResult:
 
 
 class DataCache:
-    """Three-tier TTL cache for data provider results."""
+    """Four-tier TTL cache for data provider results."""
 
     def __init__(self, config: AppConfig | None = None):
         self._config = config or get_settings()
@@ -44,10 +45,15 @@ class DataCache:
         history_ttl = self._config.data.cache_ttl_history_hours * 3600  # seconds
         metadata_ttl = self._config.data.cache_ttl_metadata_hours * 3600  # seconds
 
+        # Daily stats cache: 1 hour TTL — daily OHLCV data changes once per day,
+        # but a shorter TTL than 24h ensures forecasts react to fresh data.
+        daily_stats_ttl = 3600  # 1 hour in seconds
+
         # Max size is generous — we want LRU eviction, not size rejection
         self._prices_cache: TTLCache = TTLCache(maxsize=512, ttl=prices_ttl)
         self._history_cache: TTLCache = TTLCache(maxsize=256, ttl=history_ttl)
         self._metadata_cache: TTLCache = TTLCache(maxsize=256, ttl=metadata_ttl)
+        self._daily_stats_cache: TTLCache = TTLCache(maxsize=256, ttl=daily_stats_ttl)
 
         # Stale store: keeps the last known value even after TTL expires
         self._stale_store: dict[str, Any] = {}
@@ -69,6 +75,8 @@ class DataCache:
             return self._history_cache
         elif cache_type == "metadata":
             return self._metadata_cache
+        elif cache_type == "daily_stats":
+            return self._daily_stats_cache
         else:
             raise ValueError(f"Unknown cache type: {cache_type}")
 
@@ -118,6 +126,7 @@ class DataCache:
             self._prices_cache.clear()
             self._history_cache.clear()
             self._metadata_cache.clear()
+            self._daily_stats_cache.clear()
             self._stale_store.clear()
         else:
             self._select_cache(cache_type).clear()
@@ -128,6 +137,7 @@ class DataCache:
             "prices": {"size": len(self._prices_cache), "max": self._prices_cache.maxsize},
             "history": {"size": len(self._history_cache), "max": self._history_cache.maxsize},
             "metadata": {"size": len(self._metadata_cache), "max": self._metadata_cache.maxsize},
+            "daily_stats": {"size": len(self._daily_stats_cache), "max": self._daily_stats_cache.maxsize},
             "stale_entries": len(self._stale_store),
         }
 

@@ -76,6 +76,7 @@ class ForecastingConfig(BaseModel):
     sarima_seasonal_period: int | None = None  # None = auto-detect
     lightgbm_retrain_interval_hours: int = 6
     lightgbm_mape_trigger: float = 0.15
+    lightgbm_min_data_points: int = 15  # Minimum points for LightGBM training (lowered from 30 for reduced data)
     forecast_horizon_hours: int = 24
     confidence_level: float = 0.05
 

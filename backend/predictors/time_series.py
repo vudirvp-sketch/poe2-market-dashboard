@@ -593,12 +593,38 @@ class LightGBMForecaster:
             logger.warning("lightgbm not installed. LightGBM forecast unavailable.")
             return
 
-        if len(log_prices) < 30:
-            logger.warning("LightGBM: insufficient data for training (%d points).", len(log_prices))
+        # Minimum data points for training.
+        # Lowered from 30 to 15 so that DailyStatsHistory with reduced data
+        # (e.g. 5-9 days for new currencies) can still produce a forecast
+        # with simplified features.
+        min_points = getattr(self._fc_cfg, 'lightgbm_min_data_points', 15)
+        if len(log_prices) < min_points:
+            logger.warning(
+                "LightGBM: insufficient data for training (%d points, need >= %d).",
+                len(log_prices), min_points,
+            )
             return
 
+        # When data is sparse (< 30 points), use a simplified feature config
+        # that only includes small lags to avoid dropping too many rows via NaN.
+        effective_config = self._feature_config
+        if len(log_prices) < 30:
+            effective_config = LightGBMFeatureConfig(
+                price_lags=[lag for lag in self._feature_config.price_lags if lag < len(log_prices) // 2],
+                volume_lags=[lag for lag in self._feature_config.volume_lags if lag < len(log_prices) // 2],
+                rolling_windows=[w for w in self._feature_config.rolling_windows if w < len(log_prices) // 2],
+                use_calendar=self._feature_config.use_calendar,
+                use_event_indicator=self._feature_config.use_event_indicator,
+            )
+            logger.info(
+                "LightGBM: using simplified features for %d points (lags=%s, windows=%s)",
+                len(log_prices),
+                effective_config.price_lags,
+                effective_config.rolling_windows,
+            )
+
         # Build features
-        df = build_features(log_prices, volumes, timestamps, is_event_active, self._feature_config)
+        df = build_features(log_prices, volumes, timestamps, is_event_active, effective_config)
 
         # Drop rows with NaN (due to lagging)
         df = df.dropna()

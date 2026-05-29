@@ -47,3 +47,17 @@ class BaseDataProvider(ABC):
     @abstractmethod
     def name(self) -> str:
         """Return the provider's name for logging and cache keys."""
+
+    async def get_daily_stats(
+        self,
+        league: str,
+        item_id: int,
+        day_count: int = 30,
+        end_date: str | None = None,
+    ) -> dict | None:
+        """Return daily OHLCV stats for an item.
+
+        Optional method — default implementation returns None.
+        Providers that support DailyStatsHistory should override this.
+        """
+        return None
