@@ -213,7 +213,16 @@ export function Dashboard() {
     retry: false,
   });
 
-  const flipperBackendOnline = !flipperHealthError && flipperHealthData?.status === "ok";
+  // Backend is "online" when it responds with "ok" OR "degraded".
+  // "degraded" means the backend is running but upstream API (poe2scout.com)
+  // is unreachable — the backend can still serve cached/stale data.
+  // Only truly "offline" when we can't reach the backend at all (ECONNREFUSED).
+  const flipperBackendOnline =
+    !flipperHealthError &&
+    (flipperHealthData?.status === "ok" || flipperHealthData?.status === "degraded");
+
+  // Additional flag: is upstream API reachable? (for degraded status card)
+  const flipperUpstreamReachable = flipperHealthData?.provider === "reachable";
 
   // ============================================================================
   // Flipper phase info (for header phase badge)
@@ -850,6 +859,7 @@ export function Dashboard() {
                   realm={realm}
                   league={effectiveLeague}
                   backendOnline={flipperBackendOnline}
+                  upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable}
                 />
               </ErrorBoundary>
             </TabsContent>
@@ -857,35 +867,35 @@ export function Dashboard() {
             {/* ============ FLIPS TAB ============ */}
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle="Flips">
-                <FlipsTab backendOnline={flipperBackendOnline} />
+                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ RECIPES TAB ============ */}
             <TabsContent value="recipes">
               <ErrorBoundary fallbackTitle="Recipes">
-                <RecipesTab backendOnline={flipperBackendOnline} />
+                <RecipesTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ FORECAST TAB ============ */}
             <TabsContent value="forecast">
               <ErrorBoundary fallbackTitle="Forecasts">
-                <ForecastTab backendOnline={flipperBackendOnline} />
+                <ForecastTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ PORTFOLIO TAB ============ */}
             <TabsContent value="portfolio">
               <ErrorBoundary fallbackTitle="Portfolio">
-                <PortfolioTab backendOnline={flipperBackendOnline} />
+                <PortfolioTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ CURRENCY GRAPH TAB ============ */}
             <TabsContent value="graph">
               <ErrorBoundary fallbackTitle="Currency Graph">
-                <CurrencyGraphTab backendOnline={flipperBackendOnline} />
+                <CurrencyGraphTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 

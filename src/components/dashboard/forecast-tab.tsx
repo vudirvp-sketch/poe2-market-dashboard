@@ -161,13 +161,15 @@ const POPULAR_CURRENCIES: CurrencyOption[] = [
 interface ForecastTabProps {
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Backend is online but upstream API is unreachable (degraded mode) */
+  upstreamDegraded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const ForecastTab = memo(function ForecastTab({ backendOnline }: ForecastTabProps) {
+export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDegraded }: ForecastTabProps) {
   const { t } = useI18n();
 
   // Selected currency

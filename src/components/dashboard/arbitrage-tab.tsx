@@ -294,9 +294,11 @@ interface ArbitrageTabProps {
   league?: string;
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Backend is online but upstream API is unreachable (degraded mode) */
+  upstreamDegraded?: boolean;
 }
 
-export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendOnline }: ArbitrageTabProps) {
+export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendOnline, upstreamDegraded }: ArbitrageTabProps) {
   const { t } = useI18n();
 
   // Mode toggle

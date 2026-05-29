@@ -129,10 +129,13 @@ export interface SnapshotHistoryPoint {
 
 /** Response shape from GET /api/flipper/health */
 export interface FlipperHealthResponse {
-  status: string;
+  status: "ok" | "degraded" | "error";
+  provider: "reachable" | "unreachable";
   timestamp: string;
   league?: string;
+  base_currency?: string;
   active_events?: number;
+  cache_entries?: number;
 }
 
 /** Response shape from GET /api/flipper/phase */
@@ -246,18 +249,28 @@ export async function fetchApi<T>(path: string, params?: Record<string, string>)
   if (!res.ok) {
     let detail = "";
     let hint = "";
+    let errorType: string | undefined;
     try {
       const body = await res.json();
       detail = body.error || body.detail || "";
       hint = body.hint || "";
+      errorType = body.error_type;  // flipper-proxy sets this explicitly
     } catch {
       // Body was not JSON
+    }
+
+    // If error_type wasn't provided by the proxy, infer from status code
+    if (!errorType) {
+      if (res.status === 503) errorType = "backend_offline";
+      else if (res.status === 502) errorType = "upstream_error";
+      else if (res.status === 422) errorType = "insufficient_data";
+      else if (res.status >= 500) errorType = "server_error";
     }
 
     const err = new FlipperApiError(res.status, JSON.stringify({
       error: detail || res.statusText,
       hint,
-      error_type: res.status === 503 ? "backend_offline" : res.status === 502 ? "upstream_error" : undefined,
+      error_type: errorType,
     }));
     throw err;
   }

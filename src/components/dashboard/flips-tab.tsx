@@ -174,13 +174,15 @@ function decisionBadgeClass(decision: string): string {
 interface FlipsTabProps {
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Backend is online but upstream API is unreachable (degraded mode) */
+  upstreamDegraded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps) {
+export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded }: FlipsTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -356,6 +358,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline }: FlipsTabProps)
     <div className="space-y-4">
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
+        upstreamDegraded={upstreamDegraded}
         insufficientData={insufficientData}
         onRefresh={() => refetchFlips()}
       />

@@ -248,13 +248,15 @@ function runForceLayout(
 interface CurrencyGraphTabProps {
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Backend is online but upstream API is unreachable (degraded mode) */
+  upstreamDegraded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }: CurrencyGraphTabProps) {
+export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, upstreamDegraded }: CurrencyGraphTabProps) {
   const { t } = useI18n();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -526,6 +528,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline }
     <div className="space-y-4">
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
+        upstreamDegraded={upstreamDegraded}
         insufficientData={insufficientData}
         onRefresh={() => refetchPrices()}
       />

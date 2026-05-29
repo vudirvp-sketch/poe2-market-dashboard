@@ -62,6 +62,8 @@ interface RecipesResponse {
 interface RecipesTabProps {
   /** Whether the flipper backend is online */
   backendOnline: boolean;
+  /** Backend is online but upstream API is unreachable (degraded mode) */
+  upstreamDegraded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +72,7 @@ interface RecipesTabProps {
 
 export const RecipesTab = memo(function RecipesTab({
   backendOnline,
+  upstreamDegraded,
 }: RecipesTabProps) {
   const { t } = useI18n();
   const [showUnprofitable, setShowUnprofitable] = useState(false);
@@ -125,6 +128,7 @@ export const RecipesTab = memo(function RecipesTab({
     <div className="space-y-4">
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
+        upstreamDegraded={upstreamDegraded}
         insufficientData={insufficientData}
         onRefresh={() => refetchRecipes()}
       />

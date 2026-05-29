@@ -166,13 +166,15 @@ function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Arr
 interface PortfolioTabProps {
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Backend is online but upstream API is unreachable (degraded mode) */
+  upstreamDegraded?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: PortfolioTabProps) {
+export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstreamDegraded }: PortfolioTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -330,6 +332,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline }: Portfo
     <div className="space-y-4">
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
+        upstreamDegraded={upstreamDegraded}
         insufficientData={insufficientData}
         onRefresh={() => refetchPortfolio()}
       />
