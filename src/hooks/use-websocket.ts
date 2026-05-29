@@ -59,17 +59,58 @@ export interface UseWebSocketReturn<T = Record<string, unknown>> {
 }
 
 // ---------------------------------------------------------------------------
-// Default backend URL — matches flipper-proxy.ts convention
+// Default backend URL — production-aware WebSocket connection
+// ---------------------------------------------------------------------------
+//
+// Connection strategy:
+//   1. NEXT_PUBLIC_FLIPPER_WS_URL env var (explicit override)
+//   2. If behind a reverse proxy (same-origin), use relative path:
+//      ws(s)://current-host/ws/... — this works when nginx/Caddy
+//      proxies /ws/* to the backend.
+//   3. In dev/without proxy, connect directly to the backend on port 8000.
+//
+// Production deployment (nginx/Caddy example):
+//   location /ws/ {
+//       proxy_pass http://127.0.0.1:8000/ws/;
+//       proxy_http_version 1.1;
+//       proxy_set_header Upgrade $http_upgrade;
+//       proxy_set_header Connection "upgrade";
+//       proxy_set_header Host $host;
+//       proxy_read_timeout 86400;
+//   }
+//
+// Then set in .env.local:
+//   NEXT_PUBLIC_FLIPPER_WS_URL=   (empty = auto-detect same-origin)
+// Or explicitly:
+//   NEXT_PUBLIC_FLIPPER_WS_URL=wss://your-domain.com
 // ---------------------------------------------------------------------------
 
-const FLIPPER_WS_URL =
-  process.env.NEXT_PUBLIC_FLIPPER_WS_URL ||
-  (typeof window !== "undefined"
-    ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
-        process.env.NEXT_PUBLIC_FLIPPER_API_URL?.replace(/^https?:\/\//, "") ||
-        "localhost:8000"
-      }`
-    : "ws://localhost:8000");
+function resolveWsBaseUrl(): string {
+  // 1. Explicit override from env
+  const envUrl = process.env.NEXT_PUBLIC_FLIPPER_WS_URL;
+  if (envUrl) return envUrl;
+
+  // 2. Browser-only detection
+  if (typeof window !== "undefined") {
+    const flipperApiUrl = process.env.NEXT_PUBLIC_FLIPPER_API_URL;
+
+    // If no explicit FLIPPER_API_URL, assume same-origin (reverse proxy)
+    if (!flipperApiUrl || flipperApiUrl.includes(window.location.host)) {
+      // Same-origin: use current host with ws:/wss: protocol
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      return `${proto}//${window.location.host}`;
+    }
+
+    // Dev mode: direct connection to backend on different host/port
+    const wsProto = flipperApiUrl.startsWith("https") ? "wss:" : "ws:";
+    return `${wsProto}//${flipperApiUrl.replace(/^https?:\/\//, "")}`;
+  }
+
+  // 3. SSR fallback
+  return "ws://localhost:8000";
+}
+
+const FLIPPER_WS_URL = resolveWsBaseUrl();
 
 // ---------------------------------------------------------------------------
 // Hook

@@ -304,6 +304,14 @@ const en = {
   forecastAlertScore: "Score",
   forecastIndicators: "Indicators",
   forecastConfirmed: "Confirmed",
+  forecastLiveMode: "Live",
+  forecastLiveModeTooltip: "Enable real-time updates via WebSocket",
+  forecastPollingMode: "Polling",
+  forecastPollingModeTooltip: "Refresh data periodically via HTTP polling",
+  forecastWsConnected: "Live: connected",
+  forecastWsConnecting: "Live: connecting…",
+  forecastWsDisconnected: "Live: disconnected",
+  forecastLastUpdate: "Last update",
 
   // Timeframes
   timeframe24h: "24h",

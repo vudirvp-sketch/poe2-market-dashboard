@@ -91,6 +91,8 @@ class OAuthTokenManager:
         self._token_expires_at: float = 0.0
         self._code_verifier: str | None = None
         self._client: httpx.AsyncClient | None = None
+        # CSRF state storage — set by /auth/start, verified by /auth/callback
+        self._pending_state: str | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -108,6 +110,18 @@ class OAuthTokenManager:
         if self._access_token is None:
             return False
         return time.time() < self._token_expires_at - 60  # 60s buffer
+
+    def set_pending_state(self, state: str) -> None:
+        """Store the OAuth2 state parameter for later CSRF verification."""
+        self._pending_state = state
+
+    def get_pending_state(self) -> str | None:
+        """Return the stored OAuth2 state parameter (or None if not set)."""
+        return self._pending_state
+
+    def clear_pending_state(self) -> None:
+        """Clear the stored OAuth2 state after successful verification."""
+        self._pending_state = None
 
     def get_authorization_url(self) -> tuple[str, str]:
         """Generate the OAuth2 authorization URL with PKCE.

@@ -306,6 +306,14 @@ const zh: Record<TranslationKeys, string> = {
   forecastAlertScore: "评分",
   forecastIndicators: "指标",
   forecastConfirmed: "已确认",
+  forecastLiveMode: "实时",
+  forecastLiveModeTooltip: "通过WebSocket启用实时更新",
+  forecastPollingMode: "轮询",
+  forecastPollingModeTooltip: "通过HTTP轮询定期刷新数据",
+  forecastWsConnected: "实时：已连接",
+  forecastWsConnecting: "实时：连接中…",
+  forecastWsDisconnected: "实时：已断开",
+  forecastLastUpdate: "上次更新",
 
   // Flips Tab
   tabFlips: "翻转",

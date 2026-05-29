@@ -1,6 +1,7 @@
 // ============================================================================
 // Forecast Tab — Price forecasts, anomaly detection, storage value decisions
-// Integrates with the FastAPI flipper backend via Next.js proxy routes
+// Integrates with the FastAPI flipper backend via Next.js proxy routes.
+// Supports both polling (React Query) and live mode (WebSocket).
 // ============================================================================
 "use client";
 
@@ -17,6 +18,9 @@ import {
   ShieldCheck,
   ArrowRightLeft,
   Info,
+  Radio,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import {
   AreaChart,
@@ -41,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, FlipperApiError } from "@/lib/types";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -165,6 +170,28 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
   // Selected currency
   const [selectedCurrency, setSelectedCurrency] = useState("divine");
 
+  // Live mode toggle — switches between polling (React Query) and WebSocket
+  const [liveMode, setLiveMode] = useState(false);
+
+  // ---- WebSocket connections for live mode ----
+  const {
+    data: wsForecastData,
+    status: wsForecastStatus,
+    lastUpdateAt: wsForecastUpdateAt,
+  } = useWebSocket<ForecastResponse>(
+    `/ws/forecast/${selectedCurrency}`,
+    { enabled: liveMode && backendOnline },
+  );
+
+  const {
+    data: wsStorageData,
+    status: wsStorageStatus,
+    lastUpdateAt: wsStorageUpdateAt,
+  } = useWebSocket<StorageValueResponse>(
+    `/ws/storage-value/${selectedCurrency}`,
+    { enabled: liveMode && backendOnline },
+  );
+
   // ---- Backend health check is done at dashboard level ----
   // backendOnline is passed as prop
 
@@ -177,9 +204,9 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
     retry: 1,
   });
 
-  // ---- Forecast data ----
+  // ---- Forecast data (polling mode) ----
   const {
-    data: forecastData,
+    data: pollingForecastData,
     isLoading: forecastLoading,
     isError: forecastError,
     error: forecastErrorObj,
@@ -188,7 +215,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
     queryKey: ["flipper-forecast", selectedCurrency],
     queryFn: () =>
       fetchApi<ForecastResponse>(`/api/flipper/forecast/${selectedCurrency}`),
-    enabled: backendOnline && !!selectedCurrency,
+    enabled: backendOnline && !!selectedCurrency && !liveMode,
     staleTime: 60_000,
     retry: 1,
   });
@@ -205,29 +232,33 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
     retry: 1,
   });
 
-  // ---- Storage value ----
+  // ---- Storage value (polling mode) ----
   const {
-    data: storageData,
+    data: pollingStorageData,
     isLoading: storageLoading,
     error: storageErrorObj,
   } = useQuery<StorageValueResponse>({
     queryKey: ["flipper-storage-value", selectedCurrency],
     queryFn: () =>
       fetchApi<StorageValueResponse>(`/api/flipper/storage-value/${selectedCurrency}`),
-    enabled: backendOnline && !!selectedCurrency,
+    enabled: backendOnline && !!selectedCurrency && !liveMode,
     staleTime: 60_000,
     retry: 1,
   });
 
-  // Detect 422 insufficient-data errors for better UX
+  // ---- Merge data sources: use WS data when live, polling otherwise ----
+  const forecastData = liveMode ? wsForecastData : pollingForecastData;
+  const storageData = liveMode ? wsStorageData : pollingStorageData;
+
+  // Detect 422 insufficient-data errors for better UX (polling only)
   const isForecastInsufficientData =
-    forecastErrorObj instanceof FlipperApiError && forecastErrorObj.status === 422;
+    !liveMode && forecastErrorObj instanceof FlipperApiError && forecastErrorObj.status === 422;
   const forecastInsufficientDetail =
     isForecastInsufficientData && forecastErrorObj instanceof FlipperApiError
       ? forecastErrorObj.detail
       : undefined;
   const isStorageInsufficientData =
-    storageErrorObj instanceof FlipperApiError && storageErrorObj.status === 422;
+    !liveMode && storageErrorObj instanceof FlipperApiError && storageErrorObj.status === 422;
   const storageInsufficientDetail =
     isStorageInsufficientData && storageErrorObj instanceof FlipperApiError
       ? storageErrorObj.detail
@@ -278,12 +309,21 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
   ];
 
   // Loading state
-  const isLoading = forecastLoading && backendOnline;
+  const isLoading = forecastLoading && backendOnline && !liveMode;
+
+  // ---- WebSocket status indicator ----
+  const wsStatus = (() => {
+    if (!liveMode) return null;
+    const combined = [wsForecastStatus, wsStorageStatus];
+    if (combined.includes("connected")) return "connected";
+    if (combined.includes("connecting")) return "connecting";
+    return "disconnected";
+  })();
 
   // ---- Render ----
   return (
     <div className="space-y-4">
-      {/* ---- Header with backend status ---- */}
+      {/* ---- Header with backend status + live mode toggle ---- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {/* Currency selector */}
@@ -305,8 +345,8 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
             </Select>
           </div>
 
-          {/* Refresh */}
-          {backendOnline && (
+          {/* Refresh (polling mode only) */}
+          {backendOnline && !liveMode && (
             <Button
               variant="ghost"
               size="sm"
@@ -317,22 +357,71 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           )}
+
+          {/* Live mode toggle */}
+          <Button
+            variant={liveMode ? "default" : "outline"}
+            size="sm"
+            className="h-8 px-3 gap-1.5"
+            onClick={() => setLiveMode(!liveMode)}
+            disabled={!backendOnline}
+            title={liveMode ? t("forecastPollingModeTooltip") : t("forecastLiveModeTooltip")}
+            aria-pressed={liveMode}
+          >
+            <Radio className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="text-xs font-medium">{t("forecastLiveMode")}</span>
+          </Button>
         </div>
 
-        {/* Backend status */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Circle
-            className={`h-2.5 w-2.5 ${
-              backendOnline
-                ? "fill-emerald-500 text-emerald-500"
-                : "fill-red-500 text-red-500"
-            }`}
-            aria-hidden="true"
-          />
-          <Server className="h-3 w-3" aria-hidden="true" />
-          {backendOnline
-            ? t("flipperBackendOnline")
-            : t("flipperBackendOffline")}
+        <div className="flex items-center gap-3">
+          {/* WebSocket status indicator */}
+          {liveMode && (
+            <div className="flex items-center gap-1.5 text-xs">
+              {wsStatus === "connected" ? (
+                <>
+                  <Wifi className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {t("forecastWsConnected")}
+                  </span>
+                </>
+              ) : wsStatus === "connecting" ? (
+                <>
+                  <Wifi className="h-3.5 w-3.5 text-amber-500 animate-pulse" aria-hidden="true" />
+                  <span className="text-amber-600 dark:text-amber-400">
+                    {t("forecastWsConnecting")}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />
+                  <span className="text-red-600 dark:text-red-400">
+                    {t("forecastWsDisconnected")}
+                  </span>
+                </>
+              )}
+              {wsForecastUpdateAt && (
+                <span className="text-muted-foreground ml-1">
+                  {t("forecastLastUpdate")}: {new Date(wsForecastUpdateAt).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Backend status */}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Circle
+              className={`h-2.5 w-2.5 ${
+                backendOnline
+                  ? "fill-emerald-500 text-emerald-500"
+                  : "fill-red-500 text-red-500"
+              }`}
+              aria-hidden="true"
+            />
+            <Server className="h-3 w-3" aria-hidden="true" />
+            {backendOnline
+              ? t("flipperBackendOnline")
+              : t("flipperBackendOffline")}
+          </div>
         </div>
       </div>
 
@@ -414,7 +503,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
         <CardContent className="px-4 pb-4 pt-0">
           {isLoading ? (
             <Skeleton className="h-[300px] w-full" />
-          ) : forecastError ? (
+          ) : forecastError && !liveMode ? (
             <div className="text-center py-10">
               <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
               {isForecastInsufficientData ? (
@@ -554,7 +643,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline }: Forecast
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
-          {storageLoading && backendOnline ? (
+          {storageLoading && backendOnline && !liveMode ? (
             <div className="space-y-2">
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />

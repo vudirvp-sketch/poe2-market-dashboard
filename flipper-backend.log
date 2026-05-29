@@ -1,18 +1,18 @@
-INFO:     Started server process [15608]
+INFO:     Started server process [2452]
 INFO:     Waiting for application startup.
-2026-05-29 07:00:30,596 [INFO] backend.main: PoE2 Flipper backend starting up...
-2026-05-29 07:00:30,603 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
-2026-05-29 07:00:30,609 [INFO] backend.main: HistoricalStore initialized
-2026-05-29 07:00:30,609 [INFO] backend.main: Loaded 0 persisted events from SQLite
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Added job "Collect gold\u2192chaos rate" to job store "default"
-2026-05-29 07:00:30,640 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
-2026-05-29 07:00:30,641 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
-2026-05-29 07:00:30,641 [INFO] apscheduler.scheduler: Scheduler started
-2026-05-29 07:00:30,641 [INFO] backend.scheduler: Scheduler: started with 4 jobs (price=30m, gold=30m, prune=15m, model=30m)
+2026-05-29 07:21:43,640 [INFO] backend.main: PoE2 Flipper backend starting up...
+2026-05-29 07:21:43,646 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
+2026-05-29 07:21:43,652 [INFO] backend.main: HistoricalStore initialized
+2026-05-29 07:21:43,652 [INFO] backend.main: Loaded 0 persisted events from SQLite
+2026-05-29 07:21:43,681 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:21:43,681 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:21:43,681 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:21:43,681 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-29 07:21:43,682 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
+2026-05-29 07:21:43,682 [INFO] apscheduler.scheduler: Added job "Collect gold\u2192chaos rate" to job store "default"
+2026-05-29 07:21:43,682 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
+2026-05-29 07:21:43,682 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
+2026-05-29 07:21:43,682 [INFO] apscheduler.scheduler: Scheduler started
+2026-05-29 07:21:43,682 [INFO] backend.scheduler: Scheduler: started with 4 jobs (price=30m, gold=30m, prune=15m, model=30m)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

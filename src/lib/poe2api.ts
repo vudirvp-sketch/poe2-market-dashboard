@@ -882,7 +882,7 @@ async function getUniquesAllCategories(
 
     // Fetch remaining pages if there are more
     if (page1.Pages > 1) {
-      const extraFetches = [];
+      const extraFetches: Promise<RawPaginatedResponse<RawUniqueItem> | null>[] = [];
       for (let p = 2; p <= page1.Pages; p++) {
         const params = new URLSearchParams({
           Category: cat.ApiId,
@@ -1014,7 +1014,7 @@ async function getCurrenciesAllCategories(
 
     // Fetch remaining pages if there are more
     if (page1.Pages > 1) {
-      const extraFetches = [];
+      const extraFetches: Promise<RawPaginatedResponse<RawCurrencyItem> | null>[] = [];
       for (let p = 2; p <= page1.Pages; p++) {
         const params = new URLSearchParams({
           Category: cat.ApiId,

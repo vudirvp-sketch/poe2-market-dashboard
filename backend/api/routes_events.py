@@ -25,6 +25,7 @@ from backend.config import get_settings, AppConfig
 from backend.economy.events import get_event_manager, EventManager
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.models.currency import EventType
+from backend.data.pipeline_cache import get_pipeline_cache
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,13 @@ async def create_event(request: CreateEventRequest):
             patch_ts.isoformat(),
         )
 
+    # Invalidate the pipeline cache — events affect scoring, forecasting,
+    # and storage value computations. The next request will recompute
+    # with the new event taken into account.
+    pipeline_cache = get_pipeline_cache()
+    pipeline_cache.invalidate()
+    logger.info("PipelineCache invalidated after event creation")
+
     return {
         "message": "Event created successfully",
         "event": event.to_dict(),
@@ -191,6 +199,11 @@ async def delete_event(event_id: str):
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
 
+    # Invalidate pipeline cache — removal changes scoring/forecast context
+    pipeline_cache = get_pipeline_cache()
+    pipeline_cache.invalidate()
+    logger.info("PipelineCache invalidated after event deletion")
+
     return {"message": f"Event {event_id} deleted successfully"}
 
 
@@ -206,5 +219,10 @@ async def deactivate_event(event_id: str):
     deactivated = manager.deactivate_event(event_id)
     if not deactivated:
         raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
+
+    # Invalidate pipeline cache — deactivation changes scoring/forecast context
+    pipeline_cache = get_pipeline_cache()
+    pipeline_cache.invalidate()
+    logger.info("PipelineCache invalidated after event deactivation")
 
     return {"message": f"Event {event_id} deactivated successfully"}

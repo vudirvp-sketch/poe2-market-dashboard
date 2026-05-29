@@ -25,8 +25,10 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 async def start_oauth2():
     """Initiate the OAuth2 authorization flow with GGG.
 
-    Returns a redirect to GGG's authorization page. After the user
-    authorizes, GGG redirects back to the configured callback URL.
+    Returns a JSON object containing the authorization URL and a state
+    parameter. The caller (Next.js proxy) is responsible for:
+      1. Storing the state in an httpOnly cookie for CSRF verification
+      2. Redirecting the user to auth_url
 
     Required environment variables:
         GGG_CLIENT_ID — OAuth2 client ID from GGG developer portal
@@ -42,11 +44,19 @@ async def start_oauth2():
             detail=str(e),
         )
 
-    # In a production app, store the state in a session/cookie for CSRF
-    # verification. For now, we pass it through and verify in the callback.
-    logger.info("OAuth2: redirecting user to GGG authorization page")
+    # Store state internally so we can verify it in the callback.
+    # The Next.js proxy layer also stores state in a cookie for
+    # defense-in-depth CSRF protection.
+    manager.set_pending_state(state)
 
-    return RedirectResponse(url=auth_url)
+    logger.info("OAuth2: generated authorization URL with state=%s…", state[:8])
+
+    # Return JSON instead of RedirectResponse so the Next.js proxy
+    # can set the state cookie before redirecting the browser.
+    return {
+        "auth_url": auth_url,
+        "state": state,
+    }
 
 
 @router.get("/callback")
@@ -57,6 +67,8 @@ async def oauth2_callback(
     """Handle the OAuth2 callback from GGG.
 
     Exchanges the authorization code for access and refresh tokens.
+    Verifies the state parameter against the pending state stored
+    during /auth/start (defense-in-depth CSRF check).
 
     Args:
         code: Authorization code from GGG
@@ -64,8 +76,23 @@ async def oauth2_callback(
     """
     manager = get_token_manager()
 
+    # Verify state against the one we stored at /auth/start
+    pending_state = manager.get_pending_state()
+    if pending_state is not None and state != pending_state:
+        logger.warning(
+            "OAuth2: state mismatch! Expected %s…, got %s…",
+            pending_state[:8] if pending_state else "None",
+            state[:8],
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="OAuth2 state verification failed — possible CSRF attack",
+        )
+
     try:
         token_data = await manager.exchange_code(code, state)
+        # Clear the pending state after successful exchange
+        manager.clear_pending_state()
         return {
             "message": "Authentication successful",
             "expires_in": token_data.get("expires_in"),

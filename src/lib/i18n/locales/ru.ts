@@ -302,6 +302,14 @@ const ru: Record<TranslationKeys, string> = {
   forecastAlertScore: "Скор",
   forecastIndicators: "Индикаторы",
   forecastConfirmed: "Подтверждено",
+  forecastLiveMode: "Live",
+  forecastLiveModeTooltip: "Включить обновления в реальном времени через WebSocket",
+  forecastPollingMode: "Опрос",
+  forecastPollingModeTooltip: "Обновлять данные периодически через HTTP-запросы",
+  forecastWsConnected: "Live: подключено",
+  forecastWsConnecting: "Live: подключение…",
+  forecastWsDisconnected: "Live: отключено",
+  forecastLastUpdate: "Последнее обновление",
 
   // Timeframes
   timeframe24h: "24\u0447",

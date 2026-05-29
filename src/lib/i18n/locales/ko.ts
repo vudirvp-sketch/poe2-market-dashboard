@@ -306,6 +306,14 @@ const ko: Record<TranslationKeys, string> = {
   forecastAlertScore: "점수",
   forecastIndicators: "지표",
   forecastConfirmed: "확인됨",
+  forecastLiveMode: "라이브",
+  forecastLiveModeTooltip: "WebSocket을 통한 실시간 업데이트 활성화",
+  forecastPollingMode: "폴링",
+  forecastPollingModeTooltip: "HTTP 폴링으로 주기적 데이터 새로고침",
+  forecastWsConnected: "라이브: 연결됨",
+  forecastWsConnecting: "라이브: 연결 중…",
+  forecastWsDisconnected: "라이브: 연결 끊김",
+  forecastLastUpdate: "마지막 업데이트",
 
   // Flips Tab
   tabFlips: "플립",
