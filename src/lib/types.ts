@@ -132,6 +132,61 @@ export interface SnapshotHistoryPoint {
 // Flipper backend shared types (used across dashboard-page, tabs, sidebar)
 // ============================================================================
 
+/** Scored flip opportunity from GET /api/flipper/flips */
+export interface FlipOpportunity {
+  currency: string;
+  score: number;
+  spread_after_fees: number;
+  gold_fee_fraction: number;
+  gold_fee_actual: number;
+  volume_24h: number;
+  momentum: number;
+  volatility: number;
+  cluster: string;
+  bid: number;
+  ask: number;
+  mid_price: number;
+}
+
+/** Event status embedded in FlipsResponse */
+export interface FlipEventStatus {
+  any_active: boolean;
+  affected_currencies: string[];
+  summary: Record<string, unknown> | null;
+}
+
+/** Response shape from GET /api/flipper/flips */
+export interface FlipsResponse {
+  league: string;
+  total: number;
+  opportunities: FlipOpportunity[];
+  event_status: FlipEventStatus;
+  fetched_at: string;
+  /** true when backend has not accumulated enough data yet */
+  data_available?: boolean;
+}
+
+/** Triangular arbitrage cycle from GET /api/flipper/triangular */
+export interface TriangularCycle {
+  cycle: string[];
+  net_profit_pct: number;
+  step_rates: number[];
+  step_fees_gold: number[];
+  step_fees_fraction: number[];
+  total_volume: number;
+  confidence: number;
+}
+
+/** Response shape from GET /api/flipper/triangular */
+export interface TriangularResponse {
+  league: string;
+  total: number;
+  opportunities: TriangularCycle[];
+  fetched_at: string;
+  /** true when backend has not accumulated enough data yet */
+  data_available?: boolean;
+}
+
 /** Response shape from GET /api/flipper/health */
 export interface FlipperHealthResponse {
   status: "ok" | "degraded" | "error";

@@ -1,24 +1,29 @@
 // ============================================================================
 // usePriceAlerts — Browser notification hook for price threshold alerts
 // Checks alert conditions on a polling interval and fires browser notifications
+//
+// Fix: previously called fetchApi() directly inside a setInterval callback,
+// bypassing React Query cache entirely. Now reads from the existing React
+// Query cache (key ["allItems", realm, league]) which dashboard-page.tsx
+// already populates, and triggers a background refetch on the interval.
+// This eliminates duplicate network requests for the same data.
 // ============================================================================
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDashboardStore } from "@/lib/store";
-import { fetchApi } from "@/lib/types";
 import type { PoeItem } from "@/lib/types";
 
 /** Debounce map: alert key → timestamp of last notification */
 const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-// Fix 4.5: Increased poll interval from 60s to 5min — loading all items
-// every 60s for 1-2 alerts is wasteful (~500+ items per cycle)
+// Poll interval for cache-based alert checking
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface UsePriceAlertsOptions {
   realm: string;
   league: string;
-  /** Override polling interval in ms (default 60000) */
+  /** Override polling interval in ms (default 5 min) */
   pollInterval?: number;
 }
 
@@ -26,9 +31,12 @@ export function usePriceAlerts({ realm, league, pollInterval }: UsePriceAlertsOp
   const alerts = useDashboardStore((s) => s.alerts);
   const lastNotifiedRef = useRef<Map<string, number>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const queryClient = useQueryClient();
 
   // ---- Core alert-checking logic ----
-  const checkAlerts = useCallback(async () => {
+  // Reads from React Query cache (populated by dashboard-page.tsx's
+  // ["allItems", realm, league] query) instead of fetching directly.
+  const checkAlerts = useCallback(() => {
     const enabledAlerts = alerts.filter((a) => a.enabled);
     if (
       enabledAlerts.length === 0 ||
@@ -41,67 +49,60 @@ export function usePriceAlerts({ realm, league, pollInterval }: UsePriceAlertsOp
 
     if (!league || !realm) return;
 
-    // Gather unique item IDs that have enabled alerts
-    const itemIds = [...new Set(enabledAlerts.map((a) => a.itemId))];
-    if (itemIds.length === 0) return;
+    // Read from React Query cache — no network request
+    const allItems = queryClient.getQueryData<PoeItem[]>(["allItems", realm, league]);
+    if (!allItems) return;
 
-    try {
-      // Fetch current prices for all items with alerts
-      const allItems = await fetchApi<PoeItem[]>("/api/poe2/items", {
-        realm,
-        league,
-      });
-
-      // Build a lookup by item id
-      const itemMap = new Map<string, PoeItem>();
-      for (const item of allItems) {
-        itemMap.set(item.id, item);
-      }
-
-      const now = Date.now();
-
-      for (const alert of enabledAlerts) {
-        const item = itemMap.get(alert.itemId);
-        if (!item) continue;
-
-        const currentPrice = item.relativePrice ?? item.priceChaos ?? item.price;
-        if (currentPrice == null) continue;
-
-        // Check condition
-        const triggered =
-          alert.condition === "above"
-            ? currentPrice > alert.threshold
-            : currentPrice < alert.threshold;
-
-        if (!triggered) continue;
-
-        // Debounce: skip if we notified for this alert key within the cooldown
-        const alertKey = `${alert.itemId}_${alert.condition}`;
-        const lastNotified = lastNotifiedRef.current.get(alertKey) ?? 0;
-        if (now - lastNotified < NOTIFICATION_COOLDOWN_MS) continue;
-
-        // Fire browser notification
-        const direction = alert.condition === "above" ? "above" : "below";
-        const body = `${alert.itemName} is now ${direction} ${alert.threshold.toFixed(2)} (current: ${currentPrice.toFixed(2)})`;
-
-        try {
-          new Notification("PoE2 Price Alert", {
-            body,
-            icon: item.iconUrl || "/logo.svg",
-          });
-        } catch {
-          // Notification constructor may fail in some environments; ignore
-        }
-
-        // Record notification timestamp
-        lastNotifiedRef.current.set(alertKey, now);
-      }
-    } catch {
-      // Silently ignore fetch errors — will retry on next interval
+    // Build a lookup by item id
+    const itemMap = new Map<string, PoeItem>();
+    for (const item of allItems) {
+      itemMap.set(item.id, item);
     }
-  }, [alerts, realm, league]);
+
+    const now = Date.now();
+
+    for (const alert of enabledAlerts) {
+      const item = itemMap.get(alert.itemId);
+      if (!item) continue;
+
+      const currentPrice = item.relativePrice ?? item.priceChaos ?? item.price;
+      if (currentPrice == null) continue;
+
+      // Check condition
+      const triggered =
+        alert.condition === "above"
+          ? currentPrice > alert.threshold
+          : currentPrice < alert.threshold;
+
+      if (!triggered) continue;
+
+      // Debounce: skip if we notified for this alert key within the cooldown
+      const alertKey = `${alert.itemId}_${alert.condition}`;
+      const lastNotified = lastNotifiedRef.current.get(alertKey) ?? 0;
+      if (now - lastNotified < NOTIFICATION_COOLDOWN_MS) continue;
+
+      // Fire browser notification
+      const direction = alert.condition === "above" ? "above" : "below";
+      const body = `${alert.itemName} is now ${direction} ${alert.threshold.toFixed(2)} (current: ${currentPrice.toFixed(2)})`;
+
+      try {
+        new Notification("PoE2 Price Alert", {
+          body,
+          icon: item.iconUrl || "/logo.svg",
+        });
+      } catch {
+        // Notification constructor may fail in some environments; ignore
+      }
+
+      // Record notification timestamp
+      lastNotifiedRef.current.set(alertKey, now);
+    }
+  }, [alerts, realm, league, queryClient]);
 
   // ---- Polling interval ----
+  // Instead of calling fetchApi on every tick, we:
+  //   1. Trigger a background refetch of the cached query (stays in RQ cache)
+  //   2. After a short delay (to let the refetch complete), check alerts from cache
   useEffect(() => {
     // Clear any existing timer
     if (timerRef.current) {
@@ -121,10 +122,20 @@ export function usePriceAlerts({ realm, league, pollInterval }: UsePriceAlertsOp
 
     const interval = pollInterval ?? POLL_INTERVAL_MS;
 
-    // Initial check
+    // Initial check from cache (data likely already there from dashboard)
     checkAlerts();
 
-    timerRef.current = setInterval(checkAlerts, interval);
+    timerRef.current = setInterval(() => {
+      // Trigger a background refetch via React Query — this populates the
+      // cache and deduplicates with any other consumer of the same key.
+      queryClient.refetchQueries({ queryKey: ["allItems", realm, league] }).then(() => {
+        // After refetch completes, check alerts from the updated cache
+        checkAlerts();
+      }).catch(() => {
+        // If refetch fails, still check from stale cache
+        checkAlerts();
+      });
+    }, interval);
 
     return () => {
       if (timerRef.current) {
@@ -132,7 +143,7 @@ export function usePriceAlerts({ realm, league, pollInterval }: UsePriceAlertsOp
         timerRef.current = null;
       }
     };
-  }, [alerts, realm, league, pollInterval, checkAlerts]);
+  }, [alerts, realm, league, pollInterval, checkAlerts, queryClient]);
 
   return { checkAlerts };
 }

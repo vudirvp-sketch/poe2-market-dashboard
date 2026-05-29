@@ -35,8 +35,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { fmt, fetchApi, getFlipperErrorType } from "@/lib/types";
-import type { ExchangePair } from "@/lib/types";
+import {
+  fmt,
+  fetchApi,
+  getFlipperErrorType,
+} from "@/lib/types";
+import type {
+  ExchangePair,
+  FlipOpportunity,
+  FlipEventStatus,
+  FlipsResponse,
+  TriangularCycle,
+  TriangularResponse,
+} from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
 
 // ---------------------------------------------------------------------------
@@ -63,56 +74,9 @@ interface ArbitrageCycle {
 }
 
 // ---------------------------------------------------------------------------
-// Types — Flipper backend
+// Flipper backend types — imported from @/lib/types (Single Source of Truth)
+// Previously these were duplicated locally; now consolidated.
 // ---------------------------------------------------------------------------
-
-interface FlipOpportunity {
-  currency: string;
-  score: number;
-  spread_after_fees: number;
-  gold_fee_fraction: number;
-  gold_fee_actual: number;
-  volume_24h: number;
-  momentum: number;
-  volatility: number;
-  cluster: string;
-  bid: number;
-  ask: number;
-  mid_price: number;
-}
-
-interface FlipEventStatus {
-  any_active: boolean;
-  affected_currencies: string[];
-  summary: Record<string, unknown> | null;
-}
-
-interface FlipsResponse {
-  league: string;
-  total: number;
-  opportunities: FlipOpportunity[];
-  event_status: FlipEventStatus;
-  fetched_at: string;
-  data_available?: boolean;
-}
-
-interface TriangularCycle {
-  cycle: string[];
-  net_profit_pct: number;
-  step_rates: number[];
-  step_fees_gold: number[];
-  step_fees_fraction: number[];
-  total_volume: number;
-  confidence: number;
-}
-
-interface TriangularResponse {
-  league: string;
-  total: number;
-  opportunities: TriangularCycle[];
-  fetched_at: string;
-  data_available?: boolean;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers — Client-side

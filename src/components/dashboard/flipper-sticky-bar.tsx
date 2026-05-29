@@ -16,35 +16,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
-import type { FlipperPhaseResponse } from "@/lib/types";
+import type {
+  FlipperPhaseResponse,
+  FlipOpportunity,
+  FlipsResponse,
+  TriangularResponse,
+} from "@/lib/types";
 import { computeSentiment, scoreColor, classifySentiment } from "@/lib/flipper-helpers";
 
 // ---------------------------------------------------------------------------
-// Inline types for API responses (subset of fields we use)
+// Types — imported from @/lib/types (Single Source of Truth)
+// Previously FlipOpportunity / FlipsResponse / TriangularCycle /
+// TriangularResponse were duplicated locally as subsets. Now we use the
+// canonical types. The sticky bar only reads a few fields from each
+// (currency, score, momentum) but TypeScript allows accessing a subset
+// of fields on a fuller type.
 // ---------------------------------------------------------------------------
-
-interface FlipOpportunity {
-  currency: string;
-  score: number;
-  momentum: number;
-}
-
-interface FlipsResponse {
-  league: string;
-  total: number;
-  opportunities: FlipOpportunity[];
-  fetched_at: string;
-}
-
-interface TriangularCycle {
-  cycle: string[];
-  net_profit_pct: number;
-}
-
-interface TriangularResponse {
-  cycles: TriangularCycle[];
-  total: number;
-}
 
 interface PortfolioData {
   method: "risk_parity" | "min_variance";
@@ -77,45 +64,49 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
 }: FlipperStickyBarProps) {
   const { t } = useI18n();
 
-  // ---- Best flip ----
+  // ---- Best flip (unfiltered — shared cache key with other consumers) ----
   const { data: flipsData } = useQuery<FlipsResponse>({
-    queryKey: ["flipper-sticky-flips"],
+    queryKey: ["flipper-flips"],
     queryFn: () => fetchApi<FlipsResponse>("/api/flipper/flips"),
     enabled: backendOnline,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 
-  // ---- Best triangular arb ----
+  // ---- Best triangular arb (shared cache key with ArbitrageTab) ----
   const { data: triangularData } = useQuery<TriangularResponse>({
-    queryKey: ["flipper-sticky-triangular"],
+    queryKey: ["flipper-triangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 
-  // ---- Phase info ----
+  // ---- Phase info (shared cache key with Dashboard) ----
   const { data: phaseData } = useQuery<FlipperPhaseResponse>({
-    queryKey: ["flipper-sticky-phase"],
+    queryKey: ["flipper-phase"],
     queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: backendOnline,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 
-  // ---- Portfolio data (for correlation shock) ----
+  // ---- Portfolio data (for correlation shock; shared key with PortfolioTab) ----
   const { data: portfolioData } = useQuery<PortfolioData>({
-    queryKey: ["flipper-sticky-portfolio"],
+    queryKey: ["flipper-portfolio"],
     queryFn: () => fetchApi<PortfolioData>("/api/flipper/portfolio"),
     enabled: backendOnline,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 
   // ---- Derived data ----
   const bestFlip = flipsData?.opportunities?.[0] ?? null;
-  const bestCycle = triangularData?.cycles?.[0] ?? null;
+  const bestCycle = triangularData?.opportunities?.[0] ?? null;
   const flipCount = flipsData?.total ?? 0;
   const momentum = bestFlip?.momentum ?? 0;
   const correlationShock = portfolioData?.correlation_warning ?? false;

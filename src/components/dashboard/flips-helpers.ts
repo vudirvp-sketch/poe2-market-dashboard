@@ -1,41 +1,17 @@
 // ============================================================================
-// Flips Tab — Shared types and helper functions
+// Flips Tab — Shared helper functions
+//
+// Types (FlipOpportunity, FlipEventStatus, FlipsResponse) are defined once in
+// @/lib/types (Single Source of Truth). This file re-exports them for
+// backward-compatible imports from flips-tab / flips-table / flips-detail-dialog.
 // ============================================================================
 import type { TranslationKeys } from "@/lib/i18n";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// Re-export canonical types from @/lib/types
+export type { FlipOpportunity, FlipEventStatus, FlipsResponse } from "@/lib/types";
 
-export interface FlipOpportunity {
-  currency: string;
-  score: number;
-  spread_after_fees: number;
-  gold_fee_fraction: number;
-  gold_fee_actual: number;
-  volume_24h: number;
-  momentum: number;
-  volatility: number;
-  cluster: string;
-  bid: number;
-  ask: number;
-  mid_price: number;
-}
-
-export interface FlipEventStatus {
-  any_active: boolean;
-  affected_currencies: string[];
-  summary: Record<string, unknown> | null;
-}
-
-export interface FlipsResponse {
-  league: string;
-  total: number;
-  opportunities: FlipOpportunity[];
-  event_status: FlipEventStatus;
-  fetched_at: string;
-}
-
+// StorageValueResponse is only used in flips-detail-dialog — keep it here
+// (not in @/lib/types) because it's specific to the flips UI.
 export interface StorageValueResponse {
   currency: string;
   current_price: number;

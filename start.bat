@@ -117,10 +117,10 @@ if not exist ".env.local" (
     REM Verify POE2_API_BASE_URL uses api. subdomain (not bare poe2scout.com)
     findstr /C:"poe2scout.com/api" .env.local >nul 2>&1
     if !ERRORLEVEL! neq 0 (
-        echo [WARN] .env.local may have wrong POE2_API_BASE_URL!
+        echo [WARN] .env.local may have wrong POE2_API_BASE_URL^^!
         echo        The URL should include the "api." subdomain:
         echo        POE2_API_BASE_URL=https://api.poe2scout.com/api
-        echo        Using the bare domain (poe2scout.com) causes ECONNRESET/502 errors.
+        echo        Using the bare domain ^(poe2scout.com^) causes ECONNRESET/502 errors.
         echo.
     )
     REM Check if NEXT_PUBLIC_FLIPPER_WS_URL exists; if not, add it
