@@ -1018,38 +1018,59 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
 }
 
 export async function getExchangeSnapshot(realm: string, league: string): Promise<ExchangeSnapshot> {
-  const raw = await cachedFetch<RawExchangeSnapshot>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ExchangeSnapshot`
-  );
-  return {
-    pairs: [],
-    referenceCurrency: raw.BaseCurrencyApiId,
-    timestamp: new Date(raw.Epoch * 1000).toISOString(),
-  };
+  try {
+    const raw = await cachedFetch<RawExchangeSnapshot>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ExchangeSnapshot`
+    );
+    return {
+      pairs: [],
+      referenceCurrency: raw.BaseCurrencyApiId,
+      timestamp: new Date(raw.Epoch * 1000).toISOString(),
+    };
+  } catch (err) {
+    console.warn("[poe2api] getExchangeSnapshot: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
+    return { pairs: [], referenceCurrency: "exalted", timestamp: new Date().toISOString() };
+  }
 }
 
+const FALLBACK_REFERENCE_CURRENCIES: ReferenceCurrency[] = [
+  { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 },
+  { apiId: "divine", text: "Divine Orb", iconUrl: null, relativePrice: 0 },
+  { apiId: "chaos", text: "Chaos Orb", iconUrl: null, relativePrice: 0 },
+];
+
 export async function getReferenceCurrencies(realm: string, league: string): Promise<ReferenceCurrency[]> {
-  const raw = await cachedFetch<RawReferenceCurrency[]>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ReferenceCurrencies`
-  );
-  return raw.map((c) => ({
-    apiId: c.ApiId,
-    text: c.Text,
-    iconUrl: c.IconUrl,
-    relativePrice: c.RelativePrice,
-  }));
+  try {
+    const raw = await cachedFetch<RawReferenceCurrency[]>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/ReferenceCurrencies`
+    );
+    return raw.map((c) => ({
+      apiId: c.ApiId,
+      text: c.Text,
+      iconUrl: c.IconUrl,
+      relativePrice: c.RelativePrice,
+    }));
+  } catch (err) {
+    console.warn("[poe2api] getReferenceCurrencies: upstream unreachable, returning fallback.", err instanceof Error ? err.message : err);
+    return FALLBACK_REFERENCE_CURRENCIES;
+  }
 }
 
 export async function getSnapshotHistory(realm: string, league: string, limit = 24): Promise<SnapshotHistoryPoint[]> {
-  const raw = await cachedFetch<RawSnapshotHistoryResponse>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/SnapshotHistory?Limit=${limit}`
-  );
-  return raw.Data.map((d) => ({
-    timestamp: new Date(d.Epoch * 1000).toISOString(),
-    totalVolume: d.Volume,
-    totalMarketCap: d.MarketCap,
-    itemCount: 0,
-  }));
+  try {
+    const raw = await cachedFetch<RawSnapshotHistoryResponse>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/SnapshotHistory?Limit=${limit}`
+    );
+    return raw.Data.map((d) => ({
+      timestamp: new Date(d.Epoch * 1000).toISOString(),
+      totalVolume: d.Volume,
+      totalMarketCap: d.MarketCap,
+      itemCount: 0,
+    }));
+  } catch (err) {
+    console.warn("[poe2api] getSnapshotHistory: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
 // ============================================================================
@@ -1064,9 +1085,15 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
  *                 If false (default), enrich top-20 pairs with history data.
  */
 export async function getSnapshotPairs(realm: string, league: string, snapshot = false): Promise<ExchangePair[]> {
-  const raw = await cachedFetch<RawSnapshotPair[]>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/SnapshotPairs`
-  );
+  let raw: RawSnapshotPair[];
+  try {
+    raw = await cachedFetch<RawSnapshotPair[]>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/SnapshotPairs`
+    );
+  } catch (err) {
+    console.warn("[poe2api] getSnapshotPairs: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
   const pairs = raw.map(mapSnapshotPair);
 
   // Snapshot mode: skip history enrichment for fast initial load
@@ -1111,10 +1138,11 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
 
 // --- Items ---
 export async function getItems(realm: string, league: string): Promise<PoeItem[]> {
-  const raw = await cachedFetch<RawAllItem[]>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items`
-  );
-  return raw.map((item) => ({
+  try {
+    const raw = await cachedFetch<RawAllItem[]>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items`
+    );
+    return raw.map((item) => ({
     id: String(item.ItemId),
     apiId: item.ApiId || "",
     name: item.Name || item.Text,
@@ -1137,34 +1165,47 @@ export async function getItems(realm: string, league: string): Promise<PoeItem[]
     links: null,
     variant: null,
     levelRequired: null,
-  }));
+    }));
+  } catch (err) {
+    console.warn("[poe2api] getItems: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
+const FALLBACK_CATEGORIES: ItemCategory[] = [
+  { name: "all", displayName: "All", count: 0 },
+];
+
 export async function getItemCategories(realm: string, league: string): Promise<ItemCategory[]> {
-  const raw = await cachedFetch<RawCategoriesResponse>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
-  );
-  const cats: ItemCategory[] = [];
+  try {
+    const raw = await cachedFetch<RawCategoriesResponse>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
+    );
+    const cats: ItemCategory[] = [];
 
-  // Add unique categories
-  for (const uc of raw.UniqueCategories ?? []) {
-    cats.push({
-      name: uc.ApiId,
-      displayName: uc.Label,
-      count: 0,
-    });
+    // Add unique categories
+    for (const uc of raw.UniqueCategories ?? []) {
+      cats.push({
+        name: uc.ApiId,
+        displayName: uc.Label,
+        count: 0,
+      });
+    }
+
+    // Add currency categories
+    for (const cc of raw.CurrencyCategories ?? []) {
+      cats.push({
+        name: cc.ApiId,
+        displayName: cc.Label,
+        count: 0,
+      });
+    }
+
+    return cats;
+  } catch (err) {
+    console.warn("[poe2api] getItemCategories: upstream unreachable, returning fallback.", err instanceof Error ? err.message : err);
+    return FALLBACK_CATEGORIES;
   }
-
-  // Add currency categories
-  for (const cc of raw.CurrencyCategories ?? []) {
-    cats.push({
-      name: cc.ApiId,
-      displayName: cc.Label,
-      count: 0,
-    });
-  }
-
-  return cats;
 }
 
 export async function getItem(realm: string, league: string, itemId: string): Promise<PoeItem> {
@@ -1200,31 +1241,41 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
 // ItemHistory API returns {PriceHistory: [...], HasMore}
 // Fix 1: use maxRetries: 1 for history endpoints — non-critical, fail fast
 export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168, referenceCurrency?: string): Promise<PoeItemHistoryPoint[]> {
-  let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
-  if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
-  const raw = await cachedFetch<RawItemHistoryResponse>(url, { maxRetries: 1 });
-  return (raw.PriceHistory ?? []).map((p) => ({
-    timestamp: p.Time,
-    price: p.Price,
-    priceChaos: p.Price,
-    relativePrice: p.Price,
-    volume: p.Quantity,
-  }));
+  try {
+    let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
+    if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
+    const raw = await cachedFetch<RawItemHistoryResponse>(url, { maxRetries: 1 });
+    return (raw.PriceHistory ?? []).map((p) => ({
+      timestamp: p.Time,
+      price: p.Price,
+      priceChaos: p.Price,
+      relativePrice: p.Price,
+      volume: p.Quantity,
+    }));
+  } catch (err) {
+    console.warn("[poe2api] getItemHistory: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
 // DailyStatsHistory API returns {DailyStats: [...], HasMore}
 export async function getItemDailyStats(realm: string, league: string, itemId: string, dayCount = 30, referenceCurrency?: string): Promise<DailyStat[]> {
-  let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`;
-  if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
-  const raw = await cachedFetch<RawDailyStatsHistoryResponse>(url, { maxRetries: 1 });
-  return (raw.DailyStats ?? []).map((d) => ({
-    day: d.Time,
-    open: d.Open,
-    high: d.High,
-    low: d.Low,
-    close: d.Close,
-    volume: d.Volume,
-  }));
+  try {
+    let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/DailyStatsHistory?DayCount=${dayCount}`;
+    if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
+    const raw = await cachedFetch<RawDailyStatsHistoryResponse>(url, { maxRetries: 1 });
+    return (raw.DailyStats ?? []).map((d) => ({
+      day: d.Time,
+      open: d.Open,
+      high: d.High,
+      low: d.Low,
+      close: d.Close,
+      volume: d.Volume,
+    }));
+  } catch (err) {
+    console.warn("[poe2api] getItemDailyStats: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
 }
 
 // --- Uniques (paginated) ---

@@ -47,10 +47,11 @@ export async function GET(req: NextRequest) {
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    const status = message.includes("timed out") ? 504 : 502;
+    // All poe2api functions now have internal fallbacks, so this catch
+    // is only for truly unexpected errors. Return graceful fallback instead of 502.
     return NextResponse.json(
-      { error: message, hint: message.includes("unreachable") ? "Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local" : undefined },
-      { status }
+      { error: message },
+      { status: 200 }
     );
   }
 }
