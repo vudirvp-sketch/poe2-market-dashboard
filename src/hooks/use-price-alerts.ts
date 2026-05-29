@@ -11,7 +11,9 @@ import type { PoeItem } from "@/lib/types";
 
 /** Debounce map: alert key → timestamp of last notification */
 const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-const POLL_INTERVAL_MS = 60 * 1000; // 1 minute
+// Fix 4.5: Increased poll interval from 60s to 5min — loading all items
+// every 60s for 1-2 alerts is wasteful (~500+ items per cycle)
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface UsePriceAlertsOptions {
   realm: string;

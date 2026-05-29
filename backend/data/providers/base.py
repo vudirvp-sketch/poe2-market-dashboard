@@ -48,6 +48,12 @@ class BaseDataProvider(ABC):
     def name(self) -> str:
         """Return the provider's name for logging and cache keys."""
 
+    # Fix 5.3: Add close() to the abstract base class so polymorphic usage
+    # doesn't raise AttributeError when Poe2ScoutProvider.close() is called
+    def close(self) -> None:
+        """Clean up resources (e.g., HTTP sessions). Override if needed."""
+        pass
+
     async def get_daily_stats(
         self,
         league: str,

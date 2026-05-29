@@ -509,13 +509,27 @@ class EventManager:
         return len(expired_ids)
 
     def clear_all(self) -> int:
-        """Clear all events. Useful for testing.
+        """Clear all events from both in-memory and SQLite. Useful for testing.
+
+        Fix 4.2: Also clears the persistent SQLite store so that old events
+        don't reappear after a backend restart.
 
         Returns:
             Number of events cleared
         """
         count = len(self._events)
         self._events.clear()
+        # Fix 4.2: Also clear persistent store
+        if self._store is not None:
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.ensure_future(self._store.clear_all_events())
+                else:
+                    loop.run_until_complete(self._store.clear_all_events())
+            except Exception as e:
+                logger.error("Failed to clear persistent events: %s", e)
         return count
 
 

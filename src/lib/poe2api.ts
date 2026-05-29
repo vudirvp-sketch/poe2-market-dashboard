@@ -47,6 +47,17 @@ const CACHE_TTL = 60_000;          // 60s fresh
 const CACHE_STALE_TTL = 600_000;   // 10min — serve stale up to this age
 const MAX_CACHE_SIZE = 500;
 
+// Fix 4.6: Periodic cleanup of stale entries that are well past their TTL
+function cleanupStaleCacheEntries(): void {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (now - entry.ts > CACHE_STALE_TTL * 2) {
+      cache.delete(key);
+    }
+  }
+}
+let cacheWriteCounter = 0;
+
 // ---------- Fetch with timeout + retry ----------
 const FETCH_TIMEOUT = 30_000; // 30 seconds (increased from 20 to reduce ECONNRESET)
 const FETCH_RETRIES = 3; // Increased from 2 to give more chances on transient errors
@@ -54,8 +65,28 @@ const FETCH_RETRIES = 3; // Increased from 2 to give more chances on transient e
 // ---------- Request deduplication (Fix 3) ----------
 const pendingRequests = new Map<string, Promise<unknown>>();
 
-// ---------- Background revalidation tracking (Fix 2) ----------
-const revalidationInProgress = new Set<string>();
+// ---------- Background revalidation tracking (Fix 2 + Fix 4.7) ----------
+// Fix 4.7: Replace Set<string> with Map<string, number> for TTL-based cleanup
+const revalidationTimestamps = new Map<string, number>();
+const REVALIDATION_TTL_MS = 60_000; // 1 minute
+
+function isRevalidating(url: string): boolean {
+  const ts = revalidationTimestamps.get(url);
+  if (ts === undefined) return false;
+  if (Date.now() - ts > REVALIDATION_TTL_MS) {
+    revalidationTimestamps.delete(url);
+    return false;
+  }
+  return true;
+}
+
+function markRevalidationStart(url: string): void {
+  revalidationTimestamps.set(url, Date.now());
+}
+
+function markRevalidationEnd(url: string): void {
+  revalidationTimestamps.delete(url);
+}
 
 // ============================================================================
 // Fix 1: unwrapNetworkError — walk AggregateError/cause chain
@@ -121,9 +152,15 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  // Link external signal if provided
+  // Link external signal if provided (Fix 3.4: prevent listener leak)
+  let onAbort: (() => void) | null = null;
   if (signal) {
-    signal.addEventListener("abort", () => controller.abort());
+    if (signal.aborted) {
+      controller.abort();
+    } else {
+      onAbort = () => controller.abort();
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
   }
 
   try {
@@ -134,11 +171,13 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
         "User-Agent": "PoE2-Market-Dashboard/1.0",
         "Accept": "application/json",
       },
-      next: { revalidate: 60 },
     });
     return res;
   } finally {
     clearTimeout(timeoutId);
+    if (onAbort && signal) {
+      signal.removeEventListener("abort", onAbort);
+    }
   }
 }
 
@@ -180,6 +219,11 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
         }
       }
       cache.set(url, { data, ts: Date.now() });
+      // Fix 4.6: Periodic stale entry cleanup
+      cacheWriteCounter++;
+      if (cacheWriteCounter % 10 === 0) {
+        cleanupStaleCacheEntries();
+      }
       return data;
     } catch (err: unknown) {
       // Fix 1: use unwrapNetworkError to properly classify nested errors
@@ -249,15 +293,15 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
 // ============================================================================
 
 async function revalidateInBackground(url: string, maxRetries: number): Promise<void> {
-  if (revalidationInProgress.has(url)) return;
-  revalidationInProgress.add(url);
+  if (isRevalidating(url)) return;
+  markRevalidationStart(url);
   try {
     await doFetch(url, maxRetries);
     // doFetch already updates cache
   } catch {
     // Silently ignore — stale data still being served
   } finally {
-    revalidationInProgress.delete(url);
+    markRevalidationEnd(url);
   }
 }
 
@@ -524,7 +568,13 @@ interface RawDailyStat {
  *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
  *  order (newest entry first, e.g. [null, null, May25, May24, May23]).
  *  We must sort by timestamp to find the true latest and 24h-ago entries.
+ *
+ *  Fix 2.6: Added MAX_TIME_DRIFT_MS threshold. If the nearest log entry
+ *  is more than 6 hours away from the 24h target, return null instead of
+ *  an inaccurate percentage.
  */
+const MAX_TIME_DRIFT_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
   const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
@@ -547,6 +597,9 @@ function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): nu
     }
   }
 
+  // Fix 2.6: If the closest entry is too far from the target time, data is insufficient
+  if (closestDiff > MAX_TIME_DRIFT_MS) return null;
+
   if (closest.Price === 0) return null;
   return ((now.Price - closest.Price) / closest.Price) * 100;
 }
@@ -555,6 +608,8 @@ function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): nu
  *
  *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
  *  order (newest entry first). We must sort by timestamp first.
+ *
+ *  Fix 2.6: Same MAX_TIME_DRIFT_MS threshold applied (6h tolerance).
  */
 function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
@@ -576,6 +631,9 @@ function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): 
       closest = log;
     }
   }
+
+  // Fix 2.6: If the closest entry is too far from the target time, data is insufficient
+  if (closestDiff > MAX_TIME_DRIFT_MS) return null;
 
   if (closest.Price === 0) return null;
   return ((now.Price - closest.Price) / closest.Price) * 100;
@@ -606,13 +664,81 @@ function computeVolume24h(logs: (RawPriceLogEntry | null)[] | undefined): number
   return vol;
 }
 
+/** Fix 2.3: Compute previous price from PriceLogs directly.
+ *
+ *  Instead of back-calculating change from changePercent (which causes
+ *  division by zero at -100%), we extract the previous price from
+ *  the second-to-latest PriceLog entry and compute change directly.
+ */
+function computePreviousPrice(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
+  if (!logs || logs.length < 2) return null;
+  const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
+  if (validLogs.length < 2) return null;
+  // Sort chronologically (oldest first)
+  const sorted = [...validLogs].sort(
+    (a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime()
+  );
+  // sorted[0] = oldest, sorted[last] = most recent (current)
+  // For 24h change: find the entry closest to 24h ago
+  const now = sorted[sorted.length - 1];
+  const targetTime = new Date(now.Time).getTime() - 24 * 60 * 60 * 1000;
+  let closest = sorted[0];
+  let closestDiff = Infinity;
+  for (const log of sorted) {
+    const diff = Math.abs(new Date(log.Time).getTime() - targetTime);
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closest = log;
+    }
+  }
+  if (closestDiff > MAX_TIME_DRIFT_MS) return null;
+  return closest.Price ?? null;
+}
+
+/** Fix 2.3: Compute previous price for 7d change from PriceLogs. */
+function computePrevious7dPrice(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
+  if (!logs || logs.length < 2) return null;
+  const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
+  if (validLogs.length < 2) return null;
+  const sorted = [...validLogs].sort(
+    (a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime()
+  );
+  const now = sorted[sorted.length - 1];
+  const targetTime = new Date(now.Time).getTime() - 7 * 24 * 60 * 60 * 1000;
+  let closest = sorted[0];
+  let closestDiff = Infinity;
+  for (const log of sorted) {
+    const diff = Math.abs(new Date(log.Time).getTime() - targetTime);
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closest = log;
+    }
+  }
+  if (closestDiff > MAX_TIME_DRIFT_MS) return null;
+  return closest.Price ?? null;
+}
+
 /** Map raw currency item to PoeItem */
 function mapCurrencyItem(item: RawCurrencyItem, referencePrice?: number): PoeItem {
   const changePercent = computeChangePercent(item.PriceLogs);
   const sevenDayChange = compute7dChangePercent(item.PriceLogs);
-  const volume = computeVolume24h(item.PriceLogs);
+  const computedVolume = computeVolume24h(item.PriceLogs);
   const currentPrice = item.CurrentPrice;
   const relPrice = referencePrice && currentPrice ? currentPrice / referencePrice : currentPrice;
+
+  // Fix 2.3: Compute change from two prices directly instead of back-calculating
+  // from changePercent (which causes division by zero at -100%)
+  const previousPrice = computePreviousPrice(item.PriceLogs);
+  const change: number | null =
+    currentPrice !== null && previousPrice !== null
+      ? currentPrice - previousPrice
+      : null;
+
+  const previous7dPrice = computePrevious7dPrice(item.PriceLogs);
+  const sevenDayPriceChange: number | null =
+    currentPrice !== null && previous7dPrice !== null
+      ? currentPrice - previous7dPrice
+      : null;
 
   return {
     id: String(item.ItemId || item.CurrencyItemId),
@@ -624,15 +750,15 @@ function mapCurrencyItem(item: RawCurrencyItem, referencePrice?: number): PoeIte
     price: currentPrice,
     priceChaos: currentPrice,
     relativePrice: relPrice,
-    change: changePercent !== null ? currentPrice !== null ? currentPrice - (currentPrice / (1 + changePercent / 100)) : null : null,
+    change,
     changePercent,
-    volume: item.CurrentQuantity ?? volume,
-    sevenDayPriceChange: sevenDayChange !== null && currentPrice !== null ? currentPrice - (currentPrice / (1 + sevenDayChange / 100)) : null,
+    volume: computedVolume ?? 0,                    // Fix 2.5: Real 24h trade volume
+    sevenDayPriceChange,
     sevenDayPriceChangePercent: sevenDayChange,
     history: mapPriceLogs(item.PriceLogs),
     dailyStats: null,
     lowConfidence: (item.CurrentQuantity ?? 0) < 5,
-    listingCount: item.CurrentQuantity,
+    listingCount: item.CurrentQuantity ?? 0,        // Fix 2.5: Separate listing count
     baseType: null,
     links: null,
     variant: null,
@@ -644,9 +770,22 @@ function mapCurrencyItem(item: RawCurrencyItem, referencePrice?: number): PoeIte
 function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
   const changePercent = computeChangePercent(raw.PriceLogs);
   const sevenDayChange = compute7dChangePercent(raw.PriceLogs);
-  const volume = computeVolume24h(raw.PriceLogs);
+  const computedVolume = computeVolume24h(raw.PriceLogs);
   const currentPrice = raw.CurrentPrice;
   const relPrice = referencePrice && currentPrice ? currentPrice / referencePrice : currentPrice;
+
+  // Fix 2.3: Compute change from two prices directly
+  const previousPrice = computePreviousPrice(raw.PriceLogs);
+  const change: number | null =
+    currentPrice !== null && previousPrice !== null
+      ? currentPrice - previousPrice
+      : null;
+
+  const previous7dPrice = computePrevious7dPrice(raw.PriceLogs);
+  const sevenDayPriceChange: number | null =
+    currentPrice !== null && previous7dPrice !== null
+      ? currentPrice - previous7dPrice
+      : null;
 
   return {
     id: String(raw.ItemId || raw.UniqueItemId),
@@ -658,15 +797,15 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
     price: currentPrice,
     priceChaos: currentPrice,
     relativePrice: relPrice,
-    change: changePercent !== null && currentPrice !== null ? currentPrice - (currentPrice / (1 + changePercent / 100)) : null,
+    change,
     changePercent,
-    volume: raw.CurrentQuantity ?? volume,
-    sevenDayPriceChange: sevenDayChange !== null && currentPrice !== null ? currentPrice - (currentPrice / (1 + sevenDayChange / 100)) : null,
+    volume: computedVolume ?? 0,                    // Fix 2.5: Real 24h trade volume
+    sevenDayPriceChange,
     sevenDayPriceChangePercent: sevenDayChange,
     history: mapPriceLogs(raw.PriceLogs),
     dailyStats: null,
     lowConfidence: (raw.CurrentQuantity ?? 0) < 5,
-    listingCount: raw.CurrentQuantity,
+    listingCount: raw.CurrentQuantity ?? 0,        // Fix 2.5: Separate listing count
     baseType: null,
     links: null,
     variant: null,
@@ -694,10 +833,21 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
   }));
 }
 
+/** Fix 2.4: Safe parse float — returns null instead of masking errors as 0 */
+function safeParseFloat(value: string | number | null | undefined): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 /** Map raw snapshot pair to ExchangePair */
 function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
   // ValueTraded, RelativePrice, StockValue are strings in API response
-  const relPrice = parseFloat(raw.CurrencyOneData.RelativePrice) || 0;
+  // Fix 2.4: Use safeParseFloat instead of parseFloat() || 0
+  const relPrice = safeParseFloat(raw.CurrencyOneData.RelativePrice);
   const volTraded = raw.CurrencyOneData.VolumeTraded ?? 0;
 
   return {
@@ -712,8 +862,8 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     currency2Name: raw.CurrencyTwo.Text,
     currency2IconUrl: raw.CurrencyTwo.IconUrl,
     currency2ItemId: raw.CurrencyTwo.ItemId,
-    price: relPrice,
-    relativePrice: relPrice,
+    price: relPrice,                          // Fix 2.4: now number | null
+    relativePrice: relPrice ?? 0,             // UI consumers that need a number get 0 as fallback
     volume: volTraded,
     change: null,
     changePercent: null,

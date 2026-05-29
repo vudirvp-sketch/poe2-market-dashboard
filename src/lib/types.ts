@@ -85,7 +85,8 @@ export interface ExchangePair {
   currency2IconUrl: string | null;
   /** Numeric ItemId — required for the CurrencyPairHistory API endpoint */
   currency2ItemId: number;
-  price: number;
+  /** Fix 2.4: price is now number | null to distinguish "free" from "data error" */
+  price: number | null;
   relativePrice: number;
   volume: number;
   change: number | null;

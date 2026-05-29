@@ -24,7 +24,23 @@ const DEFAULT_RATE_LIMIT_MS = 2_000; // min 2s between identical requests
 
 const lastRequestTime = new Map<string, number>();
 
+// Fix 4.4: Periodic cleanup of stale entries when the map exceeds a threshold
+const MAX_MAP_SIZE = 500;
+
+function cleanupStaleEntries(rateLimitMs: number): void {
+  if (lastRequestTime.size > MAX_MAP_SIZE) {
+    const cutoff = Date.now() - rateLimitMs;
+    for (const [key, timestamp] of lastRequestTime) {
+      if (timestamp < cutoff) {
+        lastRequestTime.delete(key);
+      }
+    }
+  }
+}
+
 function checkRateLimit(url: string, minIntervalMs: number): boolean {
+  // Fix 4.4: Call cleanup at the start of each rate limit check
+  cleanupStaleEntries(minIntervalMs);
   const now = Date.now();
   const last = lastRequestTime.get(url) ?? 0;
   if (now - last < minIntervalMs) {

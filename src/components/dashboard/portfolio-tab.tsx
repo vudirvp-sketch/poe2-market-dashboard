@@ -231,7 +231,11 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
         },
       );
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Fix 3.2: Update selectedMethod from the server response
+      if (data?.method && (data.method === "risk_parity" || data.method === "min_variance")) {
+        setSelectedMethod(data.method);
+      }
       queryClient.invalidateQueries({ queryKey: ["flipper-portfolio"] });
       queryClient.invalidateQueries({ queryKey: ["flipper-portfolio-frontier"] });
     },
@@ -245,9 +249,11 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
   }, [portfolioData?.method]);
 
   // ---- Handle method change ----
+  // Fix 3.2: Only update selectedMethod in onSuccess callback,
+  // preventing race condition where UI shows new method while data is stale
   const handleMethodChange = useCallback(
     (newMethod: string) => {
-      setSelectedMethod(newMethod);
+      // Do NOT call setSelectedMethod here — let onSuccess handle it
       rebalanceMutation.mutate(newMethod);
     },
     [rebalanceMutation],

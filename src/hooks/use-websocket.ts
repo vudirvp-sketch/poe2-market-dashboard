@@ -88,6 +88,11 @@ export interface UseWebSocketReturn<T = Record<string, unknown>> {
 // ---------------------------------------------------------------------------
 
 function resolveWsBaseUrl(): string {
+  // Fix 4.9: SSR-safe — return empty string during server-side rendering
+  if (typeof window === "undefined") {
+    return ''; // SSR: no WebSocket connection possible
+  }
+
   // 1. Explicit override from env
   const envUrl = process.env.NEXT_PUBLIC_FLIPPER_WS_URL;
   if (envUrl) return envUrl;
@@ -108,11 +113,13 @@ function resolveWsBaseUrl(): string {
     return `${wsProto}//${flipperApiUrl.replace(/^https?:\/\//, "")}`;
   }
 
-  // 3. SSR fallback
-  return "ws://localhost:8000";
+  // 3. Should not reach here due to SSR guard above, but just in case
+  return '';
 }
 
-const FLIPPER_WS_URL = resolveWsBaseUrl();
+// Fix 4.9: Compute WS URL lazily inside the hook instead of at module level.
+// This prevents SSR from computing ws://localhost:8000 which persists after hydration.
+// const FLIPPER_WS_URL = resolveWsBaseUrl();  // REMOVED
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -147,6 +154,9 @@ export function useWebSocket<T = Record<string, unknown>>(
     }
   }, []);
 
+  // Fix 4.9: Compute WS URL lazily to avoid SSR stale value
+  const wsBaseUrl = useMemo(() => resolveWsBaseUrl(), []);
+
   const connect = useCallback(() => {
     if (!enabled || !mountedRef.current) return;
 
@@ -165,7 +175,10 @@ export function useWebSocket<T = Record<string, unknown>>(
       wsRef.current = null;
     }
 
-    const url = `${FLIPPER_WS_URL}${path}`;
+    // Fix 4.9: Guard against empty wsBaseUrl (SSR)
+    if (!wsBaseUrl) return;
+
+    const url = `${wsBaseUrl}${path}`;
     setStatus("connecting");
 
     try {
@@ -239,6 +252,7 @@ export function useWebSocket<T = Record<string, unknown>>(
     reconnectBaseDelay,
     reconnectMaxDelay,
     reconnectCount,
+    wsBaseUrl, // Fix 4.9: added dependency
   ]);
 
   // Connect on mount / when path changes
@@ -294,7 +308,7 @@ export function useFlipperWebSocket<T = Record<string, unknown>>(
   channelOrCallbacks: FlipperChannel | {
     onFlipsUpdate?: () => void;
     onAnomaly?: () => void;
-    onForecastUpdate?: () => void;
+    // Fix 4.10/4.11: Removed onForecastUpdate — no /ws/forecast connection exists
     enabled?: boolean;
   },
   options: UseWebSocketOptions = {},
@@ -302,7 +316,7 @@ export function useFlipperWebSocket<T = Record<string, unknown>>(
   // Callback-based API (Fix 10): subscribe to all channels and dispatch
   // callbacks based on message type
   if (typeof channelOrCallbacks === "object") {
-    const { onFlipsUpdate, onAnomaly, onForecastUpdate, enabled = true } = channelOrCallbacks;
+    const { onFlipsUpdate, onAnomaly, enabled = true } = channelOrCallbacks;
     // We connect to /ws/flips as the primary channel; messages from other
     // channels are dispatched based on message type field.
     // For simplicity, we connect to /ws/flips and /ws/anomalies in parallel.

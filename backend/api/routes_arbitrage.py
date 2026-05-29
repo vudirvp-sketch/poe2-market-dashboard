@@ -43,6 +43,48 @@ router = APIRouter(prefix="/api/arbitrage", tags=["arbitrage"])
 
 
 # ---------------------------------------------------------------------------
+# Fix 2.2: Helper to find price closest to 24 hours ago
+# ---------------------------------------------------------------------------
+
+def _find_price_24h_ago(
+    history_with_timestamps: list[tuple[datetime, float]],
+    max_drift_hours: float = 6.0,
+) -> float | None:
+    """Find the price point closest to 24 hours ago.
+
+    Args:
+        history_with_timestamps: list of (timestamp_utc, price) tuples, sorted ascending.
+        max_drift_hours: Maximum allowed time drift in hours (default 6h).
+
+    Returns:
+        The price ~24h ago, or None if no data within ±max_drift of target.
+    """
+    if not history_with_timestamps:
+        return None
+
+    from datetime import timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    max_drift = timedelta(hours=max_drift_hours)
+
+    closest: float | None = None
+    closest_diff: timedelta | None = None
+
+    for ts, price in history_with_timestamps:
+        # Ensure timezone-aware comparison
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        diff = abs(ts - cutoff)
+        if closest_diff is None or diff < closest_diff:
+            closest = price
+            closest_diff = diff
+
+    if closest_diff and closest_diff > max_drift:
+        return None  # No point within ±max_drift of 24h ago
+
+    return closest
+
+
+# ---------------------------------------------------------------------------
 # Helper: build flip opportunities from live data
 # ---------------------------------------------------------------------------
 
@@ -73,8 +115,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     # 2. Build price history lookup from snapshot
     currency_price_history: dict[str, list[float]] = {}
+    # Fix 2.2: Also store timestamped history for accurate 24h-ago lookup
+    currency_price_history_timestamped: dict[str, list[tuple[datetime, float]]] = {}
     for api_id_lower, points in snapshot.price_histories.items():
         currency_price_history[api_id_lower] = [p.price for p in points]
+        currency_price_history_timestamped[api_id_lower] = [(p.timestamp, p.price) for p in points]
     # Also store by original-case api_id using DataSnapshot.get_currency()
     for api_id_lower in list(snapshot.price_histories.keys()):
         curr = snapshot.get_currency(api_id_lower)
@@ -82,6 +127,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             orig_id = curr.get("api_id", "")
             if orig_id and orig_id != api_id_lower and api_id_lower in currency_price_history:
                 currency_price_history[orig_id] = currency_price_history[api_id_lower]
+                currency_price_history_timestamped[orig_id] = currency_price_history_timestamped.get(api_id_lower, [])
 
     # 3. Determine gold_to_chaos_rate
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
@@ -140,7 +186,14 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         for curr, history in cluster_price_histories.items():
             if history:
                 cluster_prices_now[curr] = history[-1]
-                cluster_prices_24h_ago[curr] = history[0] if len(history) > 1 else history[-1]
+                # Fix 2.2: Use timestamped history for accurate 24h-ago price
+                ts_history = currency_price_history_timestamped.get(curr, [])
+                if ts_history:
+                    price_24h = _find_price_24h_ago(ts_history)
+                    cluster_prices_24h_ago[curr] = price_24h if price_24h is not None else (history[-2] if len(history) >= 2 else history[-1])
+                else:
+                    # No timestamps available — fallback to second-to-last point
+                    cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
             else:
                 cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
                 cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)

@@ -27,12 +27,30 @@ from dataclasses import dataclass
 from typing import Any, Callable, Coroutine, TypeVar
 
 from cachetools import TTLCache
+from collections import OrderedDict
 
 from backend.config import AppConfig, get_settings
 
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+
+
+# Fix 4.3: LRU-bounded dict to prevent unbounded _stale_store growth
+class LRUDict(OrderedDict):
+    """Dict with automatic LRU eviction when maxsize is exceeded."""
+
+    def __init__(self, maxsize: int = 512):
+        super().__init__()
+        self._maxsize = maxsize
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if key in self:
+            self.move_to_end(key)
+        super().__setitem__(key, value)
+        if len(self) > self._maxsize:
+            oldest = next(iter(self))
+            del self[oldest]
 
 
 @dataclass
@@ -53,7 +71,8 @@ class DailyStatsCache:
         self._config = config or get_settings()
         self._ttl: float = 3600  # 1 hour in seconds
         self._cache: TTLCache = TTLCache(maxsize=256, ttl=self._ttl)
-        self._stale_store: dict[str, Any] = {}
+        # Fix 4.3: Use LRU-bounded dict instead of plain dict
+        self._stale_store: LRUDict = LRUDict(maxsize=512)
 
     @staticmethod
     def _make_key(league: str, item_id: str, days: int) -> str:

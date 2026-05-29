@@ -214,7 +214,9 @@ function findArbitrageCycles(
 
       // Estimate total slippage across all edges in the cycle
       let totalSlippage = 0;
-      let minVolume = Infinity;
+      // Fix 4.16: Renamed from minVolume to bottleneckVolume to avoid shadowing
+      // the function parameter minVolume (filter threshold)
+      let bottleneckVolume = Infinity;
       for (const edge of pathEdges) {
         const edgeSlippage = estimateSlippage(
           tradeSize,
@@ -222,7 +224,7 @@ function findArbitrageCycles(
           baseSlippageBps,
         );
         totalSlippage += edgeSlippage;
-        if (edge.volume < minVolume) minVolume = edge.volume;
+        if (edge.volume < bottleneckVolume) bottleneckVolume = edge.volume;
       }
 
       // Net profit = gross - slippage cost
@@ -230,7 +232,7 @@ function findArbitrageCycles(
       const netProfit = grossProfit - slippageCost;
 
       // Confidence: how well the bottleneck volume supports the trade size
-      const confidence = Math.min(1, minVolume / tradeSize);
+      const confidence = Math.min(1, bottleneckVolume / tradeSize);
 
       if (netProfit > 0) {
         results.push({
@@ -239,7 +241,7 @@ function findArbitrageCycles(
           grossProfit,
           netProfit,
           slippage: totalSlippage,
-          maxVolume: minVolume,
+          maxVolume: bottleneckVolume,
           confidence,
         });
       }
@@ -717,7 +719,9 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     />
                   </div>
 
-                  {/* Decay Lambda */}
+                  {/* Decay Lambda — Fix 3.1: Marked as non-functional since API
+                      doesn't provide per-pair timestamps. The slider has no effect
+                      because hoursSinceSnapshot is always 0. */}
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
                       <label className="text-sm font-medium" htmlFor="arb-decay-lambda">
@@ -734,6 +738,10 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">{t("timeDecayDesc")}</p>
+                    {/* Fix 3.1: Show that decay is currently inactive */}
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      ⚠ No effect — API does not provide snapshot timestamps
+                    </p>
                     <Input
                       id="arb-decay-lambda"
                       type="number"

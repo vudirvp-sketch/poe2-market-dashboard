@@ -45,6 +45,32 @@ _current_corr: dict | None = None
 
 
 # ---------------------------------------------------------------------------
+# Fix 2.1: Determine annualization factor based on data frequency
+# ---------------------------------------------------------------------------
+
+def _determine_periods_per_year(log_returns: np.ndarray) -> int:
+    """Determine annualization factor based on data frequency.
+
+    Logic:
+    - If >366 data points → hourly data → 365*24 = 8760
+    - If 30-366 data points → daily data → 365
+    - If <30 data points → insufficient data, use daily as fallback
+
+    This heuristic assumes PriceLogs span ~7 days max.
+    Using sqrt(365) instead of sqrt(8760) for hourly data understates
+    annual volatility by a factor of ~4.9, which invalidates the entire
+    efficient frontier, risk parity weights, and portfolio optimization.
+    """
+    n = log_returns.shape[0]
+    if n > 366:
+        return 365 * 24  # Hourly data
+    elif n >= 30:
+        return 365       # Daily data
+    else:
+        return 365       # Insufficient data, assume daily
+
+
+# ---------------------------------------------------------------------------
 # Helper: build portfolio allocation from live data
 # ---------------------------------------------------------------------------
 
@@ -122,11 +148,13 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
     log_returns_matrix = np.column_stack(log_returns_list)
 
     # 6. Run portfolio optimization
+    # Fix 2.1: Determine periods_per_year based on data frequency
+    periods_per_year = _determine_periods_per_year(log_returns_matrix)
     allocation = optimizer.optimize(
         currency_names=currency_names,
         log_returns=log_returns_matrix,
         previous_corr=_previous_corr,
-        periods_per_year=365,  # daily returns
+        periods_per_year=periods_per_year,
         method_override=method_override,
     )
 
@@ -380,12 +408,14 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
         current_weights = np.array(weight_list)
 
     # Compute frontier
+    # Fix 2.1: Use _determine_periods_per_year for consistent annualization
+    periods_per_year = _determine_periods_per_year(log_returns_matrix)
     frontier_data = compute_efficient_frontier_chart_data(
         log_returns=log_returns_matrix,
         current_weights=current_weights,
         currency_names=currency_names,
         n_points=n_points,
-        periods_per_year=365,
+        periods_per_year=periods_per_year,
     )
 
     return frontier_data

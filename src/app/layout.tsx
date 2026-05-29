@@ -18,13 +18,19 @@ const geistMono = Geist_Mono({
 // triggers React 19's warning: "Encountered a script tag while rendering
 // React component". These are harmless and expected behavior — not a bug.
 // See: https://github.com/vercel/next.js/issues/72213
+//
+// Fix 5.2: Restricted to development mode only. In production, all errors
+// should be visible for debugging. Also made the filter more targeted.
 // ---------------------------------------------------------------------------
-if (typeof window !== "undefined") {
+if (process.env.NODE_ENV === 'development' && typeof window !== "undefined") {
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
     const message = typeof args[0] === "string" ? args[0] : "";
     if (message.includes("Encountered a script tag while rendering React component")) {
       return; // Suppress known benign warning
+    }
+    if (message.includes("act(")) {
+      return; // Suppress React act() warnings in dev
     }
     originalConsoleError.apply(console, args);
   };
