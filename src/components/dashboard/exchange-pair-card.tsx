@@ -11,15 +11,25 @@ import { fmt, fmtChange } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { PairHoverPreview } from "./pair-hover-preview";
 
 interface ExchangePairCardProps {
   pair: ExchangePair;
   onClick: (pair: ExchangePair) => void;
+  /** Current realm — needed for lazy-loaded hover preview (Fix 4.15) */
+  realm?: string;
+  /** Current league — needed for lazy-loaded hover preview (Fix 4.15) */
+  league?: string;
+  /** When true, show the hover-triggered sparkline preview (Fix 4.15) */
+  showHoverPreview?: boolean;
 }
 
 export const ExchangePairCard = memo(function ExchangePairCard({
   pair,
   onClick,
+  realm,
+  league,
+  showHoverPreview = false,
 }: ExchangePairCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
@@ -120,6 +130,16 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             {t("vol")}: {pair.volume?.toLocaleString() ?? "\u2014"}
           </span>
         </div>
+
+        {/* Fix 4.15: Lazy sparkline on hover */}
+        {showHoverPreview && realm && league && (
+          <PairHoverPreview
+            currency1ItemId={pair.currency1ItemId}
+            currency2ItemId={pair.currency2ItemId}
+            realm={realm}
+            league={league}
+          />
+        )}
       </CardContent>
     </Card>
   );

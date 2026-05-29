@@ -26,7 +26,9 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(data);
       }
       case "pairs": {
-        const data = await getSnapshotPairs(realm, league);
+        // Fix 4.15: snapshot=true skips history enrichment for fast initial load
+        const isSnapshot = searchParams.get("snapshot") === "true";
+        const data = await getSnapshotPairs(realm, league, isSnapshot);
         return NextResponse.json(data);
       }
       case "history": {

@@ -5,6 +5,12 @@
 // This is the DETAILED version of the flip scoring view. The existing
 // ArbitrageTab's flipper mode serves as a quick overview; this tab provides
 // full detail panels, storage value integration, and cluster-based filtering.
+//
+// Fix 5.6: Split from 771 lines into 4 files:
+//   - flips-helpers.ts     — types + pure helpers
+//   - flips-detail-dialog  — detail dialog sub-component
+//   - flips-table.tsx      — opportunities table sub-component
+//   - flips-tab.tsx        — this file: orchestrator (state, queries, layout)
 // ============================================================================
 "use client";
 
@@ -12,16 +18,10 @@ import { useState, useMemo, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp,
-  TrendingDown,
-  AlertTriangle,
   Info,
-  ArrowUpDown,
-  Minus,
-  ChevronRight,
   Search,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -37,136 +37,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useI18n, type TranslationKeys } from "@/lib/i18n";
-import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
-import { Pagination } from "@/components/dashboard/pagination";
+import { useI18n } from "@/lib/i18n";
+import { fetchApi, getFlipperErrorType } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 import { useFlipperWebSocket } from "@/hooks/use-websocket";
-import { ApiErrorFallback } from "./api-error-fallback";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface FlipOpportunity {
-  currency: string;
-  score: number;
-  spread_after_fees: number;
-  gold_fee_fraction: number;
-  gold_fee_actual: number;
-  volume_24h: number;
-  momentum: number;
-  volatility: number;
-  cluster: string;
-  bid: number;
-  ask: number;
-  mid_price: number;
-}
-
-interface FlipEventStatus {
-  any_active: boolean;
-  affected_currencies: string[];
-  summary: Record<string, unknown> | null;
-}
-
-interface FlipsResponse {
-  league: string;
-  total: number;
-  opportunities: FlipOpportunity[];
-  event_status: FlipEventStatus;
-  fetched_at: string;
-}
-
-interface StorageValueResponse {
-  currency: string;
-  current_price: number;
-  projected_price: number;
-  risk_discount: number;
-  adjusted_price: number;
-  net_value_after_fees: number;
-  ratio: number;
-  decision: string;
-  inputs: {
-    momentum: number;
-    volatility: number;
-    acceleration: number;
-    liquidity_score: number;
-    gold_fee_fraction: number;
-    horizon_hours: number;
-    confidence_level: number;
-  };
-}
-
-type SortField =
-  | "score"
-  | "spread_after_fees"
-  | "gold_fee_actual"
-  | "volume_24h"
-  | "momentum"
-  | "volatility";
-
-type SortDirection = "asc" | "desc";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function scoreColor(score: number): string {
-  if (score >= 0.7) return "text-emerald-600 dark:text-emerald-400";
-  if (score >= 0.4) return "text-amber-600 dark:text-amber-400";
-  return "text-red-600 dark:text-red-400";
-}
-
-function scoreBg(score: number): string {
-  if (score >= 0.7) return "bg-emerald-500/10 border-emerald-500/50";
-  if (score >= 0.4) return "bg-amber-500/10 border-amber-500/50";
-  return "bg-red-500/10 border-red-500/50";
-}
-
-function clusterLabel(cluster: string, t: (key: TranslationKeys) => string): string {
-  switch (cluster) {
-    case "stable":
-      return t("flipsClusterStable");
-    case "moderate":
-      return t("flipsClusterModerate");
-    case "volatile_illiquid":
-      return t("flipsClusterVolatile");
-    default:
-      return cluster;
-  }
-}
-
-function clusterBadgeClass(cluster: string): string {
-  switch (cluster) {
-    case "stable":
-      return "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10";
-    case "moderate":
-      return "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10";
-    case "volatile_illiquid":
-      return "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10";
-    default:
-      return "border-muted-foreground/30 text-muted-foreground";
-  }
-}
-
-function momentumIcon(momentum: number) {
-  if (momentum > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
-  if (momentum < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
-  return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />;
-}
-
-function decisionBadgeClass(decision: string): string {
-  switch (decision) {
-    case "BUY":
-    case "HOLD":
-      return "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10";
-    case "SELL":
-    case "CONVERT":
-      return "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10";
-    default:
-      return "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10";
-  }
-}
+import { FlipsTable } from "./flips-table";
+import { FlipsDetailDialog } from "./flips-detail-dialog";
+import {
+  type FlipOpportunity,
+  type FlipsResponse,
+  type StorageValueResponse,
+  type SortField,
+  type SortDirection,
+  scoreColor,
+} from "./flips-helpers";
 
 // ---------------------------------------------------------------------------
 // Component Props
@@ -216,9 +100,6 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   const [selectedFlip, setSelectedFlip] = useState<FlipOpportunity | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // ---- Backend health check is done at dashboard level ----
-  // backendOnline is passed as prop
-
   // ---- Fetch flip opportunities ----
   const {
     data: flipsData,
@@ -242,7 +123,6 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   const { data: storageData } = useQuery<StorageValueResponse>({
     queryKey: ["flipper-storage-value-flips", selectedFlip?.currency],
     queryFn: () => {
-      // Extract first currency from pair like "divine/exalted"
       const firstCurrency = selectedFlip?.currency?.split("/")[0] ?? "";
       return fetchApi<StorageValueResponse>(
         `/api/flipper/storage-value/${firstCurrency}`,
@@ -287,24 +167,15 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     return sorted;
   }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection]);
 
-  // Paginated slice
-  const totalPages = Math.max(1, Math.ceil(filteredOpportunities.length / perPage));
-  const paginatedOpportunities = filteredOpportunities.slice(
-    (page - 1) * perPage,
-    page * perPage,
-  );
+  // ---- Summary stats ----
+  const avgScore = useMemo(() => {
+    if (!filteredOpportunities.length) return 0;
+    return filteredOpportunities.reduce((sum, o) => sum + o.score, 0) / filteredOpportunities.length;
+  }, [filteredOpportunities]);
 
-  // Reset page when filters change
-  const handleClusterFilterChange = (value: string) => {
-    setClusterFilter(value);
-    setPage(1);
-  };
+  const bestFlip = filteredOpportunities[0] ?? null;
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setPage(1);
-  };
-
+  // ---- Sort handler ----
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
@@ -318,28 +189,6 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     setSelectedFlip(opp);
     setDetailOpen(true);
   };
-
-  // ---- Summary stats ----
-  const avgScore = useMemo(() => {
-    if (!filteredOpportunities.length) return 0;
-    return filteredOpportunities.reduce((sum, o) => sum + o.score, 0) / filteredOpportunities.length;
-  }, [filteredOpportunities]);
-
-  const bestFlip = filteredOpportunities[0] ?? null;
-
-  // ---- Sort header helper ----
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
-    <button
-      className="flex items-center gap-1 hover:text-foreground transition-colors"
-      onClick={() => handleSort(field)}
-      aria-label={`Sort by ${label}`}
-    >
-      <span>{label}</span>
-      {sortField === field ? (
-        <ArrowUpDown className="h-3 w-3" aria-hidden="true" />
-      ) : null}
-    </button>
-  );
 
   // ---- Loading ----
   if (flipsLoading && backendOnline) {
@@ -418,7 +267,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
               <p className="text-2xl font-bold truncate">
-                {bestFlip?.currency ?? "—"}
+                {bestFlip?.currency ?? "\u2014"}
               </p>
             </CardContent>
           </Card>
@@ -431,7 +280,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
               <p className={`text-2xl font-bold ${bestFlip ? scoreColor(bestFlip.score) : ""}`}>
-                {bestFlip ? (bestFlip.score * 100).toFixed(1) + "%" : "—"}
+                {bestFlip ? (bestFlip.score * 100).toFixed(1) + "%" : "\u2014"}
               </p>
             </CardContent>
           </Card>
@@ -485,7 +334,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
             <label className="text-xs font-medium text-muted-foreground" htmlFor="flips-cluster">
               {t("flipsClusterFilter")}
             </label>
-            <Select value={clusterFilter} onValueChange={handleClusterFilterChange}>
+            <Select value={clusterFilter} onValueChange={(v) => { setClusterFilter(v); setPage(1); }}>
               <SelectTrigger id="flips-cluster" className="w-[130px] h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -504,7 +353,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
             <Input
               placeholder={t("flipsSearchCurrency")}
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               className="pl-7 h-8 text-xs"
             />
           </div>
@@ -513,131 +362,20 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
 
       {/* ---- Opportunities table ---- */}
       {backendOnline && (
-        <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4" aria-hidden="true" />
-              {t("flipsDetailedOpportunities")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0">
-            {flipsError ? (
-              <ApiErrorFallback
-                error={flipsErrorObj instanceof Error ? flipsErrorObj : String(flipsErrorObj ?? "")}
-                onRetry={() => refetchFlips()}
-                errorKind={insufficientData ? "insufficient_data" : undefined}
-              />
-            ) : !filteredOpportunities.length ? (
-              <div className="text-center py-10">
-                <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
-                <p className="font-medium">{t("flipsNoOpportunities")}</p>
-                <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                  {t("flipsNoOpportunitiesDesc")}
-                </p>
-              </div>
-            ) : (
-              <div role="table" aria-label={t("flipsDetailedOpportunities")}>
-                {/* Table header */}
-                <div role="row" className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
-                  <span role="columnheader">{t("flipperCurrency")}</span>
-                  <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
-                  <span role="columnheader" className="text-right"><SortHeader field="spread_after_fees" label={t("flipperSpread")} /></span>
-                  <span role="columnheader" className="text-right">{t("flipsGoldFeePct")}</span>
-                  <span role="columnheader" className="text-right"><SortHeader field="gold_fee_actual" label={t("flipperGoldFee")} /></span>
-                  <span role="columnheader" className="text-right"><SortHeader field="momentum" label={t("flipperMomentum")} /></span>
-                  <span role="columnheader" className="text-right"><SortHeader field="volatility" label={t("flipperVolatility")} /></span>
-                  <span role="columnheader" className="text-center">{t("flipperCluster")}</span>
-                  <span role="columnheader" />
-                </div>
-
-                {/* Table body */}
-                <div className="max-h-[500px] overflow-y-auto" role="rowgroup" aria-label="Flip opportunities">
-                  {paginatedOpportunities.map((opp) => (
-                    <div
-                      key={opp.currency}
-                      className="grid grid-cols-[1.5fr_60px_70px_70px_80px_70px_70px_80px_30px] gap-1.5 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
-                      role="row"
-                      onClick={() => openDetail(opp)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openDetail(opp);
-                        }
-                      }}
-                      tabIndex={0}
-                      aria-label={`${opp.currency} score ${(opp.score * 100).toFixed(0)}%`}
-                    >
-                      {/* Currency pair */}
-                      <span className="text-xs font-medium truncate">{opp.currency}</span>
-
-                      {/* Score */}
-                      <span className={`text-center text-xs font-bold ${scoreColor(opp.score)}`}>
-                        {(opp.score * 100).toFixed(0)}%
-                      </span>
-
-                      {/* Spread after fees */}
-                      <span className="text-right font-mono text-xs">
-                        {(opp.spread_after_fees * 100).toFixed(2)}%
-                      </span>
-
-                      {/* Gold fee % */}
-                      <span className="text-right font-mono text-xs text-muted-foreground">
-                        {(opp.gold_fee_fraction * 100).toFixed(2)}%
-                      </span>
-
-                      {/* Gold fee actual */}
-                      <span className="text-right font-mono text-xs text-muted-foreground">
-                        {fmt(opp.gold_fee_actual, 0)}
-                      </span>
-
-                      {/* Momentum */}
-                      <span className="flex items-center justify-end gap-0.5">
-                        {momentumIcon(opp.momentum)}
-                        <span className="font-mono text-xs">
-                          {opp.momentum >= 0 ? "+" : ""}
-                          {(opp.momentum * 100).toFixed(2)}%
-                        </span>
-                      </span>
-
-                      {/* Volatility */}
-                      <span className="text-right font-mono text-xs">
-                        {opp.volatility.toFixed(4)}
-                      </span>
-
-                      {/* Cluster */}
-                      <span className="flex justify-center">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-1.5 py-0 font-semibold ${clusterBadgeClass(opp.cluster)}`}
-                        >
-                          {clusterLabel(opp.cluster, t)}
-                        </Badge>
-                      </span>
-
-                      {/* Detail arrow */}
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {filteredOpportunities.length > perPage && (
-                  <div className="mt-3">
-                    <Pagination
-                      page={page}
-                      totalPages={totalPages}
-                      totalItems={filteredOpportunities.length}
-                      perPage={perPage}
-                      onPageChange={setPage}
-                      onPerPageChange={() => {}}
-                      perPageOptions={[25]}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <FlipsTable
+          opportunities={filteredOpportunities}
+          isError={flipsError}
+          errorObj={flipsErrorObj}
+          insufficientData={insufficientData}
+          onRetry={() => refetchFlips()}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onRowClick={openDetail}
+          page={page}
+          perPage={perPage}
+          onPageChange={setPage}
+        />
       )}
 
       {/* ---- Detail Dialog ---- */}
@@ -651,117 +389,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           </DialogHeader>
 
           {selectedFlip && (
-            <div className="space-y-4">
-              {/* Score & Spread */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipperScore")}</p>
-                  <p className={`text-lg font-bold ${scoreColor(selectedFlip.score)}`}>
-                    {(selectedFlip.score * 100).toFixed(1)}%
-                  </p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipperSpread")}</p>
-                  <p className="text-lg font-bold font-mono">
-                    {(selectedFlip.spread_after_fees * 100).toFixed(2)}%
-                  </p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipsFeeFraction")}</p>
-                  <p className="text-lg font-bold font-mono">
-                    {(selectedFlip.gold_fee_fraction * 100).toFixed(2)}%
-                  </p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipperGoldFee")}</p>
-                  <p className="text-lg font-bold font-mono">
-                    {fmt(selectedFlip.gold_fee_actual, 0)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Momentum, Volatility, Cluster */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground mb-1">{t("flipperMomentum")}</p>
-                  <div className="flex items-center gap-1.5">
-                    {momentumIcon(selectedFlip.momentum)}
-                    <span className="font-mono text-sm font-medium">
-                      {selectedFlip.momentum >= 0 ? "+" : ""}
-                      {(selectedFlip.momentum * 100).toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground mb-1">{t("flipperVolatility")}</p>
-                  <p className="font-mono text-sm font-medium">
-                    {selectedFlip.volatility.toFixed(4)}
-                  </p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground mb-1">{t("flipperCluster")}</p>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs px-2 py-0.5 font-semibold ${clusterBadgeClass(selectedFlip.cluster)}`}
-                  >
-                    {clusterLabel(selectedFlip.cluster, t)}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Prices: Bid / Ask / Mid */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipsBid")}</p>
-                  <p className="text-lg font-bold font-mono">{fmt(selectedFlip.bid)}</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipsAsk")}</p>
-                  <p className="text-lg font-bold font-mono">{fmt(selectedFlip.ask)}</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">{t("flipsMid")}</p>
-                  <p className="text-lg font-bold font-mono">{fmt(selectedFlip.mid_price)}</p>
-                </div>
-              </div>
-
-              {/* Volume */}
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">{t("flipperVolume")} (24h)</p>
-                <p className="text-lg font-bold font-mono">{selectedFlip.volume_24h.toLocaleString()}</p>
-              </div>
-
-              {/* Storage Value Decision */}
-              {storageData && (
-                <div className="rounded-lg border p-3 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {t("forecastStorageValue", { "0": selectedFlip.currency.split("/")[0] })}
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">{t("forecastDecision")}:</span>
-                    <Badge
-                      variant="outline"
-                      className={`text-sm px-3 py-1 font-semibold ${decisionBadgeClass(storageData.decision)}`}
-                    >
-                      {storageData.decision === "BUY" || storageData.decision === "HOLD" ? (
-                        <TrendingUp className="h-4 w-4 mr-1 inline" aria-hidden="true" />
-                      ) : storageData.decision === "SELL" || storageData.decision === "CONVERT" ? (
-                        <TrendingDown className="h-4 w-4 mr-1 inline" aria-hidden="true" />
-                      ) : null}
-                      {storageData.decision}
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <span className="text-muted-foreground">
-                      {t("forecastRatio")}: <span className="font-mono font-medium">{storageData.ratio.toFixed(4)}</span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{storageData.net_value_after_fees.toFixed(4)}</span>
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+            <FlipsDetailDialog
+              selectedFlip={selectedFlip}
+              storageData={storageData}
+            />
           )}
         </DialogContent>
       </Dialog>

@@ -95,19 +95,52 @@ export class ErrorBoundary extends React.Component<
 }
 
 /**
- * Convenience wrapper: wraps multiple sections with individual error boundaries.
+ * ErrorBoundaryGroup — Wraps each direct child in its own ErrorBoundary so
+ * that a crash in one section does NOT bring down sibling sections.
+ *
+ * Fix 5.1: Previous implementation was a no-op Fragment (<>{children}</>)
+ * which provided ZERO isolation — a render error in any child would still
+ * propagate and crash the entire parent tree. Now each child is automatically
+ * wrapped in an individual ErrorBoundary.
+ *
  * Usage:
  * ```tsx
  * <ErrorBoundaryGroup>
- *   <ErrorBoundary fallbackTitle="Market Overview">
- *     <MarketOverview ... />
- *   </ErrorBoundary>
- *   <ErrorBoundary fallbackTitle="Currencies">
- *     <CurrenciesTab ... />
- *   </ErrorBoundary>
+ *   <MarketOverview ... />
+ *   <CurrenciesTab ... />
+ * </ErrorBoundaryGroup>
+ * ```
+ * If MarketOverview throws, CurrenciesTab keeps rendering — and vice versa.
+ *
+ * Optional: pass an array of titles to label each boundary's fallback:
+ * ```tsx
+ * <ErrorBoundaryGroup titles={["Market Overview", "Currencies"]}>
+ *   <MarketOverview ... />
+ *   <CurrenciesTab ... />
  * </ErrorBoundaryGroup>
  * ```
  */
-export function ErrorBoundaryGroup({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+interface ErrorBoundaryGroupProps {
+  children: React.ReactNode;
+  /** Optional per-child fallback titles (matched by index). Missing titles default to "Section N". */
+  titles?: string[];
+}
+
+export function ErrorBoundaryGroup({ children, titles }: ErrorBoundaryGroupProps) {
+  // React.Children.toArray flattens fragments and filters nulls, giving us
+  // a stable array to iterate over. Each child gets its own ErrorBoundary.
+  const childArray = React.Children.toArray(children);
+
+  return (
+    <>
+      {childArray.map((child, index) => {
+        const fallbackTitle = titles?.[index] ?? `Section ${index + 1}`;
+        return (
+          <ErrorBoundary key={index} fallbackTitle={fallbackTitle}>
+            {child}
+          </ErrorBoundary>
+        );
+      })}
+    </>
+  );
 }

@@ -1005,11 +1005,21 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
 // Fix 5: Enrich ExchangePair with history data
 // ============================================================================
 
-export async function getSnapshotPairs(realm: string, league: string): Promise<ExchangePair[]> {
+/**
+ * Fetch exchange snapshot pairs.
+ *
+ * @param snapshot If true, return pairs WITHOUT history enrichment (fast initial load).
+ *                 The client can lazily fetch history per pair on hover.
+ *                 If false (default), enrich top-20 pairs with history data.
+ */
+export async function getSnapshotPairs(realm: string, league: string, snapshot = false): Promise<ExchangePair[]> {
   const raw = await cachedFetch<RawSnapshotPair[]>(
     `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/SnapshotPairs`
   );
   const pairs = raw.map(mapSnapshotPair);
+
+  // Snapshot mode: skip history enrichment for fast initial load
+  if (snapshot) return pairs;
 
   // Enrich top-N pairs by volume with history data
   const TOP_N = 20;

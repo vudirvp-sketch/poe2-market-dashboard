@@ -394,7 +394,7 @@ export function Dashboard() {
     retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
   });
 
-  // Exchange
+  // Exchange — Fix 4.15: Use snapshot=true for fast initial load; history loads on hover
   const {
     data: exchangeData,
     isLoading: exchangeLoading,
@@ -407,6 +407,7 @@ export function Dashboard() {
         realm,
         league: effectiveLeague,
         action: "pairs",
+        snapshot: "true", // Fix 4.15: skip server-side history enrichment
       }),
     enabled: tab === "exchange" && !!effectiveLeague,
     refetchInterval: autoRefresh ? 60_000 : false,
@@ -856,6 +857,9 @@ export function Dashboard() {
                       key={pair.id}
                       pair={pair}
                       onClick={openPairDetail}
+                      realm={realm}
+                      league={effectiveLeague}
+                      showHoverPreview={true}
                     />
                   ))}
                 </div>
