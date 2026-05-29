@@ -78,8 +78,23 @@ if !UVICORN_AVAILABLE! equ 0 (
 if !UVICORN_AVAILABLE! equ 0 (
     echo [WARN] uvicorn not found. The Flipper backend will not start.
     echo        Advanced features ^(scoring, triangular arb, forecasts^) will be unavailable.
-    echo        Install with: pip install uvicorn fastapi
+    echo        Install with: pip install -r requirements.txt
     echo.
+)
+
+REM ---- Install Python dependencies (if pip and uvicorn available) ----
+if !PYTHON_AVAILABLE! equ 1 (
+    if !UVICORN_AVAILABLE! equ 1 (
+        echo [INFO] Checking Python dependencies...
+        pip install -q -r requirements.txt 2>nul
+        if !ERRORLEVEL! equ 0 (
+            echo [OK] Python dependencies ready.
+        ) else (
+            echo [WARN] Some Python dependencies may be missing.
+            echo        Run manually: pip install -r requirements.txt
+        )
+        echo.
+    )
 )
 
 REM ---- Check .env.local ----

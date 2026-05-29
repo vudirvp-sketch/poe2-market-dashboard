@@ -18,6 +18,7 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
+from backend.data.cache import get_cache
 from backend.data.providers.poe2scout import Poe2ScoutProvider
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction
@@ -48,18 +49,32 @@ async def get_storage_value(
     """
     config = get_settings()
 
-    # Get provider
+    # Get provider and cache
     from backend.api.routes_prices import _get_provider
     provider = _get_provider()
+    cache = get_cache()
 
-    # Fetch price history for momentum/volatility
-    history = await provider.get_historical_prices(currency, days=7)
+    # Fetch price history for momentum/volatility (via cache — avoids
+    # redundant API calls when the same currency is queried by multiple
+    # tabs simultaneously, e.g. Forecast + Storage Value)
+    hist_result = await cache.get_or_fetch(
+        "history",
+        provider.name(),
+        "get_historical_prices",
+        provider.get_historical_prices,
+        currency,
+        7,
+    )
 
-    if not history or len(history) < 2:
+    if hist_result.value is None or len(hist_result.value) == 0:
         raise HTTPException(
             status_code=422,
-            detail=f"Insufficient price history for {currency}. Need at least 2 data points."
+            detail=f"Insufficient price history for {currency}. "
+                   f"Need at least 2 data points. "
+                   f"The POE2Scout API may not have historical data for this currency yet.",
         )
+
+    history = hist_result.value
 
     # Compute momentum and volatility
     tracker = PriceMomentumTracker(window_size=len(history))

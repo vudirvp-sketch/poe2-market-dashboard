@@ -71,6 +71,15 @@ class Poe2ScoutProvider(BaseDataProvider):
         # The /Realms endpoint returns value="poe2/poe2" but the actual path
         # parameter uses the simplified segment "poe2".
         raw_realm = self._config.league.realm
+
+        # Instance-level cache for ByCategory data (used as fallback when
+        # individual /Currencies/{id} endpoint returns empty PriceLogs).
+        # TTL matches cache_ttl_prices_minutes so it stays in sync.
+        self._bycategory_cache: list[dict] | None = None
+        self._bycategory_cache_ts: float = 0.0
+        self._bycategory_cache_ttl: float = (
+            self._config.data.cache_ttl_prices_minutes * 60.0
+        )
         # Auto-correct common mistake: if someone puts "poe2/pc" or "poe2/poe2",
         # extract the last segment or use "poe2" for poe2 games
         if "/" in raw_realm:
@@ -270,34 +279,108 @@ class Poe2ScoutProvider(BaseDataProvider):
     async def get_historical_prices(
         self, currency: str, days: int = 7
     ) -> list[PricePoint]:
-        """Get historical prices for a currency from the Currencies/{ApiId} endpoint.
+        """Get historical prices for a currency.
 
-        The price_logs array in the response contains recent price observations
-        with timestamps. For longer history, use the DailyStatsHistory endpoint.
+        Strategy (two-tier fallback):
+        1. Try the individual /Currencies/{ApiId} endpoint — fast, single
+           request.  However, the POE2Scout API has a known inconsistency
+           where this endpoint sometimes returns ``PriceLogs: [null, …]``
+           with ``CurrentPrice: null``, while the ByCategory endpoint
+           returns complete data for the same currency.
+        2. If the individual endpoint returns empty/null PriceLogs, fall
+           back to the ByCategory data which consistently contains price
+           history.  A short-TTL instance cache avoids re-fetching all
+           categories on every call.
         """
+        # --- Tier 1: individual endpoint ---
         data = await self._request(
             f"{self._league_path()}/Currencies/{currency}"
         )
-        if data is None:
-            return []
+        if data is not None:
+            try:
+                ext = CurrencyItemExtended.model_validate(data)
+                points: list[PricePoint] = []
+                if ext.price_logs:
+                    for log in ext.price_logs:
+                        if log is not None:
+                            points.append(PricePoint(
+                                timestamp=log.time,
+                                price=log.price,
+                                volume=log.quantity,
+                            ))
+                if points:
+                    return points
+            except Exception as e:
+                logger.error("Failed to parse currency detail for %s: %s", currency, e)
 
-        try:
-            ext = CurrencyItemExtended.model_validate(data)
-        except Exception as e:
-            logger.error("Failed to parse currency detail for %s: %s", currency, e)
-            return []
+        # --- Tier 2: ByCategory fallback ---
+        # The individual endpoint returned empty PriceLogs (known API bug).
+        # ByCategory consistently returns complete data, so we use it as a
+        # reliable fallback.  An instance-level cache avoids hammering the
+        # API when multiple currencies are queried in quick succession.
+        logger.info(
+            "Individual /Currencies/%s returned empty PriceLogs — "
+            "falling back to ByCategory data",
+            currency,
+        )
+        all_currencies = await self._get_all_currencies_cached()
 
-        points = []
-        if ext.price_logs:
-            for log in ext.price_logs:
-                if log is not None:
-                    points.append(PricePoint(
-                        timestamp=log.time,
-                        price=log.price,
-                        volume=log.quantity,
-                    ))
+        for curr in all_currencies:
+            if curr.get("api_id", "").lower() == currency.lower():
+                price_logs = curr.get("price_logs", [])
+                if price_logs:
+                    points = []
+                    for log in price_logs:
+                        time_val = log.get("time")
+                        price = log.get("price")
+                        quantity = log.get("quantity", 0)
+                        if time_val is not None and price is not None:
+                            try:
+                                if isinstance(time_val, str):
+                                    ts = datetime.fromisoformat(
+                                        time_val.replace("Z", "+00:00")
+                                    )
+                                elif isinstance(time_val, datetime):
+                                    ts = time_val
+                                else:
+                                    continue
+                                points.append(PricePoint(
+                                    timestamp=ts,
+                                    price=float(price),
+                                    volume=float(quantity) if quantity else 0.0,
+                                ))
+                            except (ValueError, TypeError) as exc:
+                                logger.debug(
+                                    "Skipping invalid price log for %s: %s",
+                                    currency, exc,
+                                )
+                    if points:
+                        return points
+                break  # found the currency but no usable logs — stop searching
 
-        return points
+        return []
+
+    async def _get_all_currencies_cached(self) -> list[dict]:
+        """Return all currencies with prices, using a short-TTL instance cache.
+
+        The cache prevents redundant API calls when
+        ``get_historical_prices()`` falls back to ByCategory for several
+        currencies in quick succession (e.g. when the dashboard loads
+        multiple Flipper tabs simultaneously).
+        """
+        import time as _time
+
+        now = _time.monotonic()
+        if (
+            self._bycategory_cache is not None
+            and now - self._bycategory_cache_ts < self._bycategory_cache_ttl
+        ):
+            return self._bycategory_cache
+
+        result = await self.get_all_currencies_with_prices(self._league)
+        self._bycategory_cache = result
+        self._bycategory_cache_ts = now
+        return result
 
     async def get_exchange_rates(self, league: str) -> dict[str, ExchangeRate]:
         """Get all exchange rates from SnapshotPairs.
