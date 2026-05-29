@@ -543,49 +543,39 @@ class Poe2ScoutProvider(BaseDataProvider):
         return result
 
     async def get_gold_chaos_rate(self, league: str) -> float | None:
-        """Observe the gold→chaos rate from the market.
+        """Derive the gold→chaos rate from known game mechanics.
 
-        Derives the rate from ReferenceCurrencies: if we know the Chaos Orb
-        price in Exalted (from ReferenceCurrencies), and we know the gold cost
-        per Chaos Orb (from gold_cost_table), we can estimate how much one
-        gold coin is worth in Chaos terms.
+        The gold cost per Chaos Orb is a FIXED game mechanic (160 gold per
+        Chaos in the Currency Exchange).  We use the reciprocal as a lower
+        bound for the market rate of gold in Chaos terms:
 
-        Derivation:
-        - From ReferenceCurrencies: chaos_price_in_exalted (e.g., 7.0 Ex per 1 Chaos)
-        - From gold_cost_table: gold_cost_per_chaos = 160 gold
-        - If we assume gold ≈ (chaos_price_in_exalted / gold_cost_per_chaos) * some_factor
-        - A simpler approach: use the observed market ratio.
-          Since 1 Chaos costs 160 gold in fees, and 1 Chaos ≈ 7 Ex,
-          the gold-to-chaos rate depends on what players are willing to pay.
-          We approximate: gold_to_chaos ≈ chaos_price_in_base / gold_cost_per_chaos * correction
+            gold_to_chaos_rate = 1 / gold_cost_per_chaos
 
-        For now, returns None — the rate should be configured in config.yaml
-        under fees.fixed_gold_to_chaos_rate. This method can be enhanced
-        later with actual market observation data.
+        This represents the minimum value of 1 gold coin: you can always
+        "spend" 1/160 Chaos worth of gold on exchange fees.  The true market
+        rate (what players would pay for gold) is typically lower because gold
+        is abundant from mapping (~35-40k per T16 map), but for fee
+        calculations the reciprocal is the correct rate — it tells us how much
+        Chaos value each gold coin of fees consumes.
+
+        If a fixed rate is configured in config.yaml
+        (fees.fixed_gold_to_chaos_rate), callers should prefer that over
+        this derived rate.
+
+        Returns:
+            Derived gold→chaos rate (e.g. 0.00625 for 160 gold/Chaos),
+            or None if the gold cost table is unavailable.
         """
-        # Attempt: derive from ReferenceCurrencies
         try:
-            ref_currencies = await self.get_reference_currencies(league)
-            chaos_price = None
-            for ref in ref_currencies:
-                if ref.api_id.lower() == "chaos":
-                    chaos_price = ref.relative_price
-                    break
-
-            if chaos_price is not None and chaos_price > 0:
-                # Approximate: each gold coin is worth roughly
-                # (1 / gold_cost_per_chaos) chaos based on fee structure.
-                # This is a rough heuristic — the true market rate depends on
-                # player behavior and gold supply from mapping.
-                from backend.economy.gold_cost_table import get_gold_cost_per_unit
-                gold_per_chaos = get_gold_cost_per_unit("chaos")
-                if gold_per_chaos > 0:
-                    # If it costs 160 gold to receive 1 Chaos, then
-                    # 1 gold ≈ 1/160 Chaos worth of fees.
-                    # But the actual market rate is typically much lower because
-                    # gold is earned from gameplay (35-40k per T16 map).
-                    # For now, return None and let config override.
-                    pass
+            from backend.economy.gold_cost_table import get_gold_cost_per_unit
+            gold_per_chaos = get_gold_cost_per_unit("chaos")
+            if gold_per_chaos > 0:
+                rate = 1.0 / gold_per_chaos
+                logger.debug(
+                    "Derived gold_to_chaos_rate=%.6f from gold_cost_per_chaos=%d",
+                    rate, gold_per_chaos,
+                )
+                return rate
         except Exception as e:
             logger.debug("Could not derive gold_to_chaos_rate: %s", e)
 

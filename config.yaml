@@ -21,7 +21,7 @@ league:
 
 fees:
   gold_to_chaos_rate_source: "market"   # "market" (observed) or "fixed"
-  fixed_gold_to_chaos_rate: null        # only if source is "fixed"
+  fixed_gold_to_chaos_rate: 0.00625    # 1/160 Chaos per gold (fallback when market source unavailable)
   unknown_item_gold_cost: 200           # fallback for items not in gold_cost_table
   # Per-unit gold costs are in gold_cost_table.py, not here
 

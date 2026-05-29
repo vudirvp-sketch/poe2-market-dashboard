@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 chcp 65001 >nul 2>&1
 
 cd /d "%~dp0"
@@ -10,6 +11,13 @@ REM  This file MUST use CRLF line endings.
 REM  If Git converts it to LF, CMD mis-parses setlocal/if
 REM  blocks, producing 'd', 'EM', 'tlocal' errors.
 REM  A .gitattributes file enforces CRLF for .bat files.
+REM
+REM  IMPORTANT: setlocal enabledelayedexpansion is required
+REM  because variables (ERRORLEVEL, _BACKEND_OK) set inside
+REM  parenthesized if/for blocks must be read with !VAR! syntax.
+REM  Without delayed expansion, %VAR% inside blocks expands at
+REM  parse time, producing "0 was unexpected at this time" when
+REM  the variable is empty or not yet assigned.
 REM ============================================================
 
 echo ============================================================
@@ -19,7 +27,7 @@ echo.
 
 REM ---- Check Node.js ----
 where node >nul 2>&1
-if %ERRORLEVEL% neq 0 (
+if !ERRORLEVEL! neq 0 (
     echo [ERROR] Node.js is not installed or not in PATH.
     echo Please install Node.js from https://nodejs.org/
     echo.
@@ -33,7 +41,7 @@ echo.
 
 REM ---- Check npm ----
 where npm >nul 2>&1
-if %ERRORLEVEL% neq 0 (
+if !ERRORLEVEL! neq 0 (
     echo [ERROR] npm is not found.
     echo.
     pause
@@ -48,29 +56,29 @@ set PYTHON_AVAILABLE=0
 set UVICORN_AVAILABLE=0
 
 where python >nul 2>&1
-if %ERRORLEVEL% equ 0 (
+if !ERRORLEVEL! equ 0 (
     set PYTHON_AVAILABLE=1
     echo [OK] Python found.
 )
 
 where uvicorn >nul 2>&1
-if %ERRORLEVEL% equ 0 (
+if !ERRORLEVEL! equ 0 (
     set UVICORN_AVAILABLE=1
     echo [OK] uvicorn found.
 )
 
 REM Check uvicorn via python -m only if not found directly AND python is available
-if %UVICORN_AVAILABLE% equ 0 (
-    if %PYTHON_AVAILABLE% equ 1 (
+if !UVICORN_AVAILABLE! equ 0 (
+    if !PYTHON_AVAILABLE! equ 1 (
         python -m pip show uvicorn >nul 2>&1
-        if %ERRORLEVEL% equ 0 (
+        if !ERRORLEVEL! equ 0 (
             set UVICORN_AVAILABLE=1
             echo [OK] uvicorn found via python -m.
         )
     )
 )
 
-if %UVICORN_AVAILABLE% equ 0 (
+if !UVICORN_AVAILABLE! equ 0 (
     echo [WARN] uvicorn not found. The Flipper backend will not start.
     echo        Advanced features ^(scoring, triangular arb, forecasts^) will be unavailable.
     echo        Install with: pip install -r requirements.txt
@@ -78,11 +86,11 @@ if %UVICORN_AVAILABLE% equ 0 (
 )
 
 REM ---- Install Python dependencies (if pip and uvicorn available) ----
-if %PYTHON_AVAILABLE% equ 1 (
-    if %UVICORN_AVAILABLE% equ 1 (
+if !PYTHON_AVAILABLE! equ 1 (
+    if !UVICORN_AVAILABLE! equ 1 (
         echo [INFO] Checking Python dependencies...
         pip install -q -r requirements.txt 2>nul
-        if %ERRORLEVEL% equ 0 (
+        if !ERRORLEVEL! equ 0 (
             echo [OK] Python dependencies ready.
         ) else (
             echo [WARN] Some Python dependencies may be missing.
@@ -128,7 +136,7 @@ echo.
 REM ---- Start FastAPI backend (if uvicorn available) ----
 set FLIPPER_PID=0
 
-if %UVICORN_AVAILABLE% equ 1 (
+if !UVICORN_AVAILABLE! equ 1 (
     echo [INFO] Starting FastAPI Flipper backend on port 8000...
     start /b uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
     timeout /t 2 /nobreak >nul
@@ -136,16 +144,16 @@ if %UVICORN_AVAILABLE% equ 1 (
     REM Verify backend started
     set _BACKEND_OK=0
     netstat -aon 2>nul | findstr :8000 | findstr LISTENING >nul 2>&1
-    if %ERRORLEVEL% equ 0 (
+    if !ERRORLEVEL! equ 0 (
         set _BACKEND_OK=1
         echo [OK] Flipper backend started on http://localhost:8000
     )
-    if %_BACKEND_OK% equ 0 (
+    if !_BACKEND_OK! equ 0 (
         echo [WARN] Flipper backend may not have started. Check flipper-backend.log
     )
     echo.
 )
-if %UVICORN_AVAILABLE% equ 0 (
+if !UVICORN_AVAILABLE! equ 0 (
     echo [SKIP] Flipper backend not started ^(uvicorn not available^).
     echo.
 )
@@ -156,7 +164,7 @@ if not exist "node_modules\" (
     echo This may take a few minutes on first run
     echo.
     call npm install
-    if %ERRORLEVEL% neq 0 (
+    if !ERRORLEVEL! neq 0 (
         echo.
         echo [ERROR] npm install failed!
         echo.
@@ -181,7 +189,7 @@ if "%~1"=="--dev" (
     echo.
 
     REM Start FastAPI with --reload in dev mode
-    if %UVICORN_AVAILABLE% equ 1 (
+    if !UVICORN_AVAILABLE! equ 1 (
         echo [INFO] Restarting Flipper backend with --reload for dev mode...
         for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :8000 ^| findstr LISTENING 2^>nul') do (
             taskkill /PID %%a /F >nul 2>&1
@@ -235,7 +243,7 @@ echo [INFO] Building project...
 echo This ensures you have the latest code compiled.
 echo.
 call npm run build
-if %ERRORLEVEL% neq 0 (
+if !ERRORLEVEL! neq 0 (
     echo.
     echo [ERROR] Build failed! Check the errors above.
     echo.
