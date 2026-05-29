@@ -97,8 +97,12 @@ if [ ! -f ".env.local" ]; then
     cat > .env.local <<'EOF'
 # PoE2 API Base URL
 POE2_API_BASE_URL=https://api.poe2scout.com/api
-# Flipper backend URL
+# Flipper backend URL (server-side only, used by API proxy routes)
 FLIPPER_API_URL=http://localhost:8000
+# Flipper WebSocket URL (client-side, for real-time updates)
+# In dev: connects directly to backend on port 8000
+# In production behind reverse proxy: set to wss://your-domain.com
+NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000
 EOF
     info ".env.local created with api.poe2scout.com"
     echo ""

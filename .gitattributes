@@ -1,23 +1,8 @@
-# Auto-detect text files and normalize LF in the repo
-* text=auto
-
-# Ensure Windows batch files always use CRLF line endings.
-# Unix LF in .bat files causes CMD to mis-parse setlocal/if blocks,
-# producing errors like 'd', 'EM', 'tlocal' on Windows.
-# NOTE: Must come AFTER * text=auto so the more-specific rule wins.
+# Enforce CRLF line endings for Windows batch files.
+# Without this, Git may convert to LF on checkout, which causes CMD to
+# crash with 'd', 'EM', 'tlocal' parse errors on setlocal/if blocks.
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
-# Binary files — do not touch
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.ico binary
-*.woff binary
-*.woff2 binary
-*.ttf binary
-*.eot binary
-*.mp3 binary
-*.mp4 binary
-*.webp binary
+# Auto-detect text files and normalize LF for everything else
+* text=auto
