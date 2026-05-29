@@ -221,6 +221,15 @@ export interface FlipperPhaseResponse {
   league: string;
 }
 
+/** Response shape from GET /api/flipper/portfolio */
+export interface PortfolioData {
+  method: "risk_parity" | "min_variance";
+  weights: Record<string, number>;
+  expected_risk: number;
+  correlation_warning: boolean;
+  last_rebalance: string | null;
+}
+
 /** Summary shape from GET /api/flipper/events?active_only=true (count only) */
 export interface FlipperEventsSummary {
   events: { event_id: string }[];

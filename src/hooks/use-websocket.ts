@@ -215,11 +215,17 @@ export function useWebSocket<T = Record<string, unknown>>(
         setStatus("disconnected");
         wsRef.current = null;
 
+        // FIX: Don't retry if ECONNREFUSED (code 1006 + !wasClean).
+        // This typically means the backend is offline — retrying is useless
+        // and produces console spam (the bug the user reported).
+        const wasRefused = event.code === 1006 && !event.wasClean;
+
         // Auto-reconnect with exponential backoff
         if (
           autoReconnect &&
           reconnectCount < maxReconnectAttempts &&
-          !event.wasClean
+          !event.wasClean &&
+          !wasRefused  // Stop retrying on ECONNREFUSED
         ) {
           const delay = Math.min(
             reconnectBaseDelay * Math.pow(2, reconnectCount),
@@ -320,13 +326,19 @@ export function useFlipperWebSocket<T = Record<string, unknown>>(
     // We connect to /ws/flips as the primary channel; messages from other
     // channels are dispatched based on message type field.
     // For simplicity, we connect to /ws/flips and /ws/anomalies in parallel.
+    // FIX: Reduced maxReconnectAttempts from default 10 to 3.
+    // Without a reverse proxy (nginx/caddy) the WS connections go to
+    // ws://localhost:8000 which may not be reachable from the browser.
+    // Limiting retries prevents console spam from repeated failures.
     const flipsResult = useWebSocket<{ type?: string }>("/ws/flips", {
       ...options,
       enabled,
+      maxReconnectAttempts: 3,
     });
     const anomaliesResult = useWebSocket<{ type?: string }>("/ws/anomalies", {
       ...options,
       enabled,
+      maxReconnectAttempts: 3,
     });
 
     // Trigger callbacks when data changes

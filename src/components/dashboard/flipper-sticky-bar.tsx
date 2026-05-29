@@ -16,30 +16,21 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
-import type {
+import {
   FlipperPhaseResponse,
   FlipOpportunity,
   FlipsResponse,
   TriangularResponse,
+  PortfolioData,
 } from "@/lib/types";
 import { computeSentiment, scoreColor, classifySentiment } from "@/lib/flipper-helpers";
 
 // ---------------------------------------------------------------------------
 // Types — imported from @/lib/types (Single Source of Truth)
 // Previously FlipOpportunity / FlipsResponse / TriangularCycle /
-// TriangularResponse were duplicated locally as subsets. Now we use the
-// canonical types. The sticky bar only reads a few fields from each
-// (currency, score, momentum) but TypeScript allows accessing a subset
-// of fields on a fuller type.
+// TriangularResponse / PortfolioData were duplicated locally as subsets.
+// Now we use the canonical types.
 // ---------------------------------------------------------------------------
-
-interface PortfolioData {
-  method: "risk_parity" | "min_variance";
-  weights: Record<string, number>;
-  expected_risk: number;
-  correlation_warning: boolean;
-  last_rebalance: string | null;
-}
 
 // ---------------------------------------------------------------------------
 // Props

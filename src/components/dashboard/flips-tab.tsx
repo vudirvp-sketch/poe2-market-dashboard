@@ -116,6 +116,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       }),
     enabled: backendOnline,
     staleTime: 60_000,
+    // FIX: Add refetchInterval as polling fallback when WebSocket is not
+    // available (no reverse proxy for WS). This ensures live updates even
+    // if ws://localhost:8000 is unreachable from the browser.
+    refetchInterval: 60_000,
     retry: 1,
   });
 

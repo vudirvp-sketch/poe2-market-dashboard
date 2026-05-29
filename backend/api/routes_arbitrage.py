@@ -214,20 +214,67 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         logger.error("Clustering failed, using MODERATE default: %s", e)
         cluster_labels = {}
 
-    # 8. Score each pair as a flip opportunity
+    # 8. Build reverse-rate lookup for real bid/ask computation
+    #    In POE2, each currency pair has independent forward/reverse rates.
+    #    The spread between them represents the real market bid-ask gap.
+    rate_by_pair: dict[tuple[str, str], object] = {}
+    for rk, rv in rates.items():
+        rate_by_pair[(rv.currency_from, rv.currency_to)] = rv
+
+    # 9. Score each pair as a flip opportunity
     opportunities: list[FlipOpportunity] = []
 
+    import math as _math
+
     for key, rate in rates.items():
+        # Fix: case-insensitive history lookup — snapshot keys are lowercase
         history = currency_price_history.get(rate.currency_from, [])
+        if not history:
+            history = currency_price_history.get(rate.currency_from.lower(), [])
         tracker = PriceMomentumTracker(window_size=24)
         for price in history:
             tracker.update(price)
         momentum_result = tracker.compute()
 
         mid_price = rate.raw_rate
-        spread_estimate = max(0.01, momentum_result.volatility * 2)
-        bid = mid_price * (1 - spread_estimate / 2)
-        ask = mid_price * (1 + spread_estimate / 2)
+
+        # --- Bid/ask computation ---
+        # Previously: spread_estimate = max(0.01, volatility * 2)
+        # This was too small — gold fees (1-16%) always exceeded the 1% spread,
+        # causing spread_after_fees ≤ 0 and score = 0 for ALL pairs.
+        #
+        # New model (momentum-assisted flip):
+        #   1. Real market spread from forward/reverse rate gap (when both exist)
+        #   2. Momentum contribution: expected 24h price movement adds to
+        #      the effective spread (you buy now, sell later at expected price)
+        #   3. Higher minimum spread for pairs without reverse rate data
+        reverse = rate_by_pair.get((rate.currency_to, rate.currency_from))
+
+        if reverse is not None and reverse.raw_rate > 0:
+            # Both directions exist: compute real market spread
+            forward_rate = rate.raw_rate
+            implied_from_reverse = 1.0 / reverse.raw_rate
+            # Mid = arithmetic mean of forward and implied
+            mid_price = (forward_rate + implied_from_reverse) / 2
+            # Market spread from the forward/reverse rate gap
+            market_spread = abs(forward_rate - implied_from_reverse) / mid_price
+        else:
+            # No reverse rate: estimate from volatility with higher floor
+            # 2% minimum — typical even for liquid POE2 pairs
+            market_spread = max(0.02, momentum_result.volatility * 3)
+
+        # Momentum contribution: expected 24h price movement
+        # momentum is mean of hourly log-returns; exp(momentum * 24) - 1 ≈ 24h % change
+        if len(history) >= 2 and momentum_result.momentum != 0:
+            momentum_24h = abs(_math.exp(momentum_result.momentum * 24) - 1)
+        else:
+            momentum_24h = 0.0
+
+        # Total effective spread = market spread + momentum opportunity
+        total_spread = market_spread + momentum_24h
+
+        bid = mid_price * (1 - total_spread / 2)
+        ask = mid_price * (1 + total_spread / 2)
 
         price_to_chaos = prices_in_chaos.get(rate.currency_to, 0)
         trade_value = rate.raw_rate * price_to_chaos
