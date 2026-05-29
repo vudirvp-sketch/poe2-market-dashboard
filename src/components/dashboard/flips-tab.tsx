@@ -224,6 +224,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     data: flipsData,
     isLoading: flipsLoading,
     isError: flipsError,
+    error: flipsErrorObj,
     refetch: refetchFlips,
   } = useQuery<FlipsResponse>({
     queryKey: ["flipper-flips-tab", minScore, minVolume],
@@ -254,7 +255,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
 
   // ---- Determine if error is due to insufficient data vs backend offline ----
   const insufficientData =
-    flipsError && getFlipperErrorType(flipsError) === "backend_insufficient_data";
+    flipsError && getFlipperErrorType(flipsErrorObj) === "backend_insufficient_data";
 
   // ---- Filter and sort opportunities ----
   const filteredOpportunities = useMemo(() => {
@@ -522,7 +523,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           <CardContent className="px-4 pb-4 pt-0">
             {flipsError ? (
               <ApiErrorFallback
-                error={flipsError instanceof Error ? flipsError : String(flipsError)}
+                error={flipsErrorObj instanceof Error ? flipsErrorObj : String(flipsErrorObj ?? "")}
                 onRetry={() => refetchFlips()}
                 errorKind={insufficientData ? "insufficient_data" : undefined}
               />

@@ -292,7 +292,7 @@ async def health_check():
     try:
         from backend.economy.events import get_event_manager
         manager = get_event_manager(config)
-        event_summary = manager.get_active_event_summary()
+        event_summary = manager.get_active_event_summary() or {}
     except Exception:
         pass
 

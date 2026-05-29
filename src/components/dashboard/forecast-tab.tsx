@@ -517,7 +517,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
             </div>
           ) : forecastError && !liveMode ? (
             <ApiErrorFallback
-              error={forecastError instanceof Error ? forecastError : String(forecastError)}
+              error={forecastErrorObj instanceof Error ? forecastErrorObj : String(forecastErrorObj ?? "")}
               onRetry={() => refetchForecast()}
               errorKind={isForecastInsufficientData ? "insufficient_data" : undefined}
             />

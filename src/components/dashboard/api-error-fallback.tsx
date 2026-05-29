@@ -54,7 +54,8 @@ export function classifyApiError(error: Error | string | null | undefined): ApiE
   if (msg.includes("backend_offline") || msg.includes("ECONNREFUSED")) return "backend_offline";
   if (msg.includes("backend_timeout") || msg.includes("ETIMEDOUT")) return "backend_timeout";
   if (msg.includes("backend_connection_reset") || msg.includes("ECONNRESET")) return "backend_connection_reset";
-  if (msg.includes("backend_insufficient_data") || msg.includes("insufficient_data")) return "insufficient_data";
+  if (msg.includes("backend_insufficient_data")) return "backend_insufficient_data";
+  if (msg.includes("insufficient_data")) return "insufficient_data";
   if (msg.includes("upstream_unreachable") || msg.includes("upstream_error")) return "upstream_unreachable";
 
   // Fallback: status-based
@@ -93,6 +94,7 @@ export function ApiErrorFallback({
     backend_offline: { Icon: Server, color: "text-red-500" },
     backend_timeout: { Icon: Server, color: "text-amber-500" },
     backend_connection_reset: { Icon: Server, color: "text-amber-500" },
+    backend_insufficient_data: { Icon: Database, color: "text-amber-500" },
     insufficient_data: { Icon: Database, color: "text-amber-500" },
     upstream_unreachable: { Icon: ShieldAlert, color: "text-amber-500" },
     upstream_error: { Icon: ShieldAlert, color: "text-amber-500" },
@@ -109,6 +111,7 @@ export function ApiErrorFallback({
     backend_offline: t("flipperBackendOfflineTitle"),
     backend_timeout: t("flipperBackendOfflineTitle"),
     backend_connection_reset: t("flipperBackendOfflineTitle"),
+    backend_insufficient_data: t("flipperBackendInsufficientDataTitle"),
     insufficient_data: t("flipperBackendInsufficientDataTitle"),
     upstream_unreachable: t("flipperBackendDegradedTitle"),
     upstream_error: t("flipperBackendDegradedTitle"),
@@ -122,6 +125,7 @@ export function ApiErrorFallback({
     backend_offline: t("flipperBackendOfflineDesc"),
     backend_timeout: t("flipperBackendOfflineDesc"),
     backend_connection_reset: t("flipperBackendOfflineDesc"),
+    backend_insufficient_data: t("flipperBackendInsufficientDataDesc"),
     insufficient_data: t("flipperBackendInsufficientDataDesc"),
     upstream_unreachable: t("flipperBackendDegradedDesc"),
     upstream_error: t("flipperBackendDegradedDesc"),

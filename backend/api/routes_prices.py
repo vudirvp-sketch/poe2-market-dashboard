@@ -146,11 +146,14 @@ async def get_all_prices():
     # Determine gold_to_chaos_rate
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
     if config.fees.gold_to_chaos_rate_source == "market":
-        from backend.api.shared import get_provider
-        provider = get_provider()
-        observed = await provider.get_gold_chaos_rate(config.league.league_name)
-        if observed is not None:
-            gold_to_chaos_rate = observed
+        try:
+            from backend.api.shared import get_provider
+            provider = get_provider()
+            observed = await provider.get_gold_chaos_rate(config.league.league_name)
+            if observed is not None:
+                gold_to_chaos_rate = observed
+        except (ConnectionError, OSError) as e:
+            logger.warning("Failed to get gold/chaos rate from market: %s", e)
 
     # Build momentum/volatility lookup from snapshot's currencies data
     momentum_lookup: dict[str, dict] = {}

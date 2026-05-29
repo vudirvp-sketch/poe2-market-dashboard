@@ -335,6 +335,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     data: pairs,
     isLoading: pairsLoading,
     isError: pairsError,
+    error: pairsErrorObj,
   } = useQuery<ExchangePair[]>({
     queryKey: ["exchangePairs", realm, league],
     queryFn: () =>
@@ -352,6 +353,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     data: flipsData,
     isLoading: flipsLoading,
     isError: flipsError,
+    error: flipsErrorObj,
     refetch: refetchFlips,
   } = useQuery<FlipsResponse>({
     queryKey: ["flipper-flips", flipMinScore, flipMinVolume],
@@ -370,6 +372,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     data: triData,
     isLoading: triLoading,
     isError: triError,
+    error: triErrorObj,
     refetch: refetchTri,
   } = useQuery<TriangularResponse>({
     queryKey: ["flipper-triangular"],
@@ -449,7 +452,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
   if (isError && mode === "client") {
     return (
       <ApiErrorFallback
-        error={pairsError instanceof Error ? pairsError : String(pairsError)}
+        error={pairsErrorObj instanceof Error ? pairsErrorObj : String(pairsErrorObj ?? "")}
         errorKind="upstream_unreachable"
       />
     );
@@ -1018,7 +1021,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                 </div>
               ) : flipsError ? (
                 <ApiErrorFallback
-                  error={flipsError instanceof Error ? flipsError : String(flipsError)}
+                  error={flipsErrorObj instanceof Error ? flipsErrorObj : String(flipsErrorObj ?? "")}
                   onRetry={() => refetchFlips()}
                 />
               ) : !flipsData?.opportunities?.length ? (
@@ -1152,7 +1155,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                 </div>
               ) : triError ? (
                 <ApiErrorFallback
-                  error={triError instanceof Error ? triError : String(triError)}
+                  error={triErrorObj instanceof Error ? triErrorObj : String(triErrorObj ?? "")}
                   onRetry={() => refetchTri()}
                   compact
                 />
