@@ -136,6 +136,22 @@ export interface FlipperHealthResponse {
   base_currency?: string;
   active_events?: number;
   cache_entries?: number;
+  snapshot?: {
+    snapshot_valid: boolean;
+    snapshot_stale: boolean;
+    snapshot_age_seconds: number | null;
+    snapshot_ttl_seconds: number;
+    exchange_rates_count: number;
+    currencies_count: number;
+    price_histories_count: number;
+    fetched_at: string | null;
+  };
+  daily_stats_cache?: {
+    size: number;
+    max: number;
+    stale_entries: number;
+    ttl_seconds: number;
+  };
 }
 
 /** Response shape from GET /api/flipper/phase */

@@ -1,13 +1,31 @@
 // ============================================================================
 // API Error Fallback — Reusable error state component for failed API calls
 // Shows a friendly error message with retry button instead of blank screen
-// v2: Detects 502 errors and shows VPN/proxy troubleshooting hints
+// v3: Three-state error differentiation:
+//   1. backend_offline    — backend process not running (connection refused)
+//   2. upstream_unreachable — backend running but upstream API unreachable
+//   3. insufficient_data  — backend running but not enough data yet
+//   Plus: network offline, rate-limited, generic server error
 // ============================================================================
 "use client";
 
-import { AlertTriangle, RefreshCw, WifiOff, ShieldAlert } from "lucide-react";
+import { AlertTriangle, RefreshCw, WifiOff, ShieldAlert, Server, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+
+/** Error type discriminant matching FlipperApiError.errorType */
+export type ApiErrorKind =
+  | "backend_offline"
+  | "backend_timeout"
+  | "backend_connection_reset"
+  | "backend_insufficient_data"
+  | "insufficient_data"
+  | "upstream_unreachable"
+  | "upstream_error"
+  | "server_error"
+  | "network_offline"
+  | "rate_limited"
+  | "unknown";
 
 interface ApiErrorFallbackProps {
   /** Error message or object */
@@ -20,6 +38,36 @@ interface ApiErrorFallbackProps {
   title?: string;
   /** Compact mode (for inline errors) */
   compact?: boolean;
+  /** Explicit error kind — overrides auto-detection from error message */
+  errorKind?: ApiErrorKind;
+}
+
+/**
+ * Classify an error into a specific ApiErrorKind for differentiated UI.
+ */
+export function classifyApiError(error: Error | string | null | undefined): ApiErrorKind {
+  if (!error) return "unknown";
+  const msg = error instanceof Error ? error.message : error;
+  const lower = msg.toLowerCase();
+
+  // FlipperApiError carries structured error_type info
+  if (msg.includes("backend_offline") || msg.includes("ECONNREFUSED")) return "backend_offline";
+  if (msg.includes("backend_timeout") || msg.includes("ETIMEDOUT")) return "backend_timeout";
+  if (msg.includes("backend_connection_reset") || msg.includes("ECONNRESET")) return "backend_connection_reset";
+  if (msg.includes("backend_insufficient_data") || msg.includes("insufficient_data")) return "insufficient_data";
+  if (msg.includes("upstream_unreachable") || msg.includes("upstream_error")) return "upstream_unreachable";
+
+  // Fallback: status-based
+  if (msg.includes("429")) return "rate_limited";
+  if (msg.includes("502")) return "upstream_unreachable";
+  if (msg.includes("503")) return "backend_offline";
+  if (msg.includes("422")) return "insufficient_data";
+  if (msg.includes("500") || msg.includes("5xx")) return "server_error";
+
+  // Network-level
+  if (lower.includes("failed to fetch") || lower.includes("network") || lower.includes("net::err")) return "network_offline";
+
+  return "unknown";
 }
 
 export function ApiErrorFallback({
@@ -28,6 +76,7 @@ export function ApiErrorFallback({
   isRetrying,
   title,
   compact,
+  errorKind: explicitKind,
 }: ApiErrorFallbackProps) {
   const { t } = useI18n();
   const errorMessage =
@@ -37,21 +86,53 @@ export function ApiErrorFallback({
       ? error
       : "An unexpected error occurred";
 
-  // Detect network/offline errors
-  const isOffline =
-    errorMessage.toLowerCase().includes("failed to fetch") ||
-    errorMessage.toLowerCase().includes("network") ||
-    errorMessage.toLowerCase().includes("net::err");
+  const kind = explicitKind ?? classifyApiError(error);
 
-  // Detect rate-limit
-  const isRateLimited = errorMessage.includes("429");
+  // Icon and color per error kind
+  const iconMap: Record<ApiErrorKind, { Icon: typeof WifiOff; color: string }> = {
+    backend_offline: { Icon: Server, color: "text-red-500" },
+    backend_timeout: { Icon: Server, color: "text-amber-500" },
+    backend_connection_reset: { Icon: Server, color: "text-amber-500" },
+    insufficient_data: { Icon: Database, color: "text-amber-500" },
+    upstream_unreachable: { Icon: ShieldAlert, color: "text-amber-500" },
+    upstream_error: { Icon: ShieldAlert, color: "text-amber-500" },
+    server_error: { Icon: AlertTriangle, color: "text-red-500" },
+    network_offline: { Icon: WifiOff, color: "text-amber-500" },
+    rate_limited: { Icon: AlertTriangle, color: "text-amber-500" },
+    unknown: { Icon: AlertTriangle, color: "text-amber-500" },
+  };
 
-  // Detect 502/server errors (API unreachable)
-  const isServerDown =
-    errorMessage.includes("502") ||
-    errorMessage.includes("unreachable") ||
-    errorMessage.includes("Cannot reach") ||
-    errorMessage.includes("timed out");
+  const { Icon, color: iconColor } = iconMap[kind] ?? iconMap.unknown;
+
+  // Title and description per error kind
+  const titleMap: Record<ApiErrorKind, string> = {
+    backend_offline: t("flipperBackendOfflineTitle"),
+    backend_timeout: t("flipperBackendOfflineTitle"),
+    backend_connection_reset: t("flipperBackendOfflineTitle"),
+    insufficient_data: t("flipperBackendInsufficientDataTitle"),
+    upstream_unreachable: t("flipperBackendDegradedTitle"),
+    upstream_error: t("flipperBackendDegradedTitle"),
+    server_error: t("failedToLoadData"),
+    network_offline: t("connectionLost"),
+    rate_limited: t("tooManyRequests"),
+    unknown: t("failedToLoadData"),
+  };
+
+  const descMap: Record<ApiErrorKind, string> = {
+    backend_offline: t("flipperBackendOfflineDesc"),
+    backend_timeout: t("flipperBackendOfflineDesc"),
+    backend_connection_reset: t("flipperBackendOfflineDesc"),
+    insufficient_data: t("flipperBackendInsufficientDataDesc"),
+    upstream_unreachable: t("flipperBackendDegradedDesc"),
+    upstream_error: t("flipperBackendDegradedDesc"),
+    server_error: t("failedToLoadDataDesc"),
+    network_offline: t("connectionLostDesc"),
+    rate_limited: t("tooManyRequestsDesc"),
+    unknown: t("failedToLoadDataDesc"),
+  };
+
+  const displayTitle = title ?? titleMap[kind];
+  const displayDesc = descMap[kind];
 
   if (compact) {
     return (
@@ -59,13 +140,9 @@ export function ApiErrorFallback({
         className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2"
         role="alert"
       >
-        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+        <Icon className={`h-4 w-4 ${iconColor} shrink-0`} />
         <span className="text-xs text-muted-foreground flex-1">
-          {isOffline
-            ? t("networkError")
-            : isRateLimited
-            ? t("rateLimited")
-            : t("failedToLoadData")}
+          {displayTitle}
         </span>
         {onRetry && (
           <Button
@@ -90,32 +167,28 @@ export function ApiErrorFallback({
       className="flex flex-col items-center justify-center py-16 px-4 text-center"
       role="alert"
     >
-      {isOffline ? (
-        <WifiOff className="h-12 w-12 text-amber-500 mb-4" />
-      ) : isServerDown ? (
-        <ShieldAlert className="h-12 w-12 text-amber-500 mb-4" />
-      ) : (
-        <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-      )}
+      <Icon className={`h-12 w-12 ${iconColor} mb-4`} />
       <h3 className="text-lg font-semibold mb-2">
-        {title ||
-          (isOffline
-            ? t("connectionLost")
-            : isRateLimited
-            ? t("tooManyRequests")
-            : isServerDown
-            ? "API Server Unreachable"
-            : t("failedToLoadData"))}
+        {displayTitle}
       </h3>
       <p className="text-sm text-muted-foreground mb-4 max-w-md">
-        {isOffline
-          ? t("connectionLostDesc")
-          : isRateLimited
-          ? t("tooManyRequestsDesc")
-          : isServerDown
-          ? "The poe2scout.com API could not be reached. This may be due to regional network restrictions. Try: 1) Edit .env.local and set POE2_API_BASE_URL=https://api.poe2scout.com/api, 2) Use a VPN, 3) Restart the server after making changes."
-          : t("failedToLoadDataDesc")}
+        {displayDesc}
       </p>
+      {/* Actionable hints per error kind */}
+      {kind === "backend_offline" && (
+        <code className="text-xs mb-4 block bg-muted px-2 py-1 rounded">
+          uvicorn backend.main:app --reload --port 8000
+        </code>
+      )}
+      {kind === "upstream_unreachable" && (
+        <p className="text-xs text-muted-foreground mb-4 max-w-md">
+          1) Edit .env.local: POE2_API_BASE_URL=https://api.poe2scout.com/api
+          <br />
+          2) Use a VPN
+          <br />
+          3) Restart the server after changes
+        </p>
+      )}
       {onRetry && (
         <Button
           variant="outline"

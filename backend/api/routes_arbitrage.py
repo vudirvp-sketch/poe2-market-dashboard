@@ -20,7 +20,6 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings, AppConfig
-from backend.data.cache import get_cache
 from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot

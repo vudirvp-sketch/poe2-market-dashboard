@@ -154,7 +154,7 @@ async def _compute_forecast(currency: str, horizon: int = 24) -> dict | None:
     try:
         from backend.api.shared import get_provider, get_forecast_engine
         from backend.api.data_snapshot import get_snapshot
-        from backend.data.cache import get_cache
+        from backend.data.daily_stats_cache import get_daily_stats_cache
         from backend.economy.events import get_event_manager
         from backend.data.schemas import DailyStatsResponse
         from backend.models.currency import PricePoint
@@ -162,7 +162,7 @@ async def _compute_forecast(currency: str, horizon: int = 24) -> dict | None:
 
         config = get_settings()
         provider = get_provider()
-        cache = get_cache()
+        ds_cache = get_daily_stats_cache()
         event_manager = get_event_manager(config)
 
         is_event_active = event_manager.is_event_active(currency)
@@ -178,10 +178,7 @@ async def _compute_forecast(currency: str, horizon: int = 24) -> dict | None:
             # Use snapshot's metadata instead of calling get_currency_metadata()
             for ci in snapshot.currency_metadata:
                 if ci.api_id.lower() == currency.lower() and ci.item_id:
-                    ds_result = await cache.get_or_fetch(
-                        "daily_stats",
-                        provider.name(),
-                        "get_daily_stats",
+                    ds_result = await ds_cache.get_or_fetch(
                         provider.get_daily_stats,
                         config.league.league_name,
                         ci.item_id,

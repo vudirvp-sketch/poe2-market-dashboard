@@ -68,27 +68,31 @@ async def get_forecast(
         price_points = snapshot.get_price_history(currency)
 
         # Also try DailyStatsHistory for richer OHLCV data
-        # (DailyStats is NOT in DataSnapshot, so we use the provider
-        # directly with a short-lived cache.)
+        # (DailyStats is NOT in DataSnapshot, so we use the dedicated
+        # DailyStatsCache — replaces the old DataCache daily_stats tier.)
         daily_stats_data: dict | None = None
+        daily_stats_stale = False
         try:
             # Look up item_id from snapshot metadata
             for ci in snapshot.currency_metadata:
                 if ci.api_id.lower() == currency.lower() and ci.item_id:
                     from backend.api.shared import get_provider as _get_prov
-                    from backend.data.cache import get_cache
+                    from backend.data.daily_stats_cache import get_daily_stats_cache
                     _provider = _get_prov()
-                    _cache = get_cache()
-                    ds_result = await _cache.get_or_fetch(
-                        "daily_stats",
-                        _provider.name(),
-                        "get_daily_stats",
+                    _ds_cache = get_daily_stats_cache()
+                    ds_result = await _ds_cache.get_or_fetch(
                         _provider.get_daily_stats,
                         config.league.league_name,
                         ci.item_id,
                         30,
                     )
                     daily_stats_data = ds_result.value
+                    daily_stats_stale = ds_result.stale
+                    if daily_stats_stale:
+                        logger.info(
+                            "Using stale DailyStats for %s forecast (upstream may be degraded)",
+                            currency,
+                        )
                     break
         except Exception as e:
             logger.debug("DailyStatsHistory lookup failed for %s: %s", currency, e)

@@ -242,6 +242,7 @@ const ru: Record<TranslationKeys, string> = {
   flipperBackendOfflineDesc: "Запустите FastAPI-бэкенд для доступа к продвинутому скорингу флипов, треугольному арбитражу и другим функциям.",
   flipperBackendDegradedTitle: "Upstream API недоступен",
   flipperBackendDegradedDesc: "Flipper-бэкенд работает, но не может достучаться до POE2Scout API (poe2scout.com). Вероятно, это связано с сетевыми ограничениями в вашем регионе. Попробуйте VPN или укажите альтернативный эндпоинт в POE2_API_BASE_URL в .env.local. Кэшированные данные по-прежнему доступны.",
+  flipperBackendDegradedHint: "1) Отредактируйте .env.local: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) Используйте VPN   3) Перезапустите сервер после изменений",
   flipperBackendInsufficientDataTitle: "Недостаточно данных для этой функции",
   flipperBackendInsufficientDataDesc: "Бэкенд работает, но пока не собрал достаточно исторических данных. Попробуйте позже, когда будет собрано больше ценовых точек (обычно требуется минимум 2 валюты с 5+ точками каждая).",
   flipperEventActive: "Активное событие влияет на рынок",

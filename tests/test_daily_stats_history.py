@@ -3,7 +3,7 @@ Integration tests for DailyStatsHistory flow.
 
 Verifies that:
 1. Poe2ScoutProvider.get_daily_stats() returns properly structured data
-2. DataCache caches DailyStatsHistory results in the "daily_stats" tier
+2. DailyStatsCache caches DailyStatsHistory results
 3. The forecast route uses DailyStatsHistory when available
 4. Cache invalidation clears daily_stats entries
 5. LightGBM trains with reduced data points (15 threshold)
@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from backend.config import AppConfig, DataConfig, ForecastingConfig, LeagueConfig
-from backend.data.cache import DataCache, CacheResult, get_cache
+from backend.data.daily_stats_cache import DailyStatsCache, DailyStatsResult, get_daily_stats_cache
 from backend.data.providers.base import BaseDataProvider
 from backend.models.currency import (
     CurrencyInfo,
@@ -206,7 +206,7 @@ class MockProviderNoDailyStats(BaseDataProvider):
 # ---------------------------------------------------------------------------
 
 class TestDailyStatsCacheIntegration:
-    """Test that DailyStatsHistory results are properly cached in DataCache."""
+    """Test that DailyStatsHistory results are properly cached in DailyStatsCache."""
 
     def _make_config(self) -> AppConfig:
         """Create a minimal test config."""
@@ -217,16 +217,13 @@ class TestDailyStatsCacheIntegration:
         )
 
     @pytest.mark.asyncio
-    async def test_daily_stats_cached_in_daily_stats_tier(self):
-        """get_or_fetch with cache_type='daily_stats' should cache results."""
-        cache = DataCache(self._make_config())
+    async def test_daily_stats_cached(self):
+        """get_or_fetch should cache daily stats results."""
+        cache = DailyStatsCache(self._make_config())
         provider = MockProviderWithDailyStats()
 
         # First call — cache miss, should fetch
         result1 = await cache.get_or_fetch(
-            "daily_stats",
-            provider.name(),
-            "get_daily_stats",
             provider.get_daily_stats,
             "vaal", 42, 30,
         )
@@ -236,76 +233,35 @@ class TestDailyStatsCacheIntegration:
 
         # Second call — should hit cache
         result2 = await cache.get_or_fetch(
-            "daily_stats",
-            provider.name(),
-            "get_daily_stats",
             provider.get_daily_stats,
             "vaal", 42, 30,
         )
         assert result2.value is not None
         assert result2.stale is False
 
-        # Verify cache stats include daily_stats tier
+        # Verify cache stats
         stats = cache.stats()
-        assert "daily_stats" in stats
-        assert stats["daily_stats"]["size"] == 1
-
-    @pytest.mark.asyncio
-    async def test_daily_stats_cache_separate_from_history(self):
-        """Daily stats cache should be independent from history cache."""
-        cache = DataCache(self._make_config())
-        provider = MockProviderWithDailyStats()
-
-        # Put something in history cache
-        await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            "divine", 7,
-        )
-
-        # Put something in daily_stats cache
-        await cache.get_or_fetch(
-            "daily_stats",
-            provider.name(),
-            "get_daily_stats",
-            provider.get_daily_stats,
-            "vaal", 42, 30,
-        )
-
-        stats = cache.stats()
-        assert stats["history"]["size"] == 1
-        assert stats["daily_stats"]["size"] == 1
-
-        # Invalidate history only — daily_stats should remain
-        cache.invalidate("history")
-        stats = cache.stats()
-        assert stats["history"]["size"] == 0
-        assert stats["daily_stats"]["size"] == 1
+        assert stats["size"] == 1
 
     @pytest.mark.asyncio
     async def test_daily_stats_cache_invalidation(self):
-        """Invalidating 'daily_stats' tier should clear only that tier."""
-        cache = DataCache(self._make_config())
+        """Invalidating cache should clear all entries."""
+        cache = DailyStatsCache(self._make_config())
         provider = MockProviderWithDailyStats()
 
         await cache.get_or_fetch(
-            "daily_stats",
-            provider.name(),
-            "get_daily_stats",
             provider.get_daily_stats,
             "vaal", 42, 30,
         )
-        assert cache.stats()["daily_stats"]["size"] == 1
+        assert cache.stats()["size"] == 1
 
-        cache.invalidate("daily_stats")
-        assert cache.stats()["daily_stats"]["size"] == 0
+        cache.invalidate()
+        assert cache.stats()["size"] == 0
 
     @pytest.mark.asyncio
     async def test_daily_stats_stale_fallback(self):
         """When fetch fails, stale daily stats should be returned."""
-        cache = DataCache(self._make_config())
+        cache = DailyStatsCache(self._make_config())
         call_count = 0
 
         async def fetch_fn(league, item_id, day_count):
@@ -317,43 +273,20 @@ class TestDailyStatsCacheIntegration:
 
         # First call succeeds
         result1 = await cache.get_or_fetch(
-            "daily_stats", "test_provider", "get_daily_stats",
             fetch_fn, "vaal", 42, 30,
         )
         assert result1.value is not None
         assert result1.stale is False
 
-        # Wait for TTL to expire (or manually expire)
-        cache._daily_stats_cache.clear()
+        # Manually expire cache entry to trigger stale fallback
+        cache._cache.clear()
 
         # Second call fails — should get stale value
         result2 = await cache.get_or_fetch(
-            "daily_stats", "test_provider", "get_daily_stats",
             fetch_fn, "vaal", 42, 30,
         )
         assert result2.value is not None
         assert result2.stale is True
-
-    @pytest.mark.asyncio
-    async def test_full_invalidation_clears_daily_stats(self):
-        """Invalidating all caches should clear daily_stats too."""
-        cache = DataCache(self._make_config())
-        provider = MockProviderWithDailyStats()
-
-        await cache.get_or_fetch(
-            "daily_stats",
-            provider.name(),
-            "get_daily_stats",
-            provider.get_daily_stats,
-            "vaal", 42, 30,
-        )
-        assert cache.stats()["daily_stats"]["size"] == 1
-
-        cache.invalidate()  # Clear all
-        assert cache.stats()["daily_stats"]["size"] == 0
-        assert cache.stats()["history"]["size"] == 0
-        assert cache.stats()["prices"]["size"] == 0
-        assert cache.stats()["metadata"]["size"] == 0
 
 
 class TestDailyStatsParsing:

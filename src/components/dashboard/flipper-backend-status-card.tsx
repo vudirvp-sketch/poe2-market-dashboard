@@ -1,13 +1,17 @@
 // ============================================================================
 // FlipperBackendStatusCard — Shared backend status indicator + offline,
-// degraded, and insufficient-data cards. Extracted from flips-tab,
-// portfolio-tab, and currency-graph-tab to eliminate duplication.
+// degraded, upstream-unreachable, and insufficient-data cards.
+// Extracted from flips-tab, portfolio-tab, and currency-graph-tab to
+// eliminate duplication.
 //
-// Three visual states:
-//   1. Online + upstream reachable  → green "online"
-//   2. Online + upstream degraded  → yellow "degraded" (backend works, upstream
-//      API unreachable — likely poe2scout.com blocked in user's region)
-//   3. Offline                     → red "offline" (backend process not running)
+// Four visual states:
+//   1. Online + upstream reachable        → green "online"
+//   2. Online + upstream DEGRADED         → yellow "upstream unreachable"
+//      (backend works, but poe2scout.com is unreachable in user's region)
+//   3. Online + insufficient data         → amber "insufficient data"
+//      (backend running, but needs more historical data)
+//   4. Offline                            → red "offline"
+//      (backend process not running)
 // ============================================================================
 "use client";
 
@@ -80,11 +84,11 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
         )}
       </div>
 
-      {/* ---- Backend OFFLINE (process not running) ---- */}
+      {/* ---- State 4: Backend OFFLINE (process not running) ---- */}
       {!backendOnline && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent className="flex items-start gap-3 p-4">
-            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <Server className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
             <div className="text-sm">
               <p className="font-medium text-red-600 dark:text-red-400">
                 {t("flipperBackendOfflineTitle")}
@@ -100,7 +104,7 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
         </Card>
       )}
 
-      {/* ---- Backend ONLINE but UPSTREAM DEGRADED (poe2scout.com unreachable) ---- */}
+      {/* ---- State 2: Backend ONLINE but UPSTREAM UNREACHABLE ---- */}
       {backendOnline && upstreamDegraded && !insufficientData && (
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-start gap-3 p-4">
@@ -112,12 +116,15 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
               <p className="text-muted-foreground mt-1">
                 {t("flipperBackendDegradedDesc")}
               </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {t("flipperBackendDegradedHint")}
+              </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* ---- Backend online but insufficient data ---- */}
+      {/* ---- State 3: Backend online but INSUFFICIENT DATA ---- */}
       {backendOnline && insufficientData && (
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-start gap-3 p-4">

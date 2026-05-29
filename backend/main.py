@@ -305,6 +305,24 @@ async def health_check():
     except Exception:
         pass
 
+    # Include DataSnapshot health info (stale detection, age, etc.)
+    snapshot_health = {}
+    try:
+        from backend.api.data_snapshot import get_snapshot_manager
+        mgr = get_snapshot_manager()
+        snapshot_health = mgr.health_info()
+    except Exception:
+        pass
+
+    # Include DailyStatsCache stats
+    daily_stats_cache_stats = {}
+    try:
+        from backend.data.daily_stats_cache import get_daily_stats_cache
+        ds_cache = get_daily_stats_cache()
+        daily_stats_cache_stats = ds_cache.stats()
+    except Exception:
+        pass
+
     return {
         "status": "ok" if _provider_healthy else "degraded",
         "provider": "reachable" if _provider_healthy else "unreachable",
@@ -313,4 +331,6 @@ async def health_check():
         "base_currency": config.league.base_currency,
         "active_events": event_summary.get("total_active_events", 0),
         "cache_entries": cache_entries,
+        "snapshot": snapshot_health,
+        "daily_stats_cache": daily_stats_cache_stats,
     }

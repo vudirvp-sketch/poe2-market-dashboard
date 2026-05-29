@@ -186,7 +186,14 @@ class SnapshotManager:
                 logger.error("DataSnapshot refresh failed: %s", e)
                 # Return stale snapshot if available, otherwise empty
                 if self._snapshot is not None:
-                    logger.warning("Returning stale DataSnapshot after refresh failure")
+                    stale_age = now - self._snapshot_ts
+                    logger.warning(
+                        "DEGRADED: Returning stale DataSnapshot after refresh failure "
+                        "(age=%.1fs, rates=%d, currencies=%d)",
+                        stale_age,
+                        len(self._snapshot.exchange_rates),
+                        len(self._snapshot.currencies),
+                    )
                     return self._snapshot
                 self._snapshot = DataSnapshot(valid=False)
 
@@ -304,6 +311,27 @@ class SnapshotManager:
     def invalidate(self) -> None:
         """Force a refresh on the next get_snapshot() call."""
         self._snapshot_ts = 0.0
+
+    def health_info(self) -> dict:
+        """Return diagnostic information about the snapshot state.
+
+        Used by the /api/health endpoint to provide visibility into
+        degraded-mode caching.
+        """
+        now = time.monotonic()
+        age = now - self._snapshot_ts if self._snapshot_ts > 0 else -1
+        is_stale = age > self._ttl if age >= 0 else True
+
+        return {
+            "snapshot_valid": self._snapshot is not None and self._snapshot.valid,
+            "snapshot_stale": is_stale,
+            "snapshot_age_seconds": round(age, 1) if age >= 0 else None,
+            "snapshot_ttl_seconds": self._ttl,
+            "exchange_rates_count": len(self._snapshot.exchange_rates) if self._snapshot else 0,
+            "currencies_count": len(self._snapshot.currencies) if self._snapshot else 0,
+            "price_histories_count": len(self._snapshot.price_histories) if self._snapshot else 0,
+            "fetched_at": self._snapshot.fetched_at.isoformat() if self._snapshot and self._snapshot.fetched_at else None,
+        }
 
 
 # ---------------------------------------------------------------------------

@@ -246,6 +246,7 @@ const zh: Record<TranslationKeys, string> = {
   flipperBackendOfflineDesc: "启动 FastAPI 后端以启用高级翻转评分、三角套利等功能。",
   flipperBackendDegradedTitle: "上游 API 不可达",
   flipperBackendDegradedDesc: "Flipper 后端正在运行，但无法访问 POE2Scout API (poe2scout.com)。这可能是您所在地区的网络限制所致。请尝试使用 VPN，或在 .env.local 中设置 POE2_API_BASE_URL 为备用端点。缓存数据仍可使用。",
+  flipperBackendDegradedHint: "1) 编辑 .env.local: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) 使用 VPN   3) 修改后重启服务器",
   flipperBackendInsufficientDataTitle: "此功能数据不足",
   flipperBackendInsufficientDataDesc: "后端已在线，但尚未收集到足够的历史数据。请稍后再试，当收集到更多价格点时即可使用（通常需要至少2种货币，每种5+个价格点）。",
   flipperEventActive: "活跃事件影响市场",

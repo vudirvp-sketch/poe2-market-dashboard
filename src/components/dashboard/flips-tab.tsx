@@ -42,6 +42,7 @@ import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 import { useFlipperWebSocket } from "@/hooks/use-websocket";
+import { ApiErrorFallback } from "./api-error-fallback";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -520,10 +521,11 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">
             {flipsError ? (
-              <div className="text-center py-10">
-                <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
-                <p className="font-medium">{t("failedToLoadData")}</p>
-              </div>
+              <ApiErrorFallback
+                error={flipsError instanceof Error ? flipsError : String(flipsError)}
+                onRetry={() => refetchFlips()}
+                errorKind={insufficientData ? "insufficient_data" : undefined}
+              />
             ) : !filteredOpportunities.length ? (
               <div className="text-center py-10">
                 <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
