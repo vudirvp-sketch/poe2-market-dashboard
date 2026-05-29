@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useI18n, type TranslationKeys } from "@lib/i18n";
+import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
