@@ -883,33 +883,78 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
   }
 }
 
+// ============================================================================
+// Fallback data — used when the upstream POE2Scout API is unreachable.
+// Updated 2025-05-30 based on live API responses.
+// These ensure the dashboard always has realm/league selectors populated,
+// even on first launch behind a restrictive network.
+// ============================================================================
+
+const FALLBACK_REALMS: Realm[] = [
+  { name: "poe2", displayName: "PoE2", defaultLeague: "Fate of the Vaal" },
+  { name: "pc", displayName: "PoE1 PC", defaultLeague: "Mirage" },
+  { name: "xbox", displayName: "PoE1 XBOX", defaultLeague: "Mirage" },
+  { name: "sony", displayName: "PoE1 PS", defaultLeague: "Mirage" },
+];
+
+const FALLBACK_LEAGUES: Record<string, League[]> = {
+  poe2: [
+    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "vaalhc", displayName: "HC Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "abyssal", displayName: "Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "abyssalhc", displayName: "HC Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "hunt", displayName: "Dawn of the Hunt", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "hunthc", displayName: "HC Dawn of the Hunt", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "standard", displayName: "Standard", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "hardcore", displayName: "Hardcore", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+  ],
+  pc: [
+    { name: "mirage", displayName: "Mirage", startAt: null, endAt: null, active: true },
+    { name: "standard", displayName: "Standard", startAt: null, endAt: null, active: false },
+  ],
+  xbox: [
+    { name: "mirage", displayName: "Mirage", startAt: null, endAt: null, active: true },
+    { name: "standard", displayName: "Standard", startAt: null, endAt: null, active: false },
+  ],
+  sony: [
+    { name: "mirage", displayName: "Mirage", startAt: null, endAt: null, active: true },
+    { name: "standard", displayName: "Standard", startAt: null, endAt: null, active: false },
+  ],
+};
+
 // --- Realms ---
 export async function getRealms(): Promise<Realm[]> {
-  const raw = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
-  return raw.map((r) => {
-    // The API path segment for leagues/etc. uses realm_api_id directly:
-    //   - PoE2: realm_api_id = "poe2" → /poe2/Leagues ✓
-    //   - PoE1 PC: realm_api_id = "pc" → /pc/Leagues ✓
-    //   - PoE1 Xbox: realm_api_id = "xbox" → /xbox/Leagues ✓
-    //   - PoE1 Sony: realm_api_id = "sony" → /sony/Leagues ✓
-    const name = r.realm_api_id;
+  try {
+    const raw = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
+    return raw.map((r) => {
+      // The API path segment for leagues/etc. uses realm_api_id directly:
+      //   - PoE2: realm_api_id = "poe2" → /poe2/Leagues ✓
+      //   - PoE1 PC: realm_api_id = "pc" → /pc/Leagues ✓
+      //   - PoE1 Xbox: realm_api_id = "xbox" → /xbox/Leagues ✓
+      //   - PoE1 Sony: realm_api_id = "sony" → /sony/Leagues ✓
+      const name = r.realm_api_id;
 
-    // Display names: include game name for clarity
-    let displayName: string;
-    if (r.game_api_id === "poe2") {
-      displayName = "PoE2";
-    } else if (r.game_api_id === "poe") {
-      displayName = `PoE1 ${r.realm_api_id.toUpperCase()}`;
-    } else {
-      displayName = r.realm_api_id;
-    }
+      // Display names: include game name for clarity
+      let displayName: string;
+      if (r.game_api_id === "poe2") {
+        displayName = "PoE2";
+      } else if (r.game_api_id === "poe") {
+        displayName = `PoE1 ${r.realm_api_id.toUpperCase()}`;
+      } else {
+        displayName = r.realm_api_id;
+      }
 
-    return {
-      name,
-      displayName,
-      defaultLeague: r.default_league_value || undefined,
-    };
-  });
+      return {
+        name,
+        displayName,
+        defaultLeague: r.default_league_value || undefined,
+      };
+    });
+  } catch (err) {
+    // Upstream API unreachable — return fallback data so the UI always works
+    console.warn("[poe2api] getRealms: upstream API unreachable, using fallback data.", err instanceof Error ? err.message : err);
+    return FALLBACK_REALMS;
+  }
 }
 
 export async function getRealmFilters(realm: string): Promise<unknown> {
@@ -919,51 +964,57 @@ export async function getRealmFilters(realm: string): Promise<unknown> {
 // --- Leagues ---
 // Fix 5.4: Added optional defaultLeagueValue parameter to avoid redundant /Realms request
 export async function getLeagues(realm: string, defaultLeagueValue?: string): Promise<League[]> {
-  const raw = await cachedFetch<RawLeague[]>(`${BASE_URL}/${encodeURIComponent(realm)}/Leagues`);
+  try {
+    const raw = await cachedFetch<RawLeague[]>(`${BASE_URL}/${encodeURIComponent(realm)}/Leagues`);
 
-  // API IsCurrent is always false. We determine the active league
-  // by getting the realm's default_league_value and matching it.
-  // Fix 5.4: If defaultLeagueValue is provided by the caller, skip the /Realms request
-  if (!defaultLeagueValue) {
-    try {
-      const realms = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
-      const matchingRealm = realms.find((r) =>
-        r.realm_api_id === realm || (realm === "poe2" && r.game_api_id === "poe2")
-      );
-      if (matchingRealm) {
-        defaultLeagueValue = matchingRealm.default_league_value;
-      }
-    } catch {
-      // If realms fetch fails, fall back to IsCurrent
-    }
-  }
-
-  return raw.map((l) => ({
-    // CRITICAL: use ShortName (e.g. "vaal") for API URL paths,
-    // NOT Value (e.g. "Fate of the Vaal"). The POE2Scout API uses
-    // ShortName as the league identifier in all URL paths.
-    // Using Value causes ECONNRESET because the API doesn't recognize
-    // the full display name as a valid league path segment.
-    name: l.ShortName || l.Value,
-    displayName: l.Value,
-    startAt: null,
-    endAt: null,
-    // Mark league as active if it matches the realm's default_league_value
-    active: defaultLeagueValue
-      ? l.Value === defaultLeagueValue
-      : l.IsCurrent,
-    // Pass base currency info from league for reference currency
-    baseCurrencyApiId: l.BaseCurrencyApiId,
-    baseCurrencyText: l.BaseCurrencyText,
-    defaultCurrency: l.DefaultCurrency
-      ? {
-          apiId: l.DefaultCurrency.ApiId,
-          text: l.DefaultCurrency.Text,
-          iconUrl: l.DefaultCurrency.IconUrl,
-          relativePrice: l.DefaultCurrency.RelativePrice,
+    // API IsCurrent is always false. We determine the active league
+    // by getting the realm's default_league_value and matching it.
+    // Fix 5.4: If defaultLeagueValue is provided by the caller, skip the /Realms request
+    if (!defaultLeagueValue) {
+      try {
+        const realms = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
+        const matchingRealm = realms.find((r) =>
+          r.realm_api_id === realm || (realm === "poe2" && r.game_api_id === "poe2")
+        );
+        if (matchingRealm) {
+          defaultLeagueValue = matchingRealm.default_league_value;
         }
-      : undefined,
-  }));
+      } catch {
+        // If realms fetch fails, fall back to IsCurrent
+      }
+    }
+
+    return raw.map((l) => ({
+      // CRITICAL: use ShortName (e.g. "vaal") for API URL paths,
+      // NOT Value (e.g. "Fate of the Vaal"). The POE2Scout API uses
+      // ShortName as the league identifier in all URL paths.
+      // Using Value causes ECONNRESET because the API doesn't recognize
+      // the full display name as a valid league path segment.
+      name: l.ShortName || l.Value,
+      displayName: l.Value,
+      startAt: null,
+      endAt: null,
+      // Mark league as active if it matches the realm's default_league_value
+      active: defaultLeagueValue
+        ? l.Value === defaultLeagueValue
+        : l.IsCurrent,
+      // Pass base currency info from league for reference currency
+      baseCurrencyApiId: l.BaseCurrencyApiId,
+      baseCurrencyText: l.BaseCurrencyText,
+      defaultCurrency: l.DefaultCurrency
+        ? {
+            apiId: l.DefaultCurrency.ApiId,
+            text: l.DefaultCurrency.Text,
+            iconUrl: l.DefaultCurrency.IconUrl,
+            relativePrice: l.DefaultCurrency.RelativePrice,
+          }
+        : undefined,
+    }));
+  } catch (err) {
+    // Upstream API unreachable — return fallback data so the UI always works
+    console.warn("[poe2api] getLeagues: upstream API unreachable, using fallback data.", err instanceof Error ? err.message : err);
+    return FALLBACK_LEAGUES[realm] || FALLBACK_LEAGUES["poe2"] || [];
+  }
 }
 
 export async function getExchangeSnapshot(realm: string, league: string): Promise<ExchangeSnapshot> {
