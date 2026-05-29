@@ -46,6 +46,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, FlipperApiError } from "@/lib/types";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { ApiErrorFallback } from "./api-error-fallback";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -432,22 +433,18 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
 
       {/* ---- Backend unavailable ---- */}
       {!backendOnline && (
-        <Card className="border-red-500/30 bg-red-500/5">
-          <CardContent className="flex items-start gap-3 p-4">
-            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
-            <div className="text-sm">
-              <p className="font-medium text-red-600 dark:text-red-400">
-                {t("flipperBackendOfflineTitle")}
-              </p>
-              <p className="text-muted-foreground mt-1">
-                {t("flipperBackendOfflineDesc")}
-              </p>
-              <code className="text-xs mt-2 block bg-muted px-2 py-1 rounded">
-                uvicorn backend.main:app --reload --port 8000
-              </code>
-            </div>
-          </CardContent>
-        </Card>
+        <ApiErrorFallback
+          errorKind="backend_offline"
+          onRetry={() => refetchForecast()}
+        />
+      )}
+
+      {/* ---- Upstream degraded ---- */}
+      {backendOnline && upstreamDegraded && (
+        <ApiErrorFallback
+          errorKind="upstream_unreachable"
+          onRetry={() => refetchForecast()}
+        />
       )}
 
       {/* ---- Phase info ---- */}
@@ -519,26 +516,13 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               </p>
             </div>
           ) : forecastError && !liveMode ? (
-            <div className="text-center py-10">
-              <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
-              {isForecastInsufficientData ? (
-                <>
-                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    {t("forecastInsufficientDataTitle")}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                    {forecastInsufficientDetail || t("forecastInsufficientDataDesc")}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("failedToLoadData")}</p>
-              )}
-            </div>
+            <ApiErrorFallback
+              error={forecastError instanceof Error ? forecastError : String(forecastError)}
+              onRetry={() => refetchForecast()}
+              errorKind={isForecastInsufficientData ? "insufficient_data" : undefined}
+            />
           ) : !backendOnline ? (
-            <div className="text-center py-10">
-              <Server className="h-8 w-8 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
-              <p className="text-sm text-muted-foreground">{t("flipperBackendOfflineTitle")}</p>
-            </div>
+            <ApiErrorFallback errorKind="backend_offline" />
           ) : chartData.length === 0 ? (
             <div className="text-center py-10">
               <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
@@ -664,9 +648,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               <Skeleton className="h-16 w-full" />
             </div>
           ) : !backendOnline ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">
-              {t("flipperBackendOfflineTitle")}
-            </div>
+            <ApiErrorFallback errorKind="backend_offline" compact />
           ) : storageData && storageData.data_available === false ? (
             <div className="text-center py-6">
               <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-2" aria-hidden="true" />
@@ -777,9 +759,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
           {anomaliesLoading && backendOnline ? (
             <Skeleton className="h-24 w-full" />
           ) : !backendOnline ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">
-              {t("flipperBackendOfflineTitle")}
-            </div>
+            <ApiErrorFallback errorKind="backend_offline" compact />
           ) : anomaliesData && anomaliesData.data_available === false ? (
             <div className="text-center py-6">
               <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
@@ -790,6 +770,8 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                 {t("dataUnavailableDesc")}
               </p>
             </div>
+          ) : upstreamDegraded ? (
+            <ApiErrorFallback errorKind="upstream_unreachable" compact />
           ) : !anomaliesData?.anomalies?.length ? (
             <div className="text-center py-6">
               <ShieldCheck className="h-8 w-8 text-emerald-500 mx-auto mb-2" aria-hidden="true" />

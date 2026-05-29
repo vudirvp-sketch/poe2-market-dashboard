@@ -75,6 +75,10 @@ class PipelineCache:
         else:
             # DON'T delete — keep as stale fallback
             entry.stale = True
+            logger.warning(
+                "DEGRADED: pipeline cache stale for key=%s (age=%.0fs > ttl=%.0fs)",
+                key, age, self._ttl,
+            )
             return entry
 
     def put(self, key: str, value: Any) -> None:

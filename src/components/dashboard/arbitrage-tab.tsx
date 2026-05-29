@@ -35,8 +35,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { fmt, fetchApi } from "@/lib/types";
+import { fmt, fetchApi, getFlipperErrorType } from "@/lib/types";
 import type { ExchangePair, FlipperHealthResponse } from "@/lib/types";
+import { ApiErrorFallback } from "./api-error-fallback";
 
 // ---------------------------------------------------------------------------
 // Types — Client-side arbitrage
@@ -447,11 +448,10 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
   if (isError && mode === "client") {
     return (
-      <Card className="border-destructive/50">
-        <CardContent className="p-6 text-center text-destructive">
-          {t("failedToLoadData")}
-        </CardContent>
-      </Card>
+      <ApiErrorFallback
+        error={pairsError instanceof Error ? pairsError : String(pairsError)}
+        errorKind="upstream_unreachable"
+      />
     );
   }
 
@@ -520,22 +520,18 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
       {/* ---- Backend unavailable warning (flipper mode) ---- */}
       {mode === "flipper" && !backendOnline && (
-        <Card className="border-red-500/30 bg-red-500/5">
-          <CardContent className="flex items-start gap-3 p-4">
-            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
-            <div className="text-sm">
-              <p className="font-medium text-red-600 dark:text-red-400">
-                {t("flipperBackendOfflineTitle")}
-              </p>
-              <p className="text-muted-foreground mt-1">
-                {t("flipperBackendOfflineDesc")}
-              </p>
-              <code className="text-xs mt-2 block bg-muted px-2 py-1 rounded">
-                uvicorn backend.main:app --reload --port 8000
-              </code>
-            </div>
-          </CardContent>
-        </Card>
+        <ApiErrorFallback
+          errorKind="backend_offline"
+          onRetry={() => { refetchFlips(); refetchTri(); }}
+        />
+      )}
+
+      {/* ---- Upstream degraded warning (flipper mode) ---- */}
+      {mode === "flipper" && backendOnline && upstreamDegraded && (
+        <ApiErrorFallback
+          errorKind="upstream_unreachable"
+          onRetry={() => { refetchFlips(); refetchTri(); }}
+        />
       )}
 
       {/* ---- Disclaimer ---- */}
@@ -1003,13 +999,15 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
               {!backendOnline ? (
-                <div className="text-center py-10">
-                  <Server className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
-                  <p className="font-medium">{t("flipperBackendOfflineTitle")}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {t("flipperBackendOfflineDesc")}
-                  </p>
-                </div>
+                <ApiErrorFallback
+                  errorKind="backend_offline"
+                  onRetry={() => refetchFlips()}
+                />
+              ) : upstreamDegraded ? (
+                <ApiErrorFallback
+                  errorKind="upstream_unreachable"
+                  onRetry={() => refetchFlips()}
+                />
               ) : flipsData && flipsData.data_available === false ? (
                 <div className="text-center py-10">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
@@ -1019,10 +1017,10 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                   </p>
                 </div>
               ) : flipsError ? (
-                <div className="text-center py-10">
-                  <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
-                  <p className="font-medium">{t("failedToLoadData")}</p>
-                </div>
+                <ApiErrorFallback
+                  error={flipsError instanceof Error ? flipsError : String(flipsError)}
+                  onRetry={() => refetchFlips()}
+                />
               ) : !flipsData?.opportunities?.length ? (
                 <div className="text-center py-10">
                   <AlertTriangle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
@@ -1139,9 +1137,9 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
               {!backendOnline ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
-                  {t("flipperBackendOfflineTitle")}
-                </div>
+                <ApiErrorFallback errorKind="backend_offline" compact />
+              ) : upstreamDegraded ? (
+                <ApiErrorFallback errorKind="upstream_unreachable" compact />
               ) : triData && triData.data_available === false ? (
                 <div className="text-center py-6">
                   <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
@@ -1153,9 +1151,11 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                   </p>
                 </div>
               ) : triError ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
-                  {t("failedToLoadData")}
-                </div>
+                <ApiErrorFallback
+                  error={triError instanceof Error ? triError : String(triError)}
+                  onRetry={() => refetchTri()}
+                  compact
+                />
               ) : !triData?.opportunities?.length ? (
                 <div className="text-center py-6">
                   <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
