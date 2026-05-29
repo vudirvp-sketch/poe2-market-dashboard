@@ -18,7 +18,7 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
-from backend.data.providers.poe2scout import Poe2ScoutProvider
+from backend.api.data_snapshot import get_snapshot
 from backend.predictors.anomaly import AnomalyDetector
 
 logger = logging.getLogger(__name__)
@@ -43,18 +43,16 @@ async def get_anomalies(
     try:
         config = get_settings()
 
-        # Get provider
-        from backend.api.shared import get_provider
-        provider = get_provider()
+        # Get unified data snapshot (single coordinated API pass)
+        snapshot = await get_snapshot()
 
         # Determine which currencies to check
         if currency:
             currencies = [currency]
         else:
             # Get all currencies from exchange rates
-            rates = await provider.get_exchange_rates(config.league.league_name)
             currency_set = set()
-            for key, rate in rates.items():
+            for key, rate in snapshot.exchange_rates.items():
                 currency_set.add(rate.currency_from)
                 currency_set.add(rate.currency_to)
             currencies = list(currency_set)
@@ -65,7 +63,7 @@ async def get_anomalies(
 
         for curr in currencies:
             try:
-                history = await provider.get_historical_prices(curr, days=7)
+                history = snapshot.price_histories.get(curr.lower(), [])
                 if len(history) < 30:
                     continue
 

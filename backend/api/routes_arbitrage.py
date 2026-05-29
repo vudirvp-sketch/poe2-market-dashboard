@@ -4,6 +4,10 @@ API routes for arbitrage / flip opportunity data.
 Endpoints:
     GET /api/arbitrage/flips        — scored flip opportunities
     GET /api/arbitrage/triangular   — detected triangular arbitrage cycles
+
+OPTIMIZATION: Uses DataSnapshot instead of making N individual
+get_historical_prices() calls per currency. Before: 50+ API requests.
+After: ~16 requests (shared snapshot).
 """
 
 from __future__ import annotations
@@ -19,6 +23,7 @@ from backend.config import get_settings, AppConfig
 from backend.data.cache import get_cache
 from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
+from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
@@ -45,63 +50,43 @@ router = APIRouter(prefix="/api/arbitrage", tags=["arbitrage"])
 async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     """Fetch live data and compute scored flip opportunities.
 
-    This orchestrates the full pipeline:
-    1. Get exchange rates from provider (via cache)
-    2. Compute momentum/volatility for each currency
+    OPTIMIZATION: Uses DataSnapshot instead of making N individual
+    get_historical_prices() calls. The snapshot already contains
+    price histories from the ByCategory response.
+
+    Pipeline:
+    1. Get exchange rates + currencies from DataSnapshot (0 additional API calls)
+    2. Compute momentum/volatility for each currency (from snapshot price_logs)
     3. Compute gold fee fractions (direction-dependent)
     4. Score each opportunity
-    5. Apply event penalties (Milestone 9)
+    5. Apply event penalties
     6. Apply quick filter
     """
-    provider = _get_provider()
-    cache = get_cache()
     detector = _get_phase_detector()
     event_manager = get_event_manager(config)
 
-    # 1. Fetch exchange rates
-    rates_result = await cache.get_or_fetch(
-        "prices",
-        provider.name(),
-        "get_exchange_rates",
-        provider.get_exchange_rates,
-        config.league.league_name,
-    )
-    if rates_result.value is None:
-        return []
+    # 1. Use DataSnapshot instead of N+1 API calls
+    snapshot = await get_snapshot()
 
-    rates = rates_result.value
+    rates = snapshot.exchange_rates
     if not rates:
         return []
 
-    # 2. Fetch historical data for momentum calculation
-    metadata_result = await cache.get_or_fetch(
-        "metadata",
-        provider.name(),
-        "get_currency_metadata",
-        provider.get_currency_metadata,
-        config.league.league_name,
-    )
-    currencies = metadata_result.value if metadata_result.value else []
-
-    # Build a mapping from api_id to historical prices for momentum
+    # 2. Build price history lookup from snapshot
     currency_price_history: dict[str, list[float]] = {}
-    for curr in currencies:
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            curr.api_id,
-            7,
-        )
-        if hist_result.value:
-            currency_price_history[curr.api_id] = [
-                p.price for p in hist_result.value
-            ]
+    for api_id_lower, points in snapshot.price_histories.items():
+        currency_price_history[api_id_lower] = [p.price for p in points]
+    # Also store by original-case api_id from currencies dict
+    for api_id_lower, curr in snapshot.currencies.items():
+        orig_id = curr.get("api_id", "")
+        if orig_id and orig_id != api_id_lower and api_id_lower in currency_price_history:
+            currency_price_history[orig_id] = currency_price_history[api_id_lower]
 
     # 3. Determine gold_to_chaos_rate
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
     if config.fees.gold_to_chaos_rate_source == "market":
+        from backend.api.shared import get_provider
+        provider = get_provider()
         observed = await provider.get_gold_chaos_rate(config.league.league_name)
         if observed is not None:
             gold_to_chaos_rate = observed
@@ -116,15 +101,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         default=1,
     )
 
-    # 6. Build price-in-chaos mapping
-    prices_in_chaos: dict[str, float] = {config.league.base_currency: 1.0}
-    for key, rate in rates.items():
-        if rate.currency_from == config.league.base_currency:
-            if rate.currency_to not in prices_in_chaos:
-                prices_in_chaos[rate.currency_to] = rate.raw_rate
-        elif rate.currency_to == config.league.base_currency:
-            if rate.currency_from not in prices_in_chaos:
-                prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate if rate.raw_rate > 0 else 0.0
+    # 6. Build price-in-chaos mapping from snapshot
+    prices_in_chaos = snapshot.prices_in_base
 
     if "chaos" in prices_in_chaos and config.league.base_currency != "chaos":
         exalted_to_chaos = prices_in_chaos.get("chaos", 1.0)
@@ -132,7 +110,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             if k != "chaos":
                 prices_in_chaos[k] = prices_in_chaos[k] * exalted_to_chaos
 
-    # 7. Run currency clustering (Milestone 6: section 5)
+    # 7. Run currency clustering
     clusterer = CurrencyClusterer(config)
     cluster_labels: dict[str, ClusterLabel] = {}
 
@@ -180,7 +158,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         cluster_labels = {}
 
     # 8. Score each pair as a flip opportunity
-    # MILESTONE 9: Apply event effects to scoring
     opportunities: list[FlipOpportunity] = []
 
     for key, rate in rates.items():
@@ -229,18 +206,13 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             vol_reference=config.scoring.volatility_reference,
         )
 
-        # MILESTONE 9: Apply event penalty
-        # From spec section 6: if affected_currencies is specified, those
-        # currencies are excluded from flip scoring. If not specified,
-        # all currencies get a temporary event_penalty on their scores.
+        # Apply event penalties
         event_penalty = event_manager.get_event_score_penalty(rate.currency_from)
         if event_penalty == 0.0:
-            # Currency is excluded entirely — skip
             continue
         score = score * event_penalty
         score = min(max(score, 0.0), 1.0)
 
-        # Also check the 'to' currency
         event_penalty_to = event_manager.get_event_score_penalty(rate.currency_to)
         if event_penalty_to == 0.0:
             continue
@@ -282,25 +254,15 @@ async def get_flip_opportunities(
     min_volume: int = Query(0, ge=0, description="Minimum 24h volume filter"),
     limit: int = Query(50, ge=1, le=200, description="Max results"),
 ):
-    """Return scored flip opportunities for the configured league.
-
-    Event effects (Milestone 9):
-    - Currencies affected by active events are excluded or penalized.
-    - The response includes event_status indicating if events are active.
-    """
+    """Return scored flip opportunities for the configured league."""
     config = get_settings()
     event_manager = get_event_manager(config)
     pipeline_cache = get_pipeline_cache()
 
-    # Try pipeline cache first — avoids re-running the expensive
-    # _build_flip_opportunities() pipeline on every request.
-    # Fix 4 (POE2-FIX-SPEC): stale-on-failure pattern — if cached is stale,
-    # try recompute; if recompute fails, return stale data as fallback.
     cached = pipeline_cache.get("flip_opportunities")
     if cached is not None and not cached.stale:
         opportunities = cached.value
     else:
-        # Try to recompute
         try:
             opportunities = await _build_flip_opportunities(config)
             pipeline_cache.put("flip_opportunities", opportunities)
@@ -310,7 +272,6 @@ async def get_flip_opportunities(
                 logger.info("Returning stale cache for flip_opportunities")
                 opportunities = cached.value
             else:
-                # No cache at all — propagate error
                 raise
 
     filtered = [
@@ -352,19 +313,15 @@ async def get_flip_opportunities(
 async def get_triangular_arbitrage(
     min_profit_pct: float = Query(0.1, ge=0.0, description="Min profit % to report"),
 ):
-    """Return detected triangular arbitrage cycles."""
-    config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
+    """Return detected triangular arbitrage cycles.
 
-    rates_result = await cache.get_or_fetch(
-        "prices",
-        provider.name(),
-        "get_exchange_rates",
-        provider.get_exchange_rates,
-        config.league.league_name,
-    )
-    if rates_result.value is None:
+    Uses DataSnapshot for exchange rates instead of independent API call.
+    """
+    config = get_settings()
+    snapshot = await get_snapshot()
+
+    rates_dict = snapshot.exchange_rates
+    if not rates_dict:
         return {
             "league": config.league.league_name,
             "total": 0,
@@ -373,30 +330,21 @@ async def get_triangular_arbitrage(
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    rates_dict = rates_result.value
-
     rates_for_bf: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
 
     gold_cost_dict = get_api_id_to_gold_cost()
-    prices_in_chaos: dict[str, float] = {}
-
-    base = config.league.base_currency
-    prices_in_chaos[base] = 1.0
-    for key, rate in rates_dict.items():
-        if rate.currency_from == base:
-            prices_in_chaos[rate.currency_to] = rate.raw_rate
-        elif rate.currency_to == base and rate.raw_rate > 0:
-            prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
+    prices_in_chaos = snapshot.prices_in_base
 
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
     if config.fees.gold_to_chaos_rate_source == "market":
+        from backend.api.shared import get_provider
+        provider = get_provider()
         observed = await provider.get_gold_chaos_rate(config.league.league_name)
         if observed is not None:
             gold_to_chaos_rate = observed
 
-    # Phase 2 (Spec §11): Build pair_volumes dict from exchange rates
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0

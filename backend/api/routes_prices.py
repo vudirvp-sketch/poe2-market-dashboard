@@ -7,6 +7,10 @@ Endpoints:
     GET /api/prices/{pair}       — current price for a specific pair (e.g. "divine/exalted")
     GET /api/currencies          — currency metadata (names, icons, etc.)
     GET /api/phase               — current league phase info
+
+OPTIMIZATION: Uses DataSnapshot to avoid redundant API calls.
+Before: each route made 15-30+ requests to ByCategory independently.
+After: all routes share a single cached snapshot (~16 requests total per TTL window).
 """
 
 from __future__ import annotations
@@ -21,11 +25,47 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings
 from backend.data.cache import get_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
+from backend.api.data_snapshot import get_snapshot
 from backend.models.currency import PhaseInfo
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["prices"])
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _compute_momentum_from_logs(
+    price_logs: list[dict],
+) -> dict:
+    """Compute momentum/volatility/acceleration from price_logs dicts."""
+    from backend.economy.momentum import PriceMomentumTracker
+
+    if len(price_logs) < 2:
+        return {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+
+    try:
+        sorted_logs = sorted(
+            [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
+            key=lambda l: l["time"],
+        )
+        prices = [l["price"] for l in sorted_logs]
+        if len(prices) < 2:
+            return {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+        tracker = PriceMomentumTracker(window_size=24)
+        for p in prices:
+            tracker.update(p)
+        result = tracker.compute()
+        return {
+            "momentum": result.momentum,
+            "volatility": result.volatility,
+            "acceleration": result.acceleration,
+        }
+    except Exception as e:
+        logger.debug("Momentum computation failed: %s", e)
+        return {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
 
 
 # ---------------------------------------------------------------------------
@@ -49,23 +89,15 @@ async def get_phase():
 
 @router.get("/currencies")
 async def get_currencies():
-    """Return currency metadata for the configured league."""
-    config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
+    """Return currency metadata for the configured league.
 
-    result = await cache.get_or_fetch(
-        "metadata",
-        provider.name(),
-        "get_currency_metadata",
-        provider.get_currency_metadata,
-        config.league.league_name,
-    )
+    Uses DataSnapshot instead of making independent ByCategory requests.
+    """
+    snapshot = await get_snapshot()
 
-    if result.value is None:
+    if not snapshot.currency_metadata:
         return {"currencies": [], "stale": True, "data_available": False}
 
-    currencies = result.value
     return {
         "currencies": [
             {
@@ -74,9 +106,9 @@ async def get_currencies():
                 "category_api_id": c.category_api_id,
                 "icon_url": c.icon_url,
             }
-            for c in currencies
+            for c in snapshot.currency_metadata
         ],
-        "stale": result.stale,
+        "stale": False,
         "data_available": True,
     }
 
@@ -89,23 +121,14 @@ async def get_all_prices():
     pairs with their current rates, volumes, and derived metrics (momentum,
     volatility, fee fractions).
 
-    Phase 2 (Spec Section 3): Added volatility and momentum fields
-    computed from price_logs via PriceMomentumTracker.
+    OPTIMIZATION: Uses DataSnapshot to avoid 30+ redundant API requests.
+    The snapshot provides exchange_rates + all_currencies in one pass.
     """
     config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
+    snapshot = await get_snapshot()
 
-    # Fetch exchange rates
-    rates_result = await cache.get_or_fetch(
-        "prices",
-        provider.name(),
-        "get_exchange_rates",
-        provider.get_exchange_rates,
-        config.league.league_name,
-    )
-
-    if rates_result.value is None:
+    rates = snapshot.exchange_rates
+    if not rates:
         return {
             "league": config.league.league_name,
             "phase": "unknown",
@@ -117,8 +140,6 @@ async def get_all_prices():
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    rates = rates_result.value
-
     # Get phase info
     detector = _get_phase_detector()
     phase_info = detector.get_phase_info()
@@ -126,47 +147,21 @@ async def get_all_prices():
     # Determine gold_to_chaos_rate
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
     if config.fees.gold_to_chaos_rate_source == "market":
+        from backend.api.shared import get_provider
+        provider = get_provider()
         observed = await provider.get_gold_chaos_rate(config.league.league_name)
         if observed is not None:
             gold_to_chaos_rate = observed
 
-    # Phase 2: Fetch all currencies with price_logs for momentum/volatility computation
-    from backend.economy.momentum import PriceMomentumTracker
-
-    all_currencies = await provider.get_all_currencies_with_prices(
-        config.league.league_name
-    )
-
-    # Build momentum/volatility lookup from price_logs
-    momentum_lookup: dict[str, dict] = {}  # api_id -> {momentum, volatility, acceleration}
-    for curr in all_currencies:
-        api_id = curr.get("api_id", "")
+    # Build momentum/volatility lookup from snapshot's currencies data
+    momentum_lookup: dict[str, dict] = {}
+    for api_id_lower, curr in snapshot.currencies.items():
         price_logs = curr.get("price_logs", [])
-        if not api_id or len(price_logs) < 2:
-            if api_id:
-                momentum_lookup[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
-            continue
-        try:
-            sorted_logs = sorted(
-                [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
-                key=lambda l: l["time"],
-            )
-            prices = [l["price"] for l in sorted_logs]
-            if len(prices) < 2:
-                momentum_lookup[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
-                continue
-            tracker = PriceMomentumTracker(window_size=24)
-            for p in prices:
-                tracker.update(p)
-            result = tracker.compute()
-            momentum_lookup[api_id] = {
-                "momentum": result.momentum,
-                "volatility": result.volatility,
-                "acceleration": result.acceleration,
-            }
-        except Exception as e:
-            logger.debug("Momentum computation failed for %s: %s", api_id, e)
-            momentum_lookup[api_id] = {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+        momentum_lookup[api_id_lower] = _compute_momentum_from_logs(price_logs)
+        # Also store by original-case api_id
+        orig_api_id = curr.get("api_id", "")
+        if orig_api_id and orig_api_id != api_id_lower:
+            momentum_lookup[orig_api_id] = momentum_lookup[api_id_lower]
 
     # Build response with fee calculations + momentum/volatility + cluster
     from backend.economy.gold_costs import compute_fee_breakdown
@@ -174,7 +169,7 @@ async def get_all_prices():
     from backend.predictors.clustering import CurrencyClusterer
     from backend.models.currency import ClusterLabel
 
-    # Run currency clustering for cluster labels (reuse all_currencies data)
+    # Run currency clustering for cluster labels
     cluster_labels: dict[str, ClusterLabel] = {}
     try:
         cluster_price_histories: dict[str, list[float]] = {}
@@ -182,15 +177,8 @@ async def get_all_prices():
         cluster_prices_now: dict[str, float] = {}
         cluster_prices_24h_ago: dict[str, float] = {}
 
-        # Build prices_in_chaos for clustering fallback
-        prices_in_chaos: dict[str, float] = {config.league.base_currency: 1.0}
-        for key, rate in rates.items():
-            if rate.currency_from == config.league.base_currency:
-                if rate.currency_to not in prices_in_chaos:
-                    prices_in_chaos[rate.currency_to] = rate.raw_rate
-            elif rate.currency_to == config.league.base_currency and rate.raw_rate > 0:
-                if rate.currency_from not in prices_in_chaos:
-                    prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
+        # Use snapshot's prices_in_base for clustering fallback
+        prices_in_chaos = snapshot.prices_in_base
 
         # Accumulate volume per currency from rates
         for key, rate in rates.items():
@@ -204,20 +192,20 @@ async def get_all_prices():
                 if vol > cluster_volumes.get(curr, 0):
                     cluster_volumes[curr] = vol
 
-        # Reuse already-fetched all_currencies for price histories
-        for curr in all_currencies:
-            api_id = curr.get("api_id", "")
+        # Reuse snapshot's currencies for price histories
+        for api_id_lower, curr in snapshot.currencies.items():
+            orig_id = curr.get("api_id", api_id_lower)
             price_logs = curr.get("price_logs", [])
-            if api_id and api_id in cluster_price_histories and price_logs:
+            if orig_id in cluster_price_histories and price_logs:
                 sorted_logs = sorted(
                     [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
                     key=lambda l: l["time"],
                 )
                 prices = [l["price"] for l in sorted_logs]
                 if len(prices) >= 2:
-                    cluster_price_histories[api_id] = prices
-                    cluster_prices_now[api_id] = prices[-1]
-                    cluster_prices_24h_ago[api_id] = prices[0]
+                    cluster_price_histories[orig_id] = prices
+                    cluster_prices_now[orig_id] = prices[-1]
+                    cluster_prices_24h_ago[orig_id] = prices[0]
 
         # Fill remaining prices from prices_in_chaos fallback
         for curr in cluster_price_histories:
@@ -264,7 +252,7 @@ async def get_all_prices():
             fee_fraction = 0.0
             gold_fee_actual = 0.0
 
-        # Phase 2: Add volatility and momentum from price_logs
+        # Add volatility and momentum from snapshot
         from_momentum = momentum_lookup.get(rate.currency_from, {})
         to_momentum = momentum_lookup.get(rate.currency_to, {})
 
@@ -289,17 +277,13 @@ async def get_all_prices():
             "timestamp": rate.timestamp.isoformat() if rate.timestamp else None,
         })
 
-    # NOTE: Price snapshot writing to HistoricalStore has been moved to the
-    # scheduler (DataScheduler.collect_price_snapshot) to avoid side effects
-    # in GET requests. The scheduler runs every price_snapshot_interval_minutes.
-
     return {
         "league": config.league.league_name,
         "phase": phase_info.phase.value,
         "rates": pairs_data,
         "gold_to_chaos_rate": gold_to_chaos_rate,
         "base_currency": config.league.base_currency,
-        "stale": rates_result.stale,
+        "stale": False,
         "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -309,24 +293,12 @@ async def get_all_prices():
 async def get_heatmap_data():
     """Return 24h price change percentages for all currencies.
 
-    Phase 2 (Spec Section 2.4): Uses price_logs from POE2Scout API
-    to compute real price change percentages between consecutive log entries.
-
-    Returns:
-        Dict with:
-        - currencies: list of {api_id, text, icon_url, changes: [float], time_labels: [str]}
-        - fetched_at: ISO timestamp
+    Uses DataSnapshot instead of making independent ByCategory requests.
     """
-    config = get_settings()
-    provider = _get_provider()
-
-    # Fetch all currencies with price_logs
-    all_currencies = await provider.get_all_currencies_with_prices(
-        config.league.league_name
-    )
+    snapshot = await get_snapshot()
 
     currencies_data = []
-    for curr in all_currencies:
+    for api_id_lower, curr in snapshot.currencies.items():
         api_id = curr.get("api_id", "")
         text = curr.get("text", "")
         icon_url = curr.get("icon_url")

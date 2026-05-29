@@ -165,8 +165,15 @@ export interface LandingSplashInfo {
 // Flipper proxy error types
 // ============================================================================
 
-/** Error type discriminant returned by the flipper proxy (503/502 responses) */
-export type FlipperErrorType = "backend_offline" | "backend_insufficient_data" | "upstream_error";
+/** Error type discriminant returned by the flipper proxy (503/502/422 responses) */
+export type FlipperErrorType =
+  | "backend_offline"
+  | "backend_timeout"
+  | "backend_connection_reset"
+  | "backend_insufficient_data"
+  | "insufficient_data"
+  | "server_error"
+  | "upstream_error";
 
 /**
  * Custom error thrown by `fetchApi` when a flipper endpoint returns 503.
@@ -199,10 +206,12 @@ export class FlipperApiError extends Error {
       // Body was not JSON — leave errorType undefined
     }
 
-    // Fix 11: classify common status codes
+    // Classify common status codes when error_type not in response body
     if (!this.errorType) {
       if (status === 503) this.errorType = "backend_offline";
-      else if (status === 502) this.errorType = "upstream_error" as FlipperErrorType;
+      else if (status === 502) this.errorType = "upstream_error";
+      else if (status === 422) this.errorType = "insufficient_data";
+      else if (status >= 500) this.errorType = "server_error";
     }
   }
 }

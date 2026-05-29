@@ -17,8 +17,8 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings, AppConfig
-from backend.data.cache import get_cache
-from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
+from backend.api.data_snapshot import get_snapshot
+from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
@@ -59,20 +59,15 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
     """
     global _previous_corr
 
-    provider = _get_provider()
-    cache = get_cache()
     detector = _get_phase_detector()
     optimizer = PortfolioOptimizer(config)
 
-    # 1. Fetch exchange rates
-    rates_result = await cache.get_or_fetch(
-        "prices",
-        provider.name(),
-        "get_exchange_rates",
-        provider.get_exchange_rates,
-        config.league.league_name,
-    )
-    if rates_result.value is None or not rates_result.value:
+    # 1. Get unified data snapshot (single coordinated API pass)
+    snapshot = await get_snapshot()
+
+    # 2. Exchange rates
+    rates = snapshot.exchange_rates
+    if not rates:
         return PortfolioAllocation(
             weights={},
             expected_risk=0.0,
@@ -80,32 +75,14 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
             correlation_warning=False,
         )
 
-    rates = rates_result.value
-
-    # 2. Fetch historical data for momentum/return calculation
-    metadata_result = await cache.get_or_fetch(
-        "metadata",
-        provider.name(),
-        "get_currency_metadata",
-        provider.get_currency_metadata,
-        config.league.league_name,
-    )
-    currencies = metadata_result.value if metadata_result.value else []
-
-    # 3. Build price histories for each currency
+    # 3. Currency metadata & price histories (from snapshot's single ByCategory pass)
+    currencies = snapshot.currency_metadata
     currency_price_history: dict[str, list[float]] = {}
     for curr in currencies:
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            curr.api_id,
-            7,
-        )
-        if hist_result.value:
+        history = snapshot.price_histories.get(curr.api_id.lower(), [])
+        if history:
             currency_price_history[curr.api_id] = [
-                p.price for p in hist_result.value
+                p.price for p in history
             ]
 
     # 4. Filter to currencies with enough data for portfolio construction
@@ -351,44 +328,23 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
         n_points: Number of points on the frontier (default 50, max 200).
     """
     config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
 
-    # Fetch exchange rates
-    rates_result = await cache.get_or_fetch(
-        "prices",
-        provider.name(),
-        "get_exchange_rates",
-        provider.get_exchange_rates,
-        config.league.league_name,
-    )
-    if rates_result.value is None:
+    # Get unified data snapshot (single coordinated API pass)
+    snapshot = await get_snapshot()
+
+    # Exchange rates
+    rates = snapshot.exchange_rates
+    if not rates:
         return {"data_available": False, "frontier": [], "currencies": []}
 
-    # Fetch metadata for currency list
-    metadata_result = await cache.get_or_fetch(
-        "metadata",
-        provider.name(),
-        "get_currency_metadata",
-        provider.get_currency_metadata,
-        config.league.league_name,
-    )
-    currencies = metadata_result.value if metadata_result.value else []
-
-    # Build price histories
+    # Currency metadata & price histories (from snapshot's single ByCategory pass)
+    currencies = snapshot.currency_metadata
     currency_price_history: dict[str, list[float]] = {}
     for curr in currencies:
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            curr.api_id,
-            7,
-        )
-        if hist_result.value:
+        history = snapshot.price_histories.get(curr.api_id.lower(), [])
+        if history:
             currency_price_history[curr.api_id] = [
-                p.price for p in hist_result.value
+                p.price for p in history
             ]
 
     # Filter to eligible currencies

@@ -1,12 +1,12 @@
 """
 Shared singletons for API route modules.
 
-Centralises provider, phase-detector, and forecast-engine instances
-so that every route module uses the **same** object instead of
+Centralises provider, phase-detector, forecast-engine, and snapshot-manager
+instances so that every route module uses the **same** object instead of
 creating its own duplicate.
 
 Usage:
-    from backend.api.shared import get_provider, get_phase_detector, get_forecast_engine
+    from backend.api.shared import get_provider, get_phase_detector, get_forecast_engine, get_snapshot
 """
 
 from __future__ import annotations

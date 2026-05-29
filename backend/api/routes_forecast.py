@@ -61,54 +61,40 @@ async def get_forecast(
         is_event_active = event_manager.is_event_active(currency)
 
     try:
-        # Fetch historical price data for this currency
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            currency,
-            14,  # 14 days of history
-        )
+        # OPTIMIZATION: Use DataSnapshot for price histories instead of
+        # individual get_historical_prices() calls. The snapshot already
+        # contains price_logs from ByCategory — no extra API calls needed.
+        from backend.api.data_snapshot import get_snapshot
+        snapshot = await get_snapshot()
 
-        # Also try DailyStatsHistory for richer OHLCV data.
-        # DailyStatsHistory gives structured daily OHLCV which is better for
-        # LightGBM feature engineering than raw price logs.  Cached in
-        # the "daily_stats" tier (1h TTL) to avoid redundant API calls.
+        # Get price history from snapshot
+        price_points = snapshot.price_histories.get(currency.lower(), [])
+
+        # Also try DailyStatsHistory for richer OHLCV data
         daily_stats_data: dict | None = None
-        # We need the item_id for DailyStatsHistory — look up from metadata
         try:
-            metadata_result = await cache.get_or_fetch(
-                "metadata",
-                provider.name(),
-                "get_currency_metadata",
-                provider.get_currency_metadata,
-                config.league.league_name,
-            )
-            if metadata_result.value:
-                for ci in metadata_result.value:
-                    if ci.api_id.lower() == currency.lower() and ci.item_id:
-                        ds_result = await cache.get_or_fetch(
-                            "daily_stats",
-                            provider.name(),
-                            "get_daily_stats",
-                            provider.get_daily_stats,
-                            config.league.league_name,
-                            ci.item_id,
-                            30,
-                        )
-                        daily_stats_data = ds_result.value
-                        break
+            # Look up item_id from snapshot metadata
+            for ci in snapshot.currency_metadata:
+                if ci.api_id.lower() == currency.lower() and ci.item_id:
+                    ds_result = await cache.get_or_fetch(
+                        "daily_stats",
+                        provider.name(),
+                        "get_daily_stats",
+                        provider.get_daily_stats,
+                        config.league.league_name,
+                        ci.item_id,
+                        30,
+                    )
+                    daily_stats_data = ds_result.value
+                    break
         except Exception as e:
             logger.debug("DailyStatsHistory lookup failed for %s: %s", currency, e)
 
-        if hist_result.value is None or len(hist_result.value) == 0:
+        if not price_points:
             raise HTTPException(
                 status_code=404,
                 detail=f"No historical data available for currency: {currency}",
             )
-
-        price_points = hist_result.value
 
         # If DailyStatsHistory is available, use it as a supplementary data
         # source.  Daily OHLCV provides a cleaner, more regular signal than

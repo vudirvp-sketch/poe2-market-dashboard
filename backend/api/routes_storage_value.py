@@ -49,25 +49,15 @@ async def get_storage_value(
     """
     config = get_settings()
 
-    # Get provider and cache
-    from backend.api.shared import get_provider
-    provider = get_provider()
-    cache = get_cache()
-
     try:
-        # Fetch price history for momentum/volatility (via cache — avoids
-        # redundant API calls when the same currency is queried by multiple
-        # tabs simultaneously, e.g. Forecast + Storage Value)
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            currency,
-            7,
-        )
+        # OPTIMIZATION: Use DataSnapshot for price histories instead of
+        # individual get_historical_prices() calls.
+        from backend.api.data_snapshot import get_snapshot
+        snapshot = await get_snapshot()
 
-        if hist_result.value is None or len(hist_result.value) == 0:
+        history = snapshot.price_histories.get(currency.lower(), [])
+
+        if not history:
             return {
                 "currency": currency,
                 "current_price": 0,
