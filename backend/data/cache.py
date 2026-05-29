@@ -1,6 +1,23 @@
 """
 In-memory LRU cache with TTL, using cachetools.TTLCache.
 
+LEGACY NOTE: After the introduction of DataSnapshot (backend/api/data_snapshot.py),
+this module is partially superseded:
+
+- **prices / metadata**: DataSnapshot now handles these via a coordinated
+  single-pass fetch.  Routes that have been migrated to DataSnapshot no
+  longer call ``cache.get_or_fetch("prices", ...)`` or
+  ``cache.get_or_fetch("metadata", ...)``.
+- **history**: DataSnapshot's ``price_histories`` replaces the per-currency
+  ``get_historical_prices()`` cache entries.
+- **daily_stats**: Still used by the forecast route and WebSocket handler
+  for the DailyStatsHistory endpoint — DataSnapshot doesn't include this
+  data, so the cache entry remains necessary.
+
+You can safely keep this module for DailyStats caching and any remaining
+provider-level calls.  Over time, as more routes migrate to DataSnapshot,
+the prices/metadata/history caches will naturally shrink.
+
 Cache key = (provider_name, method_name, args_hash)
 - Current prices: TTL = 5 minutes (configurable)
 - Historical snapshots: TTL = 24 hours

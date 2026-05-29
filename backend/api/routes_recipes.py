@@ -7,6 +7,11 @@ via REST endpoints with default PoE2 vendor recipes from config.
 Endpoints:
     GET /api/recipes — check all defined recipes for profitability
     GET /api/recipes/definitions — return all defined recipes
+
+OPTIMIZATION: Uses DataSnapshot instead of calling
+get_all_currencies_with_prices() directly. This avoids 15+ redundant
+ByCategory API requests on every call — the snapshot shares the same
+coordinated data pass as all other routes.
 """
 
 from __future__ import annotations
@@ -17,7 +22,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
-from backend.data.providers.poe2scout import Poe2ScoutProvider
+from backend.api.data_snapshot import get_snapshot
 from backend.economy.gold_costs import compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit
 
@@ -43,8 +48,9 @@ async def get_profitable_recipes(
 ):
     """Check all defined recipes for profitability.
 
-    Uses current market prices from POE2Scout and direction-dependent
-    gold fee calculations per PoE2_Flipper_Canonical_Formulas.md Section 9.
+    Uses current market prices from DataSnapshot (shared with all other
+    routes) and direction-dependent gold fee calculations per
+    PoE2_Flipper_Canonical_Formulas.md Section 9.
 
     Args:
         include_unverified: If True, include recipes marked as UNVERIFIED.
@@ -56,20 +62,31 @@ async def get_profitable_recipes(
         return {"profitable_recipes": [], "all_recipes": [], "count": 0, "data_available": False}
 
     try:
-        # Get provider and current prices
-        from backend.api.shared import get_provider
-        provider = get_provider()
+        # Use DataSnapshot instead of calling get_all_currencies_with_prices()
+        # directly — avoids 15+ redundant ByCategory API requests.
+        snapshot = await get_snapshot()
 
-        # Build price lookup from all currencies
-        all_currencies = await provider.get_all_currencies_with_prices(
-            config.league.league_name
-        )
-        price_lookup: dict[str, float] = {}  # api_id -> current_price in base currency
-        for curr in all_currencies:
-            api_id = curr.get("api_id", "")
-            cp = curr.get("current_price")
-            if api_id and cp and cp > 0:
-                price_lookup[api_id] = cp
+        # Build price lookup from snapshot's current_prices + prices_in_base
+        # current_prices: api_id (lowercase) -> current_price in base currency
+        # We need lookup by original-case api_id too, so build both.
+        price_lookup: dict[str, float] = {}
+        for api_id_lower, cp in snapshot.current_prices.items():
+            if cp > 0:
+                price_lookup[api_id_lower] = cp
+
+        # Also add by original-case api_id from currencies dict
+        for api_id_lower, curr in snapshot.currencies.items():
+            orig_id = curr.get("api_id", "")
+            if orig_id and orig_id != api_id_lower and api_id_lower in price_lookup:
+                price_lookup[orig_id] = price_lookup[api_id_lower]
+
+        # Fall back to prices_in_base for currencies not in current_prices
+        for api_id, price in snapshot.prices_in_base.items():
+            if api_id not in price_lookup and price > 0:
+                price_lookup[api_id] = price
+            api_id_lower = api_id.lower()
+            if api_id_lower not in price_lookup and price > 0:
+                price_lookup[api_id_lower] = price
 
         gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
         gold_cost_dict = {k: v for k, v in [  # Use the gold cost table

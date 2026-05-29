@@ -54,36 +54,26 @@ HEARTBEAT_INTERVAL_SECONDS = 15  # how often to send heartbeats
 # ---------------------------------------------------------------------------
 
 async def _compute_storage_value(currency: str, horizon_hours: int = 24) -> dict | None:
-    """Compute storage value using the same logic as the REST endpoint."""
+    """Compute storage value using DataSnapshot instead of individual API calls.
+
+    OPTIMIZATION: Uses DataSnapshot for price histories — no extra API calls.
+    Previously this called cache.get_or_fetch() which triggered individual
+    get_historical_prices() calls per currency (15+ ByCategory requests).
+    """
     try:
-        from backend.api.routes_storage_value import get_storage_value
-        # We can't call the endpoint function directly because it's an async
-        # route handler, so we duplicate the core logic here using the shared
-        # provider and cache.
-        from backend.api.shared import get_provider
-        from backend.data.cache import get_cache
+        from backend.api.data_snapshot import get_snapshot
         from backend.economy.momentum import PriceMomentumTracker
         from backend.economy.gold_costs import compute_gold_fee_fraction
         from backend.predictors.storage_value import project_value
         import numpy as np
 
         config = get_settings()
-        provider = get_provider()
-        cache = get_cache()
+        snapshot = await get_snapshot()
 
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            currency,
-            7,
-        )
+        history = snapshot.price_histories.get(currency.lower(), [])
 
-        if hist_result.value is None or len(hist_result.value) == 0:
+        if not history:
             return None
-
-        history = hist_result.value
         tracker = PriceMomentumTracker(window_size=len(history))
         for point in history:
             tracker.update(point.price)
@@ -151,9 +141,19 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24) -> dict
 # ---------------------------------------------------------------------------
 
 async def _compute_forecast(currency: str, horizon: int = 24) -> dict | None:
-    """Compute forecast using the same logic as the REST endpoint."""
+    """Compute forecast using DataSnapshot instead of individual API calls.
+
+    OPTIMIZATION: Uses DataSnapshot for price histories and metadata — no
+    extra API calls needed. Previously this called cache.get_or_fetch() which
+    triggered individual get_historical_prices() + get_currency_metadata() +
+    get_daily_stats() per currency (15+ ByCategory requests each time).
+
+    DailyStatsHistory is still fetched individually when needed (it's not
+    part of the snapshot), but this is a lightweight single-item request.
+    """
     try:
         from backend.api.shared import get_provider, get_forecast_engine
+        from backend.api.data_snapshot import get_snapshot
         from backend.data.cache import get_cache
         from backend.economy.events import get_event_manager
         from backend.data.schemas import DailyStatsResponse
@@ -167,46 +167,33 @@ async def _compute_forecast(currency: str, horizon: int = 24) -> dict | None:
 
         is_event_active = event_manager.is_event_active(currency)
 
-        hist_result = await cache.get_or_fetch(
-            "history",
-            provider.name(),
-            "get_historical_prices",
-            provider.get_historical_prices,
-            currency,
-            14,
-        )
+        # Use DataSnapshot for price histories (0 additional API calls)
+        snapshot = await get_snapshot()
 
-        # Try DailyStatsHistory for richer data
+        price_points = snapshot.price_histories.get(currency.lower(), [])
+
+        # Try DailyStatsHistory for richer data (single lightweight request)
         daily_stats_data: dict | None = None
         try:
-            metadata_result = await cache.get_or_fetch(
-                "metadata",
-                provider.name(),
-                "get_currency_metadata",
-                provider.get_currency_metadata,
-                config.league.league_name,
-            )
-            if metadata_result.value:
-                for ci in metadata_result.value:
-                    if ci.api_id.lower() == currency.lower() and ci.item_id:
-                        ds_result = await cache.get_or_fetch(
-                            "daily_stats",
-                            provider.name(),
-                            "get_daily_stats",
-                            provider.get_daily_stats,
-                            config.league.league_name,
-                            ci.item_id,
-                            30,
-                        )
-                        daily_stats_data = ds_result.value
-                        break
+            # Use snapshot's metadata instead of calling get_currency_metadata()
+            for ci in snapshot.currency_metadata:
+                if ci.api_id.lower() == currency.lower() and ci.item_id:
+                    ds_result = await cache.get_or_fetch(
+                        "daily_stats",
+                        provider.name(),
+                        "get_daily_stats",
+                        provider.get_daily_stats,
+                        config.league.league_name,
+                        ci.item_id,
+                        30,
+                    )
+                    daily_stats_data = ds_result.value
+                    break
         except Exception:
             pass
 
-        if hist_result.value is None or len(hist_result.value) == 0:
+        if not price_points:
             return None
-
-        price_points = hist_result.value
 
         # Use daily stats if available
         daily_stats_prices: list = []
@@ -437,18 +424,25 @@ async def _heartbeat_loop(websocket: WebSocket) -> None:
 # ---------------------------------------------------------------------------
 
 async def _compute_anomalies(min_alert_score: float = 0.4) -> dict | None:
-    """Compute anomaly detection across all currencies."""
+    """Compute anomaly detection across all currencies using DataSnapshot.
+
+    OPTIMIZATION: Uses DataSnapshot instead of calling provider methods
+    directly. Previously this called get_exchange_rates() +
+    get_historical_prices() per currency — 15+ ByCategory requests each
+    time the WebSocket pushed an update. Now it uses the shared snapshot
+    (0 additional API calls).
+    """
     try:
-        from backend.api.shared import get_provider
+        from backend.api.data_snapshot import get_snapshot
         from backend.predictors.anomaly import AnomalyDetector
         import numpy as np
 
         config = get_settings()
-        provider = get_provider()
+        snapshot = await get_snapshot()
 
-        rates = await provider.get_exchange_rates(config.league.league_name)
+        # Get currencies from snapshot's exchange rates
         currency_set = set()
-        for key, rate in rates.items():
+        for key, rate in snapshot.exchange_rates.items():
             currency_set.add(rate.currency_from)
             currency_set.add(rate.currency_to)
         currencies = list(currency_set)
@@ -458,7 +452,8 @@ async def _compute_anomalies(min_alert_score: float = 0.4) -> dict | None:
 
         for curr in currencies:
             try:
-                history = await provider.get_historical_prices(curr, days=7)
+                # Use snapshot's price histories (0 additional API calls)
+                history = snapshot.price_histories.get(curr.lower(), [])
                 if len(history) < 30:
                     continue
                 prices = np.array([p.price for p in history])

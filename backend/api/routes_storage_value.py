@@ -18,8 +18,6 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
-from backend.data.cache import get_cache
-from backend.api.shared import get_provider as _get_provider
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.gold_costs import compute_gold_fee_fraction
 from backend.predictors.storage_value import project_value
@@ -70,8 +68,6 @@ async def get_storage_value(
                 "inputs": {},
                 "data_available": False,
             }
-
-        history = hist_result.value
 
         # Compute momentum and volatility
         tracker = PriceMomentumTracker(window_size=len(history))
