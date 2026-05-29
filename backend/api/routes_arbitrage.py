@@ -76,11 +76,13 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     currency_price_history: dict[str, list[float]] = {}
     for api_id_lower, points in snapshot.price_histories.items():
         currency_price_history[api_id_lower] = [p.price for p in points]
-    # Also store by original-case api_id from currencies dict
-    for api_id_lower, curr in snapshot.currencies.items():
-        orig_id = curr.get("api_id", "")
-        if orig_id and orig_id != api_id_lower and api_id_lower in currency_price_history:
-            currency_price_history[orig_id] = currency_price_history[api_id_lower]
+    # Also store by original-case api_id using DataSnapshot.get_currency()
+    for api_id_lower in list(snapshot.price_histories.keys()):
+        curr = snapshot.get_currency(api_id_lower)
+        if curr:
+            orig_id = curr.get("api_id", "")
+            if orig_id and orig_id != api_id_lower and api_id_lower in currency_price_history:
+                currency_price_history[orig_id] = currency_price_history[api_id_lower]
 
     # 3. Determine gold_to_chaos_rate
     gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001

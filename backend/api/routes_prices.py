@@ -23,7 +23,6 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
-from backend.data.cache import get_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.models.currency import PhaseInfo
@@ -158,7 +157,7 @@ async def get_all_prices():
     for api_id_lower, curr in snapshot.currencies.items():
         price_logs = curr.get("price_logs", [])
         momentum_lookup[api_id_lower] = _compute_momentum_from_logs(price_logs)
-        # Also store by original-case api_id
+        # Also store by original-case api_id via DataSnapshot.get_currency
         orig_api_id = curr.get("api_id", "")
         if orig_api_id and orig_api_id != api_id_lower:
             momentum_lookup[orig_api_id] = momentum_lookup[api_id_lower]
@@ -351,29 +350,61 @@ async def get_heatmap_data():
 
 @router.get("/prices/{pair:path}")
 async def get_price_for_pair(pair: str):
-    """Return current price for a specific currency pair (e.g. 'divine/exalted')."""
+    """Return current price for a specific currency pair (e.g. 'divine/exalted').
+
+    OPTIMIZATION: Uses DataSnapshot to look up exchange rates instead
+    of making a separate get_current_price() API call.
+    """
     config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
+    snapshot = await get_snapshot()
 
-    result = await cache.get_or_fetch(
-        "prices",
-        provider.name(),
-        "get_current_price",
-        provider.get_current_price,
-        pair,
-    )
+    # Look up the pair from snapshot's exchange_rates
+    # Pair format: "currency_from/currency_to"
+    parts = pair.split("/")
+    if len(parts) != 2:
+        raise HTTPException(status_code=400, detail=f"Invalid pair format: {pair}. Expected 'from/to'.")
 
-    if result.value is None:
+    curr_from, curr_to = parts[0].lower(), parts[1].lower()
+
+    # Try to find the rate in snapshot
+    rate = snapshot.exchange_rates.get(pair)
+    if rate is None:
+        # Try reverse lookup by constructing the key
+        for key, r in snapshot.exchange_rates.items():
+            if r.currency_from.lower() == curr_from and r.currency_to.lower() == curr_to:
+                rate = r
+                break
+
+    if rate is None:
+        # Fallback: derive from prices_in_base
+        from_price = snapshot.prices_in_base.get(curr_from)
+        to_price = snapshot.prices_in_base.get(curr_to)
+        if from_price and to_price and to_price > 0:
+            raw_rate = from_price / to_price
+            spread_est = 0.01
+            return {
+                "pair": pair,
+                "bid": raw_rate * (1 - spread_est / 2),
+                "ask": raw_rate * (1 + spread_est / 2),
+                "mid_price": raw_rate,
+                "volume_24h": 0,
+                "timestamp": snapshot.fetched_at.isoformat(),
+                "stale": False,
+                "data_available": True,
+            }
         raise HTTPException(status_code=404, detail=f"No price data for pair: {pair}")
 
-    quote = result.value
+    # Derive mid/bid/ask from the rate
+    mid_price = rate.raw_rate
+    spread_est = max(0.005, min(0.05, 10.0 / max(rate.volume_traded, 1)))
+
     return {
-        "pair": quote.pair,
-        "bid": quote.bid,
-        "ask": quote.ask,
-        "mid_price": quote.mid_price,
-        "volume_24h": quote.volume_24h,
-        "timestamp": quote.timestamp.isoformat() if quote.timestamp else None,
-        "stale": result.stale,
+        "pair": pair,
+        "bid": mid_price * (1 - spread_est / 2),
+        "ask": mid_price * (1 + spread_est / 2),
+        "mid_price": mid_price,
+        "volume_24h": rate.volume_traded,
+        "timestamp": rate.timestamp.isoformat() if rate.timestamp else snapshot.fetched_at.isoformat(),
+        "stale": False,
+        "data_available": True,
     }

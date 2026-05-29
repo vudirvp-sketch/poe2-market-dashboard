@@ -54,12 +54,39 @@ class DataScheduler:
     async def collect_price_snapshot(self) -> int:
         """Fetch current prices and write to HistoricalStore.
 
+        Tries DataSnapshot first (shared cache, avoids duplicate API
+        calls if a snapshot was recently refreshed).  Falls back to
+        calling the provider directly if the snapshot is stale or
+        unavailable.
+
         Returns:
             Number of snapshots written, or 0 on failure.
         """
         try:
             league = self._config.league.league_name
-            rates = await self._provider.get_exchange_rates(league)
+
+            # Try DataSnapshot first — if it was recently refreshed
+            # (within the last 5 minutes), reuse its data instead of
+            # making another API call.
+            rates = None
+            try:
+                from backend.api.data_snapshot import get_snapshot_manager
+                mgr = get_snapshot_manager(self._config)
+                snapshot = mgr._snapshot
+                import time as _time
+                if (
+                    snapshot is not None
+                    and snapshot.valid
+                    and _time.monotonic() - mgr._snapshot_ts < mgr._ttl
+                ):
+                    rates = snapshot.exchange_rates
+                    logger.debug("Scheduler: reusing DataSnapshot for price snapshot")
+            except Exception:
+                pass
+
+            # Fallback: fetch directly from provider
+            if not rates:
+                rates = await self._provider.get_exchange_rates(league)
 
             if not rates:
                 logger.debug("No exchange rates returned; skipping snapshot")

@@ -15,8 +15,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings, AppConfig
-from backend.data.cache import get_cache
-from backend.api.shared import get_provider as _get_provider, get_forecast_engine as _get_forecast_engine
+from backend.api.data_snapshot import get_snapshot
+from backend.api.shared import get_forecast_engine as _get_forecast_engine
 from backend.economy.events import get_event_manager, EventManager
 from backend.models.currency import ForecastResult
 
@@ -52,8 +52,6 @@ async def get_forecast(
       from the EventManager based on whether this currency is affected.
     """
     config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
     event_manager = get_event_manager(config)
 
     # Auto-detect event status if not explicitly provided
@@ -64,23 +62,28 @@ async def get_forecast(
         # OPTIMIZATION: Use DataSnapshot for price histories instead of
         # individual get_historical_prices() calls. The snapshot already
         # contains price_logs from ByCategory — no extra API calls needed.
-        from backend.api.data_snapshot import get_snapshot
         snapshot = await get_snapshot()
 
         # Get price history from snapshot
-        price_points = snapshot.price_histories.get(currency.lower(), [])
+        price_points = snapshot.get_price_history(currency)
 
         # Also try DailyStatsHistory for richer OHLCV data
+        # (DailyStats is NOT in DataSnapshot, so we use the provider
+        # directly with a short-lived cache.)
         daily_stats_data: dict | None = None
         try:
             # Look up item_id from snapshot metadata
             for ci in snapshot.currency_metadata:
                 if ci.api_id.lower() == currency.lower() and ci.item_id:
-                    ds_result = await cache.get_or_fetch(
+                    from backend.api.shared import get_provider as _get_prov
+                    from backend.data.cache import get_cache
+                    _provider = _get_prov()
+                    _cache = get_cache()
+                    ds_result = await _cache.get_or_fetch(
                         "daily_stats",
-                        provider.name(),
+                        _provider.name(),
                         "get_daily_stats",
-                        provider.get_daily_stats,
+                        _provider.get_daily_stats,
                         config.league.league_name,
                         ci.item_id,
                         30,
@@ -211,21 +214,19 @@ async def get_stl_decomposition(
     """Return STL decomposition (trend, seasonal, residual) for a currency.
 
     Useful for visualizing the components of the price series.
+
+    OPTIMIZATION: Uses DataSnapshot for price histories instead of
+    cache.get_or_fetch("history", ...) which would call
+    get_historical_prices() per currency (N API calls).
+    The snapshot already contains price_logs from ByCategory.
     """
     config = get_settings()
-    provider = _get_provider()
-    cache = get_cache()
 
-    hist_result = await cache.get_or_fetch(
-        "history",
-        provider.name(),
-        "get_historical_prices",
-        provider.get_historical_prices,
-        currency,
-        14,
-    )
+    # Use DataSnapshot instead of cache.get_or_fetch("history", ...)
+    snapshot = await get_snapshot()
+    price_points = snapshot.get_price_history(currency)
 
-    if hist_result.value is None or len(hist_result.value) == 0:
+    if not price_points:
         raise HTTPException(
             status_code=404,
             detail=f"No historical data available for currency: {currency}",
@@ -233,7 +234,6 @@ async def get_stl_decomposition(
 
     import numpy as np
 
-    price_points = hist_result.value
     prices = np.array([p.price for p in price_points], dtype=float)
     timestamps = [p.timestamp for p in price_points]
 

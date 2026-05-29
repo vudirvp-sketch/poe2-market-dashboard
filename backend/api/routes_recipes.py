@@ -74,11 +74,13 @@ async def get_profitable_recipes(
             if cp > 0:
                 price_lookup[api_id_lower] = cp
 
-        # Also add by original-case api_id from currencies dict
-        for api_id_lower, curr in snapshot.currencies.items():
-            orig_id = curr.get("api_id", "")
-            if orig_id and orig_id != api_id_lower and api_id_lower in price_lookup:
-                price_lookup[orig_id] = price_lookup[api_id_lower]
+        # Also add by original-case api_id using DataSnapshot.get_currency()
+        for api_id_lower in list(snapshot.current_prices.keys()):
+            curr = snapshot.get_currency(api_id_lower)
+            if curr:
+                orig_id = curr.get("api_id", "")
+                if orig_id and orig_id != api_id_lower and api_id_lower in price_lookup:
+                    price_lookup[orig_id] = price_lookup[api_id_lower]
 
         # Fall back to prices_in_base for currencies not in current_prices
         for api_id, price in snapshot.prices_in_base.items():

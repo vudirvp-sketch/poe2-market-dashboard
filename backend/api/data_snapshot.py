@@ -81,6 +81,49 @@ class DataSnapshot:
     # Whether the snapshot is valid (has at least some data)
     valid: bool = False
 
+    # ------------------------------------------------------------------
+    # Convenience lookup methods
+    # ------------------------------------------------------------------
+
+    def get_currency(self, api_id: str) -> dict | None:
+        """Look up a currency by api_id (case-insensitive, with fallback).
+
+        Tries lowercase first, then the original-case key stored in
+        ``currencies``.  Returns the raw dict from ByCategory or None.
+        """
+        if not api_id:
+            return None
+        low = api_id.lower()
+        if low in self.currencies:
+            return self.currencies[low]
+        # Fallback: scan for original-case match
+        for key, curr in self.currencies.items():
+            if curr.get("api_id", "") == api_id:
+                return curr
+        return None
+
+    def get_price_history(self, api_id: str) -> list[PricePoint]:
+        """Return price history for *api_id* (case-insensitive)."""
+        if not api_id:
+            return []
+        low = api_id.lower()
+        if low in self.price_histories:
+            return self.price_histories[low]
+        # Fallback: check original-case api_id entries
+        for key, points in self.price_histories.items():
+            if key.lower() == low:
+                return points
+        return []
+
+    def get_current_price(self, api_id: str) -> float | None:
+        """Return the current price for *api_id* (case-insensitive)."""
+        if not api_id:
+            return None
+        low = api_id.lower()
+        if low in self.current_prices:
+            return self.current_prices[low]
+        return None
+
 
 # ---------------------------------------------------------------------------
 # Snapshot manager (singleton)
