@@ -122,9 +122,9 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     : overview?.topLosers7d ?? [];
 
   // Market stats
-  const totalVolume = overview?.stats.totalVolume ?? 0;
-  const trackedItems = overview?.stats.trackedItems ?? 0;
-  const exchangePairsCount = overview?.stats.exchangePairs ?? 0;
+  const totalVolume = overview?.stats?.totalVolume ?? 0;
+  const trackedItems = overview?.stats?.trackedItems ?? 0;
+  const exchangePairsCount = overview?.stats?.exchangePairs ?? 0;
 
   if (isLoading) {
     return (

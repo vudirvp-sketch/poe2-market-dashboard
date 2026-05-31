@@ -79,10 +79,10 @@ class DataScheduler:
             prices_in_chaos: dict[str, float] = {base: 1.0}
 
             for key, rate in rates.items():
-                if rate.currency_from == base:
-                    prices_in_chaos[rate.currency_to] = rate.raw_rate
+                if rate.currency_from == base and rate.raw_rate > 0:
+                    prices_in_chaos[rate.currency_to] = 1.0 / rate.raw_rate   # price in base
                 elif rate.currency_to == base and rate.raw_rate > 0:
-                    prices_in_chaos[rate.currency_from] = 1.0 / rate.raw_rate
+                    prices_in_chaos[rate.currency_from] = rate.raw_rate         # price in base
 
             # Build snapshots
             snapshots = []

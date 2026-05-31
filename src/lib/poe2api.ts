@@ -221,6 +221,13 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
           );
         }
         if (res.status === 429) {
+          // MEDIUM-3: Retry 429 with backoff instead of throwing immediately
+          const retryAfter = res.headers.get('Retry-After');
+          const delayMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 5000;
+          if (attempt < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            continue; // retry
+          }
           throw new Error(
             `API 429 Rate Limited — ${url}. Too many requests. Wait a moment and try again.`
           );
@@ -865,6 +872,41 @@ function safeParseFloat(value: string | number | null | undefined): number | nul
   return null;
 }
 
+// ============================================================================
+// MEDIUM-3: Concurrency-limited request helper
+// ============================================================================
+
+/**
+ * Execute an array of async tasks with a maximum concurrency limit.
+ * Resolves in order of the input array (preserves indexing).
+ * Adds a small delay between requests to avoid triggering 429 rate limits.
+ */
+async function withConcurrencyLimit<T>(
+  tasks: (() => Promise<T>)[],
+  maxConcurrent: number = 3,
+  delayMs: number = 200,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const index = nextIndex++;
+      if (index > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+      results[index] = await tasks[index]();
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(maxConcurrent, tasks.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 /** Map raw snapshot pair to ExchangePair */
 function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
   // ValueTraded, RelativePrice, StockValue are strings in API response
@@ -913,7 +955,7 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 // ============================================================================
 
 const FALLBACK_REALMS: Realm[] = [
-  { name: "poe2", displayName: "PoE2", defaultLeague: "Fate of the Vaal" },
+  { name: "poe2", displayName: "PoE2", defaultLeague: "Runes of Aldur" },
   { name: "pc", displayName: "PoE1 PC", defaultLeague: "Mirage" },
   { name: "xbox", displayName: "PoE1 XBOX", defaultLeague: "Mirage" },
   { name: "sony", displayName: "PoE1 PS", defaultLeague: "Mirage" },
@@ -921,7 +963,9 @@ const FALLBACK_REALMS: Realm[] = [
 
 const FALLBACK_LEAGUES: Record<string, League[]> = {
   poe2: [
-    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "runes", displayName: "Runes of Aldur", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "runeshc", displayName: "Runes of Aldur Hardcore", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "vaalhc", displayName: "HC Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "abyssal", displayName: "Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "abyssalhc", displayName: "HC Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
@@ -1016,9 +1060,9 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
       displayName: l.Value,
       startAt: null,
       endAt: null,
-      // Mark league as active if it matches the realm's default_league_value
+      // Mark league as active if it matches the realm's default_league_value OR IsCurrent
       active: defaultLeagueValue
-        ? l.Value === defaultLeagueValue
+        ? l.Value === defaultLeagueValue || l.IsCurrent
         : l.IsCurrent,
       // Pass base currency info from league for reference currency
       baseCurrencyApiId: l.BaseCurrencyApiId,
@@ -1085,8 +1129,8 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
     );
     return raw.Data.map((d) => ({
       timestamp: new Date(d.Epoch * 1000).toISOString(),
-      totalVolume: d.Volume,
-      totalMarketCap: d.MarketCap,
+      totalVolume: Number(d.Volume),            // MEDIUM-7: ensure number (API sometimes returns strings)
+      totalMarketCap: Number(d.MarketCap),      // MEDIUM-7: ensure number (API sometimes returns strings)
       itemCount: 0,
     }));
   } catch (err) {
@@ -1331,7 +1375,7 @@ export async function getUniquesByCategory(
   );
 
   return {
-    items: raw.Items.map((item) => mapUniqueItem(item)),
+    items: (raw.Items ?? []).map((item) => mapUniqueItem(item)),
     page: raw.CurrentPage,
     perPage: perPage,
     totalItems: raw.Total,
@@ -1358,11 +1402,11 @@ async function getUniquesAllCategories(
 
   const uniqueCats = categoriesRaw.UniqueCategories ?? [];
 
-  // Fetch ALL pages of each unique category in parallel.
+  // Fetch ALL pages of each unique category with concurrency limiting (MEDIUM-3).
   // Previously only page 1 was fetched, causing data loss when a category
   // contained >perPage items.  Now we fetch page 1, check Pages count,
   // and fetch remaining pages concurrently.
-  const allCategoryFetches = uniqueCats.map(async (cat) => {
+  const allCategoryTasks = uniqueCats.map((cat) => async () => {
     const pages: RawPaginatedResponse<RawUniqueItem>[] = [];
 
     // Fetch page 1 first to discover total page count
@@ -1408,14 +1452,18 @@ async function getUniquesAllCategories(
     return pages;
   });
 
-  const allPages = await Promise.all(allCategoryFetches);
+  const allPages = await withConcurrencyLimit(
+    allCategoryTasks,
+    3,   // max 3 concurrent category requests
+    200, // 200ms delay between requests
+  );
 
   // Merge all items
   const allItems: PoeItem[] = [];
 
   for (const pages of allPages) {
     for (const result of pages) {
-      allItems.push(...result.Items.map((item) => mapUniqueItem(item)));
+      allItems.push(...(result.Items ?? []).map((item) => mapUniqueItem(item)));
     }
   }
 
@@ -1465,7 +1513,7 @@ export async function getCurrenciesByCategory(
   );
 
   return {
-    items: raw.Items.map((item) => mapCurrencyItem(item)),
+    items: (raw.Items ?? []).map((item) => mapCurrencyItem(item)),
     page: raw.CurrentPage,
     perPage: perPage,
     totalItems: raw.Total,
@@ -1491,11 +1539,11 @@ async function getCurrenciesAllCategories(
 
   const currencyCats = categoriesRaw.CurrencyCategories ?? [];
 
-  // Fetch ALL pages of each currency category in parallel.
+  // Fetch ALL pages of each currency category with concurrency limiting (MEDIUM-3).
   // Previously only page 1 was fetched, causing data loss when a category
   // contained >perPage items.  Now we fetch page 1, check Pages count,
   // and fetch remaining pages concurrently.
-  const allCategoryFetches = currencyCats.map(async (cat) => {
+  const allCategoryTasks = currencyCats.map((cat) => async () => {
     const pages: RawPaginatedResponse<RawCurrencyItem>[] = [];
 
     // Fetch page 1 first to discover total page count
@@ -1539,14 +1587,18 @@ async function getCurrenciesAllCategories(
     return pages;
   });
 
-  const allPages = await Promise.all(allCategoryFetches);
+  const allPages = await withConcurrencyLimit(
+    allCategoryTasks,
+    3,   // max 3 concurrent category requests
+    200, // 200ms delay between requests
+  );
 
   // Merge all items
   const allItems: PoeItem[] = [];
 
   for (const pages of allPages) {
     for (const result of pages) {
-      allItems.push(...result.Items.map((item) => mapCurrencyItem(item)));
+      allItems.push(...(result.Items ?? []).map((item) => mapCurrencyItem(item)));
     }
   }
 

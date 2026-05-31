@@ -130,7 +130,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 currency_price_history_timestamped[orig_id] = currency_price_history_timestamped.get(api_id_lower, [])
 
     # 3. Determine gold_to_chaos_rate
-    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+    gold_to_chaos_rate = (
+        config.fees.fixed_gold_to_chaos_rate
+        if config.fees.fixed_gold_to_chaos_rate is not None
+        else 0.001
+    )
     if config.fees.gold_to_chaos_rate_source == "market":
         try:
             from backend.api.shared import get_provider
@@ -152,7 +156,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     )
 
     # 6. Build price-in-chaos mapping from snapshot
-    prices_in_chaos = snapshot.prices_in_base
+    prices_in_chaos = dict(snapshot.prices_in_base)  # shallow copy — prevents mutation of shared state
 
     if "chaos" in prices_in_chaos and config.league.base_currency != "chaos":
         exalted_to_chaos = prices_in_chaos.get("chaos", 1.0)
@@ -231,7 +235,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         history = currency_price_history.get(rate.currency_from, [])
         if not history:
             history = currency_price_history.get(rate.currency_from.lower(), [])
-        tracker = PriceMomentumTracker(window_size=24)
+        tracker = PriceMomentumTracker(window_size=24, history=history)
         for price in history:
             tracker.update(price)
         momentum_result = tracker.compute()
@@ -258,6 +262,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             mid_price = (forward_rate + implied_from_reverse) / 2
             # Market spread from the forward/reverse rate gap
             market_spread = abs(forward_rate - implied_from_reverse) / mid_price
+            # HIGH-3 FIX: Add minimum spread floor for mirrored pairs
+            # When both forward and reverse rates exist, implied_from_reverse
+            # exactly equals forward_rate (derived from same relative_price),
+            # causing market_spread = 0. Floor at 0.5% minimum.
+            market_spread = max(market_spread, 0.005)
         else:
             # No reverse rate: estimate from volatility with higher floor
             # 2% minimum — typical even for liquid POE2 pairs
@@ -466,7 +475,11 @@ async def get_triangular_arbitrage(
     gold_cost_dict = get_api_id_to_gold_cost()
     prices_in_chaos = snapshot.prices_in_base
 
-    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+    gold_to_chaos_rate = (
+        config.fees.fixed_gold_to_chaos_rate
+        if config.fees.fixed_gold_to_chaos_rate is not None
+        else 0.001
+    )
     if config.fees.gold_to_chaos_rate_source == "market":
         try:
             from backend.api.shared import get_provider

@@ -27,14 +27,20 @@ class PriceMomentumTracker:
     AGENTS MUST NOT invent their own formulas.
     """
 
-    def __init__(self, window_size: int = 24):
+    def __init__(self, window_size: int = 24, history: list | None = None):
         """
         Args:
             window_size: Number of price points in the rolling window.
                          The tracker keeps window_size + 1 prices to compute
                          window_size log-returns.
+            history: Optional price history list. If provided, window_size
+                     is scaled to the available data (minimum 2).
         """
-        self.window_size = window_size
+        # MEDIUM-2: Scale window to available data, with a minimum of 2
+        if history is not None and len(history) > 0:
+            self.window_size = min(window_size, max(2, len(history)))
+        else:
+            self.window_size = max(2, window_size)
         self.prices: list[float] = []
 
     def update(self, new_price: float) -> None:
@@ -69,6 +75,11 @@ class PriceMomentumTracker:
 
         # §2.3: volatility = std(log_returns, ddof=1)
         volatility = float(np.std(log_returns, ddof=1)) if len(log_returns) > 1 else 0.0
+
+        # MEDIUM-2: Minimum volatility estimate — prevent zero volatility
+        # with insufficient data points, which degrades momentum-assisted model
+        min_volatility = 0.01  # 1% minimum volatility estimate
+        volatility = max(volatility, min_volatility)
 
         # §2.4: acceleration with m = max(1, floor(len(log_returns) / 4))
         m = max(1, len(log_returns) // 4)

@@ -73,7 +73,12 @@ async def get_storage_value(
             }
 
         # Compute momentum and volatility
-        tracker = PriceMomentumTracker(window_size=len(history))
+        # MEDIUM-4: Use a fixed window size with graceful degradation for short histories
+        FIXED_MOMENTUM_WINDOW = 24
+        tracker = PriceMomentumTracker(
+            window_size=min(FIXED_MOMENTUM_WINDOW, max(2, len(history))),
+            history=[p.price for p in history],
+        )
         for point in history:
             tracker.update(point.price)
         metrics = tracker.compute()
@@ -100,7 +105,11 @@ async def get_storage_value(
         liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
 
         # Gold fee fraction
-        gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+        gold_to_chaos_rate = (
+            config.fees.fixed_gold_to_chaos_rate
+            if config.fees.fixed_gold_to_chaos_rate is not None
+            else 0.001
+        )
         try:
             gold_fee_fraction = compute_gold_fee_fraction(
                 currency, 1.0,

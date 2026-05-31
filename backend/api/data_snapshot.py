@@ -126,6 +126,46 @@ class DataSnapshot:
 
 
 # ---------------------------------------------------------------------------
+# Transitive price calculation (MEDIUM-1)
+# ---------------------------------------------------------------------------
+
+def _compute_transitive_prices(prices_in_base: dict, rates: dict, base: str) -> None:
+    """BFS to find prices for currencies not directly paired with the base.
+
+    Uses intermediate currencies that already have a base price.
+    Transitive prices are less accurate than direct ones — the BFS uses the
+    first path found, not necessarily the best. This is acceptable for fee
+    estimation.
+    """
+    from collections import deque
+
+    known = set(prices_in_base.keys()) | {base}
+    queue = deque(known)
+
+    while queue:
+        current = queue.popleft()
+        current_price = prices_in_base.get(current, 1.0)  # base currency has price 1.0
+
+        for key, rate in rates.items():
+            if rate.raw_rate <= 0:
+                continue
+
+            # Can we price a new currency through 'current'?
+            if rate.currency_from == current and rate.currency_to not in prices_in_base:
+                # 1 current = raw_rate units of currency_to
+                # 1 currency_to = (1/raw_rate) units of current
+                # price_of_currency_to_in_base = current_price / raw_rate
+                prices_in_base[rate.currency_to] = current_price / rate.raw_rate
+                queue.append(rate.currency_to)
+
+            elif rate.currency_to == current and rate.currency_from not in prices_in_base:
+                # 1 currency_from = raw_rate units of current
+                # price_of_currency_from_in_base = current_price * raw_rate
+                prices_in_base[rate.currency_from] = current_price * rate.raw_rate
+                queue.append(rate.currency_from)
+
+
+# ---------------------------------------------------------------------------
 # Snapshot manager (singleton)
 # ---------------------------------------------------------------------------
 
@@ -229,10 +269,16 @@ class SnapshotManager:
         for key, rate in snapshot.exchange_rates.items():
             if rate.currency_from == base and rate.raw_rate > 0:
                 if rate.currency_to not in prices_in_base:
-                    prices_in_base[rate.currency_to] = rate.raw_rate
+                    prices_in_base[rate.currency_to] = 1.0 / rate.raw_rate   # price of currency_to in base
             elif rate.currency_to == base and rate.raw_rate > 0:
                 if rate.currency_from not in prices_in_base:
-                    prices_in_base[rate.currency_from] = 1.0 / rate.raw_rate
+                    prices_in_base[rate.currency_from] = rate.raw_rate         # price of currency_from in base
+
+        # MEDIUM-1: Transitive price calculation for currencies without direct
+        # pair to the base currency (e.g. vaal has no exalted/vaal pair).
+        # Uses BFS through intermediate currencies that already have a base price.
+        _compute_transitive_prices(prices_in_base, snapshot.exchange_rates, base)
+
         snapshot.prices_in_base = prices_in_base
 
         # --- Step 3: Fetch all currencies via ByCategory (~15 requests) ---

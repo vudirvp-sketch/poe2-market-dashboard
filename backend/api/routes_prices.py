@@ -132,7 +132,7 @@ async def get_all_prices():
             "league": config.league.league_name,
             "phase": "unknown",
             "rates": [],
-            "gold_to_chaos_rate": config.fees.fixed_gold_to_chaos_rate or 0.001,
+            "gold_to_chaos_rate": config.fees.fixed_gold_to_chaos_rate if config.fees.fixed_gold_to_chaos_rate is not None else 0.001,
             "base_currency": config.league.base_currency,
             "stale": True,
             "data_available": False,
@@ -144,7 +144,11 @@ async def get_all_prices():
     phase_info = detector.get_phase_info()
 
     # Determine gold_to_chaos_rate
-    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+    gold_to_chaos_rate = (
+        config.fees.fixed_gold_to_chaos_rate
+        if config.fees.fixed_gold_to_chaos_rate is not None
+        else 0.001
+    )
     if config.fees.gold_to_chaos_rate_source == "market":
         try:
             from backend.api.shared import get_provider
