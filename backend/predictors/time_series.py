@@ -532,6 +532,7 @@ class LightGBMForecaster:
         self._last_trained_at: datetime | None = None
         self._training_mape: float | None = None
         self._retraining_triggered: bool = False
+        self._effective_feature_config: LightGBMFeatureConfig | None = None
 
         # Phase 2 (Spec §7.5): Model persistence via ModelStore
         self._model_store = model_store
@@ -639,6 +640,9 @@ class LightGBMForecaster:
 
         X = df[feature_cols].values
         y = df[target_col].values
+
+        # Store the effective feature config for consistent prediction
+        self._effective_feature_config = effective_config
 
         # Common training parameters
         common_params = {
@@ -766,6 +770,9 @@ class LightGBMForecaster:
         ci_lowers = []
         ci_uppers = []
 
+        # Use the same feature config that was used during training
+        predict_config = self._effective_feature_config or self._feature_config
+
         for step in range(horizon):
             # Build features from the working series
             working_array = np.array(working_prices)
@@ -774,7 +781,7 @@ class LightGBMForecaster:
                 np.array(working_volumes) if working_volumes is not None else None,
                 working_timestamps,
                 is_event_active,
-                self._feature_config,
+                predict_config,
             )
 
             # Take only the last row (most recent)

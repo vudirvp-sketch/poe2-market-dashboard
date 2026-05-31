@@ -25,7 +25,7 @@ class DataConfig(BaseModel):
     primary_provider: str = "poe2scout"
     fallback_provider: str = "official"
     poe2scout_base_url: str = "https://api.poe2scout.com/api"
-    cache_ttl_prices_minutes: int = 5
+    cache_ttl_prices_minutes: float = 5
     cache_ttl_history_hours: int = 24
     cache_ttl_metadata_hours: int = 1
     rate_limit_per_second: float = 1.0

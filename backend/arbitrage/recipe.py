@@ -1,20 +1,11 @@
 """
 Recipe Arbitrage — vendor recipe profit calculation.
 
-From PoE2_Flipper_Canonical_Formulas.md §9:
+Simplified: gold/commission fees are EXCLUDED from all calculations.
 
-Pure arithmetic. For each known vendor recipe:
-1. Sum the cost of input items (in chaos equivalent, including gold fees for purchasing)
-2. Compare to the market price of the output item (minus gold fee for selling)
-3. If output_value_after_fee > input_cost_after_fees, profit exists.
-
-Formula (§9.1):
-    input_cost = sum(
-        price(I_i) * quantity(I_i)
-        + gold_cost_per_unit[I_i] * quantity(I_i) * gold_to_chaos_rate
-        for i in 1..k
-    )
-    output_value = price(O) * quantity(O) - gold_cost_per_unit[O] * quantity(O) * gold_to_chaos_rate
+Formula (simplified — gold fees excluded):
+    input_cost = sum(price(I_i) * quantity(I_i) for i in 1..k)
+    output_value = price(O) * quantity(O)
     profit = output_value - input_cost
     profit_pct = profit / input_cost * 100
 """
@@ -38,16 +29,14 @@ def compute_recipe_profit(
 ) -> RecipeOpportunity | None:
     """Compute the profitability of a vendor recipe.
 
+    Simplified: gold/commission fees are EXCLUDED.
+    Only raw market prices are used for input cost and output value.
+
     Args:
-        recipe: Recipe definition from config.yaml, e.g.:
-            {
-                "name": "Chaos Recipe",
-                "inputs": [{"item": "chaos_shard", "quantity": 3}],
-                "output": {"item": "chaos_orb", "quantity": 1}
-            }
+        recipe: Recipe definition from config.yaml
         prices: Dict mapping currency api_id to price in Chaos Orbs
-        gold_to_chaos_rate: How many Chaos Orbs per 1 gold coin
-        fallback_gold_cost: Default per-unit gold cost for unknown currencies
+        gold_to_chaos_rate: DEPRECATED — kept for API compatibility, not used
+        fallback_gold_cost: DEPRECATED — kept for API compatibility, not used
 
     Returns:
         RecipeOpportunity if profitable, None otherwise
@@ -60,35 +49,26 @@ def compute_recipe_profit(
         logger.warning("Recipe '%s' has no inputs or output", name)
         return None
 
-    # §9.1: Input cost = sum of (price + fee) for each input
+    # Input cost = sum of price * quantity (no gold fee)
     input_cost = 0.0
     for inp in inputs:
         item = inp.get("item", "")
         qty = inp.get("quantity", 1)
         price = prices.get(item, 0.0)
-        gold_cost = get_gold_cost_per_unit(item, fallback=fallback_gold_cost)
-        fee_chaos = gold_cost * qty * gold_to_chaos_rate
-        input_cost += price * qty + fee_chaos
+        input_cost += price * qty
 
-    # §9.1: Output value = price - fee for selling
+    # Output value = price * quantity (no gold fee)
     output_item = output.get("item", "")
     output_qty = output.get("quantity", 1)
     output_price = prices.get(output_item, 0.0)
-    output_gold_cost = get_gold_cost_per_unit(output_item, fallback=fallback_gold_cost)
-    output_fee_chaos = output_gold_cost * output_qty * gold_to_chaos_rate
-    output_value = output_price * output_qty - output_fee_chaos
+    output_value = output_price * output_qty
 
-    # §9.1: Profit calculation
+    # Profit calculation
     profit = output_value - input_cost
     profit_pct = (profit / input_cost * 100) if input_cost > 0 else 0.0
 
+    # Total gold fee is 0 (excluded)
     total_gold_fee = 0.0
-    for inp in inputs:
-        item = inp.get("item", "")
-        qty = inp.get("quantity", 1)
-        gold_cost = get_gold_cost_per_unit(item, fallback=fallback_gold_cost)
-        total_gold_fee += gold_cost * qty
-    total_gold_fee += output_gold_cost * output_qty
 
     return RecipeOpportunity(
         name=name,

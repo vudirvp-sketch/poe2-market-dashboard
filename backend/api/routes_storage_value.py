@@ -105,25 +105,8 @@ async def get_storage_value(
         total_volume = sum(volumes) if volumes else 0
         liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
 
-        # Gold fee fraction
-        # LOW-1: Use actual quantity instead of hardcoded 1.0 so that the fee
-        # and trade_value scale correctly with the user's holdings.
-        gold_to_chaos_rate = (
-            config.fees.fixed_gold_to_chaos_rate
-            if config.fees.fixed_gold_to_chaos_rate is not None
-            else 0.001
-        )
-        total_trade_value = current_price * quantity
-        try:
-            gold_fee_fraction = compute_gold_fee_fraction(
-                currency,
-                quantity,               # actual quantity held
-                gold_to_chaos_rate,
-                max(total_trade_value, 1e-10),
-                config.fees.unknown_item_gold_cost,
-            )
-        except Exception:
-            gold_fee_fraction = 0.0
+        # Gold fee fraction — DEPRECATED: set to 0 (gold fees excluded from all calculations)
+        gold_fee_fraction = 0.0
 
         # Compute storage value
         result = project_value(

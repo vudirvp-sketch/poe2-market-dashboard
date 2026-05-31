@@ -66,6 +66,16 @@ class MockProvider:
         self._closed = True
 
 
+def _make_mock_snapshot(rates=None):
+    """Create a mock DataSnapshot with the given exchange rates."""
+    from backend.api.data_snapshot import DataSnapshot
+    snapshot = DataSnapshot()
+    if rates is not None:
+        snapshot.exchange_rates = rates
+        snapshot.valid = True
+    return snapshot
+
+
 @pytest.fixture
 def config(tmp_path):
     """Create a test config with short scheduler intervals."""
@@ -131,7 +141,11 @@ class TestCollectPriceSnapshot:
         self, scheduler, historical_store
     ):
         """Price snapshot collection should write data to HistoricalStore."""
-        count = await scheduler.collect_price_snapshot()
+        mock_rates = await MockProvider().get_exchange_rates("vaal")
+        mock_snapshot = _make_mock_snapshot(mock_rates)
+
+        with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
+            count = await scheduler.collect_price_snapshot()
         assert count > 0, "Should write at least one snapshot"
 
         # Verify data was written to SQLite
@@ -143,29 +157,28 @@ class TestCollectPriceSnapshot:
         self, scheduler, historical_store
     ):
         """collect_price_snapshot should return the number of snapshots written."""
-        count = await scheduler.collect_price_snapshot()
+        mock_rates = await MockProvider().get_exchange_rates("vaal")
+        mock_snapshot = _make_mock_snapshot(mock_rates)
+
+        with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
+            count = await scheduler.collect_price_snapshot()
         # We have 2 rate pairs, each generates at least 1 snapshot
         assert count >= 2, f"Expected at least 2 snapshots, got {count}"
 
     @pytest.mark.asyncio
     async def test_collect_with_empty_rates(self, scheduler, historical_store):
-        """When provider returns no rates, should return 0 gracefully."""
-        # Replace provider with one that returns empty dict
-        scheduler._provider = MockProvider()
-        scheduler._provider.get_exchange_rates = AsyncMock(return_value={})
+        """When snapshot returns no rates, should return 0 gracefully."""
+        empty_snapshot = _make_mock_snapshot(rates={})
 
-        count = await scheduler.collect_price_snapshot()
+        with patch("backend.scheduler._get_snapshot", return_value=empty_snapshot):
+            count = await scheduler.collect_price_snapshot()
         assert count == 0, "Should return 0 when no rates available"
 
     @pytest.mark.asyncio
     async def test_collect_handles_provider_error(self, scheduler, historical_store):
-        """When provider raises an exception, should return 0 and not crash."""
-        scheduler._provider = MockProvider()
-        scheduler._provider.get_exchange_rates = AsyncMock(
-            side_effect=Exception("API down")
-        )
-
-        count = await scheduler.collect_price_snapshot()
+        """When get_snapshot raises an exception, should return 0 and not crash."""
+        with patch("backend.scheduler._get_snapshot", side_effect=Exception("API down")):
+            count = await scheduler.collect_price_snapshot()
         assert count == 0, "Should return 0 on provider error"
 
     @pytest.mark.asyncio
@@ -173,9 +186,12 @@ class TestCollectPriceSnapshot:
         self, scheduler, historical_store
     ):
         """Multiple collections within the same 5-minute bucket should deduplicate."""
-        count1 = await scheduler.collect_price_snapshot()
-        # Second call within the same minute should be deduped by INSERT OR IGNORE
-        count2 = await scheduler.collect_price_snapshot()
+        mock_rates = await MockProvider().get_exchange_rates("vaal")
+        mock_snapshot = _make_mock_snapshot(mock_rates)
+
+        with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
+            count1 = await scheduler.collect_price_snapshot()
+            count2 = await scheduler.collect_price_snapshot()
 
         # Both should succeed (count > 0) but the store should not have
         # duplicated rows for the same 5-minute bucket
@@ -256,11 +272,6 @@ class TestPruneEvents:
 
         # Also write to SQLite
         await historical_store.write_event(expired_event)
-
-        # Verify it's there before pruning
-        active_before = event_manager.list_events(active_only=True)
-        expired_found = any(e.event_id == "expired_001" for e in active_before)
-        # The event may have already been pruned by list_events' _prune_expired
 
         # Prune
         pruned = await scheduler.prune_events()

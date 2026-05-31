@@ -1,17 +1,17 @@
 """
 Tests for recipe.py — vendor recipe arbitrage.
 
-From PoE2_Flipper_Canonical_Formulas.md §9.2 Verification:
+Simplified: gold/commission fees are EXCLUDED from all calculations.
+Only raw market prices are used for input cost and output value.
 
 Recipe: 3x Chaos Shard → 1x Chaos Orb
-Chaos Shard price = 0.3 Chaos, gold_cost = unknown (use fallback 200)
-Chaos Orb price = 1.0 Chaos, gold_cost = 160
-gold_to_chaos_rate = 0.001
+Chaos Shard price = 0.3 Chaos
+Chaos Orb price = 1.0 Chaos
 
-input_cost = 3 × (0.3 + 200 × 0.001) = 3 × (0.3 + 0.2) = 3 × 0.5 = 1.5
-output_value = 1.0 - 160 × 0.001 = 1.0 - 0.16 = 0.84
-profit = 0.84 - 1.5 = -0.66
-→ NOT profitable
+input_cost = 3 × 0.3 = 0.9
+output_value = 1.0
+profit = 1.0 - 0.9 = 0.1
+profit_pct = 0.1 / 0.9 × 100 ≈ 11.1% (now profitable without fees!)
 """
 
 import pytest
@@ -20,11 +20,14 @@ from backend.arbitrage.recipe import compute_recipe_profit, find_profitable_reci
 
 
 class TestRecipeProfit:
-    """Test recipe profit calculation from §9.2 Verification."""
+    """Test recipe profit calculation (gold fees excluded)."""
 
-    def test_canonical_not_profitable_recipe(self):
+    def test_canonical_recipe_without_fees(self):
         """
-        From §9.2: Chaos Shard recipe is NOT profitable due to high fees.
+        Without gold fees: 3x Chaos Shard (0.3 each) → 1x Chaos Orb (1.0)
+        input_cost = 3 * 0.3 = 0.9
+        output_value = 1.0
+        profit = 1.0 - 0.9 = 0.1
         """
         recipe = {
             "name": "Chaos Recipe",
@@ -39,18 +42,18 @@ class TestRecipeProfit:
         result = compute_recipe_profit(recipe, prices, gold_to_chaos_rate)
 
         assert result is not None
-        # input_cost = 3 * (0.3 + 200*0.001) = 3 * 0.5 = 1.5
-        assert abs(result.input_cost_chaos - 1.5) < 0.01
-        # output_value = 1.0 - 160*0.001 = 0.84
-        assert abs(result.output_value_chaos - 0.84) < 0.01
-        # profit = 0.84 - 1.5 = -0.66
-        assert abs(result.profit_chaos - (-0.66)) < 0.01
-        # NOT profitable
-        assert result.profit_pct < 0
+        # input_cost = 3 * 0.3 = 0.9 (no gold fee)
+        assert abs(result.input_cost_chaos - 0.9) < 0.01
+        # output_value = 1.0 (no gold fee)
+        assert abs(result.output_value_chaos - 1.0) < 0.01
+        # profit = 1.0 - 0.9 = 0.1
+        assert abs(result.profit_chaos - 0.1) < 0.01
+        # Now profitable without fees
+        assert result.profit_pct > 0
 
     def test_profitable_recipe(self):
         """
-        A recipe with input cost < output value (after fees) should be profitable.
+        A recipe with input cost < output value should be profitable.
         """
         recipe = {
             "name": "Test Profitable Recipe",
@@ -59,18 +62,18 @@ class TestRecipeProfit:
             ],
             "output": {"item": "orb_of_alchemy", "quantity": 1},
         }
-        # Suppose 1 Transmutation = 0.05 Chaos, 1 Alchemy = 2.0 Chaos
+        # 1 Transmutation = 0.05 Chaos, 1 Alchemy = 2.0 Chaos
         prices = {"orb_of_transmutation": 0.05, "orb_of_alchemy": 2.0}
         gold_to_chaos_rate = 0.001
 
         result = compute_recipe_profit(recipe, prices, gold_to_chaos_rate)
 
         assert result is not None
-        # Input: 10 * (0.05 + 50*0.001) = 10 * 0.10 = 1.0
-        assert abs(result.input_cost_chaos - 1.0) < 0.01
-        # Output: 1 * 2.0 - 200*0.001 = 2.0 - 0.2 = 1.8
-        assert abs(result.output_value_chaos - 1.8) < 0.01
-        # Profit = 1.8 - 1.0 = 0.8
+        # Input: 10 * 0.05 = 0.5 (no gold fee)
+        assert abs(result.input_cost_chaos - 0.5) < 0.01
+        # Output: 1 * 2.0 = 2.0 (no gold fee)
+        assert abs(result.output_value_chaos - 2.0) < 0.01
+        # Profit = 2.0 - 0.5 = 1.5
         assert result.profit_chaos > 0
 
     def test_empty_recipe_returns_none(self):
@@ -78,6 +81,23 @@ class TestRecipeProfit:
         recipe = {"name": "Empty", "inputs": [], "output": {}}
         result = compute_recipe_profit(recipe, {}, 0.001)
         assert result is None
+
+    def test_unprofitable_recipe_with_fees_excluded(self):
+        """A recipe where input cost > output value should be unprofitable."""
+        recipe = {
+            "name": "Bad Deal",
+            "inputs": [
+                {"item": "divine", "quantity": 1},
+            ],
+            "output": {"item": "orb_of_transmutation", "quantity": 1},
+        }
+        # 1 Divine = 200.0, 1 Transmutation = 0.05
+        prices = {"divine": 200.0, "orb_of_transmutation": 0.05}
+        result = compute_recipe_profit(recipe, prices, 0.001)
+
+        assert result is not None
+        assert result.profit_chaos < 0
+        assert result.profit_pct < 0
 
 
 class TestFindProfitableRecipes:
@@ -93,15 +113,14 @@ class TestFindProfitableRecipes:
             },
             {
                 "name": "Unprofitable",
-                "inputs": [{"item": "chaos_shard", "quantity": 3}],
-                "output": {"item": "chaos_orb", "quantity": 1},
+                "inputs": [{"item": "divine", "quantity": 1}],
+                "output": {"item": "orb_of_transmutation", "quantity": 1},
             },
         ]
         prices = {
             "orb_of_transmutation": 0.05,
             "orb_of_alchemy": 2.0,
-            "chaos_shard": 0.3,
-            "chaos_orb": 1.0,
+            "divine": 200.0,
         }
 
         results = find_profitable_recipes(recipes, prices, 0.001)

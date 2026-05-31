@@ -23,6 +23,10 @@ from typing import Optional
 from backend.config import AppConfig, get_settings
 from backend.data.historical import HistoricalStore
 
+# Import get_snapshot at module level so tests can patch it via
+# "backend.scheduler._get_snapshot"
+from backend.api.data_snapshot import get_snapshot as _get_snapshot
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,7 +70,6 @@ class DataScheduler:
 
             # Use DataSnapshot (public API) — consistent with all routes.
             # If the snapshot is stale, get_snapshot() will trigger a refresh.
-            from backend.api.data_snapshot import get_snapshot as _get_snapshot
             snapshot = await _get_snapshot()
 
             rates = snapshot.exchange_rates

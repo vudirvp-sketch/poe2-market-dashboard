@@ -314,25 +314,9 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             total_spread, bid, ask, mid_price,
         )
 
-        price_to_chaos = prices.get(rate.currency_to, 0)
-        trade_value = rate.raw_rate * price_to_chaos
-
-        try:
-            fee_fraction = compute_gold_fee_fraction(
-                currency_received=rate.currency_to,
-                quantity_received=rate.raw_rate,
-                gold_to_chaos_rate=gold_to_chaos_rate,
-                trade_value_in_chaos=max(trade_value, 1e-10),
-                fallback_cost=config.fees.unknown_item_gold_cost,
-            )
-            gold_fee_actual = compute_gold_fee(
-                rate.currency_to,
-                rate.raw_rate,
-                fallback_cost=config.fees.unknown_item_gold_cost,
-            )
-        except Exception:
-            fee_fraction = 0.0
-            gold_fee_actual = 0.0
+        # Gold fee — DEPRECATED: set to 0 (gold/commission excluded from all calculations)
+        fee_fraction = 0.0
+        gold_fee_actual = 0.0
 
         score = compute_opportunity_score(
             bid=bid,
@@ -367,7 +351,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
-            spread_after_fees=(ask - bid) / mid_price - fee_fraction if mid_price > 0 else 0.0,
+            spread_after_fees=(ask - bid) / mid_price if mid_price > 0 else 0.0,
             gold_fee_fraction=fee_fraction,
             gold_fee_actual=gold_fee_actual,
             volume_24h=float(rate.volume_traded),

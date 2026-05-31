@@ -91,7 +91,7 @@ class TestCanonicalVerification:
         np.testing.assert_almost_equal(result.adjusted_price, expected, decimal=2)
 
     def test_net_value_after_fees(self):
-        """Net value after fees should be adjusted * (1 - fee_fraction)."""
+        """Net value = adjusted_price (gold fees excluded from all calculations)."""
         result = project_value(
             current_price=100.0,
             log_momentum=0.001,
@@ -99,10 +99,10 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
+            gold_fee_fraction=0.05,  # DEPRECATED — ignored
         )
-        expected = result.adjusted_price * (1 - 0.05)
-        np.testing.assert_almost_equal(result.net_value_after_fees, expected, decimal=2)
+        # With gold fees excluded: net_value = adjusted_price (no fee deduction)
+        np.testing.assert_almost_equal(result.net_value_after_fees, result.adjusted_price, decimal=2)
 
     def test_ratio(self):
         """Ratio should be net_value / current_price."""

@@ -1,16 +1,16 @@
 """
 Triangular Arbitrage Detection using Bellman-Ford negative cycle detection.
 
-From PoE2_Flipper_Canonical_Formulas.md §8:
+From PoE2_Flipper_Canonical_Formulas.md §8 (simplified: gold fees excluded):
 
-Edge weight formula (direction-dependent fees):
-    gold_fee_fraction(u→v) = (gold_cost_per_unit[v] × qty_v × gold_to_chaos_rate) / trade_value_chaos
-    effective_rate(u→v) = raw_rate(u→v) * (1 - gold_fee_fraction(u→v))
-    weight(u→v) = -ln(effective_rate(u→v))
+Edge weight formula (gold/commission excluded per project decision):
+    effective_rate(u→v) = raw_rate(u→v)
+    weight(u→v) = -ln(raw_rate(u→v))
 
-IMPORTANT: The fee fraction is DIRECTION-DEPENDENT. A→B and B→A have
-DIFFERENT fee fractions because you receive different currencies in each
-direction. This asymmetry is a core feature of PoE2's fee model.
+NOTE: Gold/commission fees have been intentionally excluded from all
+calculations. The raw exchange rate is used directly without fee
+deduction. This simplifies the model and avoids the complexity of
+direction-dependent fee asymmetry.
 
 After detecting a negative cycle, validate by simulating with raw rates.
 If simulated profit < 0.1%, discard (numerical artifact).
@@ -91,16 +91,18 @@ def find_triangular_arbitrage(
 ) -> list[TriangularOpportunity]:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
-    From §8.6 Full Function Pseudocode — the core algorithm.
+    Simplified: gold/commission fees are EXCLUDED from all calculations.
+    The raw exchange rate is used directly (no fee deduction on edges).
 
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
-        gold_cost_per_unit: Per-unit gold cost for each currency (api_id → gold cost)
+        gold_cost_per_unit: DEPRECATED — kept for API compatibility, not used
         prices: Current price of each currency in the reference currency
-               (base currency, e.g. Exalted for PoE2; or Chaos if converted)
-        gold_to_chaos_rate: How many Chaos Orbs per 1 gold
+        gold_to_chaos_rate: DEPRECATED — kept for API compatibility, not used
         min_profit_pct: Minimum profit percentage to report (default 0.1%)
-        fallback_gold_cost: Default gold cost for unknown currencies
+        fallback_gold_cost: DEPRECATED — kept for API compatibility, not used
+        pair_volumes: Optional volume data per edge
+        snapshot_time: When the snapshot data was taken
 
     Returns:
         List of TriangularOpportunity objects
@@ -114,29 +116,15 @@ def find_triangular_arbitrage(
     n = len(currencies)
     curr_to_idx = {c: i for i, c in enumerate(currencies)}
 
-    # Build edge list with weights (direction-dependent fees)
-    # Phase 2 (Spec §11): Also track volume for each edge
-    volumes_map = pair_volumes or {}  # (from, to) -> volume_traded
+    # Build edge list — gold fees EXCLUDED, use raw_rate directly
+    volumes_map = pair_volumes or {}
     edges = []
     for (u, v), raw_rate in rates.items():
-        # §8.1: Compute fee fraction for receiving currency v
-        qty_v = raw_rate  # for 1 unit of u
-        price_v = prices.get(v, 0)
-        if price_v <= 0:
+        if raw_rate <= 0:
             continue
-        trade_value = qty_v * price_v
-
-        per_unit_cost = gold_cost_per_unit.get(v, fallback_gold_cost)
-        gold_fee = per_unit_cost * qty_v
-        fee_chaos = gold_fee * gold_to_chaos_rate
-        fee_fraction = fee_chaos / trade_value if trade_value > 0 else 0
-
-        eff_rate = raw_rate * (1 - fee_fraction)
-        if eff_rate <= 0:
-            continue
-        weight = -np.log(eff_rate)
+        weight = -np.log(raw_rate)
         edge_volume = volumes_map.get((u, v), 0.0)
-        edges.append((curr_to_idx[u], curr_to_idx[v], weight, eff_rate, fee_fraction, edge_volume))
+        edges.append((curr_to_idx[u], curr_to_idx[v], weight, raw_rate, edge_volume))
 
     if n == 0 or len(edges) == 0:
         return []
@@ -207,7 +195,7 @@ def find_triangular_arbitrage(
                     continue
                 seen_cycles.add(cycle_key)
 
-                # §8.3: Compute profit with raw rates and direction-dependent fees
+                # §8.3: Compute profit with raw rates (no fee deduction)
                 cum_rate = 1.0
                 step_rates = []
                 step_fees_gold = []
@@ -221,22 +209,10 @@ def find_triangular_arbitrage(
                         valid = False
                         break
                     raw = rates[pair]
-                    qty_v = raw
-                    price_v = prices.get(cycle_names[i + 1], 0)
-                    if price_v <= 0:
-                        valid = False
-                        break
-                    trade_value = qty_v * price_v
-                    per_unit = gold_cost_per_unit.get(cycle_names[i + 1], fallback_gold_cost)
-                    gold_fee = per_unit * qty_v
-                    fee_chaos = gold_fee * gold_to_chaos_rate
-                    fee_frac = fee_chaos / trade_value if trade_value > 0 else 0
-
-                    eff = raw * (1 - fee_frac)
-                    cum_rate *= eff
+                    cum_rate *= raw
                     step_rates.append(raw)
-                    step_fees_gold.append(gold_fee)
-                    step_fees_fraction.append(fee_frac)
+                    step_fees_gold.append(0.0)  # gold fees excluded
+                    step_fees_fraction.append(0.0)  # gold fees excluded
 
                     # Phase 2 (Spec §11): Track volume per edge
                     edge_vol = volumes_map.get(pair, 0.0)

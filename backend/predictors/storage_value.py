@@ -1,11 +1,13 @@
 """
 Storage Value Computation — Projected Value and Hold/Sell Decision.
 
-From PoE2_Flipper_Canonical_Formulas.md Section 6:
+Simplified: gold/commission fees are EXCLUDED from all calculations.
+
+From PoE2_Flipper_Canonical_Formulas.md Section 6 (simplified):
 - Price projection: current_price * exp(log_momentum * horizon_hours)
 - Risk discount: exp(-volatility * z * sqrt(horizon_hours))
 - Liquidity adjustment: (0.9 + liq_factor * 0.1)
-- After fees: adjusted * (1 - gold_fee_fraction)
+- Net value = adjusted (no fee deduction)
 - Decision: BUY/HOLD if ratio > buy_threshold, SELL/CONVERT if ratio < sell_threshold
 
 Phase 2 (Spec Section 9): Implements the project_value() function and
@@ -27,7 +29,7 @@ def project_value(
     liquidity_score: float,
     horizon_hours: int,
     confidence_level: float,
-    gold_fee_fraction: float,
+    gold_fee_fraction: float = 0.0,
     currency: str = "",
     liquidity_normalization: float = 10.0,
     buy_threshold: float = 1.03,
@@ -35,16 +37,20 @@ def project_value(
 ) -> StorageValueResult:
     """Compute projected value and hold/sell decision for a currency.
 
-    Implements the exact formulas from PoE2_Flipper_Canonical_Formulas.md Section 6.
+    Simplified: gold/commission fees are EXCLUDED.
+    net_value = adjusted_price (no fee deduction).
+
+    The gold_fee_fraction parameter is accepted for backward compatibility
+    but is NOT used in the calculation.
 
     Args:
-        current_price: Current price of the currency in base currency (e.g. Exalted)
+        current_price: Current price of the currency in base currency
         log_momentum: Mean of log-returns from PriceMomentumTracker
         volatility: Std of log-returns (ddof=1) from PriceMomentumTracker
-        liquidity_score: Liquidity score for the currency (e.g. log1p(volume))
+        liquidity_score: Liquidity score for the currency
         horizon_hours: How far ahead to project (in hours)
         confidence_level: VaR confidence level (e.g. 0.05 for 95% one-sided CI)
-        gold_fee_fraction: Fee fraction for selling the currency
+        gold_fee_fraction: DEPRECATED — ignored, kept for API compatibility
         currency: Currency API ID (for the result object)
         liquidity_normalization: Normalization divisor for liquidity (default 10.0)
         buy_threshold: Ratio above which decision is BUY/HOLD (default 1.03)
@@ -81,8 +87,8 @@ def project_value(
     liq_factor = min(liquidity_score / liquidity_normalization, 1.0)
     adjusted = projected * risk_discount * (0.9 + liq_factor * 0.1)
 
-    # Step 4: After fees (Canonical Formulas Section 6.4)
-    net_value = adjusted * (1 - gold_fee_fraction)
+    # Step 4: After fees — SIMPLIFIED: no fee deduction (gold fees excluded)
+    net_value = adjusted
 
     # Step 5: Decision (Canonical Formulas Section 6.5)
     ratio = net_value / current_price if current_price > 0 else 0
