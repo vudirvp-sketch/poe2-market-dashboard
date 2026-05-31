@@ -15,7 +15,6 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from backend.economy.gold_cost_table import get_gold_cost_per_unit
 from backend.models.currency import RecipeOpportunity
 
 logger = logging.getLogger(__name__)

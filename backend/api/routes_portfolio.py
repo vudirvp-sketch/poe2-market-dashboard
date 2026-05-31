@@ -20,8 +20,6 @@ from backend.config import get_settings, AppConfig
 from backend.api.data_snapshot import get_snapshot
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.economy.momentum import PriceMomentumTracker
-from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
-from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
 from backend.arbitrage.portfolio import PortfolioOptimizer, compute_efficient_frontier_chart_data
 from backend.models.currency import (
     PortfolioAllocation,

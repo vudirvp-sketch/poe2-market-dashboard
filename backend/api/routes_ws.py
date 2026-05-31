@@ -91,9 +91,6 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
         total_volume = sum(volumes) if volumes else 0
         liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
 
-        # Gold fee — DEPRECATED: set to 0 (gold fees excluded from all calculations)
-        gold_fee_fraction = 0.0
-
         result = project_value(
             current_price=current_price,
             log_momentum=metrics.momentum,
@@ -101,7 +98,6 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
             liquidity_score=liquidity_score,
             horizon_hours=horizon_hours,
             confidence_level=config.forecasting.confidence_level,
-            gold_fee_fraction=gold_fee_fraction,
             currency=currency,
             liquidity_normalization=config.storage_value.liquidity_normalization,
             buy_threshold=config.storage_value.buy_threshold,

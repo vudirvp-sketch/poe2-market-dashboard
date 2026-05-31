@@ -24,7 +24,6 @@ from typing import Optional
 
 import numpy as np
 
-from backend.economy.gold_cost_table import get_gold_cost_per_unit
 from backend.models.currency import TriangularOpportunity
 
 logger = logging.getLogger(__name__)
@@ -81,11 +80,8 @@ def _compute_confidence(
 
 def find_triangular_arbitrage(
     rates: dict[tuple[str, str], float],
-    gold_cost_per_unit: dict[str, int],
     prices: dict[str, float],
-    gold_to_chaos_rate: float,
     min_profit_pct: float = 0.1,
-    fallback_gold_cost: int = 200,
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
 ) -> list[TriangularOpportunity]:
@@ -96,11 +92,8 @@ def find_triangular_arbitrage(
 
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
-        gold_cost_per_unit: DEPRECATED — kept for API compatibility, not used
         prices: Current price of each currency in the reference currency
-        gold_to_chaos_rate: DEPRECATED — kept for API compatibility, not used
         min_profit_pct: Minimum profit percentage to report (default 0.1%)
-        fallback_gold_cost: DEPRECATED — kept for API compatibility, not used
         pair_volumes: Optional volume data per edge
         snapshot_time: When the snapshot data was taken
 
@@ -198,8 +191,6 @@ def find_triangular_arbitrage(
                 # §8.3: Compute profit with raw rates (no fee deduction)
                 cum_rate = 1.0
                 step_rates = []
-                step_fees_gold = []
-                step_fees_fraction = []
                 step_volumes = []
                 valid = True
 
@@ -211,8 +202,6 @@ def find_triangular_arbitrage(
                     raw = rates[pair]
                     cum_rate *= raw
                     step_rates.append(raw)
-                    step_fees_gold.append(0.0)  # gold fees excluded
-                    step_fees_fraction.append(0.0)  # gold fees excluded
 
                     # Phase 2 (Spec §11): Track volume per edge
                     edge_vol = volumes_map.get(pair, 0.0)
@@ -245,8 +234,6 @@ def find_triangular_arbitrage(
                     cycle=cycle_names,
                     net_profit_pct=profit_pct,
                     step_rates=step_rates,
-                    step_fees_gold=step_fees_gold,
-                    step_fees_fraction=step_fees_fraction,
                     total_volume=total_volume,
                     confidence=confidence,
                 ))

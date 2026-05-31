@@ -24,7 +24,6 @@ from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
-from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
 from backend.economy.events import get_event_manager, EventManager
 from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
 from backend.arbitrage.quick_filter import quick_filter
@@ -297,10 +296,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             total_spread, bid, ask, mid_price,
         )
 
-        # Gold fee — DEPRECATED: set to 0 (gold/commission excluded from all calculations)
-        fee_fraction = 0.0
-        gold_fee_actual = 0.0
-
         score = compute_opportunity_score(
             bid=bid,
             ask=ask,
@@ -308,7 +303,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             volume_24h=float(rate.volume_traded),
             max_volume=float(max_volume),
             volatility=momentum_result.volatility,
-            gold_fee_fraction=fee_fraction,
             phase_multiplier=phase_multiplier,
             momentum=momentum_result.momentum,
             momentum_neg_threshold=config.scoring.momentum_negative_threshold,
@@ -335,8 +329,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
             spread_after_fees=(ask - bid) / mid_price if mid_price > 0 else 0.0,
-            gold_fee_fraction=fee_fraction,
-            gold_fee_actual=gold_fee_actual,
             volume_24h=float(rate.volume_traded),
             momentum=momentum_result.momentum,
             volatility=momentum_result.volatility,
@@ -441,14 +433,7 @@ async def get_triangular_arbitrage(
     for key, rate in rates_dict.items():
         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
 
-    gold_cost_dict = get_api_id_to_gold_cost()
-
     # Build prices in a consistent reference currency.
-    # The triangular algorithm multiplies qty_v * price_v to get trade_value,
-    # then divides fee_chaos by trade_value to get fee_fraction.
-    # For the units to match, prices MUST be in Chaos (same unit as
-    # gold_to_chaos_rate * gold_fee = fee_chaos).  When the base currency
-    # is Exalted, we convert via the chaos/exalted rate.
     prices = dict(snapshot.prices_in_base)  # shallow copy
     if "chaos" in prices and config.league.base_currency != "chaos":
         base_to_chaos = prices.get("chaos", 1.0)
@@ -456,32 +441,14 @@ async def get_triangular_arbitrage(
             if k != "chaos":
                 prices[k] = prices[k] * base_to_chaos
 
-    gold_to_chaos_rate = (
-        config.fees.fixed_gold_to_chaos_rate
-        if config.fees.fixed_gold_to_chaos_rate is not None
-        else 0.001
-    )
-    if config.fees.gold_to_chaos_rate_source == "market":
-        try:
-            from backend.api.shared import get_provider
-            provider = get_provider()
-            observed = await provider.get_gold_chaos_rate(config.league.league_name)
-            if observed is not None:
-                gold_to_chaos_rate = observed
-        except (ConnectionError, OSError) as e:
-            logger.warning("Failed to get gold/chaos rate from market: %s", e)
-
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
 
     opportunities = find_triangular_arbitrage(
         rates=rates_for_bf,
-        gold_cost_per_unit=gold_cost_dict,
         prices=prices,
-        gold_to_chaos_rate=gold_to_chaos_rate,
         min_profit_pct=min_profit_pct,
-        fallback_gold_cost=config.fees.unknown_item_gold_cost,
         pair_volumes=pair_volumes,
         snapshot_time=datetime.now(timezone.utc),
     )
@@ -494,8 +461,6 @@ async def get_triangular_arbitrage(
                 "cycle": o.cycle,
                 "net_profit_pct": round(o.net_profit_pct, 4),
                 "step_rates": [round(r, 6) for r in o.step_rates],
-                "step_fees_gold": [round(f, 1) for f in o.step_fees_gold],
-                "step_fees_fraction": [round(f, 6) for f in o.step_fees_fraction],
                 "total_volume": o.total_volume,
                 "confidence": round(o.confidence, 4),
             }

@@ -73,7 +73,6 @@ interface TriangularCycle {
   cycle: string[];
   net_profit_pct: number;
   step_rates: number[];
-  step_fees_fraction: number[];
 }
 
 interface TriangularResponse {

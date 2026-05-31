@@ -169,9 +169,6 @@ export interface TriangularCycle {
   cycle: string[];
   net_profit_pct: number;
   step_rates: number[];
-  /** @deprecated Always [] — gold fees removed from all calculations */
-  step_fees_gold?: number[];
-  step_fees_fraction: number[];
   total_volume: number;
   confidence: number;
 }

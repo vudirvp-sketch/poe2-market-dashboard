@@ -39,7 +39,6 @@ class TestOpportunityScoring:
             volume_24h=500, max_volume=2000,
             volatility=0.03,
             phase_multiplier=1.0, momentum=0.002,
-            gold_fee_fraction=0.05,  # DEPRECATED — ignored
         )
         # With gold fees excluded, score is higher since no fee deduction
         assert abs(score - 0.0601) < 0.001

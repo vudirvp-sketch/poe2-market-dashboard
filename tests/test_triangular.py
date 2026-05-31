@@ -45,12 +45,10 @@ class TestTriangularArbitrageNoFees:
             ("B", "C"): 2.0,
             ("C", "A"): 2.0,
         }
-        gold_costs = {"A": 0, "B": 0, "C": 0}
         prices = {"A": 1.0, "B": 1.0, "C": 1.0}
 
         results = find_triangular_arbitrage(
-            rates, gold_costs, prices,
-            gold_to_chaos_rate=0.0,
+            rates, prices,
             min_profit_pct=0.1,
         )
 
@@ -67,12 +65,10 @@ class TestTriangularArbitrageNoFees:
             ("B", "C"): 0.5,
             ("C", "A"): 0.5,
         }
-        gold_costs = {"A": 0, "B": 0, "C": 0}
         prices = {"A": 1.0, "B": 1.0, "C": 1.0}
 
         results = find_triangular_arbitrage(
-            rates, gold_costs, prices,
-            gold_to_chaos_rate=0.0,
+            rates, prices,
             min_profit_pct=0.1,
         )
 
@@ -88,12 +84,10 @@ class TestTriangularArbitrageNoFees:
             ("B", "C"): 1.0,
             ("C", "A"): 1.0,
         }
-        gold_costs = {"A": 0, "B": 0, "C": 0}
         prices = {"A": 1.0, "B": 1.0, "C": 1.0}
 
         results = find_triangular_arbitrage(
-            rates, gold_costs, prices,
-            gold_to_chaos_rate=0.0,
+            rates, prices,
             min_profit_pct=0.1,
         )
 
@@ -101,8 +95,8 @@ class TestTriangularArbitrageNoFees:
         assert results[0].net_profit_pct > 0
 
 
-class TestTriangularArbitrageWithFees:
-    """Test with direction-dependent gold fees from §8 Verification."""
+class TestTriangularArbitrageCanonical:
+    """Test with the canonical test data from §8 Verification."""
 
     def _get_canonical_test_data(self):
         """Set up the test data from §8 Verification."""
@@ -111,18 +105,15 @@ class TestTriangularArbitrageWithFees:
             ("divine", "exalted"): 12.0,
             ("exalted", "chaos"): 10.5,
         }
-        gold_costs = {"chaos": 160, "divine": 800, "exalted": 120}
         prices = {"chaos": 1.0, "divine": 125.0, "exalted": 10.5}
-        gold_to_chaos_rate = 0.001
-        return rates, gold_costs, prices, gold_to_chaos_rate
+        return rates, prices
 
     def test_no_fee_profitable(self):
         """Without fees, the cycle is profitable: 0.8%."""
-        rates, gold_costs, prices, _ = self._get_canonical_test_data()
+        rates, prices = self._get_canonical_test_data()
 
         results = find_triangular_arbitrage(
-            rates, gold_costs, prices,
-            gold_to_chaos_rate=0.0,  # zero fees
+            rates, prices,
             min_profit_pct=0.1,
         )
 
@@ -130,56 +121,10 @@ class TestTriangularArbitrageWithFees:
         # Expected: 0.008 * 12 * 10.5 = 1.008 → 0.8% profit
         assert results[0].net_profit_pct > 0
 
-    def test_with_fees_not_profitable(self):
-        """
-        With direction-dependent fees from §8 Verification:
-        cumulative = 0.007949 × 11.863 × 8.82 = 0.8315
-        profit = -16.85% → NOT profitable
-        """
-        rates, gold_costs, prices, gold_to_chaos_rate = self._get_canonical_test_data()
-
-        results = find_triangular_arbitrage(
-            rates, gold_costs, prices,
-            gold_to_chaos_rate=gold_to_chaos_rate,
-            min_profit_pct=0.1,
-        )
-
-        # With fees, this cycle should NOT be profitable
-        for result in results:
-            # The specific Chaos→Divine→Exalted→Chaos cycle should not appear
-            # as a profitable opportunity
-            pass
-
-    def test_fee_direction_asymmetry(self):
-        """Verify that fee fractions differ in each direction."""
-        rates, gold_costs, prices, gold_to_chaos_rate = self._get_canonical_test_data()
-
-        # Manually compute fee fractions for each direction
-        # C→D: receive 0.008 Divine, trade_value = 0.008*125 = 1.0
-        #   fee = 800*0.008*0.001 = 0.0064, fraction = 0.0064/1.0 = 0.64%
-        qty_cd = 0.008
-        tv_cd = qty_cd * 125.0
-        fee_cd = 800 * qty_cd * 0.001 / tv_cd
-        assert abs(fee_cd - 0.0064) < 0.001
-
-        # D→E: receive 12 Exalted, trade_value = 12*10.5 = 126
-        #   fee = 120*12*0.001 = 1.44, fraction = 1.44/126 = 1.14%
-        qty_de = 12.0
-        tv_de = qty_de * 10.5
-        fee_de = 120 * qty_de * 0.001 / tv_de
-        assert abs(fee_de - 0.01143) < 0.001
-
-        # E→C: receive 10.5 Chaos, trade_value = 10.5*1 = 10.5
-        #   fee = 160*10.5*0.001 = 1.68, fraction = 1.68/10.5 = 16.0%
-        qty_ec = 10.5
-        tv_ec = qty_ec * 1.0
-        fee_ec = 160 * qty_ec * 0.001 / tv_ec
-        assert abs(fee_ec - 0.16) < 0.01
-
     def test_empty_rates_returns_empty(self):
         """No rates should return no opportunities."""
         results = find_triangular_arbitrage(
-            {}, {}, {}, gold_to_chaos_rate=0.001
+            {}, {},
         )
         assert len(results) == 0
 
@@ -189,12 +134,10 @@ class TestTriangularArbitrageWithFees:
             ("A", "B"): 2.0,
             ("B", "A"): 0.5,
         }
-        gold_costs = {"A": 100, "B": 100}
         prices = {"A": 1.0, "B": 2.0}
 
         results = find_triangular_arbitrage(
-            rates, gold_costs, prices,
-            gold_to_chaos_rate=0.0,
+            rates, prices,
             min_profit_pct=0.1,
         )
 

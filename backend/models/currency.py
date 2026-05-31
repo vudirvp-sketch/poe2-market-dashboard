@@ -137,8 +137,6 @@ class FlipOpportunity:
     currency: str
     score: float                 # 0.0 to 1.0
     spread_after_fees: float
-    gold_fee_fraction: float
-    gold_fee_actual: float       # in gold coins
     volume_24h: float
     momentum: float
     volatility: float
@@ -154,8 +152,6 @@ class TriangularOpportunity:
     cycle: list[str]              # e.g. ["chaos", "divine", "exalted", "chaos"]
     net_profit_pct: float         # after all fees
     step_rates: list[float]       # raw rate at each step
-    step_fees_gold: list[float]   # gold fee at each step
-    step_fees_fraction: list[float]  # fee as fraction at each step
     total_volume: float           # min volume across edges (bottleneck)
     confidence: float             # based on data freshness and volume
 

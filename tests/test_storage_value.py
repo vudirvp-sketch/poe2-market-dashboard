@@ -31,16 +31,15 @@ class TestCanonicalVerification:
         liquidity_score = 8.0
         horizon_hours = 24
         confidence_level = 0.05
-        gold_fee_fraction = 0.05
 
-    Expected (from §6.6):
+    Expected (from §6.6, simplified without gold fees):
         projected = 100 * exp(0.001 * 24) = 100 * exp(0.024) ≈ 102.43
         z = abs(norm.ppf(0.05)) = 1.645
         risk_discount = exp(-0.02 * 1.645 * sqrt(24)) = exp(-0.1612) ≈ 0.851
         liq_factor = 8.0/10.0 = 0.8
         adjusted = 102.43 * 0.851 * (0.9 + 0.8*0.1) = 102.43 * 0.851 * 0.98 ≈ 85.39
-        net_value = 85.39 * (1 - 0.05) = 85.39 * 0.95 ≈ 81.12
-        ratio = 81.12 / 100 = 0.8112 < 0.97 → SELL/CONVERT
+        net_value = 85.39 (gold fees excluded)
+        ratio = 85.39 / 100 = 0.8539 < 0.97 → SELL/CONVERT
     """
 
     def test_projected_price(self):
@@ -52,7 +51,6 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
         )
         expected = 100.0 * np.exp(0.001 * 24)  # ≈ 102.43
         np.testing.assert_almost_equal(result.projected_price, expected, decimal=1)
@@ -66,7 +64,6 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
         )
         from scipy.stats import norm
         z = abs(norm.ppf(0.05))
@@ -82,7 +79,6 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
         )
         # liq_factor = 8.0 / 10.0 = 0.8
         # adjusted = projected * risk_discount * (0.9 + 0.8 * 0.1) = projected * risk_discount * 0.98
@@ -99,7 +95,6 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,  # DEPRECATED — ignored
         )
         # With gold fees excluded: net_value = adjusted_price (no fee deduction)
         np.testing.assert_almost_equal(result.net_value_after_fees, result.adjusted_price, decimal=2)
@@ -113,12 +108,11 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
         )
         np.testing.assert_almost_equal(result.ratio, result.net_value_after_fees / 100.0, decimal=4)
 
     def test_decision_sell_convert(self):
-        """With high volatility and fee, decision should be SELL/CONVERT."""
+        """With high volatility, decision should be SELL/CONVERT."""
         result = project_value(
             current_price=100.0,
             log_momentum=0.001,
@@ -126,7 +120,6 @@ class TestCanonicalVerification:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
         )
         assert result.decision == Decision.SELL_CONVERT
 
@@ -147,12 +140,11 @@ class TestDecisionBoundaries:
             liquidity_score=9.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.001,  # very low fee
         )
         assert result.decision == Decision.BUY_HOLD
 
     def test_sell_convert_decision(self):
-        """With negative momentum or high fees, should be SELL/CONVERT."""
+        """With negative momentum or high volatility, should be SELL/CONVERT."""
         result = project_value(
             current_price=100.0,
             log_momentum=-0.005,  # negative momentum
@@ -160,14 +152,13 @@ class TestDecisionBoundaries:
             liquidity_score=1.0,  # low liquidity
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.1,  # high fee
         )
         assert result.decision == Decision.SELL_CONVERT
 
     def test_neutral_decision(self):
         """With moderate parameters, should be NEUTRAL."""
         # To get NEUTRAL, ratio must be between 0.97 and 1.03
-        # With zero momentum, 1-hour horizon, zero fees, and very low volatility:
+        # With tiny momentum, 1-hour horizon, and very low volatility:
         # ratio ≈ risk_discount * liq_factor_adjustment
         # We need risk_discount close to 1.0 and liq_factor close to 1.0
         result = project_value(
@@ -177,7 +168,6 @@ class TestDecisionBoundaries:
             liquidity_score=8.0,  # high liquidity
             horizon_hours=1,      # short horizon
             confidence_level=0.05,
-            gold_fee_fraction=0.001,  # tiny fee
         )
         # Should be NEUTRAL (ratio should be close to 1.0)
         assert 0.97 < result.ratio < 1.03
@@ -200,7 +190,6 @@ class TestEdgeCases:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.05,
         )
         assert result.ratio == 0.0
         assert result.decision == Decision.SELL_CONVERT
@@ -214,7 +203,6 @@ class TestEdgeCases:
             liquidity_score=8.0,
             horizon_hours=24,
             confidence_level=0.05,
-            gold_fee_fraction=0.0,
         )
         np.testing.assert_almost_equal(result.risk_discount, 1.0, decimal=6)
 
@@ -227,7 +215,6 @@ class TestEdgeCases:
             liquidity_score=0.0,
             horizon_hours=1,
             confidence_level=0.05,
-            gold_fee_fraction=0.0,
         )
         # With zero momentum and volatility: projected = 100, risk_discount = 1.0
         # liq_factor = 0.0, adjusted = 100 * 1.0 * (0.9 + 0) = 90.0
@@ -242,14 +229,13 @@ class TestEdgeCases:
             liquidity_score=50.0,  # way above normalization of 10.0
             horizon_hours=1,
             confidence_level=0.05,
-            gold_fee_fraction=0.0,
         )
         # liq_factor = min(50/10, 1.0) = 1.0
         # adjusted = 100 * 1.0 * (0.9 + 1.0*0.1) = 100.0
         np.testing.assert_almost_equal(result.adjusted_price, 100.0, decimal=2)
 
-    def test_zero_gold_fee(self):
-        """Zero gold fee should not reduce net value."""
+    def test_net_value_equals_adjusted(self):
+        """Net value should equal adjusted price (gold fees excluded)."""
         result = project_value(
             current_price=100.0,
             log_momentum=0.0,
@@ -257,8 +243,7 @@ class TestEdgeCases:
             liquidity_score=10.0,
             horizon_hours=1,
             confidence_level=0.05,
-            gold_fee_fraction=0.0,
         )
         # adjusted = 100 * 1.0 * 1.0 = 100.0
-        # net_value = 100.0 * (1 - 0) = 100.0
+        # net_value = 100.0 (gold fees excluded)
         np.testing.assert_almost_equal(result.net_value_after_fees, 100.0, decimal=2)

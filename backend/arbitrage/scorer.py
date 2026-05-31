@@ -44,9 +44,6 @@ def compute_opportunity_score(
     momentum: float,
     momentum_neg_threshold: float = -0.01,
     vol_reference: float = 0.05,
-    # Deprecated: gold_fee_fraction is accepted but IGNORED.
-    # Kept for backward compatibility with callers that still pass it.
-    gold_fee_fraction: float = 0.0,
 ) -> float:
     """Compute the opportunity score for a flip.
 
@@ -54,9 +51,6 @@ def compute_opportunity_score(
         spread = (ask - bid) / mid_price
         expected_profit = spread * fill_probability
         score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
-
-    The gold_fee_fraction parameter is accepted for backward compatibility
-    but is NOT used in the calculation.
 
     Args:
         bid: Best bid price
@@ -69,7 +63,6 @@ def compute_opportunity_score(
         momentum: Mean of log-returns
         momentum_neg_threshold: Threshold for strong negative momentum (default: -0.01)
         vol_reference: Reference volatility for penalty (default: 0.05)
-        gold_fee_fraction: DEPRECATED — ignored, kept for API compatibility
 
     Returns:
         Score between 0.0 and 1.0

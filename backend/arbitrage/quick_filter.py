@@ -24,9 +24,6 @@ def quick_filter(
     opportunity: FlipOpportunity,
     phase: LeaguePhase,
     config: AppConfig | None = None,
-    # Deprecated: gold_fee_fraction is no longer used. Kept for API
-    # compatibility with callers that still pass it positionally.
-    gold_fee_fraction: float = 0.0,
 ) -> bool:
     """Determine if an opportunity passes the quick filter.
 
@@ -36,8 +33,6 @@ def quick_filter(
         opportunity: The flip opportunity to evaluate
         phase: Current league phase
         config: Application configuration (uses defaults if None)
-        gold_fee_fraction: DEPRECATED — no longer used. The max spread
-            threshold is now a fixed configurable value (config.filters.max_spread).
     """
     cfg = config or get_settings()
 

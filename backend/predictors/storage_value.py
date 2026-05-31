@@ -29,7 +29,6 @@ def project_value(
     liquidity_score: float,
     horizon_hours: int,
     confidence_level: float,
-    gold_fee_fraction: float = 0.0,
     currency: str = "",
     liquidity_normalization: float = 10.0,
     buy_threshold: float = 1.03,
@@ -40,9 +39,6 @@ def project_value(
     Simplified: gold/commission fees are EXCLUDED.
     net_value = adjusted_price (no fee deduction).
 
-    The gold_fee_fraction parameter is accepted for backward compatibility
-    but is NOT used in the calculation.
-
     Args:
         current_price: Current price of the currency in base currency
         log_momentum: Mean of log-returns from PriceMomentumTracker
@@ -50,7 +46,6 @@ def project_value(
         liquidity_score: Liquidity score for the currency
         horizon_hours: How far ahead to project (in hours)
         confidence_level: VaR confidence level (e.g. 0.05 for 95% one-sided CI)
-        gold_fee_fraction: DEPRECATED — ignored, kept for API compatibility
         currency: Currency API ID (for the result object)
         liquidity_normalization: Normalization divisor for liquidity (default 10.0)
         buy_threshold: Ratio above which decision is BUY/HOLD (default 1.03)

@@ -103,7 +103,6 @@ const mockTriangularData = {
       cycle: ["divine", "exalted", "chaos", "divine"],
       net_profit_pct: 2.5,
       step_rates: [1.5, 120.0, 0.005],
-      step_fees_fraction: [0.02, 0.01, 0.03],
     },
   ],
   total: 1,
