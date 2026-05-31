@@ -381,7 +381,7 @@ interface RawLeague {
     Text: string;
     IconUrl: string | null;
     RelativePrice: number;
-  };
+  } | null;
 }
 
 interface RawPriceLogEntry {
@@ -452,7 +452,7 @@ interface RawAllItem {
   Name: string | null;
   Type: string | null;
   ApiId: string | null;
-  CurrentPrice: number;
+  CurrentPrice: number | null;
   IconUrl: string | null;
 }
 

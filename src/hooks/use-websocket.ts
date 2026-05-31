@@ -343,7 +343,6 @@ export function useWebSocket<T = Record<string, unknown>>(
           !event.wasClean &&
           !wasRefused &&
           everConnectedRef.current &&  // Only retry if we had a connection before
-          backendOnline !== false &&   // Don't reconnect if backend is known offline
           !isCircuitBreakerOpen();     // Don't reconnect if breaker is open
 
         if (shouldReconnect) {
