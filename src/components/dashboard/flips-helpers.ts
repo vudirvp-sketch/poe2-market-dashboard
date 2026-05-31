@@ -14,6 +14,9 @@ export type { FlipOpportunity, FlipEventStatus, FlipsResponse } from "@/lib/type
 // (not in @/lib/types) because it's specific to the flips UI.
 export interface StorageValueResponse {
   currency: string;
+  /** Number of units held (query param, default 1.0) */
+  quantity: number;
+  // Per-unit values (same as before for backward compatibility)
   current_price: number;
   projected_price: number;
   risk_discount: number;
@@ -21,6 +24,12 @@ export interface StorageValueResponse {
   net_value_after_fees: number;
   ratio: number;
   decision: string;
+  /** Whether the backend had sufficient data to compute */
+  data_available: boolean;
+  // Total values for the entire holdings (LOW-1)
+  total_current_value: number;
+  total_projected_value: number;
+  total_net_value_after_fees: number;
   inputs: {
     momentum: number;
     volatility: number;

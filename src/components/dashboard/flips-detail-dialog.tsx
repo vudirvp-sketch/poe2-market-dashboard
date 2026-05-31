@@ -116,9 +116,16 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
       {/* Storage Value Decision */}
       {storageData && (
         <div className="rounded-lg border p-3 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            {t("forecastStorageValue", { "0": selectedFlip.currency.split("/")[0] })}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">
+              {t("forecastStorageValue", { "0": selectedFlip.currency.split("/")[0] })}
+            </p>
+            {storageData.quantity > 1 && (
+              <span className="text-xs text-muted-foreground">
+                {t("storageValueQuantity", { "0": storageData.quantity })}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">{t("forecastDecision")}:</span>
             <Badge
@@ -141,6 +148,25 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
               {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{storageData.net_value_after_fees.toFixed(4)}</span>
             </span>
           </div>
+          {/* Total values for entire holdings (when quantity > 1) */}
+          {storageData.quantity > 1 && storageData.total_current_value > 0 && (
+            <div className="grid grid-cols-3 gap-2 text-xs border-t pt-2 mt-1">
+              <span className="text-muted-foreground">
+                {t("storageValueTotalCurrent")}: <span className="font-mono font-medium">{fmt(storageData.total_current_value)}</span>
+              </span>
+              <span className="text-muted-foreground">
+                {t("storageValueTotalProjected")}: <span className="font-mono font-medium">{fmt(storageData.total_projected_value)}</span>
+              </span>
+              <span className="text-muted-foreground">
+                {t("storageValueTotalNet")}: <span className="font-mono font-medium">{fmt(storageData.total_net_value_after_fees)}</span>
+              </span>
+            </div>
+          )}
+          {!storageData.data_available && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              {t("storageValueDataUnavailable")}
+            </p>
+          )}
         </div>
       )}
     </div>

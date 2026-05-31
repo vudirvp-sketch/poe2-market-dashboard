@@ -71,22 +71,27 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   });
 
   // ---- Phase info (shared cache key with Dashboard) ----
+  // Note: Dashboard-level already refetches this with refetchInterval: 60_000.
+  // We skip refetchInterval here to avoid duplicate network calls — React Query
+  // will use the data from Dashboard's query via the shared cache key.
   const { data: phaseData } = useQuery<FlipperPhaseResponse>({
     queryKey: ["flipper-phase"],
     queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: backendOnline,
     staleTime: 60_000,
-    refetchInterval: 60_000,
+    // No refetchInterval — dashboard-page already polls this key
     retry: 1,
   });
 
   // ---- Portfolio data (for correlation shock; shared key with PortfolioTab) ----
+  // PortfolioTab already refetches with its own interval.
+  // We only read from the shared cache here — no extra refetchInterval.
   const { data: portfolioData } = useQuery<PortfolioData>({
     queryKey: ["flipper-portfolio"],
     queryFn: () => fetchApi<PortfolioData>("/api/flipper/portfolio"),
     enabled: backendOnline,
     staleTime: 60_000,
-    refetchInterval: 60_000,
+    // No refetchInterval — PortfolioTab already polls this key when visible
     retry: 1,
   });
 
