@@ -90,7 +90,11 @@ async def get_profitable_recipes(
             if api_id_lower not in price_lookup and price > 0:
                 price_lookup[api_id_lower] = price
 
-        gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+        gold_to_chaos_rate = (
+            config.fees.fixed_gold_to_chaos_rate
+            if config.fees.fixed_gold_to_chaos_rate is not None
+            else 0.001
+        )
         gold_cost_dict = {k: v for k, v in [  # Use the gold cost table
             (api_id, get_gold_cost_per_unit(api_id))
             for api_id in price_lookup.keys()

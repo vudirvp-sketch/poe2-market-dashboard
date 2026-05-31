@@ -31,6 +31,7 @@ router = APIRouter(prefix="/api", tags=["storage-value"])
 async def get_storage_value(
     currency: str,
     horizon_hours: int = Query(default=24, ge=1, le=168, description="Projection horizon in hours"),
+    quantity: float = Query(default=1.0, ge=0.001, le=1_000_000, description="Number of units held"),
 ):
     """Compute projected value and hold/sell decision for a currency.
 
@@ -105,16 +106,20 @@ async def get_storage_value(
         liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
 
         # Gold fee fraction
+        # LOW-1: Use actual quantity instead of hardcoded 1.0 so that the fee
+        # and trade_value scale correctly with the user's holdings.
         gold_to_chaos_rate = (
             config.fees.fixed_gold_to_chaos_rate
             if config.fees.fixed_gold_to_chaos_rate is not None
             else 0.001
         )
+        total_trade_value = current_price * quantity
         try:
             gold_fee_fraction = compute_gold_fee_fraction(
-                currency, 1.0,
+                currency,
+                quantity,               # actual quantity held
                 gold_to_chaos_rate,
-                current_price,  # approximation: 1 unit at current price
+                max(total_trade_value, 1e-10),
                 config.fees.unknown_item_gold_cost,
             )
         except Exception:
@@ -137,6 +142,8 @@ async def get_storage_value(
 
         return {
             "currency": result.currency,
+            "quantity": quantity,
+            # Per-unit values (same as before for backward compatibility)
             "current_price": result.current_price,
             "projected_price": round(result.projected_price, 6),
             "risk_discount": round(result.risk_discount, 6),
@@ -145,6 +152,10 @@ async def get_storage_value(
             "ratio": round(result.ratio, 6),
             "decision": result.decision.value,
             "data_available": True,
+            # Total values for the entire holdings (LOW-1)
+            "total_current_value": round(result.current_price * quantity, 6),
+            "total_projected_value": round(result.projected_price * quantity, 6),
+            "total_net_value_after_fees": round(result.net_value_after_fees * quantity, 6),
             "inputs": {
                 "momentum": round(metrics.momentum, 6),
                 "volatility": round(metrics.volatility, 6),

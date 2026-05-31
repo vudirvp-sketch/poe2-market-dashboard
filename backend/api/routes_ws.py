@@ -53,7 +53,7 @@ HEARTBEAT_INTERVAL_SECONDS = 15  # how often to send heartbeats
 # Helper: build storage value data (reuses existing logic)
 # ---------------------------------------------------------------------------
 
-async def _compute_storage_value(currency: str, horizon_hours: int = 24) -> dict | None:
+async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantity: float = 1.0) -> dict | None:
     """Compute storage value using DataSnapshot instead of individual API calls.
 
     OPTIMIZATION: Uses DataSnapshot for price histories — no extra API calls.
@@ -74,7 +74,12 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24) -> dict
 
         if not history:
             return None
-        tracker = PriceMomentumTracker(window_size=len(history))
+        # MEDIUM-4: Use a fixed window size with graceful degradation for short histories
+        FIXED_MOMENTUM_WINDOW = 24
+        tracker = PriceMomentumTracker(
+            window_size=min(FIXED_MOMENTUM_WINDOW, max(2, len(history))),
+            history=[p.price for p in history],
+        )
         for point in history:
             tracker.update(point.price)
         metrics = tracker.compute()
@@ -87,12 +92,18 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24) -> dict
         total_volume = sum(volumes) if volumes else 0
         liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
 
-        gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate or 0.001
+        gold_to_chaos_rate = (
+            config.fees.fixed_gold_to_chaos_rate
+            if config.fees.fixed_gold_to_chaos_rate is not None
+            else 0.001
+        )
         try:
+            total_trade_value = current_price * quantity
             gold_fee_fraction = compute_gold_fee_fraction(
-                currency, 1.0,
+                currency,
+                quantity,  # LOW-1: use actual quantity instead of hardcoded 1.0
                 gold_to_chaos_rate,
-                current_price,
+                max(total_trade_value, 1e-10),
                 config.fees.unknown_item_gold_cost,
             )
         except Exception:

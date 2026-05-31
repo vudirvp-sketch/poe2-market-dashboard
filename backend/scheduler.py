@@ -74,33 +74,33 @@ class DataScheduler:
                 logger.debug("No exchange rates in DataSnapshot; skipping snapshot")
                 return 0
 
-            # Build price-in-chaos mapping for the base currency
+            # Build price-in-base mapping for the base currency
             base = self._config.league.base_currency
-            prices_in_chaos: dict[str, float] = {base: 1.0}
+            prices_in_base: dict[str, float] = {base: 1.0}
 
             for key, rate in rates.items():
                 if rate.currency_from == base and rate.raw_rate > 0:
-                    prices_in_chaos[rate.currency_to] = 1.0 / rate.raw_rate   # price in base
+                    prices_in_base[rate.currency_to] = 1.0 / rate.raw_rate   # price in base
                 elif rate.currency_to == base and rate.raw_rate > 0:
-                    prices_in_chaos[rate.currency_from] = rate.raw_rate         # price in base
+                    prices_in_base[rate.currency_from] = rate.raw_rate         # price in base
 
             # Build snapshots
             snapshots = []
             now = datetime.now(timezone.utc)
 
             for key, rate in rates.items():
-                # Use the currency_to's price in chaos for the snapshot
-                price_chaos = prices_in_chaos.get(rate.currency_to, rate.raw_rate)
+                # Use the currency_to's price in base for the snapshot
+                price_base = prices_in_base.get(rate.currency_to, rate.raw_rate)
                 snapshots.append({
                     "currency": rate.currency_to,
-                    "price_chaos": price_chaos,
+                    "price_chaos": price_base,
                     "volume_24h": float(rate.volume_traded) if rate.volume_traded else None,
                     "bid": None,  # bid/ask not directly available from SnapshotPairs
                     "ask": None,
                 })
 
                 # Also write a snapshot for currency_from
-                from_price = prices_in_chaos.get(rate.currency_from)
+                from_price = prices_in_base.get(rate.currency_from)
                 if from_price is not None:
                     snapshots.append({
                         "currency": rate.currency_from,
