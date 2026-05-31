@@ -480,6 +480,18 @@ const en = {
   _pl_opportunitiesFound: "Opportunities Found|Opportunity Found|Opportunities Found",
   _pl_compare: "Compare ({0})|Compare ({0})|Compare ({0})",
   _pl_pairCompare: "Pair Compare ({0})|Pair Compare ({0})|Pair Compare ({0})",
+
+  // ---- Recipes Tab ----
+  recipesTotalChecked: "Recipes Checked",
+  recipesDescription: "Vendor recipe profit opportunities based on current market prices",
+  recipesNoData: "No recipe data available",
+  recipesNoDataDesc: "Recipe data requires the flipper backend with sufficient price history. Make sure the backend is running.",
+  recipesName: "Recipe",
+  recipesInputCost: "Input Cost",
+  recipesOutputValue: "Output Value",
+  recipesStatus: "Status",
+  recipesMissingPrices: "Missing prices",
+  recipesMissingDesc: "Some recipe ingredients lack current price data. Profit estimate may be incomplete.",
 } as const;
 
 export default en;

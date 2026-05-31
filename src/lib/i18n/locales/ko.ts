@@ -478,6 +478,18 @@ const ko: Record<TranslationKeys, string> = {
   _pl_opportunitiesFound: "발견된 기회|발견된 기회|발견된 기회",
   _pl_compare: "비교 ({0})|비교 ({0})|비교 ({0})",
   _pl_pairCompare: "페어 비교 ({0})|페어 비교 ({0})|페어 비교 ({0})",
+
+  // ---- Recipes Tab ----
+  recipesTotalChecked: "확인된 조합",
+  recipesDescription: "현재 시장 가격 기반 상점 조합 수익 기회",
+  recipesNoData: "조합 데이터 없음",
+  recipesNoDataDesc: "조합 데이터는 충분한 가격 이력이 있는 백엔드가 필요합니다. 백엔드가 실행 중인지 확인하세요.",
+  recipesName: "조합",
+  recipesInputCost: "입력 비용",
+  recipesOutputValue: "출력 가치",
+  recipesStatus: "상태",
+  recipesMissingPrices: "가격 누락",
+  recipesMissingDesc: "일부 조합 재료에 현재 가격 데이터가 없습니다. 수익 추정이 불완전할 수 있습니다.",
 };
 
 export default ko;

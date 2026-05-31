@@ -478,6 +478,18 @@ const zh: Record<TranslationKeys, string> = {
   _pl_opportunitiesFound: "发现机会|发现机会|发现机会",
   _pl_compare: "对比 ({0})|对比 ({0})|对比 ({0})",
   _pl_pairCompare: "交易对对比 ({0})|交易对对比 ({0})|交易对对比 ({0})",
+
+  // ---- Recipes Tab ----
+  recipesTotalChecked: "已检查配方",
+  recipesDescription: "基于当前市场价格的商店配方利润机会",
+  recipesNoData: "无配方数据",
+  recipesNoDataDesc: "配方数据需要运行后端并具有足够的价格历史。请确保后端已启动。",
+  recipesName: "配方",
+  recipesInputCost: "输入成本",
+  recipesOutputValue: "输出价值",
+  recipesStatus: "状态",
+  recipesMissingPrices: "缺少价格",
+  recipesMissingDesc: "部分配方材料缺少当前价格数据。利润估算可能不完整。",
 };
 
 export default zh;

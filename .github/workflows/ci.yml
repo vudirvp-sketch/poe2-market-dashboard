@@ -84,7 +84,31 @@ jobs:
           retention-days: 7
 
   # ──────────────────────────────────────────────────────
-  # Job 3: Playwright E2E Tests (after build)
+  # Job 3: Python Backend Tests
+  # ──────────────────────────────────────────────────────
+  test-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Python tests
+        run: python -m pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: .
+
+  # ──────────────────────────────────────────────────────
+  # Job 4: Playwright E2E Tests (after build)
   # ──────────────────────────────────────────────────────
   test-e2e:
     runs-on: ubuntu-latest

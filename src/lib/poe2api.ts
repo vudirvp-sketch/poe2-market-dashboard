@@ -518,16 +518,16 @@ interface RawSnapshotPair {
 
 interface RawExchangeSnapshot {
   Epoch: number;
-  Volume: number;
-  MarketCap: number;
+  Volume: string | number;  // API sometimes returns string e.g. "3231895.00000000"
+  MarketCap: string | number;  // API sometimes returns string
   BaseCurrencyApiId: string;
   BaseCurrencyText: string;
 }
 
 interface RawSnapshotHistoryData {
   Epoch: number;
-  MarketCap: number;
-  Volume: number;
+  MarketCap: string | number;  // API sometimes returns string
+  Volume: string | number;      // API sometimes returns string
 }
 
 interface RawSnapshotHistoryResponse {
@@ -955,7 +955,7 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 // ============================================================================
 
 const FALLBACK_REALMS: Realm[] = [
-  { name: "poe2", displayName: "PoE2", defaultLeague: "Fate of the Vaal" },
+  { name: "poe2", displayName: "PoE2", defaultLeague: "Runes of Aldur" },
   { name: "pc", displayName: "PoE1 PC", defaultLeague: "Mirage" },
   { name: "xbox", displayName: "PoE1 XBOX", defaultLeague: "Mirage" },
   { name: "sony", displayName: "PoE1 PS", defaultLeague: "Mirage" },
@@ -963,9 +963,9 @@ const FALLBACK_REALMS: Realm[] = [
 
 const FALLBACK_LEAGUES: Record<string, League[]> = {
   poe2: [
-    { name: "runes", displayName: "Runes of Aldur", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "runes", displayName: "Runes of Aldur", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "runeshc", displayName: "Runes of Aldur Hardcore", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
-    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "vaalhc", displayName: "HC Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "abyssal", displayName: "Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "abyssalhc", displayName: "HC Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
@@ -1091,11 +1091,13 @@ export async function getExchangeSnapshot(realm: string, league: string): Promis
     return {
       pairs: [],
       referenceCurrency: raw.BaseCurrencyApiId,
-      timestamp: new Date(raw.Epoch * 1000).toISOString(),
+      timestamp: new Date(Number(raw.Epoch) * 1000).toISOString(),
+      volume: Number(raw.Volume) || 0,
+      marketCap: Number(raw.MarketCap) || 0,
     };
   } catch (err) {
     console.warn("[poe2api] getExchangeSnapshot: upstream unreachable, returning empty.", err instanceof Error ? err.message : err);
-    return { pairs: [], referenceCurrency: "exalted", timestamp: new Date().toISOString() };
+    return { pairs: [], referenceCurrency: "exalted", timestamp: new Date().toISOString(), volume: 0, marketCap: 0 };
   }
 }
 

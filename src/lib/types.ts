@@ -238,6 +238,8 @@ export interface ExchangeSnapshot {
   pairs: ExchangePair[];
   referenceCurrency: string;
   timestamp: string;
+  volume: number;
+  marketCap: number;
 }
 
 export interface LandingSplashInfo {
