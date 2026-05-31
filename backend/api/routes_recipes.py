@@ -12,6 +12,9 @@ OPTIMIZATION: Uses DataSnapshot instead of calling
 get_all_currencies_with_prices() directly. This avoids 15+ redundant
 ByCategory API requests on every call — the snapshot shares the same
 coordinated data pass as all other routes.
+
+Simplified: gold/commission fees are EXCLUDED from all calculations.
+Only raw market prices are used for input cost and output value.
 """
 
 from __future__ import annotations
@@ -23,8 +26,6 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
-from backend.economy.gold_costs import compute_gold_fee
-from backend.economy.gold_cost_table import get_gold_cost_per_unit
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,7 @@ async def get_profitable_recipes(
     """Check all defined recipes for profitability.
 
     Uses current market prices from DataSnapshot (shared with all other
-    routes) and direction-dependent gold fee calculations per
-    PoE2_Flipper_Canonical_Formulas.md Section 9.
+    routes). Gold/commission fees are EXCLUDED from all calculations.
 
     Args:
         include_unverified: If True, include recipes marked as UNVERIFIED.
@@ -90,16 +90,6 @@ async def get_profitable_recipes(
             if api_id_lower not in price_lookup and price > 0:
                 price_lookup[api_id_lower] = price
 
-        gold_to_chaos_rate = (
-            config.fees.fixed_gold_to_chaos_rate
-            if config.fees.fixed_gold_to_chaos_rate is not None
-            else 0.001
-        )
-        gold_cost_dict = {k: v for k, v in [  # Use the gold cost table
-            (api_id, get_gold_cost_per_unit(api_id))
-            for api_id in price_lookup.keys()
-        ] if v > 0}
-
         profitable = []
         all_results = []
 
@@ -113,9 +103,8 @@ async def get_profitable_recipes(
             if "UNVERIFIED" in notes.upper() and not include_unverified:
                 continue
 
-            # Calculate input cost
+            # Calculate input cost (no gold fee)
             input_cost_chaos = 0.0
-            gold_fee_total = 0.0
             missing_prices = False
 
             for inp in inputs:
@@ -126,9 +115,6 @@ async def get_profitable_recipes(
                     missing_prices = True
                     break
                 input_cost_chaos += price * quantity
-                # Gold fee for buying input
-                gold_cost = get_gold_cost_per_unit(item)
-                gold_fee_total += gold_cost * quantity
 
             if missing_prices:
                 all_results.append({
@@ -138,7 +124,7 @@ async def get_profitable_recipes(
                 })
                 continue
 
-            # Calculate output value
+            # Calculate output value (no gold fee)
             output_item = output.get("item", "")
             output_quantity = output.get("quantity", 1)
             output_price = price_lookup.get(output_item, 0)
@@ -151,26 +137,15 @@ async def get_profitable_recipes(
                 continue
 
             output_value_chaos = output_price * output_quantity
-            # Gold fee for selling/receiving output
-            output_gold_cost = get_gold_cost_per_unit(output_item)
-            gold_fee_total += output_gold_cost * output_quantity
 
-            # Profit calculation (Canonical Formulas Section 9)
-            gold_fee_chaos = gold_fee_total * gold_to_chaos_rate
-            net_input = input_cost_chaos + gold_fee_chaos  # cost + buying fees
-            # Output value minus selling fee
-            selling_fee_chaos = output_gold_cost * output_quantity * gold_to_chaos_rate
-            net_output = output_value_chaos - selling_fee_chaos
-
-            profit_chaos = net_output - net_input
-            profit_pct = (profit_chaos / net_input * 100) if net_input > 0 else 0
+            # Profit calculation (simplified: gold fees excluded)
+            profit_chaos = output_value_chaos - input_cost_chaos
+            profit_pct = (profit_chaos / input_cost_chaos * 100) if input_cost_chaos > 0 else 0
 
             result = {
                 "name": name,
                 "input_cost_chaos": round(input_cost_chaos, 4),
                 "output_value_chaos": round(output_value_chaos, 4),
-                "gold_fee_total": gold_fee_total,
-                "gold_fee_chaos": round(gold_fee_chaos, 4),
                 "profit_chaos": round(profit_chaos, 4),
                 "profit_pct": round(profit_pct, 2),
                 "is_profitable": profit_chaos > 0,

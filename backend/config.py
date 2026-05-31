@@ -60,7 +60,7 @@ class FeesConfig(BaseModel):
 class FiltersConfig(BaseModel):
     min_volume_24h: int = 50
     max_volatility: float = 0.4
-    max_spread_formula: str = "2 * gold_fee_fraction + 0.05"
+    max_spread: float = 0.15  # Max allowed spread for quick filter (replaces gold_fee_fraction-based formula)
     exclude_volatile_illiquid: bool = False
 
 

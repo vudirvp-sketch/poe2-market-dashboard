@@ -137,10 +137,6 @@ export interface FlipOpportunity {
   currency: string;
   score: number;
   spread_after_fees: number;
-  /** @deprecated Always 0 — gold fees removed from all calculations */
-  gold_fee_fraction?: number;
-  /** @deprecated Always 0 — gold fees removed from all calculations */
-  gold_fee_actual?: number;
   volume_24h: number;
   momentum: number;
   volatility: number;

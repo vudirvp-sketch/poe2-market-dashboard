@@ -108,8 +108,6 @@ interface StorageValueResponse {
     volatility: number;
     acceleration: number;
     liquidity_score: number;
-    /** @deprecated Always 0 — gold fees removed */
-    gold_fee_fraction?: number;
     horizon_hours: number;
     confidence_level: number;
   };

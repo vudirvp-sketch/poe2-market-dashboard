@@ -242,7 +242,6 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
             raw_rate: 1.5,
             volume_traded: 500,
             fee_fraction: 0.02,
-            gold_fee_actual: 0.5,
             volatility: 0.15,
             momentum: 0.02,
             cluster_from: "stable",

@@ -129,7 +129,6 @@ const mockStorageData = {
     volatility: 0.15,
     acceleration: 0.01,
     liquidity_score: 0.8,
-    gold_fee_fraction: 0.02,
     horizon_hours: 24,
     confidence_level: 0.95,
   },

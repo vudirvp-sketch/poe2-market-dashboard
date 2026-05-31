@@ -63,7 +63,6 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
     try:
         from backend.api.data_snapshot import get_snapshot
         from backend.economy.momentum import PriceMomentumTracker
-        from backend.economy.gold_costs import compute_gold_fee_fraction
         from backend.predictors.storage_value import project_value
         import numpy as np
 
@@ -92,22 +91,8 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
         total_volume = sum(volumes) if volumes else 0
         liquidity_score = np.log1p(total_volume) if total_volume > 0 else 0.0
 
-        gold_to_chaos_rate = (
-            config.fees.fixed_gold_to_chaos_rate
-            if config.fees.fixed_gold_to_chaos_rate is not None
-            else 0.001
-        )
-        try:
-            total_trade_value = current_price * quantity
-            gold_fee_fraction = compute_gold_fee_fraction(
-                currency,
-                quantity,  # LOW-1: use actual quantity instead of hardcoded 1.0
-                gold_to_chaos_rate,
-                max(total_trade_value, 1e-10),
-                config.fees.unknown_item_gold_cost,
-            )
-        except Exception:
-            gold_fee_fraction = 0.0
+        # Gold fee — DEPRECATED: set to 0 (gold fees excluded from all calculations)
+        gold_fee_fraction = 0.0
 
         result = project_value(
             current_price=current_price,
@@ -137,7 +122,6 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
                 "volatility": round(metrics.volatility, 6),
                 "acceleration": round(metrics.acceleration, 6),
                 "liquidity_score": round(liquidity_score, 4),
-                "gold_fee_fraction": round(gold_fee_fraction, 6),
                 "horizon_hours": horizon_hours,
                 "confidence_level": config.forecasting.confidence_level,
             },
@@ -518,8 +502,6 @@ async def _compute_flips(min_score: float = 0.0, min_volume: int = 0, limit: int
                     "currency": o.currency,
                     "score": round(o.score, 4),
                     "spread_after_fees": round(o.spread_after_fees, 6),
-                    "gold_fee_fraction": round(o.gold_fee_fraction, 6),
-                    "gold_fee_actual": round(o.gold_fee_actual, 1),
                     "volume_24h": o.volume_24h,
                     "momentum": round(o.momentum, 6),
                     "volatility": round(o.volatility, 6),

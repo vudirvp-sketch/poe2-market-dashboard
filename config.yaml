@@ -28,7 +28,7 @@ fees:
 filters:
   min_volume_24h: 50
   max_volatility: 0.4
-  max_spread_formula: "2 * gold_fee_fraction + 0.05"  # evaluated at runtime
+  max_spread: 0.15  # Max allowed spread for quick filter (replaces gold_fee_fraction-based formula)
   exclude_volatile_illiquid: false
 
 scoring:

@@ -53,8 +53,6 @@ interface PriceRate {
   raw_rate: number;
   volume_traded: number;
   fee_fraction: number;
-  /** @deprecated Always 0 — gold fees removed */
-  gold_fee_actual?: number;
   volatility: number;
   momentum: number;
   cluster_from?: string;

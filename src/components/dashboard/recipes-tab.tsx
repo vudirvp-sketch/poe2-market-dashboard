@@ -35,8 +35,6 @@ interface RecipeResult {
   name: string;
   input_cost_chaos?: number;
   output_value_chaos?: number;
-  gold_fee_total?: number;  // deprecated — always 0
-  gold_fee_chaos?: number;  // deprecated — always 0
   profit_chaos?: number;
   profit_pct?: number;
   is_profitable?: boolean;

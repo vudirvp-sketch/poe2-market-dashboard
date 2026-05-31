@@ -24,7 +24,6 @@ from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
-from backend.economy.gold_costs import compute_gold_fee_fraction, compute_gold_fee
 from backend.economy.gold_cost_table import get_gold_cost_per_unit, get_api_id_to_gold_cost
 from backend.economy.events import get_event_manager, EventManager
 from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
@@ -129,33 +128,17 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 currency_price_history[orig_id] = currency_price_history[api_id_lower]
                 currency_price_history_timestamped[orig_id] = currency_price_history_timestamped.get(api_id_lower, [])
 
-    # 3. Determine gold_to_chaos_rate
-    gold_to_chaos_rate = (
-        config.fees.fixed_gold_to_chaos_rate
-        if config.fees.fixed_gold_to_chaos_rate is not None
-        else 0.001
-    )
-    if config.fees.gold_to_chaos_rate_source == "market":
-        try:
-            from backend.api.shared import get_provider
-            provider = get_provider()
-            observed = await provider.get_gold_chaos_rate(config.league.league_name)
-            if observed is not None:
-                gold_to_chaos_rate = observed
-        except (ConnectionError, OSError) as e:
-            logger.warning("Failed to get gold/chaos rate from market: %s", e)
-
-    # 4. Get phase info
+    # 3. Get phase info
     phase_info = detector.get_phase_info()
     phase_multiplier = get_phase_multiplier(phase_info.phase, config)
 
-    # 5. Compute max volume across all pairs for fill probability normalization
+    # 4. Compute max volume across all pairs for fill probability normalization
     max_volume = max(
         (r.volume_traded for r in rates.values() if r.volume_traded > 0),
         default=1,
     )
 
-    # 6. Build price mapping from snapshot.
+    # 5. Build price mapping from snapshot.
     # Variable naming: `prices` holds prices in a consistent reference currency.
     # For fee calculations the triangular algorithm needs a common unit;
     # when the base is Exalted we convert to Chaos so gold-to-chaos fee
@@ -168,7 +151,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             if k != "chaos":
                 prices[k] = prices[k] * exalted_to_chaos
 
-    # 7. Run currency clustering
+    # 6. Run currency clustering
     clusterer = CurrencyClusterer(config)
     cluster_labels: dict[str, ClusterLabel] = {}
 
@@ -222,14 +205,14 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         logger.error("Clustering failed, using MODERATE default: %s", e)
         cluster_labels = {}
 
-    # 8. Build reverse-rate lookup for real bid/ask computation
+    # 7. Build reverse-rate lookup for real bid/ask computation
     #    In POE2, each currency pair has independent forward/reverse rates.
     #    The spread between them represents the real market bid-ask gap.
     rate_by_pair: dict[tuple[str, str], object] = {}
     for rk, rv in rates.items():
         rate_by_pair[(rv.currency_from, rv.currency_to)] = rv
 
-    # 9. Score each pair as a flip opportunity
+    # 8. Score each pair as a flip opportunity
     opportunities: list[FlipOpportunity] = []
 
     import math as _math
@@ -363,7 +346,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             mid_price=mid_price,
         )
 
-        if quick_filter(opp, phase_info.phase, fee_fraction, config):
+        if quick_filter(opp, phase_info.phase, config=config):
             opportunities.append(opp)
 
     opportunities.sort(key=lambda o: o.score, reverse=True)
@@ -414,8 +397,6 @@ async def get_flip_opportunities(
                 "currency": o.currency,
                 "score": round(o.score, 4),
                 "spread_after_fees": round(o.spread_after_fees, 6),
-                "gold_fee_fraction": round(o.gold_fee_fraction, 6),
-                "gold_fee_actual": round(o.gold_fee_actual, 1),
                 "volume_24h": o.volume_24h,
                 "momentum": round(o.momentum, 6),
                 "volatility": round(o.volatility, 6),

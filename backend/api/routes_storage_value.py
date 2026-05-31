@@ -19,7 +19,6 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
 from backend.economy.momentum import PriceMomentumTracker
-from backend.economy.gold_costs import compute_gold_fee_fraction
 from backend.predictors.storage_value import project_value
 
 logger = logging.getLogger(__name__)
@@ -144,7 +143,6 @@ async def get_storage_value(
                 "volatility": round(metrics.volatility, 6),
                 "acceleration": round(metrics.acceleration, 6),
                 "liquidity_score": round(liquidity_score, 4),
-                "gold_fee_fraction": round(gold_fee_fraction, 6),
                 "horizon_hours": horizon_hours,
                 "confidence_level": config.forecasting.confidence_level,
             },
