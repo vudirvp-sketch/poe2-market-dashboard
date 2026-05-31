@@ -139,11 +139,10 @@ export function Header({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync external search changes (e.g. clear button) back to local
+  // Uses functional update so localSearch is NOT needed in deps —
+  // the comparison happens inside the setter callback instead.
   useEffect(() => {
-    if (search !== localSearch) {
-      setLocalSearch(search);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLocalSearch((prev) => prev !== search ? search : prev);
   }, [search]);
 
   // Debounced search handler — 300ms delay

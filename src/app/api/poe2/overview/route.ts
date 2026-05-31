@@ -133,8 +133,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    // All poe2api functions now have internal fallbacks, so this catch
-    // is only for truly unexpected errors. Return graceful fallback instead of 502.
     return NextResponse.json(
       {
         topGainers: [],
@@ -144,8 +142,9 @@ export async function GET(req: NextRequest) {
         stats: { totalVolume: 0, trackedItems: 0, exchangePairs: 0 },
         snapshotHistory: [],
         error: message,
+        error_type: "upstream_error",
       },
-      { status: 200 }
+      { status: 502 }
     );
   }
 }

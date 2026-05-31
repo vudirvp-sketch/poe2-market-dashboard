@@ -107,7 +107,7 @@ const CIRCUIT_BREAKER_WINDOW_MS = 30_000;
 // ---------------------------------------------------------------------------
 
 function resolveWsBaseUrl(): string {
-  // Fix 4.9: SSR-safe — return empty string during server-side rendering
+  // SSR-safe — return empty string during server-side rendering
   if (typeof window === "undefined") {
     return ''; // SSR: no WebSocket connection possible
   }
@@ -116,24 +116,19 @@ function resolveWsBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_FLIPPER_WS_URL;
   if (envUrl) return envUrl;
 
-  // 2. Browser-only detection
-  if (typeof window !== "undefined") {
-    const flipperApiUrl = process.env.NEXT_PUBLIC_FLIPPER_API_URL;
+  // 2. Browser detection (guaranteed — SSR guard above already passed)
+  const flipperApiUrl = process.env.NEXT_PUBLIC_FLIPPER_API_URL;
 
-    // If no explicit FLIPPER_API_URL, assume same-origin (reverse proxy)
-    if (!flipperApiUrl || flipperApiUrl.includes(window.location.host)) {
-      // Same-origin: use current host with ws:/wss: protocol
-      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      return `${proto}//${window.location.host}`;
-    }
-
-    // Dev mode: direct connection to backend on different host/port
-    const wsProto = flipperApiUrl.startsWith("https") ? "wss:" : "ws:";
-    return `${wsProto}//${flipperApiUrl.replace(/^https?:\/\//, "")}`;
+  // If no explicit FLIPPER_API_URL, assume same-origin (reverse proxy)
+  if (!flipperApiUrl || flipperApiUrl.includes(window.location.host)) {
+    // Same-origin: use current host with ws:/wss: protocol
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${window.location.host}`;
   }
 
-  // 3. Should not reach here due to SSR guard above, but just in case
-  return '';
+  // Dev mode: direct connection to backend on different host/port
+  const wsProto = flipperApiUrl.startsWith("https") ? "wss:" : "ws:";
+  return `${wsProto}//${flipperApiUrl.replace(/^https?:\/\//, "")}`;
 }
 
 // Fix 4.9: Compute WS URL lazily inside the hook instead of at module level.
@@ -163,6 +158,11 @@ export function useWebSocket<T = Record<string, unknown>>(
   const [reconnectCount, setReconnectCount] = useState(0);
   const [lastUpdateAt, setLastUpdateAt] = useState<string | null>(null);
 
+  // Ref mirror of reconnectCount so connect() can read the latest value
+  // without having reconnectCount in its dependency array (which causes
+  // infinite re-render cascades: setReconnectCount → connect recreated → re-render → repeat).
+  const reconnectCountRef = useRef(0);
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
@@ -179,6 +179,10 @@ export function useWebSocket<T = Record<string, unknown>>(
 
   // Track previous backendOnline value to detect transitions
   const prevBackendOnlineRef = useRef<boolean | undefined>(backendOnline);
+
+  // Stable ref to the latest connect() so effects can call it without
+  // listing `connect` in their dependency arrays (which causes cascading re-runs).
+  const connectRef = useRef<typeof connect>(() => {});
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current !== null) {
@@ -248,6 +252,7 @@ export function useWebSocket<T = Record<string, unknown>>(
     } else if (backendOnline === true) {
       // Backend came back online — reset state and reconnect
       setReconnectCount(0);
+      reconnectCountRef.current = 0;
       resetCircuitBreaker();
       everConnectedRef.current = false; // Allow fresh connection attempt
     }
@@ -297,6 +302,7 @@ export function useWebSocket<T = Record<string, unknown>>(
         resetCircuitBreaker(); // Connection succeeded, reset breaker
         setStatus("connected");
         setReconnectCount(0);
+        reconnectCountRef.current = 0;
         setLastError(null);
       };
 
@@ -337,9 +343,10 @@ export function useWebSocket<T = Record<string, unknown>>(
         // closed the connection (e.g. restart, shutdown).
         // Auto-reconnect only makes sense for unexpected disconnections
         // AFTER a previously working connection.
+        const currentReconnectCount = reconnectCountRef.current;
         const shouldReconnect =
           autoReconnect &&
-          reconnectCount < maxReconnectAttempts &&
+          currentReconnectCount < maxReconnectAttempts &&
           !event.wasClean &&
           !wasRefused &&
           everConnectedRef.current &&  // Only retry if we had a connection before
@@ -347,7 +354,7 @@ export function useWebSocket<T = Record<string, unknown>>(
 
         if (shouldReconnect) {
           const delay = Math.min(
-            reconnectBaseDelay * Math.pow(2, reconnectCount),
+            reconnectBaseDelay * Math.pow(2, currentReconnectCount),
             reconnectMaxDelay,
           );
           // Add jitter ±20%
@@ -356,7 +363,8 @@ export function useWebSocket<T = Record<string, unknown>>(
 
           reconnectTimerRef.current = setTimeout(() => {
             if (mountedRef.current) {
-              setReconnectCount((prev) => prev + 1);
+              reconnectCountRef.current += 1;
+              setReconnectCount(reconnectCountRef.current);
               connect();
             }
           }, finalDelay);
@@ -382,7 +390,6 @@ export function useWebSocket<T = Record<string, unknown>>(
     maxReconnectAttempts,
     reconnectBaseDelay,
     reconnectMaxDelay,
-    reconnectCount,
     wsBaseUrl,
     backendOnline,
     isCircuitBreakerOpen,
@@ -390,13 +397,18 @@ export function useWebSocket<T = Record<string, unknown>>(
     resetCircuitBreaker,
   ]);
 
+  // Keep connectRef in sync with the latest connect callback
+  connectRef.current = connect;
+
   // Connect on mount / when path changes.
   // FIX: Only attempt connection when we have a non-empty wsBaseUrl
   // AND the backend is not known to be offline.
+  // Uses connectRef.current to avoid listing `connect` in deps,
+  // which would cause cascading re-runs every time connect's deps change.
   useEffect(() => {
     mountedRef.current = true;
     if (enabled && wsBaseUrl && backendOnline !== false) {
-      connect();
+      connectRef.current();
     }
 
     return () => {
@@ -411,22 +423,21 @@ export function useWebSocket<T = Record<string, unknown>>(
         wsRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, enabled, wsBaseUrl]);
+  }, [path, enabled, wsBaseUrl, backendOnline, clearReconnectTimer]);
 
   // Reconnect when backendOnline transitions from false → true
   // (The useEffect above handles initial mount; this one handles recovery)
   useEffect(() => {
     if (backendOnline === true && enabled && wsBaseUrl && prevBackendOnlineRef.current === false) {
-      connect();
+      connectRef.current();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backendOnline]);
+  }, [backendOnline, enabled, wsBaseUrl]);
 
   // Manual reconnect function
   const reconnect = useCallback(() => {
     clearReconnectTimer();
     setReconnectCount(0);
+    reconnectCountRef.current = 0;
     resetCircuitBreaker();
     everConnectedRef.current = false;
     connect();

@@ -17,15 +17,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(leagues);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
-    // getLeagues() now returns fallback data on error, so this catch
-    // is only for truly unexpected errors. Return 200 with info
-    // rather than 502 so the UI can still proceed.
+    // getLeagues() returns fallback data on its own errors, so this catch
+    // is only for truly unexpected errors.
     return NextResponse.json(
       {
         error: message,
+        error_type: "upstream_error",
         hint: "The poe2scout.com API is unreachable. The dashboard will use fallback data for realms and leagues. Try: 1) Set POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local, 2) Use a VPN",
       },
-      { status: 200 }
+      { status: 502 }
     );
   }
 }

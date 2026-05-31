@@ -21,9 +21,10 @@ export async function GET() {
     return NextResponse.json({
       status: "unreachable",
       error: message,
+      error_type: "upstream_error",
       hint: "The poe2scout.com API is unreachable from your server. The dashboard will use fallback data. Try: 1) Set POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local, 2) Use a VPN, 3) Check your internet connection",
       apiBaseUrl: process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api",
       timestamp: new Date().toISOString(),
-    }, { status: 200 });
+    }, { status: 502 });
   }
 }

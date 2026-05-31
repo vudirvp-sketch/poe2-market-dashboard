@@ -92,6 +92,24 @@ function markRevalidationEnd(url: string): void {
 // Fix 1: unwrapNetworkError — walk AggregateError/cause chain
 // ============================================================================
 
+/** Type-safe accessor for Error.cause (ES2022, not always in TS lib types). */
+function getErrorCause(err: Error): unknown {
+  if ("cause" in err) return (err as { cause: unknown }).cause;
+  return undefined;
+}
+
+/** Type-safe accessor for AggregateError.errors array. */
+interface AggregateErrorLike {
+  errors: Array<{ code?: string; message?: string }>;
+}
+function getAggregateErrors(obj: object): Array<{ code?: string; message?: string }> | undefined {
+  if ("errors" in obj) {
+    const errors = (obj as AggregateErrorLike).errors;
+    return Array.isArray(errors) ? errors : undefined;
+  }
+  return undefined;
+}
+
 /** Unwrap nested cause/errors chains to find the real network error code.
  *
  * Node.js `fetch()` throws `TypeError: fetch failed` with
@@ -119,11 +137,12 @@ function unwrapNetworkError(err: unknown): Error {
       ) {
         return current;
       }
-      // Descend into cause
-      current = (current as any).cause;
-    } else if (typeof current === "object" && current !== null && Array.isArray((current as any).errors)) {
+      // Descend into cause (Error.cause is part of ES2022 but not always
+      // in TS types; use a type-safe accessor instead of `as any`)
+      current = getErrorCause(current);
+    } else if (typeof current === "object" && current !== null && Array.isArray(getAggregateErrors(current))) {
       // AggregateError — check each sub-error
-      for (const sub of (current as any).errors) {
+      for (const sub of getAggregateErrors(current)!) {
         if (sub?.code === "ETIMEDOUT") return new Error("ETIMEDOUT: " + (sub.message || "connection timed out"));
         if (sub?.code === "ECONNRESET") return new Error("ECONNRESET: " + (sub.message || "connection reset"));
         if (sub?.code === "ECONNREFUSED") return new Error("ECONNREFUSED");
@@ -266,6 +285,9 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
 
       // If this is a transient error, log and retry with exponential backoff + jitter
       if (isTransientNetworkError) {
+        // Don't wait if this was the last attempt — nothing left to retry
+        if (attempt >= maxRetries) break;
+
         const baseDelay = 500 * Math.pow(2, attempt);
         const jitter = Math.random() * 500; // 0–500ms random jitter
         const delay = Math.min(baseDelay + jitter, 5000);
@@ -381,7 +403,7 @@ interface RawLeague {
     Text: string;
     IconUrl: string | null;
     RelativePrice: number;
-  } | null;
+  };
 }
 
 interface RawPriceLogEntry {
@@ -452,7 +474,7 @@ interface RawAllItem {
   Name: string | null;
   Type: string | null;
   ApiId: string | null;
-  CurrentPrice: number | null;
+  CurrentPrice: number;
   IconUrl: string | null;
 }
 
