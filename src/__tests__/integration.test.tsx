@@ -179,7 +179,7 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
     renderWithProviders(<ForecastTab backendOnline={false} />);
 
     // Should show offline message, not crash
-    expect(screen.getByText(/uvicorn backend.main:app/)).toBeInTheDocument();
+    expect(screen.getAllByText(/uvicorn backend.main:app/).length).toBeGreaterThan(0);
 
     // Should NOT call any flipper API endpoints when backend is offline
     expect(mockFetchApi).not.toHaveBeenCalledWith("/api/flipper/phase");
@@ -277,7 +277,7 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
 
     // Test that all flipper-dependent tabs respect the backendOnline flag
     const { rerender } = renderWithProviders(<ForecastTab backendOnline={false} />);
-    expect(screen.getByText(/uvicorn backend.main:app/)).toBeInTheDocument();
+    expect(screen.getAllByText(/uvicorn backend.main:app/).length).toBeGreaterThan(0);
 
     // No flipper API calls should have been made
     expect(mockFetchApi).not.toHaveBeenCalled();

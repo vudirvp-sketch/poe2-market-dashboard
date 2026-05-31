@@ -35,7 +35,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
   return (
     <div className="space-y-4">
       {/* Score & Spread */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">{t("flipperScore")}</p>
           <p className={`text-lg font-bold ${scoreColor(selectedFlip.score)}`}>
@@ -46,18 +46,6 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
           <p className="text-xs text-muted-foreground">{t("flipperSpread")}</p>
           <p className="text-lg font-bold font-mono">
             {(selectedFlip.spread_after_fees * 100).toFixed(2)}%
-          </p>
-        </div>
-        <div className="rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">{t("flipsFeeFraction")}</p>
-          <p className="text-lg font-bold font-mono">
-            {(selectedFlip.gold_fee_fraction * 100).toFixed(2)}%
-          </p>
-        </div>
-        <div className="rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">{t("flipperGoldFee")}</p>
-          <p className="text-lg font-bold font-mono">
-            {fmt(selectedFlip.gold_fee_actual, 0)}
           </p>
         </div>
       </div>

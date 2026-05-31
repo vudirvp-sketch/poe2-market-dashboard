@@ -35,8 +35,8 @@ interface RecipeResult {
   name: string;
   input_cost_chaos?: number;
   output_value_chaos?: number;
-  gold_fee_total?: number;
-  gold_fee_chaos?: number;
+  gold_fee_total?: number;  // deprecated — always 0
+  gold_fee_chaos?: number;  // deprecated — always 0
   profit_chaos?: number;
   profit_pct?: number;
   is_profitable?: boolean;
@@ -259,9 +259,6 @@ export const RecipesTab = memo(function RecipesTab({
                           {t("recipesOutputValue")}
                         </th>
                         <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">
-                          {t("recipesGoldFee")}
-                        </th>
-                        <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">
                           {t("recipesProfit")}
                         </th>
                         <th className="text-right py-2 px-3 text-xs font-medium text-muted-foreground">
@@ -298,11 +295,6 @@ export const RecipesTab = memo(function RecipesTab({
                             <td className="py-2 px-3 text-right font-mono">
                               {recipe.output_value_chaos != null
                                 ? fmt(recipe.output_value_chaos)
-                                : "—"}
-                            </td>
-                            <td className="py-2 px-3 text-right font-mono text-muted-foreground">
-                              {recipe.gold_fee_chaos != null
-                                ? fmt(recipe.gold_fee_chaos)
                                 : "—"}
                             </td>
                             <td className={`py-2 px-3 text-right font-mono font-semibold ${profitColor(recipe.profit_chaos ?? 0)}`}>

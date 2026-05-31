@@ -149,8 +149,8 @@ describe("ForecastTab", () => {
 
   it("renders backend offline message when backend is offline", () => {
     renderForecastTab(false);
-    // Should show the offline card with uvicorn command
-    expect(screen.getByText(/uvicorn backend.main:app/)).toBeInTheDocument();
+    // Should show the offline card with uvicorn command (may appear multiple times)
+    expect(screen.getAllByText(/uvicorn backend.main:app/).length).toBeGreaterThan(0);
   });
 
   it("shows offline status indicator when backend is offline", () => {

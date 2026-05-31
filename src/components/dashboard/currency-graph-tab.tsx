@@ -53,7 +53,8 @@ interface PriceRate {
   raw_rate: number;
   volume_traded: number;
   fee_fraction: number;
-  gold_fee_actual: number;
+  /** @deprecated Always 0 — gold fees removed */
+  gold_fee_actual?: number;
   volatility: number;
   momentum: number;
   cluster_from?: string;
@@ -64,7 +65,8 @@ interface PricesResponse {
   league: string;
   phase: string;
   rates: PriceRate[];
-  gold_to_chaos_rate: number;
+  /** @deprecated Always 0 — gold fees removed */
+  gold_to_chaos_rate?: number;
   base_currency: string;
   fetched_at: string;
 }

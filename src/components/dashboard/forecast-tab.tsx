@@ -108,7 +108,8 @@ interface StorageValueResponse {
     volatility: number;
     acceleration: number;
     liquidity_score: number;
-    gold_fee_fraction: number;
+    /** @deprecated Always 0 — gold fees removed */
+    gold_fee_fraction?: number;
     horizon_hours: number;
     confidence_level: number;
   };
@@ -756,10 +757,9 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               </div>
 
               {/* Inputs */}
-              <div className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <span>{t("forecastMomentumInput")}: {storageData.inputs.momentum.toFixed(4)}</span>
                 <span>{t("forecastVolatilityInput")}: {storageData.inputs.volatility.toFixed(4)}</span>
-                <span>{t("forecastGoldFee")}: {(storageData.inputs.gold_fee_fraction * 100).toFixed(2)}%</span>
                 <span>{t("forecastHorizon")}: {storageData.inputs.horizon_hours}h</span>
               </div>
             </div>

@@ -137,8 +137,10 @@ export interface FlipOpportunity {
   currency: string;
   score: number;
   spread_after_fees: number;
-  gold_fee_fraction: number;
-  gold_fee_actual: number;
+  /** @deprecated Always 0 — gold fees removed from all calculations */
+  gold_fee_fraction?: number;
+  /** @deprecated Always 0 — gold fees removed from all calculations */
+  gold_fee_actual?: number;
   volume_24h: number;
   momentum: number;
   volatility: number;
@@ -171,7 +173,8 @@ export interface TriangularCycle {
   cycle: string[];
   net_profit_pct: number;
   step_rates: number[];
-  step_fees_gold: number[];
+  /** @deprecated Always [] — gold fees removed from all calculations */
+  step_fees_gold?: number[];
   step_fees_fraction: number[];
   total_volume: number;
   confidence: number;

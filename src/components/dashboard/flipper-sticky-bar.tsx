@@ -61,12 +61,14 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   });
 
   // ---- Best triangular arb (shared cache key with ArbitrageTab) ----
+  // No refetchInterval — ArbitrageTab or Dashboard-level already polls this key
+  // when visible. We only read from the shared cache here.
   const { data: triangularData } = useQuery<TriangularResponse>({
     queryKey: ["flipper-triangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
-    refetchInterval: 60_000,
+    // No refetchInterval — avoids duplicate network calls; other consumers poll this key
     retry: 1,
   });
 

@@ -39,12 +39,10 @@ import { useI18n } from "@/lib/i18n";
 import {
   fmt,
   fetchApi,
-  getFlipperErrorType,
 } from "@/lib/types";
 import type {
   ExchangePair,
   FlipOpportunity,
-  FlipEventStatus,
   TriangularCycle,
   TriangularResponse,
 } from "@/lib/types";
@@ -996,11 +994,10 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
               ) : (
                 <div className="space-y-0" role="table" aria-label={t("flipperFlipOpportunities")}>
                   {/* Table header */}
-                  <div className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                  <div className="grid grid-cols-[1fr_60px_70px_70px_70px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
                     <span role="columnheader">{t("flipperCurrency")}</span>
                     <span className="text-center" role="columnheader">{t("flipperScore")}</span>
                     <span className="text-right" role="columnheader">{t("flipperSpread")}</span>
-                    <span className="text-right" role="columnheader">{t("flipperGoldFee")}</span>
                     <span className="text-right" role="columnheader">{t("flipperMomentum")}</span>
                     <span className="text-right" role="columnheader">{t("flipperVolatility")}</span>
                     <span className="text-center" role="columnheader">{t("flipperCluster")}</span>
@@ -1012,7 +1009,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     {flipsData.opportunities.map((opp, idx) => (
                       <div
                         key={idx}
-                        className="grid grid-cols-[1fr_60px_70px_80px_70px_70px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                        className="grid grid-cols-[1fr_60px_70px_70px_70px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
                         role="row"
                       >
                         {/* Currency pair */}
@@ -1039,11 +1036,6 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                         {/* Spread after fees */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
                           {(opp.spread_after_fees * 100).toFixed(2)}%
-                        </span>
-
-                        {/* Gold fee */}
-                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {opp.gold_fee_actual.toFixed(0)}g
                         </span>
 
                         {/* Momentum */}
@@ -1130,10 +1122,9 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
               ) : (
                 <div className="space-y-0" role="table" aria-label={t("flipperTriangularTitle")}>
                   {/* Table header */}
-                  <div className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                  <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
                     <span role="columnheader">{t("flipperCycle")}</span>
                     <span className="text-right" role="columnheader">{t("flipperNetProfitPct")}</span>
-                    <span className="text-right" role="columnheader">{t("flipperGoldFees")}</span>
                     <span className="text-center" role="columnheader">{t("confidence")}</span>
                     <span className="text-right" role="columnheader">{t("flipperTotalVolume")}</span>
                   </div>
@@ -1143,7 +1134,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     {triData.opportunities.map((tri, idx) => (
                       <div
                         key={idx}
-                        className="grid grid-cols-[1fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                        className="grid grid-cols-[1fr_80px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
                         role="row"
                       >
                         {/* Cycle */}
@@ -1161,11 +1152,6 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                         {/* Net profit % */}
                         <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400" role="cell">
                           +{tri.net_profit_pct.toFixed(2)}%
-                        </span>
-
-                        {/* Gold fees */}
-                        <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {tri.step_fees_gold.reduce((a, b) => a + b, 0).toFixed(0)}g
                         </span>
 
                         {/* Confidence */}

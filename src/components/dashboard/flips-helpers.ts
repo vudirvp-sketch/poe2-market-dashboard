@@ -35,7 +35,8 @@ export interface StorageValueResponse {
     volatility: number;
     acceleration: number;
     liquidity_score: number;
-    gold_fee_fraction: number;
+    /** @deprecated Always 0 — gold fees removed */
+    gold_fee_fraction?: number;
     horizon_hours: number;
     confidence_level: number;
   };
@@ -44,7 +45,6 @@ export interface StorageValueResponse {
 export type SortField =
   | "score"
   | "spread_after_fees"
-  | "gold_fee_actual"
   | "volume_24h"
   | "momentum"
   | "volatility";
