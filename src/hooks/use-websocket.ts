@@ -116,7 +116,16 @@ function resolveWsBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_FLIPPER_WS_URL;
   if (envUrl) return envUrl;
 
-  // 2. Browser detection (guaranteed — SSR guard above already passed)
+  // 2. Check if WebSocket is explicitly disabled (default: disabled in dev)
+  // When there's no reverse proxy, the browser can't reach the backend's
+  // WebSocket port directly. This prevents console errors from failed
+  // ws://localhost:8000 connections.
+  const wsEnabled = process.env.NEXT_PUBLIC_FLIPPER_WS_ENABLED;
+  if (wsEnabled !== 'true') {
+    return ''; // WS disabled — use polling instead
+  }
+
+  // 3. Browser detection (guaranteed — SSR guard above already passed)
   const flipperApiUrl = process.env.NEXT_PUBLIC_FLIPPER_API_URL;
 
   // If no explicit FLIPPER_API_URL, assume same-origin (reverse proxy)

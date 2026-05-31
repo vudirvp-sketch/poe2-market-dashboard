@@ -58,10 +58,6 @@ class MockProvider:
             ),
         }
 
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        """Return deterministic gold rate."""
-        return 0.001
-
     async def close(self) -> None:
         self._closed = True
 
@@ -206,48 +202,7 @@ class TestCollectPriceSnapshot:
             assert cnt <= 2, f"Currency {curr} has {cnt} entries, expected <= 2"
 
 
-# ---------------------------------------------------------------------------
-# Gold Rate Collection Tests
-# ---------------------------------------------------------------------------
 
-class TestCollectGoldRate:
-    """Test DataScheduler.collect_gold_rate()."""
-
-    @pytest.mark.asyncio
-    async def test_collect_writes_gold_rate(self, scheduler, historical_store):
-        """Gold rate collection should write to HistoricalStore."""
-        result = await scheduler.collect_gold_rate()
-        assert result is True, "Should return True when gold rate is written"
-
-        # Verify data was written
-        rates = await historical_store.get_gold_chaos_rates("vaal")
-        assert len(rates) > 0, "HistoricalStore should contain gold rate data"
-        assert rates[0]["rate"] == 0.001
-
-    @pytest.mark.asyncio
-    async def test_collect_gold_rate_returns_none(self, scheduler, historical_store):
-        """When provider returns None for gold rate, should return False."""
-        scheduler._provider = MockProvider()
-        scheduler._provider.get_gold_chaos_rate = AsyncMock(return_value=None)
-
-        result = await scheduler.collect_gold_rate()
-        assert result is False, "Should return False when gold rate is None"
-
-    @pytest.mark.asyncio
-    async def test_collect_gold_rate_handles_error(self, scheduler, historical_store):
-        """When provider raises exception, should return False gracefully."""
-        scheduler._provider = MockProvider()
-        scheduler._provider.get_gold_chaos_rate = AsyncMock(
-            side_effect=Exception("API error")
-        )
-
-        result = await scheduler.collect_gold_rate()
-        assert result is False, "Should return False on error"
-
-
-# ---------------------------------------------------------------------------
-# Event Pruning Tests
-# ---------------------------------------------------------------------------
 
 class TestPruneEvents:
     """Test DataScheduler.prune_events()."""
@@ -337,7 +292,6 @@ class TestSchedulerLifecycle:
             jobs = scheduler._scheduler.get_jobs()
             job_ids = [j.id for j in jobs]
             assert "price_snapshot" in job_ids, "price_snapshot job should be registered"
-            assert "gold_rate" in job_ids, "gold_rate job should be registered"
             assert "event_pruning" in job_ids, "event_pruning job should be registered"
             assert "model_persistence" in job_ids, "model_persistence job should be registered"
         finally:

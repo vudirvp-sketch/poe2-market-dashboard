@@ -283,15 +283,15 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
   const forecastData = liveMode ? wsForecastData : pollingForecastData;
   const storageData = liveMode ? wsStorageData : pollingStorageData;
 
-  // Detect 422 insufficient-data errors for better UX (polling only)
+  // Detect 422/404 insufficient-data errors for better UX (polling only)
   const isForecastInsufficientData =
-    !liveMode && forecastErrorObj instanceof FlipperApiError && forecastErrorObj.status === 422;
+    !liveMode && forecastErrorObj instanceof FlipperApiError && (forecastErrorObj.status === 422 || forecastErrorObj.status === 404);
   const forecastInsufficientDetail =
     isForecastInsufficientData && forecastErrorObj instanceof FlipperApiError
       ? forecastErrorObj.detail
       : undefined;
   const isStorageInsufficientData =
-    !liveMode && storageErrorObj instanceof FlipperApiError && storageErrorObj.status === 422;
+    !liveMode && storageErrorObj instanceof FlipperApiError && (storageErrorObj.status === 422 || storageErrorObj.status === 404);
   const storageInsufficientDetail =
     isStorageInsufficientData && storageErrorObj instanceof FlipperApiError
       ? storageErrorObj.detail

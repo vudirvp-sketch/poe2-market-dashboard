@@ -1,292 +1,81 @@
-2026-06-01 00:07:00,339 [INFO] backend.main: CORS origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
-INFO:     Started server process [14076]
+2026-06-01 04:18:46,607 [INFO] backend.main: CORS origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+INFO:     Started server process [12860]
 INFO:     Waiting for application startup.
-2026-06-01 00:07:00,392 [INFO] backend.main: PoE2 Flipper backend starting up...
-2026-06-01 00:07:00,400 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
-2026-06-01 00:07:00,419 [INFO] backend.main: HistoricalStore initialized
-2026-06-01 00:07:00,419 [INFO] backend.main: Loaded 0 persisted events from SQLite
-2026-06-01 00:07:00,462 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-06-01 00:07:00,462 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-06-01 00:07:00,462 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-06-01 00:07:00,462 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
-2026-06-01 00:07:00,463 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
-2026-06-01 00:07:00,463 [INFO] apscheduler.scheduler: Added job "Collect gold\u2192chaos rate" to job store "default"
-2026-06-01 00:07:00,463 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
-2026-06-01 00:07:00,463 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
-2026-06-01 00:07:00,463 [INFO] apscheduler.scheduler: Scheduler started
-2026-06-01 00:07:00,463 [INFO] backend.scheduler: Scheduler: started with 4 jobs (price=30m, gold=30m, prune=15m, model=30m)
-2026-06-01 00:07:01,217 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
+2026-06-01 04:18:46,658 [INFO] backend.main: PoE2 Flipper backend starting up...
+2026-06-01 04:18:46,663 [INFO] backend.main: League: vaal, Realm: poe2, Base currency: exalted
+2026-06-01 04:18:46,670 [INFO] backend.main: HistoricalStore initialized
+2026-06-01 04:18:46,670 [INFO] backend.main: Loaded 0 persisted events from SQLite
+2026-06-01 04:18:46,673 [WARNING] backend.main: Scheduler failed to start: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:18:46,673 [WARNING] backend.main: Initial health check: upstream API unreachable (degraded mode)
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:62344 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53171 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53171 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-2026-06-01 00:08:54,163 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
-2026-06-01 00:08:55,044 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-06-01 00:08:56,130 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:08:57,264 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:08:58,376 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:08:59,088 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:00,089 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:01,097 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:02,109 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:03,118 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:04,118 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:05,221 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:06,252 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:07,150 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:08,149 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:09,157 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:10,155 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:09:10,158 [INFO] backend.api.data_snapshot: DataSnapshot refreshed: 76 exchange rates, 437 currencies
-2026-06-01 00:09:11,508 [INFO] backend.api.routes_arbitrage: Clustering completed: 43 currencies assigned
-2026-06-01 00:09:11,508 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-chaos-orb' (normalized: 'greater_chaos_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,508 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-chaos-orb' (normalized: 'greater_chaos_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,508 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-regal-orb' (normalized: 'perfect_regal_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-regal-orb' (normalized: 'perfect_regal_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'fracturing-orb' (normalized: 'fracturing_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'fracturing-orb' (normalized: 'fracturing_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-exalted-orb' (normalized: 'perfect_exalted_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-exalted-orb' (normalized: 'perfect_exalted_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'scrap' (normalized: 'scrap'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'scrap' (normalized: 'scrap'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'breach-splinter' (normalized: 'breach_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'breach-splinter' (normalized: 'breach_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'essence-of-abyss' (normalized: 'essence_of_abyss'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'essence-of-abyss' (normalized: 'essence_of_abyss'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-dextral-exaltation' (normalized: 'omen_of_dextral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-dextral-exaltation' (normalized: 'omen_of_dextral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-recombination' (normalized: 'omen_of_recombination'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,509 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-recombination' (normalized: 'omen_of_recombination'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-chaotic-rarity' (normalized: 'omen_of_chaotic_rarity'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-chaotic-rarity' (normalized: 'omen_of_chaotic_rarity'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'preserved-collarbone' (normalized: 'preserved_collarbone'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'preserved-collarbone' (normalized: 'preserved_collarbone'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-guilt' (normalized: 'diluted_liquid_guilt'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-guilt' (normalized: 'diluted_liquid_guilt'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'vaal-cultivation-orb' (normalized: 'vaal_cultivation_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'vaal-cultivation-orb' (normalized: 'vaal_cultivation_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'secondary-calamity-fragment' (normalized: 'secondary_calamity_fragment'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'secondary-calamity-fragment' (normalized: 'secondary_calamity_fragment'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'saqawals-rune-of-the-sky' (normalized: 'saqawals_rune_of_the_sky'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'saqawals-rune-of-the-sky' (normalized: 'saqawals_rune_of_the_sky'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-essence-of-flames' (normalized: 'greater_essence_of_flames'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-essence-of-flames' (normalized: 'greater_essence_of_flames'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-tacati' (normalized: 'soul_core_of_tacati'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-tacati' (normalized: 'soul_core_of_tacati'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-citaqualotl' (normalized: 'soul_core_of_citaqualotl'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-citaqualotl' (normalized: 'soul_core_of_citaqualotl'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-abyssal-favours' (normalized: 'omen_of_abyssal_favours'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-abyssal-favours' (normalized: 'omen_of_abyssal_favours'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-sinistral-exaltation' (normalized: 'omen_of_sinistral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,510 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-sinistral-exaltation' (normalized: 'omen_of_sinistral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'petition-splinter' (normalized: 'petition_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'petition-splinter' (normalized: 'petition_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-reinforcements' (normalized: 'omen_of_reinforcements'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-reinforcements' (normalized: 'omen_of_reinforcements'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-greater-exaltation' (normalized: 'omen_of_greater_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-greater-exaltation' (normalized: 'omen_of_greater_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'adaptive-catalyst' (normalized: 'adaptive_catalyst'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'adaptive-catalyst' (normalized: 'adaptive_catalyst'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'tecrods-gaze' (normalized: 'tecrods_gaze'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'tecrods-gaze' (normalized: 'tecrods_gaze'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'uncut-spirit-gem-19' (normalized: 'uncut_spirit_gem_19'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'uncut-spirit-gem-19' (normalized: 'uncut_spirit_gem_19'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'garukhans-resolve' (normalized: 'garukhans_resolve'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'garukhans-resolve' (normalized: 'garukhans_resolve'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-ire' (normalized: 'diluted_liquid_ire'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:09:11,511 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-ire' (normalized: 'diluted_liquid_ire'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-INFO:     127.0.0.1:62344 - "GET /api/arbitrage/flips?min_score=0&min_volume=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53170 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53172 - "GET /api/portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53171 - "GET /api/prices/heatmap HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58944 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58944 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62514 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62516 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62517 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58410 - "GET /api/arbitrage/flips?min_score=0&min_volume=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58412 - "GET /api/portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58413 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54043 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54045 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59213 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59213 - "GET /api/phase HTTP/1.1" 200 OK
+2026-06-01 04:19:53,965 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+INFO:     127.0.0.1:59213 - "GET /api/portfolio HTTP/1.1" 200 OK
+2026-06-01 04:19:53,969 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:19:53,969 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256820.6s, rates=0, currencies=0)
+INFO:     127.0.0.1:50885 - "GET /api/arbitrage/flips?min_score=0&min_volume=0 HTTP/1.1" 200 OK
+2026-06-01 04:19:53,970 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:19:53,971 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256820.6s, rates=0, currencies=0)
+INFO:     127.0.0.1:50886 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50888 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+2026-06-01 04:19:54,285 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:19:54,285 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256820.9s, rates=0, currencies=0)
+INFO:     127.0.0.1:59213 - "GET /api/prices/heatmap HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57408 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57408 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     127.0.0.1:54506 - "GET /ws/flips HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56281 - "GET /ws/flips HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     127.0.0.1:51894 - "GET /ws/anomalies HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:64639 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64639 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57336 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58905 - "GET /api/storage-value/vaal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58905 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55600 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51320 - "GET /api/arbitrage/flips?min_score=0&min_volume=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51320 - "GET /api/currencies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63403 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63404 - "GET /api/anomalies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:63405 - "GET /api/storage-value/divine HTTP/1.1" 200 OK
-2026-06-01 00:12:42,853 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/291/DailyStatsHistory?DayCount=30 "HTTP/1.1 200 OK"
-2026-06-01 00:12:42,854 [INFO] backend.api.routes_forecast: Using DailyStatsHistory (30 points) for divine forecast
-2026-06-01 00:12:45,653 [WARNING] backend.predictors.time_series: LightGBM: insufficient clean data after feature building (5 rows).
-2026-06-01 00:12:45,653 [WARNING] backend.predictors.time_series: LightGBM: no trained model available.
-INFO:     127.0.0.1:63402 - "GET /api/forecast/divine HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60064 - "GET /api/storage-value/exalted HTTP/1.1" 200 OK
-2026-06-01 00:12:50,948 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/290/DailyStatsHistory?DayCount=30 "HTTP/1.1 200 OK"
-2026-06-01 00:12:50,949 [INFO] backend.api.routes_forecast: Using DailyStatsHistory (30 points) for exalted forecast
-2026-06-01 00:12:51,012 [WARNING] backend.predictors.time_series: LightGBM: insufficient clean data after feature building (5 rows).
-2026-06-01 00:12:51,012 [WARNING] backend.predictors.time_series: LightGBM: no trained model available.
-INFO:     127.0.0.1:60062 - "GET /api/forecast/exalted HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54843 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54843 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54843 - "GET /api/portfolio HTTP/1.1" 200 OK
-2026-06-01 00:13:06,569 [INFO] backend.api.routes_prices: Prices clustering completed: 43 currencies assigned
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-chaos-orb' (normalized: 'greater_chaos_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-regal-orb' (normalized: 'perfect_regal_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'fracturing-orb' (normalized: 'fracturing_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-exalted-orb' (normalized: 'perfect_exalted_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'scrap' (normalized: 'scrap'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'breach-splinter' (normalized: 'breach_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'essence-of-abyss' (normalized: 'essence_of_abyss'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-dextral-exaltation' (normalized: 'omen_of_dextral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-recombination' (normalized: 'omen_of_recombination'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,570 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-chaotic-rarity' (normalized: 'omen_of_chaotic_rarity'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'preserved-collarbone' (normalized: 'preserved_collarbone'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-guilt' (normalized: 'diluted_liquid_guilt'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'vaal-cultivation-orb' (normalized: 'vaal_cultivation_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'secondary-calamity-fragment' (normalized: 'secondary_calamity_fragment'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'saqawals-rune-of-the-sky' (normalized: 'saqawals_rune_of_the_sky'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-essence-of-flames' (normalized: 'greater_essence_of_flames'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-tacati' (normalized: 'soul_core_of_tacati'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-citaqualotl' (normalized: 'soul_core_of_citaqualotl'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-abyssal-favours' (normalized: 'omen_of_abyssal_favours'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-sinistral-exaltation' (normalized: 'omen_of_sinistral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'petition-splinter' (normalized: 'petition_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-reinforcements' (normalized: 'omen_of_reinforcements'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-greater-exaltation' (normalized: 'omen_of_greater_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'adaptive-catalyst' (normalized: 'adaptive_catalyst'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,571 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'tecrods-gaze' (normalized: 'tecrods_gaze'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,572 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'uncut-spirit-gem-19' (normalized: 'uncut_spirit_gem_19'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,572 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'garukhans-resolve' (normalized: 'garukhans_resolve'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:13:06,572 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-ire' (normalized: 'diluted_liquid_ire'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-INFO:     127.0.0.1:49193 - "GET /api/prices HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49195 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49196 - "GET /api/currencies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49201 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54555 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54555 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-2026-06-01 00:14:12,275 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs "HTTP/1.1 200 OK"
-2026-06-01 00:14:13,151 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories "HTTP/1.1 200 OK"
-2026-06-01 00:14:14,117 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:15,126 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:16,140 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:17,164 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:18,146 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:19,192 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:20,216 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:21,194 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:22,170 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:23,225 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:24,201 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:25,216 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:26,209 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:27,236 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:28,222 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
-2026-06-01 00:14:28,227 [INFO] backend.api.data_snapshot: DataSnapshot refreshed: 76 exchange rates, 437 currencies
-INFO:     127.0.0.1:57139 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49725 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49725 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49725 - "GET /api/portfolio HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50265 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50265 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50265 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-2026-06-01 00:15:39,819 [WARNING] backend.data.pipeline_cache: DEGRADED: pipeline cache stale for key=flip_opportunities (age=388s > ttl=300s)
-2026-06-01 00:15:39,834 [INFO] backend.api.routes_arbitrage: Clustering completed: 43 currencies assigned
-2026-06-01 00:15:39,834 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-chaos-orb' (normalized: 'greater_chaos_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,834 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-chaos-orb' (normalized: 'greater_chaos_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,834 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-regal-orb' (normalized: 'perfect_regal_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,834 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-regal-orb' (normalized: 'perfect_regal_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'fracturing-orb' (normalized: 'fracturing_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'fracturing-orb' (normalized: 'fracturing_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-exalted-orb' (normalized: 'perfect_exalted_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'perfect-exalted-orb' (normalized: 'perfect_exalted_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'scrap' (normalized: 'scrap'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'scrap' (normalized: 'scrap'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'breach-splinter' (normalized: 'breach_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'breach-splinter' (normalized: 'breach_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'essence-of-abyss' (normalized: 'essence_of_abyss'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'essence-of-abyss' (normalized: 'essence_of_abyss'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-dextral-exaltation' (normalized: 'omen_of_dextral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-dextral-exaltation' (normalized: 'omen_of_dextral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,835 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-corruption' (normalized: 'omen_of_corruption'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-recombination' (normalized: 'omen_of_recombination'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-recombination' (normalized: 'omen_of_recombination'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-chaotic-rarity' (normalized: 'omen_of_chaotic_rarity'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-chaotic-rarity' (normalized: 'omen_of_chaotic_rarity'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'preserved-collarbone' (normalized: 'preserved_collarbone'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'preserved-collarbone' (normalized: 'preserved_collarbone'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-guilt' (normalized: 'diluted_liquid_guilt'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-guilt' (normalized: 'diluted_liquid_guilt'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'vaal-cultivation-orb' (normalized: 'vaal_cultivation_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'vaal-cultivation-orb' (normalized: 'vaal_cultivation_orb'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'secondary-calamity-fragment' (normalized: 'secondary_calamity_fragment'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'secondary-calamity-fragment' (normalized: 'secondary_calamity_fragment'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'saqawals-rune-of-the-sky' (normalized: 'saqawals_rune_of_the_sky'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'saqawals-rune-of-the-sky' (normalized: 'saqawals_rune_of_the_sky'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-essence-of-flames' (normalized: 'greater_essence_of_flames'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,836 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'greater-essence-of-flames' (normalized: 'greater_essence_of_flames'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-tacati' (normalized: 'soul_core_of_tacati'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-tacati' (normalized: 'soul_core_of_tacati'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-citaqualotl' (normalized: 'soul_core_of_citaqualotl'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'soul-core-of-citaqualotl' (normalized: 'soul_core_of_citaqualotl'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-abyssal-favours' (normalized: 'omen_of_abyssal_favours'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-abyssal-favours' (normalized: 'omen_of_abyssal_favours'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-sinistral-exaltation' (normalized: 'omen_of_sinistral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-sinistral-exaltation' (normalized: 'omen_of_sinistral_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'petition-splinter' (normalized: 'petition_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'petition-splinter' (normalized: 'petition_splinter'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-reinforcements' (normalized: 'omen_of_reinforcements'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-reinforcements' (normalized: 'omen_of_reinforcements'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-greater-exaltation' (normalized: 'omen_of_greater_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'omen-of-greater-exaltation' (normalized: 'omen_of_greater_exaltation'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'adaptive-catalyst' (normalized: 'adaptive_catalyst'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'adaptive-catalyst' (normalized: 'adaptive_catalyst'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,837 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'tecrods-gaze' (normalized: 'tecrods_gaze'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'tecrods-gaze' (normalized: 'tecrods_gaze'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'uncut-spirit-gem-19' (normalized: 'uncut_spirit_gem_19'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'uncut-spirit-gem-19' (normalized: 'uncut_spirit_gem_19'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'garukhans-resolve' (normalized: 'garukhans_resolve'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'garukhans-resolve' (normalized: 'garukhans_resolve'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-ire' (normalized: 'diluted_liquid_ire'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-2026-06-01 00:15:39,838 [WARNING] backend.economy.gold_cost_table: Unknown currency api_id 'diluted-liquid-ire' (normalized: 'diluted_liquid_ire'). Using fallback gold cost: 200. Add this currency to gold_cost_table.py if the actual cost is known.
-INFO:     127.0.0.1:55451 - "GET /api/arbitrage/flips?min_score=0&min_volume=0 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:55451 - "GET /api/phase HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54847 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54847 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54847 - "GET /api/portfolio HTTP/1.1" 200 OK
-2026-06-01 00:16:01,505 [INFO] backend.api.routes_forecast: Using DailyStatsHistory (30 points) for divine forecast
-2026-06-01 00:16:03,586 [WARNING] backend.predictors.time_series: LightGBM: insufficient clean data after feature building (5 rows).
-2026-06-01 00:16:03,586 [WARNING] backend.predictors.time_series: LightGBM: no trained model available.
-INFO:     127.0.0.1:54847 - "GET /api/forecast/divine HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57445 - "GET /api/anomalies HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57447 - "GET /api/storage-value/divine HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64321 - "GET /ws/anomalies HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     127.0.0.1:64099 - "GET /ws/flips HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49275 - "GET /ws/flips HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     127.0.0.1:52446 - "GET /ws/anomalies HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:52104 - "GET /api/storage-value/vaal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52104 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52104 - "GET /api/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52104 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49909 - "GET /ws/anomalies HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52551 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52551 - "GET /api/phase HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52551 - "GET /api/arbitrage/flips?min_score=0&min_volume=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52551 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+2026-06-01 04:20:59,039 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:20:59,039 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256885.6s, rates=0, currencies=0)
+INFO:     127.0.0.1:52555 - "GET /api/recipes HTTP/1.1" 200 OK
+2026-06-01 04:21:04,755 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:04,755 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256891.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:51283 - "GET /api/currencies HTTP/1.1" 200 OK
+2026-06-01 04:21:04,757 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:04,758 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256891.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:51285 - "GET /api/forecast/divine HTTP/1.1" 404 Not Found
+2026-06-01 04:21:04,759 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:04,759 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256891.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:51286 - "GET /api/anomalies HTTP/1.1" 200 OK
+2026-06-01 04:21:04,760 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:04,761 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256891.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:51287 - "GET /api/storage-value/divine HTTP/1.1" 200 OK
+2026-06-01 04:21:05,770 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:05,770 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256892.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:51283 - "GET /api/forecast/divine HTTP/1.1" 404 Not Found
+2026-06-01 04:21:07,842 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:07,842 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256894.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:51283 - "GET /api/forecast/divine HTTP/1.1" 404 Not Found
+2026-06-01 04:21:08,849 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:08,849 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256895.5s, rates=0, currencies=0)
+INFO:     127.0.0.1:51283 - "GET /api/forecast/divine HTTP/1.1" 404 Not Found
+2026-06-01 04:21:15,749 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:15,749 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256902.4s, rates=0, currencies=0)
+INFO:     127.0.0.1:61366 - "GET /api/portfolio HTTP/1.1" 200 OK
+2026-06-01 04:21:22,604 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:22,604 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256909.2s, rates=0, currencies=0)
+INFO:     127.0.0.1:61081 - "GET /api/prices HTTP/1.1" 200 OK
+2026-06-01 04:21:22,605 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:22,605 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256909.2s, rates=0, currencies=0)
+INFO:     127.0.0.1:61082 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
+2026-06-01 04:21:22,605 [ERROR] backend.api.data_snapshot: DataSnapshot refresh failed: Can't instantiate abstract class Poe2ScoutProvider without an implementation for abstract method 'get_gold_chaos_rate'
+2026-06-01 04:21:22,606 [WARNING] backend.api.data_snapshot: DEGRADED: Returning stale DataSnapshot after refresh failure (age=256909.2s, rates=0, currencies=0)
+INFO:     127.0.0.1:61083 - "GET /api/currencies HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61081 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61081 - "GET /api/events?active_only=true HTTP/1.1" 200 OK

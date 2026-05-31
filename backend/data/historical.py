@@ -3,7 +3,6 @@ Historical price store using SQLite.
 
 Tables:
 - price_snapshots: (timestamp, league, currency, price, volume_24h, bid, ask)
-- gold_chaos_rates: (timestamp, league, rate)
 - events: (event_id, event_type, description, affected_currencies, created_at, expires_at, is_active, deactivated_at)
 
 Write: every time current prices are fetched successfully.
@@ -51,16 +50,6 @@ CREATE INDEX IF NOT EXISTS idx_price_snapshots_league_curr
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_price_snapshot_dedup 
     ON price_snapshots(strftime('%Y-%m-%d %H:%M', timestamp), league, currency);
-
-CREATE TABLE IF NOT EXISTS gold_chaos_rates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp TEXT NOT NULL,
-    league TEXT NOT NULL,
-    rate REAL NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_gold_chaos_rates_ts
-    ON gold_chaos_rates(timestamp);
 
 CREATE TABLE IF NOT EXISTS events (
     event_id TEXT PRIMARY KEY,
@@ -163,21 +152,6 @@ class HistoricalStore:
         )
         await db.commit()
 
-    async def write_gold_chaos_rate(
-        self,
-        league: str,
-        rate: float,
-        timestamp: datetime | None = None,
-    ) -> None:
-        """Write an observed gold->chaos conversion rate."""
-        db = await self._ensure_db()
-        ts = (timestamp or datetime.now(timezone.utc)).isoformat()
-        await db.execute(
-            "INSERT INTO gold_chaos_rates (timestamp, league, rate) VALUES (?, ?, ?)",
-            (ts, league, rate),
-        )
-        await db.commit()
-
     async def write_price_snapshots_batch(
         self,
         league: str,
@@ -276,22 +250,6 @@ class HistoricalStore:
             }
             for row in rows
         ]
-
-    async def get_gold_chaos_rates(
-        self, league: str, days: int = 7
-    ) -> list[dict]:
-        """Get historical gold->chaos rates for a league."""
-        db = await self._ensure_db()
-        cursor = await db.execute(
-            """SELECT timestamp, league, rate
-               FROM gold_chaos_rates
-               WHERE league = ?
-                 AND timestamp >= datetime('now', ? || ' days')
-               ORDER BY timestamp ASC""",
-            (league, f"-{days}"),
-        )
-        rows = await cursor.fetchall()
-        return [{"timestamp": row[0], "league": row[1], "rate": row[2]} for row in rows]
 
     # ------------------------------------------------------------------
     # Event Persistence (Phase 2, Spec Section 1)
@@ -441,18 +399,12 @@ class HistoricalStore:
         )
         deleted_prices = cursor.rowcount
 
-        cursor = await db.execute(
-            "DELETE FROM gold_chaos_rates WHERE timestamp < datetime('now', ? || ' days')",
-            (f"-{days}",),
-        )
-        deleted_rates = cursor.rowcount
-
         await db.commit()
 
-        if deleted_prices > 0 or deleted_rates > 0:
+        if deleted_prices > 0:
             logger.info(
-                "Pruned %d price snapshots and %d gold/chaos rates older than %d days",
-                deleted_prices, deleted_rates, days,
+                "Pruned %d price snapshots older than %d days",
+                deleted_prices, days,
             )
 
 

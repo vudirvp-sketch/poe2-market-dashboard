@@ -150,6 +150,3 @@ class MockPoe2ScoutProvider(BaseDataProvider):
             )
             for i in range(7)
         ]
-
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        return 0.001

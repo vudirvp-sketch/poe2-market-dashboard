@@ -127,24 +127,6 @@ class DataScheduler:
             logger.error("Scheduler: price snapshot collection failed: %s", e)
             return 0
 
-    async def collect_gold_rate(self) -> bool:
-        """Fetch gold→chaos rate and write to HistoricalStore.
-
-        Returns:
-            True if rate was written, False otherwise.
-        """
-        try:
-            league = self._config.league.league_name
-            gold_rate = await self._provider.get_gold_chaos_rate(league)
-            if gold_rate is not None:
-                await self._store.write_gold_chaos_rate(league, gold_rate)
-                logger.info("Scheduler: wrote gold→chaos rate %.6f for %s", gold_rate, league)
-                return True
-            return False
-        except Exception as e:
-            logger.error("Scheduler: gold rate collection failed: %s", e)
-            return False
-
     async def prune_events(self) -> int:
         """Prune expired events from both memory and SQLite.
 
@@ -212,17 +194,7 @@ class DataScheduler:
             misfire_grace_time=60,
         )
 
-        # Job 2: Gold rate collection (same interval as price snapshots)
-        self._scheduler.add_job(
-            self.collect_gold_rate,
-            IntervalTrigger(minutes=scheduler_config.price_snapshot_interval_minutes),
-            id="gold_rate",
-            name="Collect gold→chaos rate",
-            max_instances=1,
-            misfire_grace_time=60,
-        )
-
-        # Job 3: Event pruning
+        # Job 2: Event pruning
         self._scheduler.add_job(
             self.prune_events,
             IntervalTrigger(minutes=scheduler_config.event_pruning_interval_minutes),
@@ -232,7 +204,7 @@ class DataScheduler:
             misfire_grace_time=120,
         )
 
-        # Job 4: Model persistence
+        # Job 3: Model persistence
         self._scheduler.add_job(
             self.persist_models,
             IntervalTrigger(minutes=scheduler_config.model_persistence_interval_minutes),
@@ -245,9 +217,8 @@ class DataScheduler:
         self._scheduler.start()
         logger.info(
             "Scheduler: started with %d jobs "
-            "(price=%dm, gold=%dm, prune=%dm, model=%dm)",
-            4,
-            scheduler_config.price_snapshot_interval_minutes,
+            "(price=%dm, prune=%dm, model=%dm)",
+            3,
             scheduler_config.price_snapshot_interval_minutes,
             scheduler_config.event_pruning_interval_minutes,
             scheduler_config.model_persistence_interval_minutes,

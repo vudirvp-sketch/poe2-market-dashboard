@@ -17,7 +17,6 @@ Provides:
     GET /api/storage-value/{currency} — projected value and hold/sell decision
     GET /api/portfolio          — portfolio allocation
     GET /api/portfolio/frontier — efficient frontier data
-    GET /api/recipes            — vendor recipe arbitrage
     POST /api/events            — create a manual event flag
     GET /api/events             — list active events
     GET /api/health             — health check
@@ -252,12 +251,6 @@ try:
     app.include_router(storage_value_router)
 except ImportError:
     logger.debug("Storage value router not available yet")
-
-try:
-    from backend.api.routes_recipes import router as recipes_router
-    app.include_router(recipes_router)
-except ImportError:
-    logger.debug("Recipes router not available yet")
 
 # WebSocket routes for live updates
 try:

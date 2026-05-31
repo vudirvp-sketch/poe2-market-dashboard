@@ -59,9 +59,6 @@ class FailingPoe2ScoutProvider(BaseDataProvider):
     ) -> list[PricePoint]:
         raise ConnectionError("upstream_unreachable: API timeout")
 
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        raise ConnectionError("upstream_unreachable: API timeout")
-
 
 # ---------------------------------------------------------------------------
 # Tests — Degraded mode with real (live) provider

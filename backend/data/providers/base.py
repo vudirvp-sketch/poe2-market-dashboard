@@ -41,10 +41,6 @@ class BaseDataProvider(ABC):
         """Return metadata: name, icon URL, trade ID, etc."""
 
     @abstractmethod
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        """Return the current observed gold→chaos conversion rate, or None."""
-
-    @abstractmethod
     def name(self) -> str:
         """Return the provider's name for logging and cache keys."""
 

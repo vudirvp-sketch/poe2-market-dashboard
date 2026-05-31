@@ -12,7 +12,6 @@ import {
   GitCompare,
   Bell,
   Zap,
-  FlaskConical,
   LineChart,
   TrendingUp,
   Briefcase,
@@ -43,23 +42,6 @@ import { FlipsTab } from "@/components/dashboard/flips-tab";
 // which add significant JS weight. Users rarely visit all tabs in one session,
 // so deferring these imports improves Time-to-Interactive significantly.
 import dynamic from "next/dynamic";
-
-const RecipesTab = dynamic(
-  () => import("@/components/dashboard/recipes-tab").then((m) => ({ default: m.RecipesTab })),
-  {
-    loading: () => (
-      <div className="space-y-4">
-        <div className="h-20 w-full animate-pulse rounded bg-muted" />
-        <div className="grid grid-cols-3 gap-4">
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
-        </div>
-        <div className="h-64 w-full animate-pulse rounded bg-muted" />
-      </div>
-    ),
-  },
-);
 
 const ForecastTab = dynamic(
   () => import("@/components/dashboard/forecast-tab").then((m) => ({ default: m.ForecastTab })),
@@ -636,9 +618,6 @@ export function Dashboard() {
                 <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
                   <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
                 </TabsTrigger>
-                <TabsTrigger value="recipes" className="gap-1.5" aria-label={t("tabRecipes")}>
-                  <FlaskConical className="h-4 w-4" aria-hidden="true" /> {t("tabRecipes")}
-                </TabsTrigger>
                 <TabsTrigger value="forecast" className="gap-1.5" aria-label={t("tabForecast")}>
                   <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabForecast")}
                 </TabsTrigger>
@@ -882,13 +861,6 @@ export function Dashboard() {
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle="Flips">
                 <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
-              </ErrorBoundary>
-            </TabsContent>
-
-            {/* ============ RECIPES TAB ============ */}
-            <TabsContent value="recipes">
-              <ErrorBoundary fallbackTitle="Recipes">
-                <RecipesTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 

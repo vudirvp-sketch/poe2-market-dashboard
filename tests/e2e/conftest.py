@@ -145,11 +145,6 @@ class FlakyPoe2ScoutProvider:
             for i in range(days * 4)
         ]
 
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        if self._broken:
-            raise ConnectionError("upstream_unreachable: API down")
-        return 0.001
-
     async def get_all_currencies_with_prices(self, league: str) -> list[dict]:
         """Return deterministic currency price data.
 

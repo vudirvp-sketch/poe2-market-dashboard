@@ -562,10 +562,4 @@ class OfficialTradeProvider(BaseDataProvider):
             logger.error("OfficialTradeProvider.get_currency_metadata failed: %s", e)
             return []
 
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        """Get gold→chaos rate from GGG API.
 
-        GGG doesn't expose gold costs via the trade API.
-        Use the fixed rate from config instead.
-        """
-        return None

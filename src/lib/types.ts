@@ -295,6 +295,7 @@ export class FlipperApiError extends Error {
       if (status === 503) this.errorType = "backend_offline";
       else if (status === 502) this.errorType = "upstream_error";
       else if (status === 422) this.errorType = "insufficient_data";
+      else if (status === 404) this.errorType = "insufficient_data";
       else if (status >= 500) this.errorType = "server_error";
     }
   }

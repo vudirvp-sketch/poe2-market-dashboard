@@ -145,9 +145,6 @@ class MockProviderWithDailyStats(BaseDataProvider):
             ),
         ]
 
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        return 0.001
-
     async def get_daily_stats(
         self,
         league: str,
@@ -196,9 +193,6 @@ class MockProviderNoDailyStats(BaseDataProvider):
                 currency_item_id=100,
             ),
         ]
-
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        return 0.001
 
 
 # ---------------------------------------------------------------------------
