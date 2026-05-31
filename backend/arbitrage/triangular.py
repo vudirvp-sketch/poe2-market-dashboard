@@ -82,7 +82,7 @@ def _compute_confidence(
 def find_triangular_arbitrage(
     rates: dict[tuple[str, str], float],
     gold_cost_per_unit: dict[str, int],
-    prices_in_chaos: dict[str, float],
+    prices: dict[str, float],
     gold_to_chaos_rate: float,
     min_profit_pct: float = 0.1,
     fallback_gold_cost: int = 200,
@@ -96,7 +96,8 @@ def find_triangular_arbitrage(
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
         gold_cost_per_unit: Per-unit gold cost for each currency (api_id → gold cost)
-        prices_in_chaos: Current price of each currency in Chaos Orbs
+        prices: Current price of each currency in the reference currency
+               (base currency, e.g. Exalted for PoE2; or Chaos if converted)
         gold_to_chaos_rate: How many Chaos Orbs per 1 gold
         min_profit_pct: Minimum profit percentage to report (default 0.1%)
         fallback_gold_cost: Default gold cost for unknown currencies
@@ -120,7 +121,7 @@ def find_triangular_arbitrage(
     for (u, v), raw_rate in rates.items():
         # §8.1: Compute fee fraction for receiving currency v
         qty_v = raw_rate  # for 1 unit of u
-        price_v = prices_in_chaos.get(v, 0)
+        price_v = prices.get(v, 0)
         if price_v <= 0:
             continue
         trade_value = qty_v * price_v
@@ -221,7 +222,7 @@ def find_triangular_arbitrage(
                         break
                     raw = rates[pair]
                     qty_v = raw
-                    price_v = prices_in_chaos.get(cycle_names[i + 1], 0)
+                    price_v = prices.get(cycle_names[i + 1], 0)
                     if price_v <= 0:
                         valid = False
                         break

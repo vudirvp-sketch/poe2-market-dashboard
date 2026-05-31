@@ -155,14 +155,18 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         default=1,
     )
 
-    # 6. Build price-in-chaos mapping from snapshot
-    prices_in_chaos = dict(snapshot.prices_in_base)  # shallow copy — prevents mutation of shared state
+    # 6. Build price mapping from snapshot.
+    # Variable naming: `prices` holds prices in a consistent reference currency.
+    # For fee calculations the triangular algorithm needs a common unit;
+    # when the base is Exalted we convert to Chaos so gold-to-chaos fee
+    # arithmetic stays correct.
+    prices = dict(snapshot.prices_in_base)  # shallow copy — prevents mutation of shared state
 
-    if "chaos" in prices_in_chaos and config.league.base_currency != "chaos":
-        exalted_to_chaos = prices_in_chaos.get("chaos", 1.0)
-        for k in list(prices_in_chaos.keys()):
+    if "chaos" in prices and config.league.base_currency != "chaos":
+        exalted_to_chaos = prices.get("chaos", 1.0)
+        for k in list(prices.keys()):
             if k != "chaos":
-                prices_in_chaos[k] = prices_in_chaos[k] * exalted_to_chaos
+                prices[k] = prices[k] * exalted_to_chaos
 
     # 7. Run currency clustering
     clusterer = CurrencyClusterer(config)
@@ -199,8 +203,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                     # No timestamps available — fallback to second-to-last point
                     cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
             else:
-                cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
-                cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+                cluster_prices_now[curr] = prices.get(curr, 0)
+                cluster_prices_24h_ago[curr] = prices.get(curr, 0)
 
         if len(cluster_price_histories) >= 3:
             cluster_labels = clusterer.fit(
@@ -310,7 +314,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             total_spread, bid, ask, mid_price,
         )
 
-        price_to_chaos = prices_in_chaos.get(rate.currency_to, 0)
+        price_to_chaos = prices.get(rate.currency_to, 0)
         trade_value = rate.raw_rate * price_to_chaos
 
         try:
@@ -473,7 +477,19 @@ async def get_triangular_arbitrage(
         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
 
     gold_cost_dict = get_api_id_to_gold_cost()
-    prices_in_chaos = snapshot.prices_in_base
+
+    # Build prices in a consistent reference currency.
+    # The triangular algorithm multiplies qty_v * price_v to get trade_value,
+    # then divides fee_chaos by trade_value to get fee_fraction.
+    # For the units to match, prices MUST be in Chaos (same unit as
+    # gold_to_chaos_rate * gold_fee = fee_chaos).  When the base currency
+    # is Exalted, we convert via the chaos/exalted rate.
+    prices = dict(snapshot.prices_in_base)  # shallow copy
+    if "chaos" in prices and config.league.base_currency != "chaos":
+        base_to_chaos = prices.get("chaos", 1.0)
+        for k in list(prices.keys()):
+            if k != "chaos":
+                prices[k] = prices[k] * base_to_chaos
 
     gold_to_chaos_rate = (
         config.fees.fixed_gold_to_chaos_rate
@@ -497,7 +513,7 @@ async def get_triangular_arbitrage(
     opportunities = find_triangular_arbitrage(
         rates=rates_for_bf,
         gold_cost_per_unit=gold_cost_dict,
-        prices_in_chaos=prices_in_chaos,
+        prices=prices,
         gold_to_chaos_rate=gold_to_chaos_rate,
         min_profit_pct=min_profit_pct,
         fallback_gold_cost=config.fees.unknown_item_gold_cost,

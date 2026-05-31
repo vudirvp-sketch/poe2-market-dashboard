@@ -17,6 +17,14 @@ Where:
 - momentum_penalty: filter-style (0.5 if very negative, 0.8 if slightly negative, 1.0 if positive)
 - vol_penalty = 1.0 / (1.0 + (volatility / vol_reference)^2)
 - phase_multiplier: EARLY=1.2, MID=1.0, LATE=0.9
+
+NOTE ON score=0 FOR MOST PAIRS:
+    In PoE2, gold fees are very high (1–16% of trade value for common currencies
+    like Chaos/Divine/Exalted). This means spread_after_fees is almost always
+    negative, and the scorer correctly returns 0 — there is genuinely no
+    profitable flip after fees.  This is NOT a bug in the formula; it reflects
+    real market conditions.  A frontend workaround that recomputes scores
+    without proper fee accounting would be misleading to users.
 """
 
 from __future__ import annotations

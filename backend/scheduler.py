@@ -93,7 +93,7 @@ class DataScheduler:
                 price_base = prices_in_base.get(rate.currency_to, rate.raw_rate)
                 snapshots.append({
                     "currency": rate.currency_to,
-                    "price_chaos": price_base,
+                    "price": price_base,
                     "volume_24h": float(rate.volume_traded) if rate.volume_traded else None,
                     "bid": None,  # bid/ask not directly available from SnapshotPairs
                     "ask": None,
@@ -104,7 +104,7 @@ class DataScheduler:
                 if from_price is not None:
                     snapshots.append({
                         "currency": rate.currency_from,
-                        "price_chaos": from_price,
+                        "price": from_price,
                         "volume_24h": None,
                         "bid": None,
                         "ask": None,

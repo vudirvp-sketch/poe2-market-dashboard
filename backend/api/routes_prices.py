@@ -184,7 +184,7 @@ async def get_all_prices():
         cluster_prices_24h_ago: dict[str, float] = {}
 
         # Use snapshot's prices_in_base for clustering fallback
-        prices_in_chaos = snapshot.prices_in_base
+        prices_in_base = snapshot.prices_in_base
 
         # Accumulate volume per currency from rates
         for key, rate in rates.items():
@@ -213,12 +213,12 @@ async def get_all_prices():
                     cluster_prices_now[orig_id] = prices[-1]
                     cluster_prices_24h_ago[orig_id] = prices[0]
 
-        # Fill remaining prices from prices_in_chaos fallback
+        # Fill remaining prices from prices_in_base fallback
         for curr in cluster_price_histories:
             if cluster_prices_now[curr] == 0:
-                cluster_prices_now[curr] = prices_in_chaos.get(curr, 0)
+                cluster_prices_now[curr] = prices_in_base.get(curr, 0)
             if cluster_prices_24h_ago[curr] == 0:
-                cluster_prices_24h_ago[curr] = prices_in_chaos.get(curr, 0)
+                cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
 
         if len(cluster_price_histories) >= 3:
             clusterer = CurrencyClusterer(config)

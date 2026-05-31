@@ -2,13 +2,17 @@
 Historical price store using SQLite.
 
 Tables:
-- price_snapshots: (timestamp, league, currency, price_chaos, volume_24h, bid, ask)
+- price_snapshots: (timestamp, league, currency, price, volume_24h, bid, ask)
 - gold_chaos_rates: (timestamp, league, rate)
 - events: (event_id, event_type, description, affected_currencies, created_at, expires_at, is_active, deactivated_at)
 
 Write: every time current prices are fetched successfully.
 Read: for any model that needs history.
 Retention: configurable, default 90 days. Older records pruned on startup.
+
+Migration (v1→v2): column `price_chaos` renamed to `price` because the stored
+value is in the league's base currency (Exalted for PoE2), not necessarily
+Chaos. Existing databases are migrated automatically on init().
 """
 
 from __future__ import annotations
@@ -33,7 +37,7 @@ CREATE TABLE IF NOT EXISTS price_snapshots (
     timestamp TEXT NOT NULL,
     league TEXT NOT NULL,
     currency TEXT NOT NULL,
-    price_chaos REAL,
+    price REAL,
     volume_24h REAL,
     bid REAL,
     ask REAL
@@ -73,6 +77,16 @@ CREATE INDEX IF NOT EXISTS idx_events_active
     ON events(is_active, expires_at);
 """
 
+# ---------------------------------------------------------------------------
+# Schema migration: v1 (price_chaos) → v2 (price)
+# ---------------------------------------------------------------------------
+
+_MIGRATION_V1_TO_V2 = """
+-- Rename price_chaos → price (the column stores price in the league's base
+-- currency, not necessarily Chaos Orbs).
+ALTER TABLE price_snapshots RENAME COLUMN price_chaos TO price;
+"""
+
 
 class HistoricalStore:
     """SQLite-backed historical price store."""
@@ -84,12 +98,34 @@ class HistoricalStore:
         self._retention_days = self._config.data.historical_retention_days
 
     async def init(self) -> None:
-        """Initialize the database and create tables. Must be called once on startup."""
+        """Initialize the database, run migrations, and create tables.
+
+        Must be called once on startup.  If the database still has the old
+        ``price_chaos`` column, it is automatically migrated to ``price``.
+        """
         self._db = await aiosqlite.connect(str(self._db_path))
         self._db.row_factory = aiosqlite.Row
+
+        # --- Auto-migration: v1 (price_chaos) → v2 (price) ---
+        await self._migrate_v1_to_v2()
+
         await self._db.executescript(_CREATE_TABLES_SQL)
         await self._db.commit()
         await self._prune_old_records()
+
+    async def _migrate_v1_to_v2(self) -> None:
+        """Rename price_chaos → price if the old column still exists."""
+        db = self._db
+        # Check if the old column exists
+        cursor = await db.execute("PRAGMA table_info(price_snapshots)")
+        columns = await cursor.fetchall()
+        col_names = {row[1] for row in columns}  # row[1] = column name
+
+        if "price_chaos" in col_names and "price" not in col_names:
+            logger.info("Migrating DB schema: price_chaos → price")
+            await db.executescript(_MIGRATION_V1_TO_V2)
+            await db.commit()
+            logger.info("Migration complete: price_chaos column renamed to price")
 
     async def close(self) -> None:
         if self._db:
@@ -110,7 +146,7 @@ class HistoricalStore:
         self,
         league: str,
         currency: str,
-        price_chaos: float | None,
+        price: float | None,
         volume_24h: float | None = None,
         bid: float | None = None,
         ask: float | None = None,
@@ -121,9 +157,9 @@ class HistoricalStore:
         ts = (timestamp or datetime.now(timezone.utc)).isoformat()
         await db.execute(
             """INSERT INTO price_snapshots
-               (timestamp, league, currency, price_chaos, volume_24h, bid, ask)
+               (timestamp, league, currency, price, volume_24h, bid, ask)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (ts, league, currency, price_chaos, volume_24h, bid, ask),
+            (ts, league, currency, price, volume_24h, bid, ask),
         )
         await db.commit()
 
@@ -161,7 +197,7 @@ class HistoricalStore:
                 ts,
                 league,
                 s.get("currency", ""),
-                s.get("price_chaos"),
+                s.get("price"),
                 s.get("volume_24h"),
                 s.get("bid"),
                 s.get("ask"),
@@ -171,7 +207,7 @@ class HistoricalStore:
 
         await db.executemany(
             """INSERT OR IGNORE INTO price_snapshots
-               (timestamp, league, currency, price_chaos, volume_24h, bid, ask)
+               (timestamp, league, currency, price, volume_24h, bid, ask)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             rows,
         )
@@ -192,7 +228,7 @@ class HistoricalStore:
         cutoff = datetime.now(timezone.utc).isoformat()  # We want the last N days
 
         cursor = await db.execute(
-            """SELECT timestamp, currency, price_chaos, volume_24h, bid, ask
+            """SELECT timestamp, currency, price, volume_24h, bid, ask
                FROM price_snapshots
                WHERE league = ? AND currency = ?
                  AND timestamp >= datetime('now', ? || ' days')
@@ -204,7 +240,7 @@ class HistoricalStore:
             {
                 "timestamp": row[0],
                 "currency": row[1],
-                "price_chaos": row[2],
+                "price": row[2],
                 "volume_24h": row[3],
                 "bid": row[4],
                 "ask": row[5],
@@ -216,7 +252,7 @@ class HistoricalStore:
         """Get the most recent price for each currency in a league."""
         db = await self._ensure_db()
         cursor = await db.execute(
-            """SELECT ps.timestamp, ps.currency, ps.price_chaos, ps.volume_24h, ps.bid, ps.ask
+            """SELECT ps.timestamp, ps.currency, ps.price, ps.volume_24h, ps.bid, ps.ask
                FROM price_snapshots ps
                INNER JOIN (
                    SELECT currency, MAX(timestamp) as max_ts
@@ -233,7 +269,7 @@ class HistoricalStore:
             {
                 "timestamp": row[0],
                 "currency": row[1],
-                "price_chaos": row[2],
+                "price": row[2],
                 "volume_24h": row[3],
                 "bid": row[4],
                 "ask": row[5],
