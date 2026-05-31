@@ -52,15 +52,15 @@ class LeagueConfig(BaseModel):
 
 
 class FeesConfig(BaseModel):
-    gold_to_chaos_rate_source: str = "market"  # "market" or "fixed"
-    fixed_gold_to_chaos_rate: float | None = None
-    unknown_item_gold_cost: int = 200  # fallback for items not in gold_cost_table
+    """Fees configuration — currently unused after gold fee removal.
+    Kept as a placeholder for future fee models if needed."""
+    pass
 
 
 class FiltersConfig(BaseModel):
     min_volume_24h: int = 50
     max_volatility: float = 0.4
-    max_spread: float = 0.15  # Max allowed spread for quick filter (replaces gold_fee_fraction-based formula)
+    max_spread: float = 0.15  # Max allowed spread for quick filter
     exclude_volatile_illiquid: bool = False
 
 

@@ -37,9 +37,8 @@ class TestRecipeProfit:
             "output": {"item": "chaos_orb", "quantity": 1},
         }
         prices = {"chaos_shard": 0.3, "chaos_orb": 1.0}
-        gold_to_chaos_rate = 0.001
 
-        result = compute_recipe_profit(recipe, prices, gold_to_chaos_rate)
+        result = compute_recipe_profit(recipe, prices)
 
         assert result is not None
         # input_cost = 3 * 0.3 = 0.9 (no gold fee)
@@ -64,9 +63,8 @@ class TestRecipeProfit:
         }
         # 1 Transmutation = 0.05 Chaos, 1 Alchemy = 2.0 Chaos
         prices = {"orb_of_transmutation": 0.05, "orb_of_alchemy": 2.0}
-        gold_to_chaos_rate = 0.001
 
-        result = compute_recipe_profit(recipe, prices, gold_to_chaos_rate)
+        result = compute_recipe_profit(recipe, prices)
 
         assert result is not None
         # Input: 10 * 0.05 = 0.5 (no gold fee)
@@ -79,7 +77,7 @@ class TestRecipeProfit:
     def test_empty_recipe_returns_none(self):
         """Recipe with no inputs or output should return None."""
         recipe = {"name": "Empty", "inputs": [], "output": {}}
-        result = compute_recipe_profit(recipe, {}, 0.001)
+        result = compute_recipe_profit(recipe, {})
         assert result is None
 
     def test_unprofitable_recipe_with_fees_excluded(self):
@@ -93,7 +91,7 @@ class TestRecipeProfit:
         }
         # 1 Divine = 200.0, 1 Transmutation = 0.05
         prices = {"divine": 200.0, "orb_of_transmutation": 0.05}
-        result = compute_recipe_profit(recipe, prices, 0.001)
+        result = compute_recipe_profit(recipe, prices)
 
         assert result is not None
         assert result.profit_chaos < 0
@@ -123,7 +121,7 @@ class TestFindProfitableRecipes:
             "divine": 200.0,
         }
 
-        results = find_profitable_recipes(recipes, prices, 0.001)
+        results = find_profitable_recipes(recipes, prices)
 
         # Only the profitable recipe should be returned
         assert len(results) == 1
@@ -149,7 +147,7 @@ class TestFindProfitableRecipes:
             "orb_of_alchemy": 2.0,
         }
 
-        results = find_profitable_recipes(recipes, prices, 0.001)
+        results = find_profitable_recipes(recipes, prices)
 
         if len(results) >= 2:
             assert results[0].profit_pct >= results[1].profit_pct

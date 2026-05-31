@@ -52,7 +52,6 @@ interface PriceRate {
   currency_to: string;
   raw_rate: number;
   volume_traded: number;
-  fee_fraction: number;
   volatility: number;
   momentum: number;
   cluster_from?: string;
@@ -63,8 +62,6 @@ interface PricesResponse {
   league: string;
   phase: string;
   rates: PriceRate[];
-  /** @deprecated Always 0 — gold fees removed */
-  gold_to_chaos_rate?: number;
   base_currency: string;
   fetched_at: string;
 }
@@ -108,9 +105,7 @@ interface GraphEdge {
   source: string;
   target: string;
   rawRate: number;
-  effectiveRate: number;
   volume: number;
-  feeFraction: number;
   isCycleEdge: boolean;
 }
 
@@ -371,15 +366,12 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
     const edges: GraphEdge[] = [];
     for (const rate of pricesData.rates) {
       if (!rate.currency_from || !rate.currency_to || rate.raw_rate <= 0) continue;
-      const effectiveRate = rate.raw_rate * (1 - rate.fee_fraction);
       const isCycleEdge = cycleEdges.has(`${rate.currency_from}->${rate.currency_to}`);
       edges.push({
         source: rate.currency_from,
         target: rate.currency_to,
         rawRate: rate.raw_rate,
-        effectiveRate,
         volume: rate.volume_traded,
-        feeFraction: rate.fee_fraction,
         isCycleEdge,
       });
     }
@@ -689,8 +681,6 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                           <title>
                             {edge.source} → {edge.target}
                             {"\n"}Rate: {fmt(edge.rawRate)}
-                            {"\n"}Effective: {fmt(edge.effectiveRate)}
-                            {"\n"}Fee: {(edge.feeFraction * 100).toFixed(2)}%
                             {"\n"}Volume: {edge.volume.toLocaleString()}
                             {edge.isCycleEdge ? "\n[ARB CYCLE]" : ""}
                           </title>

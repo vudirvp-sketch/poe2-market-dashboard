@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 def compute_recipe_profit(
     recipe: dict,
     prices: dict[str, float],
-    gold_to_chaos_rate: float,
-    fallback_gold_cost: int = 200,
 ) -> RecipeOpportunity | None:
     """Compute the profitability of a vendor recipe.
 
@@ -34,8 +32,6 @@ def compute_recipe_profit(
     Args:
         recipe: Recipe definition from config.yaml
         prices: Dict mapping currency api_id to price in Chaos Orbs
-        gold_to_chaos_rate: DEPRECATED — kept for API compatibility, not used
-        fallback_gold_cost: DEPRECATED — kept for API compatibility, not used
 
     Returns:
         RecipeOpportunity if profitable, None otherwise
@@ -66,9 +62,6 @@ def compute_recipe_profit(
     profit = output_value - input_cost
     profit_pct = (profit / input_cost * 100) if input_cost > 0 else 0.0
 
-    # Total gold fee is 0 (excluded)
-    total_gold_fee = 0.0
-
     return RecipeOpportunity(
         name=name,
         inputs=inputs,
@@ -77,15 +70,12 @@ def compute_recipe_profit(
         output_value_chaos=output_value,
         profit_chaos=profit,
         profit_pct=profit_pct,
-        gold_fee_total=total_gold_fee,
     )
 
 
 def find_profitable_recipes(
     recipes: list[dict],
     prices: dict[str, float],
-    gold_to_chaos_rate: float,
-    fallback_gold_cost: int = 200,
     min_profit_pct: float = 0.0,
 ) -> list[RecipeOpportunity]:
     """Find all profitable vendor recipes.
@@ -93,8 +83,6 @@ def find_profitable_recipes(
     Args:
         recipes: List of recipe definitions from config.yaml
         prices: Dict mapping currency api_id to price in Chaos Orbs
-        gold_to_chaos_rate: Chaos value per gold coin
-        fallback_gold_cost: Default per-unit gold cost
         min_profit_pct: Minimum profit percentage to report
 
     Returns:
@@ -103,9 +91,7 @@ def find_profitable_recipes(
     profitable = []
 
     for recipe in recipes:
-        result = compute_recipe_profit(
-            recipe, prices, gold_to_chaos_rate, fallback_gold_cost
-        )
+        result = compute_recipe_profit(recipe, prices)
         if result is not None and result.profit_pct > min_profit_pct:
             profitable.append(result)
 

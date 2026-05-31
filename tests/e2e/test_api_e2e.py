@@ -64,7 +64,6 @@ async def test_get_prices(client):
         assert "league" in data
         assert "rates" in data
         assert isinstance(data["rates"], list)
-        assert "gold_to_chaos_rate" in data
         assert "phase" in data
 
 

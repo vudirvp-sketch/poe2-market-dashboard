@@ -93,18 +93,6 @@ class CurrencyInfo:
 
 
 # ---------------------------------------------------------------------------
-# Gold Fee
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True)
-class GoldCostEntry:
-    """Per-unit gold cost for a specific currency item in PoE2."""
-    api_id: str
-    gold_cost_per_unit: int
-    source: str = "wiki_verified"  # "wiki_verified", "fallback", "user_override"
-
-
-# ---------------------------------------------------------------------------
 # Economy
 # ---------------------------------------------------------------------------
 
@@ -166,7 +154,6 @@ class RecipeOpportunity:
     output_value_chaos: float
     profit_chaos: float
     profit_pct: float
-    gold_fee_total: float         # total gold fee for the recipe
 
 
 # ---------------------------------------------------------------------------

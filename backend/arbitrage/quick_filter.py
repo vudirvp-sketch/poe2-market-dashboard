@@ -45,10 +45,6 @@ def quick_filter(
         return False
 
     # 2. Max spread — fixed configurable threshold
-    # Previously: max_allowed_spread = 2 * gold_fee_fraction + 0.05
-    # Since gold_fee_fraction is now always 0, the formula simplified to a
-    # fixed constant. The new default (0.15 = 15%) gives comparable filtering
-    # to the old formula with a typical 5% gold fee (0.10 + 0.05).
     if opportunity.mid_price <= 0:
         return False
 

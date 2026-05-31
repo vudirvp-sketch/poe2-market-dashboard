@@ -131,6 +131,17 @@ Standard financial mathematics. Log-returns are the standard in quantitative fin
 
 ## §3. Gold Fee Model (PoE2-Specific)
 
+> **⚠️ DEPRECATED — REMOVED FROM CODEBASE:**
+> Gold fee calculations have been intentionally excluded from all arbitrage,
+> scoring, and recipe calculations. The `gold_costs.py` and `gold_cost_table.py`
+> modules have been deleted. The `FeesConfig` fields (`gold_to_chaos_rate_source`,
+> `fixed_gold_to_chaos_rate`, `unknown_item_gold_cost`) have been removed from
+> `config.yaml`. The `/api/prices` endpoint no longer returns `fee_fraction`,
+> `gold_fee_actual`, or `gold_to_chaos_rate`. This section is kept for
+> **reference only** — it documents the game mechanics but the code no longer
+> uses these formulas. If gold fees need to be re-introduced, this section
+> provides the canonical specification.
+
 ### 3.1 Core Formula
 
 The gold fee in PoE2's Currency Exchange is calculated as:
@@ -510,12 +521,19 @@ The `liquidity_normalization` divisor (default 10.0) maps the liquidity_score to
 
 ### 6.4 After Fees
 
-```
+> **⚠️ DEPRECATED:** Gold fee deductions are no longer applied in the codebase.
+> `net_value = adjusted_price` (no fee deduction). The `gold_fee_fraction`
+> parameter has been removed from `project_value()`.
+
+~~~
 gold_fee_fraction_for_sell = compute_fee_fraction(currency, quantity, gold_to_chaos_rate, trade_value_chaos)
 net_value = adjusted_price * (1 - gold_fee_fraction_for_sell)
-```
+~~~
 
-**Note:** The fee fraction here depends on the specific trade direction being evaluated. For a "hold" decision, the fee is the cost of eventually selling. For a "sell now" decision, the fee is the cost of the immediate sale.
+**Current implementation:**
+```
+net_value = adjusted_price   # gold fees excluded
+```
 
 ### 6.5 Decision Rule
 
@@ -719,6 +737,13 @@ Expected profit scoring is standard market-microstructure approach. The specific
 ---
 
 ## §8. Triangular Arbitrage (Bellman-Ford)
+
+> **⚠️ SIMPLIFIED IN CODEBASE:** The current implementation uses raw rates
+> directly (no gold fee deduction on edges). The `gold_cost_per_unit` and
+> `gold_to_chaos_rate` parameters have been removed from
+> `find_triangular_arbitrage()`. The weight formula is simply
+> `weight(u→v) = -ln(raw_rate(u→v))`. This section documents the original
+> fee-aware formula for reference.
 
 ### 8.1 Graph Construction
 
@@ -993,6 +1018,13 @@ Bellman-Ford negative cycle detection for arbitrage is a well-known technique in
 ---
 
 ## §9. Recipe Arbitrage
+
+> **⚠️ SIMPLIFIED IN CODEBASE:** The current implementation excludes gold
+> fees from recipe profit calculations. The `gold_to_chaos_rate` and
+> `fallback_gold_cost` parameters have been removed from
+> `compute_recipe_profit()`. The `gold_fee_total` field has been removed
+> from `RecipeOpportunity`. This section documents the original fee-aware
+> formula for reference.
 
 ### 9.1 Recipe Profit Calculation
 

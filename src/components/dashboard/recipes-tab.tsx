@@ -1,7 +1,7 @@
 // ============================================================================
 // RecipesTab — Vendor recipe arbitrage tab.
 // Shows profitable vendor orb recipes (e.g. shard → orb) compared against
-// live market prices with gold fee calculations.
+// live market prices.
 //
 // Data: GET /api/flipper/recipes
 // Backend: backend/api/routes_recipes.py

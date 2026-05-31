@@ -15,15 +15,13 @@ After: all routes share a single cached snapshot (~16 requests total per TTL win
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
-from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
+from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.models.currency import PhaseInfo
 
@@ -132,7 +130,6 @@ async def get_all_prices():
             "league": config.league.league_name,
             "phase": "unknown",
             "rates": [],
-            "gold_to_chaos_rate": config.fees.fixed_gold_to_chaos_rate if config.fees.fixed_gold_to_chaos_rate is not None else 0.001,
             "base_currency": config.league.base_currency,
             "stale": True,
             "data_available": False,
@@ -142,22 +139,6 @@ async def get_all_prices():
     # Get phase info
     detector = _get_phase_detector()
     phase_info = detector.get_phase_info()
-
-    # Determine gold_to_chaos_rate
-    gold_to_chaos_rate = (
-        config.fees.fixed_gold_to_chaos_rate
-        if config.fees.fixed_gold_to_chaos_rate is not None
-        else 0.001
-    )
-    if config.fees.gold_to_chaos_rate_source == "market":
-        try:
-            from backend.api.shared import get_provider
-            provider = get_provider()
-            observed = await provider.get_gold_chaos_rate(config.league.league_name)
-            if observed is not None:
-                gold_to_chaos_rate = observed
-        except (ConnectionError, OSError) as e:
-            logger.warning("Failed to get gold/chaos rate from market: %s", e)
 
     # Build momentum/volatility lookup from snapshot's currencies data
     momentum_lookup: dict[str, dict] = {}
@@ -169,9 +150,7 @@ async def get_all_prices():
         if orig_api_id and orig_api_id != api_id_lower:
             momentum_lookup[orig_api_id] = momentum_lookup[api_id_lower]
 
-    # Build response with fee calculations + momentum/volatility + cluster
-    from backend.economy.gold_costs import compute_fee_breakdown
-    from backend.economy.gold_cost_table import get_gold_cost_per_unit
+    # Build response with momentum/volatility + cluster
     from backend.predictors.clustering import CurrencyClusterer
     from backend.models.currency import ClusterLabel
 
@@ -239,25 +218,6 @@ async def get_all_prices():
 
     pairs_data = []
     for key, rate in rates.items():
-        # Compute fee for the forward direction
-        price_to = rate.raw_rate
-        price_from_chaos = 1.0
-        price_to_chaos = rate.raw_rate
-
-        try:
-            fee_bd = compute_fee_breakdown(
-                currency_received=rate.currency_to,
-                quantity_received=rate.raw_rate,
-                gold_to_chaos_rate=gold_to_chaos_rate,
-                trade_value_in_chaos=max(rate.raw_rate * price_to_chaos, 1e-10),
-                fallback_cost=config.fees.unknown_item_gold_cost,
-            )
-            fee_fraction = fee_bd.fee_fraction
-            gold_fee_actual = fee_bd.gold_fee_total
-        except Exception:
-            fee_fraction = 0.0
-            gold_fee_actual = 0.0
-
         # Add volatility and momentum from snapshot
         from_momentum = momentum_lookup.get(rate.currency_from, {})
         to_momentum = momentum_lookup.get(rate.currency_to, {})
@@ -273,8 +233,6 @@ async def get_all_prices():
             "raw_rate": rate.raw_rate,
             "volume_traded": rate.volume_traded,
             "stock_value": rate.stock_value,
-            "fee_fraction": round(fee_fraction, 6),
-            "gold_fee_actual": round(gold_fee_actual, 1),
             "volatility": round(from_momentum.get("volatility", 0.0), 6),
             "momentum": round(from_momentum.get("momentum", 0.0), 6),
             "acceleration": round(from_momentum.get("acceleration", 0.0), 6),
@@ -287,7 +245,6 @@ async def get_all_prices():
         "league": config.league.league_name,
         "phase": phase_info.phase.value,
         "rates": pairs_data,
-        "gold_to_chaos_rate": gold_to_chaos_rate,
         "base_currency": config.league.base_currency,
         "stale": False,
         "data_available": True,

@@ -19,16 +19,12 @@ league:
   phase_mid_days: 35
   base_currency: "exalted"
 
-fees:
-  gold_to_chaos_rate_source: "market"   # "market" (observed) or "fixed"
-  fixed_gold_to_chaos_rate: 0.00625    # 1/160 Chaos per gold (fallback when market source unavailable)
-  unknown_item_gold_cost: 200           # fallback for items not in gold_cost_table
-  # Per-unit gold costs are in gold_cost_table.py, not here
+fees: {}  # Gold fee configuration removed — fees excluded from all calculations
 
 filters:
   min_volume_24h: 50
   max_volatility: 0.4
-  max_spread: 0.15  # Max allowed spread for quick filter (replaces gold_fee_fraction-based formula)
+  max_spread: 0.15  # Max allowed spread for quick filter
   exclude_volatile_illiquid: false
 
 scoring:

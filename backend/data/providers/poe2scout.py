@@ -510,45 +510,6 @@ class Poe2ScoutProvider(BaseDataProvider):
         self._metadata_cache[effective_league] = (result, now)
         return result
 
-    async def get_gold_chaos_rate(self, league: str) -> float | None:
-        """Derive the gold→chaos rate from known game mechanics.
-
-        The gold cost per Chaos Orb is a FIXED game mechanic (160 gold per
-        Chaos in the Currency Exchange).  We use the reciprocal as a lower
-        bound for the market rate of gold in Chaos terms:
-
-            gold_to_chaos_rate = 1 / gold_cost_per_chaos
-
-        This represents the minimum value of 1 gold coin: you can always
-        "spend" 1/160 Chaos worth of gold on exchange fees.  The true market
-        rate (what players would pay for gold) is typically lower because gold
-        is abundant from mapping (~35-40k per T16 map), but for fee
-        calculations the reciprocal is the correct rate — it tells us how much
-        Chaos value each gold coin of fees consumes.
-
-        If a fixed rate is configured in config.yaml
-        (fees.fixed_gold_to_chaos_rate), callers should prefer that over
-        this derived rate.
-
-        Returns:
-            Derived gold→chaos rate (e.g. 0.00625 for 160 gold/Chaos),
-            or None if the gold cost table is unavailable.
-        """
-        try:
-            from backend.economy.gold_cost_table import get_gold_cost_per_unit
-            gold_per_chaos = get_gold_cost_per_unit("chaos")
-            if gold_per_chaos > 0:
-                rate = 1.0 / gold_per_chaos
-                logger.debug(
-                    "Derived gold_to_chaos_rate=%.6f from gold_cost_per_chaos=%d",
-                    rate, gold_per_chaos,
-                )
-                return rate
-        except Exception as e:
-            logger.debug("Could not derive gold_to_chaos_rate: %s", e)
-
-        return None
-
     # ------------------------------------------------------------------
     # Additional convenience methods
     # ------------------------------------------------------------------
