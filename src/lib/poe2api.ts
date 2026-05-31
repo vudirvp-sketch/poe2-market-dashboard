@@ -1308,7 +1308,9 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
 // Fix 1: use maxRetries: 1 for history endpoints — non-critical, fail fast
 export async function getItemHistory(realm: string, league: string, itemId: string, logCount = 168, referenceCurrency?: string): Promise<PoeItemHistoryPoint[]> {
   try {
-    let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${logCount}`;
+    // API requires LogCount to be a multiple of 4, otherwise returns 400
+    const safeLogCount = Math.max(4, Math.ceil(logCount / 4) * 4);
+    let url = `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/${itemId}/History?LogCount=${safeLogCount}`;
     if (referenceCurrency) url += `&ReferenceCurrency=${encodeURIComponent(referenceCurrency)}`;
     const raw = await cachedFetch<RawItemHistoryResponse>(url, { maxRetries: 1 });
     return (raw.PriceHistory ?? []).map((p) => ({

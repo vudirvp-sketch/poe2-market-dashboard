@@ -600,13 +600,14 @@ Note: With this volatility and horizon, the risk discount is severe, making the 
 
 ## §7. Opportunity Scoring
 
-### 7.1 Expected Profit After Fees
+### 7.1 Expected Profit (Raw Spread)
+
+> **Design decision (Iteration 3):** Gold/commission fees have been intentionally excluded from the opportunity scorer to simplify the model and avoid the complexity of direction-dependent fee asymmetry (see §3.3 for the 24% vs 0.73% example). The raw spread is used instead of `spread_after_fees`. Gold fee information is still computed by the backend for display purposes but does NOT affect scoring.
 
 ```
-gold_fee_fraction = compute_fee_fraction(currency_received, quantity, gold_to_chaos_rate, trade_value_chaos)
-spread_after_fees = (ask - bid) / mid_price - gold_fee_fraction
+spread = (ask - bid) / mid_price
 
-if spread_after_fees <= 0:
+if spread <= 0:
     score = 0.0    # no profit possible
 ```
 
@@ -641,7 +642,7 @@ Where `vol_reference` = 0.05 by default (5% volatility as reference point). At `
 ### 7.5 Final Score
 
 ```
-expected_profit = spread_after_fees * fill_probability
+expected_profit = spread * fill_probability
 score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
 score = clamp(score, 0.0, 1.0)
 ```
@@ -661,25 +662,25 @@ import numpy as np
 
 def compute_opportunity_score(bid: float, ask: float, mid_price: float,
                               volume_24h: float, max_volume: float,
-                              volatility: float, gold_fee_fraction: float,
+                              volatility: float,
                               phase_multiplier: float, momentum: float,
                               momentum_neg_threshold: float = -0.01,
                               vol_reference: float = 0.05) -> float:
-    # Spread after fees
+    # §7.1: Raw spread (gold fees excluded per project decision)
     if mid_price <= 0:
         return 0.0
-    spread_after_fees = (ask - bid) / mid_price - gold_fee_fraction
-    if spread_after_fees <= 0:
+    spread = (ask - bid) / mid_price
+    if spread <= 0:
         return 0.0
 
-    # Fill probability
+    # §7.2: Fill probability
     fill_probability = np.log1p(volume_24h) / np.log1p(max_volume)
     fill_probability = min(fill_probability, 1.0)
 
-    # Expected profit
-    expected_profit = spread_after_fees * fill_probability
+    # §7.5: Expected profit
+    expected_profit = spread * fill_probability
 
-    # Momentum penalty (filter-style)
+    # §7.3: Momentum penalty (filter-style)
     if momentum < momentum_neg_threshold:
         momentum_penalty = 0.5
     elif momentum < 0:
@@ -687,10 +688,10 @@ def compute_opportunity_score(bid: float, ask: float, mid_price: float,
     else:
         momentum_penalty = 1.0
 
-    # Volatility penalty
+    # §7.4: Volatility penalty
     vol_penalty = 1.0 / (1.0 + (volatility / vol_reference) ** 2)
 
-    # Final score
+    # §7.5: Final score
     score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
     return min(max(score, 0.0), 1.0)
 ```
@@ -700,15 +701,15 @@ def compute_opportunity_score(bid: float, ask: float, mid_price: float,
 ```
 bid = 95, ask = 105, mid_price = 100
 volume_24h = 500, max_volume = 2000
-volatility = 0.03, gold_fee_fraction = 0.05
+volatility = 0.03
 phase_multiplier = 1.0, momentum = 0.002
 
-spread_after_fees = (105-95)/100 - 0.05 = 0.10 - 0.05 = 0.05
+spread = (105-95)/100 = 0.10
 fill_probability = log1p(500)/log1p(2000) = 6.216/7.601 ≈ 0.818
-expected_profit = 0.05 * 0.818 = 0.0409
+expected_profit = 0.10 * 0.818 = 0.0818
 momentum_penalty = 1.0 (momentum > 0)
 vol_penalty = 1/(1+(0.03/0.05)^2) = 1/(1+0.36) = 0.735
-score = 0.0409 * 1.0 * 0.735 * 1.0 = 0.0301
+score = 0.0818 * 1.0 * 0.735 * 1.0 = 0.0601
 ```
 
 ### Source
