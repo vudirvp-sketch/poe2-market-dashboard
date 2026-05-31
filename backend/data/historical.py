@@ -100,6 +100,10 @@ class HistoricalStore:
 
         await self._db.executescript(_CREATE_TABLES_SQL)
         await self._db.commit()
+
+        # --- Cleanup: drop obsolete gold_chaos_rates table if it exists ---
+        await self._drop_obsolete_tables()
+
         await self._prune_old_records()
 
     async def _migrate_v1_to_v2(self) -> None:
@@ -115,6 +119,24 @@ class HistoricalStore:
             await db.executescript(_MIGRATION_V1_TO_V2)
             await db.commit()
             logger.info("Migration complete: price_chaos column renamed to price")
+
+    async def _drop_obsolete_tables(self) -> None:
+        """Drop tables that are no longer part of the schema.
+
+        The gold_chaos_rates table was used by the recipe arbitrage module
+        which has been removed. If the table still exists in an older
+        database, we drop it here to keep the schema clean.
+        """
+        db = self._db
+        # Check if gold_chaos_rates table exists
+        cursor = await db.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='gold_chaos_rates'"
+        )
+        row = await cursor.fetchone()
+        if row:
+            logger.info("Dropping obsolete table: gold_chaos_rates")
+            await db.execute("DROP TABLE IF EXISTS gold_chaos_rates")
+            await db.commit()
 
     async def close(self) -> None:
         if self._db:

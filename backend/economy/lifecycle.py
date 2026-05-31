@@ -36,7 +36,7 @@ _PHASE_STRATEGIES = {
         "reference_currency": "exalted",
     },
     LeaguePhase.MID: {
-        "recommended_strategy": "Triangular arb, recipe arb",
+        "recommended_strategy": "Triangular arb",
         "min_spread_after_fees": 0.05,  # 5%
         "max_hold_time": "24 hours",
         "reference_currency": "divine",

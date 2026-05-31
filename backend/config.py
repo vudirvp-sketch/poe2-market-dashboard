@@ -142,7 +142,6 @@ class AppConfig(BaseModel):
     events: EventsConfig = EventsConfig()
     storage_value: StorageValueConfig = StorageValueConfig()
     scheduler: SchedulerConfig = SchedulerConfig()
-    vendor_recipes: list[dict] = []
 
 
 def load_config_from_yaml(yaml_path: str | Path) -> AppConfig:

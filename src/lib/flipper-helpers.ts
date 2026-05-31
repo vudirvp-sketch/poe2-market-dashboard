@@ -1,6 +1,6 @@
 // ============================================================================
 // Flipper Helper Functions — Pure functions extracted from flipper-sticky-bar
-// and recipes-tab for testability. These are shared utilities that compute
+// for testability. These are shared utilities that compute
 // scores, colors, sentiment, and profit indicators.
 // ============================================================================
 

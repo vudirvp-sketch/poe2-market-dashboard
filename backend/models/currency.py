@@ -144,18 +144,6 @@ class TriangularOpportunity:
     confidence: float             # based on data freshness and volume
 
 
-@dataclass
-class RecipeOpportunity:
-    """A profitable vendor recipe."""
-    name: str
-    inputs: list[dict]            # [{"item": str, "quantity": int}]
-    output: dict                  # {"item": str, "quantity": int}
-    input_cost_chaos: float
-    output_value_chaos: float
-    profit_chaos: float
-    profit_pct: float
-
-
 # ---------------------------------------------------------------------------
 # Anomaly
 # ---------------------------------------------------------------------------

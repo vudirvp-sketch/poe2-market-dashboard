@@ -469,31 +469,6 @@ const en = {
   // ---- Overview Heatmap ----
   overviewHeatmap: "Price Heatmap (24h)",
 
-  // ---- Recipes Tab ----
-  tabRecipes: "Recipes",
-  recipesTitle: "Vendor Recipe Arbitrage",
-  recipesDescription: "Vendor recipes allow converting currency shards into orbs at a vendor. When the market price of shards is lower than the resulting orb value minus gold fees, the recipe becomes profitable. Prices are checked against live market data with gold fee calculations per the canonical formulas.",
-  recipesProfitableCount: "Profitable Recipes",
-  recipesTotalChecked: "Total Checked",
-  recipesBestProfit: "Best Profit",
-  recipesNoData: "Recipe data unavailable",
-  recipesNoDataDesc: "Make sure the backend is running and provides sufficient price data for recipe calculation.",
-  recipesNoProfitable: "No profitable vendor recipes",
-  recipesNoProfitableDesc: "Current market conditions do not make any vendor recipes profitable. This is common during stable market phases. Check back later when shard prices shift.",
-  recipesName: "Recipe",
-  recipesInputCost: "Input Cost",
-  recipesOutputValue: "Output Value",
-  recipesProfit: "Profit",
-  recipesProfitPct: "Profit %",
-  recipesStatus: "Status",
-  recipesMissingPrices: "Missing Prices",
-  recipesProfitable: "Profitable",
-  recipesUnprofitable: "Unprofitable",
-  recipesShowUnprofitable: "Show unprofitable recipes ({0})",
-  recipesHideUnprofitable: "Hide unprofitable recipes",
-  recipesMissingTitle: "{0} recipes have missing price data",
-  recipesMissingDesc: "Some recipes cannot be evaluated because the required currency prices are not available in the current market data.",
-
   // ---- Data Available (graceful unavailable) ----
   dataUnavailableTitle: "Data currently unavailable",
   dataUnavailableDesc: "The POE2Scout API may be unreachable or has no data for this request. This is not an error — try again later.",
