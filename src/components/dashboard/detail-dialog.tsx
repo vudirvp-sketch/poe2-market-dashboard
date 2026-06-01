@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint, DailyStat } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
@@ -56,7 +57,7 @@ export function DetailDialog({
   referenceCurrency,
 }: DetailDialogProps) {
   const [chartMode, setChartMode] = useState<"hourly" | "daily">("hourly");
-  const { isFavorite, toggleFavorite } = useDashboardStore();
+  const { isFavorite, toggleFavorite, uiState } = useDashboardStore();
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
 
@@ -191,7 +192,7 @@ export function DetailDialog({
             <div className="rounded-lg bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground">{t("priceLabel")}</p>
               <p className="text-lg font-bold font-mono">
-                {fmt(item.relativePrice ?? item.priceChaos)}
+                {formatPrice(item.relativePrice ?? item.priceChaos, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">

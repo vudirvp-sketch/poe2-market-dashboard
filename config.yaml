@@ -12,11 +12,11 @@ data:
   historical_retention_days: 90
 
 league:
-  league_name: "vaal"
+  league_name: "runes"
   realm: "poe2"                    # POE2Scout API realm path segment — NOT "poe2/pc" (that's the RealmOption.value, not the path param)
-  league_start_date: "2026-03-21T00:00:00Z"  # Fate of the Vaal launch date — update when a new league starts
-  phase_early_days: 7
-  phase_mid_days: 35
+  league_start_date: "2026-05-29T00:00:00Z"  # Runes of Aldur launch date — update when a new league starts
+  phase_early_days: 14
+  phase_mid_days: 42
   base_currency: "exalted"
 
 fees: {}  # Gold fee configuration removed — fees excluded from all calculations

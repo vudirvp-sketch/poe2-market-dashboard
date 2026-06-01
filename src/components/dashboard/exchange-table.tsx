@@ -21,6 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { formatPrice, getCurrencyShortName } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { Sparkline } from "./sparkline";
 import { PairHoverPreview } from "./pair-hover-preview";
@@ -173,7 +174,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("rate")}
               >
                 <span className="inline-flex items-center justify-end">
-                  {t("rate") ?? "Rate"}
+                  {t("rate") ?? "Rate"} ({getCurrencyShortName(uiState.baseCurrencyText, uiState.baseCurrencyApiId)})
                   <SortIndicator field="rate" />
                 </span>
               </th>
@@ -312,7 +313,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                   {/* Rate */}
                   <td className="px-3 py-2 text-right">
                     <span className="text-xl font-bold font-mono">
-                      {fmt(pair.relativePrice)}
+                      {formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
                     </span>
                   </td>
                   {/* Change */}

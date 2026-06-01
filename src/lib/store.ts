@@ -65,10 +65,14 @@ export interface PersistedUIState {
   league: string;
   /** §3.5: Global compact/dense mode toggle */
   denseMode: boolean;
+  /** Phase 0.2: Base currency API ID (e.g. "exalted") for currency labels */
+  baseCurrencyApiId: string | null;
+  /** Phase 0.2: Base currency display text (e.g. "Exalted Orb") for currency labels */
+  baseCurrencyText: string | null;
 }
 
 const DEFAULT_UI_STATE: PersistedUIState = {
-  _version: 3,
+  _version: 4,
   activeTab: "exchange",
   exchange: {
     viewMode: "table",
@@ -84,8 +88,10 @@ const DEFAULT_UI_STATE: PersistedUIState = {
     },
   },
   watchlist: [],
-  league: "vaal",
+  league: "runes",
   denseMode: false,
+  baseCurrencyApiId: null,
+  baseCurrencyText: null,
 };
 
 const UI_STATE_KEY = "poe2-dashboard-state";
@@ -134,9 +140,9 @@ function validateUIState(raw: unknown): PersistedUIState {
   if (!raw || typeof raw !== "object") return DEFAULT_UI_STATE;
   const stored = raw as Record<string, unknown>;
 
-  // Version check — support v1, v2 (migrate) and v3 (current)
+  // Version check — support v1, v2, v3, v4 (migrate)
   const version = stored._version;
-  if (version !== 1 && version !== 2 && version !== 3) return DEFAULT_UI_STATE;
+  if (version !== 1 && version !== 2 && version !== 3 && version !== 4) return DEFAULT_UI_STATE;
 
   // Validate activeTab
   const validTabs = [
@@ -196,7 +202,11 @@ function validateUIState(raw: unknown): PersistedUIState {
   // §3.5: Migrate denseMode (v2 → v3 adds denseMode)
   const denseMode = typeof stored.denseMode === "boolean" ? stored.denseMode : false;
 
-  return { _version: 3, activeTab, exchange, watchlist, league, denseMode };
+  // Phase 0.2: Migrate baseCurrencyApiId/baseCurrencyText (v3 → v4 adds currency fields)
+  const baseCurrencyApiId = typeof stored.baseCurrencyApiId === "string" ? stored.baseCurrencyApiId : null;
+  const baseCurrencyText = typeof stored.baseCurrencyText === "string" ? stored.baseCurrencyText : null;
+
+  return { _version: 4, activeTab, exchange, watchlist, league, denseMode, baseCurrencyApiId, baseCurrencyText };
 }
 
 // ---------- Store Interface ----------
@@ -248,6 +258,9 @@ interface DashboardStore {
 
   // §3.5: Global dense mode
   setDenseMode: (enabled: boolean) => void;
+
+  // Phase 0.2: Base currency for labels
+  setBaseCurrency: (apiId: string | null, text: string | null) => void;
 
   // Hydration
   _hydrated: boolean;
@@ -489,6 +502,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   // ---- §3.5: Global Dense Mode ----
   setDenseMode: (enabled) => {
     const uiState = { ...get().uiState, denseMode: enabled };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  // ---- Phase 0.2: Base Currency ----
+  setBaseCurrency: (apiId, text) => {
+    const uiState = { ...get().uiState, baseCurrencyApiId: apiId, baseCurrencyText: text };
     set({ uiState });
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
   },

@@ -10,6 +10,7 @@ import { Coins, ArrowLeftRight, GitCompare, Star } from "lucide-react";
 import { fmt, fmtChange } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { formatPrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { PairHoverPreview } from "./pair-hover-preview";
 
@@ -150,7 +151,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         <div className="flex items-center justify-between mt-2">
           <div>
             <span className="text-xl font-bold font-mono">  {/* §1.6: text-xl for prices */}
-              {fmt(pair.relativePrice)}
+              {formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
             </span>
             <span className={`ml-2 text-xs font-medium ${chg.color}`}>
               {chg.text}

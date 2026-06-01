@@ -207,6 +207,7 @@ export function Dashboard() {
     setExchangeExtendedFilters,
     clearExchangeExtendedFilters,
     setDenseMode,
+    setBaseCurrency,
   } = useDashboardStore();
 
   // §3.5: Toggle .dense-mode class on <html> when global dense mode changes
@@ -341,6 +342,19 @@ export function Dashboard() {
       }
     }
   }, [league, leagues]);
+
+  // Phase 0.2: Update base currency in store when league changes
+  useEffect(() => {
+    if (leagues && effectiveLeague) {
+      const currentLeague = leagues.find((l) => l.name === effectiveLeague);
+      if (currentLeague?.baseCurrencyApiId || currentLeague?.baseCurrencyText) {
+        setBaseCurrency(
+          currentLeague.baseCurrencyApiId ?? null,
+          currentLeague.baseCurrencyText ?? null,
+        );
+      }
+    }
+  }, [leagues, effectiveLeague, setBaseCurrency]);
 
   // Reference currencies
   const { data: referenceCurrencies } = useQuery({
@@ -764,6 +778,8 @@ export function Dashboard() {
         }}
         denseMode={uiState.denseMode}
         onDenseModeToggle={() => setDenseMode(!uiState.denseMode)}
+        baseCurrencyApiId={uiState.baseCurrencyApiId}
+        baseCurrencyText={uiState.baseCurrencyText}
       />
 
       <FlipperStickyBar backendOnline={flipperBackendOnline} />

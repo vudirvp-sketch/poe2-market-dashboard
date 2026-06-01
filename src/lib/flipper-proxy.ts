@@ -76,7 +76,9 @@ async function _doProxyWithRetry(
           Accept: "application/json",
           ...(body ? { "Content-Type": "application/json" } : {}),
         },
-        signal: AbortSignal.timeout(30_000),
+        // Phase 0.5: Reduced from 30s to 5s to prevent hanging requests
+        // when the backend is completely unreachable.
+        signal: AbortSignal.timeout(5_000),
       };
 
       if (body && method !== "GET") {

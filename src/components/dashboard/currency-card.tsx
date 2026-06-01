@@ -14,6 +14,7 @@ import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatPrice } from "@/lib/utils";
 
 interface CurrencyCardProps {
   item: PoeItem;
@@ -34,7 +35,7 @@ export const CurrencyCard = memo(function CurrencyCard({
   const chg = fmtChange(item.changePercent);
   const sparkData =
     item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) || [];
-  const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison } =
+  const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison, uiState } =
     useDashboardStore();
   const fav = isFavorite(item.id);
   const inComparison = isInComparison(item.id);
@@ -145,7 +146,7 @@ export const CurrencyCard = memo(function CurrencyCard({
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xl font-bold">  {/* §1.6: text-xl for prices */}
-              {fmt(item.relativePrice ?? item.priceChaos)}
+              {formatPrice(item.relativePrice ?? item.priceChaos, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
             </p>
             <p className={`text-xs font-medium ${chg.color}`}>{chg.text}</p>
           </div>

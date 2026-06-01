@@ -86,6 +86,10 @@ interface HeaderProps {
   denseMode?: boolean;
   /** §3.5: Callback to toggle dense mode */
   onDenseModeToggle?: () => void;
+  /** Base currency API ID (e.g. "exalted") for currency labels */
+  baseCurrencyApiId?: string | null;
+  /** Base currency display text (e.g. "Exalted Orb") for currency labels */
+  baseCurrencyText?: string | null;
 }
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -98,6 +102,35 @@ const LOCALE_LABELS: Record<Locale, string> = {
 // ---------------------------------------------------------------------------
 // Phase badge helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Determine the effective phase, accounting for backend misreporting.
+ * If the backend says "late" but the league is very young (<14 days),
+ * override to the correct phase based on league age.
+ */
+function getEffectivePhase(phaseInfo: PhaseInfo | null | undefined): {
+  phase: string;
+  isEstimated: boolean;
+} {
+  if (!phaseInfo) return { phase: "", isEstimated: false };
+
+  const days = phaseInfo.days_since_ref;
+  const reportedPhase = phaseInfo.phase?.toLowerCase();
+
+  // Client-side validation: if backend says "late" but league is clearly young
+  if (reportedPhase === "late" && days < 14) {
+    return { phase: "early", isEstimated: true };
+  }
+  if (reportedPhase === "late" && days < 42) {
+    return { phase: "mid", isEstimated: true };
+  }
+  if (reportedPhase === "mid" && days < 14) {
+    return { phase: "early", isEstimated: true };
+  }
+
+  return { phase: reportedPhase, isEstimated: false };
+}
+
 function phaseBadgeClass(phase: string): string {
   switch (phase?.toLowerCase()) {
     case "early":
@@ -217,6 +250,9 @@ export function Header({
 
   const leagueSelectValue = effectiveLeague || "__none__";
 
+  // Compute effective phase with client-side validation
+  const effectivePhase = getEffectivePhase(phaseInfo);
+
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
       <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center gap-2.5 flex-nowrap overflow-x-auto">
@@ -274,13 +310,17 @@ export function Header({
           </Select>
         </div>
 
-        {/* Phase badge — compact, useful context */}
-        {flipperBackendOnline && phaseInfo && (
+        {/* Phase badge — compact, useful context with client-side validation */}
+        {(flipperBackendOnline ? phaseInfo : leagues?.find(l => l.active)) && (
           <Badge
             variant="outline"
-            className={`text-[10px] px-1.5 py-0 font-bold shrink-0 ${phaseBadgeClass(phaseInfo.phase)}`}
+            className={`text-[10px] px-1.5 py-0 font-bold shrink-0 ${phaseBadgeClass(effectivePhase.phase)}`}
+            title={effectivePhase.isEstimated ? t("phaseEstimatedTooltip") : t("phaseBackendTooltip")}
           >
-            {phaseLabel(phaseInfo.phase, t)}
+            {phaseLabel(effectivePhase.phase, t)}
+            {effectivePhase.isEstimated && (
+              <span className="ml-0.5 opacity-60 text-[8px]" title={t("phaseEstimatedTooltip")}>~</span>
+            )}
           </Badge>
         )}
 

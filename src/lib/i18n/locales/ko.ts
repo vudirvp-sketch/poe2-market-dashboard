@@ -353,6 +353,11 @@ const ko: Record<TranslationKeys, string> = {
   flipsAsk: "도",
   flipsMid: "중간",
   flipsDetailTitle: "플립 상세: {0}",
+  flipsDataQualityWarning: "데이터 품질 문제: 가격이 부정확할 수 있습니다",
+  flipsStaleDataWarning: "데이터가 오래되었을 수 있습니다 — 10분 이상 전에 업데이트됨",
+  flipsBackendOfflineTitle: "플립 분석에는 백엔드 서버가 필요합니다",
+  flipsBackendOfflineDesc: "백엔드 분석 서버가 현재 오프라인입니다. 서버를 시작하거나 차익거래 탭으로 전환하여 클라이언트 측 분석을 사용하세요.",
+  flipsSwitchToArbitrage: "차익거래로 전환",
 
   // ---- Events Sidebar ----
   eventsTitle: "이벤트",
@@ -440,6 +445,8 @@ const ko: Record<TranslationKeys, string> = {
   phaseEarly: "초기",
   phaseMid: "중기",
   phaseLate: "후기",
+  phaseEstimatedTooltip: "리그 기간을 기반으로 추정된 단계 (백엔드 데이터가 오래되었을 수 있음)",
+  phaseBackendTooltip: "백엔드 분석의 단계",
 
   // ---- Currency Graph Tab ----
   graphCurrencies: "통화 수",

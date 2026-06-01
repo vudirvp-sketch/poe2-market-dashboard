@@ -45,6 +45,8 @@ import {
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, FlipperApiError } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ApiErrorFallback } from "./api-error-fallback";
 
@@ -175,6 +177,7 @@ interface ForecastTabProps {
 
 export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDegraded }: ForecastTabProps) {
   const { t } = useI18n();
+  const { uiState } = useDashboardStore();
 
   // Selected currency
   const [selectedCurrency, setSelectedCurrency] = useState("divine");
@@ -730,15 +733,15 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastCurrentPrice")}</p>
-                  <p className="text-lg font-bold font-mono">{storageData.current_price.toFixed(4)}</p>
+                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.current_price, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastProjectedPrice")}</p>
-                  <p className="text-lg font-bold font-mono">{storageData.projected_price.toFixed(4)}</p>
+                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.projected_price, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastNetAfterFees")}</p>
-                  <p className="text-lg font-bold font-mono">{storageData.net_value_after_fees.toFixed(4)}</p>
+                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.net_value_after_fees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastRatio")}</p>

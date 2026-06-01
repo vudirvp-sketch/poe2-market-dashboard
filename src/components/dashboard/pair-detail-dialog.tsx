@@ -25,6 +25,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store";
 import { useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -54,6 +56,7 @@ export function PairDetailDialog({
 }: PairDetailDialogProps) {
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
+  const { uiState } = useDashboardStore();
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
 
   const { data: pairHistory, isLoading } = useQuery({
@@ -158,7 +161,7 @@ export function PairDetailDialog({
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("current")}</p>
               <p className="text-sm font-bold font-mono">
-                {fmt(pair.relativePrice)}{" "}
+                {formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}{" "}
                 <span className={`text-xs font-semibold ${changeIndicator.color}`}>
                   {changeIndicator.text}
                 </span>

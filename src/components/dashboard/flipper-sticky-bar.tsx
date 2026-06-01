@@ -107,6 +107,17 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   // Market sentiment from all flip opportunities
   const sentiment = computeSentiment(flipsData?.opportunities ?? []);
 
+  // Client-side phase validation (same logic as header.tsx)
+  const effectivePhase = (() => {
+    if (!phaseData?.phase) return { phase: "", isEstimated: false };
+    const days = phaseData.days_since_ref;
+    const reported = phaseData.phase.toLowerCase();
+    if (reported === "late" && days < 14) return { phase: "early", isEstimated: true };
+    if (reported === "late" && days < 42) return { phase: "mid", isEstimated: true };
+    if (reported === "mid" && days < 14) return { phase: "early", isEstimated: true };
+    return { phase: reported, isEstimated: false };
+  })();
+
   // Don't render if backend is offline
   if (!backendOnline) return null;
 
@@ -244,24 +255,28 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
             </div>
           )}
 
-          {/* Phase Badge */}
-          {phaseData?.phase && (
+          {/* Phase Badge — with client-side validation */}
+          {effectivePhase.phase && (
             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
               <Badge
                 variant="outline"
+                title={effectivePhase.isEstimated ? t("phaseEstimatedTooltip") : t("phaseBackendTooltip")}
                 className={
-                  phaseData.phase === "early"
+                  effectivePhase.phase === "early"
                     ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px] px-1.5 py-0 font-semibold"
-                    : phaseData.phase === "mid"
+                    : effectivePhase.phase === "mid"
                       ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10 text-[10px] px-1.5 py-0 font-semibold"
                       : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10 text-[10px] px-1.5 py-0 font-semibold"
                 }
               >
-                {phaseData.phase === "early"
+                {effectivePhase.phase === "early"
                   ? t("phaseEarly")
-                  : phaseData.phase === "mid"
+                  : effectivePhase.phase === "mid"
                     ? t("phaseMid")
                     : t("phaseLate")}
+                {effectivePhase.isEstimated && (
+                  <span className="ml-0.5 opacity-60 text-[8px]">~</span>
+                )}
               </Badge>
             </div>
           )}

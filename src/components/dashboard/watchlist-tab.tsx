@@ -37,6 +37,7 @@ import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
+import { formatPrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
 // ============================================================================
@@ -454,7 +455,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                       {/* Rate */}
                       <td className="px-3 py-2 text-right">
                         <span className="text-xl font-bold font-mono">
-                          {fmt(pair.relativePrice)}
+                          {formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
                         </span>
                       </td>
                       {/* Change */}

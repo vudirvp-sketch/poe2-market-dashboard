@@ -9,6 +9,8 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { fmt } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
+import { useDashboardStore } from "@/lib/store";
 import {
   type FlipOpportunity,
   type StorageValueResponse,
@@ -31,6 +33,7 @@ interface FlipsDetailDialogProps {
 
 export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDialogProps) {
   const { t } = useI18n();
+  const { uiState } = useDashboardStore();
 
   return (
     <div className="space-y-4">
@@ -130,10 +133,10 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <span className="text-muted-foreground">
-              {t("forecastRatio")}: <span className="font-mono font-medium">{storageData.ratio.toFixed(4)}</span>
+              {t("forecastRatio")}: <span className="font-mono font-medium">{formatPrice(storageData.ratio, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
             </span>
             <span className="text-muted-foreground">
-              {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{storageData.net_value_after_fees.toFixed(4)}</span>
+              {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{formatPrice(storageData.net_value_after_fees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
             </span>
           </div>
           {/* Total values for entire holdings (when quantity > 1) */}

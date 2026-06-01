@@ -1,8 +1,10 @@
 // ============================================================================
 // Flipper Helper Functions — Pure functions extracted from flipper-sticky-bar
 // for testability. These are shared utilities that compute
-// scores, colors, sentiment, and profit indicators.
+// scores, colors, sentiment, profit indicators, and data quality checks.
 // ============================================================================
+
+import type { FlipOpportunity } from "@/lib/types";
 
 /**
  * Compute aggregated market sentiment from all flip opportunities.
@@ -66,4 +68,67 @@ export function classifySentiment(value: number): "bullish" | "bearish" | "neutr
   if (value > 0.005) return "bullish";
   if (value < -0.005) return "bearish";
   return "neutral";
+}
+
+/**
+ * Phase 0.4: Check if flip data appears suspicious.
+ * Detects patterns that indicate placeholder or incorrect data:
+ * - All prices identical (buy = sell = mid)
+ * - Spread contradicts the actual buy/sell prices
+ * - Zero prices with non-zero volume
+ */
+export function isFlipDataSuspicious(flip: FlipOpportunity): boolean {
+  // All prices identical → likely placeholder data
+  if (flip.bid > 0 && flip.ask > 0 && flip.mid_price > 0 &&
+      flip.bid === flip.ask && flip.bid === flip.mid_price) {
+    return true;
+  }
+  // Spread contradicts buy/sell prices
+  if (flip.bid > 0 && flip.ask > 0) {
+    const actualSpread = Math.abs(flip.ask - flip.bid) /
+                         ((flip.bid + flip.ask) / 2);
+    const reportedSpread = flip.spread ?? flip.spread_after_fees;
+    if (reportedSpread > 0 && Math.abs(actualSpread - reportedSpread) > 0.01) {
+      return true;
+    }
+  }
+  // Zero prices with non-zero volume → data error
+  if (flip.bid === 0 && flip.volume_24h > 0) return true;
+  return false;
+}
+
+/**
+ * Phase 0.4: Validate an entire flips response for suspicious patterns.
+ * Returns true if the response looks like it contains bad data.
+ */
+export function isFlipsResponseSuspicious(
+  opportunities: FlipOpportunity[],
+): { suspicious: boolean; reason: string } {
+  if (!opportunities || opportunities.length === 0) {
+    return { suspicious: false, reason: "" };
+  }
+
+  // Check if all opportunities have identical prices
+  const allSamePrice = opportunities.every(
+    (f) => f.bid === opportunities[0].bid &&
+           f.ask === opportunities[0].ask &&
+           f.mid_price === opportunities[0].mid_price,
+  );
+  if (allSamePrice && opportunities.length > 1) {
+    return {
+      suspicious: true,
+      reason: "All flips have identical prices — likely placeholder data",
+    };
+  }
+
+  // Check if a large proportion of flips are individually suspicious
+  const suspiciousCount = opportunities.filter(isFlipDataSuspicious).length;
+  if (suspiciousCount > opportunities.length * 0.5) {
+    return {
+      suspicious: true,
+      reason: `${suspiciousCount} of ${opportunities.length} flips have suspicious data`,
+    };
+  }
+
+  return { suspicious: false, reason: "" };
 }

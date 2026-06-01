@@ -353,6 +353,11 @@ const en = {
   flipsAsk: "Ask",
   flipsMid: "Mid",
   flipsDetailTitle: "Flip Detail: {0}",
+  flipsDataQualityWarning: "Data quality issue: prices may be inaccurate",
+  flipsStaleDataWarning: "Data may be stale — last updated more than 10 minutes ago",
+  flipsBackendOfflineTitle: "Flip analysis requires the backend server",
+  flipsBackendOfflineDesc: "The backend analytics server is currently offline. Start it or switch to the Arbitrage tab for client-side analysis.",
+  flipsSwitchToArbitrage: "Switch to Arbitrage",
 
   // ---- Events Sidebar ----
   eventsTitle: "Events",
@@ -440,6 +445,8 @@ const en = {
   phaseEarly: "EARLY",
   phaseMid: "MID",
   phaseLate: "LATE",
+  phaseEstimatedTooltip: "Phase is estimated based on league age (backend data may be outdated)",
+  phaseBackendTooltip: "Phase from backend analytics",
 
   // ---- Currency Graph Tab ----
   graphCurrencies: "Currencies",

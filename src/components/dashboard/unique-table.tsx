@@ -17,6 +17,7 @@ import { Shield, Star, ArrowUpDown, ArrowUp, ArrowDown, GitCompare, ChevronRight
 import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
@@ -143,7 +144,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         ),
         cell: ({ row }) => (
           <span className={`font-mono ${isCompact ? "text-xs" : ""}`}>
-            {fmt(row.original.relativePrice ?? row.original.priceChaos)}
+            {formatPrice(row.original.relativePrice ?? row.original.priceChaos, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
           </span>
         ),
       },

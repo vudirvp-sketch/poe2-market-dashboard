@@ -353,6 +353,11 @@ const zh: Record<TranslationKeys, string> = {
   flipsAsk: "卖价",
   flipsMid: "中价",
   flipsDetailTitle: "翻转详情: {0}",
+  flipsDataQualityWarning: "数据质量问题：价格可能不准确",
+  flipsStaleDataWarning: "数据可能已过时 — 超过10分钟未更新",
+  flipsBackendOfflineTitle: "翻转分析需要后端服务器",
+  flipsBackendOfflineDesc: "后端分析服务器当前离线。请启动服务器或切换到套利标签页进行客户端分析。",
+  flipsSwitchToArbitrage: "切换到套利",
 
   // ---- Events Sidebar ----
   eventsTitle: "事件",
@@ -440,6 +445,8 @@ const zh: Record<TranslationKeys, string> = {
   phaseEarly: "早期",
   phaseMid: "中期",
   phaseLate: "后期",
+  phaseEstimatedTooltip: "阶段根据联赛年龄估算（后端数据可能已过时）",
+  phaseBackendTooltip: "阶段来自后端分析",
 
   // ---- Currency Graph Tab ----
   graphCurrencies: "货币数",
