@@ -137,3 +137,26 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* §2.4: Volume color indication for Exchange table rows */
+.volume-indicator-row {
+  background-color: rgba(59, 130, 246, calc(var(--vol-opacity, 0) * 0.08));
+}
+.dark .volume-indicator-row {
+  background-color: rgba(96, 165, 250, calc(var(--vol-opacity, 0) * 0.12));
+}
+/* Keep hover visible on top of volume indication */
+.volume-indicator-row:hover {
+  background-color: rgba(59, 130, 246, calc(var(--vol-opacity, 0) * 0.08 + 0.04));
+}
+.dark .volume-indicator-row:hover {
+  background-color: rgba(96, 165, 250, calc(var(--vol-opacity, 0) * 0.12 + 0.06));
+}
+
+/* §2.4: Volume color indication for Exchange pair cards (left border) */
+.volume-indicator-card {
+  border-left: 3px solid rgba(59, 130, 246, calc(var(--vol-opacity, 0) * 0.8));
+}
+.dark .volume-indicator-card {
+  border-left: 3px solid rgba(96, 165, 250, calc(var(--vol-opacity, 0) * 0.8));
+}

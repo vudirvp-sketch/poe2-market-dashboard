@@ -516,6 +516,20 @@ const zh: Record<TranslationKeys, string> = {
   recipesMissingTitle: "{0} 个配方缺少价格",
   recipesShowUnprofitable: "显示 {0} 个亏损配方",
   recipesHideUnprofitable: "隐藏亏损配方",
+
+  // ---- Watchlist Filters ----
+  filters: "筛选",
+  minVolume: "最小成交量",
+  maxVolume: "最大成交量",
+  minChange: "最小变动 %",
+  maxChange: "最大变动 %",
+  resetFilters: "重置筛选",
+  searchNoResults: "未找到结果",
+  sharpMovements: "剧烈波动",
+  searchWatchlist: "搜索关注列表...",
+  added: "添加时间",
+  noWatchlistMatches: "没有项目匹配筛选条件",
+  noWatchlistMatchesDesc: "请尝试调整搜索或分组筛选。",
 };
 
 export default zh;

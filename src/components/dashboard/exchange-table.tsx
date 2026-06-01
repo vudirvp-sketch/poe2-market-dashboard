@@ -67,6 +67,12 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
   const sortDirection = uiState.exchange.sortDirection;
   const favorites = uiState.exchange.favorites;
 
+  // §2.4: Compute max volume for volume color indication
+  const maxVolume = useMemo(
+    () => Math.max(...pairs.map((p) => p.volume), 1),
+    [pairs]
+  );
+
   // --- Sorting ---
   const sortedPairs = useMemo(() => {
     const sorted = [...pairs];
@@ -217,10 +223,17 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
                     : "#ef4444"
                   : "#888888";
 
+              // §2.4: Volume color indication — background opacity proportional to volume rank
+              const volumeRank = pair.volume / maxVolume;
+              const volumeBgStyle = {
+                '--vol-opacity': volumeRank.toFixed(3),
+              } as React.CSSProperties;
+
               return (
                 <tr
                   key={pair.id}
-                  className="border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group"
+                  className="border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group volume-indicator-row"
+                  style={volumeBgStyle}
                   onClick={() => onPairClick(pair)}
                   tabIndex={0}
                   onKeyDown={(e) => {

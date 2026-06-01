@@ -25,6 +25,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { Header } from "@/components/dashboard/header";
 import { CurrencyCard } from "@/components/dashboard/currency-card";
@@ -186,6 +187,9 @@ export function Dashboard() {
   // --- Events sidebar ---
   const [eventsSidebarOpen, setEventsSidebarOpen] = useState(false);
 
+  // --- §2.3: Extended filters panel ---
+  const [extendedFiltersOpen, setExtendedFiltersOpen] = useState(false);
+
   // --- Comparison store ---
   const {
     comparisonIds,
@@ -196,7 +200,20 @@ export function Dashboard() {
     setLeague: persistLeague,
     setExchangeViewMode,
     setExchangeFilter,
+    setExchangeExtendedFilters,
+    clearExchangeExtendedFilters,
   } = useDashboardStore();
+
+  // §2.3: Count of active extended filters
+  const activeExtFilterCount = useMemo(() => {
+    const f = uiState.exchange.extendedFilters;
+    let count = 0;
+    if (f.minVolume != null) count++;
+    if (f.maxVolume != null) count++;
+    if (f.minChange != null) count++;
+    if (f.maxChange != null) count++;
+    return count;
+  }, [uiState.exchange.extendedFilters]);
 
   // --- i18n ---
   const { t, tp } = useI18n();
@@ -458,8 +475,23 @@ export function Dashboard() {
       pairs = pairs.filter((p) => uiState.exchange.favorites.includes(p.id));
     }
 
+    // §2.3: Apply extended filters
+    const extFilters = uiState.exchange.extendedFilters;
+    if (extFilters.minVolume != null) {
+      pairs = pairs.filter((p) => p.volume >= (extFilters.minVolume ?? 0));
+    }
+    if (extFilters.maxVolume != null) {
+      pairs = pairs.filter((p) => p.volume <= (extFilters.maxVolume ?? Infinity));
+    }
+    if (extFilters.minChange != null && extFilters.minChange !== 0) {
+      pairs = pairs.filter((p) => (p.changePercent ?? -Infinity) >= (extFilters.minChange ?? -Infinity));
+    }
+    if (extFilters.maxChange != null && extFilters.maxChange !== 0) {
+      pairs = pairs.filter((p) => (p.changePercent ?? Infinity) <= (extFilters.maxChange ?? Infinity));
+    }
+
     return pairs;
-  }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites]);
+  }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites, uiState.exchange.extendedFilters]);
 
   // Categories
   const currencyCategories = useMemo(() => {
@@ -629,6 +661,16 @@ export function Dashboard() {
         phaseInfo={flipperPhaseData ?? null}
         activeEventsCount={activeEventsCount}
         onEventsClick={() => setEventsSidebarOpen(true)}
+        exchangePairs={exchangeData ?? []}
+        allItems={allItems ?? []}
+        activeTab={tab}
+        onSearchResultSelect={(result) => {
+          // Navigate to the relevant tab
+          setTab(result.tab);
+          // Set the search so the table filters to show the item
+          // For exchange, we use pair names; for items, we use item names
+          setSearch(""); // Clear search after navigation — the tab switch itself highlights
+        }}
       />
 
       <FlipperStickyBar backendOnline={flipperBackendOnline} />
@@ -889,7 +931,7 @@ export function Dashboard() {
                 />
               ) : (
                 <>
-                  {/* §1.1: View toggle + §1.2: Quick Filter Chips */}
+                  {/* §1.1: View toggle + §1.2: Quick Filter Chips + §2.3: Extended Filters */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     {/* Quick Filter Chips (§1.2) */}
                     <div className="flex items-center gap-1.5" role="group" aria-label="Exchange filters">
@@ -932,6 +974,24 @@ export function Dashboard() {
                         <Star className="h-3 w-3 mr-1" aria-hidden="true" />
                         {t("favorites") ?? "Favorites"}
                       </Badge>
+
+                      {/* §2.3: Extended Filters toggle button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1 px-2"
+                        onClick={() => setExtendedFiltersOpen(!extendedFiltersOpen)}
+                        aria-expanded={extendedFiltersOpen}
+                        aria-label={t("filters") ?? "Filters"}
+                      >
+                        <Filter className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t("filters") ?? "Filters"}
+                        {activeExtFilterCount > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center rounded-full">
+                            {activeExtFilterCount}
+                          </Badge>
+                        )}
+                      </Button>
                     </div>
 
                     {/* View toggle: Table / Cards (§1.1) */}
@@ -961,6 +1021,97 @@ export function Dashboard() {
                     </div>
                   </div>
 
+                  {/* §2.3: Extended Filters collapsible panel */}
+                  {extendedFiltersOpen && (
+                    <div className="mb-3 p-3 border border-border rounded-lg bg-muted/30" role="region" aria-label="Extended filters">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {/* Min Volume */}
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("minVolume") ?? "Min Volume"}</label>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={uiState.exchange.extendedFilters.minVolume ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setExchangeExtendedFilters({
+                                ...uiState.exchange.extendedFilters,
+                                minVolume: val === "" ? null : Number(val),
+                              });
+                            }}
+                            className="h-7 text-xs"
+                            min={0}
+                          />
+                        </div>
+                        {/* Max Volume */}
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxVolume") ?? "Max Volume"}</label>
+                          <Input
+                            type="number"
+                            placeholder="∞"
+                            value={uiState.exchange.extendedFilters.maxVolume ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setExchangeExtendedFilters({
+                                ...uiState.exchange.extendedFilters,
+                                maxVolume: val === "" ? null : Number(val),
+                              });
+                            }}
+                            className="h-7 text-xs"
+                            min={0}
+                          />
+                        </div>
+                        {/* Min Change % */}
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("minChange") ?? "Min Change %"}</label>
+                          <Input
+                            type="number"
+                            placeholder="-∞"
+                            value={uiState.exchange.extendedFilters.minChange ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setExchangeExtendedFilters({
+                                ...uiState.exchange.extendedFilters,
+                                minChange: val === "" ? null : Number(val),
+                              });
+                            }}
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                        {/* Max Change % */}
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxChange") ?? "Max Change %"}</label>
+                          <Input
+                            type="number"
+                            placeholder="∞"
+                            value={uiState.exchange.extendedFilters.maxChange ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setExchangeExtendedFilters({
+                                ...uiState.exchange.extendedFilters,
+                                maxChange: val === "" ? null : Number(val),
+                              });
+                            }}
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      </div>
+                      {/* Reset button */}
+                      {activeExtFilterCount > 0 && (
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs"
+                            onClick={() => clearExchangeExtendedFilters()}
+                          >
+                            {t("resetFilters") ?? "Reset filters"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Empty state for favorites filter */}
                   {uiState.exchange.activeFilter === "favorites" && exchangePairs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" role="status">
@@ -987,6 +1138,7 @@ export function Dashboard() {
                           realm={realm}
                           league={effectiveLeague}
                           showHoverPreview={true}
+                          maxVolume={Math.max(...(exchangeData ?? []).map((p) => p.volume), 1)}
                         />
                       ))}
                     </div>
@@ -1041,7 +1193,7 @@ export function Dashboard() {
                 <WatchlistTab
                   realm={realm}
                   league={effectiveLeague}
-                  onItemClick={openDetail}
+                  onPairClick={openPairDetail}
                 />
               </ErrorBoundary>
             </TabsContent>

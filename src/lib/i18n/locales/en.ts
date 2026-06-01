@@ -516,6 +516,24 @@ const en = {
   recipesMissingDesc: "Some recipe ingredients lack current price data. Profit estimate may be incomplete.",
   recipesShowUnprofitable: "Show {0} unprofitable recipes",
   recipesHideUnprofitable: "Hide unprofitable recipes",
+
+  // ---- §2.3: Extended Filters ----
+  filters: "Filters",
+  minVolume: "Min Volume",
+  maxVolume: "Max Volume",
+  minChange: "Min Change %",
+  maxChange: "Max Change %",
+  resetFilters: "Reset filters",
+
+  // ---- §2.5: Fuzzy Search ----
+  searchNoResults: "No results found",
+
+  // ---- §2.6: Watchlist Tab Enhanced ----
+  sharpMovements: "Sharp Movements",
+  searchWatchlist: "Search watchlist...",
+  added: "Added",
+  noWatchlistMatches: "No items match your filters",
+  noWatchlistMatchesDesc: "Try adjusting your search or group filter.",
 } as const;
 
 export default en;

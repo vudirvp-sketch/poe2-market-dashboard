@@ -4,7 +4,7 @@
 // ============================================================================
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Coins, ArrowLeftRight, GitCompare, Star } from "lucide-react";
 import { fmt, fmtChange } from "@/lib/types";
@@ -22,6 +22,8 @@ interface ExchangePairCardProps {
   league?: string;
   /** When true, show the hover-triggered sparkline preview (Fix 4.15) */
   showHoverPreview?: boolean;
+  /** §2.4: Max volume across all pairs (for volume color indication) */
+  maxVolume?: number;
 }
 
 export const ExchangePairCard = memo(function ExchangePairCard({
@@ -30,6 +32,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
   realm,
   league,
   showHoverPreview = false,
+  maxVolume = 1,
 }: ExchangePairCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
@@ -59,9 +62,16 @@ export const ExchangePairCard = memo(function ExchangePairCard({
     [inComparison, addPairToComparison, removePairFromComparison, pairKey, pair]
   );
 
+  // §2.4: Compute volume opacity for card border indication
+  const volumeRank = maxVolume > 0 ? pair.volume / maxVolume : 0;
+  const volumeCardStyle = {
+    '--vol-opacity': volumeRank.toFixed(3),
+  } as React.CSSProperties;
+
   return (
     <Card
-      className="hover:border-primary/50 transition-colors cursor-pointer group relative"
+      className="hover:border-primary/50 transition-colors cursor-pointer group relative volume-indicator-card"
+      style={volumeCardStyle}
       onClick={() => onClick(pair)}
       role="listitem"
       tabIndex={0}

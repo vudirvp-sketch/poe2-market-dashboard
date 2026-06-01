@@ -516,6 +516,20 @@ const ko: Record<TranslationKeys, string> = {
   recipesMissingTitle: "{0}개 조합 가격 누락",
   recipesShowUnprofitable: "{0}개 비수익성 조합 표시",
   recipesHideUnprofitable: "비수익성 조합 숨기기",
+
+  // ---- Watchlist Filters ----
+  filters: "필터",
+  minVolume: "최소 거래량",
+  maxVolume: "최대 거래량",
+  minChange: "최소 변동 %",
+  maxChange: "최대 변동 %",
+  resetFilters: "필터 초기화",
+  searchNoResults: "검색 결과 없음",
+  sharpMovements: "급격한 변동",
+  searchWatchlist: "관심 목록 검색...",
+  added: "추가일",
+  noWatchlistMatches: "필터와 일치하는 항목 없음",
+  noWatchlistMatchesDesc: "검색어 또는 그룹 필터를 조정해 보세요.",
 };
 
 export default ko;

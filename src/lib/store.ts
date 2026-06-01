@@ -32,7 +32,21 @@ export interface PairComparisonId {
   label: string; // e.g. "Chaos Orb / Divine Orb"
 }
 
-// ---------- Persisted UI State (§1.7) ----------
+// ---------- Extended Filters (§2.3) ----------
+export interface ExchangeExtendedFilters {
+  minVolume: number | null;
+  maxVolume: number | null;
+  minChange: number | null;
+  maxChange: number | null;
+}
+
+// ---------- Watchlist Added Dates (§2.6) ----------
+export interface WatchlistEntry {
+  id: string;
+  addedAt: string; // ISO timestamp
+}
+
+// ---------- Persisted UI State (§1.7 + §2.3 + §2.6) ----------
 export interface PersistedUIState {
   /** Schema version for migration support */
   _version: number;
@@ -43,12 +57,16 @@ export interface PersistedUIState {
     sortDirection: "asc" | "desc";
     activeFilter: "all" | "topVolume" | "favorites";
     favorites: string[];
+    /** §2.3: Extended numeric filters */
+    extendedFilters: ExchangeExtendedFilters;
   };
+  /** §2.6: Watchlist entries with added dates */
+  watchlist: WatchlistEntry[];
   league: string;
 }
 
 const DEFAULT_UI_STATE: PersistedUIState = {
-  _version: 1,
+  _version: 2,
   activeTab: "exchange",
   exchange: {
     viewMode: "table",
@@ -56,7 +74,14 @@ const DEFAULT_UI_STATE: PersistedUIState = {
     sortDirection: "desc",
     activeFilter: "all",
     favorites: [],
+    extendedFilters: {
+      minVolume: null,
+      maxVolume: null,
+      minChange: null,
+      maxChange: null,
+    },
   },
+  watchlist: [],
   league: "vaal",
 };
 
@@ -106,8 +131,9 @@ function validateUIState(raw: unknown): PersistedUIState {
   if (!raw || typeof raw !== "object") return DEFAULT_UI_STATE;
   const stored = raw as Record<string, unknown>;
 
-  // Version check — for now only v1 is supported
-  if (stored._version !== 1) return DEFAULT_UI_STATE;
+  // Version check — support v1 (migrate) and v2 (current)
+  const version = stored._version;
+  if (version !== 1 && version !== 2) return DEFAULT_UI_STATE;
 
   // Validate activeTab
   const validTabs = [
@@ -121,6 +147,15 @@ function validateUIState(raw: unknown): PersistedUIState {
 
   // Validate exchange sub-object
   const rawExchange = stored.exchange as Record<string, unknown> | undefined;
+  // §2.3: Extended filters (migrated from v1 → v2 with defaults)
+  const rawExtFilters = rawExchange?.extendedFilters as Record<string, unknown> | undefined;
+  const extendedFilters: ExchangeExtendedFilters = {
+    minVolume: typeof rawExtFilters?.minVolume === "number" ? rawExtFilters.minVolume : null,
+    maxVolume: typeof rawExtFilters?.maxVolume === "number" ? rawExtFilters.maxVolume : null,
+    minChange: typeof rawExtFilters?.minChange === "number" ? rawExtFilters.minChange : null,
+    maxChange: typeof rawExtFilters?.maxChange === "number" ? rawExtFilters.maxChange : null,
+  };
+
   const exchange = {
     viewMode: rawExchange?.viewMode === "cards" ? "cards" as const : "table" as const,
     sortField: typeof rawExchange?.sortField === "string" ? rawExchange.sortField : DEFAULT_UI_STATE.exchange.sortField,
@@ -130,6 +165,7 @@ function validateUIState(raw: unknown): PersistedUIState {
         ? (rawExchange.activeFilter as "topVolume" | "favorites")
         : "all" as const,
     favorites: Array.isArray(rawExchange?.favorites) ? rawExchange.favorites as string[] : [],
+    extendedFilters,
   };
 
   // Validate league
@@ -137,7 +173,24 @@ function validateUIState(raw: unknown): PersistedUIState {
     ? stored.league
     : DEFAULT_UI_STATE.league;
 
-  return { _version: 1, activeTab, exchange, league };
+  // §2.6: Watchlist entries with added dates
+  const rawWatchlist = stored.watchlist;
+  const watchlist: WatchlistEntry[] = Array.isArray(rawWatchlist)
+    ? rawWatchlist.filter(
+        (w: unknown) => w && typeof (w as Record<string, unknown>).id === "string" && typeof (w as Record<string, unknown>).addedAt === "string"
+      ) as WatchlistEntry[]
+    : [];
+
+  // Migrate exchange favorites to watchlist entries (v1 → v2)
+  if (version === 1 && exchange.favorites.length > 0) {
+    const existingIds = new Set(watchlist.map((w) => w.id));
+    const migrated = exchange.favorites
+      .filter((id) => !existingIds.has(id))
+      .map((id) => ({ id, addedAt: new Date().toISOString() }));
+    watchlist.push(...migrated);
+  }
+
+  return { _version: 2, activeTab, exchange, watchlist, league };
 }
 
 // ---------- Store Interface ----------
@@ -177,6 +230,15 @@ interface DashboardStore {
   setExchangeFilter: (filter: "all" | "topVolume" | "favorites") => void;
   toggleExchangeFavorite: (pairId: string) => void;
   setLeague: (league: string) => void;
+
+  // §2.3: Extended Exchange Filters
+  setExchangeExtendedFilters: (filters: ExchangeExtendedFilters) => void;
+  clearExchangeExtendedFilters: () => void;
+
+  // §2.6: Watchlist with added dates
+  getWatchlistEntry: (id: string) => WatchlistEntry | undefined;
+  addToWatchlist: (id: string) => void;
+  removeFromWatchlist: (id: string) => void;
 
   // Hydration
   _hydrated: boolean;
@@ -349,12 +411,20 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   toggleExchangeFavorite: (pairId) => {
     const current = get().uiState.exchange.favorites;
-    const next = current.includes(pairId)
+    const isFav = current.includes(pairId);
+    const next = isFav
       ? current.filter((id) => id !== pairId)
       : [...current, pairId];
+
+    // §2.6: Sync with watchlist — add/remove watchlist entry too
+    const watchlist = isFav
+      ? get().uiState.watchlist.filter((w) => w.id !== pairId)
+      : [...get().uiState.watchlist, { id: pairId, addedAt: new Date().toISOString() }];
+
     const uiState = {
       ...get().uiState,
       exchange: { ...get().uiState.exchange, favorites: next },
+      watchlist,
     };
     set({ uiState });
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
@@ -362,6 +432,47 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   setLeague: (league) => {
     const uiState = { ...get().uiState, league };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+   // ---- §2.3: Extended Exchange Filters ----
+  setExchangeExtendedFilters: (filters) => {
+    const uiState = {
+      ...get().uiState,
+      exchange: { ...get().uiState.exchange, extendedFilters: filters },
+    };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  clearExchangeExtendedFilters: () => {
+    const uiState = {
+      ...get().uiState,
+      exchange: {
+        ...get().uiState.exchange,
+        extendedFilters: { minVolume: null, maxVolume: null, minChange: null, maxChange: null },
+      },
+    };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  // ---- §2.6: Watchlist with added dates ----
+  getWatchlistEntry: (id) => get().uiState.watchlist.find((w) => w.id === id),
+
+  addToWatchlist: (id) => {
+    const existing = get().uiState.watchlist;
+    if (existing.some((w) => w.id === id)) return; // already in watchlist
+    const watchlist = [...existing, { id, addedAt: new Date().toISOString() }];
+    const uiState = { ...get().uiState, watchlist };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  removeFromWatchlist: (id) => {
+    const watchlist = get().uiState.watchlist.filter((w) => w.id !== id);
+    const uiState = { ...get().uiState, watchlist };
     set({ uiState });
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
   },

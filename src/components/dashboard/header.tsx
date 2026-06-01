@@ -10,9 +10,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  Search,
   RefreshCw,
-  X,
   Activity,
   Sun,
   Moon,
@@ -21,13 +19,9 @@ import {
   Globe,
   Bell,
   Circle,
-  Server,
   MoreVertical,
-  Palette,
-  Languages,
   FileDown,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,7 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Realm, League, ReferenceCurrency } from "@/lib/types";
+import { FuzzySearch } from "@/components/dashboard/fuzzy-search";
+import type { Realm, League, ReferenceCurrency, ExchangePair, PoeItem } from "@/lib/types";
 import { useTheme } from "next-themes";
 import { useI18n, type Locale, type TranslationKeys } from "@/lib/i18n";
 
@@ -78,6 +73,14 @@ interface HeaderProps {
   activeEventsCount?: number;
   /** Callback when the Events button is clicked */
   onEventsClick?: () => void;
+  /** §2.5: Exchange pairs for fuzzy search indexing */
+  exchangePairs?: ExchangePair[];
+  /** §2.5: All items for fuzzy search indexing */
+  allItems?: PoeItem[];
+  /** §2.5: Current active tab */
+  activeTab?: string;
+  /** §2.5: Callback when a fuzzy search result is selected */
+  onSearchResultSelect?: (item: { tab: string; id: string }) => void;
 }
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -135,39 +138,34 @@ export function Header({
   phaseInfo,
   activeEventsCount,
   onEventsClick,
+  exchangePairs,
+  allItems,
+  activeTab,
+  onSearchResultSelect,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const [timeAgo, setTimeAgo] = useState<string>("");
-  const [localSearch, setLocalSearch] = useState(search);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  // Sync external search changes
-  useEffect(() => {
-    setLocalSearch((prev) => prev !== search ? search : prev);
-  }, [search]);
-
-  // Debounced search handler
-  const handleSearchInput = useCallback(
-    (value: string) => {
-      setLocalSearch(value);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        onSearchChange(value);
-      }, 300);
+  // §2.5: FuzzySearch result selection handler
+  const handleSearchResultSelect = useCallback(
+    (item: { id: string; name: string; secondary: string; price: string; changeText: string; changeColor: string; iconUrl: string | null; tab: "exchange" | "currencies" | "uniques"; original: ExchangePair | PoeItem }) => {
+      if (onSearchResultSelect) {
+        onSearchResultSelect({ tab: item.tab, id: item.id });
+      }
     },
-    [onSearchChange]
+    [onSearchResultSelect]
   );
 
-  const handleClearSearch = useCallback(() => {
-    setLocalSearch("");
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    onSearchChange("");
-  }, [onSearchChange]);
+  // No need to sync external search changes — FuzzySearch manages its own state
+
+  // FuzzySearch handles debouncing internally — just pass the value up
+
+  // FuzzySearch handles clearing internally
 
   useEffect(() => {
     if (!lastUpdated) return;
@@ -181,12 +179,7 @@ export function Header({
     return () => clearInterval(interval);
   }, [lastUpdated, t]);
 
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+  // No more cleanup needed for debounce ref
 
   // Cycle through locales
   const LOCALE_ORDER: Locale[] = ["ru", "en", "zh", "ko"];
@@ -298,25 +291,16 @@ export function Header({
           </div>
         )}
 
-        {/* Search — §1.4: subtle when not focused, expands on focus */}
-        <div className="relative flex-1 min-w-[150px] max-w-md">
-          <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            value={localSearch}
-            onChange={(e) => handleSearchInput(e.target.value)}
-            className="pl-8 h-8 text-sm"
-          />
-          {localSearch && (
-            <button
-              onClick={handleClearSearch}
-              className="absolute right-2.5 top-2"
-              aria-label="Clear search"
-            >
-              <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-            </button>
-          )}
-        </div>
+        {/* §2.5: Fuzzy Search with Autocomplete */}
+        <FuzzySearch
+          value={search}
+          onValueChange={onSearchChange}
+          onResultSelect={handleSearchResultSelect}
+          onFilterSubmit={onSearchChange}
+          exchangePairs={exchangePairs ?? []}
+          allItems={allItems ?? []}
+          activeTab={activeTab ?? "overview"}
+        />
 
         {/* Auto-refresh toggle — §1.4: visible with indicator */}
         <Button
