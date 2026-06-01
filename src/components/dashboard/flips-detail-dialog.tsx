@@ -5,12 +5,13 @@
 // ============================================================================
 "use client";
 
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { fmt } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
+import { isFlipDataSuspicious } from "@/lib/flipper-helpers";
 import {
   type FlipOpportunity,
   type StorageValueResponse,
@@ -34,9 +35,20 @@ interface FlipsDetailDialogProps {
 export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDialogProps) {
   const { t } = useI18n();
   const { uiState } = useDashboardStore();
+  const suspicious = isFlipDataSuspicious(selectedFlip);
 
   return (
     <div className="space-y-4">
+      {/* §0.4: Data quality warning — shown when flip data looks suspicious */}
+      {suspicious && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" aria-hidden="true" />
+          <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+            {t("flipsDataQualityWarning")}
+          </span>
+        </div>
+      )}
+
       {/* Score & Spread */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg border p-3">

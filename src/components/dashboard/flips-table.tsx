@@ -27,6 +27,7 @@ import {
   clusterBadgeClass,
   clusterLabel,
 } from "./flips-helpers";
+import { isFlipDataSuspicious } from "@/lib/flipper-helpers";
 
 // ---------------------------------------------------------------------------
 // Local helpers (JSX-dependent)
@@ -150,8 +151,13 @@ export const FlipsTable = memo(function FlipsTable({
                   tabIndex={0}
                   aria-label={`${opp.currency} score ${(opp.score * 100).toFixed(0)}%`}
                 >
-                  {/* Currency pair */}
-                  <span className="text-xs font-medium truncate">{opp.currency}</span>
+                  {/* Currency pair + suspicious data indicator */}
+                  <span className="flex items-center gap-1 text-xs font-medium truncate">
+                    {isFlipDataSuspicious(opp) && (
+                      <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" aria-hidden="true" />
+                    )}
+                    {opp.currency}
+                  </span>
 
                   {/* Score */}
                   <span className={`text-center text-xs font-bold ${scoreColor(opp.score)}`}>

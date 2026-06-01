@@ -21,10 +21,11 @@ import {
   TrendingUp,
   Info,
   Search,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { FlipsSkeleton } from "@/components/dashboard/skeletons";
 import {
   Select,
   SelectContent,
@@ -52,6 +53,7 @@ import {
   type SortDirection,
   scoreColor,
 } from "./flips-helpers";
+import { isFlipDataSuspicious, isFlipsResponseSuspicious } from "@/lib/flipper-helpers";
 
 // ---------------------------------------------------------------------------
 // Component Props
@@ -188,19 +190,17 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     setDetailOpen(true);
   };
 
+  // §1.5: Data quality check — detect suspicious flip data
+  const dataQuality = useMemo(() => {
+    if (!flipsData?.opportunities || flipsData.opportunities.length === 0) {
+      return { suspicious: false, reason: "" };
+    }
+    return isFlipsResponseSuspicious(flipsData.opportunities);
+  }, [flipsData?.opportunities]);
+
   // ---- Loading ----
   if (flipsLoading && backendOnline) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-20 w-full" />
-        <div className="grid grid-cols-3 gap-4">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <FlipsSkeleton />;
   }
 
   return (
@@ -211,6 +211,23 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
         insufficientData={insufficientData}
         onRefresh={() => refetchFlips()}
       />
+
+      {/* §0.4: Data quality warning banner — when flip data looks suspicious */}
+      {dataQuality.suspicious && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-600 dark:text-amber-400">
+                {t("flipsDataQualityWarning")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {dataQuality.reason}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ---- Event status banner ---- */}
       {flipsData?.event_status?.any_active && (

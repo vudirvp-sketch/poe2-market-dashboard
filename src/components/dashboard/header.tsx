@@ -324,9 +324,12 @@ export function Header({
           </Badge>
         )}
 
-        {/* Backend status indicator — minimal */}
+        {/* Backend status indicator — enhanced with text label */}
         {flipperBackendOnline !== undefined && (
-          <div className="flex items-center gap-0.5 shrink-0" title={flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}>
+          <div
+            className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-md bg-muted/50 text-[10px] font-medium text-muted-foreground"
+            title={flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}
+          >
             <Circle
               className={`h-2 w-2 ${
                 flipperBackendOnline
@@ -335,6 +338,9 @@ export function Header({
               }`}
               aria-hidden="true"
             />
+            <span className="hidden sm:inline">
+              {flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}
+            </span>
           </div>
         )}
 
