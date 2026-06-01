@@ -51,6 +51,15 @@ const zh: Record<TranslationKeys, string> = {
 
   // Exchange
   noExchangePairs: "未找到兑换对",
+  allPairs: "所有对",
+  topVolume: "高交易量",
+  favorites: "收藏",
+  favoritesEmptyTooltip: "点击星标将货币对添加到收藏",
+  noFavoritesYet: "暂无收藏的货币对",
+  addFavoritesHint: "点击任意货币对上的 ★ 图标添加收藏。",
+  tableView: "表格",
+  cardsView: "卡片",
+  rate: "汇率",
 
   // Pagination
   perPage: "每页:",

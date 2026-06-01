@@ -53,6 +53,15 @@ const en = {
 
   // Exchange
   noExchangePairs: "No exchange pairs found",
+  allPairs: "All Pairs",
+  topVolume: "Top Volume",
+  favorites: "Favorites",
+  favoritesEmptyTooltip: "Add pairs to favorites by clicking the star icon",
+  noFavoritesYet: "No favorite pairs yet",
+  addFavoritesHint: "Click the ★ icon on any pair to add it.",
+  tableView: "Table",
+  cardsView: "Cards",
+  rate: "Rate",
 
   // Pagination
   perPage: "Per page:",

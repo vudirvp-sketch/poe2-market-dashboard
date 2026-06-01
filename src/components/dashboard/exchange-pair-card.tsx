@@ -6,7 +6,7 @@
 
 import { memo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Coins, ArrowLeftRight, GitCompare } from "lucide-react";
+import { Coins, ArrowLeftRight, GitCompare, Star } from "lucide-react";
 import { fmt, fmtChange } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
@@ -33,8 +33,9 @@ export const ExchangePairCard = memo(function ExchangePairCard({
 }: ExchangePairCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
-  const { pairComparisonIds, addPairToComparison, removePairFromComparison } =
+  const { pairComparisonIds, addPairToComparison, removePairFromComparison, uiState, toggleExchangeFavorite } =
     useDashboardStore();
+  const isFav = uiState.exchange.favorites.includes(pair.id);
   const pairKey = `${pair.currency1Id}_${pair.currency2Id}`;
   const inComparison = pairComparisonIds.some(
     (p) => `${p.currency1Id}_${p.currency2Id}` === pairKey
@@ -71,6 +72,25 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         }
       }}
     >
+      {/* Favorite star (§1.2) */}
+      <button
+        className="absolute top-2 left-2 z-10 transition-opacity"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleExchangeFavorite(pair.id);
+        }}
+        aria-label={isFav ? t("removeFromFavorites") : t("addToFavorites")}
+      >
+        <Star
+          className={`h-4 w-4 ${
+            isFav
+              ? "fill-amber-400 text-amber-400"
+              : "text-muted-foreground/40 hover:text-amber-400"
+          }`}
+          aria-hidden="true"
+        />
+      </button>
+
       {/* Compare button */}
       <button
         className={`absolute top-2 right-2 z-10 ${
@@ -89,7 +109,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         />
       </button>
 
-      <CardContent className="py-3 px-4">
+      <CardContent className="py-3 pl-8 pr-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {pair.currency1IconUrl ? (

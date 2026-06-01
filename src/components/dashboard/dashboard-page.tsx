@@ -16,6 +16,9 @@ import {
   TrendingUp,
   Briefcase,
   Network,
+  LayoutGrid,
+  List,
+  Filter,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +29,7 @@ import { CurrencyCard } from "@/components/dashboard/currency-card";
 import { VirtualCurrencyGrid } from "@/components/dashboard/virtual-currency-grid";
 import { UniqueTable } from "@/components/dashboard/unique-table";
 import { ExchangePairCard } from "@/components/dashboard/exchange-pair-card";
+import { ExchangeTable } from "@/components/dashboard/exchange-table";
 import { DetailDialog } from "@/components/dashboard/detail-dialog";
 import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
 import { MarketOverview } from "@/components/dashboard/market-overview";
@@ -103,6 +107,7 @@ import {
   CurrencyGridSkeleton,
   UniqueTableSkeleton,
   ExchangeGridSkeleton,
+  ExchangeTableSkeleton,
 } from "@/components/dashboard/skeletons";
 
 import {
@@ -179,7 +184,16 @@ export function Dashboard() {
   const [eventsSidebarOpen, setEventsSidebarOpen] = useState(false);
 
   // --- Comparison store ---
-  const { comparisonIds, pairComparisonIds, alerts, uiState, setActiveTab, setLeague: persistLeague } = useDashboardStore();
+  const {
+    comparisonIds,
+    pairComparisonIds,
+    alerts,
+    uiState,
+    setActiveTab,
+    setLeague: persistLeague,
+    setExchangeViewMode,
+    setExchangeFilter,
+  } = useDashboardStore();
 
   // --- i18n ---
   const { t, tp } = useI18n();
@@ -419,14 +433,30 @@ export function Dashboard() {
 
   // --- Derived data ---
   const exchangePairs = useMemo(() => {
-    const pairs = exchangeData || [];
-    if (!search) return pairs;
-    return pairs.filter(
-      (p) =>
-        p.currency1Name.toLowerCase().includes(search.toLowerCase()) ||
-        p.currency2Name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [exchangeData, search]);
+    let pairs = exchangeData || [];
+
+    // Apply search filter
+    if (search) {
+      pairs = pairs.filter(
+        (p) =>
+          p.currency1Name.toLowerCase().includes(search.toLowerCase()) ||
+          p.currency2Name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Apply quick filter chips (§1.2)
+    const activeFilter = uiState.exchange.activeFilter;
+    if (activeFilter === "topVolume") {
+      // Top 20 pairs by volume
+      const sorted = [...pairs].sort((a, b) => b.volume - a.volume);
+      pairs = sorted.slice(0, 20);
+    } else if (activeFilter === "favorites") {
+      // Only favorited pairs
+      pairs = pairs.filter((p) => uiState.exchange.favorites.includes(p.id));
+    }
+
+    return pairs;
+  }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites]);
 
   // Categories
   const currencyCategories = useMemo(() => {
@@ -837,30 +867,122 @@ export function Dashboard() {
             {/* ============ EXCHANGE TAB ============ */}
             <TabsContent value="exchange">
               {isLoading ? (
-                <ExchangeGridSkeleton />
+                <ExchangeTableSkeleton rows={15} />
               ) : activeError && !exchangeData ? (
                 <ApiErrorFallback
                   error={activeError}
                   onRetry={() => refetchExchange()}
                   title={t("failedToLoadData")}
                 />
-              ) : exchangePairs.length === 0 ? (
+              ) : exchangePairs.length === 0 && !exchangeData ? (
                 <p className="text-center text-muted-foreground py-20" role="status">
                   {t("noExchangePairs")}
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label="Exchange pairs">
-                  {exchangePairs.map((pair) => (
-                    <ExchangePairCard
-                      key={pair.id}
-                      pair={pair}
-                      onClick={openPairDetail}
+                <>
+                  {/* §1.1: View toggle + §1.2: Quick Filter Chips */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    {/* Quick Filter Chips (§1.2) */}
+                    <div className="flex items-center gap-1.5" role="group" aria-label="Exchange filters">
+                      <Badge
+                        variant={uiState.exchange.activeFilter === "all" ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => setExchangeFilter("all")}
+                        role="button"
+                        aria-pressed={uiState.exchange.activeFilter === "all"}
+                        tabIndex={0}
+                      >
+                        {t("allPairs") ?? "All Pairs"}
+                      </Badge>
+                      <Badge
+                        variant={uiState.exchange.activeFilter === "topVolume" ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => setExchangeFilter("topVolume")}
+                        role="button"
+                        aria-pressed={uiState.exchange.activeFilter === "topVolume"}
+                        tabIndex={0}
+                      >
+                        {t("topVolume") ?? "Top Volume"}
+                      </Badge>
+                      <Badge
+                        variant={uiState.exchange.activeFilter === "favorites" ? "default" : "outline"}
+                        className={`cursor-pointer ${
+                          uiState.exchange.favorites.length === 0 ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        onClick={() => {
+                          if (uiState.exchange.favorites.length > 0) {
+                            setExchangeFilter("favorites");
+                          }
+                        }}
+                        role="button"
+                        aria-pressed={uiState.exchange.activeFilter === "favorites"}
+                        aria-disabled={uiState.exchange.favorites.length === 0}
+                        tabIndex={0}
+                        title={uiState.exchange.favorites.length === 0 ? (t("favoritesEmptyTooltip") ?? "Add pairs to favorites by clicking the star icon") : undefined}
+                      >
+                        <Star className="h-3 w-3 mr-1" aria-hidden="true" />
+                        {t("favorites") ?? "Favorites"}
+                      </Badge>
+                    </div>
+
+                    {/* View toggle: Table / Cards (§1.1) */}
+                    <div className="flex items-center gap-1" role="group" aria-label="View mode">
+                      <Button
+                        variant={uiState.exchange.viewMode === "table" ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs gap-1 px-2"
+                        onClick={() => setExchangeViewMode("table")}
+                        aria-pressed={uiState.exchange.viewMode === "table"}
+                        aria-label="Table view"
+                      >
+                        <List className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t("tableView") ?? "Table"}
+                      </Button>
+                      <Button
+                        variant={uiState.exchange.viewMode === "cards" ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 text-xs gap-1 px-2"
+                        onClick={() => setExchangeViewMode("cards")}
+                        aria-pressed={uiState.exchange.viewMode === "cards"}
+                        aria-label="Cards view"
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t("cardsView") ?? "Cards"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Empty state for favorites filter */}
+                  {uiState.exchange.activeFilter === "favorites" && exchangePairs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" role="status">
+                      <Star className="h-12 w-12 mb-4 opacity-30" aria-hidden="true" />
+                      <p className="text-lg mb-1">{t("noFavoritesYet") ?? "No favorite pairs yet"}</p>
+                      <p className="text-sm">{t("addFavoritesHint") ?? "Click the ★ icon on any pair to add it."}</p>
+                    </div>
+                  ) : uiState.exchange.viewMode === "table" ? (
+                    /* §1.1: Table-First Layout */
+                    <ExchangeTable
+                      pairs={exchangePairs}
+                      onPairClick={openPairDetail}
                       realm={realm}
                       league={effectiveLeague}
-                      showHoverPreview={true}
                     />
-                  ))}
-                </div>
+                  ) : (
+                    /* Cards view (original) */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label="Exchange pairs">
+                      {exchangePairs.map((pair) => (
+                        <ExchangePairCard
+                          key={pair.id}
+                          pair={pair}
+                          onClick={openPairDetail}
+                          realm={realm}
+                          league={effectiveLeague}
+                          showHoverPreview={true}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </TabsContent>
 

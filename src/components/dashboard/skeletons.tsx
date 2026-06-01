@@ -130,6 +130,48 @@ export function ExchangeGridSkeleton({ count = 9 }: { count?: number }) {
 }
 
 // ============================================================================
+// Exchange Table Row Skeleton (§1.1 + §1.5)
+// ============================================================================
+export function ExchangeTableSkeleton({ rows = 15 }: { rows?: number }) {
+  return (
+    <div className="rounded-md border border-border overflow-hidden">
+      {/* Header */}
+      <div className="border-b border-border bg-muted/80">
+        <div className="flex items-center py-2 px-3 gap-4">
+          <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-14 ml-auto" />
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      </div>
+      {/* Rows */}
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center py-2 px-3 gap-4 border-b border-border/50"
+        >
+          <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-5 w-5 rounded shrink-0" />
+            <Skeleton className="h-4 w-20" />
+            <span className="text-muted-foreground text-xs">/</span>
+            <Skeleton className="h-5 w-5 rounded shrink-0" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <Skeleton className="h-5 w-14 ml-auto" />
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-6 w-20 rounded" />
+          <Skeleton className="h-4 w-4 rounded shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================================
 // Market Overview Skeleton
 // ============================================================================
 export function MarketOverviewSkeleton() {

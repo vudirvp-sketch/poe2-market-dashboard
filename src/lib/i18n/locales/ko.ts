@@ -51,6 +51,15 @@ const ko: Record<TranslationKeys, string> = {
 
   // Exchange
   noExchangePairs: "교환 페어를 찾을 수 없음",
+  allPairs: "전체 페어",
+  topVolume: "거래량 상위",
+  favorites: "즐겨찾기",
+  favoritesEmptyTooltip: "별 아이콘을 클릭하여 페어를 즐겨찾기에 추가",
+  noFavoritesYet: "즐겨찾기 페어가 없습니다",
+  addFavoritesHint: "★ 아이콘을 클릭하여 페어를 추가하세요.",
+  tableView: "표",
+  cardsView: "카드",
+  rate: "환율",
 
   // Pagination
   perPage: "페이지당:",
