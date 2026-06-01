@@ -21,6 +21,7 @@ import {
   Filter,
   SearchX,
   Inbox,
+  Keyboard,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
+import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
 
 // Heavy tab components — lazy-loaded via next/dynamic to reduce initial bundle size.
 // These tabs use Recharts (forecast, portfolio) or complex force-layout (graph)
@@ -135,6 +137,8 @@ import type {
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import type { KeyboardShortcutActions } from "@/hooks/use-keyboard-shortcuts";
 import { useI18n } from "@/lib/i18n";
 
 // Virtualization threshold: use virtual grid when more than this many currencies
@@ -190,6 +194,10 @@ export function Dashboard() {
   // --- §2.3: Extended filters panel ---
   const [extendedFiltersOpen, setExtendedFiltersOpen] = useState(false);
 
+  // --- §3.2: Keyboard shortcuts state ---
+  const [highlightedRowIndex, setHighlightedRowIndex] = useState<number | null>(null);
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+
   // --- Comparison store ---
   const {
     comparisonIds,
@@ -202,7 +210,17 @@ export function Dashboard() {
     setExchangeFilter,
     setExchangeExtendedFilters,
     clearExchangeExtendedFilters,
+    setDenseMode,
   } = useDashboardStore();
+
+  // §3.5: Toggle .dense-mode class on <html> when global dense mode changes
+  useEffect(() => {
+    if (uiState.denseMode) {
+      document.documentElement.classList.add('dense-mode');
+    } else {
+      document.documentElement.classList.remove('dense-mode');
+    }
+  }, [uiState.denseMode]);
 
   // §2.3: Count of active extended filters
   const activeExtFilterCount = useMemo(() => {
@@ -570,6 +588,83 @@ export function Dashboard() {
     return () => window.removeEventListener("keydown", handler);
   }, [tab, uniquesData, currenciesData]);
 
+  // ============================================================================
+  // §3.2: Keyboard Shortcuts
+  // ============================================================================
+  // Tab index mapping for shortcuts 1–5
+  const TAB_MAP = ["overview", "exchange", "uniques", "watchlist", "arbitrage"];
+
+  // Get the current list for row navigation (depends on active tab)
+  const navigableList = useMemo(() => {
+    if (tab === "exchange") return exchangePairs;
+    return [];
+  }, [tab, exchangePairs]);
+
+  const keyboardActions: KeyboardShortcutActions = useMemo(
+    () => ({
+      onToggleView: () => {
+        if (tab === "exchange" || tab === "uniques") {
+          setExchangeViewMode(uiState.exchange.viewMode === "table" ? "cards" : "table");
+        }
+      },
+      onFocusSearch: () => {
+        const searchInput = document.querySelector(
+          'input[role="combobox"]'
+        ) as HTMLInputElement | null;
+        searchInput?.focus();
+      },
+      onNavigateUp: () => {
+        setHighlightedRowIndex((prev) => {
+          if (navigableList.length === 0) return null;
+          if (prev === null) return navigableList.length - 1;
+          return prev > 0 ? prev - 1 : navigableList.length - 1;
+        });
+      },
+      onNavigateDown: () => {
+        setHighlightedRowIndex((prev) => {
+          if (navigableList.length === 0) return null;
+          if (prev === null) return 0;
+          return prev < navigableList.length - 1 ? prev + 1 : 0;
+        });
+      },
+      onEnter: () => {
+        if (highlightedRowIndex != null && navigableList[highlightedRowIndex]) {
+          const pair = navigableList[highlightedRowIndex] as ExchangePair;
+          openPairDetail(pair);
+        }
+      },
+      onEscape: () => {
+        // Close any open dialogs, deselect row, unfocus
+        setHighlightedRowIndex(null);
+        setDetailOpen(false);
+        setPairDetailOpen(false);
+        setComparisonOpen(false);
+        setPairComparisonOpen(false);
+        setAlertOpen(false);
+        setShortcutsHelpOpen(false);
+        setEventsSidebarOpen(false);
+        setExtendedFiltersOpen(false);
+        // Unfocus search
+        (document.activeElement as HTMLElement)?.blur?.();
+      },
+      onSwitchTab: (tabIndex: number) => {
+        if (tabIndex >= 0 && tabIndex < TAB_MAP.length) {
+          setTab(TAB_MAP[tabIndex]);
+          setCategoryFilter("all");
+          setUniquesPage(1);
+          setCurrenciesPage(1);
+          setHighlightedRowIndex(null);
+        }
+      },
+      onShowHelp: () => {
+        setShortcutsHelpOpen(true);
+      },
+    }),
+    [tab, uiState.exchange.viewMode, setExchangeViewMode, navigableList, highlightedRowIndex, openPairDetail, setTab]
+  );
+
+  useKeyboardShortcuts(keyboardActions);
+
   // --- Export handler ---
   const handleExport = useCallback(
     (format: "csv" | "json") => {
@@ -671,6 +766,8 @@ export function Dashboard() {
           // For exchange, we use pair names; for items, we use item names
           setSearch(""); // Clear search after navigation — the tab switch itself highlights
         }}
+        denseMode={uiState.denseMode}
+        onDenseModeToggle={() => setDenseMode(!uiState.denseMode)}
       />
 
       <FlipperStickyBar backendOnline={flipperBackendOnline} />
@@ -727,6 +824,18 @@ export function Dashboard() {
               </TabsList>
 
               <div className="flex items-center gap-2">
+                {/* §3.2: Keyboard Shortcuts help button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  onClick={() => setShortcutsHelpOpen(true)}
+                  aria-label={t("keyboardShortcuts") ?? "Keyboard Shortcuts"}
+                  title={t("keyboardShortcuts") ?? "Keyboard Shortcuts"}
+                >
+                  <Keyboard className="h-3.5 w-3.5" aria-hidden="true" />
+                </Button>
+
                 {/* Price Alerts button — with pluralization */}
                 <Button
                   variant={alerts.length > 0 ? "default" : "outline"}
@@ -1126,6 +1235,7 @@ export function Dashboard() {
                       onPairClick={openPairDetail}
                       realm={realm}
                       league={effectiveLeague}
+                      highlightedRowIndex={tab === "exchange" ? highlightedRowIndex : null}
                     />
                   ) : (
                     /* Cards view (original) */
@@ -1260,6 +1370,12 @@ export function Dashboard() {
 
       {/* ============ OFFLINE BANNER (PWA) ============ */}
       <OfflineBanner />
+
+      {/* ============ §3.2: KEYBOARD SHORTCUTS HELP DIALOG ============ */}
+      <ShortcutsDialog
+        open={shortcutsHelpOpen}
+        onOpenChange={setShortcutsHelpOpen}
+      />
     </div>
   );
 }

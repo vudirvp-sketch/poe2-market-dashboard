@@ -63,10 +63,12 @@ export interface PersistedUIState {
   /** §2.6: Watchlist entries with added dates */
   watchlist: WatchlistEntry[];
   league: string;
+  /** §3.5: Global compact/dense mode toggle */
+  denseMode: boolean;
 }
 
 const DEFAULT_UI_STATE: PersistedUIState = {
-  _version: 2,
+  _version: 3,
   activeTab: "exchange",
   exchange: {
     viewMode: "table",
@@ -83,6 +85,7 @@ const DEFAULT_UI_STATE: PersistedUIState = {
   },
   watchlist: [],
   league: "vaal",
+  denseMode: false,
 };
 
 const UI_STATE_KEY = "poe2-dashboard-state";
@@ -131,9 +134,9 @@ function validateUIState(raw: unknown): PersistedUIState {
   if (!raw || typeof raw !== "object") return DEFAULT_UI_STATE;
   const stored = raw as Record<string, unknown>;
 
-  // Version check — support v1 (migrate) and v2 (current)
+  // Version check — support v1, v2 (migrate) and v3 (current)
   const version = stored._version;
-  if (version !== 1 && version !== 2) return DEFAULT_UI_STATE;
+  if (version !== 1 && version !== 2 && version !== 3) return DEFAULT_UI_STATE;
 
   // Validate activeTab
   const validTabs = [
@@ -190,7 +193,10 @@ function validateUIState(raw: unknown): PersistedUIState {
     watchlist.push(...migrated);
   }
 
-  return { _version: 2, activeTab, exchange, watchlist, league };
+  // §3.5: Migrate denseMode (v2 → v3 adds denseMode)
+  const denseMode = typeof stored.denseMode === "boolean" ? stored.denseMode : false;
+
+  return { _version: 3, activeTab, exchange, watchlist, league, denseMode };
 }
 
 // ---------- Store Interface ----------
@@ -239,6 +245,9 @@ interface DashboardStore {
   getWatchlistEntry: (id: string) => WatchlistEntry | undefined;
   addToWatchlist: (id: string) => void;
   removeFromWatchlist: (id: string) => void;
+
+  // §3.5: Global dense mode
+  setDenseMode: (enabled: boolean) => void;
 
   // Hydration
   _hydrated: boolean;
@@ -473,6 +482,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   removeFromWatchlist: (id) => {
     const watchlist = get().uiState.watchlist.filter((w) => w.id !== id);
     const uiState = { ...get().uiState, watchlist };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  // ---- §3.5: Global Dense Mode ----
+  setDenseMode: (enabled) => {
+    const uiState = { ...get().uiState, denseMode: enabled };
     set({ uiState });
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
   },

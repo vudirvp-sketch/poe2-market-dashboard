@@ -1,5 +1,5 @@
 // ============================================================================
-// Currency Pair Detail Dialog (Priority 2.2)
+// Currency Pair Detail Dialog (Priority 2.2 → §3.4 Enhanced)
 // ============================================================================
 "use client";
 
@@ -15,20 +15,27 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { ArrowLeftRight, Activity } from "lucide-react";
+import { ArrowLeftRight, Activity, Coins } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fmt, fetchApi } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
 import { EmptyState } from "./empty-state";
+
+const TIME_RANGE_LIMITS: Record<"7d" | "30d" | "90d", string> = {
+  "7d": "168",
+  "30d": "720",
+  "90d": "2160",
+};
 
 interface PairDetailDialogProps {
   pair: ExchangePair | null;
@@ -47,8 +54,17 @@ export function PairDetailDialog({
 }: PairDetailDialogProps) {
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
+  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
+
   const { data: pairHistory, isLoading } = useQuery({
-    queryKey: ["pairHistory", realm, league, pair?.currency1ItemId, pair?.currency2ItemId],
+    queryKey: [
+      "pairHistory",
+      realm,
+      league,
+      pair?.currency1ItemId,
+      pair?.currency2ItemId,
+      timeRange,
+    ],
     queryFn: () =>
       fetchApi<ExchangePairHistoryPoint[]>("/api/poe2/currencies", {
         realm,
@@ -57,12 +73,12 @@ export function PairDetailDialog({
         // Use numeric ItemIds — the CurrencyPairHistory API expects integers, not ApiId strings
         id1: String(pair!.currency1ItemId),
         id2: String(pair!.currency2ItemId),
-        limit: "168",
+        limit: TIME_RANGE_LIMITS[timeRange],
       }),
     enabled: !!pair && open,
   });
 
-  // Stats
+  // Overall stats (from the loaded history period)
   const stats = useMemo(() => {
     if (!pairHistory || pairHistory.length === 0) return null;
     const prices = pairHistory.map((p) => p.relativePrice);
@@ -74,7 +90,33 @@ export function PairDetailDialog({
     return { min, max, avg, spread, totalVolume: vols.reduce((a, b) => a + b, 0) };
   }, [pairHistory]);
 
+  // 24h stats — last 24 data points (hourly data → 24 points = 24h)
+  const stats24h = useMemo(() => {
+    if (!pairHistory || pairHistory.length === 0) return null;
+    const last24 = pairHistory.slice(-24);
+    if (last24.length === 0) return null;
+    const prices = last24.map((p) => p.relativePrice);
+    return {
+      high: Math.max(...prices),
+      low: Math.min(...prices),
+    };
+  }, [pairHistory]);
+
+  // 7d stats — last 168 data points (hourly data → 168 points = 7d)
+  const stats7d = useMemo(() => {
+    if (!pairHistory || pairHistory.length === 0) return null;
+    const last168 = pairHistory.slice(-168);
+    if (last168.length === 0) return null;
+    const prices = last168.map((p) => p.relativePrice);
+    return {
+      high: Math.max(...prices),
+      low: Math.min(...prices),
+    };
+  }, [pairHistory]);
+
   if (!pair) return null;
+
+  const changeIndicator = fmtChange(pair.changePercent);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,16 +124,45 @@ export function PairDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ArrowLeftRight className="h-5 w-5 text-primary" />
+            {/* Currency pair icons */}
+            {pair.currency1IconUrl ? (
+              <img
+                src={pair.currency1IconUrl}
+                alt={pair.currency1Name}
+                width={32}
+                height={32}
+                className="rounded-sm"
+              />
+            ) : (
+              <Coins className="h-8 w-8 text-muted-foreground" />
+            )}
+            <span className="text-muted-foreground">/</span>
+            {pair.currency2IconUrl ? (
+              <img
+                src={pair.currency2IconUrl}
+                alt={pair.currency2Name}
+                width={32}
+                height={32}
+                className="rounded-sm"
+              />
+            ) : (
+              <Coins className="h-8 w-8 text-muted-foreground" />
+            )}
             {pair.currency1Name} / {pair.currency2Name}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Stats row */}
+        {/* Stats grid */}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 mt-2">
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("current")}</p>
-              <p className="text-sm font-bold font-mono">{fmt(pair.relativePrice)}</p>
+              <p className="text-sm font-bold font-mono">
+                {fmt(pair.relativePrice)}{" "}
+                <span className={`text-xs font-semibold ${changeIndicator.color}`}>
+                  {changeIndicator.text}
+                </span>
+              </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("min")}</p>
@@ -109,8 +180,49 @@ export function PairDetailDialog({
               <p className="text-[10px] text-muted-foreground">{t("spread")}</p>
               <p className="text-sm font-bold font-mono">{fmt(stats.spread)}</p>
             </div>
+            {/* 24h High / Low */}
+            {stats24h && (
+              <>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <p className="text-[10px] text-muted-foreground">{t("high24h")}</p>
+                  <p className="text-sm font-bold font-mono text-emerald-400">{fmt(stats24h.high)}</p>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <p className="text-[10px] text-muted-foreground">{t("low24h")}</p>
+                  <p className="text-sm font-bold font-mono text-red-400">{fmt(stats24h.low)}</p>
+                </div>
+              </>
+            )}
+            {/* 7d High / Low (only if we have enough data) */}
+            {stats7d && (timeRange === "30d" || timeRange === "90d") && (
+              <>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <p className="text-[10px] text-muted-foreground">{t("high7d")}</p>
+                  <p className="text-sm font-bold font-mono text-emerald-400">{fmt(stats7d.high)}</p>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <p className="text-[10px] text-muted-foreground">{t("low7d")}</p>
+                  <p className="text-sm font-bold font-mono text-red-400">{fmt(stats7d.low)}</p>
+                </div>
+              </>
+            )}
           </div>
         )}
+
+        {/* Time range toggle */}
+        <div className="flex items-center gap-1 mt-2">
+          {(["7d", "30d", "90d"] as const).map((range) => (
+            <Button
+              key={range}
+              variant={timeRange === range ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange(range)}
+              className="h-7 px-3 text-xs"
+            >
+              {t(`timeRange${range}` as "timeRange7d" | "timeRange30d" | "timeRange90d")}
+            </Button>
+          ))}
+        </div>
 
         {/* Price history chart */}
         {isLoading ? (

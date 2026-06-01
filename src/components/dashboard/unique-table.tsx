@@ -44,11 +44,15 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
   const [sorting, setSorting] = useState<SortingState>([]);
   const [density, setDensity] = useState<DensityMode>("comfortable");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
-  const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison } =
+  const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison, uiState } =
     useDashboardStore();
   const queryClient = useQueryClient();
 
-  const isCompact = density === "compact";
+  // §3.5: Global dense mode overrides local density
+  const isGlobalDense = uiState.denseMode;
+  const effectiveDensity: DensityMode = isGlobalDense ? "compact" : density;
+
+  const isCompact = effectiveDensity === "compact";
   const rowHeight = isCompact ? 28 : 44;
   const fontSize = isCompact ? "text-xs" : "text-sm";
   const cellPadding = isCompact ? "py-1 px-2" : "py-2 px-3";

@@ -530,6 +530,37 @@ const ko: Record<TranslationKeys, string> = {
   added: "추가일",
   noWatchlistMatches: "필터와 일치하는 항목 없음",
   noWatchlistMatchesDesc: "검색어 또는 그룹 필터를 조정해 보세요.",
+
+  // ---- §3.1: Accessibility ----
+  marketOverviewStats: "시장 개요 통계",
+  keyboardShortcuts: "키보드 단축키",
+  shortcutToggleView: "표/카드 보기 전환",
+  shortcutFocusSearch: "검색 포커스",
+  shortcutNavigateRows: "행 탐색",
+  shortcutOpenDetail: "상세 열기 / 즐겨찾기 전환",
+  shortcutClose: "드롭다운/모달 닫기",
+  shortcutSwitchTab: "탭 전환",
+  shortcutHelp: "키보드 단축키 표시",
+  shortcutTitle: "키보드 단축키",
+  shortcutDescription: "이 단축키를 사용하여 대시보드를 빠르게 탐색하세요.",
+  shortcutKey: "키",
+  shortcutAction: "동작",
+  shortcutTabMapping: "탭 단축키:",
+
+  // ---- §3.5: Dense Mode ----
+  enableDenseMode: "간결 모드 활성화",
+  disableDenseMode: "간결 모드 비활성화",
+
+  // ---- §3.4: Currency Drill-Down ----
+  timeRange7d: "7일",
+  timeRange30d: "30일",
+  timeRange90d: "90일",
+  high24h: "24시 최고",
+  low24h: "24시 최저",
+  high7d: "7일 최고",
+  low7d: "7일 최저",
+  backToExchange: "교환으로 돌아가기",
+  pairDetailTitle: "페어 상세",
 };
 
 export default ko;

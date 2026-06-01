@@ -8,7 +8,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   Coins,
   ArrowUpDown,
@@ -35,6 +35,8 @@ interface ExchangeTableProps {
   onPairClick: (pair: ExchangePair) => void;
   realm: string;
   league: string;
+  /** §3.2: Index of the row to highlight via keyboard navigation */
+  highlightedRowIndex?: number | null;
 }
 
 // ============================================================================
@@ -52,7 +54,7 @@ function fmtVolume(n: number | null | undefined): string {
 // Exchange Table
 // ============================================================================
 
-export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTableProps) {
+export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex }: ExchangeTableProps) {
   const { t } = useI18n();
   const {
     uiState,
@@ -104,6 +106,15 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
     return sorted;
   }, [pairs, sortField, sortDirection]);
 
+  // §3.2: Scroll highlighted row into view
+  useEffect(() => {
+    if (highlightedRowIndex != null && highlightedRowIndex >= 0) {
+      const table = document.querySelector('[data-slot="exchange-table"]');
+      const rows = table?.querySelectorAll("tbody tr");
+      rows?.[highlightedRowIndex]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [highlightedRowIndex]);
+
   // --- Sort toggle handler ---
   const handleSort = useCallback(
     (field: SortField) => {
@@ -132,7 +143,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
   };
 
   return (
-    <div className="rounded-md border border-border overflow-hidden">
+    <div className="rounded-md border border-border overflow-hidden" data-slot="exchange-table">
       <div className="overflow-x-auto">
         <table className="w-full text-sm" role="table">
           <thead>
@@ -208,7 +219,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
             </tr>
           </thead>
           <tbody>
-            {sortedPairs.map((pair) => {
+            {sortedPairs.map((pair, index) => {
               const chg = fmtChange(pair.changePercent);
               const isFav = favorites.includes(pair.id);
               const pairKey = `${pair.currency1Id}_${pair.currency2Id}`;
@@ -232,7 +243,11 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
               return (
                 <tr
                   key={pair.id}
-                  className="border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group volume-indicator-row"
+                  className={`border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group volume-indicator-row ${
+                    index === highlightedRowIndex
+                      ? "bg-accent/80 ring-2 ring-inset ring-primary/40"
+                      : ""
+                  }`}
                   style={volumeBgStyle}
                   onClick={() => onPairClick(pair)}
                   tabIndex={0}

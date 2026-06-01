@@ -535,6 +535,37 @@ const ru: Record<TranslationKeys, string> = {
   added: "\u0414\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u043E",
   noWatchlistMatches: "\u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u0435\u0442 \u0444\u0438\u043B\u044C\u0442\u0440\u0430\u043C",
   noWatchlistMatchesDesc: "\u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u043F\u043E\u0438\u0441\u043A \u0438\u043B\u0438 \u0444\u0438\u043B\u044C\u0442\u0440 \u0433\u0440\u0443\u043F\u043F\u044B.",
+
+  // ---- §3.1: Accessibility ----
+  marketOverviewStats: "Статистика рынка",
+  keyboardShortcuts: "Горячие клавиши",
+  shortcutToggleView: "Переключить вид таблица/карточки",
+  shortcutFocusSearch: "Фокус на поиск",
+  shortcutNavigateRows: "Навигация по строкам",
+  shortcutOpenDetail: "Открыть детали / Добавить в избранное",
+  shortcutClose: "Закрыть выпадающий список/модальное окно",
+  shortcutSwitchTab: "Переключить вкладку",
+  shortcutHelp: "Показать горячие клавиши",
+  shortcutTitle: "Горячие клавиши",
+  shortcutDescription: "Используйте эти горячие клавиши для быстрой навигации по дашборду.",
+  shortcutKey: "Клавиша",
+  shortcutAction: "Действие",
+  shortcutTabMapping: "Горячие клавиши вкладок:",
+
+  // ---- §3.5: Dense Mode ----
+  enableDenseMode: "Включить компактный режим",
+  disableDenseMode: "Отключить компактный режим",
+
+  // ---- §3.4: Currency Drill-Down ----
+  timeRange7d: "7д",
+  timeRange30d: "30д",
+  timeRange90d: "90д",
+  high24h: "Макс 24ч",
+  low24h: "Мин 24ч",
+  high7d: "Макс 7д",
+  low7d: "Мин 7д",
+  backToExchange: "Назад к обмену",
+  pairDetailTitle: "Детали пары",
 };
 
 export default ru;

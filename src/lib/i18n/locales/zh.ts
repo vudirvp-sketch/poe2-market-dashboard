@@ -530,6 +530,37 @@ const zh: Record<TranslationKeys, string> = {
   added: "添加时间",
   noWatchlistMatches: "没有项目匹配筛选条件",
   noWatchlistMatchesDesc: "请尝试调整搜索或分组筛选。",
+
+  // ---- §3.1: Accessibility ----
+  marketOverviewStats: "市场概览统计",
+  keyboardShortcuts: "键盘快捷键",
+  shortcutToggleView: "切换表格/卡片视图",
+  shortcutFocusSearch: "聚焦搜索",
+  shortcutNavigateRows: "导航行",
+  shortcutOpenDetail: "打开详情 / 切换收藏",
+  shortcutClose: "关闭下拉菜单/弹窗",
+  shortcutSwitchTab: "切换标签页",
+  shortcutHelp: "显示键盘快捷键",
+  shortcutTitle: "键盘快捷键",
+  shortcutDescription: "使用这些快捷键更快地浏览仪表板。",
+  shortcutKey: "按键",
+  shortcutAction: "操作",
+  shortcutTabMapping: "标签页快捷键：",
+
+  // ---- §3.5: Dense Mode ----
+  enableDenseMode: "启用紧凑模式",
+  disableDenseMode: "禁用紧凑模式",
+
+  // ---- §3.4: Currency Drill-Down ----
+  timeRange7d: "7天",
+  timeRange30d: "30天",
+  timeRange90d: "90天",
+  high24h: "24h 最高",
+  low24h: "24h 最低",
+  high7d: "7d 最高",
+  low7d: "7d 最低",
+  backToExchange: "返回兑换",
+  pairDetailTitle: "交易对详情",
 };
 
 export default zh;

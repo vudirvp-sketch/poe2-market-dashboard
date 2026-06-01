@@ -534,6 +534,37 @@ const en = {
   added: "Added",
   noWatchlistMatches: "No items match your filters",
   noWatchlistMatchesDesc: "Try adjusting your search or group filter.",
+
+  // ---- §3.1: Accessibility ----
+  marketOverviewStats: "Market overview statistics",
+  keyboardShortcuts: "Keyboard Shortcuts",
+  shortcutToggleView: "Toggle table/cards view",
+  shortcutFocusSearch: "Focus search",
+  shortcutNavigateRows: "Navigate rows",
+  shortcutOpenDetail: "Open detail / Toggle favorite",
+  shortcutClose: "Close dropdown/modal",
+  shortcutSwitchTab: "Switch tab",
+  shortcutHelp: "Show keyboard shortcuts",
+  shortcutTitle: "Keyboard Shortcuts",
+  shortcutDescription: "Use these shortcuts to navigate the dashboard faster.",
+  shortcutKey: "Key",
+  shortcutAction: "Action",
+  shortcutTabMapping: "Tab shortcuts:",
+
+  // ---- §3.5: Dense Mode ----
+  enableDenseMode: "Enable Dense Mode",
+  disableDenseMode: "Disable Dense Mode",
+
+  // ---- §3.4: Currency Drill-Down ----
+  timeRange7d: "7d",
+  timeRange30d: "30d",
+  timeRange90d: "90d",
+  high24h: "24h High",
+  low24h: "24h Low",
+  high7d: "7d High",
+  low7d: "7d Low",
+  backToExchange: "Back to Exchange",
+  pairDetailTitle: "Pair Detail",
 } as const;
 
 export default en;

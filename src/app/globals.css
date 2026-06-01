@@ -160,3 +160,46 @@
 .dark .volume-indicator-card {
   border-left: 3px solid rgba(96, 165, 250, calc(var(--vol-opacity, 0) * 0.8));
 }
+
+/* §3.1: WCAG 2.1 AA — Focus indicators for keyboard navigation */
+@layer base {
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  /* Remove outline on mouse click (only show for keyboard) */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* §3.1: WCAG 2.1 AA — Responsive tables on mobile */
+@media (max-width: 768px) {
+  table[role="table"] {
+    font-size: 13px;
+  }
+  table[role="table"] th,
+  table[role="table"] td {
+    white-space: nowrap;
+  }
+}
+
+/* §3.5: Global Dense Mode — applied when .dense-mode class is on the root element */
+.dense-mode {
+  font-size: 14px; /* Reduced from 15px base */
+}
+
+.dense-mode table[role="table"] {
+  font-size: 12px;
+}
+
+.dense-mode table[role="table"] th,
+.dense-mode table[role="table"] td {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.dense-mode .grid {
+  gap: 4px !important;
+}

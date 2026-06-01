@@ -21,6 +21,7 @@ import {
   Circle,
   MoreVertical,
   FileDown,
+  Rows3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +82,10 @@ interface HeaderProps {
   activeTab?: string;
   /** §2.5: Callback when a fuzzy search result is selected */
   onSearchResultSelect?: (item: { tab: string; id: string }) => void;
+  /** §3.5: Whether dense mode is enabled */
+  denseMode?: boolean;
+  /** §3.5: Callback to toggle dense mode */
+  onDenseModeToggle?: () => void;
 }
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -142,6 +147,8 @@ export function Header({
   allItems,
   activeTab,
   onSearchResultSelect,
+  denseMode,
+  onDenseModeToggle,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
@@ -410,6 +417,17 @@ export function Header({
               >
                 <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 {t("switchLanguage")} ({LOCALE_LABELS[locale]})
+              </button>
+
+              {/* §3.5: Dense Mode toggle */}
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                onClick={() => { onDenseModeToggle?.(); setMoreOpen(false); }}
+                role="menuitem"
+                aria-label={denseMode ? t("disableDenseMode") ?? "Disable dense mode" : t("enableDenseMode") ?? "Enable dense mode"}
+              >
+                <Rows3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {denseMode ? (t("disableDenseMode") ?? "Disable Dense Mode") : (t("enableDenseMode") ?? "Enable Dense Mode")}
               </button>
 
               {/* Theme toggle */}

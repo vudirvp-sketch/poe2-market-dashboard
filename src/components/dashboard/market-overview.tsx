@@ -178,7 +178,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   return (
     <div className="space-y-6">
       {/* §2.1: KPI Cards — 4 cards in a row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" aria-live="polite" aria-label={t("marketOverviewStats") ?? "Market overview statistics"}>
         <Card>
           <CardContent className="py-5 px-5">  {/* §1.6: increased padding */}
             <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
             </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="region" aria-label={t("topMovers") ?? "Top Movers"}>
           {/* Top Gainers */}
           <Card>
             <CardHeader className="pb-2">
