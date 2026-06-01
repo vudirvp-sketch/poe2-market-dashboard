@@ -15,7 +15,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { ArrowLeftRight, Activity, Loader2 } from "lucide-react";
+import { ArrowLeftRight, Activity } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,8 @@ import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { ChartSkeleton } from "./skeletons";
+import { EmptyState } from "./empty-state";
 
 interface PairDetailDialogProps {
   pair: ExchangePair | null;
@@ -112,9 +114,7 @@ export function PairDetailDialog({
 
         {/* Price history chart */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <ChartSkeleton height={250} />
         ) : pairHistory && pairHistory.length > 1 ? (
           <div className="mt-4 space-y-4">
             <div>
@@ -188,9 +188,10 @@ export function PairDetailDialog({
             </div>
           </div>
         ) : (
-          <p className="text-center text-muted-foreground py-10">
-            {t("noPairHistory")}
-          </p>
+          <EmptyState
+            kind="noResults"
+            message={t("noPairHistory")}
+          />
         )}
       </DialogContent>
     </Dialog>

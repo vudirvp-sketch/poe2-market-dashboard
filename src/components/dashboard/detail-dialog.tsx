@@ -20,7 +20,7 @@ import {
   ComposedChart,
   Line,
 } from "recharts";
-import { TrendingUp, Activity, Loader2 } from "lucide-react";
+import { TrendingUp, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -35,6 +35,8 @@ import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { ChartSkeleton } from "./skeletons";
+import { EmptyState } from "./empty-state";
 
 interface DetailDialogProps {
   item: PoeItem | null;
@@ -237,9 +239,7 @@ export function DetailDialog({
           {/* Charts */}
           {chartMode === "hourly" ? (
             detailHistoryLoading ? (
-              <div className="flex items-center justify-center py-10" role="status" aria-live="polite">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
-              </div>
+              <ChartSkeleton height={250} />
             ) : detailHistory && detailHistory.length > 1 ? (
               <div className="mt-4 space-y-4">
                 {/* Price history AreaChart */}
@@ -363,15 +363,14 @@ export function DetailDialog({
                 </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-10" role="status">
-                {t("noHistory")}
-              </p>
+              <EmptyState
+                kind="noResults"
+                message={t("noHistory")}
+              />
             )
           ) : // Daily candlestick mode
           dailyLoading ? (
-            <div className="flex items-center justify-center py-10" role="status" aria-live="polite">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
-            </div>
+            <ChartSkeleton height={300} />
           ) : dailyStats && dailyStats.length > 0 ? (
             <div className="mt-4 space-y-4">
               {/* Candlestick chart using ComposedChart */}
@@ -431,9 +430,10 @@ export function DetailDialog({
               </div>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-10" role="status">
-              {t("noDailyStats")}
-            </p>
+            <EmptyState
+              kind="noResults"
+              message={t("noDailyStats")}
+            />
           )}
         </>
       </DialogContent>

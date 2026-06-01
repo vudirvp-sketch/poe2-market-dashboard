@@ -15,7 +15,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { GitCompare, X, Loader2, Trash2 } from "lucide-react";
+import { GitCompare, X, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ import { fmt, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { DialogContentSkeleton } from "./skeletons";
 import { useMemo } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
@@ -226,12 +227,7 @@ export function ComparisonDialog({
 
         {/* Chart */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-sm text-muted-foreground">
-              {t("loadingComparison")}
-            </span>
-          </div>
+          <DialogContentSkeleton />
         ) : chartData.length > 1 && seriesMeta.length >= 2 ? (
           <div className="mt-4">
             <h4 className="text-sm font-medium mb-2">

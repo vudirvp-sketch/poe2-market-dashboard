@@ -31,7 +31,10 @@ const en = {
   totalVolume24h: "Total Volume (24h)",
   trackedItems: "Tracked Items",
   exchangePairs: "Exchange Pairs",
-  marketVolumeTrend: "Market Volume Trend (7 days)",
+  medianChange24h: "Median Change 24h",
+  marketVolumeTrend: "Market Volume Trend",
+  timeframe24h: "24h",
+  timeframe7d: "7d",
   topMovers: "Top Movers",
   topGainers: "Top Gainers",
   topLosers: "Top Losers",
@@ -53,6 +56,7 @@ const en = {
 
   // Exchange
   noExchangePairs: "No exchange pairs found",
+  noResultsSuggestion: "Try adjusting your search or switching to a different filter.",
   allPairs: "All Pairs",
   topVolume: "Top Volume",
   favorites: "Favorites",
@@ -61,6 +65,8 @@ const en = {
   addFavoritesHint: "Click the ★ icon on any pair to add it.",
   tableView: "Table",
   cardsView: "Cards",
+  comfortable: "Comfortable",
+  compact: "Compact",
   rate: "Rate",
 
   // Pagination
@@ -328,10 +334,6 @@ const en = {
   forecastWsConnecting: "Live: connecting…",
   forecastWsDisconnected: "Live: disconnected",
   forecastLastUpdate: "Last update",
-
-  // Timeframes
-  timeframe24h: "24h",
-  timeframe7d: "7d",
 
   // Flips Tab
   tabFlips: "Flips",

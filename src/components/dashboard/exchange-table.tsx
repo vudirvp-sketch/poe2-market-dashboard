@@ -257,10 +257,10 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
                         <img
                           src={pair.currency1IconUrl}
                           alt=""
-                          className="w-6 h-6 object-contain"
+                          className="w-8 h-8 object-contain"  /* §1.6: 32x32px icons */
                         />
                       ) : (
-                        <Coins className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+                        <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                       )}
                       <span className="font-medium text-sm truncate max-w-[120px]">
                         {pair.currency1Name}
@@ -270,10 +270,10 @@ export function ExchangeTable({ pairs, onPairClick, realm, league }: ExchangeTab
                         <img
                           src={pair.currency2IconUrl}
                           alt=""
-                          className="w-6 h-6 object-contain"
+                          className="w-8 h-8 object-contain"  /* §1.6: 32x32px icons */
                         />
                       ) : (
-                        <Coins className="w-6 h-6 text-muted-foreground" aria-hidden="true" />
+                        <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                       )}
                       <span className="font-medium text-sm truncate max-w-[120px]">
                         {pair.currency2Name}

@@ -29,6 +29,7 @@ const zh: Record<TranslationKeys, string> = {
   totalVolume24h: "总交易量 (24小时)",
   trackedItems: "追踪物品",
   exchangePairs: "兑换对",
+  medianChange24h: "24小时中位数变化",
   marketVolumeTrend: "市场交易量趋势 (7天)",
   topMovers: "涨跌榜",
   topGainers: "涨幅榜",
@@ -51,6 +52,7 @@ const zh: Record<TranslationKeys, string> = {
 
   // Exchange
   noExchangePairs: "未找到兑换对",
+  noResultsSuggestion: "请尝试调整搜索条件或切换筛选器。",
   allPairs: "所有对",
   topVolume: "高交易量",
   favorites: "收藏",
@@ -59,6 +61,8 @@ const zh: Record<TranslationKeys, string> = {
   addFavoritesHint: "点击任意货币对上的 ★ 图标添加收藏。",
   tableView: "表格",
   cardsView: "卡片",
+  comfortable: "舒适",
+  compact: "紧凑",
   rate: "汇率",
 
   // Pagination

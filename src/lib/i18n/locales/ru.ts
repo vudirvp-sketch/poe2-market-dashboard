@@ -29,6 +29,7 @@ const ru: Record<TranslationKeys, string> = {
   totalVolume24h: "\u041E\u0431\u044A\u0451\u043C (24\u0447)",
   trackedItems: "\u041E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0445 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432",
   exchangePairs: "\u041E\u0431\u043C\u0435\u043D\u043D\u044B\u0445 \u043F\u0430\u0440",
+  medianChange24h: "Медианное изменение 24ч",
   marketVolumeTrend: "\u0422\u0440\u0435\u043D\u0434 \u043E\u0431\u044A\u0451\u043C\u0430 \u0440\u044B\u043D\u043A\u0430 (7 \u0434\u043D\u0435\u0439)",
   topMovers: "\u0422\u043E\u043F \u0434\u0432\u0438\u0436\u0435\u043D\u0438\u0439",
   topGainers: "\u0422\u043E\u043F \u0440\u043E\u0441\u0442\u0430",
@@ -51,6 +52,7 @@ const ru: Record<TranslationKeys, string> = {
 
   // Exchange
   noExchangePairs: "\u041E\u0431\u043C\u0435\u043D\u043D\u044B\u0435 \u043F\u0430\u0440\u044B \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u044B",
+  noResultsSuggestion: "Попробуйте изменить поиск или переключить фильтр.",
   allPairs: "\u0412\u0441\u0435 \u043F\u0430\u0440\u044B",
   topVolume: "\u0422\u043E\u043F \u043F\u043E \u043E\u0431\u044A\u0451\u043C\u0443",
   favorites: "\u0418\u0437\u0431\u0440\u0430\u043D\u043D\u044B\u0435",
@@ -59,6 +61,8 @@ const ru: Record<TranslationKeys, string> = {
   addFavoritesHint: "\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u2605 \u043D\u0430 \u043B\u044E\u0431\u043E\u0439 \u043F\u0430\u0440\u0435, \u0447\u0442\u043E\u0431\u044B \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C.",
   tableView: "\u0422\u0430\u0431\u043B\u0438\u0446\u0430",
   cardsView: "\u041A\u0430\u0440\u0442\u043E\u0447\u043A\u0438",
+  comfortable: "Комфортный",
+  compact: "Компактный",
   rate: "\u041A\u0443\u0440\u0441",
 
   // Pagination

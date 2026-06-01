@@ -19,6 +19,8 @@ import {
   LayoutGrid,
   List,
   Filter,
+  SearchX,
+  Inbox,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +111,7 @@ import {
   ExchangeGridSkeleton,
   ExchangeTableSkeleton,
 } from "@/components/dashboard/skeletons";
+import { EmptyState } from "@/components/dashboard/empty-state";
 
 import {
   fetchApi,
@@ -782,9 +785,11 @@ export function Dashboard() {
                   title={t("failedToLoadData")}
                 />
               ) : !currenciesData?.items?.length ? (
-                <p className="text-center text-muted-foreground py-20" role="status">
-                  {t("noCurrencies")}
-                </p>
+                <EmptyState
+                  kind="noResults"
+                  message={t("noCurrencies")}
+                  suggestion={search ? t("noResultsSuggestion") ?? "Try adjusting your search or switching to a different category." : undefined}
+                />
               ) : (
                 <>
                   {useVirtualCurrencies ? (
@@ -836,9 +841,11 @@ export function Dashboard() {
                   title={t("failedToLoadData")}
                 />
               ) : !uniquesData?.items?.length ? (
-                <p className="text-center text-muted-foreground py-20" role="status">
-                  {t("noUniques")}
-                </p>
+                <EmptyState
+                  kind="noResults"
+                  message={t("noUniques")}
+                  suggestion={search ? t("noResultsSuggestion") ?? "Try adjusting your search or switching to a different category." : undefined}
+                />
               ) : (
                 <>
                   <UniqueTable
@@ -875,9 +882,11 @@ export function Dashboard() {
                   title={t("failedToLoadData")}
                 />
               ) : exchangePairs.length === 0 && !exchangeData ? (
-                <p className="text-center text-muted-foreground py-20" role="status">
-                  {t("noExchangePairs")}
-                </p>
+                <EmptyState
+                  kind="noResults"
+                  message={t("noExchangePairs")}
+                  suggestion={search ? t("noResultsSuggestion") ?? "Try adjusting your search or switching to 'All Pairs'." : undefined}
+                />
               ) : (
                 <>
                   {/* §1.1: View toggle + §1.2: Quick Filter Chips */}

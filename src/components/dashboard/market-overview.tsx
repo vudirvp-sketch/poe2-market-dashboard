@@ -17,11 +17,13 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  Loader2,
   BarChart3,
   Coins,
+  ArrowLeftRight,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ import { useI18n } from "@/lib/i18n";
 import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
 import { useState, useMemo } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { MarketOverviewSkeleton } from "./skeletons";
 
 interface HeatmapItem {
   currency: string;
@@ -61,6 +64,7 @@ interface MarketOverviewProps {
 export function MarketOverview({ realm, league, onItemClick, backendOnline }: MarketOverviewProps) {
   const { t } = useI18n();
   const [topTimeframe, setTopTimeframe] = useState<"24h" | "7d">("24h");
+  const [trendTimeframe, setTrendTimeframe] = useState<"24h" | "7d">("7d");
   const reducedMotion = useReducedMotion();
 
   // Single aggregated overview query — replaces 3 separate queries
@@ -126,12 +130,36 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   const trackedItems = overview?.stats?.trackedItems ?? 0;
   const exchangePairsCount = overview?.stats?.exchangePairs ?? 0;
 
+  // Compute median change 24h from top movers
+  const medianChange = useMemo(() => {
+    const allMovers = [
+      ...(overview?.topGainers ?? []),
+      ...(overview?.topLosers ?? []),
+    ];
+    const changes = allMovers
+      .map((i) => i.changePercent)
+      .filter((v): v is number => v != null);
+    if (changes.length === 0) return null;
+    changes.sort((a, b) => a - b);
+    const mid = Math.floor(changes.length / 2);
+    return changes.length % 2 !== 0
+      ? changes[mid]
+      : (changes[mid - 1] + changes[mid]) / 2;
+  }, [overview]);
+
+  // Filter snapshot history by trend timeframe
+  const trendData = useMemo(() => {
+    const history = overview?.snapshotHistory;
+    if (!history || history.length === 0) return [];
+    if (trendTimeframe === "7d") return history;
+    // 24h: take the last 24 hours of data
+    const latest = new Date(history[history.length - 1].timestamp).getTime();
+    const cutoff = latest - 24 * 60 * 60 * 1000;
+    return history.filter((p) => new Date(p.timestamp).getTime() >= cutoff);
+  }, [overview?.snapshotHistory, trendTimeframe]);
+
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <MarketOverviewSkeleton />;
   }
 
   // Heatmap color helper: green for positive, red for negative, intensity proportional to magnitude
@@ -149,8 +177,8 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
 
   return (
     <div className="space-y-6">
-      {/* Market stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* §2.1: KPI Cards — 4 cards in a row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card>
           <CardContent className="py-5 px-5">  {/* §1.6: increased padding */}
             <div className="flex items-center gap-2">
@@ -163,6 +191,23 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                 : totalVolume >= 1000
                 ? `${(totalVolume / 1000).toFixed(1)}K`
                 : totalVolume.toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-5 px-5">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              <p className="text-xs text-muted-foreground">{t("medianChange24h")}</p>
+            </div>
+            <p className={`text-2xl font-bold font-mono mt-1 ${
+              medianChange != null
+                ? medianChange >= 0 ? "text-emerald-400" : "text-red-400"
+                : ""
+            }`}>
+              {medianChange != null
+                ? `${medianChange >= 0 ? "▲" : "▼"} ${medianChange >= 0 ? "+" : ""}${medianChange.toFixed(1)}%`
+                : "—"}
             </p>
           </CardContent>
         </Card>
@@ -180,7 +225,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
         <Card>
           <CardContent className="py-5 px-5">  {/* §1.6: increased padding */}
             <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
+              <ArrowLeftRight className="h-5 w-5 text-primary" />
               <p className="text-xs text-muted-foreground">{t("exchangePairs")}</p>
             </div>
             <p className="text-2xl font-bold font-mono mt-1">
@@ -190,18 +235,38 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
         </Card>
       </div>
 
-      {/* Volume trend chart */}
-      {overview?.snapshotHistory && overview.snapshotHistory.length > 1 && (
+      {/* §2.1: Volume trend chart with 24h/7d toggle */}
+      {trendData.length > 1 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-1">
-              <Activity className="h-4 w-4" /> {t("marketVolumeTrend")}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-1">
+                <Activity className="h-4 w-4" /> {t("marketVolumeTrend")}
+              </CardTitle>
+              <div className="flex gap-1">
+                <Button
+                  variant={trendTimeframe === "24h" ? "default" : "outline"}
+                  size="sm"
+                  className="h-6 text-xs px-2"
+                  onClick={() => setTrendTimeframe("24h")}
+                >
+                  {t("timeframe24h")}
+                </Button>
+                <Button
+                  variant={trendTimeframe === "7d" ? "default" : "outline"}
+                  size="sm"
+                  className="h-6 text-xs px-2"
+                  onClick={() => setTrendTimeframe("7d")}
+                >
+                  {t("timeframe7d")}
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={overview.snapshotHistory}>
+                <AreaChart data={trendData}>
                   <defs>
                     <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />

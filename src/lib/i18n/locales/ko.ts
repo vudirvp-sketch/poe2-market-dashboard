@@ -29,6 +29,7 @@ const ko: Record<TranslationKeys, string> = {
   totalVolume24h: "총 거래량 (24시)",
   trackedItems: "추적 아이템",
   exchangePairs: "교환 페어",
+  medianChange24h: "24시간 중간 변화",
   marketVolumeTrend: "시장 거래량 동향 (7일)",
   topMovers: "도움 종목",
   topGainers: "상승 종목",
@@ -51,6 +52,7 @@ const ko: Record<TranslationKeys, string> = {
 
   // Exchange
   noExchangePairs: "교환 페어를 찾을 수 없음",
+  noResultsSuggestion: "검색어를 조정하거나 필터를 전환해 보세요.",
   allPairs: "전체 페어",
   topVolume: "거래량 상위",
   favorites: "즐겨찾기",
@@ -59,6 +61,8 @@ const ko: Record<TranslationKeys, string> = {
   addFavoritesHint: "★ 아이콘을 클릭하여 페어를 추가하세요.",
   tableView: "표",
   cardsView: "카드",
+  comfortable: "편안하게",
+  compact: "간결하게",
   rate: "환율",
 
   // Pagination

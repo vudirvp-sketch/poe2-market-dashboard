@@ -4,9 +4,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Star, Loader2 } from "lucide-react";
+import { Star, Inbox } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { WatchlistSkeleton } from "./skeletons";
+import { EmptyState } from "./empty-state";
 import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem } from "@/lib/types";
@@ -34,29 +36,25 @@ export function WatchlistTab({ realm, league, onItemClick }: WatchlistTabProps) 
 
   if (favorites.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <Star className="h-12 w-12 mb-4" />
-        <p className="text-lg mb-1">{t("noFavorites")}</p>
-        <p className="text-sm">{t("noFavoritesDesc")}</p>
-      </div>
+      <EmptyState
+        kind="noFavorites"
+        message={t("noFavorites")}
+        suggestion={t("noFavoritesDesc")}
+      />
     );
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <WatchlistSkeleton count={6} />;
   }
 
   if (watchedItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <Star className="h-12 w-12 mb-4" />
-        <p className="text-lg mb-1">{t("favoritedNotFound")}</p>
-        <p className="text-sm">{t("favoritedNotFoundDesc")}</p>
-      </div>
+      <EmptyState
+        icon={Inbox}
+        message={t("favoritedNotFound")}
+        suggestion={t("favoritedNotFoundDesc")}
+      />
     );
   }
 

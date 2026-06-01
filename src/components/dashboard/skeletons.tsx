@@ -40,7 +40,7 @@ export function CurrencyCardSkeleton() {
 // ============================================================================
 export function CurrencyGridSkeleton({ count = 10 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {Array.from({ length: count }).map((_, i) => (
         <CurrencyCardSkeleton key={i} />
       ))}
@@ -121,7 +121,7 @@ export function ExchangePairCardSkeleton() {
 // ============================================================================
 export function ExchangeGridSkeleton({ count = 9 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
       {Array.from({ length: count }).map((_, i) => (
         <ExchangePairCardSkeleton key={i} />
       ))}
@@ -177,9 +177,9 @@ export function ExchangeTableSkeleton({ rows = 15 }: { rows?: number }) {
 export function MarketOverviewSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+      {/* §2.1: Stats row — 4 KPI cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="py-4 px-4">
               <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export function ArbitrageSkeleton() {
   return (
     <div className="space-y-6">
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="py-4 px-4">
@@ -259,10 +259,45 @@ export function ArbitrageSkeleton() {
 // ============================================================================
 export function WatchlistSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
       {Array.from({ length: count }).map((_, i) => (
         <CurrencyCardSkeleton key={i} />
       ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// Chart Skeleton — for dialog chart loading states
+// ============================================================================
+export function ChartSkeleton({ height = 250 }: { height?: number }) {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="w-full rounded-lg" style={{ height }} />
+    </div>
+  );
+}
+
+// ============================================================================
+// Dialog Content Skeleton — for detail/comparison dialog loading
+// ============================================================================
+export function DialogContentSkeleton() {
+  return (
+    <div className="space-y-4 py-4">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 w-10 rounded" />
+        <div className="flex-1">
+          <Skeleton className="h-5 w-40 mb-1" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton className="h-16 rounded-lg" />
+      </div>
+      <ChartSkeleton height={250} />
     </div>
   );
 }
