@@ -89,11 +89,15 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     retry: 2,
   });
 
-  // ---- Heatmap data (flipper backend) ----
+  // ---- Heatmap data ----
+  // ENHANCEMENT: The heatmap now works even when the flipper backend is offline.
+  // The /api/flipper/heatmap route falls back to POE2Scout API data when the
+  // flipper backend returns empty results. Realm and league are passed so the
+  // POE2Scout fallback knows which league to query.
   const { data: heatmapData } = useQuery<HeatmapItem[]>({
-    queryKey: ["flipper-heatmap"],
-    queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap"),
-    enabled: !!backendOnline,
+    queryKey: ["flipper-heatmap", realm, league],
+    queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap", { realm, league }),
+    enabled: !!league,
     staleTime: 60_000,
     retry: 1,
   });
@@ -362,8 +366,8 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
         </Card>
       )}
 
-      {/* Price Heatmap */}
-      {backendOnline && heatmapData && heatmapData.length > 0 && (
+      {/* Price Heatmap — now works even when flipper backend is offline */}
+      {heatmapData && heatmapData.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{t("overviewHeatmap")}</CardTitle>
