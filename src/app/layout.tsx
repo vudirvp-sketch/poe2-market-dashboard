@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://poe2-market-dashboard.vercel.app",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://poe2-market-dashboard.vercel.app",
     title: "PoE2 Market Dashboard",
     description:
       "Real-time Path of Exile 2 market tracker. Monitor prices, exchange rates, and find arbitrage opportunities.",

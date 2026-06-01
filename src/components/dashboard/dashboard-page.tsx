@@ -19,8 +19,6 @@ import {
   LayoutGrid,
   List,
   Filter,
-  SearchX,
-  Inbox,
   Keyboard,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -118,8 +116,6 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 
 import {
   fetchApi,
-  fmt,
-  fmtChange,
   exportToCsv,
   exportToJson,
 } from "@/lib/types";

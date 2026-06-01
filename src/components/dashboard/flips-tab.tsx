@@ -16,7 +16,7 @@
 
 import { useState, useMemo, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useFlipsQuery, useInvalidateFlips, FLIPS_QUERY_KEY } from "@/hooks/use-flips-query";
+import { useFlipsQuery, useInvalidateFlips } from "@/hooks/use-flips-query";
 import {
   TrendingUp,
   Info,

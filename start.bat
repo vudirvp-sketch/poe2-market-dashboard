@@ -203,6 +203,23 @@ if not exist "node_modules\" (
 ) else (
     echo [OK] Dependencies already installed.
     echo.
+    REM Verify all dependencies are present (catches cases where package.json was
+    REM updated but npm install wasn't re-run, e.g. new fuse.js dependency).
+    echo [INFO] Verifying npm dependencies...
+    call npm ls --depth=0 --silent >nul 2>&1
+    if !ERRORLEVEL! neq 0 (
+        echo [WARN] Some npm dependencies are missing. Running npm install...
+        call npm install
+        if !ERRORLEVEL! neq 0 (
+            echo.
+            echo [ERROR] npm install failed!
+            echo.
+            pause
+            exit /b 1
+        )
+        echo [OK] Missing dependencies installed.
+    )
+    echo.
 )
 
 REM ---- Handle flags ----

@@ -8,7 +8,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Coins,
   ArrowUpDown,
@@ -17,8 +17,9 @@ import {
   Star,
   GitCompare,
 } from "lucide-react";
-import { fmt, fmtChange } from "@/lib/types";
-import type { ExchangePair } from "@/lib/types";
+import { useQuery } from "@tanstack/react-query";
+import { fmt, fmtChange, fetchApi } from "@/lib/types";
+import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { Sparkline } from "./sparkline";
@@ -464,7 +465,4 @@ function TableSparklinePreview({
   );
 }
 
-// Need to import useQuery and fetchApi for the TableSparklinePreview
-import { useQuery } from "@tanstack/react-query";
-import { fetchApi } from "@/lib/types";
-import type { ExchangePairHistoryPoint } from "@/lib/types";
+

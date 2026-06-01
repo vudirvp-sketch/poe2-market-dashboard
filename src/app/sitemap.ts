@@ -4,13 +4,13 @@
 // ============================================================================
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://poe2-market-dashboard.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://poe2-market-dashboard.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
-      url: BASE_URL,
+      url: SITE_URL,
       lastModified: new Date(),
       changeFrequency: "hourly",
       priority: 1.0,

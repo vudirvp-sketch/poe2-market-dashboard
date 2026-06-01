@@ -216,7 +216,7 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
         if (res.status === 403) {
           throw new Error(
             `API 403 Forbidden — ${url}. Your IP may be blocked by poe2scout.com. ` +
-            `Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local ` +
+            `Try setting POE2_API_BASE_URL=${BASE_URL} in .env.local ` +
             `or use a VPN.`
           );
         }
@@ -265,7 +265,7 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
         throw new Error(
           `API request timed out after ${FETCH_TIMEOUT / 1000}s — ${url}. ` +
           `The poe2scout.com server may be unreachable from your network. ` +
-          `Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local ` +
+          `Try setting POE2_API_BASE_URL=${BASE_URL} in .env.local ` +
           `or use a VPN.`
         );
       }
@@ -285,7 +285,7 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
         throw new Error(
           `Cannot reach poe2scout.com API — ${url}. ` +
           `Error: ${lastError.message}. ` +
-          `Try setting POE2_API_BASE_URL=https://api.poe2scout.com/api in .env.local ` +
+          `Try setting POE2_API_BASE_URL=${BASE_URL} in .env.local ` +
           `or use a VPN to access poe2scout.com.`
         );
       }
