@@ -324,6 +324,36 @@ export function Header({
           </Badge>
         )}
 
+        {/* P1-4: Base Currency Selector — promoted from "More" menu to main bar */}
+        {referenceCurrencies && referenceCurrencies.length > 0 && onReferenceCurrencyChange && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Select
+              value={referenceCurrency || "_default"}
+              onValueChange={(v) => {
+                onReferenceCurrencyChange(v === "_default" ? "" : v);
+              }}
+            >
+              <SelectTrigger className="h-8 text-xs w-[120px]">
+                <SelectValue placeholder={t("baseCurrency")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
+                {referenceCurrencies.map((c) => (
+                  <SelectItem key={c.apiId} value={c.apiId}>
+                    {c.text} ({c.relativePrice.toFixed(1)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* P1-4: Phase-aware hint — suggest switching to Divine in MID/LATE */}
+            {effectivePhase.phase === "mid" || effectivePhase.phase === "late" ? (
+              <span className="text-[10px] text-amber-500 hidden sm:inline" title={t("baseCurrencyPhaseHintTooltip")}>
+                {t("baseCurrencyPhaseHint")}
+              </span>
+            ) : null}
+          </div>
+        )}
+
         {/* Backend status indicator — enhanced with text label */}
         {flipperBackendOnline !== undefined && (
           <div

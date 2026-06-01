@@ -582,6 +582,59 @@ const ru: Record<TranslationKeys, string> = {
   low7d: "Мин 7д",
   backToExchange: "Назад к обмену",
   pairDetailTitle: "Детали пары",
+
+  // P1-5: Benchmark & Range Position
+  range30d: "30д Диапазон",
+  range30dAriaLabel: "Позиция в 30-дневном диапазоне",
+  benchmark30dTitle: "30-дневный бенчмарк",
+  benchmark30dLow: "30д Мин",
+  benchmark30dHigh: "30д Макс",
+  benchmarkPercentile: "Перцентиль",
+  benchmarkVsAvg: "Ср. знач.",
+  benchmarkRangePosition: "Позиция в диапазоне",
+
+  // P1-4: Base Currency Phase Hint
+  baseCurrencyPhaseHint: "Рассмотрите Divine для дорогих предметов",
+  baseCurrencyPhaseHintTooltip: "В MID/LATE фазе дорогие предметы обычно оцениваются в Divine Orbs. Смена базовой валюты упрощает чтение цен.",
+
+  // P1-1: Quantized Scorer UI
+  qSpread: "К-Спред",
+  qSpreadTooltip: "Квантованный спред — фактический процент прибыли после округления до целых чисел при минимальном прибыльном лоте",
+  minLot: "Мин Лот",
+  minLotTooltip: "Минимальный размер лота для прибыльной сделки (после округления). Чем выше, тем сложнее получить прибыль.",
+  brickRisk: "Кирп.",
+  brickRiskTooltip: "Кирпичное сопротивление (0-100). Выше = соотношение листинга надёжнее. Низкие значения означают хрупкость.",
+  tierDist: "Тир",
+  tierDistanceTooltip: "Расстояние между тирами двух валют. Выше = больший риск квантования при кросс-тир торговле.",
+
+  // P1-1: Quantized Detail Panel
+  quantizedAnalysisTitle: "Квантованный анализ",
+  qSpreadDetail: "К-Спред (Оптимальный)",
+  minLotDetail: "Мин прибыльный лот",
+  brickRiskDetail: "Кирпичное сопротивление",
+  recommendedRatio: "Рекомендуемое соотношение",
+  qSpreadByLotSize: "К-Спреды по размеру лота",
+  lotSizeCol: "Лот",
+  costCol: "Расход",
+  revenueCol: "Доход",
+  profitCol: "Прибыль",
+  theoreticalSpread: "Теоретический спред",
+  quantizedNoProfit: "Нет прибыльного лота",
+  quantizedLossWarning: "Теоретический спред положительный, но округление делает это убыточным!",
+
+  // P1-3: Tier Distance Detail
+  tierDistanceDetail: "Расстояние между тир: Δ{0}",
+  tierDistanceWarning: "Кросс-тир флип — высокий риск квантования из-за большой разницы в стоимости валют.",
+
+  // P1-2: Quantized Triangular Arbitrage
+  quantizedProfit: "К-Профит",
+  quantizedProfitTooltip: "Прибыль % проверена через целочисленное моделирование. Непрерывная прибыль может быть положительной, а целочисленная — убыточной.",
+  minStart: "Мин Старт",
+  minStartTooltip: "Минимальный стартовый капитал (в целых единицах), необходимый для прибыльности этого цикла после округления.",
+  integerSimTooltip: "Путь целочисленного моделирования — суммы на каждом шаге при минимальном прибыльном старте.",
+
+  // P2-4: Liquidity Indicators
+  liquidityScoreTooltip: "Ликвидность: {0}% — на основе соотношения объёма к запасу",
 };
 
 export default ru;

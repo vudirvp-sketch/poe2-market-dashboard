@@ -1139,10 +1139,12 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                 </div>
               ) : (
                 <div className="space-y-0" role="table" aria-label={t("flipperTriangularTitle")}>
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                  {/* Table header — P1-2: Added Min Start and Q-Profit columns */}
+                  <div className="grid grid-cols-[1fr_70px_70px_60px_60px_70px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
                     <span role="columnheader">{t("flipperCycle")}</span>
                     <span className="text-right" role="columnheader">{t("flipperNetProfitPct")}</span>
+                    <span className="text-right" role="columnheader" title={t("quantizedProfitTooltip")}>{t("quantizedProfit")}</span>
+                    <span className="text-right" role="columnheader" title={t("minStartTooltip")}>{t("minStart")}</span>
                     <span className="text-center" role="columnheader">{t("confidence")}</span>
                     <span className="text-right" role="columnheader">{t("flipperTotalVolume")}</span>
                   </div>
@@ -1152,7 +1154,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     {triData.opportunities.map((tri, idx) => (
                       <div
                         key={idx}
-                        className="grid grid-cols-[1fr_80px_80px_80px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                        className="grid grid-cols-[1fr_70px_70px_60px_60px_70px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
                         role="row"
                       >
                         {/* Cycle */}
@@ -1165,11 +1167,39 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                               )}
                             </span>
                           ))}
+                          {/* P1-2: Integer simulation path */}
+                          {tri.integer_simulation && tri.integer_simulation.length > 0 && (
+                            <span className="text-[9px] text-muted-foreground ml-1" title={t("integerSimTooltip")}>
+                              [{tri.integer_simulation.join("→")}]
+                            </span>
+                          )}
                         </div>
 
-                        {/* Net profit % */}
+                        {/* Net profit % (continuous) */}
                         <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400" role="cell">
                           +{tri.net_profit_pct.toFixed(2)}%
+                        </span>
+
+                        {/* P1-2: Quantized profit % */}
+                        <span className="text-right font-mono text-xs" role="cell" title={t("quantizedProfitTooltip")}>
+                          {tri.quantized_profit_pct != null ? (
+                            <span className={tri.quantized_profit_pct > 0 ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-red-500"}>
+                              {tri.quantized_profit_pct > 0 ? "+" : ""}{tri.quantized_profit_pct.toFixed(2)}%
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </span>
+
+                        {/* P1-2: Min starting amount */}
+                        <span className="text-right font-mono text-xs" role="cell" title={t("minStartTooltip")}>
+                          {tri.min_starting_amount != null && tri.min_starting_amount > 0 ? (
+                            <span className={tri.min_starting_amount > 100 ? "text-amber-600 dark:text-amber-400" : ""}>
+                              {tri.min_starting_amount}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </span>
 
                         {/* Confidence */}

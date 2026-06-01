@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
-import type { PoeItem, PoeItemHistoryPoint, DailyStat } from "@/lib/types";
+import type { PoeItem, PoeItemHistoryPoint, DailyStat, BenchmarksResponse } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
@@ -151,6 +151,16 @@ export function DetailDialog({
     enabled: !!item && open && chartMode === "daily",
   });
 
+  // P1-5: Fetch benchmark data for the detail panel
+  const { data: benchmarkData } = useQuery<BenchmarksResponse>({
+    queryKey: ["benchmark", item?.apiId],
+    queryFn: () => fetchApi<BenchmarksResponse>(`/api/flipper/benchmarks/${item!.apiId}`),
+    enabled: !!item?.apiId && open,
+    staleTime: 120_000,
+    retry: 0,
+  });
+  const benchmark = benchmarkData?.benchmark;
+
   if (!item) return null;
   const fav = isFavorite(item.id);
 
@@ -218,6 +228,55 @@ export function DetailDialog({
               </p>
             </div>
           </div>
+
+          {/* P1-5: Benchmark Info Panel — 30-day range, percentile, vs avg */}
+          {benchmark && (
+            <div className="mt-3 rounded-lg border p-3 space-y-2">
+              <h4 className="text-xs font-semibold flex items-center gap-1.5">
+                <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("benchmark30dTitle")}
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground">{t("benchmark30dLow")}</p>
+                  <p className="text-sm font-mono font-medium">{fmt(benchmark.low30d)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground">{t("benchmark30dHigh")}</p>
+                  <p className="text-sm font-mono font-medium">{fmt(benchmark.high30d)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground">{t("benchmarkPercentile")}</p>
+                  <p className="text-sm font-mono font-medium">{benchmark.percentile30d.toFixed(0)}%</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground">{t("benchmarkVsAvg")}</p>
+                  <p className={`text-sm font-mono font-medium ${benchmark.currentVsAvg >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {benchmark.currentVsAvg >= 0 ? "+" : ""}{(benchmark.currentVsAvg * 100).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+              {/* Range position bar */}
+              <div>
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-0.5">
+                  <span>{t("benchmarkRangePosition")}</span>
+                  <span>{(benchmark.rangePosition * 100).toFixed(0)}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden" role="meter" aria-valuenow={benchmark.rangePosition * 100} aria-valuemin={0} aria-valuemax={100} aria-label={t("benchmarkRangePosition")}>
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.max(3, benchmark.rangePosition * 100)}%`,
+                      backgroundColor:
+                        benchmark.rangePosition >= 0.8 ? "#f87171" :
+                        benchmark.rangePosition >= 0.5 ? "#fbbf24" :
+                        "#34d399",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Chart mode toggle */}
           <div className="flex gap-2 mt-3">

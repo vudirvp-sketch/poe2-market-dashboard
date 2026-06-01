@@ -581,6 +581,59 @@ const en = {
   low7d: "7d Low",
   backToExchange: "Back to Exchange",
   pairDetailTitle: "Pair Detail",
+
+  // ---- P1-5: Benchmark & Range Position ----
+  range30d: "30d Range",
+  range30dAriaLabel: "30-day range position",
+  benchmark30dTitle: "30-Day Benchmark",
+  benchmark30dLow: "30d Low",
+  benchmark30dHigh: "30d High",
+  benchmarkPercentile: "Percentile",
+  benchmarkVsAvg: "vs Avg",
+  benchmarkRangePosition: "Range Position",
+
+  // ---- P1-4: Base Currency Phase Hint ----
+  baseCurrencyPhaseHint: "Consider Divine for expensive items",
+  baseCurrencyPhaseHintTooltip: "In MID/LATE phase, high-value items are usually priced in Divine Orbs. Switching the base currency makes prices easier to read.",
+
+  // ---- P1-1: Quantized Scorer UI ----
+  qSpread: "Q-Spread",
+  qSpreadTooltip: "Quantized spread — actual profit % after integer rounding at the minimum profitable lot size",
+  minLot: "Min Lot",
+  minLotTooltip: "Minimum lot size needed for a profitable trade (after integer rounding). Higher = harder to profit.",
+  brickRisk: "Brick",
+  brickRiskTooltip: "Brick resistance (0-100). Higher = listing ratio is more reliable. Low values mean the ratio is fragile to rounding.",
+  tierDist: "Tier",
+  tierDistanceTooltip: "Tier distance between the two currencies. Higher = more quantization risk from cross-tier trading.",
+
+  // ---- P1-1: Quantized Detail Panel ----
+  quantizedAnalysisTitle: "Quantized Analysis",
+  qSpreadDetail: "Q-Spread (Optimal)",
+  minLotDetail: "Min Profitable Lot",
+  brickRiskDetail: "Brick Resistance",
+  recommendedRatio: "Recommended Ratio",
+  qSpreadByLotSize: "Q-Spreads by Lot Size",
+  lotSizeCol: "Lot",
+  costCol: "Cost",
+  revenueCol: "Revenue",
+  profitCol: "Profit",
+  theoreticalSpread: "Theoretical Spread",
+  quantizedNoProfit: "No profitable lot",
+  quantizedLossWarning: "Theoretical spread is positive but integer rounding makes this unprofitable!",
+
+  // ---- P1-3: Tier Distance Detail ----
+  tierDistanceDetail: "Tier Distance: Δ{0}",
+  tierDistanceWarning: "Cross-tier flip — high quantization risk due to large value difference between currencies.",
+
+  // ---- P1-2: Quantized Triangular Arbitrage ----
+  quantizedProfit: "Q-Profit",
+  quantizedProfitTooltip: "Profit % validated via integer simulation. Continuous profit may be positive while integer simulation shows a loss.",
+  minStart: "Min Start",
+  minStartTooltip: "Minimum starting capital (in integer units) needed for this cycle to be profitable after rounding.",
+  integerSimTooltip: "Integer simulation path — amounts at each step when starting with the minimum profitable amount.",
+
+  // ---- P2-4: Liquidity Indicators ----
+  liquidityScoreTooltip: "Liquidity: {0}% — based on volume-to-stock ratio",
 } as const;
 
 export default en;

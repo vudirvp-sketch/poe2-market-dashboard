@@ -577,6 +577,59 @@ const ko: Record<TranslationKeys, string> = {
   low7d: "7일 최저",
   backToExchange: "교환으로 돌아가기",
   pairDetailTitle: "페어 상세",
+
+  // P1-5: Benchmark & Range Position
+  range30d: "30일 범위",
+  range30dAriaLabel: "30일 범위 위치",
+  benchmark30dTitle: "30일 벤치마크",
+  benchmark30dLow: "30일 최저",
+  benchmark30dHigh: "30일 최고",
+  benchmarkPercentile: "백분위",
+  benchmarkVsAvg: "평균 대비",
+  benchmarkRangePosition: "범위 위치",
+
+  // P1-4: Base Currency Phase Hint
+  baseCurrencyPhaseHint: "비싼 아이템은 Divine 고려",
+  baseCurrencyPhaseHintTooltip: "MID/LATE 단계에서는 고가 아이템이 보통 Divine Orb로 가격이 책정됩니다. 기준 통화를 전환하면 가격을 읽기 쉽습니다.",
+
+  // P1-1: Quantized Scorer UI
+  qSpread: "Q-스프레드",
+  qSpreadTooltip: "양자화 스프레드 — 최소 수익 로트에서 정수 반올림 후 실제 수익 %",
+  minLot: "최소 로트",
+  minLotTooltip: "수익 가능한 거래를 위한 최소 로트 크기 (정수 반올림 후). 높을수록 수익 내기 어려움.",
+  brickRisk: "브릭",
+  brickRiskTooltip: "브릭 저항 (0-100). 높을수록 리스팅 비율이 안정적. 낮으면 반올림에 취약.",
+  tierDist: "티어",
+  tierDistanceTooltip: "두 통화 간 티어 거리. 높을수록 크로스 티어 거래 시 양자화 리스크 증가.",
+
+  // P1-1: Quantized Detail Panel
+  quantizedAnalysisTitle: "양자화 분석",
+  qSpreadDetail: "Q-스프레드 (최적)",
+  minLotDetail: "최소 수익 로트",
+  brickRiskDetail: "브릭 저항",
+  recommendedRatio: "권장 비율",
+  qSpreadByLotSize: "로트 크기별 Q-스프레드",
+  lotSizeCol: "로트",
+  costCol: "비용",
+  revenueCol: "수익",
+  profitCol: "이익",
+  theoreticalSpread: "이론적 스프레드",
+  quantizedNoProfit: "수익 로트 없음",
+  quantizedLossWarning: "이론적 스프레드는 양수이지만 정수 반올림으로 손실!",
+
+  // P1-3: Tier Distance Detail
+  tierDistanceDetail: "티어 거리: Δ{0}",
+  tierDistanceWarning: "크로스 티어 플립 — 통화 간 가치 차이로 인한 높은 양자화 리스크.",
+
+  // P1-2: Quantized Triangular Arbitrage
+  quantizedProfit: "Q-수익",
+  quantizedProfitTooltip: "정수 시뮬레이션으로 검증된 수익 %. 연속 수익은 양수일 수 있지만 정수 시뮬레이션에서는 손실일 수 있습니다.",
+  minStart: "최소 시작",
+  minStartTooltip: "반올림 후 이 사이클이 수익을 내기 위해 필요한 최소 시작 자본 (정수 단위).",
+  integerSimTooltip: "정수 시뮬레이션 경로 — 최소 수익 시작 금액으로 각 단계의 금액.",
+
+  // P2-4: Liquidity Indicators
+  liquidityScoreTooltip: "유동성: {0}% — 거래량/재고 비율 기준",
 };
 
 export default ko;

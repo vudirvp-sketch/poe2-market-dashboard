@@ -577,6 +577,59 @@ const zh: Record<TranslationKeys, string> = {
   low7d: "7d 最低",
   backToExchange: "返回兑换",
   pairDetailTitle: "交易对详情",
+
+  // P1-5: Benchmark & Range Position
+  range30d: "30日范围",
+  range30dAriaLabel: "30日范围位置",
+  benchmark30dTitle: "30日基准",
+  benchmark30dLow: "30日最低",
+  benchmark30dHigh: "30日最高",
+  benchmarkPercentile: "百分位",
+  benchmarkVsAvg: "对比均值",
+  benchmarkRangePosition: "范围位置",
+
+  // P1-4: Base Currency Phase Hint
+  baseCurrencyPhaseHint: "高价物品建议切换至Divine",
+  baseCurrencyPhaseHintTooltip: "在MID/LATE阶段，高价物品通常以Divine Orb标价。切换基准货币可以让价格更易读。",
+
+  // P1-1: Quantized Scorer UI
+  qSpread: "量化价差",
+  qSpreadTooltip: "量化价差——在最小盈利手数下，经整数取整后的实际利润百分比",
+  minLot: "最小手数",
+  minLotTooltip: "盈利交易所需的最小手数（整数取整后）。越高越难盈利。",
+  brickRisk: "砖阻",
+  brickRiskTooltip: "砖块阻力(0-100)。越高=挂单比例越可靠。低值表示比例对取整脆弱。",
+  tierDist: "层级",
+  tierDistanceTooltip: "两种货币之间的层级距离。越高=跨层级交易的量化风险越大。",
+
+  // P1-1: Quantized Detail Panel
+  quantizedAnalysisTitle: "量化分析",
+  qSpreadDetail: "量化价差（最优）",
+  minLotDetail: "最小盈利手数",
+  brickRiskDetail: "砖块阻力",
+  recommendedRatio: "推荐比例",
+  qSpreadByLotSize: "按手数的量化价差",
+  lotSizeCol: "手数",
+  costCol: "成本",
+  revenueCol: "收入",
+  profitCol: "利润",
+  theoreticalSpread: "理论价差",
+  quantizedNoProfit: "无盈利手数",
+  quantizedLossWarning: "理论价差为正，但整数取整导致亏损！",
+
+  // P1-3: Tier Distance Detail
+  tierDistanceDetail: "层级距离: Δ{0}",
+  tierDistanceWarning: "跨层级倒卖——货币间价值差异大，量化风险高。",
+
+  // P1-2: Quantized Triangular Arbitrage
+  quantizedProfit: "量化利润",
+  quantizedProfitTooltip: "经整数模拟验证的利润百分比。连续利润可能为正，但整数模拟显示亏损。",
+  minStart: "最小起投",
+  minStartTooltip: "取整后该周期盈利所需的最小起始资金（整数单位）。",
+  integerSimTooltip: "整数模拟路径——以最小盈利金额开始时每步的金额。",
+
+  // P2-4: Liquidity Indicators
+  liquidityScoreTooltip: "流动性: {0}%——基于成交量与库存比",
 };
 
 export default zh;
