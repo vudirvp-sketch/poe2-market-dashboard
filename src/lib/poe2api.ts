@@ -1142,15 +1142,135 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
 }
 
 // ============================================================================
-// Fix 5: Enrich ExchangePair with history data
+// Fix 5: Enrich ExchangePair with change data
 // ============================================================================
+//
+// Variant B (implemented): Use ByCategory → PriceLogs to compute 24h change
+// for ALL exchange pairs, not just top-N.
+//
+// The ByCategory endpoint returns PriceLogs (7 daily entries) for each
+// currency item. Since each currency's price is relative to the base currency
+// (e.g., Exalted), we can compute the pair's change from the individual
+// currency changes:
+//   pair_rate = currency1_price_in_base
+//   pair_changePercent ≈ currency1_changePercent (for pairs against base)
+//   For cross-pairs: pair_change = computed from both currencies' price changes
+//
+// This replaces the previous Variant A (top-50 per-pair history enrichment).
+// The per-pair history is still fetched lazily on hover (PairHoverPreview)
+// and in PairDetailDialog.
+
+interface CurrencyChangeEntry {
+  /** 24h change percent computed from PriceLogs */
+  changePercent: number | null;
+  /** Absolute price change in 24h */
+  change: number | null;
+  /** Current price in base currency */
+  currentPrice: number | null;
+  /** Price ~24h ago in base currency */
+  previousPrice: number | null;
+}
+
+/**
+ * Build a map of currency ApiId → change data from ByCategory PriceLogs.
+ *
+ * Fetches ALL currency categories (currency, verisium, runes, essences, etc.)
+ * and computes 24h change from PriceLogs for each item.
+ * Returns a Map keyed by ApiId.
+ */
+async function buildCurrencyChangeMap(
+  realm: string,
+  league: string,
+): Promise<Map<string, CurrencyChangeEntry>> {
+  const changeMap = new Map<string, CurrencyChangeEntry>();
+
+  try {
+    // Fetch all currency categories to discover available categories
+    const categoriesRaw = await cachedFetch<RawCategoriesResponse>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
+    );
+    const currencyCats = categoriesRaw.CurrencyCategories ?? [];
+
+    // Fetch each category's items (with PriceLogs) using concurrency limit
+    const categoryTasks: (() => Promise<void>)[] = [];
+    for (const cat of currencyCats) {
+      categoryTasks.push(async () => {
+        try {
+          const params = new URLSearchParams({
+            Category: cat.ApiId,
+            Page: "1",
+            PerPage: "250",
+          });
+          const raw = await cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
+            `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
+          );
+
+          // Process items from page 1
+          for (const item of raw.Items ?? []) {
+            if (!item.ApiId) continue;
+            const changePercent = computeChangePercent(item.PriceLogs);
+            const currentPrice = item.CurrentPrice;
+            const previousPrice = computePreviousPrice(item.PriceLogs);
+            const change: number | null =
+              currentPrice !== null && previousPrice !== null
+                ? currentPrice - previousPrice
+                : null;
+            changeMap.set(item.ApiId, { changePercent, change, currentPrice, previousPrice });
+          }
+
+          // Fetch remaining pages if there are more
+          if (raw.Pages > 1) {
+            const extraFetches: Promise<RawPaginatedResponse<RawCurrencyItem> | null>[] = [];
+            for (let p = 2; p <= raw.Pages; p++) {
+              const pParams = new URLSearchParams({
+                Category: cat.ApiId,
+                Page: String(p),
+                PerPage: "250",
+              });
+              extraFetches.push(
+                cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
+                  `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${pParams}`
+                ).catch(() => null)
+              );
+            }
+            const extraPages = await Promise.all(extraFetches);
+            for (const ep of extraPages) {
+              if (!ep) continue;
+              for (const item of ep.Items ?? []) {
+                if (!item.ApiId) continue;
+                const changePercent = computeChangePercent(item.PriceLogs);
+                const currentPrice = item.CurrentPrice;
+                const previousPrice = computePreviousPrice(item.PriceLogs);
+                const change: number | null =
+                  currentPrice !== null && previousPrice !== null
+                    ? currentPrice - previousPrice
+                    : null;
+                changeMap.set(item.ApiId, { changePercent, change, currentPrice, previousPrice });
+              }
+            }
+          }
+        } catch {
+          // Non-critical — skip this category
+        }
+      });
+    }
+
+    await withConcurrencyLimit(categoryTasks, 3, 200);
+  } catch (err) {
+    console.warn("[poe2api] buildCurrencyChangeMap: failed to fetch categories.", err instanceof Error ? err.message : err);
+  }
+
+  return changeMap;
+}
 
 /**
  * Fetch exchange snapshot pairs.
  *
- * @param snapshot If true, return pairs WITHOUT history enrichment (fast initial load).
- *                 The client can lazily fetch history per pair on hover.
- *                 If false (default), enrich top-20 pairs with history data.
+ * @param snapshot If true, return pairs WITHOUT per-pair history enrichment
+ *                 (fast initial load). Change data is still populated from
+ *                 ByCategory PriceLogs for ALL pairs (Variant B).
+ *                 If false (default), also enrich top pairs with full history
+ *                 data for sparkline charts.
  */
 export async function getSnapshotPairs(realm: string, league: string, snapshot = false): Promise<ExchangePair[]> {
   let raw: RawSnapshotPair[];
@@ -1164,13 +1284,40 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
   }
   const pairs = raw.map(mapSnapshotPair);
 
-  // Snapshot mode: skip history enrichment for fast initial load
+  // ── Variant B: Enrich ALL pairs with change data from ByCategory PriceLogs ──
+  // This gives every pair changePercent/change, not just the top-N.
+  // The PriceLogs contain 7 daily entries, sufficient for 24h change computation.
+  try {
+    const changeMap = await buildCurrencyChangeMap(realm, league);
+
+    for (const pair of pairs) {
+      // The pair's displayed rate is CurrencyOneData.RelativePrice which is
+      // the price of CurrencyOne in base currency (e.g., Exalted).
+      // Therefore, the pair's change = CurrencyOne's change in base currency.
+      const entry = changeMap.get(pair.currency1Id);
+      if (entry) {
+        // Only set if not already set (per-pair history takes priority below)
+        if (pair.changePercent === null && entry.changePercent !== null) {
+          pair.changePercent = entry.changePercent;
+        }
+        if (pair.change === null && entry.change !== null) {
+          pair.change = entry.change;
+        }
+      }
+    }
+
+    console.info(`[poe2api] Enriched ${pairs.filter(p => p.changePercent !== null).length}/${pairs.length} pairs with change data from PriceLogs`);
+  } catch (err) {
+    console.warn("[poe2api] buildCurrencyChangeMap failed, pairs will have no change data.", err instanceof Error ? err.message : err);
+  }
+
+  // Snapshot mode: skip per-pair history enrichment for fast initial load
   if (snapshot) return pairs;
 
-  // Enrich top-N pairs by volume with history data
-  // TOP_N=50 ensures more pairs get change/changePercent data (previously only 20
-  // out of ~2000 pairs were enriched, leaving the rest showing "—" for change).
-  const TOP_N = 50;
+  // Additionally enrich top-N pairs by volume with FULL history data
+  // (hourly data points for sparkline charts). This is more detailed than
+  // the daily PriceLogs change data above.
+  const TOP_N = 20;
   const topPairs = pairs
     .filter(p => p.volume > 0)
     .sort((a, b) => b.volume - a.volume)
@@ -1179,7 +1326,6 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
   if (topPairs.length === 0) return pairs;
 
   // Fetch history for top pairs in parallel (with concurrency limit)
-  // Reduced concurrency from 5 to 4 to avoid overwhelming the API with 50 pairs
   const CONCURRENCY = 4;
   for (let i = 0; i < topPairs.length; i += CONCURRENCY) {
     const batch = topPairs.slice(i, i + CONCURRENCY);
@@ -1193,6 +1339,7 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
             const oldest = history[0];
             const newest = history[history.length - 1];
             if (oldest.relativePrice > 0) {
+              // Per-pair history is more accurate than PriceLogs for this pair
               pair.changePercent = ((newest.relativePrice - oldest.relativePrice) / oldest.relativePrice) * 100;
               pair.change = newest.relativePrice - oldest.relativePrice;
             }

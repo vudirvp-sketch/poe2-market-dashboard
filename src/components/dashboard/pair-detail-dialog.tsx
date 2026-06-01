@@ -86,9 +86,12 @@ export function PairDetailDialog({
     if (!pairHistory || pairHistory.length === 0) return null;
     // Filter out zero prices — the first snapshot hour often has RelativePrice=0
     // (no trades yet in a new league), which would skew min/avg/spread.
-    const prices = pairHistory.map((p) => p.relativePrice).filter((p) => p > 0);
+    // Also filter out NaN/Infinity values that can appear from malformed API data.
+    const prices = pairHistory
+      .map((p) => p.relativePrice)
+      .filter((p) => p > 0 && Number.isFinite(p));
     if (prices.length === 0) return null;
-    const vols = pairHistory.map((p) => p.volume);
+    const vols = pairHistory.map((p) => p.volume).filter((v) => Number.isFinite(v));
     const min = Math.min(...prices);
     const max = Math.max(...prices);
     const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
@@ -101,7 +104,9 @@ export function PairDetailDialog({
     if (!pairHistory || pairHistory.length === 0) return null;
     const last24 = pairHistory.slice(-24);
     if (last24.length === 0) return null;
-    const prices = last24.map((p) => p.relativePrice).filter((p) => p > 0);
+    const prices = last24
+      .map((p) => p.relativePrice)
+      .filter((p) => p > 0 && Number.isFinite(p));
     if (prices.length === 0) return null;
     return {
       high: Math.max(...prices),
@@ -114,7 +119,9 @@ export function PairDetailDialog({
     if (!pairHistory || pairHistory.length === 0) return null;
     const last168 = pairHistory.slice(-168);
     if (last168.length === 0) return null;
-    const prices = last168.map((p) => p.relativePrice).filter((p) => p > 0);
+    const prices = last168
+      .map((p) => p.relativePrice)
+      .filter((p) => p > 0 && Number.isFinite(p));
     if (prices.length === 0) return null;
     return {
       high: Math.max(...prices),

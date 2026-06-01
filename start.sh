@@ -153,7 +153,9 @@ if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
     if ! command -v python3 &>/dev/null; then
         PY_CMD="python"
     fi
-    $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
+    # PYTHONPATH must include the project root so Python can find the 'backend' package
+    # Without this, uvicorn fails with "ModuleNotFoundError: No module named 'backend'"
+    PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
     FLIPPER_PID=$!
 
     # Wait for backend to start with retry loop (up to 15 seconds)
@@ -232,7 +234,7 @@ if [ "$DEV_MODE" -eq 1 ]; then
             kill "$FLIPPER_PID" 2>/dev/null || true
             sleep 1
         fi
-        $PY_CMD -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
+        PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
         FLIPPER_PID=$!
         sleep 2
         info "Flipper backend restarted with --reload"

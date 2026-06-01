@@ -194,6 +194,7 @@ set FLIPPER_PID=0
 
 if !UVICORN_AVAILABLE! equ 1 (
     echo [INFO] Starting FastAPI Flipper backend on port 8000...
+    set PYTHONPATH=%~dp0
     start /b python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
 
     REM Wait for backend to start with retry loop (up to 15 seconds)
@@ -275,6 +276,7 @@ if "%~1"=="--dev" (
             taskkill /PID %%a /F >nul 2>&1
         )
         timeout /t 1 /nobreak >nul
+        set PYTHONPATH=%~dp0
         start /b python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
         timeout /t 2 /nobreak >nul
         echo [OK] Flipper backend restarted with --reload
