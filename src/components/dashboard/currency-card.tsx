@@ -144,7 +144,7 @@ export const CurrencyCard = memo(function CurrencyCard({
       <CardContent className="px-3 pb-3 pt-0">
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-lg font-bold">
+            <p className="text-xl font-bold">  {/* §1.6: text-xl for prices */}
               {fmt(item.relativePrice ?? item.priceChaos)}
             </p>
             <p className={`text-xs font-medium ${chg.color}`}>{chg.text}</p>

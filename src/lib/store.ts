@@ -1,9 +1,14 @@
 // ============================================================================
-// PoE2 Market Dashboard — Zustand Store (Favorites + Comparison + Alerts)
+// PoE2 Market Dashboard — Zustand Store
+//
+// Manages: Favorites, Comparison, Alerts, and Persisted UI State (§1.7).
 //
 // v0.5 FIX: Deferred localStorage reads to avoid hydration mismatch.
 // On SSR and first client render, state starts with empty/default values.
 // After mount, a `rehydrate()` call loads from localStorage.
+//
+// v0.6 (§1.7): Added persisted UI state (activeTab, exchange settings, league).
+// Debounced save (300ms) to avoid excessive writes. Version field for migration.
 // ============================================================================
 
 import { create } from "zustand";
@@ -27,6 +32,115 @@ export interface PairComparisonId {
   label: string; // e.g. "Chaos Orb / Divine Orb"
 }
 
+// ---------- Persisted UI State (§1.7) ----------
+export interface PersistedUIState {
+  /** Schema version for migration support */
+  _version: number;
+  activeTab: string;
+  exchange: {
+    viewMode: "table" | "cards";
+    sortField: string;
+    sortDirection: "asc" | "desc";
+    activeFilter: "all" | "topVolume" | "favorites";
+    favorites: string[];
+  };
+  league: string;
+}
+
+const DEFAULT_UI_STATE: PersistedUIState = {
+  _version: 1,
+  activeTab: "exchange",
+  exchange: {
+    viewMode: "table",
+    sortField: "volume",
+    sortDirection: "desc",
+    activeFilter: "all",
+    favorites: [],
+  },
+  league: "vaal",
+};
+
+const UI_STATE_KEY = "poe2-dashboard-state";
+
+// ---------- Debounced save helper ----------
+let _saveTimer: ReturnType<typeof setTimeout> | null = null;
+const SAVE_DEBOUNCE_MS = 300;
+
+function debouncedSaveToStorage(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  if (_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // ignore quota errors
+    }
+  }, SAVE_DEBOUNCE_MS);
+}
+
+// ---------- localStorage helpers ----------
+function loadFromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Validate and migrate persisted UI state.
+ * Returns DEFAULT_UI_STATE if the stored state is invalid or corrupted.
+ */
+function validateUIState(raw: unknown): PersistedUIState {
+  if (!raw || typeof raw !== "object") return DEFAULT_UI_STATE;
+  const stored = raw as Record<string, unknown>;
+
+  // Version check — for now only v1 is supported
+  if (stored._version !== 1) return DEFAULT_UI_STATE;
+
+  // Validate activeTab
+  const validTabs = [
+    "overview", "currencies", "uniques", "exchange",
+    "arbitrage", "flips", "forecast", "portfolio",
+    "graph", "watchlist",
+  ];
+  const activeTab = validTabs.includes(stored.activeTab as string)
+    ? (stored.activeTab as string)
+    : DEFAULT_UI_STATE.activeTab;
+
+  // Validate exchange sub-object
+  const rawExchange = stored.exchange as Record<string, unknown> | undefined;
+  const exchange = {
+    viewMode: rawExchange?.viewMode === "cards" ? "cards" as const : "table" as const,
+    sortField: typeof rawExchange?.sortField === "string" ? rawExchange.sortField : DEFAULT_UI_STATE.exchange.sortField,
+    sortDirection: rawExchange?.sortDirection === "asc" ? "asc" as const : "desc" as const,
+    activeFilter:
+      rawExchange?.activeFilter === "topVolume" || rawExchange?.activeFilter === "favorites"
+        ? (rawExchange.activeFilter as "topVolume" | "favorites")
+        : "all" as const,
+    favorites: Array.isArray(rawExchange?.favorites) ? rawExchange.favorites as string[] : [],
+  };
+
+  // Validate league
+  const league = typeof stored.league === "string" && stored.league
+    ? stored.league
+    : DEFAULT_UI_STATE.league;
+
+  return { _version: 1, activeTab, exchange, league };
+}
+
+// ---------- Store Interface ----------
 interface DashboardStore {
   // Favorites / Watchlist
   favorites: string[]; // item IDs
@@ -55,29 +169,18 @@ interface DashboardStore {
   updateAlert: (itemId: string, updates: Partial<PriceAlert>) => void;
   getAlertsForItem: (itemId: string) => PriceAlert[];
 
+  // Persisted UI State (§1.7)
+  uiState: PersistedUIState;
+  setActiveTab: (tab: string) => void;
+  setExchangeViewMode: (mode: "table" | "cards") => void;
+  setExchangeSort: (field: string, direction: "asc" | "desc") => void;
+  setExchangeFilter: (filter: "all" | "topVolume" | "favorites") => void;
+  toggleExchangeFavorite: (pairId: string) => void;
+  setLeague: (league: string) => void;
+
   // Hydration
   _hydrated: boolean;
   rehydrate: () => void;
-}
-
-// ---------- localStorage helpers ----------
-function loadFromStorage<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage(key: string, value: unknown) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
 }
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
@@ -86,6 +189,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   comparisonIds: [],
   pairComparisonIds: [],
   alerts: [],
+  uiState: DEFAULT_UI_STATE,
   _hydrated: false,
 
   /**
@@ -96,7 +200,15 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     const favorites = loadFromStorage<string[]>("poe2-favorites", []);
     const pairComparisonIds = loadFromStorage<PairComparisonId[]>("poe2-pair-comparison", []);
     const alerts = loadFromStorage<PriceAlert[]>("poe2-alerts", []);
-    set({ favorites, pairComparisonIds, alerts, _hydrated: true });
+    const rawUIState = loadFromStorage<unknown>(UI_STATE_KEY, null);
+    const uiState = validateUIState(rawUIState);
+
+    // Merge exchange favorites from persisted state into the main favorites list
+    // so the Favorites chip in Exchange works correctly
+    const exchangeFavs = uiState.exchange.favorites;
+    const mergedFavorites = [...new Set([...favorites, ...exchangeFavs])];
+
+    set({ favorites: mergedFavorites, pairComparisonIds, alerts, uiState, _hydrated: true });
   },
 
   addFavorite: (id) => {
@@ -200,4 +312,57 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   },
 
   getAlertsForItem: (itemId) => get().alerts.filter((a) => a.itemId === itemId),
+
+  // ---- Persisted UI State (§1.7) ----
+  setActiveTab: (tab) => {
+    const uiState = { ...get().uiState, activeTab: tab };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  setExchangeViewMode: (mode) => {
+    const uiState = {
+      ...get().uiState,
+      exchange: { ...get().uiState.exchange, viewMode: mode },
+    };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  setExchangeSort: (field, direction) => {
+    const uiState = {
+      ...get().uiState,
+      exchange: { ...get().uiState.exchange, sortField: field, sortDirection: direction },
+    };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  setExchangeFilter: (filter) => {
+    const uiState = {
+      ...get().uiState,
+      exchange: { ...get().uiState.exchange, activeFilter: filter },
+    };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  toggleExchangeFavorite: (pairId) => {
+    const current = get().uiState.exchange.favorites;
+    const next = current.includes(pairId)
+      ? current.filter((id) => id !== pairId)
+      : [...current, pairId];
+    const uiState = {
+      ...get().uiState,
+      exchange: { ...get().uiState.exchange, favorites: next },
+    };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  setLeague: (league) => {
+    const uiState = { ...get().uiState, league };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
 }));

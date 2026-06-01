@@ -45,7 +45,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">{t("flipperSpread")}</p>
           <p className="text-lg font-bold font-mono">
-            {(selectedFlip.spread_after_fees * 100).toFixed(2)}%
+            {((selectedFlip.spread ?? selectedFlip.spread_after_fees) * 100).toFixed(2)}%
           </p>
         </div>
       </div>

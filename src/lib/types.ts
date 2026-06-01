@@ -136,6 +136,9 @@ export interface SnapshotHistoryPoint {
 export interface FlipOpportunity {
   currency: string;
   score: number;
+  /** Raw spread (ask - bid) / mid_price — no fees deducted */
+  spread: number;
+  /** @deprecated Use spread instead. Kept for backward compat. */
   spread_after_fees: number;
   volume_24h: number;
   momentum: number;

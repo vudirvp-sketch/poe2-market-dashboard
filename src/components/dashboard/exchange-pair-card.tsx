@@ -96,10 +96,10 @@ export const ExchangePairCard = memo(function ExchangePairCard({
               <img
                 src={pair.currency1IconUrl}
                 alt=""
-                className="w-5 h-5 object-contain"
+                className="w-8 h-8 object-contain"  /* §1.6: 32x32px icons */
               />
             ) : (
-              <Coins className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+              <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
             )}
             <span className="font-medium text-sm">{pair.currency1Name}</span>
           </div>
@@ -110,16 +110,16 @@ export const ExchangePairCard = memo(function ExchangePairCard({
               <img
                 src={pair.currency2IconUrl}
                 alt=""
-                className="w-5 h-5 object-contain"
+                className="w-8 h-8 object-contain"  /* §1.6: 32x32px icons */
               />
             ) : (
-              <Coins className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+              <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
             )}
           </div>
         </div>
         <div className="flex items-center justify-between mt-2">
           <div>
-            <span className="text-lg font-bold font-mono">
+            <span className="text-xl font-bold font-mono">  {/* §1.6: text-xl for prices */}
               {fmt(pair.relativePrice)}
             </span>
             <span className={`ml-2 text-xs font-medium ${chg.color}`}>

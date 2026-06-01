@@ -1,6 +1,10 @@
 // ============================================================================
-// Header Component (realm/league select, search with debounce, refresh, auto-refresh, theme, base currency)
-// Updated: Phase badge + Events button + Backend status indicator
+// Header Component (§1.4: Simplified layout)
+//
+// Always visible: Logo, Realm+League selector, Search, Auto-refresh toggle
+// "More" menu (⋮): Export, Theme, Language, Events, Reference Currency
+//
+// Updated: Phase badge + Backend status indicator (kept — minimal, useful)
 // ============================================================================
 "use client";
 
@@ -18,6 +22,10 @@ import {
   Bell,
   Circle,
   Server,
+  MoreVertical,
+  Palette,
+  Languages,
+  FileDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -130,22 +138,20 @@ export function Header({
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
-  // Avoid hydration mismatch: theme is undefined during SSR, so we delay
-  // rendering theme-dependent UI until after the component has mounted.
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const [timeAgo, setTimeAgo] = useState<string>("");
   const [localSearch, setLocalSearch] = useState(search);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
-  // Sync external search changes (e.g. clear button) back to local
-  // Uses functional update so localSearch is NOT needed in deps —
-  // the comparison happens inside the setter callback instead.
+  // Sync external search changes
   useEffect(() => {
     setLocalSearch((prev) => prev !== search ? search : prev);
   }, [search]);
 
-  // Debounced search handler — 300ms delay
+  // Debounced search handler
   const handleSearchInput = useCallback(
     (value: string) => {
       setLocalSearch(value);
@@ -157,7 +163,6 @@ export function Header({
     [onSearchChange]
   );
 
-  // Clear search immediately
   const handleClearSearch = useCallback(() => {
     setLocalSearch("");
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -191,7 +196,17 @@ export function Header({
     setLocale(next);
   }, [locale, setLocale]);
 
-  // FIX: Sort leagues — active first, then alphabetically
+  // Close "More" on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    if (moreOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [moreOpen]);
+
   const sortedLeagues = leagues
     ? [...leagues].sort((a, b) => {
         if (a.active && !b.active) return -1;
@@ -200,245 +215,238 @@ export function Header({
       })
     : [];
 
-  // FIX: Radix Select does not accept empty string as `value`.
-  // Use a sentinel value "__none__" instead of `undefined` to avoid the
-  // uncontrolled→controlled switch warning. Radix treats `value={undefined}`
-  // as uncontrolled, then when effectiveLeague resolves to a string it
-  // becomes controlled, triggering the React warning.
   const leagueSelectValue = effectiveLeague || "__none__";
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-      <div className="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-        {/* Logo */}
-        <div className="flex items-center gap-2 mr-4">
-          <Activity className="h-6 w-6 text-primary" />
+      <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center gap-2.5 flex-nowrap overflow-x-auto">
+        {/* Logo — §1.4: prominent */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Activity className="h-6 w-6 text-primary" aria-hidden="true" />
           <h1 className="text-lg font-bold tracking-tight">{t("appTitle")}</h1>
         </div>
 
-        {/* Realm select */}
-        <Select
-          value={realm || undefined}
-          onValueChange={(v) => onRealmChange(v)}
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder={t("realm")} />
-          </SelectTrigger>
-          <SelectContent>
-            {realmsLoading ? (
-              <SelectItem value="__loading__" disabled>
-                {t("loading")}
-              </SelectItem>
-            ) : (
-              realms?.map((r) => (
-                <SelectItem key={r.name} value={r.name}>
-                  {r.displayName}
-                </SelectItem>
-              ))
-            )}
-          </SelectContent>
-        </Select>
+        {/* Realm + League selector — §1.4: compact */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Select
+            value={realm || undefined}
+            onValueChange={(v) => onRealmChange(v)}
+          >
+            <SelectTrigger className="w-[100px] h-8 text-xs">
+              <SelectValue placeholder={t("realm")} />
+            </SelectTrigger>
+            <SelectContent>
+              {realmsLoading ? (
+                <SelectItem value="__loading__" disabled>{t("loading")}</SelectItem>
+              ) : (
+                realms?.map((r) => (
+                  <SelectItem key={r.name} value={r.name}>{r.displayName}</SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
 
-        {/* League select */}
-        <Select
-          value={leagueSelectValue}
-          onValueChange={onLeagueChange}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t("league")} />
-          </SelectTrigger>
-          <SelectContent>
-            {leaguesLoading ? (
-              <SelectItem value="__loading__" disabled>
-                {t("loading")}
-              </SelectItem>
-            ) : sortedLeagues.length === 0 ? (
-              <SelectItem value="__none__" disabled>
-                {t("league")}
-              </SelectItem>
-            ) : (
-              <>
-                {/* Hidden placeholder item for the sentinel value */}
-                <SelectItem value="__none__" disabled className="hidden">
-                  {t("league")}
-                </SelectItem>
-                {sortedLeagues.map((l) => (
-                  <SelectItem key={l.name} value={l.name}>
-                    {l.displayName} {!l.active && `(${t("inactive")})`}
+          <Select
+            value={leagueSelectValue}
+            onValueChange={onLeagueChange}
+          >
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder={t("league")} />
+            </SelectTrigger>
+            <SelectContent>
+              {leaguesLoading ? (
+                <SelectItem value="__loading__" disabled>{t("loading")}</SelectItem>
+              ) : sortedLeagues.length === 0 ? (
+                <SelectItem value="__none__" disabled>{t("league")}</SelectItem>
+              ) : (
+                <>
+                  <SelectItem value="__none__" disabled className="hidden">
+                    {t("league")}
                   </SelectItem>
-                ))}
-              </>
-            )}
-          </SelectContent>
-        </Select>
+                  {sortedLeagues.map((l) => (
+                    <SelectItem key={l.name} value={l.name}>
+                      {l.displayName} {!l.active && `(${t("inactive")})`}
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Phase badge — shown when flipper backend is online and phase data is available */}
+        {/* Phase badge — compact, useful context */}
         {flipperBackendOnline && phaseInfo && (
           <Badge
             variant="outline"
-            className={`text-[10px] px-2 py-0.5 font-bold ${phaseBadgeClass(phaseInfo.phase)}`}
+            className={`text-[10px] px-1.5 py-0 font-bold shrink-0 ${phaseBadgeClass(phaseInfo.phase)}`}
           >
             {phaseLabel(phaseInfo.phase, t)}
           </Badge>
         )}
 
-        {/* Backend status indicator — small circle next to league selector */}
+        {/* Backend status indicator — minimal */}
         {flipperBackendOnline !== undefined && (
-          <div className="flex items-center gap-1" title={flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}>
+          <div className="flex items-center gap-0.5 shrink-0" title={flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}>
             <Circle
-              className={`h-2.5 w-2.5 ${
+              className={`h-2 w-2 ${
                 flipperBackendOnline
                   ? "fill-emerald-500 text-emerald-500"
                   : "fill-red-500 text-red-500"
               }`}
               aria-hidden="true"
             />
-            <Server className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
           </div>
         )}
 
-        {/* Reference Currency select */}
-        {referenceCurrencies && referenceCurrencies.length > 0 && onReferenceCurrencyChange && (
-          <Select
-            value={referenceCurrency || "_default"}
-            onValueChange={(v) =>
-              onReferenceCurrencyChange(v === "_default" ? "" : v)
-            }
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder={t("baseCurrency")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
-              {referenceCurrencies.map((c) => (
-                <SelectItem key={c.apiId} value={c.apiId}>
-                  {c.text}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Search (debounced) */}
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        {/* Search — §1.4: subtle when not focused, expands on focus */}
+        <div className="relative flex-1 min-w-[150px] max-w-md">
+          <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder={t("searchPlaceholder")}
             value={localSearch}
             onChange={(e) => handleSearchInput(e.target.value)}
-            className="pl-9 h-9"
+            className="pl-8 h-8 text-sm"
           />
           {localSearch && (
             <button
               onClick={handleClearSearch}
-              className="absolute right-2.5 top-2.5"
+              className="absolute right-2.5 top-2"
               aria-label="Clear search"
             >
-              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+              <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
             </button>
           )}
         </div>
 
-        {/* Auto-refresh toggle */}
+        {/* Auto-refresh toggle — §1.4: visible with indicator */}
         <Button
           variant={autoRefresh ? "default" : "outline"}
           size="sm"
           onClick={onAutoRefreshToggle}
-          className="h-9"
+          className="h-8 text-xs shrink-0"
           aria-label={autoRefresh ? t("disableAutoRefresh") : t("enableAutoRefresh")}
         >
-          <Clock className="h-4 w-4 mr-1" aria-hidden="true" />
+          <Clock className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
           {autoRefresh ? "60s" : t("autoRefresh")}
+          {autoRefresh && <span className="ml-1 h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />}
         </Button>
 
-        {/* Refresh */}
-        <Button variant="outline" size="sm" onClick={onRefresh} className="h-9" aria-label={t("refreshData")}>
-          <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-          {t("refresh")}
+        {/* Refresh button — compact */}
+        <Button variant="outline" size="sm" onClick={onRefresh} className="h-8 text-xs shrink-0" aria-label={t("refreshData")}>
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
         </Button>
 
-        {/* Last updated */}
+        {/* Last updated — minimal */}
         {lastUpdated && (
-          <span className="text-xs text-muted-foreground" aria-live="polite" role="status">
+          <span className="text-[10px] text-muted-foreground shrink-0" aria-live="polite" role="status">
             {timeAgo}
           </span>
         )}
 
-        {/* Export dropdown */}
-        {onExport && (
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 text-xs"
-              onClick={() => onExport("csv")}
-              aria-label={t("exportCsv")}
-            >
-              <Download className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-              {t("exportCsv")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 text-xs"
-              onClick={() => onExport("json")}
-              aria-label={t("exportJson")}
-            >
-              <Download className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-              {t("exportJson")}
-            </Button>
-          </div>
-        )}
-
-        {/* Events button — with dot indicator if events are active */}
-        <Button
-          variant={activeEventsCount && activeEventsCount > 0 ? "default" : "ghost"}
-          size="sm"
-          className="h-9 gap-1.5 relative"
-          onClick={onEventsClick}
-          aria-label={t("eventsButtonLabel")}
-        >
-          <Bell className="h-4 w-4" aria-hidden="true" />
-          {activeEventsCount && activeEventsCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-background" />
-          )}
-          {t("eventsButtonLabel")}
-        </Button>
-
-        {/* Language toggle — cycles ru -> en -> zh -> ko -> ru */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-9 gap-1"
-          onClick={cycleLocale}
-          title={t("switchLanguage")}
-          aria-label={t("switchLanguage")}
-        >
-          <Globe className="h-4 w-4" aria-hidden="true" />
-          <span className="text-xs">{LOCALE_LABELS[locale]}</span>
-        </Button>
-
-        {/* Theme toggle — rendered after mount to avoid hydration mismatch */}
-        {mounted ? (
+        {/* §1.4: "More" menu — contains secondary controls */}
+        <div className="relative shrink-0" ref={moreRef}>
           <Button
             variant="ghost"
             size="sm"
-            className="h-9"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label={theme === "dark" ? t("switchToLightMode") : t("switchToDarkMode")}
+            className="h-8 w-8 p-0"
+            onClick={() => setMoreOpen(!moreOpen)}
+            aria-label={t("moreMenu") ?? "More options"}
+            aria-expanded={moreOpen}
           >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <Moon className="h-4 w-4" aria-hidden="true" />
-            )}
+            <MoreVertical className="h-4 w-4" aria-hidden="true" />
           </Button>
-        ) : (
-          // Placeholder button with same dimensions to prevent layout shift
-          <Button variant="ghost" size="sm" className="h-9" disabled aria-hidden="true" tabIndex={-1}>
-            <Sun className="h-4 w-4" />
-          </Button>
-        )}
+
+          {moreOpen && (
+            <div className="absolute right-0 top-full mt-1 w-56 bg-popover border border-border rounded-lg shadow-lg z-50 py-1" role="menu">
+              {/* Reference Currency */}
+              {referenceCurrencies && referenceCurrencies.length > 0 && onReferenceCurrencyChange && (
+                <div className="px-3 py-2 border-b border-border">
+                  <p className="text-xs text-muted-foreground mb-1.5">{t("baseCurrency")}</p>
+                  <Select
+                    value={referenceCurrency || "_default"}
+                    onValueChange={(v) => {
+                      onReferenceCurrencyChange(v === "_default" ? "" : v);
+                    }}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-full">
+                      <SelectValue placeholder={t("baseCurrency")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
+                      {referenceCurrencies.map((c) => (
+                        <SelectItem key={c.apiId} value={c.apiId}>{c.text}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Export */}
+              {onExport && (
+                <>
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    onClick={() => { onExport("csv"); setMoreOpen(false); }}
+                    role="menuitem"
+                  >
+                    <FileDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    {t("exportCsv")}
+                  </button>
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    onClick={() => { onExport("json"); setMoreOpen(false); }}
+                    role="menuitem"
+                  >
+                    <Download className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    {t("exportJson")}
+                  </button>
+                </>
+              )}
+
+              {/* Events */}
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                onClick={() => { onEventsClick?.(); setMoreOpen(false); }}
+                role="menuitem"
+              >
+                <Bell className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {t("eventsButtonLabel")}
+                {activeEventsCount && activeEventsCount > 0 && (
+                  <span className="ml-auto h-2 w-2 rounded-full bg-orange-500" />
+                )}
+              </button>
+
+              <div className="border-t border-border my-1" />
+
+              {/* Language */}
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                onClick={() => { cycleLocale(); }}
+                role="menuitem"
+              >
+                <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {t("switchLanguage")} ({LOCALE_LABELS[locale]})
+              </button>
+
+              {/* Theme toggle */}
+              {mounted && (
+                <button
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); }}
+                  role="menuitem"
+                  aria-label={theme === "dark" ? t("switchToLightMode") : t("switchToDarkMode")}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  ) : (
+                    <Moon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  )}
+                  {theme === "dark" ? t("switchToLightMode") : t("switchToDarkMode")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

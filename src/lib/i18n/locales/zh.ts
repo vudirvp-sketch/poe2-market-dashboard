@@ -225,6 +225,7 @@ const zh: Record<TranslationKeys, string> = {
   korean: "한국어",
 
   // Accessibility (WCAG 2.1 AA)
+  moreMenu: "更多选项",
   switchLanguage: "切换语言",
   switchToLightMode: "切换到浅色模式",
   switchToDarkMode: "切换到深色模式",

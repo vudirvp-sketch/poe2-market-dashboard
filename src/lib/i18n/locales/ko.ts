@@ -225,6 +225,7 @@ const ko: Record<TranslationKeys, string> = {
   korean: "한국어",
 
   // Accessibility (WCAG 2.1 AA)
+  moreMenu: "더 보기",
   switchLanguage: "언어 변경",
   switchToLightMode: "일반 모드로 전환",
   switchToDarkMode: "어두운 모드로 전환",

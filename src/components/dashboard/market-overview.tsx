@@ -152,7 +152,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
       {/* Market stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card>
-          <CardContent className="py-4 px-4">
+          <CardContent className="py-5 px-5">  {/* §1.6: increased padding */}
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
               <p className="text-xs text-muted-foreground">{t("totalVolume24h")}</p>
@@ -167,7 +167,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4 px-4">
+          <CardContent className="py-5 px-5">  {/* §1.6: increased padding */}
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-primary" />
               <p className="text-xs text-muted-foreground">{t("trackedItems")}</p>
@@ -178,7 +178,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4 px-4">
+          <CardContent className="py-5 px-5">  {/* §1.6: increased padding */}
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
               <p className="text-xs text-muted-foreground">{t("exchangePairs")}</p>

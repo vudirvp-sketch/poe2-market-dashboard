@@ -120,6 +120,9 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-size: 15px;  /* §1.6: Changed from 14px to 15px */
+  }
   body {
     @apply bg-background text-foreground;
   }

@@ -621,6 +621,8 @@ Note: With this volatility and horizon, the risk discount is severe, making the 
 ### 7.1 Expected Profit (Raw Spread)
 
 > **Design decision (Iteration 3):** Gold/commission fees have been intentionally excluded from the opportunity scorer to simplify the model and avoid the complexity of direction-dependent fee asymmetry (see §3.3 for the 24% vs 0.73% example). The raw spread is used instead of `spread_after_fees`. Gold fee information is still computed by the backend for display purposes but does NOT affect scoring.
+>
+> **Update (Iteration 4):** The `spread_after_fees` field has been renamed to `spread` in the API response (both fields are returned for backward compatibility). The `spread` value is the raw `(ask - bid) / mid_price` with no fees deducted.
 
 ```
 spread = (ask - bid) / mid_price
@@ -628,6 +630,58 @@ spread = (ask - bid) / mid_price
 if spread <= 0:
     score = 0.0    # no profit possible
 ```
+
+### 7.1.1 Spread Estimation Model
+
+> **Iteration 4 update:** The previous model used the forward/reverse rate gap from
+> POE2Scout to estimate market spread. This was fundamentally broken because both
+> rates are derived from the same `relative_price` data, making
+> `1/reverse_rate === forward_rate` and thus `market_spread = 0` for all pairs.
+> A 0.5% floor was a band-aid that produced unrealistically tight spreads.
+>
+> **New model:** Volume-based + volatility-based spread estimation that reflects
+> real POE2 Currency Exchange market microstructure.
+
+The POE2Scout API does not expose a real order book with bid/ask prices.
+We estimate the bid-ask spread from available data:
+
+```
+# Step 1: Volume-based spread component
+# Higher volume → tighter spread (more liquidity)
+if volume_24h > 0:
+    volume_spread = 0.05 / (1.0 + log1p(volume_24h) / 8.0)
+else:
+    volume_spread = 0.08  # 8% for zero-volume pairs
+
+# Typical values:
+#   volume=1000:  0.05 / (1 + 6.9/8) = 2.7%
+#   volume=10000: 0.05 / (1 + 9.2/8) = 2.3%
+#   volume=100:   0.05 / (1 + 4.6/8) = 3.2%
+
+# Step 2: Volatility component
+# Uncertain prices → wider spread
+vol_spread = volatility * 0.5
+# vol=0.01 → 0.5%, vol=0.05 → 2.5%, vol=0.10 → 5%
+
+# Step 3: Base spread
+market_spread = volume_spread + vol_spread
+market_spread = max(0.01, min(0.15, market_spread))  # [1%, 15%]
+
+# Step 4: Momentum amplification (capped at 50% wider)
+momentum_24h_raw = |exp(momentum * 24) - 1|
+momentum_factor = min(momentum_24h_raw, 0.5)
+total_spread = market_spread * (1.0 + momentum_factor)
+total_spread = min(total_spread, 0.20)  # hard cap at 20%
+
+# Step 5: Derive bid/ask from mid_price and total_spread
+bid = mid_price * (1 - total_spread / 2)
+ask = mid_price * (1 + total_spread / 2)
+```
+
+**Rationale:** POE2 has no market makers. Spreads are set by the gap between
+the best available buy and sell offers. Typical spreads are 2-5% for liquid
+pairs (Divine/Exalted) and 5-15% for illiquid pairs. The old 0.5% floor was
+far too tight, causing all scores to be near-zero and display as "0%".
 
 ### 7.2 Fill Probability
 

@@ -124,7 +124,8 @@ class FlipOpportunity:
     """A single flip opportunity after scoring."""
     currency: str
     score: float                 # 0.0 to 1.0
-    spread_after_fees: float
+    spread: float               # raw (ask - bid) / mid_price — no fees deducted
+    spread_after_fees: float    # DEPRECATED alias for spread (kept for backward compat)
     volume_24h: float
     momentum: float
     volatility: float

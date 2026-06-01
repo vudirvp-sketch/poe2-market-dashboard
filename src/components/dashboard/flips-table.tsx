@@ -155,12 +155,12 @@ export const FlipsTable = memo(function FlipsTable({
 
                   {/* Score */}
                   <span className={`text-center text-xs font-bold ${scoreColor(opp.score)}`}>
-                    {(opp.score * 100).toFixed(0)}%
+                    {(opp.score * 100).toFixed(1)}%
                   </span>
 
-                  {/* Spread after fees */}
+                  {/* Spread */}
                   <span className="text-right font-mono text-xs">
-                    {(opp.spread_after_fees * 100).toFixed(2)}%
+                    {((opp.spread ?? opp.spread_after_fees) * 100).toFixed(2)}%
                   </span>
 
                   {/* Momentum */}

@@ -227,6 +227,7 @@ const en = {
   korean: "\uD55C\uAD6D\uC5B4",
 
   // Accessibility (WCAG 2.1 AA)
+  moreMenu: "More options",
   switchLanguage: "Switch language",
   switchToLightMode: "Switch to light mode",
   switchToDarkMode: "Switch to dark mode",

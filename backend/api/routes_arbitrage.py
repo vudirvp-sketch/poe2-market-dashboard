@@ -204,9 +204,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         logger.error("Clustering failed, using MODERATE default: %s", e)
         cluster_labels = {}
 
-    # 7. Build reverse-rate lookup for real bid/ask computation
-    #    In POE2, each currency pair has independent forward/reverse rates.
-    #    The spread between them represents the real market bid-ask gap.
+    # 7. Build reverse-rate lookup (kept for potential future use)
     rate_by_pair: dict[tuple[str, str], object] = {}
     for rk, rv in rates.items():
         rate_by_pair[(rv.currency_from, rv.currency_to)] = rv
@@ -227,72 +225,73 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         momentum_result = tracker.compute()
 
         mid_price = rate.raw_rate
+        volume = float(rate.volume_traded)
 
         # --- Bid/ask computation ---
-        # Previously: spread_estimate = max(0.01, volatility * 2)
-        # This was too small — gold fees (1-16%) always exceeded the 1% spread,
-        # causing spread_after_fees ≤ 0 and score = 0 for ALL pairs.
         #
-        # New model (momentum-assisted flip):
-        #   1. Real market spread from forward/reverse rate gap (when both exist)
-        #   2. Momentum contribution: expected 24h price movement adds to
-        #      the effective spread (you buy now, sell later at expected price)
-        #   3. Higher minimum spread for pairs without reverse rate data
-        reverse = rate_by_pair.get((rate.currency_to, rate.currency_from))
-
-        if reverse is not None and reverse.raw_rate > 0:
-            # Both directions exist: compute real market spread
-            forward_rate = rate.raw_rate
-            implied_from_reverse = 1.0 / reverse.raw_rate
-            # Mid = arithmetic mean of forward and implied
-            mid_price = (forward_rate + implied_from_reverse) / 2
-            # Market spread from the forward/reverse rate gap
-            market_spread = abs(forward_rate - implied_from_reverse) / mid_price
-            # HIGH-3 FIX: Add minimum spread floor for mirrored pairs
-            # When both forward and reverse rates exist, implied_from_reverse
-            # exactly equals forward_rate (derived from same relative_price),
-            # causing market_spread = 0. Floor at 0.5% minimum.
-            market_spread = max(market_spread, 0.005)
+        # BUG FIX (Iteration 4): The old model used forward/reverse rate gap
+        # to estimate spread. But in POE2Scout, both forward and reverse rates
+        # are derived from the same relative_price data, so:
+        #   reverse_rate = c2_rel / c1_rel
+        #   1 / reverse_rate = c1_rel / c2_rel = forward_rate
+        # This means market_spread = 0 for ALL mirrored pairs.
+        # The 0.5% floor was a band-aid producing unrealistically tight spreads.
+        #
+        # NEW MODEL: Realistic volume-based + volatility-based spread estimation.
+        # In POE2's Currency Exchange, the bid-ask gap comes from:
+        #   1. Order book depth — higher volume → tighter spread
+        #   2. Volatility — uncertain prices → wider spread
+        #   3. Market microstructure — POE2 has no market makers, so spreads
+        #      are typically 2-10% (much wider than traditional markets)
+        #
+        # Volume-based spread: tighter for high-volume pairs
+        #   log1p(100) ≈ 4.6, log1p(1000) ≈ 6.9, log1p(10000) ≈ 9.2
+        #   At volume=1000:  0.05 / (1 + 6.9/8) = 0.05 / 1.86 ≈ 2.7%
+        #   At volume=10000: 0.05 / (1 + 9.2/8) = 0.05 / 2.15 ≈ 2.3%
+        #   At volume=100:   0.05 / (1 + 4.6/8) = 0.05 / 1.58 ≈ 3.2%
+        if volume > 0:
+            volume_spread = 0.05 / (1.0 + _math.log1p(volume) / 8.0)
         else:
-            # No reverse rate: estimate from volatility with higher floor
-            # 2% minimum — typical even for liquid POE2 pairs
-            market_spread = max(0.02, momentum_result.volatility * 3)
+            volume_spread = 0.08  # 8% for zero-volume pairs
 
-        # Momentum contribution: expected 24h price movement
-        #
-        # PREVIOUS MODEL (BROKEN): additive — momentum_24h + market_spread.
-        # exp(momentum * 24) is exponential: at momentum=0.05, momentum_24h ≈ 3.3,
-        # completely dominating market_spread (0.02–0.10). This inflated
-        # total_spread → inflated bid/ask gap → inflated spread_after_fees →
-        # inflated scores for trending pairs.
-        #
-        # NEW MODEL: multiplicative with capped momentum_factor.
-        #   total_spread = market_spread * (1 + momentum_factor)
-        # where momentum_factor = clamp(momentum_24h_raw, 0, 1.0)
-        #
-        # This preserves the direction: trending pairs get a wider effective
-        # spread, but the contribution is proportional to market_spread,
-        # not unbounded. A momentum_factor of 1.0 doubles the spread at most.
+        # Volatility contribution: volatile pairs have wider spreads
+        # vol=0.01 → 0.5%, vol=0.05 → 2.5%, vol=0.10 → 5%
+        vol_spread = momentum_result.volatility * 0.5
+
+        # Base spread = volume component + volatility component
+        market_spread = volume_spread + vol_spread
+
+        # Apply realistic bounds:
+        #   Minimum 1% — even the most liquid POE2 pairs have at least 1% spread
+        #   Maximum 15% — beyond this the spread is too wide to be tradeable
+        market_spread = max(0.01, min(0.15, market_spread))
+
+        # Momentum contribution: trending pairs may have wider effective spread
+        # because you can buy now and sell later at the expected price.
+        # Multiplicative model with cap: momentum_factor ∈ [0, 0.5]
+        # (at most 50% wider than base spread, not 100% which was too much)
         if len(history) >= 2 and momentum_result.momentum != 0:
             momentum_24h_raw = abs(_math.exp(momentum_result.momentum * 24) - 1)
         else:
             momentum_24h_raw = 0.0
 
-        # Clamp momentum_factor to [0, 1.0] — at most doubles the market_spread
-        momentum_factor = min(momentum_24h_raw, 1.0)
+        momentum_factor = min(momentum_24h_raw, 0.5)
 
         # Total effective spread = market spread amplified by momentum
         total_spread = market_spread * (1.0 + momentum_factor)
 
+        # Re-apply cap after momentum amplification
+        total_spread = min(total_spread, 0.20)
+
         bid = mid_price * (1 - total_spread / 2)
         ask = mid_price * (1 + total_spread / 2)
 
-        # Debug: log spread model components for top pairs (only at DEBUG level)
         logger.debug(
-            "spread_model pair=%s market_spread=%.6f momentum_24h_raw=%.4f "
-            "momentum_factor=%.4f total_spread=%.6f bid=%.6f ask=%.6f mid=%.6f",
+            "spread_model pair=%s volume=%.0f volume_spread=%.4f vol_spread=%.4f "
+            "market_spread=%.4f momentum_factor=%.4f total_spread=%.4f bid=%.6f ask=%.6f mid=%.6f",
             rate.currency_from + "/" + rate.currency_to,
-            market_spread, momentum_24h_raw, momentum_factor,
+            volume, volume_spread, vol_spread,
+            market_spread, momentum_factor,
             total_spread, bid, ask, mid_price,
         )
 
@@ -325,10 +324,13 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         currency_key = rate.currency_from
         cluster = cluster_labels.get(currency_key, ClusterLabel.MODERATE)
 
+        spread_value = (ask - bid) / mid_price if mid_price > 0 else 0.0
+
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
-            spread_after_fees=(ask - bid) / mid_price if mid_price > 0 else 0.0,
+            spread=spread_value,
+            spread_after_fees=spread_value,  # backward compat alias (no fees deducted)
             volume_24h=float(rate.volume_traded),
             momentum=momentum_result.momentum,
             volatility=momentum_result.volatility,
@@ -388,7 +390,8 @@ async def get_flip_opportunities(
             {
                 "currency": o.currency,
                 "score": round(o.score, 4),
-                "spread_after_fees": round(o.spread_after_fees, 6),
+                "spread": round(o.spread, 6),
+                "spread_after_fees": round(o.spread_after_fees, 6),  # backward compat
                 "volume_24h": o.volume_24h,
                 "momentum": round(o.momentum, 6),
                 "volatility": round(o.volatility, 6),

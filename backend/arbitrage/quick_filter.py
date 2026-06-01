@@ -48,7 +48,8 @@ def quick_filter(
     if opportunity.mid_price <= 0:
         return False
 
-    spread = (opportunity.ask - opportunity.bid) / opportunity.mid_price
+    # Use the new 'spread' field (same value as deprecated 'spread_after_fees')
+    spread = opportunity.spread if hasattr(opportunity, 'spread') else opportunity.spread_after_fees
     max_allowed_spread = cfg.filters.max_spread
 
     if spread > max_allowed_spread:

@@ -140,8 +140,8 @@ export function Dashboard() {
   // --- Selection state ---
   // Default realm is "poe2" to match API URL path segment
   const [realm, setRealm] = useState("poe2");
-  const [league, setLeague] = useState("");
-  const [tab, setTab] = useState("overview");
+  const [league, setLeagueLocal] = useState("");
+  const [tab, setTabLocal] = useState("overview");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -179,7 +179,7 @@ export function Dashboard() {
   const [eventsSidebarOpen, setEventsSidebarOpen] = useState(false);
 
   // --- Comparison store ---
-  const { comparisonIds, pairComparisonIds, alerts } = useDashboardStore();
+  const { comparisonIds, pairComparisonIds, alerts, uiState, setActiveTab, setLeague: persistLeague } = useDashboardStore();
 
   // --- i18n ---
   const { t, tp } = useI18n();
@@ -260,6 +260,25 @@ export function Dashboard() {
     const active = leagues?.find((l) => l.active);
     return active?.name || leagues?.[0]?.name || "";
   }, [league, leagues]);
+
+  // Sync tab with persisted state on mount
+  useEffect(() => {
+    if (uiState.activeTab && tab === "overview") {
+      setTabLocal(uiState.activeTab);
+    }
+  }, [uiState.activeTab]);
+
+  // Wrapper for tab changes that also persists
+  const setTab = (newTab: string) => {
+    setTabLocal(newTab);
+    setActiveTab(newTab);
+  };
+
+  // Wrapper for league changes that also persists
+  const setLeague = (newLeague: string) => {
+    setLeagueLocal(newLeague);
+    persistLeague(newLeague);
+  };
 
   // FIX: Auto-select the first league when leagues load and no league is
   // explicitly selected.  Without this the Radix Select stays empty because
@@ -747,7 +766,7 @@ export function Dashboard() {
                       referenceCurrency={referenceCurrency}
                     />
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3" role="list" aria-label="Currency items">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2" role="list" aria-label="Currency items">
                       {currenciesData.items.map((item) => (
                         <CurrencyCard
                           key={item.id}
@@ -830,7 +849,7 @@ export function Dashboard() {
                   {t("noExchangePairs")}
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" role="list" aria-label="Exchange pairs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label="Exchange pairs">
                   {exchangePairs.map((pair) => (
                     <ExchangePairCard
                       key={pair.id}
