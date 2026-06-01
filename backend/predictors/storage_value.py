@@ -33,6 +33,7 @@ def project_value(
     liquidity_normalization: float = 10.0,
     buy_threshold: float = 1.03,
     sell_threshold: float = 0.97,
+    acceleration: float = 0.0,
 ) -> StorageValueResult:
     """Compute projected value and hold/sell decision for a currency.
 
@@ -50,6 +51,10 @@ def project_value(
         liquidity_normalization: Normalization divisor for liquidity (default 10.0)
         buy_threshold: Ratio above which decision is BUY/HOLD (default 1.03)
         sell_threshold: Ratio below which decision is SELL/CONVERT (default 0.97)
+        acceleration: Change in momentum from PriceMomentumTracker.acceleration.
+            Adjusts the projection: positive acceleration strengthens the
+            trend, negative acceleration weakens it. The adjustment is dampened
+            to prevent over-extrapolation from noisy short-term acceleration.
 
     Returns:
         StorageValueResult with projected_price, risk_discount, adjusted_price,
@@ -59,7 +64,20 @@ def project_value(
     #
     # Formula: projected = current_price * exp(log_momentum * horizon_hours)
     #
-    # SAFETY CAP: exp(log_momentum * horizon_hours) can produce absurdly
+    # FIX: Incorporate acceleration as a dampened adjustment to momentum.
+    # If momentum is positive and acceleration is positive, the trend is
+    # strengthening — we nudge the projection slightly higher. If momentum
+    # is positive but acceleration is negative, the trend is fading — we
+    # dampen the projection. The dampening factor of 0.3 prevents
+    # over-extrapolation from noisy acceleration estimates.
+    #
+    # effective_momentum = momentum + 0.3 * acceleration * horizon_hours
+    #
+    # The 0.3 factor was chosen because acceleration is per-period and
+    # can be noisy; giving it full weight would cause wild swings.
+    effective_momentum = log_momentum + 0.3 * acceleration * horizon_hours
+    #
+    # SAFETY CAP: exp(effective_momentum * horizon_hours) can produce absurdly
     # large projections when momentum is noisy (e.g. from a short window).
     # At momentum=0.05/hour, 24h projection ≈ 3.3x price — unrealistic.
     # We cap the projection factor to a horizon-dependent maximum:
@@ -67,7 +85,7 @@ def project_value(
     # This allows 1.49x for 24h, 1.69x for 48h, 2.0x for 168h — still
     # optimistic but bounded. The risk discount and liquidity adjustment
     # further dampen the final value.
-    raw_factor = np.exp(log_momentum * horizon_hours)
+    raw_factor = np.exp(effective_momentum * horizon_hours)
     max_projection_factor = 1.0 + 0.10 * np.sqrt(horizon_hours)
     capped_factor = min(raw_factor, max_projection_factor)
     projected = current_price * capped_factor

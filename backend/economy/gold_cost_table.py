@@ -1,6 +1,12 @@
 """
 Verified per-unit gold cost table for PoE2 Currency Exchange.
 
+⚠️ DEPRECATED — This module supports the deprecated gold_costs.py.
+See gold_costs.py docstring for details on why gold fees are excluded
+from all business logic. This table is kept for potential future use.
+
+---
+
 Source: poe2wiki.net — Currency Exchange Market
 (last verified 2025-12-26, patch 0.3.0)
 

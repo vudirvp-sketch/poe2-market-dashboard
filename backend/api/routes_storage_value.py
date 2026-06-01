@@ -115,6 +115,7 @@ async def get_storage_value(
             liquidity_normalization=config.storage_value.liquidity_normalization,
             buy_threshold=config.storage_value.buy_threshold,
             sell_threshold=config.storage_value.sell_threshold,
+            acceleration=metrics.acceleration,  # FIX: use acceleration from MomentumResult
         )
 
         return {

@@ -1,6 +1,22 @@
 """
 Gold fee calculation engine for PoE2 Currency Exchange.
 
+⚠️ DEPRECATED — This module is NOT used in any scoring, arbitrage, or
+storage value calculations. The Canonical Formulas §3 is marked DEPRECATED
+and §6.4 is DEPRECATED. The gold fee asymmetry (24% vs 0.73%) makes most
+arbitrage opportunities unprofitable when fees are included, so all
+business logic intentionally excludes gold fees.
+
+DO NOT import functions from this module in scorer.py, triangular.py,
+recipe.py, or storage_value.py without understanding the implications.
+If gold fees are to be re-enabled, the scorer and arbitrage modules must
+be updated to handle direction-dependent fee asymmetry correctly.
+
+This module is kept for potential future use if the decision to exclude
+gold fees is reversed, or for a "fee-aware" display mode in the UI.
+
+---
+
 CRITICAL: The gold fee in PoE2 is NOT a percentage of trade value.
 It is a FIXED PER-UNIT cost in gold coins, where each currency item type
 has its own gold cost.

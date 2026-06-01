@@ -1,6 +1,14 @@
 """
 API routes for OAuth2 authentication with GGG's trade API.
 
+⚠️ NOTE: This router is registered in main.py but OAuth2 is not currently
+in active use. The routes depend on `backend.data.providers.official` which
+requires GGG_CLIENT_ID and GGG_CLIENT_SECRET environment variables that are
+typically not configured. This module is a stub for future authentication
+functionality (e.g., accessing personal trade history or rate-limit-exempt
+API access). If OAuth2 is not needed, this router can be safely removed from
+main.py to reduce the attack surface.
+
 Endpoints:
     GET /api/auth/start     — initiates OAuth2 authorization flow
     GET /api/auth/callback  — handles OAuth2 callback, exchanges code for tokens

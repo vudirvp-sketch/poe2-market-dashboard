@@ -959,8 +959,13 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 
 // ============================================================================
 // Fallback data — used when the upstream POE2Scout API is unreachable.
-// Updated 2025-05-30 based on live API responses.
-// These ensure the dashboard always has realm/league selectors populated,
+//
+// ⚠️ MAINTENANCE REQUIRED: These lists must be updated when new leagues
+// launch or old leagues end. Check https://poe2scout.com or the API
+// (/poe2/Leagues) periodically. Last verified: 2025-05-30.
+//
+// If the API is reachable, these are never used — they only serve as a
+// fallback so the dashboard always has realm/league selectors populated,
 // even on first launch behind a restrictive network.
 // ============================================================================
 
@@ -1031,10 +1036,6 @@ export async function getRealms(): Promise<Realm[]> {
     console.warn("[poe2api] getRealms: upstream API unreachable, using fallback data.", err instanceof Error ? err.message : err);
     return FALLBACK_REALMS;
   }
-}
-
-export async function getRealmFilters(realm: string): Promise<unknown> {
-  return cachedFetch(`${BASE_URL}/Realms/${realm}/Filters`);
 }
 
 // --- Leagues ---

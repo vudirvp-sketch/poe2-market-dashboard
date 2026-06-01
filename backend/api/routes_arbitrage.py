@@ -315,6 +315,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             momentum=momentum_result.momentum,
             momentum_neg_threshold=config.scoring.momentum_negative_threshold,
             vol_reference=config.scoring.volatility_reference,
+            volatility_period="hourly",  # FIX: PriceMomentumTracker uses hourly-period data
         )
 
         # Apply event penalties

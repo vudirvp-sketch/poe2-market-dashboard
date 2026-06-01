@@ -163,6 +163,58 @@ User Browser
     │                                          DataSnapshot.get_prices()
     │                                              │
     │                                          return: [{currency, bid, ask, mid, volume, momentum, volatility, cluster}, ...]
+
+### 2.2a GET /api/prices — Response Structure
+
+The `/api/prices` endpoint (implemented in `routes_prices.py`) is the primary
+data source for the dashboard. It returns all exchange rates with derived
+metrics computed from DataSnapshot.
+
+**Response shape:**
+
+```json
+{
+  "league": "vaal",
+  "phase": "MID",
+  "rates": [
+    {
+      "pair": "divine/exalted",
+      "currency_from": "divine",
+      "currency_to": "exalted",
+      "raw_rate": 0.123,
+      "volume_traded": 1500,
+      "stock_value": 200.0,
+      "volatility": 0.0234,
+      "momentum": 0.0012,
+      "acceleration": -0.0003,
+      "cluster_from": "moderate",
+      "cluster_to": "stable",
+      "timestamp": "2025-06-02T12:00:00+00:00"
+    }
+  ],
+  "base_currency": "exalted",
+  "stale": false,
+  "data_available": true,
+  "fetched_at": "2025-06-02T12:00:00+00:00"
+}
+```
+
+**Key fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pair` | string | Currency pair key (e.g. "divine/exalted") |
+| `currency_from` | string | Source currency api_id |
+| `currency_to` | string | Target currency api_id |
+| `raw_rate` | float | Exchange rate from→to |
+| `volume_traded` | number | 24h trading volume for this pair |
+| `stock_value` | number | Stock value from snapshot |
+| `volatility` | float | Std of log-returns (from PriceMomentumTracker) |
+| `momentum` | float | Mean of log-returns (from PriceMomentumTracker) |
+| `acceleration` | float | Change in momentum (from PriceMomentumTracker) |
+| `cluster_from` | string | Cluster label for currency_from ("stable"/"moderate"/"volatile") |
+| `cluster_to` | string | Cluster label for currency_to |
+| `timestamp` | string | ISO 8601 timestamp of the rate data |
     │
     ├─→ GET /api/flipper/flips ──────────────→ routes_arbitrage.py
     │                                              │

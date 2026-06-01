@@ -44,6 +44,7 @@ def compute_opportunity_score(
     momentum: float,
     momentum_neg_threshold: float = -0.01,
     vol_reference: float = 0.05,
+    volatility_period: str = "daily",
 ) -> float:
     """Compute the opportunity score for a flip.
 
@@ -62,7 +63,12 @@ def compute_opportunity_score(
         phase_multiplier: Phase-dependent multiplier (1.2/1.0/0.9)
         momentum: Mean of log-returns
         momentum_neg_threshold: Threshold for strong negative momentum (default: -0.01)
-        vol_reference: Reference volatility for penalty (default: 0.05)
+        vol_reference: Reference volatility for penalty (default: 0.05, assumed DAILY)
+        volatility_period: Period of the volatility input — "hourly" or "daily".
+            If "hourly", volatility is annualized to daily equivalent via
+            vol_daily = vol_hourly * sqrt(24) before comparing to vol_reference.
+            This fixes the mismatch where vol_reference=0.05 assumes daily
+            volatility but PriceMomentumTracker may provide hourly-period values.
 
     Returns:
         Score between 0.0 and 1.0
@@ -89,8 +95,17 @@ def compute_opportunity_score(
     else:
         momentum_penalty = 1.0
 
-    # §7.4: Volatility penalty
-    vol_penalty = 1.0 / (1.0 + (volatility / vol_reference) ** 2)
+    # §7.4: Volatility penalty — with annualization fix
+    # PriceMomentumTracker computes volatility over its window_size (default 24)
+    # periods. If the data is hourly, the daily-equivalent volatility is:
+    #   vol_daily = vol_hourly * sqrt(24) ≈ vol_hourly * 4.9
+    # Without annualization, vol_reference=0.05 (daily) is compared against
+    # vol_hourly≈0.003, making the penalty almost zero for hourly data.
+    effective_vol = volatility
+    if volatility_period == "hourly":
+        effective_vol = volatility * np.sqrt(24)
+
+    vol_penalty = 1.0 / (1.0 + (effective_vol / vol_reference) ** 2)
 
     # §7.5: Final score
     score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier

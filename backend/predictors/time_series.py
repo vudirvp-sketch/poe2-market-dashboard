@@ -335,21 +335,64 @@ def forecast_holt_winters(
             )
             fitted = model.fit()
 
-            # Forecast with 95% CI
-            # statsmodels ExponentialSmoothing doesn't provide CI directly,
-            # so we estimate CI from residuals
+            # Forecast point estimates
             forecast_log = fitted.forecast(horizon)
 
-            # Estimate prediction interval from residual std
+            # --- Prediction intervals via simulation ---
+            # The previous implementation used sqrt(h) scaling which assumes
+            # a random walk model, not exponential smoothing. This produced
+            # CIs that are too narrow at longer horizons.
+            #
+            # The proper approach for ETS models (Hyndman et al., "Forecasting
+            # with Exponential Smoothing", §6.2) is simulation-based: generate
+            # N sample paths by adding randomly drawn residuals at each step,
+            # then take percentiles of the simulated paths.
+            #
+            # This correctly accounts for:
+            # - Uncertainty in level, trend, and seasonality propagation
+            # - Compounding error through the recursion
+            # - The actual error distribution (not assuming normality)
+            N_SIMULATIONS = 1000
             residuals = fitted.resid
             residual_std = float(np.std(residuals, ddof=1))
 
-            # Approximate 95% CI: forecast ± 1.96 * residual_std * sqrt(h)
-            # This is a simplified CI; for a more accurate one, we'd need
-            # simulation-based methods.
-            ci_multiplier = 1.96  # 95% CI for normal distribution
-            ci_lower_log = forecast_log - ci_multiplier * residual_std * np.sqrt(np.arange(1, horizon + 1))
-            ci_upper_log = forecast_log + ci_multiplier * residual_std * np.sqrt(np.arange(1, horizon + 1))
+            # Get model state for simulation seeding
+            # fitted.model holds the model spec; fitted holds the states
+            level = fitted.level[-1] if hasattr(fitted, 'level') and fitted.level is not None else forecast_log[0]
+            trend_val = fitted.trend[-1] if hasattr(fitted, 'trend') and fitted.trend is not None and fitted.model.trend else 0.0
+            seasonal_vals = fitted.season if hasattr(fitted, 'season') and fitted.season is not None else None
+
+            # Simulate future paths
+            simulated = np.zeros((N_SIMULATIONS, horizon))
+            for sim_i in range(N_SIMULATIONS):
+                y = level
+                b = trend_val
+                s_idx = len(fitted.level) % seasonal_period if seasonal_vals is not None else 0
+                for h in range(horizon):
+                    # Draw a random residual (bootstrap from empirical residuals)
+                    if len(residuals) > 0:
+                        eps = np.random.choice(residuals)
+                    else:
+                        eps = np.random.normal(0, residual_std)
+
+                    # One-step-ahead simulation following ETS(A,A,A) recursion
+                    s = seasonal_vals[-(seasonal_period - s_idx % seasonal_period)] if seasonal_vals is not None and len(seasonal_vals) > 0 else 0.0
+                    y_new = y + b + s + eps
+                    simulated[sim_i, h] = y_new
+
+                    # Update components
+                    alpha = fitted.params.get('smoothing_level', 0.1) if hasattr(fitted, 'params') else 0.1
+                    beta = fitted.params.get('smoothing_trend', 0.01) if hasattr(fitted, 'params') else 0.01
+                    gamma = fitted.params.get('smoothing_seasonal', 0.01) if hasattr(fitted, 'params') else 0.01
+
+                    y = alpha * y_new + (1 - alpha) * (y + b)
+                    b = beta * (y - level) + (1 - beta) * b
+                    level = y
+                    s_idx += 1
+
+            # Compute 95% CI from simulated percentiles
+            ci_lower_log = np.percentile(simulated, 2.5, axis=0)
+            ci_upper_log = np.percentile(simulated, 97.5, axis=0)
 
         # Convert to price space
         point_forecast = np.exp(forecast_log).tolist()
@@ -685,6 +728,10 @@ class LightGBMForecaster:
         self._last_trained_at = datetime.now(timezone.utc)
 
         # Phase 2 (Spec §7.5): Persist trained models to ModelStore
+        # FIX: Persist immediately after training rather than waiting for the
+        # scheduler's periodic persist_pending() call. The scheduler runs every
+        # 30 minutes by default; if the server crashes before then, all trained
+        # models are lost. Immediate persistence ensures models survive restarts.
         if self._model_store is not None and self._currency:
             for model_type, model_obj in [
                 ("median", self._model_median),
@@ -699,6 +746,20 @@ class LightGBMForecaster:
                         "n_samples": len(df),
                         "n_features": X.shape[1],
                     },
+                )
+            # Persist all registered models to disk immediately
+            try:
+                persisted = self._model_store.persist_pending()
+                if persisted > 0:
+                    logger.info(
+                        "LightGBM: immediately persisted %d model files for %s",
+                        persisted, self._currency,
+                    )
+            except Exception as persist_err:
+                logger.warning(
+                    "LightGBM: failed to persist models for %s: %s. "
+                    "Models will be persisted by the scheduler later.",
+                    self._currency, persist_err,
                 )
 
         logger.info(
@@ -799,9 +860,24 @@ class LightGBMForecaster:
             pred_lower = float(self._model_lower.predict(X)[0])
             pred_upper = float(self._model_upper.predict(X)[0])
 
+            # FIX: Widen CI to account for compounding error in iterative
+            # prediction. Each step uses the previous prediction as input,
+            # so errors compound. The quantile regression models produce
+            # per-step CIs that don't account for this accumulated
+            # uncertainty. We apply a widening factor that grows with the
+            # square root of the step number (similar to random walk CI):
+            #   ci_spread_at_step_h = base_ci_spread * sqrt(h + 1)
+            # This ensures the CI at step 24 is ~5x wider than at step 1,
+            # reflecting realistic compounding uncertainty.
+            step_multiplier = np.sqrt(step + 1)
+            ci_spread = pred_upper - pred_lower
+            widened_spread = ci_spread * step_multiplier
+            widened_lower = pred_median - widened_spread / 2
+            widened_upper = pred_median + widened_spread / 2
+
             point_forecasts.append(np.exp(pred_median))
-            ci_lowers.append(np.exp(pred_lower))
-            ci_uppers.append(np.exp(pred_upper))
+            ci_lowers.append(np.exp(widened_lower))
+            ci_uppers.append(np.exp(widened_upper))
 
             # Feed prediction back into working series for next step
             working_prices.append(pred_median)
