@@ -169,19 +169,27 @@ export function PairDetailDialog({
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("min")}</p>
-              <p className="text-sm font-bold font-mono">{fmt(stats.min)}</p>
+              <p className="text-sm font-bold font-mono">{formatPrice(stats.min, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("max")}</p>
-              <p className="text-sm font-bold font-mono">{fmt(stats.max)}</p>
+              <p className="text-sm font-bold font-mono">{formatPrice(stats.max, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("average")}</p>
-              <p className="text-sm font-bold font-mono">{fmt(stats.avg)}</p>
+              <p className="text-sm font-bold font-mono">{formatPrice(stats.avg, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("spread")}</p>
-              <p className="text-sm font-bold font-mono">{fmt(stats.spread)}</p>
+              <p className="text-sm font-bold font-mono">{formatPrice(stats.spread, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}</p>
+            </div>
+            <div className="rounded-lg bg-muted/50 p-2">
+              <p className="text-[10px] text-muted-foreground">{t("avgVolume")}</p>
+              <p className="text-sm font-bold font-mono">
+                {stats.totalVolume > 0 && pairHistory
+                  ? fmt(stats.totalVolume / pairHistory.length)
+                  : "\u2014"}
+              </p>
             </div>
             {/* 24h High / Low */}
             {stats24h && (

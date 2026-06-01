@@ -404,7 +404,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                           <img
                             src={item.iconUrl}
                             alt=""
-                            className="w-4 h-4 object-contain"
+                            className="w-6 h-6 object-contain"
                           />
                         ) : null}
                         <span className="text-xs font-medium truncate max-w-[150px]">
@@ -454,7 +454,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                           <img
                             src={item.iconUrl}
                             alt=""
-                            className="w-4 h-4 object-contain"
+                            className="w-6 h-6 object-contain"
                           />
                         ) : null}
                         <span className="text-xs font-medium truncate max-w-[150px]">

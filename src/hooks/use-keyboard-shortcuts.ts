@@ -84,6 +84,26 @@ export function useKeyboardShortcuts(actions: KeyboardShortcutActions) {
           e.preventDefault();
           actions.onSwitchTab?.(4);
           break;
+        case "6":
+          e.preventDefault();
+          actions.onSwitchTab?.(5);
+          break;
+        case "7":
+          e.preventDefault();
+          actions.onSwitchTab?.(6);
+          break;
+        case "8":
+          e.preventDefault();
+          actions.onSwitchTab?.(7);
+          break;
+        case "9":
+          e.preventDefault();
+          actions.onSwitchTab?.(8);
+          break;
+        case "0":
+          e.preventDefault();
+          actions.onSwitchTab?.(9);
+          break;
         case "?":
           // Shift+/ = ?
           e.preventDefault();

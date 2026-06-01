@@ -14,7 +14,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFlipsQuery, useInvalidateFlips } from "@/hooks/use-flips-query";
 import {
@@ -22,6 +22,7 @@ import {
   Info,
   Search,
   AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -198,6 +199,23 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     return isFlipsResponseSuspicious(flipsData.opportunities);
   }, [flipsData?.opportunities]);
 
+  // §0.4: Stale data detection — check if fetched_at is older than 10 minutes
+  const [isStale, setIsStale] = useState(false);
+  useEffect(() => {
+    if (!flipsData?.fetched_at || !backendOnline) {
+      setIsStale(false);
+      return;
+    }
+    const checkStaleness = () => {
+      const fetchedTime = new Date(flipsData.fetched_at).getTime();
+      const ageMs = Date.now() - fetchedTime;
+      setIsStale(ageMs > 10 * 60 * 1000); // 10 minutes
+    };
+    checkStaleness();
+    const interval = setInterval(checkStaleness, 30_000); // re-check every 30s
+    return () => clearInterval(interval);
+  }, [flipsData?.fetched_at, backendOnline]);
+
   // ---- Loading ----
   if (flipsLoading && backendOnline) {
     return <FlipsSkeleton />;
@@ -223,6 +241,25 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
               </p>
               <p className="text-muted-foreground mt-1">
                 {dataQuality.reason}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* §0.4: Stale data warning — when fetched_at is older than 10 minutes */}
+      {isStale && (
+        <Card className="border-blue-500/30 bg-blue-500/5" role="alert" aria-live="polite">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Clock className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-blue-600 dark:text-blue-400">
+                {t("flipsStaleDataWarning")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {flipsData?.fetched_at
+                  ? t("lastUpdatedAt", { "0": new Date(flipsData.fetched_at).toLocaleTimeString() })
+                  : undefined}
               </p>
             </div>
           </CardContent>

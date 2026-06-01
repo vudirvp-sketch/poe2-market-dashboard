@@ -601,8 +601,8 @@ export function Dashboard() {
   // ============================================================================
   // §3.2: Keyboard Shortcuts
   // ============================================================================
-  // Tab index mapping for shortcuts 1–5
-  const TAB_MAP = ["overview", "exchange", "uniques", "watchlist", "arbitrage"];
+  // Tab index mapping for shortcuts 1–9 (matching visible tab order)
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "forecast", "portfolio", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   const navigableList = useMemo(() => {
@@ -738,6 +738,14 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* §3.1: Skip-to-content link for keyboard/screen reader users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:text-sm focus:font-medium"
+      >
+        {t("skipToContent") ?? "Skip to content"}
+      </a>
+
       {/* Header — now with flipper backend status, phase badge, events button */}
       <Header
         realms={realms}

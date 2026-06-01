@@ -22,7 +22,7 @@ const SHORTCUTS: { key: string; i18nKey: TranslationKeys }[] = [
   { key: "↑ / ↓", i18nKey: "shortcutNavigateRows" },
   { key: "Enter", i18nKey: "shortcutOpenDetail" },
   { key: "Escape", i18nKey: "shortcutClose" },
-  { key: "1–5", i18nKey: "shortcutSwitchTab" },
+  { key: "1–0", i18nKey: "shortcutSwitchTab" },
   { key: "?", i18nKey: "shortcutHelp" },
 ];
 
@@ -76,10 +76,15 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span><kbd className="font-mono font-semibold">1</kbd> {t("tabOverview")}</span>
-            <span><kbd className="font-mono font-semibold">2</kbd> {t("tabExchange")}</span>
+            <span><kbd className="font-mono font-semibold">2</kbd> {t("tabCurrencies")}</span>
             <span><kbd className="font-mono font-semibold">3</kbd> {t("tabUniques")}</span>
-            <span><kbd className="font-mono font-semibold">4</kbd> {t("tabWatchlist")}</span>
+            <span><kbd className="font-mono font-semibold">4</kbd> {t("tabExchange")}</span>
             <span><kbd className="font-mono font-semibold">5</kbd> {t("tabArbitrage")}</span>
+            <span><kbd className="font-mono font-semibold">6</kbd> {t("tabFlips")}</span>
+            <span><kbd className="font-mono font-semibold">7</kbd> {t("tabForecast")}</span>
+            <span><kbd className="font-mono font-semibold">8</kbd> {t("tabPortfolio")}</span>
+            <span><kbd className="font-mono font-semibold">9</kbd> {t("tabGraph")}</span>
+            <span><kbd className="font-mono font-semibold">0</kbd> {t("tabWatchlist")}</span>
           </div>
         </div>
       </DialogContent>
