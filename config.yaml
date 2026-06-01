@@ -18,6 +18,24 @@ league:
   phase_early_days: 14
   phase_mid_days: 42
   base_currency: "exalted"
+  currency_categories:               # Known POE2 currency categories for ByCategory pagination
+    - currency
+    - fragments
+    - runes
+    - essences
+    - ultimatum
+    - expedition
+    - ritual
+    - vaultkeys
+    - breach
+    - abyss
+    - uncutgems
+    - lineagesupportgems
+    - delirium
+    - incursion
+    - idol
+    - verisium                        # Runes of Aldur league
+    - vaal                            # Runes of Aldur league
 
 fees: {}  # Gold fee configuration removed — fees excluded from all calculations
 

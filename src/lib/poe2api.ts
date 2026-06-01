@@ -1168,7 +1168,9 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
   if (snapshot) return pairs;
 
   // Enrich top-N pairs by volume with history data
-  const TOP_N = 20;
+  // TOP_N=50 ensures more pairs get change/changePercent data (previously only 20
+  // out of ~2000 pairs were enriched, leaving the rest showing "—" for change).
+  const TOP_N = 50;
   const topPairs = pairs
     .filter(p => p.volume > 0)
     .sort((a, b) => b.volume - a.volume)
@@ -1177,7 +1179,8 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
   if (topPairs.length === 0) return pairs;
 
   // Fetch history for top pairs in parallel (with concurrency limit)
-  const CONCURRENCY = 5;
+  // Reduced concurrency from 5 to 4 to avoid overwhelming the API with 50 pairs
+  const CONCURRENCY = 4;
   for (let i = 0; i < topPairs.length; i += CONCURRENCY) {
     const batch = topPairs.slice(i, i + CONCURRENCY);
     await Promise.allSettled(

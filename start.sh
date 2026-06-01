@@ -62,9 +62,18 @@ if command -v uvicorn &>/dev/null; then
     UVICORN_AVAILABLE=1
     info "uvicorn found."
 elif [ "$PYTHON_AVAILABLE" -eq 1 ]; then
-    if python3 -m pip show uvicorn &>/dev/null 2>&1; then
+    # Check via python3 -m uvicorn --version (more reliable than pip show)
+    # This catches cases where uvicorn is installed but not in PATH
+    PY_CMD="python3"
+    if ! command -v python3 &>/dev/null; then
+        PY_CMD="python"
+    fi
+    if $PY_CMD -m uvicorn --version &>/dev/null 2>&1; then
         UVICORN_AVAILABLE=1
-        info "uvicorn found via python3 -m."
+        info "uvicorn found via $PY_CMD -m uvicorn."
+    elif $PY_CMD -m pip show uvicorn &>/dev/null 2>&1; then
+        UVICORN_AVAILABLE=1
+        info "uvicorn found via pip show."
     fi
 fi
 
@@ -138,7 +147,13 @@ FLIPPER_PID=""
 
 if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
     info "Starting FastAPI Flipper backend on port 8000..."
-    uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
+    # Use python3 -m uvicorn to avoid PATH issues (uvicorn may not be in PATH
+    # even though it's installed via pip --user)
+    PY_CMD="python3"
+    if ! command -v python3 &>/dev/null; then
+        PY_CMD="python"
+    fi
+    $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
     FLIPPER_PID=$!
 
     # Wait for backend to start with retry loop (up to 15 seconds)
@@ -217,7 +232,7 @@ if [ "$DEV_MODE" -eq 1 ]; then
             kill "$FLIPPER_PID" 2>/dev/null || true
             sleep 1
         fi
-        uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
+        $PY_CMD -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
         FLIPPER_PID=$!
         sleep 2
         info "Flipper backend restarted with --reload"

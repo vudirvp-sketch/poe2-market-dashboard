@@ -44,6 +44,7 @@ class LeagueConfig(BaseModel):
         "currency", "fragments", "runes", "essences", "ultimatum",
         "expedition", "ritual", "vaultkeys", "breach", "abyss",
         "uncutgems", "lineagesupportgems", "delirium", "incursion", "idol",
+        "verisium", "vaal",  # Runes of Aldur league categories
     ])
 
     @property

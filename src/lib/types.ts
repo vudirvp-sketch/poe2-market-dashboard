@@ -370,7 +370,15 @@ export async function fetchApi<T>(path: string, params?: Record<string, string>)
 export function fmt(n: number | null | undefined, digits = 2): string {
   if (n == null) return "—";
   if (n >= 1000) return n.toLocaleString("en-US", { maximumFractionDigits: 1 });
-  return n.toFixed(digits);
+  if (n >= 1) return n.toFixed(digits);
+  // Adaptive precision for small prices (e.g. 0.000875 Exa):
+  // 0.1–0.99 → 3 digits, 0.01–0.099 → 4 digits, 0.001–0.0099 → 5 digits, etc.
+  // This ensures significant digits are visible instead of showing "0.00".
+  const absN = Math.abs(n);
+  if (absN === 0) return "0";
+  const magnitude = Math.floor(Math.log10(absN));          // e.g. -3 for 0.000875
+  const decimalPlaces = Math.max(digits, digits + 1 - magnitude); // e.g. 2+1-(-3)=6
+  return n.toFixed(Math.min(decimalPlaces, 8));             // cap at 8 decimal places
 }
 
 export function fmtChange(pct: number | null | undefined): { text: string; color: string } {

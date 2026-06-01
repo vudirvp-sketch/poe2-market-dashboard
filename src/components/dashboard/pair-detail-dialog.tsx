@@ -84,7 +84,10 @@ export function PairDetailDialog({
   // Overall stats (from the loaded history period)
   const stats = useMemo(() => {
     if (!pairHistory || pairHistory.length === 0) return null;
-    const prices = pairHistory.map((p) => p.relativePrice);
+    // Filter out zero prices — the first snapshot hour often has RelativePrice=0
+    // (no trades yet in a new league), which would skew min/avg/spread.
+    const prices = pairHistory.map((p) => p.relativePrice).filter((p) => p > 0);
+    if (prices.length === 0) return null;
     const vols = pairHistory.map((p) => p.volume);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
@@ -98,7 +101,8 @@ export function PairDetailDialog({
     if (!pairHistory || pairHistory.length === 0) return null;
     const last24 = pairHistory.slice(-24);
     if (last24.length === 0) return null;
-    const prices = last24.map((p) => p.relativePrice);
+    const prices = last24.map((p) => p.relativePrice).filter((p) => p > 0);
+    if (prices.length === 0) return null;
     return {
       high: Math.max(...prices),
       low: Math.min(...prices),
@@ -110,7 +114,8 @@ export function PairDetailDialog({
     if (!pairHistory || pairHistory.length === 0) return null;
     const last168 = pairHistory.slice(-168);
     if (last168.length === 0) return null;
-    const prices = last168.map((p) => p.relativePrice);
+    const prices = last168.map((p) => p.relativePrice).filter((p) => p > 0);
+    if (prices.length === 0) return null;
     return {
       high: Math.max(...prices),
       low: Math.min(...prices),

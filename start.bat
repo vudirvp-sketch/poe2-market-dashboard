@@ -67,13 +67,27 @@ if !ERRORLEVEL! equ 0 (
     echo [OK] uvicorn found.
 )
 
-REM Check uvicorn via python -m only if not found directly AND python is available
+REM Check uvicorn via python -m uvicorn --version (more reliable than pip show)
+REM This catches cases where uvicorn is installed via pip but not in PATH
+REM (typical for "pip install --user" on Windows: uvicorn lands in
+REM %APPDATA%\Python\Python3x\Scripts\ which is NOT in PATH by default)
+if !UVICORN_AVAILABLE! equ 0 (
+    if !PYTHON_AVAILABLE! equ 1 (
+        python -m uvicorn --version >nul 2>&1
+        if !ERRORLEVEL! equ 0 (
+            set UVICORN_AVAILABLE=1
+            echo [OK] uvicorn found via python -m uvicorn.
+        )
+    )
+)
+
+REM Fallback: check pip show if python -m uvicorn didn't work either
 if !UVICORN_AVAILABLE! equ 0 (
     if !PYTHON_AVAILABLE! equ 1 (
         python -m pip show uvicorn >nul 2>&1
         if !ERRORLEVEL! equ 0 (
             set UVICORN_AVAILABLE=1
-            echo [OK] uvicorn found via python -m.
+            echo [OK] uvicorn found via pip show.
         )
     )
 )
@@ -180,7 +194,7 @@ set FLIPPER_PID=0
 
 if !UVICORN_AVAILABLE! equ 1 (
     echo [INFO] Starting FastAPI Flipper backend on port 8000...
-    start /b uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+    start /b python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
 
     REM Wait for backend to start with retry loop (up to 15 seconds)
     REM Using PowerShell HTTP check instead of netstat for reliability.
@@ -261,7 +275,7 @@ if "%~1"=="--dev" (
             taskkill /PID %%a /F >nul 2>&1
         )
         timeout /t 1 /nobreak >nul
-        start /b uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+        start /b python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
         timeout /t 2 /nobreak >nul
         echo [OK] Flipper backend restarted with --reload
         echo.
