@@ -22,6 +22,7 @@ import {
   Circle,
   Server,
   RefreshCw,
+  Coins,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -504,6 +505,23 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
           </div>
         </CardContent>
       </Card>
+
+      {/* ---- Gold fee warning (flipper mode) ---- */}
+      {mode === "flipper" && (flipsData?.fee_warning?.gold_fees_excluded || triData?.fee_warning?.gold_fees_excluded) && (
+        <Card className="border-orange-500/30 bg-orange-500/5" role="alert" aria-live="polite">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Coins className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-orange-600 dark:text-orange-400">
+                {t("flipsGoldFeesExcluded")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("flipsGoldFeesExcludedDesc")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ---- Event status banner (flipper mode) ---- */}
       {mode === "flipper" && flipsData?.event_status?.any_active && (

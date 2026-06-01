@@ -1003,19 +1003,24 @@ const FALLBACK_LEAGUES: Record<string, League[]> = {
   ],
 };
 
+// ============================================================================
+// Dynamic fallback: When the API is successfully queried, we update these
+// in-memory caches. On subsequent calls where the API is unreachable, the
+// last-known-good data is used instead of the hardcoded fallbacks above.
+// This eliminates the need to manually update FALLBACK_LEAGUES when new
+// leagues launch — the API automatically keeps them current.
+// ============================================================================
+
+let dynamicRealmsFallback: Realm[] | null = null;
+const dynamicLeaguesFallback: Map<string, League[]> = new Map();
+
 // --- Realms ---
 export async function getRealms(): Promise<Realm[]> {
   try {
     const raw = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
-    return raw.map((r) => {
-      // The API path segment for leagues/etc. uses realm_api_id directly:
-      //   - PoE2: realm_api_id = "poe2" → /poe2/Leagues ✓
-      //   - PoE1 PC: realm_api_id = "pc" → /pc/Leagues ✓
-      //   - PoE1 Xbox: realm_api_id = "xbox" → /xbox/Leagues ✓
-      //   - PoE1 Sony: realm_api_id = "sony" → /sony/Leagues ✓
+    const result = raw.map((r) => {
       const name = r.realm_api_id;
 
-      // Display names: include game name for clarity
       let displayName: string;
       if (r.game_api_id === "poe2") {
         displayName = "PoE2";
@@ -1031,9 +1036,16 @@ export async function getRealms(): Promise<Realm[]> {
         defaultLeague: r.default_league_value || undefined,
       };
     });
+    // Update dynamic fallback with live data
+    dynamicRealmsFallback = result;
+    return result;
   } catch (err) {
-    // Upstream API unreachable — return fallback data so the UI always works
-    console.warn("[poe2api] getRealms: upstream API unreachable, using fallback data.", err instanceof Error ? err.message : err);
+    // Upstream API unreachable — return dynamic fallback if available, otherwise hardcoded
+    if (dynamicRealmsFallback) {
+      console.warn("[poe2api] getRealms: upstream API unreachable, using last-known-good data.");
+      return dynamicRealmsFallback;
+    }
+    console.warn("[poe2api] getRealms: upstream API unreachable, using hardcoded fallback.", err instanceof Error ? err.message : err);
     return FALLBACK_REALMS;
   }
 }
@@ -1061,7 +1073,7 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
       }
     }
 
-    return raw.map((l) => ({
+    const mapped = raw.map((l) => ({
       // CRITICAL: use ShortName (e.g. "vaal") for API URL paths,
       // NOT Value (e.g. "Fate of the Vaal"). The POE2Scout API uses
       // ShortName as the league identifier in all URL paths.
@@ -1087,9 +1099,17 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
           }
         : undefined,
     }));
+    // Update dynamic fallback with live data
+    dynamicLeaguesFallback.set(realm, mapped);
+    return mapped;
   } catch (err) {
-    // Upstream API unreachable — return fallback data so the UI always works
-    console.warn("[poe2api] getLeagues: upstream API unreachable, using fallback data.", err instanceof Error ? err.message : err);
+    // Upstream API unreachable — return dynamic fallback if available, then hardcoded
+    const dynamicFallback = dynamicLeaguesFallback.get(realm);
+    if (dynamicFallback) {
+      console.warn("[poe2api] getLeagues: upstream API unreachable, using last-known-good data for realm=%s.", realm);
+      return dynamicFallback;
+    }
+    console.warn("[poe2api] getLeagues: upstream API unreachable, using hardcoded fallback for realm=%s.", realm, err instanceof Error ? err.message : err);
     return FALLBACK_LEAGUES[realm] || FALLBACK_LEAGUES["poe2"] || [];
   }
 }

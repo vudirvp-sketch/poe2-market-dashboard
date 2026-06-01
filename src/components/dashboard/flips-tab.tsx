@@ -23,6 +23,7 @@ import {
   Search,
   AlertTriangle,
   Clock,
+  Coins,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -229,6 +230,23 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
         insufficientData={insufficientData}
         onRefresh={() => refetchFlips()}
       />
+
+      {/* Gold fee warning — displayed whenever fee_warning is present in response */}
+      {flipsData?.fee_warning?.gold_fees_excluded && (
+        <Card className="border-orange-500/30 bg-orange-500/5" role="alert" aria-live="polite">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Coins className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-orange-600 dark:text-orange-400">
+                {t("flipsGoldFeesExcluded")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("flipsGoldFeesExcludedDesc")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )
 
       {/* §0.4: Data quality warning banner — when flip data looks suspicious */}
       {dataQuality.suspicious && (

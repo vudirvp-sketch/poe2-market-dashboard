@@ -356,6 +356,8 @@ const en = {
   flipsDetailTitle: "Flip Detail: {0}",
   flipsDataQualityWarning: "Data quality issue: prices may be inaccurate",
   flipsStaleDataWarning: "Data may be stale — last updated more than 10 minutes ago",
+  flipsGoldFeesExcluded: "Gold fees are NOT included in calculations",
+  flipsGoldFeesExcludedDesc: "Spread and profit estimates do not account for PoE2 gold trading fees, which can be up to 24% and are direction-dependent. Actual profit may be lower than shown.",
   lastUpdatedAt: "Last updated at {0}",
   skipToContent: "Skip to content",
   flipsBackendOfflineTitle: "Flip analysis requires the backend server",

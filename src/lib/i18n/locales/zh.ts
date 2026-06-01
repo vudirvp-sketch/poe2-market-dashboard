@@ -356,6 +356,8 @@ const zh: Record<TranslationKeys, string> = {
   flipsDetailTitle: "翻转详情: {0}",
   flipsDataQualityWarning: "数据质量问题：价格可能不准确",
   flipsStaleDataWarning: "数据可能已过时 — 超过10分钟未更新",
+  flipsGoldFeesExcluded: "金币手续费未计入计算",
+  flipsGoldFeesExcludedDesc: "价差和利润估算未考虑PoE2金币交易手续费，该费用最高可达24%且具有方向性。实际利润可能低于显示值。",
   lastUpdatedAt: "最后更新于 {0}",
   skipToContent: "跳转到内容",
   flipsBackendOfflineTitle: "翻转分析需要后端服务器",

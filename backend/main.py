@@ -259,12 +259,10 @@ try:
 except ImportError:
     logger.debug("WebSocket router not available yet")
 
-# OAuth2 authentication routes
-try:
-    from backend.api.routes_auth import router as auth_router
-    app.include_router(auth_router)
-except ImportError:
-    logger.debug("Auth router not available yet")
+# NOTE: routes_auth.py has been removed. OAuth2 authentication was a stub
+# that depended on GGG_CLIENT_ID/SECRET env vars (never configured).
+# If OAuth2 is needed in the future, create a new routes_auth.py and
+# re-register it here.
 
 
 # ---------------------------------------------------------------------------
