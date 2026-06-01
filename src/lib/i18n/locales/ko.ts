@@ -495,6 +495,10 @@ const ko: Record<TranslationKeys, string> = {
   // ---- Overview Heatmap ----
   overviewHeatmap: "가격 히트맵 (24시)",
 
+  // ---- §3.5: Additional Overview Visualizations ----
+  topMoversChart: "상위 변동 차트",
+  categoryDistribution: "카테고리 분포",
+
   // ---- Plural keys (Korean: all forms identical) ----
   _pl_alertsCount: "알림 ({0})|알림 ({0})|알림 ({0})",
   _pl_items: "개|개|개",

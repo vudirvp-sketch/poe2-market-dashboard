@@ -12,6 +12,11 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
 } from "recharts";
 import {
   TrendingUp,
@@ -60,6 +65,11 @@ interface MarketOverviewProps {
   onItemClick: (item: PoeItem) => void;
   backendOnline?: boolean;
 }
+
+const PIE_COLORS = [
+  "#6366f1", "#8b5cf6", "#a78bfa", "#c084fc", "#e879f9",
+  "#f472b6", "#fb923c", "#fbbf24", "#34d399", "#22d3ee",
+];
 
 export function MarketOverview({ realm, league, onItemClick, backendOnline }: MarketOverviewProps) {
   const { t } = useI18n();
@@ -157,6 +167,40 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     const cutoff = latest - 24 * 60 * 60 * 1000;
     return history.filter((p) => new Date(p.timestamp).getTime() >= cutoff);
   }, [overview?.snapshotHistory, trendTimeframe]);
+
+  // §3.5: Category distribution for donut chart
+  const categoryDistribution = useMemo(() => {
+    const allItems = [
+      ...(overview?.topGainers ?? []),
+      ...(overview?.topLosers ?? []),
+    ];
+    const catCount = new Map<string, number>();
+    for (const item of allItems) {
+      const cat = item.category || item.type || "Other";
+      catCount.set(cat, (catCount.get(cat) || 0) + 1);
+    }
+    return Array.from(catCount.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [overview]);
+
+  // §3.5: Top movers as horizontal bar data
+  const topMoversBarData = useMemo(() => {
+    const movers = [
+      ...topGainers.slice(0, 5).map((i) => ({
+        name: i.name,
+        change: topTimeframe === "24h" ? (i.changePercent ?? 0) : (i.sevenDayPriceChangePercent ?? 0),
+        type: "gainer" as const,
+      })),
+      ...topLosers.slice(0, 5).map((i) => ({
+        name: i.name,
+        change: topTimeframe === "24h" ? (i.changePercent ?? 0) : (i.sevenDayPriceChangePercent ?? 0),
+        type: "loser" as const,
+      })),
+    ];
+    return movers.sort((a, b) => b.change - a.change);
+  }, [topGainers, topLosers, topTimeframe]);
 
   if (isLoading) {
     return <MarketOverviewSkeleton />;
@@ -373,6 +417,107 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
             </Button>
           </div>
         </div>
+
+        {/* §3.5: Horizontal Bar Chart for top movers */}
+        {topMoversBarData.length > 0 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{t("topMoversChart") ?? "Top Movers Chart"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topMoversBarData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v: number) => `${v > 0 ? "+" : ""}${v.toFixed(0)}%`}
+                    />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      width={100}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
+                      formatter={(v: number) => [`${v > 0 ? "+" : ""}${v.toFixed(1)}%`, "Change"]}
+                    />
+                    <Bar dataKey="change" radius={[0, 4, 4, 0]} isAnimationActive={!reducedMotion}>
+                      {topMoversBarData.map((entry, idx) => (
+                        <Cell
+                          key={idx}
+                          fill={entry.change >= 0 ? "#22c55e" : "#ef4444"}
+                          fillOpacity={0.7 + Math.abs(entry.change) / Math.max(...topMoversBarData.map(d => Math.abs(d.change)), 1) * 0.3}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* §3.5: Donut Chart for category distribution */}
+        {categoryDistribution.length > 1 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{t("categoryDistribution") ?? "Category Distribution"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="h-[200px] w-[200px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                        isAnimationActive={!reducedMotion}
+                      >
+                        {categoryDistribution.map((_, idx) => (
+                          <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-1">
+                  {categoryDistribution.map((cat, idx) => (
+                    <div key={cat.name} className="flex items-center gap-2 text-xs">
+                      <span
+                        className="w-3 h-3 rounded-sm shrink-0"
+                        style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}
+                      />
+                      <span className="truncate">{cat.name}</span>
+                      <span className="ml-auto font-mono text-muted-foreground">{cat.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="region" aria-label={t("topMovers") ?? "Top Movers"}>
           {/* Top Gainers */}
           <Card>

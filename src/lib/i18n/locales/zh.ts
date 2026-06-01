@@ -495,6 +495,10 @@ const zh: Record<TranslationKeys, string> = {
   // ---- Overview Heatmap ----
   overviewHeatmap: "价格热力图 (24小时)",
 
+  // ---- §3.5: Additional Overview Visualizations ----
+  topMoversChart: "热门涨跌图表",
+  categoryDistribution: "类别分布",
+
   // ---- Plural keys (Chinese: all forms identical) ----
   _pl_alertsCount: "提醒 ({0})|提醒 ({0})|提醒 ({0})",
   _pl_items: "项|项|项",

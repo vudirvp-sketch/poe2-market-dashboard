@@ -39,6 +39,8 @@ interface ExchangeTableProps {
   league: string;
   /** §3.2: Index of the row to highlight via keyboard navigation */
   highlightedRowIndex?: number | null;
+  /** §3.5: Pair ID to highlight and scroll to from search result */
+  highlightedItemId?: string | null;
 }
 
 // ============================================================================
@@ -56,7 +58,7 @@ function fmtVolume(n: number | null | undefined): string {
 // Exchange Table
 // ============================================================================
 
-export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex }: ExchangeTableProps) {
+export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId }: ExchangeTableProps) {
   const { t } = useI18n();
   const {
     uiState,
@@ -116,6 +118,14 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
       rows?.[highlightedRowIndex]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }, [highlightedRowIndex]);
+
+  // §3.5: Scroll highlighted item into view from search
+  useEffect(() => {
+    if (highlightedItemId) {
+      const el = document.querySelector(`[data-pair-id="${highlightedItemId}"]`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [highlightedItemId]);
 
   // --- Sort toggle handler ---
   const handleSort = useCallback(
@@ -249,8 +259,11 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                     index === highlightedRowIndex
                       ? "bg-accent/80 ring-2 ring-inset ring-primary/40"
                       : ""
+                  } ${
+                    highlightedItemId === pair.id ? 'search-highlight' : ''
                   }`}
                   style={volumeBgStyle}
+                  data-pair-id={pair.id}
                   onClick={() => onPairClick(pair)}
                   tabIndex={0}
                   onKeyDown={(e) => {

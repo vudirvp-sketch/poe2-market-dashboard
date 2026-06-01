@@ -495,6 +495,10 @@ const ru: Record<TranslationKeys, string> = {
   // ---- Overview Heatmap ----
   overviewHeatmap: "Тепловая карта цен (24ч)",
 
+  // ---- §3.5: Additional Overview Visualizations ----
+  topMoversChart: "Диаграмма топ-движений",
+  categoryDistribution: "Распределение по категориям",
+
   // ---- Plural keys (3 forms for Russian) ----
   _pl_alertsCount: "\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u044F ({0})|\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u0435 ({0})|\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u044F ({0})|\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u0439 ({0})",
   _pl_items: "\u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432|\u043F\u0440\u0435\u0434\u043C\u0435\u0442|\u043F\u0440\u0435\u0434\u043C\u0435\u0442\u0430|\u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432",

@@ -22,6 +22,8 @@ interface CurrencyCardProps {
   realm?: string;
   league?: string;
   referenceCurrency?: string;
+  /** §3.5: Whether this card is highlighted from search result navigation */
+  highlighted?: boolean;
 }
 
 export const CurrencyCard = memo(function CurrencyCard({
@@ -30,6 +32,7 @@ export const CurrencyCard = memo(function CurrencyCard({
   realm,
   league,
   referenceCurrency,
+  highlighted,
 }: CurrencyCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(item.changePercent);
@@ -72,7 +75,8 @@ export const CurrencyCard = memo(function CurrencyCard({
 
   return (
     <Card
-      className="cursor-pointer hover:border-primary/50 transition-colors group relative"
+      ref={highlighted ? (el => { el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }) : undefined}
+      className={`cursor-pointer hover:border-primary/50 transition-colors group relative ${highlighted ? 'search-highlight' : ''}`}
       onClick={() => onClick(item)}
       onMouseEnter={handleMouseEnter}
       role="listitem"

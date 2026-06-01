@@ -194,6 +194,9 @@ export function Dashboard() {
   const [highlightedRowIndex, setHighlightedRowIndex] = useState<number | null>(null);
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
 
+  // --- §3.5: Search result highlight (scroll + pulse) ---
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
+
   // --- Comparison store ---
   const {
     comparisonIds,
@@ -605,10 +608,13 @@ export function Dashboard() {
   const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "forecast", "portfolio", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
+  // §3.5: Extended to uniques and currencies tabs
   const navigableList = useMemo(() => {
     if (tab === "exchange") return exchangePairs;
+    if (tab === "uniques" && uniquesData?.items) return uniquesData.items;
+    if (tab === "currencies" && currenciesData?.items) return currenciesData.items;
     return [];
-  }, [tab, exchangePairs]);
+  }, [tab, exchangePairs, uniquesData, currenciesData]);
 
   const keyboardActions: KeyboardShortcutActions = useMemo(
     () => ({
@@ -639,8 +645,14 @@ export function Dashboard() {
       },
       onEnter: () => {
         if (highlightedRowIndex != null && navigableList[highlightedRowIndex]) {
-          const pair = navigableList[highlightedRowIndex] as ExchangePair;
-          openPairDetail(pair);
+          const item = navigableList[highlightedRowIndex];
+          // §3.5: Handle different tab types
+          if (tab === "exchange") {
+            openPairDetail(item as ExchangePair);
+          } else {
+            // Uniques or Currencies — open item detail
+            openDetail(item as PoeItem);
+          }
         }
       },
       onEscape: () => {
@@ -780,9 +792,11 @@ export function Dashboard() {
         onSearchResultSelect={(result) => {
           // Navigate to the relevant tab
           setTab(result.tab);
-          // Set the search so the table filters to show the item
-          // For exchange, we use pair names; for items, we use item names
-          setSearch(""); // Clear search after navigation — the tab switch itself highlights
+          // §3.5: Set the highlighted item ID so the component scrolls to it + pulses
+          setHighlightedItemId(result.id);
+          // Clear the highlight after 3 seconds
+          setTimeout(() => setHighlightedItemId(null), 3000);
+          setSearch(""); // Clear search after navigation
         }}
         denseMode={uiState.denseMode}
         onDenseModeToggle={() => setDenseMode(!uiState.denseMode)}
@@ -981,6 +995,7 @@ export function Dashboard() {
                           realm={realm}
                           league={effectiveLeague}
                           referenceCurrency={referenceCurrency}
+                          highlighted={highlightedItemId === item.id}
                         />
                       ))}
                     </div>
@@ -1025,6 +1040,7 @@ export function Dashboard() {
                     realm={realm}
                     league={effectiveLeague}
                     referenceCurrency={referenceCurrency}
+                    highlightedItemId={highlightedItemId}
                   />
                   <Pagination
                     page={uniquesPage}
@@ -1256,6 +1272,7 @@ export function Dashboard() {
                       realm={realm}
                       league={effectiveLeague}
                       highlightedRowIndex={tab === "exchange" ? highlightedRowIndex : null}
+                      highlightedItemId={highlightedItemId}
                     />
                   ) : (
                     /* Cards view (original) */

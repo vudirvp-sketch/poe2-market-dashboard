@@ -4,7 +4,7 @@
 // ============================================================================
 "use client";
 
-import { useMemo, useCallback, useRef, useState } from "react";
+import { useMemo, useCallback, useRef, useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -29,6 +29,8 @@ interface UniqueTableProps {
   realm?: string;
   league?: string;
   referenceCurrency?: string;
+  /** §3.5: Item ID to highlight and scroll to from search result */
+  highlightedItemId?: string | null;
 }
 
 type DensityMode = "comfortable" | "compact";
@@ -40,7 +42,7 @@ interface CategoryGroup {
   items: PoeItem[];
 }
 
-export function UniqueTable({ items, onItemClick, realm, league, referenceCurrency }: UniqueTableProps) {
+export function UniqueTable({ items, onItemClick, realm, league, referenceCurrency, highlightedItemId }: UniqueTableProps) {
   const { t } = useI18n();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [density, setDensity] = useState<DensityMode>("comfortable");
@@ -261,6 +263,14 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
     [queryClient, realm, league, referenceCurrency]
   );
 
+  // §3.5: Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedItemId) {
+      const el = document.querySelector(`[data-item-id="${highlightedItemId}"]`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [highlightedItemId]);
+
   return (
     <div className="space-y-2">
       {/* §2.2: Density toggle */}
@@ -322,7 +332,6 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                 <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               )}
               <span className="font-medium text-sm">{group.displayName}</span>
-              <Badge count={group.items.length} />
               <span className="text-xs text-muted-foreground">({group.items.length})</span>
             </button>
 
@@ -372,8 +381,11 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                     {rows.map((row) => (
                       <tr
                         key={row.id}
-                        className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
+                        className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${
+                          row.original.id === highlightedItemId ? 'search-highlight' : ''
+                        }`}
                         style={{ height: `${rowHeight}px` }}
+                        data-item-id={row.original.id}
                         onClick={() => onItemClick(row.original)}
                         onMouseEnter={() => handleRowMouseEnter(row.original)}
                         tabIndex={0}
@@ -414,10 +426,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
   );
 }
 
-/** Simple count badge */
-function Badge({ count }: { count: number }) {
-  return null; // Count is displayed inline next to category name
-}
+// Badge component removed — count is displayed inline next to category name
 
 // Sortable column header
 function SortHeader({

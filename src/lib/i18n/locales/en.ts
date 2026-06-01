@@ -491,6 +491,10 @@ const en = {
   // ---- Overview Heatmap ----
   overviewHeatmap: "Price Heatmap (24h)",
 
+  // ---- §3.5: Additional Overview Visualizations ----
+  topMoversChart: "Top Movers Chart",
+  categoryDistribution: "Category Distribution",
+
   // ---- Data Available (graceful unavailable) ----
   dataUnavailableTitle: "Data currently unavailable",
   dataUnavailableDesc: "The POE2Scout API may be unreachable or has no data for this request. This is not an error — try again later.",
