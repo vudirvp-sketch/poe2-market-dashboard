@@ -98,10 +98,19 @@ async def get_forecast(
             logger.debug("DailyStatsHistory lookup failed for %s: %s", currency, e)
 
         if not price_points:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No historical data available for currency: {currency}",
-            )
+            # Return graceful response instead of 404 so the frontend
+            # can show "insufficient data" UI without browser console errors.
+            return {
+                "currency": currency,
+                "horizon": horizon,
+                "models": {},
+                "disagreement": False,
+                "low_confidence": False,
+                "is_event_active": is_event_active or False,
+                "data_points": 0,
+                "data_available": False,
+                "fetched_at": datetime.now(timezone.utc).isoformat(),
+            }
 
         # If DailyStatsHistory is available, use it as a supplementary data
         # source.  Daily OHLCV provides a cleaner, more regular signal than
@@ -145,10 +154,19 @@ async def get_forecast(
         timestamps = [p.timestamp for p in price_points]
 
         if len(prices) < 10:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Insufficient historical data for {currency} ({len(prices)} points, need >= 10)",
-            )
+            # Return graceful response instead of 422 so the frontend
+            # can show "insufficient data" UI without browser console errors.
+            return {
+                "currency": currency,
+                "horizon": horizon,
+                "models": {},
+                "disagreement": False,
+                "low_confidence": False,
+                "is_event_active": is_event_active or False,
+                "data_points": len(prices),
+                "data_available": False,
+                "fetched_at": datetime.now(timezone.utc).isoformat(),
+            }
 
         # Run forecasts
         engine = _get_forecast_engine(config)
@@ -231,10 +249,18 @@ async def get_stl_decomposition(
     price_points = snapshot.get_price_history(currency)
 
     if not price_points:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No historical data available for currency: {currency}",
-        )
+        # Return graceful response instead of 404
+        return {
+            "currency": currency,
+            "seasonal_period": seasonal_period,
+            "trend": [],
+            "seasonal": [],
+            "residual": [],
+            "timestamps": [],
+            "data_points": 0,
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     import numpy as np
 
@@ -249,11 +275,18 @@ async def get_stl_decomposition(
     )
 
     if stl_result is None:
-        raise HTTPException(
-            status_code=422,
-            detail=f"STL decomposition failed for {currency}. "
-                   f"Need at least {2 * seasonal_period} data points.",
-        )
+        # Return graceful response instead of 422
+        return {
+            "currency": currency,
+            "seasonal_period": seasonal_period,
+            "trend": [],
+            "seasonal": [],
+            "residual": [],
+            "timestamps": [],
+            "data_points": len(prices),
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     return {
         "currency": currency,

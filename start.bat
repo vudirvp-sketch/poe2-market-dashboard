@@ -101,14 +101,24 @@ if !PYTHON_AVAILABLE! equ 1 (
 )
 
 REM ---- Check .env.local ----
+REM WS env vars are only set when uvicorn is available, because
+REM the browser cannot reach ws://localhost:8000 without a running
+REM backend.  This prevents console errors from failed WebSocket
+REM connections.
 if not exist ".env.local" (
     echo [INFO] .env.local not found. Creating with default settings...
     echo # PoE2 API Base URL> .env.local
     echo POE2_API_BASE_URL=https://api.poe2scout.com/api>> .env.local
     echo # Flipper backend URL (server-side only)>> .env.local
     echo FLIPPER_API_URL=http://localhost:8000>> .env.local
-    echo # Flipper WebSocket URL (client-side, for real-time updates)>> .env.local
-    echo NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000>> .env.local
+    if !UVICORN_AVAILABLE! equ 1 (
+        echo # Flipper WebSocket - enabled because uvicorn is available>> .env.local
+        echo NEXT_PUBLIC_FLIPPER_WS_ENABLED=true>> .env.local
+        echo NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000>> .env.local
+    ) else (
+        echo # Flipper WebSocket - disabled (uvicorn not found)>> .env.local
+        echo NEXT_PUBLIC_FLIPPER_WS_ENABLED=false>> .env.local
+    )
     echo.
     echo [OK] .env.local created with api.poe2scout.com
     echo.
@@ -123,14 +133,27 @@ if not exist ".env.local" (
         echo        Using the bare domain ^(poe2scout.com^) causes ECONNRESET/502 errors.
         echo.
     )
-    REM Check if NEXT_PUBLIC_FLIPPER_WS_URL exists; if not, add it
-    findstr /C:"NEXT_PUBLIC_FLIPPER_WS_URL" .env.local >nul 2>&1
+    REM Ensure NEXT_PUBLIC_FLIPPER_WS_ENABLED exists in .env.local
+    findstr /C:"NEXT_PUBLIC_FLIPPER_WS_ENABLED" .env.local >nul 2>&1
     if !ERRORLEVEL! neq 0 (
-        echo [INFO] Adding NEXT_PUBLIC_FLIPPER_WS_URL to .env.local...
-        echo # Flipper WebSocket URL (client-side, for real-time updates)>> .env.local
-        echo NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000>> .env.local
-        echo [OK] NEXT_PUBLIC_FLIPPER_WS_URL added.
+        echo [INFO] Adding NEXT_PUBLIC_FLIPPER_WS_ENABLED to .env.local...
+        if !UVICORN_AVAILABLE! equ 1 (
+            echo NEXT_PUBLIC_FLIPPER_WS_ENABLED=true>> .env.local
+        ) else (
+            echo NEXT_PUBLIC_FLIPPER_WS_ENABLED=false>> .env.local
+        )
+        echo [OK] NEXT_PUBLIC_FLIPPER_WS_ENABLED added.
         echo.
+    )
+    REM Only add WS URL if uvicorn is available AND the var is missing
+    if !UVICORN_AVAILABLE! equ 1 (
+        findstr /C:"NEXT_PUBLIC_FLIPPER_WS_URL" .env.local >nul 2>&1
+        if !ERRORLEVEL! neq 0 (
+            echo [INFO] Adding NEXT_PUBLIC_FLIPPER_WS_URL to .env.local...
+            echo NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000>> .env.local
+            echo [OK] NEXT_PUBLIC_FLIPPER_WS_URL added.
+            echo.
+        )
     )
 )
 
