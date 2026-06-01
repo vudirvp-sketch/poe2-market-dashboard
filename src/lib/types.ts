@@ -92,6 +92,10 @@ export interface ExchangePair {
   volume: number;
   change: number | null;
   changePercent: number | null;
+  /** Absolute price change over 7 days (null when no data) */
+  sevenDayChange: number | null;
+  /** Percent price change over 7 days (null when no data) */
+  sevenDayChangePercent: number | null;
   history: ExchangePairHistoryPoint[] | null;
 }
 

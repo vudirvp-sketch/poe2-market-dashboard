@@ -30,7 +30,7 @@ import { PairHoverPreview } from "./pair-hover-preview";
 // Types
 // ============================================================================
 
-type SortField = "pair" | "rate" | "change" | "volume" | "trend";
+type SortField = "pair" | "rate" | "change" | "change7d" | "volume" | "trend";
 
 interface ExchangeTableProps {
   pairs: ExchangePair[];
@@ -94,6 +94,11 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
           const aChg = a.changePercent ?? -Infinity;
           const bChg = b.changePercent ?? -Infinity;
           return dir * (aChg - bChg);
+        }
+        case "change7d": {
+          const aChg7d = a.sevenDayChangePercent ?? -Infinity;
+          const bChg7d = b.sevenDayChangePercent ?? -Infinity;
+          return dir * (aChg7d - bChg7d);
         }
         case "volume":
           return dir * (a.volume - b.volume);
@@ -200,6 +205,18 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                   <SortIndicator field="change" />
                 </span>
               </th>
+              {/* 7d Change */}
+              <th
+                className="px-3 py-2.5 text-right font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                scope="col"
+                aria-sort={sortField === "change7d" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                onClick={() => handleSort("change7d")}
+              >
+                <span className="inline-flex items-center justify-end">
+                  {t("change7d") ?? "7d Change"}
+                  <SortIndicator field="change7d" />
+                </span>
+              </th>
               {/* Volume */}
               <th
                 className="px-3 py-2.5 text-right font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
@@ -233,6 +250,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
           <tbody>
             {sortedPairs.map((pair, index) => {
               const chg = fmtChange(pair.changePercent);
+              const chg7d = fmtChange(pair.sevenDayChangePercent);
               const isFav = favorites.includes(pair.id);
               const pairKey = `${pair.currency1Id}_${pair.currency2Id}`;
               const inComparison = pairComparisonIds.some(
@@ -333,6 +351,12 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                   <td className="px-3 py-2 text-right">
                     <span className={`text-xs font-medium ${chg.color}`}>
                       {chg.text}
+                    </span>
+                  </td>
+                  {/* 7d Change */}
+                  <td className="px-3 py-2 text-right">
+                    <span className={`text-xs font-medium ${chg7d.color}`}>
+                      {chg7d.text}
                     </span>
                   </td>
                   {/* Volume */}

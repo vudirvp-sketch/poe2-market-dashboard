@@ -77,6 +77,8 @@ describe("API Types", () => {
       volume: 5000,
       change: -0.001,
       changePercent: -15.0,
+      sevenDayChange: -0.002,
+      sevenDayChangePercent: -25.0,
       history: null,
     };
     expect(pair.currency1Name).toBe("Chaos Orb");

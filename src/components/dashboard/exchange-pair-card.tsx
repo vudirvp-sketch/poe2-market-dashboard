@@ -37,6 +37,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
 }: ExchangePairCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
+  const chg7d = fmtChange(pair.sevenDayChangePercent);
   const { pairComparisonIds, addPairToComparison, removePairFromComparison, uiState, toggleExchangeFavorite } =
     useDashboardStore();
   const isFav = uiState.exchange.favorites.includes(pair.id);
@@ -156,6 +157,12 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             <span className={`ml-2 text-xs font-medium ${chg.color}`}>
               {chg.text}
             </span>
+            {/* 7d change indicator */}
+            {pair.sevenDayChangePercent !== null && (
+              <span className={`ml-1.5 text-[10px] font-medium ${chg7d.color}`}>
+                7d {chg7d.text}
+              </span>
+            )}
           </div>
           <span className="text-xs text-muted-foreground">
             {t("vol")}: {pair.volume?.toLocaleString() ?? "\u2014"}

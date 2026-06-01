@@ -132,6 +132,7 @@ export function PairDetailDialog({
   if (!pair) return null;
 
   const changeIndicator = fmtChange(pair.changePercent);
+  const change7dIndicator = fmtChange(pair.sevenDayChangePercent);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -178,6 +179,11 @@ export function PairDetailDialog({
                   {changeIndicator.text}
                 </span>
               </p>
+              {pair.sevenDayChangePercent !== null && (
+                <p className={`text-[10px] font-semibold ${change7dIndicator.color}`}>
+                  7d: {change7dIndicator.text}
+                </p>
+              )}
             </div>
             <div className="rounded-lg bg-muted/50 p-2">
               <p className="text-[10px] text-muted-foreground">{t("min")}</p>

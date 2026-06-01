@@ -939,6 +939,8 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     volume: volTraded,
     change: null,
     changePercent: null,
+    sevenDayChange: null,
+    sevenDayChangePercent: null,
     history: null,
   };
 }
@@ -1195,6 +1197,12 @@ interface CurrencyChangeEntry {
   currentPrice: number | null;
   /** Price ~24h ago in base currency */
   previousPrice: number | null;
+  /** 7d change percent computed from PriceLogs */
+  sevenDayChangePercent: number | null;
+  /** Absolute price change over 7 days */
+  sevenDayChange: number | null;
+  /** Price ~7d ago in base currency */
+  previous7dPrice: number | null;
 }
 
 /**
@@ -1248,7 +1256,13 @@ async function buildCurrencyChangeMap(
               currentPrice !== null && previousPrice !== null
                 ? currentPrice - previousPrice
                 : null;
-            changeMap.set(item.ApiId, { changePercent, change, currentPrice, previousPrice });
+            const sevenDayChangePercent = compute7dChangePercent(item.PriceLogs);
+            const previous7dPrice = computePrevious7dPrice(item.PriceLogs);
+            const sevenDayChange: number | null =
+              currentPrice !== null && previous7dPrice !== null
+                ? currentPrice - previous7dPrice
+                : null;
+            changeMap.set(item.ApiId, { changePercent, change, currentPrice, previousPrice, sevenDayChangePercent, sevenDayChange, previous7dPrice });
           }
 
           // Fetch remaining pages if there are more
@@ -1278,7 +1292,13 @@ async function buildCurrencyChangeMap(
                   currentPrice !== null && previousPrice !== null
                     ? currentPrice - previousPrice
                     : null;
-                changeMap.set(item.ApiId, { changePercent, change, currentPrice, previousPrice });
+                const sevenDayChangePercent = compute7dChangePercent(item.PriceLogs);
+                const previous7dPrice = computePrevious7dPrice(item.PriceLogs);
+                const sevenDayChange: number | null =
+                  currentPrice !== null && previous7dPrice !== null
+                    ? currentPrice - previous7dPrice
+                    : null;
+                changeMap.set(item.ApiId, { changePercent, change, currentPrice, previousPrice, sevenDayChangePercent, sevenDayChange, previous7dPrice });
               }
             }
           }
@@ -1351,8 +1371,51 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
       // PriceLog computation, producing slightly wrong results).
       const isCurrency2Base = baseCurrencyApiId !== null && pair.currency2Id === baseCurrencyApiId;
 
-      if (entry1 && entry2 && !isCurrency2Base) {
-        // True cross-pair (neither currency is the base):
+      // FIX: Determine if currency1 IS the base currency (e.g. pair = "Exalted/Chaos").
+      // This is an inverse pair: the displayed rate is 1/curr2_price_in_base.
+      // If curr2 went up, the inverse rate went down, so changePercent ≈ -entry2.changePercent.
+      const isCurrency1Base = baseCurrencyApiId !== null && pair.currency1Id === baseCurrencyApiId;
+
+      if (isCurrency1Base && entry2) {
+        // ── Inverse pair (currency1 is the base, e.g. "Exalted/Chaos") ──
+        // The pair rate = 1 / curr2_price_in_base, so:
+        //   rateNow  = 1 / curr2Now
+        //   ratePrev = 1 / curr2Prev
+        //   changePercent = (rateNow - ratePrev) / ratePrev * 100
+        //                 = ((1/curr2Now - 1/curr2Prev) / (1/curr2Prev)) * 100
+        //                 = ((curr2Prev - curr2Now) / curr2Now) * 100
+        //                 ≈ -entry2.changePercent (for small changes)
+        //
+        // For better accuracy we compute the exact inverse rate change:
+        const curr2Now = entry2.currentPrice;
+        const curr2Prev = entry2.previousPrice;
+
+        // 24h inverse pair change
+        if (
+          pair.changePercent === null &&
+          curr2Now !== null && curr2Now > 0 &&
+          curr2Prev !== null && curr2Prev > 0
+        ) {
+          const rateNow = 1 / curr2Now;
+          const ratePrev = 1 / curr2Prev;
+          pair.changePercent = ((rateNow - ratePrev) / ratePrev) * 100;
+          pair.change = rateNow - ratePrev;
+        }
+
+        // 7d inverse pair change
+        const curr2Prev7d = entry2.previous7dPrice;
+        if (
+          pair.sevenDayChangePercent === null &&
+          curr2Now !== null && curr2Now > 0 &&
+          curr2Prev7d !== null && curr2Prev7d > 0
+        ) {
+          const rateNow = 1 / curr2Now;
+          const ratePrev7d = 1 / curr2Prev7d;
+          pair.sevenDayChangePercent = ((rateNow - ratePrev7d) / ratePrev7d) * 100;
+          pair.sevenDayChange = rateNow - ratePrev7d;
+        }
+      } else if (entry1 && entry2 && !isCurrency2Base) {
+        // ── True cross-pair (neither currency is the base) ──
         //   pair_rate = curr1_price_in_base / curr2_price_in_base
         //   pair_changePercent = (rate_now - rate_prev) / rate_prev * 100
         //   where rate_now = curr1_current / curr2_current
@@ -1362,6 +1425,7 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
         const curr2Now = entry2.currentPrice;
         const curr2Prev = entry2.previousPrice;
 
+        // 24h cross-pair change
         if (
           pair.changePercent === null &&
           curr1Now !== null && curr1Now > 0 &&
@@ -1374,27 +1438,54 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
           pair.changePercent = ((rateNow - ratePrev) / ratePrev) * 100;
           pair.change = rateNow - ratePrev;
         }
+
+        // 7d cross-pair change
+        const curr1Prev7d = entry1.previous7dPrice;
+        const curr2Prev7d = entry2.previous7dPrice;
+        if (
+          pair.sevenDayChangePercent === null &&
+          curr1Now !== null && curr1Now > 0 &&
+          curr2Now !== null && curr2Now > 0 &&
+          curr1Prev7d !== null && curr1Prev7d > 0 &&
+          curr2Prev7d !== null && curr2Prev7d > 0
+        ) {
+          const rateNow = curr1Now / curr2Now;
+          const ratePrev7d = curr1Prev7d / curr2Prev7d;
+          pair.sevenDayChangePercent = ((rateNow - ratePrev7d) / ratePrev7d) * 100;
+          pair.sevenDayChange = rateNow - ratePrev7d;
+        }
       } else if (entry1) {
-        // Simple pair against base currency (currency2 is the base, or
-        // entry2 is missing) — use currency1's change directly.
+        // ── Simple pair against base currency (currency2 is the base, or
+        //    entry2 is missing) — use currency1's change directly. ──
         if (pair.changePercent === null && entry1.changePercent !== null) {
           pair.changePercent = entry1.changePercent;
         }
         if (pair.change === null && entry1.change !== null) {
           pair.change = entry1.change;
         }
+        // 7d direct change
+        if (pair.sevenDayChangePercent === null && entry1.sevenDayChangePercent !== null) {
+          pair.sevenDayChangePercent = entry1.sevenDayChangePercent;
+        }
+        if (pair.sevenDayChange === null && entry1.sevenDayChange !== null) {
+          pair.sevenDayChange = entry1.sevenDayChange;
+        }
       } else if (entry2 && !isCurrency2Base) {
-        // Only entry2 exists and it's NOT the base currency.
+        // ── Only entry2 exists and it's NOT the base currency. ──
         // The pair rate = curr1_price / curr2_price, but we only have curr2 data.
         // We can infer inverse change: if curr2 went up, the pair rate went down.
         // changePercent ≈ -entry2.changePercent (approximation for small changes)
         if (pair.changePercent === null && entry2.changePercent !== null) {
           pair.changePercent = -entry2.changePercent;
         }
+        // 7d inverse approximation
+        if (pair.sevenDayChangePercent === null && entry2.sevenDayChangePercent !== null) {
+          pair.sevenDayChangePercent = -entry2.sevenDayChangePercent;
+        }
       }
     }
 
-    console.info(`[poe2api] Enriched ${pairs.filter(p => p.changePercent !== null).length}/${pairs.length} pairs with change data from PriceLogs`);
+    console.info(`[poe2api] Enriched ${pairs.filter(p => p.changePercent !== null).length}/${pairs.length} pairs with 24h change, ${pairs.filter(p => p.sevenDayChangePercent !== null).length} with 7d change from PriceLogs`);
   } catch (err) {
     console.warn("[poe2api] buildCurrencyChangeMap failed, pairs will have no change data.", err instanceof Error ? err.message : err);
   }
@@ -1405,6 +1496,10 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
   // Additionally enrich top-N pairs by volume with FULL history data
   // (hourly data points for sparkline charts). This is more detailed than
   // the daily PriceLogs change data above.
+  //
+  // OPTIMIZATION: Cache per-pair history results so that subsequent calls
+  // within the TTL don't re-fetch from upstream. The CurrencyPairHistory
+  // endpoint is the slowest part of the enrichment (20 sequential API calls).
   const TOP_N = 20;
   const topPairs = pairs
     .filter(p => p.volume > 0)
@@ -1413,31 +1508,33 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
 
   if (topPairs.length === 0) return pairs;
 
-  // Fetch history for top pairs in parallel (with concurrency limit)
-  const CONCURRENCY = 4;
-  for (let i = 0; i < topPairs.length; i += CONCURRENCY) {
-    const batch = topPairs.slice(i, i + CONCURRENCY);
-    await Promise.allSettled(
-      batch.map(async (pair) => {
-        try {
-          // Use numeric ItemIds — the CurrencyPairHistory API expects integers
-          const history = await getCurrencyPairHistory(realm, league, pair.currency1ItemId, pair.currency2ItemId, 168);
-          if (history.length >= 2) {
-            pair.history = history;
-            const oldest = history[0];
-            const newest = history[history.length - 1];
-            if (oldest.relativePrice > 0) {
-              // Per-pair history is more accurate than PriceLogs for this pair
-              pair.changePercent = ((newest.relativePrice - oldest.relativePrice) / oldest.relativePrice) * 100;
-              pair.change = newest.relativePrice - oldest.relativePrice;
-            }
+  // Fetch history for top pairs with increased parallelism (8 concurrent)
+  // and per-pair caching via getCurrencyPairHistory (which uses cachedFetch).
+  // The cachedFetch layer already handles TTL, dedup, and stale-while-revalidate,
+  // so repeated calls for the same pair are essentially free.
+  const TOP_N_CONCURRENCY = 8;
+  await withConcurrencyLimit(
+    topPairs.map((pair) => async () => {
+      try {
+        // Use numeric ItemIds — the CurrencyPairHistory API expects integers
+        const history = await getCurrencyPairHistory(realm, league, pair.currency1ItemId, pair.currency2ItemId, 168);
+        if (history.length >= 2) {
+          pair.history = history;
+          const oldest = history[0];
+          const newest = history[history.length - 1];
+          if (oldest.relativePrice > 0) {
+            // Per-pair history is more accurate than PriceLogs for this pair
+            pair.changePercent = ((newest.relativePrice - oldest.relativePrice) / oldest.relativePrice) * 100;
+            pair.change = newest.relativePrice - oldest.relativePrice;
           }
-        } catch {
-          // Non-critical enrichment — ignore failures
         }
-      })
-    );
-  }
+      } catch {
+        // Non-critical enrichment — ignore failures
+      }
+    }),
+    TOP_N_CONCURRENCY,
+    100, // reduced delay: 100ms between batch requests
+  );
 
   return pairs;
 }

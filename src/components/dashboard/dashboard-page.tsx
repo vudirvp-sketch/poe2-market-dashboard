@@ -721,6 +721,7 @@ export function Dashboard() {
           price: p.relativePrice,
           volume: p.volume,
           changePercent: p.changePercent,
+          sevenDayChangePercent: p.sevenDayChangePercent,
         }));
         const fname = `exchange-${effectiveLeague}-${timestamp}`;
         if (format === "csv") exportToCsv(data, fname);
