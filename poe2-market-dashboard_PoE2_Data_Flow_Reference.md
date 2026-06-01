@@ -1224,7 +1224,7 @@ FastAPI Routes (backend/api/)
 ├── routes_phase.py            # /api/phase
 ├── routes_recipes.py          # /api/recipes
 ├── routes_ws.py               # WebSocket /ws
-├── routes_auth.py             # OAuth2 authentication
+├── routes_auth.py             # REMOVED — OAuth2 stub was never configured
 └── main.py                    # App entry, CORS, lifespan events
 ```
 

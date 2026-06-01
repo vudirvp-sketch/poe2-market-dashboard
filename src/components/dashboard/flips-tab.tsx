@@ -246,7 +246,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
             </div>
           </CardContent>
         </Card>
-      )
+      )}
 
       {/* §0.4: Data quality warning banner — when flip data looks suspicious */}
       {dataQuality.suspicious && (

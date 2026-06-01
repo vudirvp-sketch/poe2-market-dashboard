@@ -960,9 +960,17 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 // ============================================================================
 // Fallback data — used when the upstream POE2Scout API is unreachable.
 //
-// ⚠️ MAINTENANCE REQUIRED: These lists must be updated when new leagues
-// launch or old leagues end. Check https://poe2scout.com or the API
-// (/poe2/Leagues) periodically. Last verified: 2025-05-30.
+// NOTE: A dynamic fallback mechanism (dynamicRealmsFallback /
+// dynamicLeaguesFallback) automatically caches the last successful API
+// response in memory. When the API is unreachable on a subsequent call,
+// the last-known-good data is served instead. This means the hardcoded
+// tables below are only used on the very first request ever, or when the
+// API has never been reached in the current session.
+//
+// The hardcoded data below should still be periodically updated when new
+// leagues launch, but this is now LOWER PRIORITY thanks to the dynamic
+// fallback. Check https://poe2scout.com or the API (/poe2/Leagues)
+// periodically. Last verified: 2025-05-30.
 //
 // If the API is reachable, these are never used — they only serve as a
 // fallback so the dashboard always has realm/league selectors populated,
