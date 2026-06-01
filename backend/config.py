@@ -126,6 +126,31 @@ class SchedulerConfig(BaseModel):
     event_pruning_interval_minutes: int = 15
 
 
+class TierBoundaryConfig(BaseModel):
+    """Tier boundary thresholds based on RelativePrice ONLY.
+    Do NOT hardcode currency names — different leagues have different RelativePrice values."""
+    t0_min: float = 50.0
+    t1_min: float = 10.0
+    t2_min: float = 1.0
+    t3_min: float = 0.1
+    t4_min: float = 0.01
+
+
+class TierConfig(BaseModel):
+    boundaries: TierBoundaryConfig = TierBoundaryConfig()
+
+
+class QuantizationConfig(BaseModel):
+    default_lot_sizes: list[int] = [1, 5, 10, 50, 100]
+    max_lot_search: int = 10000
+    brick_resistance_weight: float = 0.2
+
+
+class BenchmarksConfig(BaseModel):
+    lookback_days: int = 30
+    include_league_lifetime: bool = True
+
+
 class StorageValueConfig(BaseModel):
     buy_threshold: float = 1.03
     sell_threshold: float = 0.97
@@ -146,6 +171,12 @@ class AppConfig(BaseModel):
     events: EventsConfig = EventsConfig()
     storage_value: StorageValueConfig = StorageValueConfig()
     scheduler: SchedulerConfig = SchedulerConfig()
+    # P1-3: Tier classification config
+    tiers: TierConfig = TierConfig()
+    # P1-1: Quantization config
+    quantization: QuantizationConfig = QuantizationConfig()
+    # P1-5: Historical benchmarks config
+    benchmarks: BenchmarksConfig = BenchmarksConfig()
 
 
 def load_config_from_yaml(yaml_path: str | Path) -> AppConfig:

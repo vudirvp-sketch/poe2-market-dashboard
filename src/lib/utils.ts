@@ -60,3 +60,53 @@ export function formatPrice(
 
   return `${formatted} ${shortName}`;
 }
+
+// ============================================================================
+// P1-4: Base currency conversion utility
+// ============================================================================
+
+/**
+ * Convert a price from one base currency to another.
+ *
+ * priceInBase: price expressed in the current base currency
+ * baseRelativePrice: RelativePrice of current base (e.g., Exalted = 1.0)
+ * targetRelativePrice: RelativePrice of target base (e.g., Divine = 27.3)
+ *
+ * Formula: price_in_target = priceInBase * baseRelativePrice / targetRelativePrice
+ *
+ * Example: An item priced at 5.0 Exalted. Divine RelativePrice = 27.3.
+ * Price in Divine = 5.0 * 1.0 / 27.3 = 0.183 Divine
+ */
+export function convertBaseCurrency(
+  priceInBase: number,
+  baseRelativePrice: number,
+  targetRelativePrice: number,
+): number {
+  if (targetRelativePrice === 0) return 0;
+  return priceInBase * baseRelativePrice / targetRelativePrice;
+}
+
+// ============================================================================
+// P2-4: Volume & Liquidity utilities
+// ============================================================================
+
+/**
+ * Liquidity score: 0 (illiquid) to 1 (highly liquid).
+ * High volume with low stock = high liquidity (fast execution).
+ */
+export function computeLiquidityScore(volumeTraded: number, highestStock: number): number {
+  return Math.min(1.0, Math.log1p(volumeTraded) / Math.log1p(highestStock + 1));
+}
+
+/**
+ * Volume z-score: how many standard deviations current volume is above 7d mean.
+ * > 2 = volume anomaly.
+ */
+export function computeVolumeZScore(
+  currentVolume: number,
+  rollingMean: number,
+  rollingStd: number,
+): number {
+  if (rollingStd === 0) return 0;
+  return (currentVolume - rollingMean) / rollingStd;
+}

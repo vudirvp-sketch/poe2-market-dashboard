@@ -37,6 +37,7 @@ from backend.config import AppConfig, get_settings
 from backend.data.providers.poe2scout import Poe2ScoutProvider
 from backend.models.currency import (
     CurrencyInfo,
+    CurrencyTier,
     ExchangeRate,
     PricePoint,
 )
@@ -74,6 +75,9 @@ class DataSnapshot:
 
     # Prices in base currency (from SnapshotPairs relative_price)
     prices_in_base: dict[str, float] = field(default_factory=dict)
+
+    # P1-3: Currency tier classifications
+    tiers: dict[str, CurrencyTier] = field(default_factory=dict)
 
     # Timestamps
     fetched_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -351,6 +355,31 @@ class SnapshotManager:
         snapshot.price_histories = price_histories
         snapshot.current_prices = current_prices
         snapshot.valid = bool(currencies or snapshot.exchange_rates)
+
+        # P1-3: Compute currency tier classifications from prices_in_base
+        if snapshot.prices_in_base:
+            try:
+                from backend.economy.tiers import classify_currencies
+                tier_input = [
+                    {"api_id": api_id, "relative_price": price}
+                    for api_id, price in snapshot.prices_in_base.items()
+                    if price > 0
+                ]
+                tier_results = classify_currencies(tier_input, config.tiers.boundaries)
+                snapshot.tiers = {
+                    r.api_id: CurrencyTier(
+                        api_id=r.api_id,
+                        tier=r.tier,
+                        tier_label=r.tier_label,
+                        relative_price=r.relative_price,
+                        tier_anchor=r.tier_anchor,
+                    )
+                    for r in tier_results
+                }
+                logger.info("Tier classification: %d currencies classified", len(snapshot.tiers))
+            except Exception as e:
+                logger.error("Tier classification failed: %s", e)
+                snapshot.tiers = {}
 
         return snapshot
 

@@ -152,6 +152,30 @@ export interface FlipOpportunity {
   bid: number;
   ask: number;
   mid_price: number;
+  /** P1-1: Quantized analysis (integer-aware spread) */
+  quantized_analysis?: QuantizedAnalysis;
+  /** P1-3: Tier distance between the two currencies */
+  tier_distance?: number;
+}
+
+/** P1-1: Quantized spread result at a specific lot size */
+export interface QuantizedSpread {
+  lotSize: number;
+  actualCost: number;
+  actualRevenue: number;
+  netProfit: number;
+  grossProfitPct: number;
+  qSpread: number;
+}
+
+/** P1-1: Complete quantized analysis for a currency pair */
+export interface QuantizedAnalysis {
+  qSpreads: Record<string, QuantizedSpread>;
+  minProfitableLot: number;
+  optimalLotProfitPct: number;
+  recommendedRatio: [number, number];
+  brickResistance: number;
+  theoreticalSpread: number;
 }
 
 /** Event status embedded in FlipsResponse */
@@ -187,6 +211,14 @@ export interface TriangularCycle {
   step_rates: number[];
   total_volume: number;
   confidence: number;
+  /** P1-2: Minimum starting capital for integer-profitable cycle */
+  min_starting_amount?: number;
+  /** P1-2: Profit validated via integer simulation */
+  quantized_profit_pct?: number;
+  /** P1-2: Original float profit (for reference) */
+  continuous_profit_pct?: number;
+  /** P1-2: Amounts at each step for min_start */
+  integer_simulation?: number[];
 }
 
 /** Response shape from GET /api/flipper/triangular */
@@ -263,6 +295,54 @@ export interface ExchangeSnapshot {
 export interface LandingSplashInfo {
   topItems: PoeItem[];
   topCurrencies: PoeItem[];
+}
+
+// ============================================================================
+// P1-3: Currency Tier types
+// ============================================================================
+
+/** P1-3: Currency tier classification */
+export interface CurrencyTier {
+  apiId: string;
+  tier: number;
+  tierLabel: string;
+  relativePrice: number;
+  tierAnchor: string;
+}
+
+/** P1-3: Tiers API response */
+export interface TiersResponse {
+  tiers: CurrencyTier[];
+  boundaries: {
+    t0Min: number;
+    t1Min: number;
+    t2Min: number;
+    t3Min: number;
+    t4Min: number;
+  };
+  dataAvailable: boolean;
+}
+
+// ============================================================================
+// P1-5: Historical Benchmark types
+// ============================================================================
+
+/** P1-5: Historical price benchmark */
+export interface HistoricalBenchmark {
+  low30d: number;
+  high30d: number;
+  rangePosition: number;   // 0 = bottom, 1 = peak
+  percentile30d: number;   // 0-100
+  currentVsAvg: number;    // negative = below average
+}
+
+/** P1-5: Benchmarks API response */
+export interface BenchmarksResponse {
+  currencyApiId: string;
+  currentPrice: number;
+  benchmark: HistoricalBenchmark | null;
+  days: number;
+  dataAvailable: boolean;
 }
 
 // ============================================================================

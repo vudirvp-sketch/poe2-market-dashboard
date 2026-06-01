@@ -14,11 +14,19 @@ direction-dependent fee asymmetry.
 
 After detecting a negative cycle, validate by simulating with raw rates.
 If simulated profit < 0.1%, discard (numerical artifact).
+
+QUANTIZED VALIDATION (P1-2):
+  The continuous profit from Bellman-Ford can be misleading — PoE2 exchange
+  requires positive integers on both sides. A cycle showing +0.5% profit on
+  float math may be a loss when integers are required. The integer simulation
+  validates each detected cycle and only reports cycles that are profitable
+  with actual integer amounts.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -27,6 +35,55 @@ import numpy as np
 from backend.models.currency import TriangularOpportunity
 
 logger = logging.getLogger(__name__)
+
+
+def simulate_cycle_integers(
+    cycle: list[str],
+    rates: dict[tuple[str, str], float],
+    start_amount: int,
+) -> tuple[int, list[int]]:
+    """Simulate a triangular arbitrage cycle using integer math.
+
+    cycle: ["CurrencyA", "CurrencyB", "CurrencyC"] (will close A→B→C→A)
+    rates: {(from, to): float_rate} — direct conversion rates
+    start_amount: integer amount of starting currency
+
+    Returns: (final_amount, [amounts_at_each_step])
+    """
+    amounts = [start_amount]
+    current = start_amount
+
+    for i in range(len(cycle)):
+        from_curr = cycle[i]
+        to_curr = cycle[(i + 1) % len(cycle)]
+        rate = rates.get((from_curr, to_curr))
+        if rate is None:
+            # Try inverse
+            inverse = rates.get((to_curr, from_curr))
+            if inverse is None:
+                return (0, amounts)  # Cannot complete cycle
+            current = math.floor(current / inverse) if inverse > 0 else 0
+        else:
+            current = math.floor(current * rate)
+        amounts.append(current)
+
+    return (current, amounts)
+
+
+def find_min_profitable_start(
+    cycle: list[str],
+    rates: dict[tuple[str, str], float],
+    max_start: int = 10000,
+) -> int:
+    """Find the minimum starting integer amount that yields profit in a cycle.
+
+    Returns 0 if no profitable amount found within max_start.
+    """
+    for start in range(1, max_start + 1):
+        final, _ = simulate_cycle_integers(cycle, rates, start)
+        if final > start:
+            return start
+    return 0
 
 
 def _compute_confidence(
@@ -242,6 +299,44 @@ def find_triangular_arbitrage(
                     step_rates=step_rates,
                     total_volume=total_volume,
                     confidence=confidence,
+                    continuous_profit_pct=profit_pct,
                 ))
 
-    return results
+    # P1-2: Validate detected cycles with integer simulation
+    validated_results: list[TriangularOpportunity] = []
+    for opp in results:
+        # Build rates dict for the cycle currencies (excluding closing node)
+        cycle_currencies = opp.cycle[:-1] if len(opp.cycle) > 1 else opp.cycle
+        step_rates_map: dict[tuple[str, str], float] = {}
+        for i in range(len(cycle_currencies)):
+            from_curr = cycle_currencies[i]
+            to_curr = cycle_currencies[(i + 1) % len(cycle_currencies)]
+            pair = (from_curr, to_curr)
+            if pair in rates:
+                step_rates_map[pair] = rates[pair]
+            else:
+                # Try reverse
+                reverse = (to_curr, from_curr)
+                if reverse in rates and rates[reverse] > 0:
+                    # Store as forward rate (1/reverse)
+                    step_rates_map[pair] = 1.0 / rates[reverse]
+
+        min_start = find_min_profitable_start(cycle_currencies, step_rates_map)
+        if min_start > 0:
+            final_amount, sim_amounts = simulate_cycle_integers(
+                cycle_currencies, step_rates_map, min_start
+            )
+            quantized_profit = (final_amount - min_start) / min_start * 100
+            opp.min_starting_amount = min_start
+            opp.quantized_profit_pct = round(quantized_profit, 4)
+            opp.integer_simulation = sim_amounts
+            validated_results.append(opp)
+        else:
+            # Cycle is lossy at all lot sizes up to max_start — discard
+            # Don't show false opportunities
+            logger.debug(
+                "Discarding cycle %s: no profitable integer amount found (continuous profit=%.2f%%)",
+                opp.cycle, opp.continuous_profit_pct,
+            )
+
+    return validated_results

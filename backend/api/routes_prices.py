@@ -23,7 +23,7 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
-from backend.models.currency import PhaseInfo
+from backend.models.currency import PhaseInfo, CurrencyTier
 
 logger = logging.getLogger(__name__)
 
@@ -370,5 +370,127 @@ async def get_price_for_pair(pair: str):
         "volume_24h": rate.volume_traded,
         "timestamp": rate.timestamp.isoformat() if rate.timestamp else snapshot.fetched_at.isoformat(),
         "stale": False,
+        "data_available": True,
+    }
+
+
+# ---------------------------------------------------------------------------
+# P1-3: Tiers endpoint
+# ---------------------------------------------------------------------------
+
+@router.get("/tiers")
+async def get_tiers():
+    """Return currency tier classifications for the configured league."""
+    config = get_settings()
+    snapshot = await get_snapshot()
+
+    if not snapshot.tiers:
+        return {
+            "tiers": [],
+            "boundaries": {
+                "t0_min": config.tiers.boundaries.t0_min,
+                "t1_min": config.tiers.boundaries.t1_min,
+                "t2_min": config.tiers.boundaries.t2_min,
+                "t3_min": config.tiers.boundaries.t3_min,
+                "t4_min": config.tiers.boundaries.t4_min,
+            },
+            "data_available": False,
+        }
+
+    # Sort tiers by tier number then by relative_price descending
+    sorted_tiers = sorted(
+        snapshot.tiers.values(),
+        key=lambda t: (t.tier, -t.relative_price),
+    )
+
+    return {
+        "tiers": [
+            {
+                "api_id": t.api_id,
+                "tier": t.tier,
+                "tier_label": t.tier_label,
+                "relative_price": round(t.relative_price, 6),
+                "tier_anchor": t.tier_anchor,
+            }
+            for t in sorted_tiers
+        ],
+        "boundaries": {
+            "t0_min": config.tiers.boundaries.t0_min,
+            "t1_min": config.tiers.boundaries.t1_min,
+            "t2_min": config.tiers.boundaries.t2_min,
+            "t3_min": config.tiers.boundaries.t3_min,
+            "t4_min": config.tiers.boundaries.t4_min,
+        },
+        "data_available": True,
+    }
+
+
+# ---------------------------------------------------------------------------
+# P1-5: Benchmarks endpoint
+# ---------------------------------------------------------------------------
+
+@router.get("/benchmarks/{currency_api_id}")
+async def get_benchmarks(
+    currency_api_id: str,
+    days: int = Query(30, ge=7, le=90, description="Lookback days"),
+):
+    """Return historical price benchmarks for a specific currency."""
+    config = get_settings()
+    snapshot = await get_snapshot()
+
+    # Get current price from snapshot
+    current_price = snapshot.get_current_price(currency_api_id)
+    if current_price is None:
+        current_price = snapshot.prices_in_base.get(currency_api_id.lower())
+
+    if current_price is None:
+        raise HTTPException(status_code=404, detail=f"No price data for currency: {currency_api_id}")
+
+    # Get daily stats from the data provider
+    from backend.api.shared import get_provider
+    provider = get_provider()
+    league = config.league.league_name
+
+    try:
+        # Find the item_id for this currency
+        currency_info = snapshot.get_currency(currency_api_id)
+        if not currency_info:
+            raise HTTPException(status_code=404, detail=f"Currency not found: {currency_api_id}")
+
+        item_id = currency_info.get("item_id", 0)
+        if not item_id:
+            raise HTTPException(status_code=404, detail=f"No item_id for currency: {currency_api_id}")
+
+        daily_stats_raw = await provider.get_daily_stats_history(league, item_id, day_count=days)
+    except Exception as e:
+        logger.error("Failed to fetch daily stats for %s: %s", currency_api_id, e)
+        raise HTTPException(status_code=503, detail=f"Failed to fetch historical data: {e}")
+
+    if not daily_stats_raw:
+        raise HTTPException(status_code=404, detail=f"No historical data for currency: {currency_api_id}")
+
+    from backend.economy.benchmarks import compute_benchmarks
+    benchmark = compute_benchmarks(daily_stats_raw, current_price)
+
+    if benchmark is None:
+        return {
+            "currency_api_id": currency_api_id,
+            "current_price": current_price,
+            "benchmark": None,
+            "data_available": False,
+            "message": "Insufficient historical data (need at least 7 days)",
+        }
+
+    return {
+        "currency_api_id": currency_api_id,
+        "current_price": current_price,
+        "benchmark": {
+            "low_30d": round(benchmark.low_30d, 6),
+            "high_30d": round(benchmark.high_30d, 6),
+            "range_position": round(benchmark.range_position, 4),
+            "percentile_30d": round(benchmark.percentile_30d, 1),
+            "current_vs_avg": round(benchmark.current_vs_avg, 4),
+        },
+        "days": days,
         "data_available": True,
     }

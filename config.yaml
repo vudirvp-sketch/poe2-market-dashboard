@@ -99,3 +99,25 @@ scheduler:
   model_retrain_interval_hours: 6         # LightGBM retraining check
   model_persistence_interval_minutes: 30  # Save LightGBM models to disk
   event_pruning_interval_minutes: 15      # Prune expired events
+
+# P1-3: Currency tier classification boundaries based on RelativePrice ONLY.
+# Do NOT hardcode currency names — different leagues have different RelativePrice values.
+tiers:
+  boundaries:
+    t0_min: 50.0      # Ultra: Mirror of Kalandra, etc.
+    t1_min: 10.0      # High: Divine Orb
+    t2_min: 1.0       # Core: Exalted Orb, Chaos Orb
+    t3_min: 0.1       # Mid: Orb of Regret, Annulment Shard
+    t4_min: 0.01      # Low: Orb of Transmutation, Augmentation
+    # Below t4_min = T5 (Micro): Scroll of Wisdom, etc.
+
+# P1-1: Quantization parameters for integer-aware spread analysis
+quantization:
+  default_lot_sizes: [1, 5, 10, 50, 100]
+  max_lot_search: 10000
+  brick_resistance_weight: 0.2
+
+# P1-5: Historical benchmarks lookback configuration
+benchmarks:
+  lookback_days: 30
+  include_league_lifetime: true

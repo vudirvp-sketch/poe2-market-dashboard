@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from fractions import Fraction
 from typing import Optional
 
 
@@ -131,6 +132,28 @@ class PhaseInfo:
 # Arbitrage
 # ---------------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class QuantizedSpreadResult:
+    """Spread calculation accounting for integer rounding at a specific lot size."""
+    lot_size: int                    # N — the lot size tested
+    actual_cost: int                 # ceil(N * R_buy)  — integer B you pay
+    actual_revenue: int              # floor(N * R_sell) — integer B you receive
+    net_profit: int                  # actual_revenue - actual_cost
+    gross_profit_pct: float          # net_profit / actual_cost * 100  (negative = loss)
+    q_spread: float                  # (actual_revenue/N - actual_cost/N) / mid_price
+
+
+@dataclass
+class QuantizedAnalysis:
+    """Complete quantized analysis for a currency pair."""
+    q_spreads: dict[int, QuantizedSpreadResult]  # keyed by lot_size
+    min_profitable_lot: int         # smallest N where profit > 0
+    optimal_lot_profit_pct: float   # gross_profit_pct at min_profitable_lot
+    recommended_ratio: tuple[int, int]  # (p, q) from Fraction.limit_denominator(1000)
+    brick_resistance: float         # 1.0 / max(p, q)  — higher = more reliable
+    theoretical_spread: float       # continuous spread (for reference only)
+
+
 @dataclass
 class FlipOpportunity:
     """A single flip opportunity after scoring."""
@@ -145,6 +168,9 @@ class FlipOpportunity:
     bid: float = 0.0
     ask: float = 0.0
     mid_price: float = 0.0
+    # NEW quantized fields
+    quantized_analysis: QuantizedAnalysis | None = None
+    tier_distance: int = 0  # Will be populated after P1-3 is done
 
 
 @dataclass
@@ -155,6 +181,11 @@ class TriangularOpportunity:
     step_rates: list[float]       # raw rate at each step
     total_volume: float           # min volume across edges (bottleneck)
     confidence: float             # based on data freshness and volume
+    # NEW quantized fields
+    min_starting_amount: int = 0                 # minimum starting capital for profit
+    quantized_profit_pct: float = 0.0            # profit validated via integer simulation
+    continuous_profit_pct: float = 0.0           # original float profit (for reference)
+    integer_simulation: list[int] | None = None  # amounts at each step for min_start
 
 
 # ---------------------------------------------------------------------------
@@ -238,6 +269,16 @@ class RecipeOpportunity:
 # ---------------------------------------------------------------------------
 # Storage Value
 # ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class CurrencyTier:
+    """Currency tier classification based on RelativePrice."""
+    api_id: str
+    tier: int               # 0-5
+    tier_label: str         # "Ultra", "High", "Core", "Mid", "Low", "Micro"
+    relative_price: float
+    tier_anchor: str        # api_id of tier anchor
+
 
 @dataclass
 class StorageValueResult:

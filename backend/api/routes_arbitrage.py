@@ -25,7 +25,7 @@ from backend.api.shared import get_provider as _get_provider, get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.events import get_event_manager, EventManager
-from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
+from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
 from backend.predictors.clustering import CurrencyClusterer
@@ -34,6 +34,7 @@ from backend.models.currency import (
     LeaguePhase,
     ClusterLabel,
 )
+from backend.economy.tiers import tier_penalty, tier_distance
 
 logger = logging.getLogger(__name__)
 
@@ -336,6 +337,28 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
         spread_value = (ask - bid) / mid_price if mid_price > 0 else 0.0
 
+        # P1-1: Compute quantized analysis for this pair
+        quantized = compute_quantized_analysis(
+            R_buy=ask / mid_price if mid_price > 0 else 0,  # buy rate (you pay more)
+            R_sell=bid / mid_price if mid_price > 0 else 0,  # sell rate (you receive less)
+            mid_price=1.0,  # Rates are already normalized relative to mid_price
+            lot_sizes=config.quantization.default_lot_sizes,
+            max_lot_search=config.quantization.max_lot_search,
+        )
+
+        # P1-3: Compute tier penalty
+        t_penalty = 1.0
+        t_distance = 0
+        if snapshot.tiers:
+            tier_a = snapshot.tiers.get(rate.currency_from)
+            tier_b = snapshot.tiers.get(rate.currency_to)
+            if tier_a and tier_b:
+                t_penalty = tier_penalty(tier_a.tier, tier_b.tier)
+                t_distance = tier_distance(tier_a.tier, tier_b.tier)
+                # Re-score with tier penalty
+                score = score * t_penalty
+                score = min(max(score, 0.0), 1.0)
+
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
@@ -348,6 +371,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             bid=bid,
             ask=ask,
             mid_price=mid_price,
+            quantized_analysis=quantized,
+            tier_distance=t_distance,
         )
 
         if quick_filter(opp, phase_info.phase, config=config):
@@ -409,6 +434,25 @@ async def get_flip_opportunities(
                 "bid": round(o.bid, 6),
                 "ask": round(o.ask, 6),
                 "mid_price": round(o.mid_price, 6),
+                "quantized_analysis": {
+                    "q_spreads": {
+                        str(k): {
+                            "lot_size": v.lot_size,
+                            "actual_cost": v.actual_cost,
+                            "actual_revenue": v.actual_revenue,
+                            "net_profit": v.net_profit,
+                            "gross_profit_pct": round(v.gross_profit_pct, 4),
+                            "q_spread": round(v.q_spread, 6),
+                        }
+                        for k, v in o.quantized_analysis.q_spreads.items()
+                    },
+                    "min_profitable_lot": o.quantized_analysis.min_profitable_lot,
+                    "optimal_lot_profit_pct": round(o.quantized_analysis.optimal_lot_profit_pct, 4),
+                    "recommended_ratio": list(o.quantized_analysis.recommended_ratio),
+                    "brick_resistance": round(o.quantized_analysis.brick_resistance, 4),
+                    "theoretical_spread": round(o.quantized_analysis.theoretical_spread, 6),
+                } if o.quantized_analysis else None,
+                "tier_distance": o.tier_distance,
             }
             for o in filtered
         ],
@@ -486,6 +530,10 @@ async def get_triangular_arbitrage(
                 "step_rates": [round(r, 6) for r in o.step_rates],
                 "total_volume": o.total_volume,
                 "confidence": round(o.confidence, 4),
+                "min_starting_amount": o.min_starting_amount,
+                "quantized_profit_pct": round(o.quantized_profit_pct, 4),
+                "continuous_profit_pct": round(o.continuous_profit_pct, 4),
+                "integer_simulation": o.integer_simulation,
             }
             for o in opportunities
         ],
