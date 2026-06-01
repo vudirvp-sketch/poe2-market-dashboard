@@ -1,13 +1,26 @@
 import { NextRequest } from "next/server";
-import { proxyToFlipper } from "@/lib/flipper-proxy";
+import { proxyWithFallback } from "@/lib/flipper-proxy";
 
 export const dynamic = "force-dynamic";
 
-/** POST /api/flipper/events/[eventId]/deactivate → proxies to FastAPI POST /api/events/{eventId}/deactivate */
+/** POST /api/flipper/events/[eventId]/deactivate → proxies to FastAPI POST /api/events/{eventId}/deactivate
+ *
+ *  FIX: When the backend is offline, return error response instead of 503.
+ */
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
   const { eventId } = await params;
-  return proxyToFlipper(`/api/events/${eventId}/deactivate`, undefined, "POST");
+  return proxyWithFallback(
+    `/api/events/${eventId}/deactivate`,
+    {
+      offlineFallback: {
+        error: "Cannot deactivate event — backend is offline",
+        error_type: "backend_offline",
+      },
+    },
+    undefined,
+    "POST",
+  );
 }

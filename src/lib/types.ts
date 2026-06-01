@@ -188,7 +188,7 @@ export interface TriangularResponse {
 
 /** Response shape from GET /api/flipper/health */
 export interface FlipperHealthResponse {
-  status: "ok" | "degraded" | "error";
+  status: "ok" | "degraded" | "error" | "offline";
   provider: "reachable" | "unreachable";
   timestamp: string;
   league?: string;

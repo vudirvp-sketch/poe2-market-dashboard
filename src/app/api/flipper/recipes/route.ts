@@ -1,10 +1,23 @@
 import { NextRequest } from "next/server";
-import { proxyToFlipper } from "@/lib/flipper-proxy";
+import { proxyWithFallback } from "@/lib/flipper-proxy";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/flipper/recipes → proxies to FastAPI GET /api/recipes */
+/** GET /api/flipper/recipes → proxies to FastAPI GET /api/recipes
+ *
+ *  FIX: When the backend is offline, return empty recipes instead of 503.
+ */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  return proxyToFlipper("/api/recipes", searchParams);
+  return proxyWithFallback(
+    "/api/recipes",
+    {
+      offlineFallback: {
+        recipes: [],
+        total: 0,
+        data_available: false,
+      },
+    },
+    searchParams,
+  );
 }

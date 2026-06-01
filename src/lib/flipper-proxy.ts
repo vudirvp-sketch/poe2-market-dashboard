@@ -194,3 +194,92 @@ async function _doProxyWithRetry(
     { status: 503 },
   );
 }
+
+// ============================================================================
+// proxyWithFallback — Proxy with graceful fallback when backend is offline
+// ============================================================================
+//
+// When the FastAPI backend is unreachable (ECONNREFUSED, timeout), the proxy
+// returns 503. This causes console errors and triggers React Query retries,
+// flooding the network. Instead of propagating 503, this helper catches
+// offline/timeout errors and returns fallback data with a 200 status.
+//
+// The frontend already checks `data_available: false` and shows appropriate
+// "backend offline" / "insufficient data" UI states. By returning 200 with
+// fallback data, we eliminate console error spam while keeping the UX clean.
+//
+// The health endpoint is an exception — it returns a structured response
+// with `status: "offline"` so the dashboard can set `backendOnline = false`.
+// ============================================================================
+
+export interface ProxyFallbackOptions {
+  /** Fallback data to return when the backend is offline (503 with backend_offline error_type) */
+  offlineFallback: unknown;
+  /** Fallback data to return when the backend returns 503 with backend_insufficient_data */
+  insufficientDataFallback?: unknown;
+  /**
+   * If true, inspect the proxy response for 503 status and return fallback
+   * instead of passing the error through. Default: true.
+   */
+  catch503?: boolean;
+}
+
+/**
+ * Proxy a request to the flipper backend, returning fallback data when
+ * the backend is offline or has insufficient data.
+ *
+ * @param path       API path relative to the backend root
+ * @param fallback   Options object with fallback data for different error scenarios
+ * @param searchParams  Optional query params to forward
+ * @param method     HTTP method
+ * @param body       Optional request body
+ * @returns          Response with backend data or fallback data (always 200)
+ */
+export async function proxyWithFallback(
+  path: string,
+  fallback: ProxyFallbackOptions,
+  searchParams?: URLSearchParams,
+  method: string = "GET",
+  body?: unknown,
+): Promise<Response> {
+  try {
+    const res = await proxyToFlipper(path, searchParams, method, body, 0);
+
+    // If the response is OK (2xx), pass it through
+    if (res.ok) {
+      return res;
+    }
+
+    // If 503 with backend_offline error type, return fallback
+    if (res.status === 503) {
+      try {
+        const data = await res.json();
+        const errorType = data?.error_type;
+
+        if (errorType === "backend_offline" || errorType === "backend_timeout" || errorType === "backend_connection_reset") {
+          return Response.json(fallback.offlineFallback);
+        }
+
+        if (errorType === "backend_insufficient_data" && fallback.insufficientDataFallback !== undefined) {
+          return Response.json(fallback.insufficientDataFallback);
+        }
+      } catch {
+        // JSON parse failed — return offline fallback
+        return Response.json(fallback.offlineFallback);
+      }
+
+      // Other 503 errors (e.g., backend running but insufficient data)
+      // Return insufficient data fallback if provided, otherwise offline fallback
+      if (fallback.insufficientDataFallback !== undefined) {
+        return Response.json(fallback.insufficientDataFallback);
+      }
+      return Response.json(fallback.offlineFallback);
+    }
+
+    // For other error statuses (422, 500, etc.), pass through as-is
+    return res;
+  } catch {
+    // Unexpected error — return offline fallback
+    return Response.json(fallback.offlineFallback);
+  }
+}
