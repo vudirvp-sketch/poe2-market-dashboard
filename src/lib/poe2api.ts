@@ -862,10 +862,18 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
   }));
 }
 
-/** Fix 2.4: Safe parse float — returns null instead of masking errors as 0 */
+/** Fix 2.4: Safe parse float — returns null instead of masking errors as 0
+ *
+ *  API returns "0E-8" for pairs with no trades. parseFloat("0E-8") = 0,
+ *  which is technically correct but misleading — it means "no data", not
+ *  "free". We detect scientific-notation strings that round to 0 and return
+ *  null so the UI can display "—" instead of "0".
+ */
 function safeParseFloat(value: string | number | null | undefined): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value === 'string') {
+    // Detect "0E-8", "0e-10", etc. — these mean "no data" in POE2Scout API
+    if (/^0[eE]-\d+$/i.test(value.trim())) return null;
     const parsed = parseFloat(value);
     return Number.isFinite(parsed) ? parsed : null;
   }
@@ -927,7 +935,7 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     currency2IconUrl: raw.CurrencyTwo.IconUrl,
     currency2ItemId: raw.CurrencyTwo.ItemId,
     price: relPrice,                          // Fix 2.4: now number | null
-    relativePrice: relPrice ?? 0,             // UI consumers that need a number get 0 as fallback
+    relativePrice: relPrice,                   // null when no trade data ("0E-8")
     volume: volTraded,
     change: null,
     changePercent: null,
@@ -1160,6 +1168,12 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
 // The per-pair history is still fetched lazily on hover (PairHoverPreview)
 // and in PairDetailDialog.
 
+// --- Change map cache (TTL ~5 min) ---
+// buildCurrencyChangeMap() fetches ~20 API requests (all categories).
+// Caching the result avoids hammering the upstream on every exchange page load.
+const changeMapCache = new Map<string, { data: Map<string, CurrencyChangeEntry>; ts: number }>();
+const CHANGE_MAP_TTL = 5 * 60_000; // 5 minutes
+
 interface CurrencyChangeEntry {
   /** 24h change percent computed from PriceLogs */
   changePercent: number | null;
@@ -1182,6 +1196,13 @@ async function buildCurrencyChangeMap(
   realm: string,
   league: string,
 ): Promise<Map<string, CurrencyChangeEntry>> {
+  // Check TTL cache first — avoid ~20 API requests on every call
+  const cacheKey = `${realm}:${league}`;
+  const cached = changeMapCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CHANGE_MAP_TTL) {
+    return cached.data;
+  }
+
   const changeMap = new Map<string, CurrencyChangeEntry>();
 
   try {
@@ -1260,6 +1281,11 @@ async function buildCurrencyChangeMap(
     console.warn("[poe2api] buildCurrencyChangeMap: failed to fetch categories.", err instanceof Error ? err.message : err);
   }
 
+  // Store in TTL cache for subsequent calls
+  if (changeMap.size > 0) {
+    changeMapCache.set(cacheKey, { data: changeMap, ts: Date.now() });
+  }
+
   return changeMap;
 }
 
@@ -1293,15 +1319,44 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
     for (const pair of pairs) {
       // The pair's displayed rate is CurrencyOneData.RelativePrice which is
       // the price of CurrencyOne in base currency (e.g., Exalted).
-      // Therefore, the pair's change = CurrencyOne's change in base currency.
-      const entry = changeMap.get(pair.currency1Id);
-      if (entry) {
-        // Only set if not already set (per-pair history takes priority below)
-        if (pair.changePercent === null && entry.changePercent !== null) {
-          pair.changePercent = entry.changePercent;
+      //
+      // For pairs against the base currency (e.g. Chaos/Exalted):
+      //   pair_changePercent ≈ currency1_changePercent
+      //
+      // For cross-pairs (e.g. Chaos/Divine, where neither is the base):
+      //   pair_rate = curr1_price_in_base / curr2_price_in_base
+      //   pair_changePercent = (rate_now - rate_prev) / rate_prev * 100
+      //   where rate_now = curr1_current / curr2_current
+      //         rate_prev = curr1_previous / curr2_previous
+      const entry1 = changeMap.get(pair.currency1Id);
+      const entry2 = changeMap.get(pair.currency2Id);
+
+      if (entry1 && entry2) {
+        // Cross-pair: both currencies have change data
+        const curr1Now = entry1.currentPrice;
+        const curr1Prev = entry1.previousPrice;
+        const curr2Now = entry2.currentPrice;
+        const curr2Prev = entry2.previousPrice;
+
+        if (
+          pair.changePercent === null &&
+          curr1Now !== null && curr1Now > 0 &&
+          curr2Now !== null && curr2Now > 0 &&
+          curr1Prev !== null && curr1Prev > 0 &&
+          curr2Prev !== null && curr2Prev > 0
+        ) {
+          const rateNow = curr1Now / curr2Now;
+          const ratePrev = curr1Prev / curr2Prev;
+          pair.changePercent = ((rateNow - ratePrev) / ratePrev) * 100;
+          pair.change = rateNow - ratePrev;
         }
-        if (pair.change === null && entry.change !== null) {
-          pair.change = entry.change;
+      } else if (entry1) {
+        // Simple pair against base currency — use currency1's change directly
+        if (pair.changePercent === null && entry1.changePercent !== null) {
+          pair.changePercent = entry1.changePercent;
+        }
+        if (pair.change === null && entry1.change !== null) {
+          pair.change = entry1.change;
         }
       }
     }

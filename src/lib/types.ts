@@ -87,7 +87,8 @@ export interface ExchangePair {
   currency2ItemId: number;
   /** Fix 2.4: price is now number | null to distinguish "free" from "data error" */
   price: number | null;
-  relativePrice: number;
+  /** Relative price of currency1 in base currency. null when no trade data ("0E-8"). */
+  relativePrice: number | null;
   volume: number;
   change: number | null;
   changePercent: number | null;
