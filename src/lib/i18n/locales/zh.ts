@@ -490,6 +490,18 @@ const zh: Record<TranslationKeys, string> = {
   recipesStatus: "状态",
   recipesMissingPrices: "缺少价格",
   recipesMissingDesc: "部分配方材料缺少当前价格数据。利润估算可能不完整。",
+  recipesTitle: "商店配方",
+  recipesProfitableCount: "盈利配方",
+  recipesBestProfit: "最佳利润",
+  recipesNoProfitable: "未找到盈利配方",
+  recipesNoProfitableDesc: "当前市场价格无法使任何商店配方盈利。请稍后查看，价格变化后再试。",
+  recipesProfit: "利润",
+  recipesProfitPct: "利润 %",
+  recipesProfitable: "盈利",
+  recipesUnprofitable: "亏损",
+  recipesMissingTitle: "{0} 个配方缺少价格",
+  recipesShowUnprofitable: "显示 {0} 个亏损配方",
+  recipesHideUnprofitable: "隐藏亏损配方",
 };
 
 export default zh;

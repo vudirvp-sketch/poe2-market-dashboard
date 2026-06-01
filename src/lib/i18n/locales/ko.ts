@@ -490,6 +490,18 @@ const ko: Record<TranslationKeys, string> = {
   recipesStatus: "상태",
   recipesMissingPrices: "가격 누락",
   recipesMissingDesc: "일부 조합 재료에 현재 가격 데이터가 없습니다. 수익 추정이 불완전할 수 있습니다.",
+  recipesTitle: "상점 조합",
+  recipesProfitableCount: "수익성 조합",
+  recipesBestProfit: "최고 수익",
+  recipesNoProfitable: "수익성 조합을 찾을 수 없음",
+  recipesNoProfitableDesc: "현재 시장 가격으로는 어떤 상점 조합도 수익성이 없습니다. 가격이 변동되면 나중에 다시 확인하세요.",
+  recipesProfit: "수익",
+  recipesProfitPct: "수익 %",
+  recipesProfitable: "수익성",
+  recipesUnprofitable: "비수익성",
+  recipesMissingTitle: "{0}개 조합 가격 누락",
+  recipesShowUnprofitable: "{0}개 비수익성 조합 표시",
+  recipesHideUnprofitable: "비수익성 조합 숨기기",
 };
 
 export default ko;

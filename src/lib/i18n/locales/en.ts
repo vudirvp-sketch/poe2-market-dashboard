@@ -482,16 +482,28 @@ const en = {
   _pl_pairCompare: "Pair Compare ({0})|Pair Compare ({0})|Pair Compare ({0})",
 
   // ---- Recipes Tab ----
+  recipesTitle: "Vendor Recipes",
+  recipesProfitableCount: "Profitable Recipes",
+  recipesBestProfit: "Best Profit",
   recipesTotalChecked: "Recipes Checked",
   recipesDescription: "Vendor recipe profit opportunities based on current market prices",
   recipesNoData: "No recipe data available",
   recipesNoDataDesc: "Recipe data requires the flipper backend with sufficient price history. Make sure the backend is running.",
+  recipesNoProfitable: "No profitable recipes found",
+  recipesNoProfitableDesc: "Current market prices do not make any vendor recipe profitable. Check back later when prices change.",
   recipesName: "Recipe",
   recipesInputCost: "Input Cost",
   recipesOutputValue: "Output Value",
+  recipesProfit: "Profit",
+  recipesProfitPct: "Profit %",
   recipesStatus: "Status",
+  recipesProfitable: "Profitable",
+  recipesUnprofitable: "Unprofitable",
   recipesMissingPrices: "Missing prices",
+  recipesMissingTitle: "{0} recipes with missing prices",
   recipesMissingDesc: "Some recipe ingredients lack current price data. Profit estimate may be incomplete.",
+  recipesShowUnprofitable: "Show {0} unprofitable recipes",
+  recipesHideUnprofitable: "Hide unprofitable recipes",
 } as const;
 
 export default en;
