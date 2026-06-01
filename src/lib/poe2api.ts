@@ -1173,6 +1173,18 @@ export async function getSnapshotHistory(realm: string, league: string, limit = 
 // Caching the result avoids hammering the upstream on every exchange page load.
 const changeMapCache = new Map<string, { data: Map<string, CurrencyChangeEntry>; ts: number }>();
 const CHANGE_MAP_TTL = 5 * 60_000; // 5 minutes
+const CHANGE_MAP_STALE_TTL = 20 * 60_000; // 20 minutes — entries older than this are stale
+
+/** Periodic cleanup of stale changeMapCache entries (mirrors main cache cleanup pattern). */
+function cleanupStaleChangeMapEntries(): void {
+  const now = Date.now();
+  for (const [key, entry] of changeMapCache) {
+    if (now - entry.ts > CHANGE_MAP_STALE_TTL) {
+      changeMapCache.delete(key);
+    }
+  }
+}
+let changeMapWriteCounter = 0;
 
 interface CurrencyChangeEntry {
   /** 24h change percent computed from PriceLogs */
@@ -1284,6 +1296,11 @@ async function buildCurrencyChangeMap(
   // Store in TTL cache for subsequent calls
   if (changeMap.size > 0) {
     changeMapCache.set(cacheKey, { data: changeMap, ts: Date.now() });
+    // Periodic stale entry cleanup (every 3 writes)
+    changeMapWriteCounter++;
+    if (changeMapWriteCounter % 3 === 0) {
+      cleanupStaleChangeMapEntries();
+    }
   }
 
   return changeMap;
@@ -1316,23 +1333,30 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
   try {
     const changeMap = await buildCurrencyChangeMap(realm, league);
 
+    // Extract the base currency ApiId from raw pairs (all pairs in a league
+    // share the same base currency, e.g. "exalted"). Used to determine
+    // whether to apply cross-pair or direct change calculation.
+    const baseCurrencyApiId = raw.length > 0 ? raw[0].BaseCurrencyApiId : null;
+
     for (const pair of pairs) {
       // The pair's displayed rate is CurrencyOneData.RelativePrice which is
       // the price of CurrencyOne in base currency (e.g., Exalted).
-      //
-      // For pairs against the base currency (e.g. Chaos/Exalted):
-      //   pair_changePercent ≈ currency1_changePercent
-      //
-      // For cross-pairs (e.g. Chaos/Divine, where neither is the base):
-      //   pair_rate = curr1_price_in_base / curr2_price_in_base
-      //   pair_changePercent = (rate_now - rate_prev) / rate_prev * 100
-      //   where rate_now = curr1_current / curr2_current
-      //         rate_prev = curr1_previous / curr2_previous
       const entry1 = changeMap.get(pair.currency1Id);
       const entry2 = changeMap.get(pair.currency2Id);
 
-      if (entry1 && entry2) {
-        // Cross-pair: both currencies have change data
+      // Determine if currency2 IS the base currency (e.g. pair = "Chaos/Exalted").
+      // In this case the pair rate equals currency1's price in base currency
+      // directly, so we should use entry1.changePercent — NOT the cross-pair
+      // formula which divides by entry2's price (≈1.0 but may drift due to
+      // PriceLog computation, producing slightly wrong results).
+      const isCurrency2Base = baseCurrencyApiId !== null && pair.currency2Id === baseCurrencyApiId;
+
+      if (entry1 && entry2 && !isCurrency2Base) {
+        // True cross-pair (neither currency is the base):
+        //   pair_rate = curr1_price_in_base / curr2_price_in_base
+        //   pair_changePercent = (rate_now - rate_prev) / rate_prev * 100
+        //   where rate_now = curr1_current / curr2_current
+        //         rate_prev = curr1_previous / curr2_previous
         const curr1Now = entry1.currentPrice;
         const curr1Prev = entry1.previousPrice;
         const curr2Now = entry2.currentPrice;
@@ -1351,12 +1375,21 @@ export async function getSnapshotPairs(realm: string, league: string, snapshot =
           pair.change = rateNow - ratePrev;
         }
       } else if (entry1) {
-        // Simple pair against base currency — use currency1's change directly
+        // Simple pair against base currency (currency2 is the base, or
+        // entry2 is missing) — use currency1's change directly.
         if (pair.changePercent === null && entry1.changePercent !== null) {
           pair.changePercent = entry1.changePercent;
         }
         if (pair.change === null && entry1.change !== null) {
           pair.change = entry1.change;
+        }
+      } else if (entry2 && !isCurrency2Base) {
+        // Only entry2 exists and it's NOT the base currency.
+        // The pair rate = curr1_price / curr2_price, but we only have curr2 data.
+        // We can infer inverse change: if curr2 went up, the pair rate went down.
+        // changePercent ≈ -entry2.changePercent (approximation for small changes)
+        if (pair.changePercent === null && entry2.changePercent !== null) {
+          pair.changePercent = -entry2.changePercent;
         }
       }
     }

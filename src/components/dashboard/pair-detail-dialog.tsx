@@ -208,24 +208,32 @@ export function PairDetailDialog({
               <>
                 <div className="rounded-lg bg-muted/50 p-2">
                   <p className="text-[10px] text-muted-foreground">{t("high24h")}</p>
-                  <p className="text-sm font-bold font-mono text-emerald-400">{fmt(stats24h.high)}</p>
+                  <p className="text-sm font-bold font-mono text-emerald-400">
+                    {formatPrice(stats24h.high, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+                  </p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-2">
                   <p className="text-[10px] text-muted-foreground">{t("low24h")}</p>
-                  <p className="text-sm font-bold font-mono text-red-400">{fmt(stats24h.low)}</p>
+                  <p className="text-sm font-bold font-mono text-red-400">
+                    {formatPrice(stats24h.low, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+                  </p>
                 </div>
               </>
             )}
-            {/* 7d High / Low (only if we have enough data) */}
-            {stats7d && (timeRange === "30d" || timeRange === "90d") && (
+            {/* 7d High / Low — show for all time ranges when we have enough data */}
+            {stats7d && (
               <>
                 <div className="rounded-lg bg-muted/50 p-2">
                   <p className="text-[10px] text-muted-foreground">{t("high7d")}</p>
-                  <p className="text-sm font-bold font-mono text-emerald-400">{fmt(stats7d.high)}</p>
+                  <p className="text-sm font-bold font-mono text-emerald-400">
+                    {formatPrice(stats7d.high, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+                  </p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-2">
                   <p className="text-[10px] text-muted-foreground">{t("low7d")}</p>
-                  <p className="text-sm font-bold font-mono text-red-400">{fmt(stats7d.low)}</p>
+                  <p className="text-sm font-bold font-mono text-red-400">
+                    {formatPrice(stats7d.low, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+                  </p>
                 </div>
               </>
             )}
