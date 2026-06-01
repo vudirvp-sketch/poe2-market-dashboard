@@ -71,6 +71,9 @@ class ScoringConfig(BaseModel):
     phase_multiplier_early: float = 1.2
     phase_multiplier_mid: float = 1.0
     phase_multiplier_late: float = 0.9
+    # FIX: Added flashback and event multipliers for league type support
+    flashback_multiplier: float = 1.5
+    event_multiplier: float = 2.0
 
 
 class ForecastingConfig(BaseModel):

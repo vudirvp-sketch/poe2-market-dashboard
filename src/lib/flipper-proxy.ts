@@ -76,9 +76,12 @@ async function _doProxyWithRetry(
           Accept: "application/json",
           ...(body ? { "Content-Type": "application/json" } : {}),
         },
-        // Phase 0.5: Reduced from 30s to 5s to prevent hanging requests
-        // when the backend is completely unreachable.
-        signal: AbortSignal.timeout(5_000),
+        // FIX: Increased from 5s to 15s. The backend performs a full
+        // refresh snapshot + clustering + scoring on some requests,
+        // which can take >5 seconds. 5s was causing all such requests
+        // to time out. 15s is a better balance between responsiveness
+        // and allowing the backend to complete its work.
+        signal: AbortSignal.timeout(15_000),
       };
 
       if (body && method !== "GET") {

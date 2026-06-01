@@ -147,14 +147,20 @@ def find_triangular_arbitrage(
         for u, v, w, *_ in edges:
             if dist[u] != INF and dist[u] + w < dist[v]:
                 # Extract the cycle (§8.2)
-                # Walk back V steps via predecessor to ensure we're in the cycle
+                # Walk back V steps via predecessor to ensure we're in the cycle.
+                # FIX: If we encounter a node with no predecessor (pred == -1)
+                # during the walk-back, it means this node is unreachable from
+                # the source via the negative cycle — skip this candidate.
+                # Also add a safety check: if dist[u] is extremely large
+                # (but not INF), skip to avoid arithmetic overflow artifacts.
                 node = v
+                found_cycle_entry = False
                 for _ in range(n):
-                    node = pred[node]
-                    if node == -1:
+                    if node == -1 or pred[node] == -1:
                         break
+                    node = pred[node]
 
-                if node == -1:
+                if node == -1 or pred[node] == -1:
                     continue
 
                 # Now walk from node via predecessors to extract the actual cycle

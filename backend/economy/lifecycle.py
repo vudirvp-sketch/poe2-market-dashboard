@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from backend.config import AppConfig, get_settings
-from backend.models.currency import LeaguePhase, PhaseInfo
+from backend.models.currency import LeaguePhase, LeagueType, PhaseInfo
 
 
 # Phase strategy table from Implementation Spec §3.1
@@ -60,10 +60,13 @@ class PhaseDetector:
         self,
         league_start: datetime,
         config: AppConfig | None = None,
+        league_type: LeagueType = LeagueType.STANDARD,
     ):
         self._league_start = league_start
         self._config = config or get_settings()
         self._patch_reset_date: datetime | None = None
+        # FIX: Track league type for proper phase multiplier calculation
+        self._league_type = league_type
 
     @property
     def patch_reset_date(self) -> datetime | None:
@@ -131,6 +134,42 @@ class PhaseDetector:
             min_spread_after_fees=strategy["min_spread_after_fees"],
             max_hold_time=strategy["max_hold_time"],
         )
+
+    def get_league_type(self) -> LeagueType:
+        """Return the league type (standard, flashback, event)."""
+        return self._league_type
+
+    def set_league_type(self, league_type: LeagueType) -> None:
+        """Set the league type. Call this when the league type is known."""
+        self._league_type = league_type
+
+    def get_phase_multiplier(self, now: datetime | None = None) -> float:
+        """Get the combined phase + league type multiplier for scoring.
+
+        FIX: Added to properly compute phase multiplier with league type.
+        Previously, scorer.py only used EARLY/MID/LATE multipliers and
+        ignored flashback/event leagues entirely.
+
+        Multipliers by league type (from Data Flow Reference §5.2.4):
+            standard: EARLY=1.2, MID=1.0, LATE=0.9
+            flashback: base * flashback_multiplier (default 1.5)
+            event: base * event_multiplier (default 2.0)
+        """
+        phase = self.current_phase(now)
+        base_multipliers = {
+            LeaguePhase.EARLY: self._config.scoring.phase_multiplier_early,
+            LeaguePhase.MID: self._config.scoring.phase_multiplier_mid,
+            LeaguePhase.LATE: self._config.scoring.phase_multiplier_late,
+        }
+        base = base_multipliers[phase]
+
+        # League type multipliers (stack on top of base phase)
+        type_multipliers = {
+            LeagueType.STANDARD: 1.0,
+            LeagueType.FLASHBACK: self._config.scoring.flashback_multiplier,
+            LeagueType.EVENT: self._config.scoring.event_multiplier,
+        }
+        return base * type_multipliers[self._league_type]
 
     def reset_for_major_patch(self, patch_datetime: datetime) -> None:
         """Reset the phase clock for a major patch event.

@@ -547,178 +547,154 @@ def compute_volatility(price_history: list[PricePoint], lookback_hours: int = 24
 
 #### 5.2.3 Currency Clustering
 
+> **⚠️ CORRECTION (2026-06-02):** The old version of this section described a
+> threshold heuristic (weighted sum with cutoffs 0.25/0.5). This was **never
+> implemented**. The actual code uses **KMeans clustering** as described below
+> and as documented in `PoE2_Flipper_Canonical_Formulas.md §5`.
+
 ```python
-# K-Means clustering on normalized features
-# Features: [log(1+volatility), log(1+|momentum|), liquidity_score]
+# KMeans clustering on normalized features (backend/predictors/clustering.py)
+# Features: [volatility_24h, price_change_rate_24h, liquidity_score_24h]
+# All features are min-max normalized to [0,1]; if all identical -> 0.5
 
-FEATURE_WEIGHTS = {
-    'volatility': 0.4,
-    'momentum': 0.3,
-    'liquidity': 0.3
-}
+from sklearn.cluster import KMeans
 
-CLUSTER_LABELS = {
-    0: 'stable',          # Low volatility, stable momentum
-    1: 'moderate',        # Medium values
-    2: 'volatile_illiquid' # High volatility or low liquidity
-}
-
-def compute_cluster(momentum: float, volatility: float, volume: float) -> str:
+def cluster_currencies(
+    price_histories: dict[str, list[float]],
+    volumes_24h: dict[str, float],
+    prices_now: dict[str, float],
+    prices_24h_ago: dict[str, float],
+) -> dict[str, ClusterLabel]:
     """
-    Classify currency into cluster based on features.
+    One-shot clustering: compute features, normalize, run KMeans, assign labels.
+
+    Algorithm: KMeans(n_clusters=3, init='k-means++', n_init=10, random_state=42)
+
+    Cluster label assignment (post-hoc, centroid-based):
+        stable           = argmin(centroid[:, 0])  # lowest volatility
+        volatile_illiquid = argmax(centroid[:, 0])  # highest volatility
+        moderate          = remaining cluster
+
+    Tiebreaker (if two centroids have volatility difference < 0.1):
+        lower liquidity -> volatile_illiquid
     """
-    # Normalize features (approximate, production should use fitted scaler)
-    norm_vol = min(volatility / 0.1, 1.0)  # Cap at 0.1 daily vol
-    norm_mom = min(abs(momentum) / 0.05, 1.0)
-    norm_liq = min(math.log1p(volume) / 10, 1.0)
+    # Step 1: Compute features per currency
+    #   volatility_24h = std(log_returns, ddof=1) over window
+    #   price_change_rate_24h = (price_now - price_24h_ago) / price_24h_ago
+    #   liquidity_score_24h = log1p(volume_24h) / log1p(max_volume)
 
-    score = (
-        FEATURE_WEIGHTS['volatility'] * norm_vol +
-        FEATURE_WEIGHTS['momentum'] * norm_mom +
-        FEATURE_WEIGHTS['liquidity'] * (1 - norm_liq)  # Inverse: low liquidity bad
-    )
+    # Step 2: Min-max normalize to [0,1]
 
-    if score < 0.25:
-        return 'stable'
-    elif score < 0.5:
-        return 'moderate'
-    else:
-        return 'volatile_illiquid'
+    # Step 3: KMeans with k=3
+
+    # Step 4: Assign semantic labels based on centroid volatility ordering
 ```
 
 #### 5.2.4 Flip Opportunity Scoring
 
+> **⚠️ CORRECTION (2026-06-02):** The old version described a weighted-sum formula
+> with CLUSTER_PENALTIES and PHASE_MULTIPLIERS for standard/flashback/event.
+> This was **never implemented**. The actual scoring follows
+> `PoE2_Flipper_Canonical_Formulas.md §7` — expected profit per trade,
+> scaled by fill probability and penalty factors. Gold fees are excluded.
+
 ```python
-# Score = f(spread, volume, momentum, volatility, cluster, phase_multiplier)
+# Score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
 # Output: 0.0 to 1.0
+# Gold/commission fees are EXCLUDED from all calculations.
+
+# From backend/arbitrage/scorer.py:
 
 PHASE_MULTIPLIERS = {
-    'standard': 1.0,
-    'flashback': 1.5,
-    'event': 2.0
+    'early': 1.2,
+    'mid': 1.0,
+    'late': 0.9,
 }
 
-CLUSTER_PENALTIES = {
-    'stable': 1.0,
-    'moderate': 0.8,
-    'volatile_illiquid': 0.5
-}
+# League type multipliers (stack on top of phase):
+#   standard: 1.0, flashback: 1.5, event: 2.0
 
-def compute_flip_score(
-    spread: float,           # Raw spread (ask - bid) / mid
-    volume_24h: float,
+def compute_opportunity_score(
+    bid: float, ask: float, mid_price: float,
+    volume_24h: float, max_volume: float,
+    volatility: float, phase_multiplier: float,
     momentum: float,
-    volatility: float,
-    cluster: str,
-    phase: str = 'standard'
+    momentum_neg_threshold: float = -0.01,
+    vol_reference: float = 0.05,
 ) -> float:
     """
-    Compute flip opportunity score (0.0 to 1.0).
+    Compute flip opportunity score.
 
-    Higher spread = better opportunity
-    Higher volume = more liquid = better
-    Momentum doesn't directly affect score (informational)
-    Volatility: penalize extreme volatility
-    Cluster: penalize illiquid currencies
-    Phase: multiplier for special leagues
+    Formula (gold fees excluded per project decision):
+        spread = (ask - bid) / mid_price
+        fill_probability = log1p(volume_24h) / log1p(max_volume)
+        expected_profit = spread * fill_probability
+        momentum_penalty:
+            0.5 if momentum < -0.01 (strong negative)
+            0.8 if -0.01 <= momentum < 0 (slight negative)
+            1.0 if momentum >= 0 (positive)
+        vol_penalty = 1.0 / (1.0 + (volatility / vol_reference)^2)
+        score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
+        score = clamp(score, 0.0, 1.0)
     """
-    # Normalize spread (typical range 0.001 to 0.1)
-    spread_score = min(spread / 0.05, 1.0)
+    spread = (ask - bid) / mid_price
+    fill_probability = log1p(volume_24h) / log1p(max_volume)
+    expected_profit = spread * fill_probability
 
-    # Volume score (log scale, typical range 100 to 1M)
-    volume_score = min(math.log1p(volume_24h) / 12, 1.0)
+    if momentum < momentum_neg_threshold:
+        momentum_penalty = 0.5
+    elif momentum < 0:
+        momentum_penalty = 0.8
+    else:
+        momentum_penalty = 1.0
 
-    # Volatility penalty (optimal around 0.02, penalize extremes)
-    vol_penalty = 1.0 - min(abs(volatility - 0.02) / 0.08, 1.0)
+    vol_penalty = 1.0 / (1.0 + (volatility / vol_reference) ** 2)
 
-    # Get cluster and phase modifiers
-    cluster_mult = CLUSTER_PENALTIES.get(cluster, 0.5)
-    phase_mult = PHASE_MULTIPLIERS.get(phase, 1.0)
-
-    # Combined score
-    raw_score = (
-        0.5 * spread_score +
-        0.3 * volume_score +
-        0.2 * vol_penalty
-    ) * cluster_mult * phase_mult
-
-    return min(max(raw_score, 0.0), 1.0)
+    score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
+    return min(max(score, 0.0), 1.0)
 ```
 
 #### 5.2.5 Triangular Arbitrage Detection
 
+> **⚠️ CORRECTION (2026-06-02):** The old signature accepted a nested dict
+> `exchange_rates: dict[str, dict[str, float]]`. The actual code uses a flat
+> dict with tuple keys plus a separate prices dict. Gold fees are excluded.
+
 ```python
 # Uses Bellman-Ford algorithm to detect negative cycles in currency graph
+# From backend/arbitrage/triangular.py:
 
-def find_triangular_arbitrage(exchange_rates: dict[str, dict[str, float]]) -> list[TriangularCycle]:
+def find_triangular_arbitrage(
+    rates: dict[tuple[str, str], float],  # (currency_from, currency_to) -> raw_rate
+    prices: dict[str, float],             # currency -> price in reference currency
+    min_profit_pct: float = 0.1,
+    pair_volumes: dict[tuple[str, str], float] | None = None,
+    snapshot_time: datetime | None = None,
+) -> list[TriangularOpportunity]:
     """
-    Find profitable triangular arbitrage cycles.
+    Find profitable triangular (and multi-hop) arbitrage cycles.
 
-    Exchange rates: {from_currency: {to_currency: rate}}
-    e.g., {"divine": {"chaos": 200, "exalted": 0.5}}
+    Gold/commission fees are EXCLUDED — raw rates are used directly.
 
-    Returns: List of cycles with profit > 0 after fees.
+    Edge weight: -ln(raw_rate)
+    Cycle validation: simulated profit < min_profit_pct → discarded
+
+    Confidence score based on:
+    - Data freshness (max 1.0 if <5min old, decays)
+    - Volume (bottleneck = min across edges)
+    - Cycle length penalty = 1/len(cycle)
     """
-    TRADE_FEE = 0.005  # 0.5% per trade
-    MIN_PROFIT = 0.001  # 0.1% minimum profit after fees
-
-    # Build directed graph with log rates (for Bellman-Ford)
-    # Negative edge weight = potential profit
-    edges = []
-    nodes = set(exchange_rates.keys())
-
-    for from_cur, rates in exchange_rates.items():
-        for to_cur, rate in rates.items():
-            if rate > 0:
-                # Weight = -log(rate * (1 - fee))
-                weight = -math.log(rate * (1 - TRADE_FEE))
-                edges.append((from_cur, to_cur, weight))
-
-    cycles = []
-
-    # Run Bellman-Ford from each node
-    for source in nodes:
-        distances = {node: 0 if node == source else float('inf') for node in nodes}
-        predecessors = {node: None for node in nodes}
-
-        # Relax edges |V|-1 times
-        for _ in range(len(nodes) - 1):
-            for u, v, w in edges:
-                if distances[u] + w < distances[v]:
-                    distances[v] = distances[u] + w
-                    predecessors[v] = u
-
-        # Check for negative cycles reachable from source
-        for u, v, w in edges:
-            if distances[u] + w < distances[v] and predecessors[v] is not None:
-                # Found negative cycle, extract it
-                cycle = extract_cycle(predecessors, u, v)
-                profit = calculate_cycle_profit(cycle, exchange_rates)
-
-                if profit > MIN_PROFIT:
-                    cycles.append(TriangularCycle(
-                        cycle=cycle,
-                        net_profit_pct=profit * 100,
-                        step_rates=[exchange_rates[cycle[i]][cycle[i+1]]
-                                    for i in range(len(cycle)-1)],
-                        total_volume=estimate_cycle_volume(cycle, exchange_rates),
-                        confidence=compute_cycle_confidence(cycle, distances)
-                    ))
-
-    return deduplicate_cycles(cycles)
-
-def calculate_cycle_profit(cycle: list[str], rates: dict) -> float:
-    """Calculate profit percentage from completing a cycle."""
-    product = 1.0
-    for i in range(len(cycle) - 1):
-        product *= rates[cycle[i]][cycle[i+1]] * (1 - TRADE_FEE)
-    return product - 1.0
 ```
 
 #### 5.2.6 Portfolio Optimization (Risk Parity)
 
+> **⚠️ CORRECTION (2026-06-02):** Risk parity now uses Ledoit-Wolf shrinkage
+> for the covariance matrix (was using plain sample covariance, which is noisier
+> with small samples). This matches the min_variance method and the original
+> documentation claim.
+
 ```python
-# Ledoit-Wolf shrinkage estimator for covariance matrix
+# Ledoit-Wolf shrinkage estimator for covariance matrix (now used for BOTH methods)
 # Then optimize for risk parity (equal risk contribution)
 
 def optimize_portfolio_risk_parity(
@@ -789,54 +765,43 @@ def optimize_portfolio_risk_parity(
     return {k: float(v) for k, v in weights.items()}
 ```
 
-#### 5.2.7 Forecasting (SARIMA / LightGBM Hybrid)
+#### 5.2.7 Forecasting
+
+> **⚠️ CORRECTION (2026-06-02):** The old version described a simple binary
+> choice (LightGBM if <50 points, SARIMA otherwise). The actual system runs
+> **three models in parallel** with model agreement checks and event flags.
 
 ```python
-def forecast_price(
-    price_history: list[PricePoint],
-    currency: str,
-    horizon_hours: int = 24
-) -> ForecastResult:
-    """
-    Generate price forecast with confidence intervals.
+# Three models run in parallel (backend/predictors/time_series.py):
+# 1. SARIMA — auto_arima with ADF test for stationarity
+# 2. Holt-Winters — exponential smoothing (short-horizon secondary opinion)
+# 3. LightGBM — primary short-horizon model with feature engineering
+#
+# All models operate on log-prices; convert back to price space at output.
 
-    Strategy:
-    1. If data < 50 points or non-stationary: use LightGBM
-    2. If data >= 50 points and stationary: use SARIMA
-    3. Return 95% confidence interval
-    """
-    df = pd.DataFrame([
-        {'timestamp': p.timestamp, 'price': p.price, 'volume': p.volume}
-        for p in sorted(price_history, key=lambda x: x.timestamp)
-    ])
-    df.set_index('timestamp', inplace=True)
+class ForecastEngine:
+    def forecast(
+        self, currency, price_series, volumes, timestamps,
+        is_event_active, seasonal_period
+    ) -> dict[str, ForecastResult]:
+        """
+        Run all available forecasting models and return results.
 
-    # Stationarity test (ADF)
-    is_stationary = adfuller(df['price'].dropna())[1] < 0.05
+        Strategy:
+        1. Convert prices to log-prices
+        2. Auto-detect seasonal period from data frequency
+        3. Run SARIMA, Holt-Winters, and LightGBM in parallel
+        4. Check model agreement: if SARIMA and LightGBM diverge >20%,
+           flag disagreement=True on both results
 
-    if len(df) < 50 or not is_stationary:
-        # Use LightGBM
-        model = 'lightgbm'
-        forecast = lightgbm_forecast(df, horizon_hours)
-    else:
-        # Use SARIMA
-        model = 'sarima'
-        forecast = sarima_forecast(df, horizon_hours)
+        Event flag behavior:
+        - SARIMA: labeled low_confidence=True when event active
+        - Holt-Winters: disabled entirely when event active
+        - LightGBM: includes is_event_active feature
 
-    return ForecastResult(
-        currency=currency,
-        forecast=[
-            ForecastPoint(
-                timestamp=row['timestamp'],
-                price=row['price'],
-                lower=row['price'] - 1.96 * row['std'],
-                upper=row['price'] + 1.96 * row['std']
-            )
-            for row in forecast.itertuples()
-        ],
-        model=model,
-        horizon=horizon_hours
-    )
+        Returns dict: {'sarima': ForecastResult, 'holt_winters': ForecastResult,
+                       'lightgbm': ForecastResult}
+        """
 ```
 
 ---
@@ -845,14 +810,21 @@ def forecast_price(
 
 ### 6.1 Frontend Cache (poe2api.ts)
 
+> **⚠️ CORRECTION (2026-06-02):** The old version described an `inflight` field
+> stored inside the cache entry. The actual implementation uses a **separate**
+> `pendingRequests` Map for request deduplication, not an `inflight` field in
+> the cache. The cache only stores `{ data, ts }`.
+
 ```typescript
 // In-memory cache with stale-while-revalidate
-const cache = new Map<string, { data: unknown; ts: number; inflight?: Promise<unknown> }>();
+// NOTE: Cache entries do NOT contain an 'inflight' field.
+// Request deduplication uses a SEPARATE Map (pendingRequests).
+const cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 60_000;         // 60s — fresh
 const CACHE_STALE_TTL = 600_000;  // 10min — serve stale, revalidate in background
 const REQUEST_DEDUP_WINDOW = 10_000; // 10s — dedup concurrent identical requests
 
-async function cachedFetch<T>(url: string): Promise<T> {
+async function cachedFetch<T>(url: string, options?: { maxRetries?: number }): Promise<T> {
   const hit = cache.get(url);
   const now = Date.now();
 
@@ -867,33 +839,21 @@ async function cachedFetch<T>(url: string): Promise<T> {
     return hit.data as T;
   }
 
-  // Request deduplication
-  if (hit?.inflight && now - hit.ts < REQUEST_DEDUP_WINDOW) {
-    return hit.inflight as Promise<T>;
-  }
+  // Request deduplication — uses SEPARATE Map, not cache entry field
+  const pending = pendingRequests.get(url);
+  if (pending) return pending as Promise<T>;
 
   // Cache miss or very stale — fetch
-  const fetchPromise = doFetch<T>(url).finally(() => {
-    // Clear inflight marker after completion
-    const entry = cache.get(url);
-    if (entry?.inflight === fetchPromise) {
-      entry.inflight = undefined;
-    }
-  });
+  const fetchPromise = doFetch<T>(url, maxRetries)
+    .catch((err) => {
+      // Last resort — return very stale data if available
+      if (hit) { return hit.data as T; }
+      throw err;
+    })
+    .finally(() => pendingRequests.delete(url));
 
-  cache.set(url, { data: undefined, ts: now, inflight: fetchPromise });
-
-  try {
-    const data = await fetchPromise;
-    cache.set(url, { data, ts: now });
-    return data;
-  } catch (err) {
-    // On fetch error with stale data available, return stale
-    if (hit && hit.data !== undefined) {
-      return hit.data as T;
-    }
-    throw err;
-  }
+  pendingRequests.set(url, fetchPromise);
+  return fetchPromise;
 }
 ```
 

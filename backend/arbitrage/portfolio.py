@@ -34,6 +34,24 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# FIX #5.4: Persist previous correlation matrix for shock detection
+# ---------------------------------------------------------------------------
+# The old code required `previous_corr` as a parameter but nobody persisted
+# or loaded it, so correlation shocks were NEVER detected. We now maintain
+# a module-level cache of the last computed correlation matrix, keyed by
+# a tuple of sorted currency names. This ensures shock detection works
+# across multiple optimize() calls without requiring the caller to manage
+# state.
+# ---------------------------------------------------------------------------
+
+_previous_correlation_matrices: dict[str, np.ndarray] = {}
+"""Cache of previous correlation matrices, keyed by sorted currency tuple hash."""
+
+_previous_correlation_currencies: dict[str, list[str]] = {}
+"""Cache of currency names for the stored correlation matrices."""
+
+
+# ---------------------------------------------------------------------------
 # §5 Efficient Frontier (Spec Section 5)
 # ---------------------------------------------------------------------------
 
@@ -494,12 +512,20 @@ class PortfolioOptimizer:
             method = "risk_parity"
 
         # Correlation shock detection (§10.3)
-        if previous_corr is not None and previous_corr.shape[0] == n:
-            current_corr = np.corrcoef(log_returns, rowvar=False)
-            # Ensure 2D for single asset
-            if current_corr.ndim == 0:
-                current_corr = np.array([[1.0]])
+        # FIX: Now automatically manages previous correlation matrix state.
+        # Previously, `previous_corr` was always None because nobody persisted
+        # it between calls. We now cache the last correlation matrix internally
+        # so shock detection actually works.
+        current_corr = np.corrcoef(log_returns, rowvar=False)
+        # Ensure 2D for single asset
+        if current_corr.ndim == 0:
+            current_corr = np.array([[1.0]])
 
+        # Build a cache key from the sorted currency names
+        currencies_key = ",".join(sorted(currency_names))
+        previous_corr = _previous_correlation_matrices.get(currencies_key)
+
+        if previous_corr is not None and previous_corr.shape == current_corr.shape:
             correlation_warning = detect_correlation_shock(
                 current_corr,
                 previous_corr,
@@ -518,6 +544,13 @@ class PortfolioOptimizer:
                 weight_sum = np.sum(weights)
                 if weight_sum > 0:
                     weights = weights / weight_sum
+        else:
+            # First run or currency set changed — no shock detection possible
+            correlation_warning = False
+
+        # Persist current correlation matrix for next call
+        _previous_correlation_matrices[currencies_key] = current_corr.copy()
+        _previous_correlation_currencies[currencies_key] = currency_names
 
         # Compute annualized risk (§10.4)
         expected_risk = annualized_portfolio_volatility(
@@ -542,18 +575,26 @@ class PortfolioOptimizer:
     ) -> tuple[np.ndarray, np.ndarray]:
         """Run risk parity optimization.
 
+        FIX: Now uses Ledoit-Wolf shrinkage for the covariance matrix,
+        consistent with the min_variance method and the Data Flow Reference
+        documentation. Plain sample covariance is noisier with small samples
+        and can produce unstable weights.
+
         Returns (weights, covariance_matrix).
         """
-        # Compute sample covariance for risk parity
-        if log_returns.shape[1] == 1:
+        # Use Ledoit-Wolf shrinkage for robust covariance estimation
+        try:
+            from sklearn.covariance import LedoitWolf
+            lw = LedoitWolf().fit(log_returns)
+            cov_matrix = lw.covariance_
+        except Exception:
+            # Fallback to sample covariance if Ledoit-Wolf fails
             cov_matrix = np.cov(log_returns, rowvar=False, ddof=1)
             if cov_matrix.ndim == 0:
                 cov_matrix = np.array([[float(cov_matrix)]])
-            return np.array([1.0]), cov_matrix
 
-        cov_matrix = np.cov(log_returns, rowvar=False, ddof=1)
-        if cov_matrix.ndim == 0:
-            cov_matrix = np.array([[float(cov_matrix)]])
+        if log_returns.shape[1] == 1:
+            return np.array([1.0]), cov_matrix
 
         weights = risk_parity_weights(cov_matrix)
         return weights, cov_matrix

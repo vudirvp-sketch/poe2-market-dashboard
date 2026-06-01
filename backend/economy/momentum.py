@@ -27,7 +27,7 @@ class PriceMomentumTracker:
     AGENTS MUST NOT invent their own formulas.
     """
 
-    def __init__(self, window_size: int = 24, history: list | None = None):
+    def __init__(self, window_size: int = 24, history: list | None = None, min_volatility: float = 0.001):
         """
         Args:
             window_size: Number of price points in the rolling window.
@@ -35,7 +35,11 @@ class PriceMomentumTracker:
                          window_size log-returns.
             history: Optional price history list. If provided, window_size
                      is scaled to the available data (minimum 2).
+            min_volatility: Minimum volatility floor to prevent zero volatility
+                            (default: 0.001 = 0.1%). Was 0.01 (1%) which
+                            inflated stable currency volatility.
         """
+        self.min_volatility = min_volatility
         # MEDIUM-2: Scale window to available data, with a minimum of 2
         if history is not None and len(history) > 0:
             self.window_size = min(window_size, max(2, len(history)))
@@ -77,8 +81,13 @@ class PriceMomentumTracker:
         volatility = float(np.std(log_returns, ddof=1)) if len(log_returns) > 1 else 0.0
 
         # MEDIUM-2: Minimum volatility estimate — prevent zero volatility
-        # with insufficient data points, which degrades momentum-assisted model
-        min_volatility = 0.01  # 1% minimum volatility estimate
+        # with insufficient data points, which degrades momentum-assisted model.
+        # FIX: Lowered from 0.01 (1%) to 0.001 (0.1%). The old 1% floor
+        # systematically inflated volatility for stable currencies, causing:
+        #   - storage_value.py: risk_discount too low (0.92 vs 0.99 for vol=0.001)
+        #   - scorer.py: vol_penalty too aggressive for stable pairs
+        #   - All flip scores for stable currencies were depressed
+        min_volatility = self.min_volatility
         volatility = max(volatility, min_volatility)
 
         # §2.4: acceleration with m = max(1, floor(len(log_returns) / 4))

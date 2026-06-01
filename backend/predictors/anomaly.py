@@ -220,12 +220,21 @@ def compute_rsi_indicator(
     losses = np.maximum(0, -np.diff(price_series))
 
     if len(gains) < period:
-        # Not enough data for full RSI period; use what we have
+        # Not enough data for full RSI period; use simple average as fallback
         avg_gain = float(np.mean(gains)) if len(gains) > 0 else 0.0
         avg_loss = float(np.mean(losses)) if len(losses) > 0 else 0.0
     else:
-        avg_gain = float(np.mean(gains[-period:]))
-        avg_loss = float(np.mean(losses[-period:]))
+        # FIX: Use Wilder's smoothing (exponential) instead of simple average.
+        # Wilder's RSI: first avg = SMA of first `period` values,
+        # subsequent: prev_avg * (period-1)/period + current/period
+        # This is the standard RSI calculation used in technical analysis.
+        # Simple average (np.mean) produces RMA (Running Moving Average),
+        # which is more sensitive to outliers and yields different values.
+        avg_gain = float(np.mean(gains[:period]))  # Initial SMA
+        avg_loss = float(np.mean(losses[:period]))
+        for i in range(period, len(gains)):
+            avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+            avg_loss = (avg_loss * (period - 1) + losses[i]) / period
 
     # §4.3: Handle division by zero
     if avg_loss == 0 and avg_gain == 0:

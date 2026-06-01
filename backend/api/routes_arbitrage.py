@@ -151,55 +151,64 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 prices[k] = prices[k] * exalted_to_chaos
 
     # 6. Run currency clustering
+    # FIX: Cache clustering result with pipeline_cache instead of recreating
+    # CurrencyClusterer on every request. KMeans with n_init=10 means ~10
+    # KMeans runs per call, which is expensive. Cache with same TTL as snapshot.
     clusterer = CurrencyClusterer(config)
     cluster_labels: dict[str, ClusterLabel] = {}
 
     try:
-        cluster_price_histories: dict[str, list[float]] = {}
-        cluster_volumes: dict[str, float] = {}
-        cluster_prices_now: dict[str, float] = {}
-        cluster_prices_24h_ago: dict[str, float] = {}
-
-        for key, rate in rates.items():
-            for curr in (rate.currency_from, rate.currency_to):
-                if curr not in cluster_price_histories:
-                    cluster_price_histories[curr] = currency_price_history.get(curr, [])
-                    cluster_volumes[curr] = 0.0
-                    cluster_prices_now[curr] = 0.0
-                    cluster_prices_24h_ago[curr] = 0.0
-
-            for curr in (rate.currency_from, rate.currency_to):
-                vol = float(rate.volume_traded)
-                if vol > cluster_volumes.get(curr, 0):
-                    cluster_volumes[curr] = vol
-
-        for curr, history in cluster_price_histories.items():
-            if history:
-                cluster_prices_now[curr] = history[-1]
-                # Fix 2.2: Use timestamped history for accurate 24h-ago price
-                ts_history = currency_price_history_timestamped.get(curr, [])
-                if ts_history:
-                    price_24h = _find_price_24h_ago(ts_history)
-                    cluster_prices_24h_ago[curr] = price_24h if price_24h is not None else (history[-2] if len(history) >= 2 else history[-1])
-                else:
-                    # No timestamps available — fallback to second-to-last point
-                    cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
-            else:
-                cluster_prices_now[curr] = prices.get(curr, 0)
-                cluster_prices_24h_ago[curr] = prices.get(curr, 0)
-
-        if len(cluster_price_histories) >= 3:
-            cluster_labels = clusterer.fit(
-                cluster_price_histories, cluster_volumes,
-                cluster_prices_now, cluster_prices_24h_ago,
-            )
-            cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
-            logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
+        cached_clustering = pipeline_cache.get("cluster_labels")
+        if cached_clustering is not None and not cached_clustering.stale:
+            cluster_labels = cached_clustering.value
         else:
-            logger.warning(
-                "Only %d currencies for clustering (need >=3), using MODERATE default",
-                len(cluster_price_histories),
-            )
+            cluster_price_histories: dict[str, list[float]] = {}
+            cluster_volumes: dict[str, float] = {}
+            cluster_prices_now: dict[str, float] = {}
+            cluster_prices_24h_ago: dict[str, float] = {}
+
+            for key, rate in rates.items():
+                for curr in (rate.currency_from, rate.currency_to):
+                    if curr not in cluster_price_histories:
+                        cluster_price_histories[curr] = currency_price_history.get(curr, [])
+                        cluster_volumes[curr] = 0.0
+                        cluster_prices_now[curr] = 0.0
+                        cluster_prices_24h_ago[curr] = 0.0
+
+                for curr in (rate.currency_from, rate.currency_to):
+                    vol = float(rate.volume_traded)
+                    if vol > cluster_volumes.get(curr, 0):
+                        cluster_volumes[curr] = vol
+
+            for curr, history in cluster_price_histories.items():
+                if history:
+                    cluster_prices_now[curr] = history[-1]
+                    # Fix 2.2: Use timestamped history for accurate 24h-ago price
+                    ts_history = currency_price_history_timestamped.get(curr, [])
+                    if ts_history:
+                        price_24h = _find_price_24h_ago(ts_history)
+                        cluster_prices_24h_ago[curr] = price_24h if price_24h is not None else (history[-2] if len(history) >= 2 else history[-1])
+                    else:
+                        # No timestamps available — fallback to second-to-last point
+                        cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
+                else:
+                    cluster_prices_now[curr] = prices.get(curr, 0)
+                    cluster_prices_24h_ago[curr] = prices.get(curr, 0)
+
+            if len(cluster_price_histories) >= 3:
+                cluster_labels_result = clusterer.fit(
+                    cluster_price_histories, cluster_volumes,
+                    cluster_prices_now, cluster_prices_24h_ago,
+                )
+                cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
+                logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
+                # Cache the result
+                pipeline_cache.put("cluster_labels", cluster_labels)
+            else:
+                logger.warning(
+                    "Only %d currencies for clustering (need >=3), using MODERATE default",
+                    len(cluster_price_histories),
+                )
     except Exception as e:
         logger.error("Clustering failed, using MODERATE default: %s", e)
         cluster_labels = {}
@@ -407,6 +416,16 @@ async def get_flip_opportunities(
             "affected_currencies": list(event_manager.get_affected_currencies()),
             "summary": event_manager.get_active_event_summary(),
         },
+        # FIX: Gold fee warning — all scoring excludes gold fees, so displayed
+        # profits may be lower or even negative after actual trade fees.
+        # This warning informs the user that gold/commission costs are NOT
+        # factored into the spread or score calculations.
+        "fee_warning": {
+            "gold_fees_excluded": True,
+            "message": "Gold/commission fees are NOT included in spread or profit calculations. "
+                       "Actual profit may be lower than shown. POE2 gold fees can be up to 24% "
+                       "asymmetric, making many apparent arbitrage opportunities unprofitable after fees.",
+        },
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -469,6 +488,12 @@ async def get_triangular_arbitrage(
             }
             for o in opportunities
         ],
+        # FIX: Gold fee warning for triangular arbitrage
+        "fee_warning": {
+            "gold_fees_excluded": True,
+            "message": "Gold/commission fees are NOT included in profit calculations. "
+                       "Actual profit may be lower or even negative after fees.",
+        },
         "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }

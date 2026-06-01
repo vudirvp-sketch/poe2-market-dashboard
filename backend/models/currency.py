@@ -32,6 +32,18 @@ class EventType(str, Enum):
     OTHER = "other"
 
 
+class LeagueType(str, Enum):
+    """League type — affects phase multiplier for scoring.
+
+    FIX: Added to distinguish standard, flashback, and event leagues.
+    The Data Flow Reference (§5.2.4) describes PHASE_MULTIPLIERS for
+    standard/flashback/event, but the old code only knew EARLY/MID/LATE.
+    """
+    STANDARD = "standard"
+    FLASHBACK = "flashback"
+    EVENT = "event"
+
+
 class ClusterLabel(str, Enum):
     """Currency clustering labels assigned post-hoc by inspecting centroids."""
     STABLE = "stable"
