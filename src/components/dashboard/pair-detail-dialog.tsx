@@ -487,7 +487,7 @@ export function PairDetailDialog({
             {isRefetching && !isFirstLoad && (
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1 text-xs text-muted-foreground bg-background/80 rounded px-2 py-1">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                {t("loading") || "Loading..."}
+                {t("loading")}
               </div>
             )}
             <CandlestickChart

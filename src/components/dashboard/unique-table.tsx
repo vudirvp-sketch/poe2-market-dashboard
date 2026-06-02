@@ -64,7 +64,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
   const categoryGroups = useMemo<CategoryGroup[]>(() => {
     const groupMap = new Map<string, PoeItem[]>();
     for (const item of items) {
-      const cat = item.category || "Other";
+      const cat = item.category || t("all");
       if (!groupMap.has(cat)) groupMap.set(cat, []);
       groupMap.get(cat)!.push(item);
     }

@@ -225,7 +225,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
           </div>
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="tp-direction">
-              Direction
+              {t("takeProfitDirection")}
             </label>
             <Select
               value={positionDirection}
@@ -235,8 +235,8 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="long">Long</SelectItem>
-                <SelectItem value="short">Short</SelectItem>
+                <SelectItem value="long">{t("takeProfitLong")}</SelectItem>
+                <SelectItem value="short">{t("takeProfitShort")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

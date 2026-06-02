@@ -620,6 +620,7 @@ const ru: Record<TranslationKeys, string> = {
   volumeLiquidityHighLiquidity: "Пары с высокой ликвидностью",
   volumeLiquidityAnomalies: "Аномалии объёма",
   volumeLiquidityDetailed: "Подробные данные ликвидности",
+  volumeLiquidityIlliquid: "Неликвидный",
   // ---- P3-1: Technical Indicators ----
   technicalIndicatorsTitle: "Технические индикаторы",
   indicatorSMA20: "SMA 20",

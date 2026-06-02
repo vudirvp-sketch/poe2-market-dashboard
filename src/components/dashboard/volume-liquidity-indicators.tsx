@@ -356,20 +356,20 @@ export const VolumeLiquidityIndicators = memo(function VolumeLiquidityIndicators
       {/* ---- Detailed table ---- */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold">Detailed Liquidity Data</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t("volumeLiquidityDetailed")}</CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
-          <div className="max-h-64 overflow-y-auto" role="table" aria-label="Volume & Liquidity data">
+          <div className="max-h-64 overflow-y-auto" role="table" aria-label={t("volumeLiquidityDetailed")}>
             {/* Header */}
             <div
               className="grid grid-cols-[1.5fr_80px_80px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10"
               role="row"
             >
-              <span role="columnheader">Pair</span>
-              <span role="columnheader" className="text-right">Volume</span>
-              <span role="columnheader" className="text-right">Liquidity</span>
+              <span role="columnheader">{t("pair")}</span>
+              <span role="columnheader" className="text-right">{t("volume")}</span>
+              <span role="columnheader" className="text-right">{t("volumeLiquidityAvgLiquidity")}</span>
               <span role="columnheader" className="text-right">Z-Score</span>
-              <span role="columnheader" className="text-right">Status</span>
+              <span role="columnheader" className="text-right">{t("recipesStatus")}</span>
             </div>
             {/* Body */}
             {sortedData.map((d) => (
@@ -403,15 +403,15 @@ export const VolumeLiquidityIndicators = memo(function VolumeLiquidityIndicators
                 <span className="text-right">
                   {d.liquidityScore >= 0.7 ? (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
-                      Liquid
+                      {t("flipsClusterStable")}
                     </Badge>
                   ) : d.liquidityScore >= 0.4 ? (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10">
-                      Moderate
+                      {t("flipsClusterModerate")}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-[9px] px-1 py-0 border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10">
-                      Illiquid
+                      {t("volumeLiquidityIlliquid")}
                     </Badge>
                   )}
                 </span>

@@ -180,7 +180,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     ];
     const catCount = new Map<string, number>();
     for (const item of allItems) {
-      const cat = item.category || item.type || "Other";
+      const cat = item.category || item.type || t("all");
       catCount.set(cat, (catCount.get(cat) || 0) + 1);
     }
     return Array.from(catCount.entries())

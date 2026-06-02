@@ -85,7 +85,7 @@ export function ApiErrorFallback({
       ? error.message
       : typeof error === "string"
       ? error
-      : "An unexpected error occurred";
+      : t("failedToLoadData");
 
   const kind = explicitKind ?? classifyApiError(error);
 

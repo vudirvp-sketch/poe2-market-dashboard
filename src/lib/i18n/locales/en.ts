@@ -678,6 +678,7 @@ const en = {
   volumeLiquidityHighLiquidity: "High Liquidity Pairs",
   volumeLiquidityAnomalies: "Volume Anomalies",
   volumeLiquidityDetailed: "Detailed Liquidity Data",
+  volumeLiquidityIlliquid: "Illiquid",
 
   // ---- P3-1: Technical Indicators ----
   technicalIndicatorsTitle: "Technical Indicators",

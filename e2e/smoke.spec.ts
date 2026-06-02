@@ -72,9 +72,16 @@ test.describe("Smoke Tests", () => {
     await expect(main).toBeVisible();
   });
 
-  test("language switcher button is visible", async ({ page }) => {
-    // The globe icon button — has a Globe icon + locale label (EN/RU/中/한)
-    const globeButton = page.locator('button:has(svg.lucide-globe)').first();
+  test("language switcher is accessible via More menu", async ({ page }) => {
+    // The language switcher is inside the "More" (⋮) dropdown menu.
+    // First open the More menu, then verify the Globe button is visible.
+    const moreButton = page.locator('button[aria-label="More options"]').first();
+    await expect(moreButton).toBeVisible({ timeout: 5000 });
+    await moreButton.click();
+    await page.waitForTimeout(500);
+
+    // Now the Globe button (language switcher) should be visible in the dropdown
+    const globeButton = page.locator('button:has(svg.lucide-globe), [role="menuitem"]:has(svg.lucide-globe)').first();
     await expect(globeButton).toBeVisible({ timeout: 5000 });
   });
 

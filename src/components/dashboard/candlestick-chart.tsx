@@ -163,6 +163,8 @@ export const CandlestickChart = memo(function CandlestickChart({
   timeframeAlignments,
 }: CandlestickChartProps) {
   const { t } = useI18n();
+  const _defaultTitle = t("candlestickChartTitle");
+  const effectiveTitle = title === "Candlestick Chart" ? _defaultTitle : title;
   const [activeOverlays, setActiveOverlays] = useState<Set<string>>(
     new Set(overlays),
   );
@@ -275,12 +277,12 @@ export const CandlestickChart = memo(function CandlestickChart({
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <CandlestickIcon className="h-4 w-4" aria-hidden="true" />
-            {title}
+            {effectiveTitle}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
           <p className="text-sm text-muted-foreground text-center py-6">
-            No OHLCV data available for candlestick chart
+            {t("candlestickNoData")}
           </p>
         </CardContent>
       </Card>
@@ -295,7 +297,7 @@ export const CandlestickChart = memo(function CandlestickChart({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <CandlestickIcon className="h-4 w-4" aria-hidden="true" />
-            {title}
+            {effectiveTitle}
           </CardTitle>
           {/* P3-2: Timeframe switcher */}
           {onTimeframeChange && (
@@ -356,11 +358,11 @@ export const CandlestickChart = memo(function CandlestickChart({
         {hoveredData && (
           <div className="flex flex-wrap items-center gap-3 mb-2 text-xs">
             <span className="text-muted-foreground">{hoveredData.time}</span>
-            <span>O: <span className="font-mono">{fmt(hoveredData.open)}</span></span>
-            <span>H: <span className="font-mono">{fmt(hoveredData.high)}</span></span>
-            <span>L: <span className="font-mono">{fmt(hoveredData.low)}</span></span>
-            <span>C: <span className="font-mono font-bold">{fmt(hoveredData.close)}</span></span>
-            <span>Vol: <span className="font-mono">{hoveredData.volume.toLocaleString()}</span></span>
+            <span>{t("candlestickOpen")}: <span className="font-mono">{fmt(hoveredData.open)}</span></span>
+            <span>{t("candlestickHigh")}: <span className="font-mono">{fmt(hoveredData.high)}</span></span>
+            <span>{t("candlestickLow")}: <span className="font-mono">{fmt(hoveredData.low)}</span></span>
+            <span>{t("candlestickClose")}: <span className="font-mono font-bold">{fmt(hoveredData.close)}</span></span>
+            <span>{t("candlestickVol")}: <span className="font-mono">{hoveredData.volume.toLocaleString()}</span></span>
           </div>
         )}
 
@@ -529,29 +531,29 @@ export const CandlestickChart = memo(function CandlestickChart({
         <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] text-muted-foreground">
           {activeOverlays.has("sma20") && (
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-amber-500 inline-block" /> SMA 20
+              <span className="w-3 h-0.5 bg-amber-500 inline-block" /> {t("indicatorSMA20")}
             </span>
           )}
           {activeOverlays.has("ema12") && (
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-violet-500 inline-block" /> EMA 12
+              <span className="w-3 h-0.5 bg-violet-500 inline-block" /> {t("indicatorEMA12")}
             </span>
           )}
           {activeOverlays.has("ema26") && (
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-cyan-500 inline-block" /> EMA 26
+              <span className="w-3 h-0.5 bg-cyan-500 inline-block" /> {t("indicatorEMA26")}
             </span>
           )}
           {activeOverlays.has("rsi14") && (
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-purple-500 inline-block" /> RSI 14
+              <span className="w-3 h-0.5 bg-purple-500 inline-block" /> {t("indicatorRSI14")}
             </span>
           )}
           <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 bg-emerald-500 inline-block" /> Bullish
+            <span className="w-3 h-0.5 bg-emerald-500 inline-block" /> {t("candlestickBullish")}
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-3 h-0.5 bg-red-500 inline-block" /> Bearish
+            <span className="w-3 h-0.5 bg-red-500 inline-block" /> {t("candlestickBearish")}
           </span>
         </div>
 

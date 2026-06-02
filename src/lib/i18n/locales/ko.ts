@@ -674,6 +674,7 @@ const ko: Record<TranslationKeys, string> = {
   volumeLiquidityHighLiquidity: "고유동성 페어",
   volumeLiquidityAnomalies: "거래량 이상",
   volumeLiquidityDetailed: "상세 유동성 데이터",
+  volumeLiquidityIlliquid: "비유동적",
 
   // P3-1: Technical Indicators
   technicalIndicatorsTitle: "기술 지표",

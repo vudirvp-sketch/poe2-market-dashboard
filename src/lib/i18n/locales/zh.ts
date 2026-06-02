@@ -674,6 +674,7 @@ const zh: Record<TranslationKeys, string> = {
   volumeLiquidityHighLiquidity: "高流动性交易对",
   volumeLiquidityAnomalies: "成交量异常",
   volumeLiquidityDetailed: "详细流动性数据",
+  volumeLiquidityIlliquid: "流动性差",
 
   // P3-1: Technical Indicators
   technicalIndicatorsTitle: "技术指标",

@@ -531,9 +531,9 @@ export function Dashboard() {
   // Categories
   const currencyCategories = useMemo(() => {
     const cats = uniqueCategories?.filter((c) => c.name !== "Unique") || [];
-    if (cats.length === 0) cats.push({ name: "all", displayName: "All", count: 0 });
+    if (cats.length === 0) cats.push({ name: "all", displayName: t("all"), count: 0 });
     return cats;
-  }, [uniqueCategories]);
+  }, [uniqueCategories, t]);
 
   const uniqueCategoriesList = useMemo(() => {
     const cats =
@@ -548,9 +548,9 @@ export function Dashboard() {
           c.name.includes("Jewel") ||
           c.name.includes("Gem")
       ) || [];
-    if (cats.length === 0) cats.push({ name: "all", displayName: "All", count: 0 });
+    if (cats.length === 0) cats.push({ name: "all", displayName: t("all"), count: 0 });
     return cats;
-  }, [uniqueCategories]);
+  }, [uniqueCategories, t]);
 
   const currentCategories =
     tab === "currencies" ? currencyCategories : uniqueCategoriesList;
