@@ -43,6 +43,9 @@ import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
 import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
+import { MarketHeatmap } from "@/components/dashboard/market-heatmap";
+import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
+import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 
 // Heavy tab components — lazy-loaded via next/dynamic to reduce initial bundle size.
 // These tabs use Recharts (forecast, portfolio) or complex force-layout (graph)
@@ -958,6 +961,14 @@ export function Dashboard() {
                   backendOnline={flipperBackendOnline}
                 />
               </ErrorBoundary>
+              {/* P2-2: Market Heatmap with Market Tops (standalone component) */}
+              <ErrorBoundary fallbackTitle="Market Heatmap">
+                <MarketHeatmap
+                  realm={realm}
+                  league={effectiveLeague}
+                  backendOnline={flipperBackendOnline}
+                />
+              </ErrorBoundary>
             </TabsContent>
 
             {/* ============ CURRENCIES TAB ============ */}
@@ -1258,6 +1269,15 @@ export function Dashboard() {
                     </div>
                   )}
 
+                  {/* P2-4: Volume & Liquidity Indicators */}
+                  <ErrorBoundary fallbackTitle="Volume & Liquidity">
+                    <VolumeLiquidityIndicators
+                      realm={realm}
+                      league={effectiveLeague}
+                      backendOnline={flipperBackendOnline}
+                    />
+                  </ErrorBoundary>
+
                   {/* Empty state for favorites filter */}
                   {uiState.exchange.activeFilter === "favorites" && exchangePairs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" role="status">
@@ -1311,6 +1331,10 @@ export function Dashboard() {
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle="Flips">
                 <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
+              </ErrorBoundary>
+              {/* P3-7: Tier Drift Tracker */}
+              <ErrorBoundary fallbackTitle="Tier Drift">
+                <TierDriftTracker backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 

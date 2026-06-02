@@ -49,6 +49,7 @@ import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { ApiErrorFallback } from "./api-error-fallback";
+import { TakeProfitCalculator } from "./take-profit-calculator";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -159,6 +160,192 @@ const POPULAR_CURRENCIES: CurrencyOption[] = [
   { api_id: "mirror", text: "Mirror of Kalandra" },
   { api_id: "annul", text: "Orb of Annulment" },
 ];
+
+// ---------------------------------------------------------------------------
+// P3-6: Forecast Recommendations — inline component
+//
+// Generates actionable trading recommendations based on forecast models,
+// storage value decision, and anomaly detection signals.
+// ---------------------------------------------------------------------------
+
+interface ForecastRecommendationsProps {
+  forecastData: ForecastResponse;
+  storageData: StorageValueResponse;
+  anomaliesData: AnomaliesResponse | undefined;
+  baseCurrencyText: string | null;
+  baseCurrencyApiId: string | null;
+}
+
+interface Recommendation {
+  action: "BUY" | "SELL" | "HOLD" | "CONVERT" | "WAIT";
+  confidence: "high" | "medium" | "low";
+  reason: string;
+  priceTarget: number | null;
+  timeframe: string;
+}
+
+function ForecastRecommendations({
+  forecastData,
+  storageData,
+  anomaliesData,
+  baseCurrencyText,
+  baseCurrencyApiId,
+}: ForecastRecommendationsProps) {
+  const recommendations = useMemo((): Recommendation[] => {
+    const recs: Recommendation[] = [];
+    const modelNames = Object.keys(forecastData.models);
+    if (modelNames.length === 0) return recs;
+
+    // 1. Primary recommendation from storage value decision
+    const decision = storageData.decision;
+    const ratio = storageData.ratio;
+    const momentum = storageData.inputs.momentum;
+    const volatility = storageData.inputs.volatility;
+
+    // Determine confidence based on model agreement and data quality
+    const hasDisagreement = forecastData.disagreement;
+    const isLowConfidence = forecastData.low_confidence;
+    const hasAnomaly = (anomaliesData?.anomalies?.length ?? 0) > 0;
+    const currencyAnomaly = anomaliesData?.anomalies?.find(
+      (a) => a.currency === forecastData.currency
+    );
+
+    let confidence: "high" | "medium" | "low" = "medium";
+    if (hasDisagreement || isLowConfidence) confidence = "low";
+    else if (!hasAnomaly && modelNames.length >= 2) confidence = "high";
+
+    // 2. Storage value recommendation
+    if (decision === "BUY" || decision === "HOLD") {
+      recs.push({
+        action: decision,
+        confidence,
+        reason: ratio > 1
+          ? `Storage value ratio ${ratio.toFixed(3)} > 1.0 indicates favorable holding conditions. Momentum: ${momentum > 0 ? "positive" : "negative"} (${momentum.toFixed(4)}).`
+          : `Decision is ${decision} but ratio ${ratio.toFixed(3)} is near threshold. Monitor closely for changes.`,
+        priceTarget: storageData.projected_price,
+        timeframe: `${storageData.inputs.horizon_hours}h horizon`,
+      });
+    } else if (decision === "SELL" || decision === "CONVERT") {
+      recs.push({
+        action: decision,
+        confidence,
+        reason: ratio < 1
+          ? `Storage value ratio ${ratio.toFixed(3)} < 1.0 suggests declining value. Projected price: ${formatPrice(storageData.projected_price, baseCurrencyText, baseCurrencyApiId, { digits: 4 })}.`
+          : `Decision is ${decision} despite ratio near 1.0. Volatility: ${(volatility * 100).toFixed(2)}%.`,
+        priceTarget: storageData.projected_price,
+        timeframe: `${storageData.inputs.horizon_hours}h horizon`,
+      });
+    }
+
+    // 3. Forecast trend recommendation
+    const primaryModel = forecastData.models[modelNames[0]];
+    const lastForecast = primaryModel.point_forecast[primaryModel.point_forecast.length - 1];
+    const firstForecast = primaryModel.point_forecast[0];
+    if (lastForecast != null && firstForecast != null && firstForecast > 0) {
+      const forecastChange = ((lastForecast - firstForecast) / firstForecast) * 100;
+      if (Math.abs(forecastChange) > 2) {
+        recs.push({
+          action: forecastChange > 0 ? "BUY" : "SELL",
+          confidence: isLowConfidence ? "low" : "medium",
+          reason: `Forecast trend: ${forecastChange > 0 ? "+" : ""}${forecastChange.toFixed(1)}% over forecast horizon (${modelNames[0]} model). ${isLowConfidence ? "Low confidence flag active." : ""}`,
+          priceTarget: lastForecast,
+          timeframe: `${primaryModel.point_forecast.length} periods`,
+        });
+      }
+    }
+
+    // 4. Anomaly-driven recommendation
+    if (currencyAnomaly) {
+      const direction = currencyAnomaly.direction;
+      recs.push({
+        action: direction === "up" ? "HOLD" : direction === "down" ? "SELL" : "WAIT",
+        confidence: currencyAnomaly.is_confirmed ? "high" : "low",
+        reason: `Anomaly detected (${direction}), alert score: ${currencyAnomaly.alert_score.toFixed(2)}. Indicators: ${currencyAnomaly.triggered_indicators.join(", ")}. ${currencyAnomaly.is_confirmed ? "Confirmed anomaly." : "Unconfirmed — observe."}`,
+        priceTarget: null,
+        timeframe: "Immediate",
+      });
+    }
+
+    // 5. Volatility caution
+    if (volatility > 0.05) {
+      recs.push({
+        action: "WAIT",
+        confidence: "medium",
+        reason: `High volatility (${(volatility * 100).toFixed(2)}%) increases risk. Consider reducing position size or waiting for stabilization before entering.`,
+        priceTarget: null,
+        timeframe: "Until volatility subsides",
+      });
+    }
+
+    // If no recommendations generated, add a WAIT
+    if (recs.length === 0) {
+      recs.push({
+        action: "WAIT",
+        confidence: "medium",
+        reason: "Insufficient signals for a clear recommendation. Data quality is acceptable but no strong directional bias detected.",
+        priceTarget: null,
+        timeframe: "Re-evaluate when new data arrives",
+      });
+    }
+
+    return recs;
+  }, [forecastData, storageData, anomaliesData, baseCurrencyText, baseCurrencyApiId]);
+
+  const actionColors: Record<string, string> = {
+    BUY: "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+    HOLD: "border-blue-500/50 text-blue-600 dark:text-blue-400 bg-blue-500/10",
+    SELL: "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10",
+    CONVERT: "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10",
+    WAIT: "border-gray-500/50 text-gray-600 dark:text-gray-400 bg-gray-500/10",
+  };
+
+  const confidenceColors: Record<string, string> = {
+    high: "border-emerald-500/50 text-emerald-600 dark:text-emerald-400",
+    medium: "border-amber-500/50 text-amber-600 dark:text-amber-400",
+    low: "border-red-500/50 text-red-600 dark:text-red-400",
+  };
+
+  return (
+    <div className="space-y-3">
+      {recommendations.map((rec, idx) => (
+        <div
+          key={idx}
+          className="flex items-start gap-3 rounded-lg border p-3"
+        >
+          <Badge
+            variant="outline"
+            className={`text-xs px-2 py-1 font-bold shrink-0 ${actionColors[rec.action] ?? ""}`}
+          >
+            {rec.action}
+          </Badge>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge
+                variant="outline"
+                className={`text-[9px] px-1.5 py-0 ${confidenceColors[rec.confidence] ?? ""}`}
+              >
+                {rec.confidence} confidence
+              </Badge>
+              {rec.timeframe && (
+                <span className="text-[10px] text-muted-foreground">
+                  {rec.timeframe}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-foreground leading-relaxed">
+              {rec.reason}
+            </p>
+            {rec.priceTarget !== null && (
+              <p className="text-xs text-muted-foreground mt-1 font-mono">
+                Target: {formatPrice(rec.priceTarget, baseCurrencyText, baseCurrencyApiId, { digits: 4 })}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Component Props
@@ -767,6 +954,41 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
           )}
         </CardContent>
       </Card>
+
+      {/* ---- P2-3: Take-Profit & Stop-Loss Calculator ---- */}
+      {backendOnline && forecastData?.models && storageData && (
+        <TakeProfitCalculator
+          models={forecastData.models}
+          currentPrice={storageData.current_price}
+          currencyId={selectedCurrency}
+          baseCurrencyText={uiState.baseCurrencyText}
+          baseCurrencyApiId={uiState.baseCurrencyApiId}
+        />
+      )}
+
+      {/* ---- P3-6: Forecast Recommendations ---- */}
+      {backendOnline && forecastData?.models && storageData && (
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+              <Info className="h-4 w-4" aria-hidden="true" />
+              Forecast Recommendations
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Based on ensemble forecast, storage value decision, and anomaly detection
+            </p>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0">
+            <ForecastRecommendations
+              forecastData={forecastData}
+              storageData={storageData}
+              anomaliesData={anomaliesData}
+              baseCurrencyText={uiState.baseCurrencyText}
+              baseCurrencyApiId={uiState.baseCurrencyApiId}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* ---- Anomaly Alerts ---- */}
       <Card>

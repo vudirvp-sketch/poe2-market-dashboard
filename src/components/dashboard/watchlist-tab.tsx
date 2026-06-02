@@ -2,8 +2,8 @@
 // Watchlist Tab (§2.6 — Enhanced)
 //
 // Features:
-// - Table of favorited exchange pairs with additional "Added" date column
-// - Sort options: by name, by price, by change, by date added
+// - Table of favorited exchange pairs with "P&L" and "Added" date columns
+// - Sort options: by name, by price, by change, by P&L, by date added
 // - Group toggle: Gainers / Losers / All
 // - Sharp movements alert for items with >10% change
 // - Search/filter within watchlist
@@ -44,7 +44,7 @@ import { useI18n } from "@/lib/i18n";
 // Types
 // ============================================================================
 
-type SortField = "pair" | "rate" | "change" | "added";
+type SortField = "pair" | "rate" | "change" | "pnl" | "added";
 type SortDirection = "asc" | "desc";
 type GroupFilter = "all" | "gainers" | "losers";
 
@@ -144,6 +144,11 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
           const aChg = a.changePercent ?? -Infinity;
           const bChg = b.changePercent ?? -Infinity;
           return dir * (aChg - bChg);
+        }
+        case "pnl": {
+          const aPnl = a.changePercent ?? -Infinity;
+          const bPnl = b.changePercent ?? -Infinity;
+          return dir * (aPnl - bPnl);
         }
         case "added": {
           // Sort by date added to watchlist
@@ -373,6 +378,17 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                   <th className="px-3 py-2.5 text-right font-medium text-muted-foreground" scope="col">
                     {t("volume") ?? "Volume"}
                   </th>
+                  {/* P&L */}
+                  <th
+                    className="px-3 py-2.5 text-right font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                    scope="col"
+                    onClick={() => handleSort("pnl")}
+                  >
+                    <span className="inline-flex items-center justify-end">
+                      {t("pnl") ?? "P&L"}
+                      <SortIndicator field="pnl" />
+                    </span>
+                  </th>
                   {/* Added date */}
                   <th
                     className="px-3 py-2.5 text-right font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
@@ -468,6 +484,12 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                       <td className="px-3 py-2 text-right">
                         <span className="text-sm text-muted-foreground font-mono">
                           {fmtVolume(pair.volume)}
+                        </span>
+                      </td>
+                      {/* P&L */}
+                      <td className="px-3 py-2 text-right">
+                        <span className={`text-xs font-semibold font-mono ${chg.color}`}>
+                          {fmtChange(pair.changePercent).text}
                         </span>
                       </td>
                       {/* Added date */}

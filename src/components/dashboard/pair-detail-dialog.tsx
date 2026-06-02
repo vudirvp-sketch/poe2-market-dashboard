@@ -32,6 +32,7 @@ import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
 import { EmptyState } from "./empty-state";
+import { CandlestickChart, type OHLCVData } from "./candlestick-chart";
 
 const TIME_RANGE_LIMITS: Record<"7d" | "30d" | "90d", string> = {
   "7d": "168",
@@ -80,6 +81,47 @@ export function PairDetailDialog({
       }),
     enabled: !!pair && open,
   });
+
+  // P3-8: Fetch daily OHLCV stats for candlestick chart
+  const { data: dailyStatsData } = useQuery({
+    queryKey: [
+      "pairDailyStats",
+      realm,
+      league,
+      pair?.currency1ItemId,
+      pair?.currency2ItemId,
+    ],
+    queryFn: () =>
+      fetchApi<Array<{ Date: string; Open: number; High: number; Low: number; Close: number; Volume: number }>>(
+        "/api/poe2/currencies",
+        {
+          realm,
+          league,
+          action: "dailyStats",
+          // Use the first currency's ItemId for daily stats
+          itemId: String(pair!.currency1ItemId),
+          limit: "60",
+        }
+      ),
+    enabled: !!pair && open,
+    staleTime: 120_000,
+    retry: 1,
+  });
+
+  // Convert daily stats to OHLCV data for the CandlestickChart component
+  const ohlcvData = useMemo((): OHLCVData[] => {
+    if (!dailyStatsData || !Array.isArray(dailyStatsData)) return [];
+    return dailyStatsData
+      .filter((d) => d.Close > 0 && Number.isFinite(d.Close))
+      .map((d) => ({
+        time: d.Date?.slice(0, 10) ?? "",
+        open: d.Open ?? d.Close,
+        high: d.High ?? d.Close,
+        low: d.Low ?? d.Close,
+        close: d.Close,
+        volume: d.Volume ?? 0,
+      }));
+  }, [dailyStatsData]);
 
   // Overall stats (from the loaded history period)
   const stats = useMemo(() => {
@@ -341,6 +383,18 @@ export function PairDetailDialog({
             kind="noResults"
             message={t("noPairHistory")}
           />
+        )}
+
+        {/* P3-8: Candlestick Chart with SMA/EMA/RSI overlays */}
+        {ohlcvData.length > 0 && (
+          <div className="mt-4">
+            <CandlestickChart
+              data={ohlcvData}
+              title={`${pair.currency1Name}/${pair.currency2Name} — Daily Candlestick`}
+              showVolume={true}
+              overlays={["sma20", "ema12", "rsi14"]}
+            />
+          </div>
         )}
       </DialogContent>
     </Dialog>
