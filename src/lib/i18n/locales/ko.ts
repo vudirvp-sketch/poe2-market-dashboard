@@ -738,6 +738,33 @@ const ko: Record<TranslationKeys, string> = {
   // ---- Currency Graph — SVG labels ----
   graphArbCycleLabel: "차익: +{0}%",
   graphArbCycleTooltip: "[차익거래 사이클]",
+
+  // ---- Accessibility: Sort ----
+  sortBy: "정렬 기준 {0}",
+
+  // ---- Suffix: 24h ----
+  suffix24h: "(24시)",
+
+  // ---- Forecast Recommendations (i18n-ready) ----
+  forecastRecStorageRatioFavorable: "저장 가치 비율 {0} > 1.0은 유리한 보유 조건을 나타냅니다. 모멘텀: {1} ({2}).",
+  forecastRecStorageRatioNearThreshold: "결정은 {0}이지만 비율 {1}이 임계값 근처입니다. 변화를 주의 깊게 모니터링하세요.",
+  forecastRecStorageRatioDeclining: "저장 가치 비율 {0} < 1.0은 가치 하락을 시사합니다. 예상 가격: {1}.",
+  forecastRecStorageRatioVolatility: "비율이 1.0 근처임에도 결정은 {0}입니다. 변동성: {1}%.",
+  forecastRecTrendUp: "예측 추세: 예측 기간 동안 +{0}% ({1} 모델). {2}",
+  forecastRecTrendDown: "예측 추세: 예측 기간 동안 {0}% ({1} 모델). {2}",
+  forecastRecLowConfidenceFlag: "낮은 신뢰도 플래그 활성화됨.",
+  forecastRecAnomalyDetected: "이상 징후 감지됨 ({0}), 알림 점수: {1}. 지표: {2}. {3}",
+  forecastRecAnomalyConfirmed: "확인된 이상 징후.",
+  forecastRecAnomalyUnconfirmed: "미확인 — 관찰 필요.",
+  forecastRecHighVolatility: "높은 변동성 ({0}%)은 리스크를 증가시킵니다. 포지션 크기를 줄이거나 안정화될 때까지 대기하는 것을 고려하세요.",
+  forecastRecNoSignals: "명확한 권장 사항을 위한 신호가 부족합니다. 데이터 품질은 허용되지만 강한 방향성 편향이 감지되지 않았습니다.",
+  forecastRecHorizon: "{0}시간 기간",
+  forecastRecPeriods: "{0} 기간",
+  forecastRecImmediate: "즉시",
+  forecastRecUntilVolatilitySubsides: "변동성이 가라앉을 때까지",
+  forecastRecReevaluate: "새 데이터 도착 시 재평가",
+  forecastRecPositive: "긍정적",
+  forecastRecNegative: "부정적",
 };
 
 export default ko;

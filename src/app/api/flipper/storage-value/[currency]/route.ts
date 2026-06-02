@@ -33,7 +33,7 @@ export async function GET(
           acceleration: 0,
           liquidityScore: 0,
           horizonHours: 24,
-          confidenceLevel: 0.95,
+          significanceLevel: 0.95,
         },
       },
       insufficientDataFallback: {
@@ -52,7 +52,7 @@ export async function GET(
           acceleration: 0,
           liquidityScore: 0,
           horizonHours: 24,
-          confidenceLevel: 0.95,
+          significanceLevel: 0.95,
         },
       },
     },

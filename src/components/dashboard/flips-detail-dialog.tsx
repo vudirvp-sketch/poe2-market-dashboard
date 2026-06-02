@@ -115,7 +115,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
 
       {/* Volume */}
       <div className="rounded-lg border p-3">
-        <p className="text-xs text-muted-foreground">{t("flipperVolume")} (24h)</p>
+        <p className="text-xs text-muted-foreground">{t("flipperVolume")} {t("suffix24h")}</p>
         <p className="text-lg font-bold font-mono">{selectedFlip.volume24h.toLocaleString()}</p>
       </div>
 

@@ -23,7 +23,7 @@ interface HeatmapItem {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const realm = searchParams.get("realm") || "poe2";
-  const league = searchParams.get("league") || "vaal";
+  const league = searchParams.get("league") || "runes";
 
   const res = await proxyWithFallback(
     "/api/prices/heatmap",

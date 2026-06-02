@@ -22,8 +22,8 @@ export async function GET(
   const benchmarksFallback = {
     currency,
     dataAvailable: false,
-    low_30d: null,
-    high_30d: null,
+    low30d: null,
+    high30d: null,
     rangePosition: null,
     percentile30d: null,
     currentVsAvg: null,

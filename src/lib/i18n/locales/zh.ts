@@ -738,6 +738,33 @@ const zh: Record<TranslationKeys, string> = {
   // ---- Currency Graph — SVG labels ----
   graphArbCycleLabel: "套利: +{0}%",
   graphArbCycleTooltip: "[套利循环]",
+
+  // ---- Accessibility: Sort ----
+  sortBy: "排序方式 {0}",
+
+  // ---- Suffix: 24h ----
+  suffix24h: "(24小时)",
+
+  // ---- Forecast Recommendations (i18n-ready) ----
+  forecastRecStorageRatioFavorable: "存储价值比率 {0} > 1.0 表明持有条件有利。动量：{1}（{2}）。",
+  forecastRecStorageRatioNearThreshold: "决策为 {0}，但比率 {1} 接近阈值。请密切监控变化。",
+  forecastRecStorageRatioDeclining: "存储价值比率 {0} < 1.0 表明价值下降。预测价格：{1}。",
+  forecastRecStorageRatioVolatility: "决策为 {0}，尽管比率接近 1.0。波动率：{1}%。",
+  forecastRecTrendUp: "预测趋势：+{0}%（预测周期内，{1} 模型）。{2}",
+  forecastRecTrendDown: "预测趋势：{0}%（预测周期内，{1} 模型）。{2}",
+  forecastRecLowConfidenceFlag: "低置信度标记已激活。",
+  forecastRecAnomalyDetected: "检测到异常（{0}），警报评分：{1}。指标：{2}。{3}",
+  forecastRecAnomalyConfirmed: "已确认异常。",
+  forecastRecAnomalyUnconfirmed: "未确认 — 继续观察。",
+  forecastRecHighVolatility: "高波动率（{0}%）增加风险。考虑减少仓位或等待稳定后再入场。",
+  forecastRecNoSignals: "信号不足，无法给出明确建议。数据质量可接受，但未检测到强烈的方向性倾向。",
+  forecastRecHorizon: "{0}小时周期",
+  forecastRecPeriods: "{0} 个周期",
+  forecastRecImmediate: "立即",
+  forecastRecUntilVolatilitySubsides: "直到波动性消退",
+  forecastRecReevaluate: "新数据到达时重新评估",
+  forecastRecPositive: "正向",
+  forecastRecNegative: "负向",
 };
 
 export default zh;

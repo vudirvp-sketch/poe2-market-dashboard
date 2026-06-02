@@ -165,6 +165,7 @@ function ForecastRecommendations({
   baseCurrencyText,
   baseCurrencyApiId,
 }: ForecastRecommendationsProps) {
+  const { t } = useI18n();
   const recommendations = useMemo((): Recommendation[] => {
     const recs: Recommendation[] = [];
     const modelNames = Object.keys(forecastData.models);
@@ -188,26 +189,28 @@ function ForecastRecommendations({
     if (hasDisagreement || isLowConfidence) confidence = "low";
     else if (!hasAnomaly && modelNames.length >= 2) confidence = "high";
 
+    const horizonHours = storageData.inputs?.horizonHours ?? "?";
+
     // 2. Storage value recommendation
     if (decision === "BUY" || decision === "HOLD") {
       recs.push({
         action: decision,
         confidence,
         reason: ratio > 1
-          ? `Storage value ratio ${ratio.toFixed(3)} > 1.0 indicates favorable holding conditions. Momentum: ${momentum > 0 ? "positive" : "negative"} (${momentum.toFixed(4)}).`
-          : `Decision is ${decision} but ratio ${ratio.toFixed(3)} is near threshold. Monitor closely for changes.`,
+          ? t("forecastRecStorageRatioFavorable", { "0": ratio.toFixed(3), "1": momentum > 0 ? t("forecastRecPositive") : t("forecastRecNegative"), "2": momentum.toFixed(4) })
+          : t("forecastRecStorageRatioNearThreshold", { "0": decision, "1": ratio.toFixed(3) }),
         priceTarget: storageData.projectedPrice,
-        timeframe: `${storageData.inputs?.horizonHours ?? "?"}h horizon`,
+        timeframe: t("forecastRecHorizon", { "0": horizonHours }),
       });
     } else if (decision === "SELL" || decision === "CONVERT") {
       recs.push({
         action: decision,
         confidence,
         reason: ratio < 1
-          ? `Storage value ratio ${ratio.toFixed(3)} < 1.0 suggests declining value. Projected price: ${formatPrice(storageData.projectedPrice, baseCurrencyText, baseCurrencyApiId, { digits: 4 })}.`
-          : `Decision is ${decision} despite ratio near 1.0. Volatility: ${(volatility * 100).toFixed(2)}%.`,
+          ? t("forecastRecStorageRatioDeclining", { "0": ratio.toFixed(3), "1": formatPrice(storageData.projectedPrice, baseCurrencyText, baseCurrencyApiId, { digits: 4 }) })
+          : t("forecastRecStorageRatioVolatility", { "0": decision, "1": (volatility * 100).toFixed(2) }),
         priceTarget: storageData.projectedPrice,
-        timeframe: `${storageData.inputs?.horizonHours ?? "?"}h horizon`,
+        timeframe: t("forecastRecHorizon", { "0": horizonHours }),
       });
     }
 
@@ -218,12 +221,15 @@ function ForecastRecommendations({
     if (lastForecast != null && firstForecast != null && firstForecast > 0) {
       const forecastChange = ((lastForecast - firstForecast) / firstForecast) * 100;
       if (Math.abs(forecastChange) > 2) {
+        const lowConfText = isLowConfidence ? t("forecastRecLowConfidenceFlag") : "";
         recs.push({
           action: forecastChange > 0 ? "BUY" : "SELL",
           confidence: isLowConfidence ? "low" : "medium",
-          reason: `Forecast trend: ${forecastChange > 0 ? "+" : ""}${forecastChange.toFixed(1)}% over forecast horizon (${modelNames[0]} model). ${isLowConfidence ? "Low confidence flag active." : ""}`,
+          reason: forecastChange > 0
+            ? t("forecastRecTrendUp", { "0": forecastChange.toFixed(1), "1": modelNames[0], "2": lowConfText })
+            : t("forecastRecTrendDown", { "0": forecastChange.toFixed(1), "1": modelNames[0], "2": lowConfText }),
           priceTarget: lastForecast,
-          timeframe: `${primaryModel.pointForecast.length} periods`,
+          timeframe: t("forecastRecPeriods", { "0": String(primaryModel.pointForecast.length) }),
         });
       }
     }
@@ -234,9 +240,14 @@ function ForecastRecommendations({
       recs.push({
         action: direction === "up" ? "HOLD" : direction === "down" ? "SELL" : "WAIT",
         confidence: currencyAnomaly.is_confirmed ? "high" : "low",
-        reason: `Anomaly detected (${direction}), alert score: ${currencyAnomaly.alert_score.toFixed(2)}. Indicators: ${currencyAnomaly.triggered_indicators.join(", ")}. ${currencyAnomaly.is_confirmed ? "Confirmed anomaly." : "Unconfirmed — observe."}`,
+        reason: t("forecastRecAnomalyDetected", {
+          "0": direction,
+          "1": currencyAnomaly.alert_score.toFixed(2),
+          "2": currencyAnomaly.triggered_indicators.join(", "),
+          "3": currencyAnomaly.is_confirmed ? t("forecastRecAnomalyConfirmed") : t("forecastRecAnomalyUnconfirmed"),
+        }),
         priceTarget: null,
-        timeframe: "Immediate",
+        timeframe: t("forecastRecImmediate"),
       });
     }
 
@@ -245,9 +256,9 @@ function ForecastRecommendations({
       recs.push({
         action: "WAIT",
         confidence: "medium",
-        reason: `High volatility (${(volatility * 100).toFixed(2)}%) increases risk. Consider reducing position size or waiting for stabilization before entering.`,
+        reason: t("forecastRecHighVolatility", { "0": (volatility * 100).toFixed(2) }),
         priceTarget: null,
-        timeframe: "Until volatility subsides",
+        timeframe: t("forecastRecUntilVolatilitySubsides"),
       });
     }
 
@@ -256,14 +267,14 @@ function ForecastRecommendations({
       recs.push({
         action: "WAIT",
         confidence: "medium",
-        reason: "Insufficient signals for a clear recommendation. Data quality is acceptable but no strong directional bias detected.",
+        reason: t("forecastRecNoSignals"),
         priceTarget: null,
-        timeframe: "Re-evaluate when new data arrives",
+        timeframe: t("forecastRecReevaluate"),
       });
     }
 
     return recs;
-  }, [forecastData, storageData, anomaliesData, baseCurrencyText, baseCurrencyApiId]);
+  }, [forecastData, storageData, anomaliesData, baseCurrencyText, baseCurrencyApiId, t]);
 
   const actionColors: Record<string, string> = {
     BUY: "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",

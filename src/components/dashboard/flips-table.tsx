@@ -87,7 +87,7 @@ export const FlipsTable = memo(function FlipsTable({
     <button
       className="flex items-center gap-1 hover:text-foreground transition-colors"
       onClick={() => onSort(field)}
-      aria-label={`Sort by ${label}`}
+      aria-label={t("sortBy", { "0": label })}
     >
       <span>{label}</span>
       {sortField === field ? (

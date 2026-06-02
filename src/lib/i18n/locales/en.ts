@@ -742,6 +742,33 @@ const en = {
   // ---- Currency Graph — SVG labels ----
   graphArbCycleLabel: "Arb: +{0}%",
   graphArbCycleTooltip: "[ARB CYCLE]",
+
+  // ---- Accessibility: Sort ----
+  sortBy: "Sort by {0}",
+
+  // ---- Suffix: 24h ----
+  suffix24h: "(24h)",
+
+  // ---- Forecast Recommendations (i18n-ready) ----
+  forecastRecStorageRatioFavorable: "Storage value ratio {0} > 1.0 indicates favorable holding conditions. Momentum: {1} ({2}).",
+  forecastRecStorageRatioNearThreshold: "Decision is {0} but ratio {1} is near threshold. Monitor closely for changes.",
+  forecastRecStorageRatioDeclining: "Storage value ratio {0} < 1.0 suggests declining value. Projected price: {1}.",
+  forecastRecStorageRatioVolatility: "Decision is {0} despite ratio near 1.0. Volatility: {1}%.",
+  forecastRecTrendUp: "Forecast trend: +{0}% over forecast horizon ({1} model). {2}",
+  forecastRecTrendDown: "Forecast trend: {0}% over forecast horizon ({1} model). {2}",
+  forecastRecLowConfidenceFlag: "Low confidence flag active.",
+  forecastRecAnomalyDetected: "Anomaly detected ({0}), alert score: {1}. Indicators: {2}. {3}",
+  forecastRecAnomalyConfirmed: "Confirmed anomaly.",
+  forecastRecAnomalyUnconfirmed: "Unconfirmed — observe.",
+  forecastRecHighVolatility: "High volatility ({0}%) increases risk. Consider reducing position size or waiting for stabilization before entering.",
+  forecastRecNoSignals: "Insufficient signals for a clear recommendation. Data quality is acceptable but no strong directional bias detected.",
+  forecastRecHorizon: "{0}h horizon",
+  forecastRecPeriods: "{0} periods",
+  forecastRecImmediate: "Immediate",
+  forecastRecUntilVolatilitySubsides: "Until volatility subsides",
+  forecastRecReevaluate: "Re-evaluate when new data arrives",
+  forecastRecPositive: "positive",
+  forecastRecNegative: "negative",
 } as const;
 
 export default en;

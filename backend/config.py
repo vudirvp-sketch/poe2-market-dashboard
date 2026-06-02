@@ -33,7 +33,7 @@ class DataConfig(BaseModel):
 
 
 class LeagueConfig(BaseModel):
-    league_name: str = "vaal"
+    league_name: str = "runes"  # Override in config.yaml when league changes
     realm: str = "poe2"  # POE2Scout API realm path segment: "poe2" (NOT "poe2/pc")
     league_start_date: str = "2025-01-15T00:00:00Z"
     phase_early_days: int = 7

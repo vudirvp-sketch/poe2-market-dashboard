@@ -740,6 +740,33 @@ const ru: Record<TranslationKeys, string> = {
   // ---- Currency Graph — SVG labels ----
   graphArbCycleLabel: "Арб: +{0}%",
   graphArbCycleTooltip: "[АРБ. ЦИКЛ]",
+
+  // ---- Accessibility: Sort ----
+  sortBy: "Сортировать по {0}",
+
+  // ---- Suffix: 24h ----
+  suffix24h: "(24ч)",
+
+  // ---- Forecast Recommendations (i18n-ready) ----
+  forecastRecStorageRatioFavorable: "Коэффициент хранения {0} > 1.0 указывает на благоприятные условия для удержания. Моментум: {1} ({2}).",
+  forecastRecStorageRatioNearThreshold: "Решение {0}, но коэффициент {1} близок к порогу. Внимательно следите за изменениями.",
+  forecastRecStorageRatioDeclining: "Коэффициент хранения {0} < 1.0 указывает на снижение стоимости. Прогнозируемая цена: {1}.",
+  forecastRecStorageRatioVolatility: "Решение {0}, несмотря на коэффициент около 1.0. Волатильность: {1}%.",
+  forecastRecTrendUp: "Тренд прогноза: +{0}% за горизонт прогноза (модель {1}). {2}",
+  forecastRecTrendDown: "Тренд прогноза: {0}% за горизонт прогноза (модель {1}). {2}",
+  forecastRecLowConfidenceFlag: "Флаг низкой достоверности активен.",
+  forecastRecAnomalyDetected: "Обнаружена аномалия ({0}), скор алерта: {1}. Индикаторы: {2}. {3}",
+  forecastRecAnomalyConfirmed: "Аномалия подтверждена.",
+  forecastRecAnomalyUnconfirmed: "Не подтверждено — наблюдение.",
+  forecastRecHighVolatility: "Высокая волатильность ({0}%) увеличивает риск. Рассмотрите уменьшение размера позиции или ожидание стабилизации перед входом.",
+  forecastRecNoSignals: "Недостаточно сигналов для чёткой рекомендации. Качество данных приемлемое, но явного направленного смещения не обнаружено.",
+  forecastRecHorizon: "Горизонт {0}ч",
+  forecastRecPeriods: "{0} периодов",
+  forecastRecImmediate: "Немедленно",
+  forecastRecUntilVolatilitySubsides: "До спада волатильности",
+  forecastRecReevaluate: "Переоценить при поступлении новых данных",
+  forecastRecPositive: "положительный",
+  forecastRecNegative: "отрицательный",
 };
 
 export default ru;
