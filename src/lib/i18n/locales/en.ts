@@ -634,6 +634,57 @@ const en = {
 
   // ---- P2-4: Liquidity Indicators ----
   liquidityScoreTooltip: "Liquidity: {0}% — based on volume-to-stock ratio",
+
+  // ---- P2-2: Heatmap & Market Tops ----
+  heatmapMarketTops: "Market Tops",
+  heatmapTopGainers: "Top Gainers",
+  heatmapTopLosers: "Top Losers",
+  heatmapColorLegend: "Color intensity = magnitude of 24h change",
+
+  // ---- P2-3: Take-Profit Calculator ----
+  takeProfitTitle: "Take-Profit & Stop-Loss Calculator",
+  takeProfitBasedOnCI: "Based on forecast confidence intervals for {0}",
+  takeProfitPositionSize: "Position Size",
+  takeProfitDirection: "Direction",
+  takeProfitLong: "Long",
+  takeProfitShort: "Short",
+  takeProfitRiskReward: "Risk/Reward",
+  takeProfitEntryPrice: "Entry Price",
+  takeProfitPositionValue: "Position Value",
+  takeProfitLevels: "Take-Profit Levels",
+  takeProfitStopLoss: "Stop-Loss Levels",
+  takeProfitConservative: "Conservative",
+  takeProfitOptimistic: "Optimistic",
+  takeProfitAggressive: "Aggressive",
+  takeProfitPessimistic: "Pessimistic",
+
+  // ---- P2-4: Volume & Liquidity ----
+  volumeLiquidityTitle: "Volume & Liquidity",
+  volumeLiquidityTotalPairs: "Total Pairs",
+  volumeLiquidityAvgLiquidity: "Avg Liquidity",
+  volumeLiquidityHighLiquidity: "High Liquidity Pairs",
+  volumeLiquidityAnomalies: "Volume Anomalies",
+  volumeLiquidityDetailed: "Detailed Liquidity Data",
+
+  // ---- P3-1: Technical Indicators ----
+  technicalIndicatorsTitle: "Technical Indicators",
+  indicatorSMA20: "SMA 20",
+  indicatorEMA12: "EMA 12",
+  indicatorEMA26: "EMA 26",
+  indicatorRSI14: "RSI 14",
+  indicatorOverbought: "Overbought",
+  indicatorOversold: "Oversold",
+
+  // ---- P3-8: Candlestick Chart ----
+  candlestickChartTitle: "Candlestick Chart",
+  candlestickNoData: "No OHLCV data available for candlestick chart",
+  candlestickOpen: "O",
+  candlestickHigh: "H",
+  candlestickLow: "L",
+  candlestickClose: "C",
+  candlestickVol: "Vol",
+  candlestickBullish: "Bullish",
+  candlestickBearish: "Bearish",
 } as const;
 
 export default en;

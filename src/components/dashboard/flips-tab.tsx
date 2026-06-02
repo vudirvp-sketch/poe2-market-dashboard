@@ -158,10 +158,34 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       );
     }
 
-    // Sort
+    // Sort — P2-1: Support nested quantized fields
     const sorted = [...filtered].sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
+      let aVal: number;
+      let bVal: number;
+
+      // Handle quantized sort fields that require nested property access
+      switch (sortField) {
+        case "qSpread":
+          aVal = a.quantized_analysis?.optimalLotProfitPct ?? 0;
+          bVal = b.quantized_analysis?.optimalLotProfitPct ?? 0;
+          break;
+        case "minLot":
+          aVal = a.quantized_analysis?.minProfitableLot ?? 0;
+          bVal = b.quantized_analysis?.minProfitableLot ?? 0;
+          break;
+        case "brickRisk":
+          aVal = a.quantized_analysis?.brickResistance ?? 0;
+          bVal = b.quantized_analysis?.brickResistance ?? 0;
+          break;
+        case "tierDistance":
+          aVal = a.tier_distance ?? 0;
+          bVal = b.tier_distance ?? 0;
+          break;
+        default:
+          aVal = a[sortField] as number;
+          bVal = b[sortField] as number;
+      }
+
       const multiplier = sortDirection === "desc" ? -1 : 1;
       return (aVal - bVal) * multiplier;
     });

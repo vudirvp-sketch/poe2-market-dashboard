@@ -45,7 +45,12 @@ export type SortField =
   | "spread_after_fees"
   | "volume_24h"
   | "momentum"
-  | "volatility";
+  | "volatility"
+  // P2-1: Quantized sort fields
+  | "qSpread"       // optimalLotProfitPct from quantized analysis
+  | "minLot"        // minProfitableLot from quantized analysis
+  | "brickRisk"     // brickResistance from quantized analysis
+  | "tierDistance";  // tier_distance between currencies
 
 export type SortDirection = "asc" | "desc";
 

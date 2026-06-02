@@ -132,12 +132,12 @@ export const FlipsTable = memo(function FlipsTable({
               <span role="columnheader">{t("flipperCurrency")}</span>
               <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
               <span role="columnheader" className="text-right"><SortHeader field="spread_after_fees" label={t("flipperSpread")} /></span>
-              <span role="columnheader" className="text-right" title={t("qSpreadTooltip")}>{t("qSpread")}</span>
+              <span role="columnheader" className="text-right" title={t("qSpreadTooltip")}><SortHeader field="qSpread" label={t("qSpread")} /></span>
               <span role="columnheader" className="text-right">{t("flipperMomentum")}</span>
-              <span role="columnheader" className="text-right" title={t("minLotTooltip")}>{t("minLot")}</span>
-              <span role="columnheader" className="text-center" title={t("brickRiskTooltip")}>{t("brickRisk")}</span>
+              <span role="columnheader" className="text-right" title={t("minLotTooltip")}><SortHeader field="minLot" label={t("minLot")} /></span>
+              <span role="columnheader" className="text-center" title={t("brickRiskTooltip")}><SortHeader field="brickRisk" label={t("brickRisk")} /></span>
               <span role="columnheader" className="text-center">{t("flipperCluster")}</span>
-              <span role="columnheader" className="text-center" title={t("tierDistanceTooltip")}>{t("tierDist")}</span>
+              <span role="columnheader" className="text-center" title={t("tierDistanceTooltip")}><SortHeader field="tierDistance" label={t("tierDist")} /></span>
               <span role="columnheader" />
             </div>
 
