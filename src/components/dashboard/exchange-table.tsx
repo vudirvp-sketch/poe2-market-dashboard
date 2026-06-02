@@ -177,7 +177,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("pair")}
               >
                 <span className="inline-flex items-center">
-                  {t("pair") ?? "Pair"}
+                  {t("pair")}
                   <SortIndicator field="pair" />
                 </span>
               </th>
@@ -189,7 +189,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("rate")}
               >
                 <span className="inline-flex items-center justify-end">
-                  {t("rate") ?? "Rate"} ({getCurrencyShortName(uiState.baseCurrencyText, uiState.baseCurrencyApiId)})
+                  {t("rate")} ({getCurrencyShortName(uiState.baseCurrencyText, uiState.baseCurrencyApiId)})
                   <SortIndicator field="rate" />
                 </span>
               </th>
@@ -201,7 +201,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("change")}
               >
                 <span className="inline-flex items-center justify-end">
-                  {t("change") ?? "Change"}
+                  {t("change")}
                   <SortIndicator field="change" />
                 </span>
               </th>
@@ -213,7 +213,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("change7d")}
               >
                 <span className="inline-flex items-center justify-end">
-                  {t("change7d") ?? "7d Change"}
+                  {t("change7d")}
                   <SortIndicator field="change7d" />
                 </span>
               </th>
@@ -225,7 +225,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("volume")}
               >
                 <span className="inline-flex items-center justify-end">
-                  {t("volume") ?? "Volume"}
+                  {t("volume")}
                   <SortIndicator field="volume" />
                 </span>
               </th>
@@ -237,7 +237,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 onClick={() => handleSort("trend")}
               >
                 <span className="inline-flex items-center justify-center">
-                  {t("trend") ?? "Trend"}
+                  {t("trend")}
                   <SortIndicator field="trend" />
                 </span>
               </th>
@@ -299,7 +299,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                         toggleExchangeFavorite(pair.id);
                       }}
                       className="p-0.5 hover:scale-110 transition-transform"
-                      aria-label={isFav ? t("removeFromFavorites") ?? "Remove from favorites" : t("addToFavorites") ?? "Add to favorites"}
+                      aria-label={isFav ? t("removeFromFavorites") : t("addToFavorites")}
                     >
                       <Star
                         className={`h-4 w-4 ${
@@ -394,7 +394,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       className={`p-0.5 transition-opacity ${
                         inComparison ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                       }`}
-                      aria-label={inComparison ? t("removeFromComparison") ?? "Remove from comparison" : t("addToComparison") ?? "Add to comparison"}
+                      aria-label={inComparison ? t("removeFromComparison") : t("addToComparison")}
                     >
                       <GitCompare
                         className={`h-4 w-4 ${

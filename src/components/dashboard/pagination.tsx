@@ -38,7 +38,7 @@ export function Pagination({
   if (totalPages <= 1 && !onPerPageChange) return null;
 
   return (
-    <div className="flex items-center justify-between gap-2 mt-4" role="navigation" aria-label="Pagination">
+    <div className="flex items-center justify-between gap-2 mt-4" role="navigation" aria-label={t("ariaPagination")}>
       <div className="flex items-center gap-2">
         {onPerPageChange && (
           <div className="flex items-center gap-1.5">

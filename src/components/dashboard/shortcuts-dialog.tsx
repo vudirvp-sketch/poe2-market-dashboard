@@ -35,10 +35,10 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Keyboard className="h-5 w-5" aria-hidden="true" />
-            {t("shortcutTitle") ?? "Keyboard Shortcuts"}
+            {t("shortcutTitle")}
           </DialogTitle>
           <DialogDescription>
-            {t("shortcutDescription") ?? "Use these shortcuts to navigate the dashboard faster."}
+            {t("shortcutDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-2">
@@ -46,10 +46,10 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
             <thead>
               <tr className="border-b border-border">
                 <th className="py-2 pr-4 text-left font-medium text-muted-foreground w-24">
-                  {t("shortcutKey") ?? "Key"}
+                  {t("shortcutKey")}
                 </th>
                 <th className="py-2 text-left font-medium text-muted-foreground">
-                  {t("shortcutAction") ?? "Action"}
+                  {t("shortcutAction")}
                 </th>
               </tr>
             </thead>
@@ -72,7 +72,7 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
         {/* Tab mapping reference */}
         <div className="mt-3 pt-3 border-t border-border">
           <p className="text-xs text-muted-foreground mb-1.5">
-            {t("shortcutTabMapping") ?? "Tab shortcuts:"}
+            {t("shortcutTabMapping")}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span><kbd className="font-mono font-semibold">1</kbd> {t("tabOverview")}</span>

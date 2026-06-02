@@ -233,7 +233,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
-          <div className="max-h-96 overflow-y-auto" role="table" aria-label="Currency tiers">
+          <div className="max-h-96 overflow-y-auto" role="table" aria-label={t("ariaCurrencyTiers")}>
             <div
               className="grid grid-cols-[1fr_60px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10"
               role="row"

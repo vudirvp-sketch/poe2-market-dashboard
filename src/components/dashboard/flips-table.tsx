@@ -142,7 +142,7 @@ export const FlipsTable = memo(function FlipsTable({
             </div>
 
             {/* Table body */}
-            <div className="max-h-[500px] overflow-y-auto" role="rowgroup" aria-label="Flip opportunities">
+            <div className="max-h-[500px] overflow-y-auto" role="rowgroup" aria-label={t("ariaFlipOpportunities")}>
               {paginatedOpportunities.map((opp) => (
                 <div
                   key={opp.currency}
@@ -156,7 +156,7 @@ export const FlipsTable = memo(function FlipsTable({
                     }
                   }}
                   tabIndex={0}
-                  aria-label={`${opp.currency} score ${(opp.score * 100).toFixed(0)}%`}
+                  aria-label={t("ariaFlipRowScore", { "0": opp.currency, "1": (opp.score * 100).toFixed(0) })}
                 >
                   {/* Currency pair + suspicious data indicator */}
                   <span className="flex items-center gap-1 text-xs font-medium truncate">

@@ -216,8 +216,8 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
     return (
       <EmptyState
         kind="noFavorites"
-        message={t("noFavorites") ?? "No favorites yet"}
-        suggestion={t("noFavoritesDesc") ?? "Click the star icon on any item to add it to your watchlist"}
+        message={t("noFavorites")}
+        suggestion={t("noFavoritesDesc")}
       />
     );
   }
@@ -230,8 +230,8 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
     return (
       <EmptyState
         icon={Inbox}
-        message={t("favoritedNotFound") ?? "Favorited items not found in current league"}
-        suggestion={t("favoritedNotFoundDesc") ?? "Try switching leagues or add new favorites"}
+        message={t("favoritedNotFound")}
+        suggestion={t("favoritedNotFoundDesc")}
       />
     );
   }
@@ -246,7 +246,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
               <Zap className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
                 <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                  {t("sharpMovements") ?? "Sharp Movements"}
+                  {t("sharpMovements")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {sharpMovements.map((p) => {
@@ -268,7 +268,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
       {/* Toolbar: group filter + search */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Group filter chips */}
-        <div className="flex items-center gap-1.5" role="group" aria-label="Watchlist group filter">
+        <div className="flex items-center gap-1.5" role="group" aria-label={t("ariaWatchlistGroupFilter")}>
           <Badge
             variant={groupFilter === "all" ? "default" : "outline"}
             className="cursor-pointer"
@@ -277,7 +277,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
             aria-pressed={groupFilter === "all"}
             tabIndex={0}
           >
-            {t("all") ?? "All"}
+            {t("all")}
           </Badge>
           <Badge
             variant={groupFilter === "gainers" ? "default" : "outline"}
@@ -288,7 +288,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
             tabIndex={0}
           >
             <TrendingUp className="h-3 w-3 mr-1" aria-hidden="true" />
-            {t("topGainers") ?? "Gainers"}
+            {t("topGainers")}
           </Badge>
           <Badge
             variant={groupFilter === "losers" ? "default" : "outline"}
@@ -299,7 +299,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
             tabIndex={0}
           >
             <TrendingDown className="h-3 w-3 mr-1" aria-hidden="true" />
-            {t("topLosers") ?? "Losers"}
+            {t("topLosers")}
           </Badge>
         </div>
 
@@ -307,7 +307,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
         <div className="relative min-w-[150px] max-w-[250px]">
           <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
-            placeholder={t("searchWatchlist") ?? "Search watchlist..."}
+            placeholder={t("searchWatchlist")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-8 h-7 text-xs"
@@ -316,7 +316,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
             <button
               onClick={() => setSearchQuery("")}
               className="absolute right-2.5 top-1.5"
-              aria-label="Clear search"
+              aria-label={t("ariaClearSearch")}
             >
               <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
             </button>
@@ -328,8 +328,8 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
       {sortedPairs.length === 0 ? (
         <EmptyState
           kind="noResults"
-          message={t("noWatchlistMatches") ?? "No items match your filters"}
-          suggestion={t("noWatchlistMatchesDesc") ?? "Try adjusting your search or group filter."}
+          message={t("noWatchlistMatches")}
+          suggestion={t("noWatchlistMatchesDesc")}
         />
       ) : (
         <div className="rounded-md border border-border overflow-hidden">
@@ -348,7 +348,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                     onClick={() => handleSort("pair")}
                   >
                     <span className="inline-flex items-center">
-                      {t("pair") ?? "Pair"}
+                      {t("pair")}
                       <SortIndicator field="pair" />
                     </span>
                   </th>
@@ -359,7 +359,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                     onClick={() => handleSort("rate")}
                   >
                     <span className="inline-flex items-center justify-end">
-                      {t("rate") ?? "Rate"}
+                      {t("rate")}
                       <SortIndicator field="rate" />
                     </span>
                   </th>
@@ -370,13 +370,13 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                     onClick={() => handleSort("change")}
                   >
                     <span className="inline-flex items-center justify-end">
-                      {t("change") ?? "Change"}
+                      {t("change")}
                       <SortIndicator field="change" />
                     </span>
                   </th>
                   {/* Volume */}
                   <th className="px-3 py-2.5 text-right font-medium text-muted-foreground" scope="col">
-                    {t("volume") ?? "Volume"}
+                    {t("volume")}
                   </th>
                   {/* P&L */}
                   <th
@@ -385,7 +385,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                     onClick={() => handleSort("pnl")}
                   >
                     <span className="inline-flex items-center justify-end">
-                      {t("pnl") ?? "P&L"}
+                      {t("pnl")}
                       <SortIndicator field="pnl" />
                     </span>
                   </th>
@@ -396,7 +396,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                     onClick={() => handleSort("added")}
                   >
                     <span className="inline-flex items-center justify-end">
-                      {t("added") ?? "Added"}
+                      {t("added")}
                       <SortIndicator field="added" />
                     </span>
                   </th>
@@ -434,7 +434,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                             toggleExchangeFavorite(pair.id);
                           }}
                           className="p-0.5 hover:scale-110 transition-transform"
-                          aria-label={isFav ? t("removeFromFavorites") ?? "Remove from favorites" : t("addToFavorites") ?? "Add to favorites"}
+                          aria-label={isFav ? t("removeFromFavorites") : t("addToFavorites")}
                         >
                           <Star
                             className={`h-4 w-4 ${

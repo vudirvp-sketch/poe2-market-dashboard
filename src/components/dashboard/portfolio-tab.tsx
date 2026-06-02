@@ -598,7 +598,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                     <table className="text-xs border-collapse" role="table" aria-label={t("portfolioCorrelationMatrix")}>
                       <thead>
                         <tr>
-                          <th className="p-1 border border-border bg-muted/50 sticky left-0 z-10 min-w-[60px]" aria-label="Row header" />
+                          <th className="p-1 border border-border bg-muted/50 sticky left-0 z-10 min-w-[60px]" aria-label={t("ariaRowHeader")} />
                           {portfolioData.correlationMatrix.currencies.map((cur) => (
                             <th
                               key={cur}

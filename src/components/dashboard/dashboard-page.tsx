@@ -760,7 +760,7 @@ export function Dashboard() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:text-sm focus:font-medium"
       >
-        {t("skipToContent") ?? "Skip to content"}
+        {t("skipToContent")}
       </a>
 
       {/* Header — now with flipper backend status, phase badge, events button */}
@@ -829,7 +829,7 @@ export function Dashboard() {
             }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <TabsList aria-label="Dashboard sections">
+              <TabsList aria-label={t("ariaDashboardSections")}>
                 <TabsTrigger value="overview" className="gap-1.5" aria-label={t("tabOverview")}>
                   <BarChart3 className="h-4 w-4" aria-hidden="true" /> {t("tabOverview")}
                 </TabsTrigger>
@@ -869,8 +869,8 @@ export function Dashboard() {
                   size="sm"
                   className="h-8 gap-1.5"
                   onClick={() => setShortcutsHelpOpen(true)}
-                  aria-label={t("keyboardShortcuts") ?? "Keyboard Shortcuts"}
-                  title={t("keyboardShortcuts") ?? "Keyboard Shortcuts"}
+                  aria-label={t("keyboardShortcuts")}
+                  title={t("keyboardShortcuts")}
                 >
                   <Keyboard className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
@@ -921,7 +921,7 @@ export function Dashboard() {
 
                 {/* Category filter buttons (only for currencies/uniques) */}
                 {(tab === "currencies" || tab === "uniques") && (
-                  <div className="flex flex-wrap gap-1.5" role="group" aria-label="Category filter">
+                  <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("ariaCategoryFilter")}>
                     <Badge
                       variant={categoryFilter === "all" ? "default" : "outline"}
                       className="cursor-pointer"
@@ -954,7 +954,7 @@ export function Dashboard() {
 
             {/* ============ OVERVIEW TAB ============ */}
             <TabsContent value="overview">
-              <ErrorBoundary fallbackTitle="Market Overview">
+              <ErrorBoundary fallbackTitle={t("fallbackMarketOverview")}>
                 <MarketOverview
                   realm={realm}
                   league={effectiveLeague}
@@ -963,7 +963,7 @@ export function Dashboard() {
                 />
               </ErrorBoundary>
               {/* P2-2: Market Heatmap with Market Tops (standalone component) */}
-              <ErrorBoundary fallbackTitle="Market Heatmap">
+              <ErrorBoundary fallbackTitle={t("fallbackMarketHeatmap")}>
                 <MarketHeatmap
                   realm={realm}
                   league={effectiveLeague}
@@ -972,7 +972,7 @@ export function Dashboard() {
               </ErrorBoundary>
 
               {/* P3-3: Comparative Analytics — integrated into Overview tab */}
-              <ErrorBoundary fallbackTitle="Comparative Analytics">
+              <ErrorBoundary fallbackTitle={t("fallbackComparativeAnalytics")}>
                 <ComparativeChart
                   realm={realm}
                   league={effectiveLeague}
@@ -996,7 +996,7 @@ export function Dashboard() {
                 <EmptyState
                   kind="noResults"
                   message={t("noCurrencies")}
-                  suggestion={search ? t("noResultsSuggestion") ?? "Try adjusting your search or switching to a different category." : undefined}
+                  suggestion={search ? t("noResultsSuggestion") : undefined}
                 />
               ) : (
                 <>
@@ -1009,7 +1009,7 @@ export function Dashboard() {
                       referenceCurrency={referenceCurrency}
                     />
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2" role="list" aria-label="Currency items">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2" role="list" aria-label={t("ariaCurrencyItems")}>
                       {currenciesData.items.map((item) => (
                         <CurrencyCard
                           key={item.id}
@@ -1053,7 +1053,7 @@ export function Dashboard() {
                 <EmptyState
                   kind="noResults"
                   message={t("noUniques")}
-                  suggestion={search ? t("noResultsSuggestion") ?? "Try adjusting your search or switching to a different category." : undefined}
+                  suggestion={search ? t("noResultsSuggestion") : undefined}
                 />
               ) : (
                 <>
@@ -1095,14 +1095,14 @@ export function Dashboard() {
                 <EmptyState
                   kind="noResults"
                   message={t("noExchangePairs")}
-                  suggestion={search ? t("noResultsSuggestion") ?? "Try adjusting your search or switching to 'All Pairs'." : undefined}
+                  suggestion={search ? t("noResultsSuggestion") : undefined}
                 />
               ) : (
                 <>
                   {/* §1.1: View toggle + §1.2: Quick Filter Chips + §2.3: Extended Filters */}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     {/* Quick Filter Chips (§1.2) */}
-                    <div className="flex items-center gap-1.5" role="group" aria-label="Exchange filters">
+                    <div className="flex items-center gap-1.5" role="group" aria-label={t("ariaExchangeFilters")}>
                       <Badge
                         variant={uiState.exchange.activeFilter === "all" ? "default" : "outline"}
                         className="cursor-pointer"
@@ -1111,7 +1111,7 @@ export function Dashboard() {
                         aria-pressed={uiState.exchange.activeFilter === "all"}
                         tabIndex={0}
                       >
-                        {t("allPairs") ?? "All Pairs"}
+                        {t("allPairs")}
                       </Badge>
                       <Badge
                         variant={uiState.exchange.activeFilter === "topVolume" ? "default" : "outline"}
@@ -1121,7 +1121,7 @@ export function Dashboard() {
                         aria-pressed={uiState.exchange.activeFilter === "topVolume"}
                         tabIndex={0}
                       >
-                        {t("topVolume") ?? "Top Volume"}
+                        {t("topVolume")}
                       </Badge>
                       <Badge
                         variant={uiState.exchange.activeFilter === "favorites" ? "default" : "outline"}
@@ -1137,10 +1137,10 @@ export function Dashboard() {
                         aria-pressed={uiState.exchange.activeFilter === "favorites"}
                         aria-disabled={uiState.exchange.favorites.length === 0}
                         tabIndex={0}
-                        title={uiState.exchange.favorites.length === 0 ? (t("favoritesEmptyTooltip") ?? "Add pairs to favorites by clicking the star icon") : undefined}
+                        title={uiState.exchange.favorites.length === 0 ? (t("favoritesEmptyTooltip")) : undefined}
                       >
                         <Star className="h-3 w-3 mr-1" aria-hidden="true" />
-                        {t("favorites") ?? "Favorites"}
+                        {t("favorites")}
                       </Badge>
 
                       {/* §2.3: Extended Filters toggle button */}
@@ -1150,10 +1150,10 @@ export function Dashboard() {
                         className="h-7 text-xs gap-1 px-2"
                         onClick={() => setExtendedFiltersOpen(!extendedFiltersOpen)}
                         aria-expanded={extendedFiltersOpen}
-                        aria-label={t("filters") ?? "Filters"}
+                        aria-label={t("filters")}
                       >
                         <Filter className="h-3.5 w-3.5" aria-hidden="true" />
-                        {t("filters") ?? "Filters"}
+                        {t("filters")}
                         {activeExtFilterCount > 0 && (
                           <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center rounded-full">
                             {activeExtFilterCount}
@@ -1163,17 +1163,17 @@ export function Dashboard() {
                     </div>
 
                     {/* View toggle: Table / Cards (§1.1) */}
-                    <div className="flex items-center gap-1" role="group" aria-label="View mode">
+                    <div className="flex items-center gap-1" role="group" aria-label={t("ariaViewMode")}>
                       <Button
                         variant={uiState.exchange.viewMode === "table" ? "default" : "outline"}
                         size="sm"
                         className="h-7 text-xs gap-1 px-2"
                         onClick={() => setExchangeViewMode("table")}
                         aria-pressed={uiState.exchange.viewMode === "table"}
-                        aria-label="Table view"
+                        aria-label={t("ariaTableView")}
                       >
                         <List className="h-3.5 w-3.5" aria-hidden="true" />
-                        {t("tableView") ?? "Table"}
+                        {t("tableView")}
                       </Button>
                       <Button
                         variant={uiState.exchange.viewMode === "cards" ? "default" : "outline"}
@@ -1181,21 +1181,21 @@ export function Dashboard() {
                         className="h-7 text-xs gap-1 px-2"
                         onClick={() => setExchangeViewMode("cards")}
                         aria-pressed={uiState.exchange.viewMode === "cards"}
-                        aria-label="Cards view"
+                        aria-label={t("ariaCardsView")}
                       >
                         <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
-                        {t("cardsView") ?? "Cards"}
+                        {t("cardsView")}
                       </Button>
                     </div>
                   </div>
 
                   {/* §2.3: Extended Filters collapsible panel */}
                   {extendedFiltersOpen && (
-                    <div className="mb-3 p-3 border border-border rounded-lg bg-muted/30" role="region" aria-label="Extended filters">
+                    <div className="mb-3 p-3 border border-border rounded-lg bg-muted/30" role="region" aria-label={t("ariaExtendedFilters")}>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {/* Min Volume */}
                         <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("minVolume") ?? "Min Volume"}</label>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("minVolume")}</label>
                           <Input
                             type="number"
                             placeholder="0"
@@ -1213,7 +1213,7 @@ export function Dashboard() {
                         </div>
                         {/* Max Volume */}
                         <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxVolume") ?? "Max Volume"}</label>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxVolume")}</label>
                           <Input
                             type="number"
                             placeholder="∞"
@@ -1231,7 +1231,7 @@ export function Dashboard() {
                         </div>
                         {/* Min Change % */}
                         <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("minChange") ?? "Min Change %"}</label>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("minChange")}</label>
                           <Input
                             type="number"
                             placeholder="-∞"
@@ -1248,7 +1248,7 @@ export function Dashboard() {
                         </div>
                         {/* Max Change % */}
                         <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxChange") ?? "Max Change %"}</label>
+                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxChange")}</label>
                           <Input
                             type="number"
                             placeholder="∞"
@@ -1273,7 +1273,7 @@ export function Dashboard() {
                             className="h-6 text-xs"
                             onClick={() => clearExchangeExtendedFilters()}
                           >
-                            {t("resetFilters") ?? "Reset filters"}
+                            {t("resetFilters")}
                           </Button>
                         </div>
                       )}
@@ -1281,7 +1281,7 @@ export function Dashboard() {
                   )}
 
                   {/* P2-4: Volume & Liquidity Indicators */}
-                  <ErrorBoundary fallbackTitle="Volume & Liquidity">
+                  <ErrorBoundary fallbackTitle={t("fallbackVolumeLiquidity")}>
                     <VolumeLiquidityIndicators
                       realm={realm}
                       league={effectiveLeague}
@@ -1293,8 +1293,8 @@ export function Dashboard() {
                   {uiState.exchange.activeFilter === "favorites" && exchangePairs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" role="status">
                       <Star className="h-12 w-12 mb-4 opacity-30" aria-hidden="true" />
-                      <p className="text-lg mb-1">{t("noFavoritesYet") ?? "No favorite pairs yet"}</p>
-                      <p className="text-sm">{t("addFavoritesHint") ?? "Click the ★ icon on any pair to add it."}</p>
+                      <p className="text-lg mb-1">{t("noFavoritesYet")}</p>
+                      <p className="text-sm">{t("addFavoritesHint")}</p>
                     </div>
                   ) : uiState.exchange.viewMode === "table" ? (
                     /* §1.1: Table-First Layout */
@@ -1308,7 +1308,7 @@ export function Dashboard() {
                     />
                   ) : (
                     /* Cards view (original) */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label="Exchange pairs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label={t("ariaExchangePairs")}>
                       {exchangePairs.map((pair) => (
                         <ExchangePairCard
                           key={pair.id}
@@ -1328,7 +1328,7 @@ export function Dashboard() {
 
             {/* ============ ARBITRAGE TAB ============ */}
             <TabsContent value="arbitrage">
-              <ErrorBoundary fallbackTitle="Arbitrage Calculator">
+              <ErrorBoundary fallbackTitle={t("fallbackArbitrageCalculator")}>
                 <ArbitrageTab
                   realm={realm}
                   league={effectiveLeague}
@@ -1340,39 +1340,39 @@ export function Dashboard() {
 
             {/* ============ FLIPS TAB ============ */}
             <TabsContent value="flips">
-              <ErrorBoundary fallbackTitle="Flips">
+              <ErrorBoundary fallbackTitle={t("fallbackFlips")}>
                 <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
               {/* P3-7: Tier Drift Tracker */}
-              <ErrorBoundary fallbackTitle="Tier Drift">
+              <ErrorBoundary fallbackTitle={t("fallbackTierDrift")}>
                 <TierDriftTracker backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ FORECAST TAB ============ */}
             <TabsContent value="forecast">
-              <ErrorBoundary fallbackTitle="Forecasts">
+              <ErrorBoundary fallbackTitle={t("fallbackForecasts")}>
                 <ForecastTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ PORTFOLIO TAB ============ */}
             <TabsContent value="portfolio">
-              <ErrorBoundary fallbackTitle="Portfolio">
+              <ErrorBoundary fallbackTitle={t("fallbackPortfolio")}>
                 <PortfolioTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ CURRENCY GRAPH TAB ============ */}
             <TabsContent value="graph">
-              <ErrorBoundary fallbackTitle="Currency Graph">
+              <ErrorBoundary fallbackTitle={t("fallbackCurrencyGraph")}>
                 <CurrencyGraphTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ WATCHLIST TAB ============ */}
             <TabsContent value="watchlist">
-              <ErrorBoundary fallbackTitle="Watchlist">
+              <ErrorBoundary fallbackTitle={t("fallbackWatchlist")}>
                 <WatchlistTab
                   realm={realm}
                   league={effectiveLeague}
@@ -1385,7 +1385,7 @@ export function Dashboard() {
       </main>
 
       {/* ============ ITEM DETAIL DIALOG ============ */}
-      <ErrorBoundary fallbackTitle="Item Details">
+      <ErrorBoundary fallbackTitle={t("fallbackItemDetails")}>
         <DetailDialog
           item={detailItem}
           open={detailOpen}
@@ -1397,7 +1397,7 @@ export function Dashboard() {
       </ErrorBoundary>
 
       {/* ============ PAIR DETAIL DIALOG ============ */}
-      <ErrorBoundary fallbackTitle="Pair Details">
+      <ErrorBoundary fallbackTitle={t("fallbackPairDetails")}>
         <PairDetailDialog
           pair={detailPair}
           open={pairDetailOpen}

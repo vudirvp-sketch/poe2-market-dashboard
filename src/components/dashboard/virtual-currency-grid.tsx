@@ -211,6 +211,7 @@ export function VirtualCurrencyGrid({
   league,
   referenceCurrency,
 }: VirtualCurrencyGridProps) {
+  const { t } = useI18n();
   const parentRef = useRef<HTMLDivElement>(null);
 
   // Responsive column count based on container width via ResizeObserver
@@ -284,7 +285,7 @@ export function VirtualCurrencyGrid({
           position: "relative",
         }}
         role="grid"
-        aria-label="Currency items grid"
+        aria-label={t("ariaCurrencyItemsGrid")}
         onKeyDown={handleGridKeyDown}
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {

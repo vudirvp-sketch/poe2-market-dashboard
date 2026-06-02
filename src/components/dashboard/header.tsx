@@ -417,7 +417,7 @@ export function Header({
             size="sm"
             className="h-8 w-8 p-0"
             onClick={() => setMoreOpen(!moreOpen)}
-            aria-label={t("moreMenu") ?? "More options"}
+            aria-label={t("moreMenu")}
             aria-expanded={moreOpen}
           >
             <MoreVertical className="h-4 w-4" aria-hidden="true" />
@@ -500,10 +500,10 @@ export function Header({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
                 onClick={() => { onDenseModeToggle?.(); setMoreOpen(false); }}
                 role="menuitem"
-                aria-label={denseMode ? t("disableDenseMode") ?? "Disable dense mode" : t("enableDenseMode") ?? "Enable dense mode"}
+                aria-label={denseMode ? t("disableDenseMode") : t("enableDenseMode")}
               >
                 <Rows3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                {denseMode ? (t("disableDenseMode") ?? "Disable Dense Mode") : (t("enableDenseMode") ?? "Enable Dense Mode")}
+                {denseMode ? (t("disableDenseMode")) : (t("enableDenseMode"))}
               </button>
 
               {/* Theme toggle */}

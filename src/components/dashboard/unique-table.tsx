@@ -274,17 +274,17 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
   return (
     <div className="space-y-2">
       {/* §2.2: Density toggle */}
-      <div className="flex items-center justify-end gap-1" role="group" aria-label="Density toggle">
+      <div className="flex items-center justify-end gap-1" role="group" aria-label={t("ariaDensityToggle")}>
         <Button
           variant={density === "comfortable" ? "default" : "outline"}
           size="sm"
           className="h-7 text-xs gap-1 px-2"
           onClick={() => setDensity("comfortable")}
           aria-pressed={density === "comfortable"}
-          aria-label={t("comfortable") ?? "Comfortable"}
+          aria-label={t("comfortable")}
         >
           <List className="h-3.5 w-3.5" aria-hidden="true" />
-          {t("comfortable") ?? "Comfortable"}
+          {t("comfortable")}
         </Button>
         <Button
           variant={density === "compact" ? "default" : "outline"}
@@ -292,10 +292,10 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
           className="h-7 text-xs gap-1 px-2"
           onClick={() => setDensity("compact")}
           aria-pressed={density === "compact"}
-          aria-label={t("compact") ?? "Compact"}
+          aria-label={t("compact")}
         >
           <Rows3 className="h-3.5 w-3.5" aria-hidden="true" />
-          {t("compact") ?? "Compact"}
+          {t("compact")}
         </Button>
       </div>
 
@@ -317,7 +317,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
             key={group.name}
             className="rounded-md border border-border overflow-hidden"
             role="region"
-            aria-label={`${group.displayName} unique items`}
+            aria-label={t("ariaUniqueItems", { "0": group.displayName })}
           >
             {/* §2.2: Collapsible category header */}
             <button

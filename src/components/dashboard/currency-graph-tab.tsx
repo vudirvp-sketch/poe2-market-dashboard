@@ -739,7 +739,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                           }}
                           tabIndex={0}
                           role="button"
-                          aria-label={`${node.label}: volume ${node.volume.toLocaleString()}, ${node.degree} connections`}
+                          aria-label={t("ariaGraphNodeInfo", { "0": node.label, "1": node.volume.toLocaleString(), "2": String(node.degree) })}
                         >
                           <circle
                             cx={pos.x}

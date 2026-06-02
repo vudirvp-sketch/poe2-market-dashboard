@@ -475,7 +475,7 @@ export const ComparativeChart = memo(function ComparativeChart({
                 <p className="text-[10px] text-muted-foreground mb-2">
                   {t("comparativeCorrelationNote")}
                   {"source" in correlationMatrix && correlationMatrix.source === "backend" && (
-                    <span className="ml-1 text-emerald-500">({t("comparativeCorrelationBackend") ?? "Backend data"})</span>
+                    <span className="ml-1 text-emerald-500">({t("comparativeCorrelationBackend")})</span>
                   )}
                 </p>
                 <CorrelationHeatmap

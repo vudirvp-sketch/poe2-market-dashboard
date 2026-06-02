@@ -247,7 +247,7 @@ export function FuzzySearch({
     };
   }, []);
 
-  const defaultPlaceholder = t("searchPlaceholder") ?? "Search items...";
+  const defaultPlaceholder = t("searchPlaceholder");
 
   return (
     <div className="relative flex-1 min-w-[150px] max-w-md" ref={containerRef}>
@@ -279,7 +279,7 @@ export function FuzzySearch({
         <button
           onClick={handleClear}
           className="absolute right-2.5 top-2"
-          aria-label="Clear search"
+          aria-label={t("ariaClearSearch")}
         >
           <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
         </button>
@@ -345,7 +345,7 @@ export function FuzzySearch({
       {isOpen && localValue.length >= 2 && results.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 py-3 px-4 text-center">
           <p className="text-sm text-muted-foreground">
-            {t("searchNoResults") ?? "No results found"}
+            {t("searchNoResults")}
           </p>
         </div>
       )}

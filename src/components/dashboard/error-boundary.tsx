@@ -7,7 +7,7 @@
 import React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { I18nContext } from "@/lib/i18n";
+import { I18nContext, useI18n } from "@/lib/i18n";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -53,7 +53,7 @@ export class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       const i18n = this.context;
       const t = i18n?.t ?? ((key: string) => key);
-      const title = this.props.fallbackTitle || "Component";
+      const title = this.props.fallbackTitle || t("errorBoundaryComponent");
       return (
         <div
           className="flex flex-col items-center justify-center py-12 px-4 text-center"
@@ -130,11 +130,12 @@ export function ErrorBoundaryGroup({ children, titles }: ErrorBoundaryGroupProps
   // React.Children.toArray flattens fragments and filters nulls, giving us
   // a stable array to iterate over. Each child gets its own ErrorBoundary.
   const childArray = React.Children.toArray(children);
+  const { t } = useI18n();
 
   return (
     <>
       {childArray.map((child, index) => {
-        const fallbackTitle = titles?.[index] ?? `Section ${index + 1}`;
+        const fallbackTitle = titles?.[index] ?? t("ariaSectionN", { "0": String(index + 1) });
         return (
           <ErrorBoundary key={index} fallbackTitle={fallbackTitle}>
             {child}
