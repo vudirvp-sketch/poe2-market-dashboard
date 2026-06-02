@@ -1,15 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
+// Use local Geist font files from the `geist` npm package instead of
+// next/font/google. This eliminates the build-time dependency on
+// fonts.gstatic.com which is unreachable in some network environments
+// (behind corporate firewalls, air-gapped CI, etc.). The font files
+// are bundled locally so the build never needs internet access.
+const geistSans = localFont({
+  src: [
+    { path: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2", style: "normal" },
+    { path: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Italic[wght].woff2", style: "italic" },
+  ],
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: [
+    { path: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2", style: "normal" },
+    { path: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Italic[wght].woff2", style: "italic" },
+  ],
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
 // ---------------------------------------------------------------------------
