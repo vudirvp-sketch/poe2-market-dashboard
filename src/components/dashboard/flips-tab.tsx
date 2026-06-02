@@ -155,6 +155,15 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
 
     let filtered = flipsData.opportunities;
 
+    // Bug 2.4 fix: minScore/minVolume are now filtered client-side
+    // (no longer sent to the API to avoid cache fragmentation)
+    if (minScore > 0) {
+      filtered = filtered.filter((o) => (o.score ?? 0) >= minScore);
+    }
+    if (minVolume > 0) {
+      filtered = filtered.filter((o) => (o.volume24h ?? 0) >= minVolume);
+    }
+
     // Cluster filter
     if (clusterFilter !== "all") {
       filtered = filtered.filter((o) => o.cluster === clusterFilter);

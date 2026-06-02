@@ -155,6 +155,7 @@ const en = {
   settings: "Settings",
   noArbitrage: "No arbitrage opportunities detected",
   noArbitrageDesc: "This is normal \u2014 efficient markets rarely have exploitable cycles. Try refreshing later or check a different league. You can also adjust slippage/fee settings.",
+  learnMoreFlipsDocs: "Learn how flipper scoring works →",
   route: "Route",
   len: "Len",
   netProfit: "Net Profit",

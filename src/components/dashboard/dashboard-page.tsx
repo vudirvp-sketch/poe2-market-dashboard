@@ -53,15 +53,18 @@ import { ComparativeChart } from "@/components/dashboard/comparative-chart";
 // which add significant JS weight. Users rarely visit all tabs in one session,
 // so deferring these imports improves Time-to-Interactive significantly.
 import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
 
+// 4.4: Replaced all animate-pulse divs with proper <Skeleton> components
+// for consistent shimmer animation and better a11y (Skeleton has aria-busy)
 const ForecastTab = dynamic(
   () => import("@/components/dashboard/forecast-tab").then((m) => ({ default: m.ForecastTab })),
   {
     loading: () => (
       <div className="space-y-4">
-        <div className="h-20 w-full animate-pulse rounded bg-muted" />
-        <div className="h-[300px] w-full animate-pulse rounded bg-muted" />
-        <div className="h-48 w-full animate-pulse rounded bg-muted" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-[300px] w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     ),
   },
@@ -72,14 +75,14 @@ const PortfolioTab = dynamic(
   {
     loading: () => (
       <div className="space-y-4">
-        <div className="h-20 w-full animate-pulse rounded bg-muted" />
+        <Skeleton className="h-20 w-full" />
         <div className="grid grid-cols-3 gap-4">
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
         </div>
-        <div className="h-64 w-full animate-pulse rounded bg-muted" />
-        <div className="h-48 w-full animate-pulse rounded bg-muted" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     ),
   },
@@ -90,14 +93,14 @@ const CurrencyGraphTab = dynamic(
   {
     loading: () => (
       <div className="space-y-4">
-        <div className="h-20 w-full animate-pulse rounded bg-muted" />
+        <Skeleton className="h-20 w-full" />
         <div className="grid grid-cols-4 gap-4">
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
-          <div className="h-24 animate-pulse rounded bg-muted" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
         </div>
-        <div className="h-[500px] w-full animate-pulse rounded bg-muted" />
+        <Skeleton className="h-[500px] w-full" />
       </div>
     ),
   },
@@ -134,6 +137,7 @@ import type {
   FlipperHealthResponse,
   FlipperPhaseResponse,
   FlipperEventsSummary,
+  PortfolioData,
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
@@ -271,6 +275,21 @@ export function Dashboard() {
     enabled: flipperBackendOnline,
     staleTime: 60_000,
     refetchInterval: 60_000,
+    retry: 1,
+  });
+
+  // ============================================================================
+  // Flipper portfolio data (for sticky bar correlationWarning)
+  // 4.2: Moved from FlipperStickyBar to dashboard-page to avoid redundant
+  // fetch when PortfolioTab is not mounted. The sticky bar now receives
+  // correlationWarning as a prop instead of making its own query.
+  // ============================================================================
+  const { data: flipperPortfolioData } = useQuery<PortfolioData>({
+    queryKey: ["flipper-portfolio"],
+    queryFn: () => fetchApi<PortfolioData>("/api/flipper/portfolio"),
+    enabled: flipperBackendOnline,
+    staleTime: 60_000,
+    // No refetchInterval — PortfolioTab polls this key when visible
     retry: 1,
   });
 
@@ -809,7 +828,7 @@ export function Dashboard() {
         baseCurrencyText={uiState.baseCurrencyText}
       />
 
-      <FlipperStickyBar backendOnline={flipperBackendOnline} />
+      <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={flipperPortfolioData?.correlationWarning ?? false} />
 
       {/* Main content — id for skip-to-content a11y link */}
       <main id="main-content" className="max-w-[1600px] mx-auto px-4 py-4" role="main">

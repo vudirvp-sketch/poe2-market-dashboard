@@ -19,9 +19,7 @@ import { useI18n } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
 import {
   FlipperPhaseResponse,
-  FlipOpportunity,
   TriangularResponse,
-  PortfolioData,
 } from "@/lib/types";
 import { computeSentiment, scoreColor, classifySentiment } from "@/lib/flipper-helpers";
 
@@ -38,6 +36,10 @@ import { computeSentiment, scoreColor, classifySentiment } from "@/lib/flipper-h
 
 interface FlipperStickyBarProps {
   backendOnline: boolean;
+  /** 4.2: Correlation warning flag from dashboard-level portfolio query.
+   *  Previously this component made its own ["flipper-portfolio"] query,
+   *  which was redundant with PortfolioTab's query. Now passed as a prop. */
+  correlationWarning?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,6 +54,7 @@ interface FlipperStickyBarProps {
 
 export const FlipperStickyBar = memo(function FlipperStickyBar({
   backendOnline,
+  correlationWarning = false,
 }: FlipperStickyBarProps) {
   const { t } = useI18n();
 
@@ -85,24 +88,17 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
     retry: 1,
   });
 
-  // ---- Portfolio data (for correlation shock; shared key with PortfolioTab) ----
-  // PortfolioTab already refetches with its own interval.
-  // We only read from the shared cache here — no extra refetchInterval.
-  const { data: portfolioData } = useQuery<PortfolioData>({
-    queryKey: ["flipper-portfolio"],
-    queryFn: () => fetchApi<PortfolioData>("/api/flipper/portfolio"),
-    enabled: backendOnline,
-    staleTime: 60_000,
-    // No refetchInterval — PortfolioTab already polls this key when visible
-    retry: 1,
-  });
+  // 4.2: Portfolio query removed from FlipperStickyBar.
+  // correlationWarning is now passed as a prop from dashboard-page.tsx,
+  // which owns the ["flipper-portfolio"] query at the page level.
+  // This eliminates a redundant network request when PortfolioTab is not mounted.
 
   // ---- Derived data ----
   const bestFlip = flipsData?.opportunities?.[0] ?? null;
   const bestCycle = triangularData?.opportunities?.[0] ?? null;
   const flipCount = flipsData?.total ?? 0;
   const momentum = bestFlip?.momentum ?? 0;
-  const correlationShock = portfolioData?.correlationWarning ?? false;
+  const correlationShock = correlationWarning;
 
   // Market sentiment from all flip opportunities
   const sentiment = computeSentiment(flipsData?.opportunities ?? []);

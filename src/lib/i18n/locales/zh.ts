@@ -151,6 +151,7 @@ const zh: Record<TranslationKeys, string> = {
   settings: "设置",
   noArbitrage: "未检测到套利机会",
   noArbitrageDesc: "这是正常的 — 高效市场很少有可利用的循环。请稍后刷新或检查其他联赛。也可以调整滑点/费用设置。",
+  learnMoreFlipsDocs: "了解 Flipper 评分如何工作 →",
   route: "路径",
   len: "步长",
   netProfit: "净利润",

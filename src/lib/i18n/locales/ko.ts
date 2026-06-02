@@ -151,6 +151,7 @@ const ko: Record<TranslationKeys, string> = {
   settings: "설정",
   noArbitrage: "채권트라지 기회가 감지되지 않음",
   noArbitrageDesc: "정상입니다 — 효율적인 시장은 이용 가능한 사이클이 드뭅니다. 나중에 새로고침하거나 다른 리그를 확인하세요. 미끄러짐/수수료 설정을 조정할 수도 있습니다.",
+  learnMoreFlipsDocs: "Flipper 점수 작동 방식 알아보기 →",
   route: "경로",
   len: "길이",
   netProfit: "순이익",
