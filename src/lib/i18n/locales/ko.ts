@@ -642,9 +642,12 @@ const ko: Record<TranslationKeys, string> = {
   liquidityScoreTooltip: "유동성: {0}% — 거래량/재고 비율 기준",
 
   // P2-2: Heatmap & Market Tops
-  heatmapMarketTops: "시장 상위",
+  heatmapMarketTops: "시장 상위 — 상승/하락",
   heatmapTopGainers: "상승 상위",
   heatmapTopLosers: "하락 상위",
+  heatmapNoGainers: "상승 없음",
+  heatmapNoLosers: "하락 없음",
+  heatmapCurrenciesCount: "{0}개 통화 — 색상 강도 = 24시간 변동 폭",
   heatmapColorLegend: "색상 강도 = 24시간 변동 폭",
 
   // P2-3: Take-Profit Calculator

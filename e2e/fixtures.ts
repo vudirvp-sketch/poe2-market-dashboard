@@ -110,6 +110,19 @@ export async function installApiMocks(page: Page): Promise<void> {
       body: JSON.stringify({ error: "backend_offline", events: [], total: 0 }),
     });
   });
+
+  // Flipper heatmap — return mock data so the heatmap component renders
+  await page.route("**/api/flipper/heatmap**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        { currency: "divine", change24h: 5.2 },
+        { currency: "exalted", change24h: -3.1 },
+        { currency: "chaos", change24h: 1.8 },
+      ]),
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -184,7 +184,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
             {t("overviewHeatmap")}
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            {heatmapData.length} currencies — color intensity = magnitude of 24h change
+            {t("heatmapCurrenciesCount", { "0": heatmapData.length })}
           </p>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -231,7 +231,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Trophy className="h-4 w-4" aria-hidden="true" />
-            Market Tops — Gainers & Losers
+            {t("heatmapMarketTops")}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -240,10 +240,10 @@ export const MarketHeatmap = memo(function MarketHeatmap({
             <div>
               <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
-                Top Gainers
+                {t("heatmapTopGainers")}
               </h4>
               {topGainers.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No gainers</p>
+                <p className="text-xs text-muted-foreground">{t("heatmapNoGainers")}</p>
               ) : (
                 <div className="space-y-1">
                   {topGainers.map((item, idx) => (
@@ -271,10 +271,10 @@ export const MarketHeatmap = memo(function MarketHeatmap({
             <div>
               <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                 <TrendingDown className="h-3 w-3 text-red-500" aria-hidden="true" />
-                Top Losers
+                {t("heatmapTopLosers")}
               </h4>
               {topLosers.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No losers</p>
+                <p className="text-xs text-muted-foreground">{t("heatmapNoLosers")}</p>
               ) : (
                 <div className="space-y-1">
                   {topLosers.map((item, idx) => (

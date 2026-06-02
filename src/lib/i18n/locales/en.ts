@@ -646,9 +646,12 @@ const en = {
   liquidityScoreTooltip: "Liquidity: {0}% — based on volume-to-stock ratio",
 
   // ---- P2-2: Heatmap & Market Tops ----
-  heatmapMarketTops: "Market Tops",
+  heatmapMarketTops: "Market Tops — Gainers & Losers",
   heatmapTopGainers: "Top Gainers",
   heatmapTopLosers: "Top Losers",
+  heatmapNoGainers: "No gainers",
+  heatmapNoLosers: "No losers",
+  heatmapCurrenciesCount: "{0} currencies — color intensity = magnitude of 24h change",
   heatmapColorLegend: "Color intensity = magnitude of 24h change",
 
   // ---- P2-3: Take-Profit Calculator ----

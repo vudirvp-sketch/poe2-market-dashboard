@@ -642,9 +642,12 @@ const zh: Record<TranslationKeys, string> = {
   liquidityScoreTooltip: "流动性: {0}%——基于成交量与库存比",
 
   // P2-2: Heatmap & Market Tops
-  heatmapMarketTops: "市场热门",
+  heatmapMarketTops: "市场热门 — 涨跌榜",
   heatmapTopGainers: "涨幅榜",
   heatmapTopLosers: "跌幅榜",
+  heatmapNoGainers: "无上涨",
+  heatmapNoLosers: "无下跌",
+  heatmapCurrenciesCount: "{0} 种货币 — 颜色强度 = 24小时变化幅度",
   heatmapColorLegend: "颜色强度 = 24小时变化幅度",
 
   // P2-3: Take-Profit Calculator
