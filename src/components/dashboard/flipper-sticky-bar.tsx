@@ -102,7 +102,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   const bestCycle = triangularData?.opportunities?.[0] ?? null;
   const flipCount = flipsData?.total ?? 0;
   const momentum = bestFlip?.momentum ?? 0;
-  const correlationShock = portfolioData?.correlation_warning ?? false;
+  const correlationShock = portfolioData?.correlationWarning ?? false;
 
   // Market sentiment from all flip opportunities
   const sentiment = computeSentiment(flipsData?.opportunities ?? []);
@@ -110,7 +110,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   // Client-side phase validation (same logic as header.tsx)
   const effectivePhase = (() => {
     if (!phaseData?.phase) return { phase: "", isEstimated: false };
-    const days = phaseData.days_since_ref;
+    const days = phaseData.daysSinceRef;
     const reported = phaseData.phase.toLowerCase();
     if (reported === "late" && days < 14) return { phase: "early", isEstimated: true };
     if (reported === "late" && days < 42) return { phase: "mid", isEstimated: true };
@@ -234,7 +234,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
                   variant="outline"
                   className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px] px-1.5 py-0 font-semibold"
                 >
-                  +{bestCycle.net_profit_pct.toFixed(2)}%
+                  +{bestCycle.netProfitPct.toFixed(2)}%
                 </Badge>
               </>
             ) : (

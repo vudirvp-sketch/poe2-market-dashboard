@@ -134,7 +134,7 @@ function correlationTextColor(value: number): string {
 interface BackendCorrelationResponse {
   currencies: string[];
   matrix: number[][];
-  data_available: boolean;
+  dataAvailable: boolean;
 }
 
 export const ComparativeChart = memo(function ComparativeChart({
@@ -256,7 +256,7 @@ export const ComparativeChart = memo(function ComparativeChart({
     if (seriesMeta.length < 2) return null;
 
     // P3-3 Step 3: Try to use backend correlation matrix
-    if (backendCorrelation?.data_available && backendCorrelation.currencies.length >= 2) {
+    if (backendCorrelation?.dataAvailable && backendCorrelation.currencies.length >= 2) {
       // Map compared item apiIds to backend currency names
       const comparedApiIds = comparedItems.map((item) => item.apiId?.toLowerCase());
       const backendCurrencies = backendCorrelation.currencies.map((c) => c.toLowerCase());

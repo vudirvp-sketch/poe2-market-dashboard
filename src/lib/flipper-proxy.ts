@@ -13,6 +13,7 @@
 // ============================================================================
 
 import { NextResponse } from "next/server";
+import { transformKeys } from "./case-transform";
 
 const FLIPPER_API_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
 
@@ -149,7 +150,9 @@ async function _doProxyWithRetry(
       }
 
       const data = await res.json();
-      return NextResponse.json(data, { status: res.status });
+      // Transform snake_case keys from backend to camelCase for frontend types
+      const transformed = transformKeys(data);
+      return NextResponse.json(transformed, { status: res.status });
     } catch (e: unknown) {
       lastError = e instanceof Error ? e : new Error(String(e));
 

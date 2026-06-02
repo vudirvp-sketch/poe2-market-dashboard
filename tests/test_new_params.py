@@ -4,7 +4,7 @@ Tests for new parameters: volatility_period, acceleration, CI widening.
 Covers:
 1. volatility_period in scorer.py — hourly vs daily volatility annualization
 2. acceleration in storage_value.py — dampened momentum adjustment
-3. CI widening in storage_value.py — confidence_level effect on risk_discount
+3. CI widening in storage_value.py — significance_level effect on risk_discount
 4. Integration: acceleration + CI widening combined effect
 """
 
@@ -146,7 +146,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=0.0,
         )
         accel_result = project_value(
@@ -155,7 +155,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=0.0005,  # positive acceleration
         )
         assert accel_result.projected_price > base_result.projected_price
@@ -168,7 +168,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=0.0,
         )
         decel_result = project_value(
@@ -177,7 +177,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=-0.0005,  # negative acceleration
         )
         assert decel_result.projected_price < base_result.projected_price
@@ -190,7 +190,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=0.0,
         )
         result_no_accel = project_value(
@@ -199,7 +199,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         assert result_zero.projected_price == result_no_accel.projected_price
         assert result_zero.ratio == result_no_accel.ratio
@@ -214,7 +214,7 @@ class TestAcceleration:
             volatility=0.05,
             liquidity_score=5.0,
             horizon_hours=48,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=-0.005,  # strong negative
         )
         # With strong positive acceleration, decision should be more likely BUY
@@ -224,7 +224,7 @@ class TestAcceleration:
             volatility=0.01,
             liquidity_score=15.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=0.003,  # strong positive
         )
         assert result_sell.ratio < result_buy.ratio
@@ -249,7 +249,7 @@ class TestAcceleration:
             volatility=0.02,
             liquidity_score=10.0,
             horizon_hours=horizon,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=acceleration,
         )
         # projected_price should be > 100 (trend + positive acceleration)
@@ -257,21 +257,21 @@ class TestAcceleration:
 
 
 # ===========================================================================
-# 3. CI widening — confidence_level in storage_value.py
+# 3. CI widening — significance_level in storage_value.py
 # ===========================================================================
 
 class TestCIWidening:
-    """Test that higher confidence_level (wider CI) increases the risk discount.
+    """Test that higher significance_level (wider CI) increases the risk discount.
 
     From storage_value.py:
-        z = abs(norm.ppf(confidence_level))
+        z = abs(norm.ppf(significance_level))
         risk_discount = exp(-volatility * z * sqrt(horizon_hours))
 
-    A lower confidence_level (e.g., 0.01) means a wider confidence interval
+    A lower significance_level (e.g., 0.01) means a wider confidence interval
     (99% CI), which produces a higher z-value and thus a LARGER risk_discount
     decay (more conservative projection).
 
-    A higher confidence_level (e.g., 0.40) means a narrower CI (60% CI),
+    A higher significance_level (e.g., 0.40) means a narrower CI (60% CI),
     which produces a lower z-value and thus a SMALLER risk_discount decay
     (more optimistic projection).
 
@@ -280,7 +280,7 @@ class TestCIWidening:
     """
 
     def test_narrower_ci_higher_ratio(self):
-        """A narrower CI (higher confidence_level, e.g. 0.40) should produce
+        """A narrower CI (higher significance_level, e.g. 0.40) should produce
         a higher ratio (more optimistic)."""
         result_wide = project_value(
             current_price=100.0,
@@ -288,7 +288,7 @@ class TestCIWidening:
             volatility=0.05,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.01,  # 99% CI — very conservative
+            significance_level=0.01,  # 99% CI — very conservative
         )
         result_narrow = project_value(
             current_price=100.0,
@@ -296,13 +296,13 @@ class TestCIWidening:
             volatility=0.05,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.40,  # 60% CI — less conservative
+            significance_level=0.40,  # 60% CI — less conservative
         )
         # Narrower CI → less risk_discount decay → higher ratio
         assert result_narrow.ratio > result_wide.ratio
 
     def test_wider_ci_lower_ratio(self):
-        """A wider CI (lower confidence_level, e.g. 0.01) should produce
+        """A wider CI (lower significance_level, e.g. 0.01) should produce
         a lower ratio (more conservative)."""
         result_wide = project_value(
             current_price=100.0,
@@ -310,7 +310,7 @@ class TestCIWidening:
             volatility=0.05,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.01,
+            significance_level=0.01,
         )
         result_default = project_value(
             current_price=100.0,
@@ -318,12 +318,12 @@ class TestCIWidening:
             volatility=0.05,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,  # default 95% CI
+            significance_level=0.05,  # default 95% CI
         )
         # Wider CI (0.01) should produce lower ratio than default (0.05)
         assert result_wide.ratio < result_default.ratio
 
-    def test_confidence_level_affects_risk_discount(self):
+    def test_significance_level_affects_risk_discount(self):
         """Different confidence levels should produce different risk_discounts."""
         result_low = project_value(
             current_price=100.0,
@@ -331,7 +331,7 @@ class TestCIWidening:
             volatility=0.05,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.01,
+            significance_level=0.01,
         )
         result_high = project_value(
             current_price=100.0,
@@ -339,7 +339,7 @@ class TestCIWidening:
             volatility=0.05,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.40,
+            significance_level=0.40,
         )
         # risk_discount = exp(-vol * z * sqrt(horizon))
         # z for 0.01 = 2.326 → more discount (closer to 0)
@@ -352,12 +352,12 @@ class TestCIWidening:
         low_vol_wide = project_value(
             current_price=100.0, log_momentum=0.0,
             volatility=0.01, liquidity_score=10.0,
-            horizon_hours=24, confidence_level=0.01,
+            horizon_hours=24, significance_level=0.01,
         )
         low_vol_narrow = project_value(
             current_price=100.0, log_momentum=0.0,
             volatility=0.01, liquidity_score=10.0,
-            horizon_hours=24, confidence_level=0.40,
+            horizon_hours=24, significance_level=0.40,
         )
         low_vol_diff = low_vol_narrow.ratio - low_vol_wide.ratio
 
@@ -365,12 +365,12 @@ class TestCIWidening:
         high_vol_wide = project_value(
             current_price=100.0, log_momentum=0.0,
             volatility=0.10, liquidity_score=10.0,
-            horizon_hours=24, confidence_level=0.01,
+            horizon_hours=24, significance_level=0.01,
         )
         high_vol_narrow = project_value(
             current_price=100.0, log_momentum=0.0,
             volatility=0.10, liquidity_score=10.0,
-            horizon_hours=24, confidence_level=0.40,
+            horizon_hours=24, significance_level=0.40,
         )
         high_vol_diff = high_vol_narrow.ratio - high_vol_wide.ratio
 
@@ -383,13 +383,13 @@ class TestCIWidening:
         result_optimistic = project_value(
             current_price=100.0, log_momentum=0.005,
             volatility=0.02, liquidity_score=10.0,
-            horizon_hours=24, confidence_level=0.40,  # narrow CI → optimistic
+            horizon_hours=24, significance_level=0.40,  # narrow CI → optimistic
             buy_threshold=1.02, sell_threshold=0.98,
         )
         result_conservative = project_value(
             current_price=100.0, log_momentum=0.005,
             volatility=0.08, liquidity_score=3.0,
-            horizon_hours=48, confidence_level=0.01,  # wide CI → conservative
+            horizon_hours=48, significance_level=0.01,  # wide CI → conservative
             buy_threshold=1.02, sell_threshold=0.98,
         )
         # The optimistic case should have a higher decision category
@@ -411,7 +411,7 @@ class TestAccelerationAndCIIntegration:
             volatility=0.03,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.40,
+            significance_level=0.40,
             acceleration=0.001,
         )
         # This is the most optimistic combination
@@ -425,7 +425,7 @@ class TestAccelerationAndCIIntegration:
             volatility=0.06,
             liquidity_score=3.0,
             horizon_hours=48,
-            confidence_level=0.01,
+            significance_level=0.01,
             acceleration=-0.002,
         )
         # This is the most conservative combination
@@ -451,7 +451,7 @@ class TestAccelerationAndCIIntegration:
             volatility=result.volatility,
             liquidity_score=10.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
             acceleration=result.acceleration,
         )
         # Should produce a valid result

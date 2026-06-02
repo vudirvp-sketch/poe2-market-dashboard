@@ -33,12 +33,12 @@ import { useDashboardStore } from "@/lib/store";
 
 interface ForecastModel {
   currency: string;
-  model_name: string;
-  point_forecast: number[];
-  ci_lower: number[];
-  ci_upper: number[];
+  modelName: string;
+  pointForecast: number[];
+  ciLower: number[];
+  ciUpper: number[];
   timestamps: string[];
-  low_confidence: boolean;
+  lowConfidence: boolean;
   disagreement: boolean;
   mape: number | null;
 }
@@ -80,15 +80,15 @@ function computeLevels(
   }
 
   const primary = models[modelNames[0]];
-  const lastIdx = primary.point_forecast.length - 1;
+  const lastIdx = primary.pointForecast.length - 1;
   if (lastIdx < 0) {
     return { takeProfitLevels: [], stopLossLevels: [], riskRewardRatio: null };
   }
 
   // Extract final forecast values
-  const finalPointForecast = primary.point_forecast[lastIdx];
-  const finalCiUpper = primary.ci_upper[lastIdx];
-  const finalCiLower = primary.ci_lower[lastIdx];
+  const finalPointForecast = primary.pointForecast[lastIdx];
+  const finalCiUpper = primary.ciUpper[lastIdx];
+  const finalCiLower = primary.ciLower[lastIdx];
 
   // If multiple models, also compute ensemble bounds
   let ensembleUpper = finalCiUpper;
@@ -96,9 +96,9 @@ function computeLevels(
   let ensemblePoint = finalPointForecast;
 
   if (modelNames.length > 1) {
-    const allUppers = modelNames.map((n) => models[n].ci_upper[lastIdx] ?? 0).filter((v) => v > 0);
-    const allLowers = modelNames.map((n) => models[n].ci_lower[lastIdx] ?? 0).filter((v) => v > 0);
-    const allPoints = modelNames.map((n) => models[n].point_forecast[lastIdx] ?? 0).filter((v) => v > 0);
+    const allUppers = modelNames.map((n) => models[n].ciUpper[lastIdx] ?? 0).filter((v) => v > 0);
+    const allLowers = modelNames.map((n) => models[n].ciLower[lastIdx] ?? 0).filter((v) => v > 0);
+    const allPoints = modelNames.map((n) => models[n].pointForecast[lastIdx] ?? 0).filter((v) => v > 0);
 
     if (allUppers.length > 0) ensembleUpper = Math.max(...allUppers);
     if (allLowers.length > 0) ensembleLower = Math.min(...allLowers);

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       offlineFallback: {
         recipes: [],
         total: 0,
-        data_available: false,
+        dataAvailable: false,
       },
     },
     searchParams,

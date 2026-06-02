@@ -51,12 +51,12 @@ import { fetchApi } from "@/lib/types";
 // ---------------------------------------------------------------------------
 
 interface ActiveEvent {
-  event_id: string;
-  event_type: string;
+  eventId: string;
+  eventType: string;
   description: string;
-  affected_currencies: string[];
-  created_at: string;
-  expires_at: string | null;
+  affectedCurrencies: string[];
+  createdAt: string;
+  expiresAt: string | null;
   active: boolean;
 }
 
@@ -66,10 +66,10 @@ interface EventsListResponse {
 }
 
 interface CreateEventPayload {
-  event_type: string;
+  eventType: string;
   description: string;
-  affected_currencies: string[];
-  expiry_hours: number;
+  affectedCurrencies: string[];
+  expiryHours: number;
 }
 
 interface CreateEventResponse {
@@ -234,16 +234,16 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
       : [];
 
     createMutation.mutate({
-      event_type: eventType,
+      eventType: eventType,
       description: description.trim(),
-      affected_currencies: currencies,
-      expiry_hours: expiryHours,
+      affectedCurrencies: currencies,
+      expiryHours: expiryHours,
     });
   }, [description, affectedCurrencies, eventType, expiryHours, createMutation, t]);
 
   // ---- Compute impact summary ----
   const allAffectedCurrencies = eventsData?.events?.flatMap(
-    (e) => e.affected_currencies,
+    (e) => e.affectedCurrencies,
   ) ?? [];
   const uniqueAffected = [...new Set(allAffectedCurrencies)];
 
@@ -332,10 +332,10 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
             ) : (
               <div className="space-y-3">
                 {eventsData.events.map((event) => {
-                  const display = eventTypeDisplay(event.event_type, t);
+                  const display = eventTypeDisplay(event.eventType, t);
                   return (
                     <Card
-                      key={event.event_id}
+                      key={event.eventId}
                       className={`border-l-4 ${display.color}`}
                     >
                       <CardContent className="p-3 space-y-2">
@@ -348,18 +348,18 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
                           </Badge>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
                             <Calendar className="h-3 w-3" aria-hidden="true" />
-                            {formatExpiry(event.expires_at, t)}
+                            {formatExpiry(event.expiresAt, t)}
                           </span>
                         </div>
                         <p className="text-sm leading-snug">
                           {event.description}
                         </p>
-                        {event.affected_currencies.length > 0 && (
+                        {event.affectedCurrencies.length > 0 && (
                           <p className="text-xs text-muted-foreground">
                             {t("eventsAffects")}:{" "}
-                            {event.affected_currencies.slice(0, 5).join(", ")}
-                            {event.affected_currencies.length > 5 &&
-                              ` +${event.affected_currencies.length - 5}`}
+                            {event.affectedCurrencies.slice(0, 5).join(", ")}
+                            {event.affectedCurrencies.length > 5 &&
+                              ` +${event.affectedCurrencies.length - 5}`}
                           </p>
                         )}
                         <div className="flex gap-2 pt-1">
@@ -367,7 +367,7 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs gap-1"
-                            onClick={() => deactivateMutation.mutate(event.event_id)}
+                            onClick={() => deactivateMutation.mutate(event.eventId)}
                             disabled={deactivateMutation.isPending}
                             aria-label={t("eventsDeactivate")}
                           >
@@ -378,7 +378,7 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
                             variant="ghost"
                             size="sm"
                             className="h-7 text-xs gap-1 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                            onClick={() => deleteMutation.mutate(event.event_id)}
+                            onClick={() => deleteMutation.mutate(event.eventId)}
                             disabled={deleteMutation.isPending}
                             aria-label={t("eventsDelete")}
                           >

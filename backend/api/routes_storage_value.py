@@ -110,7 +110,7 @@ async def get_storage_value(
             volatility=metrics.volatility,
             liquidity_score=liquidity_score,
             horizon_hours=horizon_hours,
-            confidence_level=config.forecasting.confidence_level,
+            significance_level=config.forecasting.significance_level,
             currency=currency,
             liquidity_normalization=config.storage_value.liquidity_normalization,
             buy_threshold=config.storage_value.buy_threshold,
@@ -140,7 +140,7 @@ async def get_storage_value(
                 "acceleration": round(metrics.acceleration, 6),
                 "liquidity_score": round(liquidity_score, 4),
                 "horizon_hours": horizon_hours,
-                "confidence_level": config.forecasting.confidence_level,
+                "significance_level": config.forecasting.significance_level,
             },
         }
     except Exception as e:

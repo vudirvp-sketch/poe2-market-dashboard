@@ -30,7 +30,7 @@ class TestCanonicalVerification:
         volatility = 0.02
         liquidity_score = 8.0
         horizon_hours = 24
-        confidence_level = 0.05
+        significance_level = 0.05
 
     Expected (from §6.6, simplified without gold fees):
         projected = 100 * exp(0.001 * 24) = 100 * exp(0.024) ≈ 102.43
@@ -50,7 +50,7 @@ class TestCanonicalVerification:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         expected = 100.0 * np.exp(0.001 * 24)  # ≈ 102.43
         np.testing.assert_almost_equal(result.projected_price, expected, decimal=1)
@@ -63,7 +63,7 @@ class TestCanonicalVerification:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         from scipy.stats import norm
         z = abs(norm.ppf(0.05))
@@ -78,7 +78,7 @@ class TestCanonicalVerification:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         # liq_factor = 8.0 / 10.0 = 0.8
         # adjusted = projected * risk_discount * (0.9 + 0.8 * 0.1) = projected * risk_discount * 0.98
@@ -94,7 +94,7 @@ class TestCanonicalVerification:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         # With gold fees excluded: net_value = adjusted_price (no fee deduction)
         np.testing.assert_almost_equal(result.net_value_after_fees, result.adjusted_price, decimal=2)
@@ -107,7 +107,7 @@ class TestCanonicalVerification:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         np.testing.assert_almost_equal(result.ratio, result.net_value_after_fees / 100.0, decimal=4)
 
@@ -119,7 +119,7 @@ class TestCanonicalVerification:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         assert result.decision == Decision.SELL_CONVERT
 
@@ -139,7 +139,7 @@ class TestDecisionBoundaries:
             volatility=0.001,   # very low volatility
             liquidity_score=9.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         assert result.decision == Decision.BUY_HOLD
 
@@ -151,7 +151,7 @@ class TestDecisionBoundaries:
             volatility=0.05,      # high volatility
             liquidity_score=1.0,  # low liquidity
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         assert result.decision == Decision.SELL_CONVERT
 
@@ -167,7 +167,7 @@ class TestDecisionBoundaries:
             volatility=0.001,     # very low volatility
             liquidity_score=8.0,  # high liquidity
             horizon_hours=1,      # short horizon
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         # Should be NEUTRAL (ratio should be close to 1.0)
         assert 0.97 < result.ratio < 1.03
@@ -189,7 +189,7 @@ class TestEdgeCases:
             volatility=0.02,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         assert result.ratio == 0.0
         assert result.decision == Decision.SELL_CONVERT
@@ -202,7 +202,7 @@ class TestEdgeCases:
             volatility=0.0,
             liquidity_score=8.0,
             horizon_hours=24,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         np.testing.assert_almost_equal(result.risk_discount, 1.0, decimal=6)
 
@@ -214,7 +214,7 @@ class TestEdgeCases:
             volatility=0.0,
             liquidity_score=0.0,
             horizon_hours=1,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         # With zero momentum and volatility: projected = 100, risk_discount = 1.0
         # liq_factor = 0.0, adjusted = 100 * 1.0 * (0.9 + 0) = 90.0
@@ -228,7 +228,7 @@ class TestEdgeCases:
             volatility=0.0,
             liquidity_score=50.0,  # way above normalization of 10.0
             horizon_hours=1,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         # liq_factor = min(50/10, 1.0) = 1.0
         # adjusted = 100 * 1.0 * (0.9 + 1.0*0.1) = 100.0
@@ -242,7 +242,7 @@ class TestEdgeCases:
             volatility=0.0,
             liquidity_score=10.0,
             horizon_hours=1,
-            confidence_level=0.05,
+            significance_level=0.05,
         )
         # adjusted = 100 * 1.0 * 1.0 = 100.0
         # net_value = 100.0 (gold fees excluded)

@@ -176,20 +176,20 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       // Handle quantized sort fields that require nested property access
       switch (sortField) {
         case "qSpread":
-          aVal = a.quantized_analysis?.optimalLotProfitPct ?? 0;
-          bVal = b.quantized_analysis?.optimalLotProfitPct ?? 0;
+          aVal = a.quantizedAnalysis?.optimalLotProfitPct ?? 0;
+          bVal = b.quantizedAnalysis?.optimalLotProfitPct ?? 0;
           break;
         case "minLot":
-          aVal = a.quantized_analysis?.minProfitableLot ?? 0;
-          bVal = b.quantized_analysis?.minProfitableLot ?? 0;
+          aVal = a.quantizedAnalysis?.minProfitableLot ?? 0;
+          bVal = b.quantizedAnalysis?.minProfitableLot ?? 0;
           break;
         case "brickRisk":
-          aVal = a.quantized_analysis?.brickResistance ?? 0;
-          bVal = b.quantized_analysis?.brickResistance ?? 0;
+          aVal = a.quantizedAnalysis?.brickResistance ?? 0;
+          bVal = b.quantizedAnalysis?.brickResistance ?? 0;
           break;
         case "tierDistance":
-          aVal = a.tier_distance ?? 0;
-          bVal = b.tier_distance ?? 0;
+          aVal = a.tierDistance ?? 0;
+          bVal = b.tierDistance ?? 0;
           break;
         default:
           aVal = a[sortField] as number;
@@ -237,19 +237,19 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   // §0.4: Stale data detection — check if fetched_at is older than 10 minutes
   const [isStale, setIsStale] = useState(false);
   useEffect(() => {
-    if (!flipsData?.fetched_at || !backendOnline) {
+    if (!flipsData?.fetchedAt || !backendOnline) {
       setIsStale(false);
       return;
     }
     const checkStaleness = () => {
-      const fetchedTime = new Date(flipsData.fetched_at).getTime();
+      const fetchedTime = new Date(flipsData.fetchedAt).getTime();
       const ageMs = Date.now() - fetchedTime;
       setIsStale(ageMs > 10 * 60 * 1000); // 10 minutes
     };
     checkStaleness();
     const interval = setInterval(checkStaleness, 30_000); // re-check every 30s
     return () => clearInterval(interval);
-  }, [flipsData?.fetched_at, backendOnline]);
+  }, [flipsData?.fetchedAt, backendOnline]);
 
   // ---- Loading ----
   if (flipsLoading && backendOnline) {
@@ -266,7 +266,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       />
 
       {/* Gold fee warning — displayed whenever fee_warning is present in response */}
-      {flipsData?.fee_warning?.gold_fees_excluded && (
+      {flipsData?.feeWarning?.goldFeesExcluded && (
         <Card className="border-orange-500/30 bg-orange-500/5" role="alert" aria-live="polite">
           <CardContent className="flex items-start gap-3 p-4">
             <Coins className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -283,7 +283,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       )}
 
       {/* ---- Cross-rate inconsistency warning ---- */}
-      {triData?.cross_rate_warning && triData.cross_rate_warning.suspicious_triples_count > 0 && (
+      {triData?.crossRateWarning && triData.crossRateWarning.suspiciousTriplesCount > 0 && (
         <Card className="border-red-500/30 bg-red-500/5" role="alert" aria-live="polite">
           <CardContent className="flex items-start gap-3 p-4">
             <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -294,9 +294,9 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
               <p className="text-muted-foreground mt-1">
                 {t("crossRateWarningDesc")}
               </p>
-              {triData.cross_rate_warning.affected_currencies.length > 0 && (
+              {triData.crossRateWarning.affectedCurrencies.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {t("flipperAffectedCurrencies")}: {triData.cross_rate_warning.affected_currencies.join(", ")}
+                  {t("flipperAffectedCurrencies")}: {triData.crossRateWarning.affectedCurrencies.join(", ")}
                 </p>
               )}
             </div>
@@ -331,8 +331,8 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
                 {t("flipsStaleDataWarning")}
               </p>
               <p className="text-muted-foreground mt-1">
-                {flipsData?.fetched_at
-                  ? t("lastUpdatedAt", { "0": new Date(flipsData.fetched_at).toLocaleTimeString() })
+                {flipsData?.fetchedAt
+                  ? t("lastUpdatedAt", { "0": new Date(flipsData.fetchedAt).toLocaleTimeString() })
                   : undefined}
               </p>
             </div>
@@ -341,7 +341,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       )}
 
       {/* ---- Event status banner ---- */}
-      {flipsData?.event_status?.any_active && (
+      {flipsData?.eventStatus?.anyActive && (
         <Card className="border-orange-500/30 bg-orange-500/5">
           <CardContent className="flex items-start gap-3 p-4">
             <Info className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -349,10 +349,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
               <p className="font-medium text-orange-600 dark:text-orange-400">
                 {t("flipperEventActive")}
               </p>
-              {flipsData.event_status.affected_currencies.length > 0 && (
+              {flipsData.eventStatus.affectedCurrencies.length > 0 && (
                 <p className="text-muted-foreground mt-1">
                   {t("flipperAffectedCurrencies")}:{" "}
-                  {flipsData.event_status.affected_currencies.join(", ")}
+                  {flipsData.eventStatus.affectedCurrencies.join(", ")}
                 </p>
               )}
             </div>

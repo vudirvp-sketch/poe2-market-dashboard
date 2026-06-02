@@ -90,12 +90,17 @@ def classify_currencies(
         tier_groups.setdefault(tier, []).append(result)
 
     # Set tier_anchor for each currency to the highest-priced currency in its tier
+    # Build anchor map: tier → anchor api_id
+    tier_anchor_map: dict[int, str] = {}
     for tier, group in tier_groups.items():
         anchor = max(group, key=lambda x: x.relative_price)
-        results = [
-            replace(r, tier_anchor=anchor.api_id) if r.tier == tier else r
-            for r in results
-        ]
+        tier_anchor_map[tier] = anchor.api_id
+
+    # Single pass to assign tier_anchors
+    results = [
+        replace(r, tier_anchor=tier_anchor_map[r.tier]) if r.tier in tier_anchor_map else r
+        for r in results
+    ]
 
     return results
 

@@ -46,7 +46,7 @@ interface RecipesResponse {
   profitable_recipes: RecipeResult[];
   all_recipes: RecipeResult[];
   count: number;
-  data_available?: boolean;
+  dataAvailable?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ export const RecipesTab = memo(function RecipesTab({
           </Card>
 
           {/* ---- Data unavailable (graceful) ---- */}
-          {recipesData && recipesData.data_available === false && (
+          {recipesData && recipesData.dataAvailable === false && (
             <Card className="border-amber-500/30 bg-amber-500/5">
               <CardContent className="text-center py-10">
                 <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />

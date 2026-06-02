@@ -153,7 +153,6 @@ class Poe2ScoutProvider(BaseDataProvider):
                     await asyncio.sleep(min_interval - elapsed)
 
                 try:
-                    self._last_request_time = asyncio.get_event_loop().time()
                     resp = await client.get(url, params=params)
 
                     if resp.status_code == 429:
@@ -170,6 +169,8 @@ class Poe2ScoutProvider(BaseDataProvider):
                             return None
 
                     resp.raise_for_status()
+                    if resp.status_code < 400:
+                        self._last_request_time = asyncio.get_event_loop().time()
                     return resp.json()
 
                 except httpx.HTTPStatusError as e:

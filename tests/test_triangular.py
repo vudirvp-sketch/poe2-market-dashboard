@@ -1,5 +1,9 @@
 """
-Tests for triangular.py — Bellman-Ford negative cycle detection.
+Tests for triangular arbitrage detection.
+
+NOTE: Gold fee calculations were removed from the triangular arbitrage
+module. Tests that reference gold fees are HISTORICAL and test the
+fee-free logic only.
 
 From PoE2_Flipper_Canonical_Formulas.md §8 Verification:
 
@@ -52,8 +56,8 @@ class TestTriangularArbitrageNoFees:
             min_profit_pct=0.1,
         )
 
-        assert len(results) >= 1
-        assert results[0].net_profit_pct > 100  # very profitable
+        assert len(results.opportunities) >= 1
+        assert results.opportunities[0].net_profit_pct > 100  # very profitable
 
     def test_no_cycle_no_profit(self):
         """
@@ -72,7 +76,7 @@ class TestTriangularArbitrageNoFees:
             min_profit_pct=0.1,
         )
 
-        assert len(results) == 0
+        assert len(results.opportunities) == 0
 
     def test_marginal_profitable_cycle(self):
         """
@@ -91,8 +95,8 @@ class TestTriangularArbitrageNoFees:
             min_profit_pct=0.1,
         )
 
-        assert len(results) >= 1
-        assert results[0].net_profit_pct > 0
+        assert len(results.opportunities) >= 1
+        assert results.opportunities[0].net_profit_pct > 0
 
 
 class TestTriangularArbitrageCanonical:
@@ -117,16 +121,16 @@ class TestTriangularArbitrageCanonical:
             min_profit_pct=0.1,
         )
 
-        assert len(results) >= 1
+        assert len(results.opportunities) >= 1
         # Expected: 0.008 * 12 * 10.5 = 1.008 → 0.8% profit
-        assert results[0].net_profit_pct > 0
+        assert results.opportunities[0].net_profit_pct > 0
 
     def test_empty_rates_returns_empty(self):
         """No rates should return no opportunities."""
         results = find_triangular_arbitrage(
             {}, {},
         )
-        assert len(results) == 0
+        assert len(results.opportunities) == 0
 
     def test_two_currencies_no_cycle(self):
         """Two currencies with reciprocal rates cannot form a cycle."""
@@ -141,4 +145,31 @@ class TestTriangularArbitrageCanonical:
             min_profit_pct=0.1,
         )
 
-        assert len(results) == 0
+        assert len(results.opportunities) == 0
+
+
+class TestProductionDefaultThreshold:
+    """Verify detection works with the production default min_profit_pct=1.0."""
+
+    def test_with_production_default_threshold(self):
+        """Verify detection works with the production default min_profit_pct=1.0."""
+        rates = {
+            ("A", "B"): 1.5, ("B", "A"): 1 / 1.5,
+            ("B", "C"): 120.0, ("C", "B"): 1 / 120.0,
+            ("C", "A"): 0.006, ("A", "C"): 1 / 0.006,
+        }
+        prices = {"A": 1.0, "B": 1.5, "C": 180.0}
+        # Provide volumes so edges pass the MIN_EDGE_VOLUME=200 filter
+        volumes = {
+            ("A", "B"): 500, ("B", "A"): 500,
+            ("B", "C"): 500, ("C", "B"): 500,
+            ("C", "A"): 500, ("A", "C"): 500,
+        }
+        result = find_triangular_arbitrage(
+            rates,
+            prices,
+            min_profit_pct=1.0,  # production default
+            pair_volumes=volumes,
+        )
+        # Should find the profitable cycle
+        assert len(result.opportunities) >= 1

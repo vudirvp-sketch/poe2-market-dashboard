@@ -63,7 +63,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">{t("flipperSpread")}</p>
           <p className="text-lg font-bold font-mono">
-            {((selectedFlip.spread ?? selectedFlip.spread_after_fees) * 100).toFixed(2)}%
+            {((selectedFlip.spread ?? selectedFlip.spreadAfterFees) * 100).toFixed(2)}%
           </p>
         </div>
       </div>
@@ -109,18 +109,18 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
         </div>
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">{t("flipsMid")}</p>
-          <p className="text-lg font-bold font-mono">{fmt(selectedFlip.mid_price)}</p>
+          <p className="text-lg font-bold font-mono">{fmt(selectedFlip.midPrice)}</p>
         </div>
       </div>
 
       {/* Volume */}
       <div className="rounded-lg border p-3">
         <p className="text-xs text-muted-foreground">{t("flipperVolume")} (24h)</p>
-        <p className="text-lg font-bold font-mono">{selectedFlip.volume_24h.toLocaleString()}</p>
+        <p className="text-lg font-bold font-mono">{selectedFlip.volume24h.toLocaleString()}</p>
       </div>
 
       {/* P1-1: Quantized Analysis Panel */}
-      {selectedFlip.quantized_analysis && (
+      {selectedFlip.quantizedAnalysis && (
         <div className="rounded-lg border p-3 space-y-3">
           <h4 className="text-xs font-semibold flex items-center gap-1.5">
             <Boxes className="h-3.5 w-3.5" aria-hidden="true" />
@@ -131,24 +131,24 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
           <div className="grid grid-cols-3 gap-3">
             <div>
               <p className="text-[10px] text-muted-foreground">{t("qSpreadDetail")}</p>
-              <p className={`text-sm font-mono font-medium ${selectedFlip.quantized_analysis.optimalLotProfitPct > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
-                {selectedFlip.quantized_analysis.optimalLotProfitPct.toFixed(2)}%
+              <p className={`text-sm font-mono font-medium ${selectedFlip.quantizedAnalysis.optimalLotProfitPct > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
+                {selectedFlip.quantizedAnalysis.optimalLotProfitPct.toFixed(2)}%
               </p>
             </div>
             <div>
               <p className="text-[10px] text-muted-foreground">{t("minLotDetail")}</p>
               <p className="text-sm font-mono font-medium">
-                {selectedFlip.quantized_analysis.minProfitableLot > 0
-                  ? `×${selectedFlip.quantized_analysis.minProfitableLot}`
+                {selectedFlip.quantizedAnalysis.minProfitableLot > 0
+                  ? `×${selectedFlip.quantizedAnalysis.minProfitableLot}`
                   : t("quantizedNoProfit")}
               </p>
             </div>
             <div className="flex items-center gap-1.5">
               <Shield
                 className={`h-4 w-4 ${
-                  selectedFlip.quantized_analysis.brickResistance >= 0.5
+                  selectedFlip.quantizedAnalysis.brickResistance >= 0.5
                     ? "text-emerald-500"
-                    : selectedFlip.quantized_analysis.brickResistance >= 0.2
+                    : selectedFlip.quantizedAnalysis.brickResistance >= 0.2
                     ? "text-amber-500"
                     : "text-red-500"
                 }`}
@@ -156,14 +156,14 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
               />
               <div>
                 <p className="text-[10px] text-muted-foreground">{t("brickRiskDetail")}</p>
-                <p className="text-sm font-mono font-medium">{(selectedFlip.quantized_analysis.brickResistance * 100).toFixed(0)}/100</p>
+                <p className="text-sm font-mono font-medium">{(selectedFlip.quantizedAnalysis.brickResistance * 100).toFixed(0)}/100</p>
               </div>
             </div>
           </div>
 
           {/* Recommended ratio */}
           <div className="text-xs text-muted-foreground">
-            {t("recommendedRatio")}: <span className="font-mono font-medium">{selectedFlip.quantized_analysis.recommendedRatio[0]}:{selectedFlip.quantized_analysis.recommendedRatio[1]}</span>
+            {t("recommendedRatio")}: <span className="font-mono font-medium">{selectedFlip.quantizedAnalysis.recommendedRatio[0]}:{selectedFlip.quantizedAnalysis.recommendedRatio[1]}</span>
           </div>
 
           {/* Q-Spreads table by lot size */}
@@ -174,7 +174,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
               <span className="text-muted-foreground">{t("costCol")}</span>
               <span className="text-muted-foreground">{t("revenueCol")}</span>
               <span className="text-muted-foreground">{t("profitCol")}</span>
-              {Object.entries(selectedFlip.quantized_analysis.qSpreads)
+              {Object.entries(selectedFlip.quantizedAnalysis.qSpreads)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([lotSize, qs]) => (
                   <React.Fragment key={lotSize}>
@@ -191,8 +191,8 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
 
           {/* Theoretical vs Quantized comparison */}
           <div className="text-xs text-muted-foreground border-t pt-2">
-            {t("theoreticalSpread")}: <span className="font-mono">{(selectedFlip.quantized_analysis.theoreticalSpread * 100).toFixed(2)}%</span>
-            {selectedFlip.quantized_analysis.theoreticalSpread > 0 && selectedFlip.quantized_analysis.optimalLotProfitPct <= 0 && (
+            {t("theoreticalSpread")}: <span className="font-mono">{(selectedFlip.quantizedAnalysis.theoreticalSpread * 100).toFixed(2)}%</span>
+            {selectedFlip.quantizedAnalysis.theoreticalSpread > 0 && selectedFlip.quantizedAnalysis.optimalLotProfitPct <= 0 && (
               <span className="ml-2 text-amber-600 dark:text-amber-400">{t("quantizedLossWarning")}</span>
             )}
           </div>
@@ -200,19 +200,19 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
       )}
 
       {/* P1-3: Tier Distance indicator */}
-      {selectedFlip.tier_distance != null && selectedFlip.tier_distance > 0 && (
+      {selectedFlip.tierDistance != null && selectedFlip.tierDistance > 0 && (
         <div className="rounded-lg border p-3">
           <div className="flex items-center gap-2">
             <Shield className={`h-4 w-4 ${
-              selectedFlip.tier_distance >= 3
+              selectedFlip.tierDistance >= 3
                 ? "text-red-500"
-                : selectedFlip.tier_distance >= 2
+                : selectedFlip.tierDistance >= 2
                 ? "text-amber-500"
                 : "text-muted-foreground"
             }`} aria-hidden="true" />
-            <span className="text-xs font-medium">{t("tierDistanceDetail", { "0": selectedFlip.tier_distance })}</span>
+            <span className="text-xs font-medium">{t("tierDistanceDetail", { "0": selectedFlip.tierDistance })}</span>
           </div>
-          {selectedFlip.tier_distance >= 3 && (
+          {selectedFlip.tierDistance >= 3 && (
             <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
               {t("tierDistanceWarning")}
             </p>
@@ -227,11 +227,6 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
             <p className="text-xs font-medium text-muted-foreground">
               {t("forecastStorageValue", { "0": selectedFlip.currency.split("/")[0] })}
             </p>
-            {storageData.quantity > 1 && (
-              <span className="text-xs text-muted-foreground">
-                {t("storageValueQuantity", { "0": storageData.quantity })}
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">{t("forecastDecision")}:</span>
@@ -252,24 +247,10 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
               {t("forecastRatio")}: <span className="font-mono font-medium">{formatPrice(storageData.ratio, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
             </span>
             <span className="text-muted-foreground">
-              {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{formatPrice(storageData.net_value_after_fees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
+              {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{formatPrice(storageData.netValueAfterFees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
             </span>
           </div>
-          {/* Total values for entire holdings (when quantity > 1) */}
-          {storageData.quantity > 1 && storageData.total_current_value > 0 && (
-            <div className="grid grid-cols-3 gap-2 text-xs border-t pt-2 mt-1">
-              <span className="text-muted-foreground">
-                {t("storageValueTotalCurrent")}: <span className="font-mono font-medium">{fmt(storageData.total_current_value)}</span>
-              </span>
-              <span className="text-muted-foreground">
-                {t("storageValueTotalProjected")}: <span className="font-mono font-medium">{fmt(storageData.total_projected_value)}</span>
-              </span>
-              <span className="text-muted-foreground">
-                {t("storageValueTotalNet")}: <span className="font-mono font-medium">{fmt(storageData.total_net_value_after_fees)}</span>
-              </span>
-            </div>
-          )}
-          {!storageData.data_available && (
+          {!storageData.dataAvailable && (
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
               {t("storageValueDataUnavailable")}
             </p>

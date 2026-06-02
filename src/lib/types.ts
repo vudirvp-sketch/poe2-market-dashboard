@@ -144,21 +144,23 @@ export interface SnapshotHistoryPoint {
 export interface FlipOpportunity {
   currency: string;
   score: number;
-  /** Raw spread (ask - bid) / mid_price — no fees deducted */
+  /** Raw spread (ask - bid) / mid_price — no fees deducted.
+   *  Always present in current backend response. Fallback to spreadAfterFees
+   *  is defensive — should not be needed in practice. */
   spread: number;
   /** @deprecated Use spread instead. Kept for backward compat. */
-  spread_after_fees: number;
-  volume_24h: number;
+  spreadAfterFees: number;
+  volume24h: number;
   momentum: number;
   volatility: number;
   cluster: string;
   bid: number;
   ask: number;
-  mid_price: number;
+  midPrice: number;
   /** P1-1: Quantized analysis (integer-aware spread) */
-  quantized_analysis?: QuantizedAnalysis;
+  quantizedAnalysis?: QuantizedAnalysis;
   /** P1-3: Tier distance between the two currencies */
-  tier_distance?: number;
+  tierDistance?: number;
 }
 
 /** P1-1: Quantized spread result at a specific lot size */
@@ -183,14 +185,14 @@ export interface QuantizedAnalysis {
 
 /** Event status embedded in FlipsResponse */
 export interface FlipEventStatus {
-  any_active: boolean;
-  affected_currencies: string[];
+  anyActive: boolean;
+  affectedCurrencies: string[];
   summary: Record<string, unknown> | null;
 }
 
 /** Gold fee warning embedded in FlipsResponse and TriangularResponse */
 export interface FeeWarning {
-  gold_fees_excluded: boolean;
+  goldFeesExcluded: boolean;
   message: string;
 }
 
@@ -199,35 +201,35 @@ export interface FlipsResponse {
   league: string;
   total: number;
   opportunities: FlipOpportunity[];
-  event_status: FlipEventStatus;
-  fetched_at: string;
+  eventStatus: FlipEventStatus;
+  fetchedAt: string;
   /** true when backend has not accumulated enough data yet */
-  data_available?: boolean;
+  dataAvailable?: boolean;
   /** Warning about gold fees being excluded from calculations */
-  fee_warning?: FeeWarning;
+  feeWarning?: FeeWarning;
 }
 
 /** Triangular arbitrage cycle from GET /api/flipper/triangular */
 export interface TriangularCycle {
   cycle: string[];
-  net_profit_pct: number;
-  step_rates: number[];
-  total_volume: number;
+  netProfitPct: number;
+  stepRates: number[];
+  totalVolume: number;
   confidence: number;
   /** P1-2: Minimum starting capital for integer-profitable cycle */
-  min_starting_amount?: number;
+  minStartingAmount?: number;
   /** P1-2: Profit validated via integer simulation */
-  quantized_profit_pct?: number;
+  quantizedProfitPct?: number;
   /** P1-2: Original float profit (for reference) */
-  continuous_profit_pct?: number;
+  continuousProfitPct?: number;
   /** P1-2: Amounts at each step for min_start */
-  integer_simulation?: number[];
+  integerSimulation?: number[];
 }
 
 /** Response shape from GET /api/flipper/triangular */
 export interface CrossRateWarning {
-  suspicious_triples_count: number;
-  affected_currencies: string[];
+  suspiciousTriplesCount: number;
+  affectedCurrencies: string[];
   message: string;
 }
 
@@ -235,13 +237,13 @@ export interface TriangularResponse {
   league: string;
   total: number;
   opportunities: TriangularCycle[];
-  fetched_at: string;
+  fetchedAt: string;
   /** true when backend has not accumulated enough data yet */
-  data_available?: boolean;
+  dataAvailable?: boolean;
   /** Warning about gold fees being excluded from calculations */
-  fee_warning?: FeeWarning;
+  feeWarning?: FeeWarning;
   /** Warning about cross-rate inconsistencies causing false positives */
-  cross_rate_warning?: CrossRateWarning | null;
+  crossRateWarning?: CrossRateWarning | null;
 }
 
 /** Response shape from GET /api/flipper/health */
@@ -250,47 +252,73 @@ export interface FlipperHealthResponse {
   provider: "reachable" | "unreachable";
   timestamp: string;
   league?: string;
-  base_currency?: string;
-  active_events?: number;
-  cache_entries?: number;
+  baseCurrency?: string;
+  activeEvents?: number;
+  cacheEntries?: number;
   snapshot?: {
-    snapshot_valid: boolean;
-    snapshot_stale: boolean;
-    snapshot_age_seconds: number | null;
-    snapshot_ttl_seconds: number;
-    exchange_rates_count: number;
-    currencies_count: number;
-    price_histories_count: number;
-    fetched_at: string | null;
+    snapshotValid: boolean;
+    snapshotStale: boolean;
+    snapshotAgeSeconds: number | null;
+    snapshotTtlSeconds: number;
+    exchangeRatesCount: number;
+    currenciesCount: number;
+    priceHistoriesCount: number;
+    fetchedAt: string | null;
   };
-  daily_stats_cache?: {
+  dailyStatsCache?: {
     size: number;
     max: number;
-    stale_entries: number;
-    ttl_seconds: number;
+    staleEntries: number;
+    ttlSeconds: number;
   };
 }
 
 /** Response shape from GET /api/flipper/phase */
 export interface FlipperPhaseResponse {
   phase: string;
-  days_since_ref: number;
+  daysSinceRef: number;
   league: string;
+  dataAvailable?: boolean;
 }
 
 /** Response shape from GET /api/flipper/portfolio */
 export interface PortfolioData {
   method: "risk_parity" | "min_variance";
   weights: Record<string, number>;
-  expected_risk: number;
-  correlation_warning: boolean;
-  last_rebalance: string | null;
+  expectedRisk: number;
+  correlationWarning: boolean;
+  lastRebalance: string | null;
+  dataAvailable?: boolean;
 }
 
 /** Summary shape from GET /api/flipper/events?active_only=true (count only) */
 export interface FlipperEventsSummary {
-  events: { event_id: string }[];
+  events: { eventId: string }[];
   total: number;
+}
+
+/** Storage value inputs from GET /api/flipper/storage-value/[currency] */
+export interface StorageValueInputs {
+  momentum: number;
+  volatility: number;
+  acceleration: number;
+  liquidityScore: number;
+  horizonHours: number;
+  significanceLevel: number;
+}
+
+/** Storage value response from GET /api/flipper/storage-value/[currency] */
+export interface StorageValueResponse {
+  currency: string;
+  currentPrice: number;
+  projectedPrice: number;
+  riskDiscount: number;
+  adjustedPrice: number;
+  netValueAfterFees: number;
+  ratio: number;
+  decision: string;
+  dataAvailable: boolean;
+  inputs?: StorageValueInputs;
 }
 
 // Types previously in poe2api.ts — now consolidated here
@@ -394,7 +422,7 @@ export class FlipperApiError extends Error {
     // Try to parse the JSON body for structured fields
     try {
       const parsed = JSON.parse(body);
-      this.errorType = parsed.error_type;
+      this.errorType = parsed.errorType ?? parsed.error_type;
       this.detail = parsed.detail ?? parsed.error;
       this.hint = parsed.hint;
     } catch {
@@ -447,7 +475,7 @@ export async function fetchApi<T>(path: string, params?: Record<string, string>)
       const body = await res.json();
       detail = body.error || body.detail || "";
       hint = body.hint || "";
-      errorType = body.error_type;  // flipper-proxy sets this explicitly
+      errorType = body.errorType ?? body.error_type;  // flipper-proxy sets this explicitly (may be camelCase after transform)
     } catch {
       // Body was not JSON
     }

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 /** GET /api/flipper/triangular → proxies to FastAPI GET /api/arbitrage/triangular
  *
  *  FIX: When the backend is offline, return empty triangular data with
- *  data_available: false instead of 503.
+ *  dataAvailable: false instead of 503.
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -17,15 +17,15 @@ export async function GET(req: NextRequest) {
         league: "",
         total: 0,
         opportunities: [],
-        fetched_at: new Date().toISOString(),
-        data_available: false,
+        fetchedAt: new Date().toISOString(),
+        dataAvailable: false,
       },
       insufficientDataFallback: {
         league: "",
         total: 0,
         opportunities: [],
-        fetched_at: new Date().toISOString(),
-        data_available: false,
+        fetchedAt: new Date().toISOString(),
+        dataAvailable: false,
       },
     },
     searchParams,

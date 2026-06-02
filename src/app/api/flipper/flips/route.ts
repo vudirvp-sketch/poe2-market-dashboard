@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /** GET /api/flipper/flips → proxies to FastAPI GET /api/arbitrage/flips
  *
- *  FIX: When the backend is offline, return empty flips with data_available: false
+ *  FIX: When the backend is offline, return empty flips with dataAvailable: false
  *  instead of 503. The frontend already handles this gracefully by showing
  *  "backend offline" / "insufficient data" UI states.
  */
@@ -18,25 +18,25 @@ export async function GET(req: NextRequest) {
         league: "",
         total: 0,
         opportunities: [],
-        event_status: {
-          any_active: false,
-          affected_currencies: [],
+        eventStatus: {
+          anyActive: false,
+          affectedCurrencies: [],
           summary: null,
         },
-        fetched_at: new Date().toISOString(),
-        data_available: false,
+        fetchedAt: new Date().toISOString(),
+        dataAvailable: false,
       },
       insufficientDataFallback: {
         league: "",
         total: 0,
         opportunities: [],
-        event_status: {
-          any_active: false,
-          affected_currencies: [],
+        eventStatus: {
+          anyActive: false,
+          affectedCurrencies: [],
           summary: null,
         },
-        fetched_at: new Date().toISOString(),
-        data_available: false,
+        fetchedAt: new Date().toISOString(),
+        dataAvailable: false,
       },
     },
     searchParams,

@@ -142,6 +142,8 @@ function findArbitrageCycles(
   const adj = new Map<string, GraphEdge[]>();
   const names = new Map<string, string>();
 
+  let skippedPairs = 0;
+
   for (const p of pairs) {
     const pairVolume = p.volume ?? 0;
     if (pairVolume < minVolume) continue;
@@ -171,7 +173,10 @@ function findArbitrageCycles(
     const c2Rel = p.currency2RelativePrice ?? 0;
 
     // Skip pairs where either relative price is missing or zero
-    if (c1Rel <= 0 || c2Rel <= 0) continue;
+    if (c1Rel <= 0 || c2Rel <= 0) {
+      skippedPairs++;
+      continue;
+    }
 
     // Forward edge: c1 → c2 — you sell 1 c1, receive c1Rel/c2Rel units of c2
     const forwardRate = c1Rel / c2Rel;
@@ -215,6 +220,10 @@ function findArbitrageCycles(
       if (!adj.has(c2)) adj.set(c2, []);
       adj.get(c2)!.push(edge);
     }
+  }
+
+  if (skippedPairs > 0) {
+    console.warn(`[ArbitrageTab] Skipped ${skippedPairs} pairs due to missing relative price data`);
   }
 
   // ---- DFS to find cycles ----
@@ -597,7 +606,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
       )}
 
       {/* ---- Gold fee warning (flipper mode) ---- */}
-      {mode === "flipper" && (flipsData?.fee_warning?.gold_fees_excluded || triData?.fee_warning?.gold_fees_excluded) && (
+      {mode === "flipper" && (flipsData?.feeWarning?.goldFeesExcluded || triData?.feeWarning?.goldFeesExcluded) && (
         <Card className="border-orange-500/30 bg-orange-500/5" role="alert" aria-live="polite">
           <CardContent className="flex items-start gap-3 p-4">
             <Coins className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -614,7 +623,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
       )}
 
       {/* ---- Cross-rate inconsistency warning (flipper mode) ---- */}
-      {mode === "flipper" && triData?.cross_rate_warning && triData.cross_rate_warning.suspicious_triples_count > 0 && (
+      {mode === "flipper" && triData?.crossRateWarning && triData.crossRateWarning.suspiciousTriplesCount > 0 && (
         <Card className="border-red-500/30 bg-red-500/5" role="alert" aria-live="polite">
           <CardContent className="flex items-start gap-3 p-4">
             <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -625,9 +634,9 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
               <p className="text-muted-foreground mt-1">
                 {t("crossRateWarningDesc")}
               </p>
-              {triData.cross_rate_warning.affected_currencies.length > 0 && (
+              {triData.crossRateWarning.affectedCurrencies.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {t("flipperAffectedCurrencies")}: {triData.cross_rate_warning.affected_currencies.join(", ")}
+                  {t("flipperAffectedCurrencies")}: {triData.crossRateWarning.affectedCurrencies.join(", ")}
                 </p>
               )}
             </div>
@@ -636,7 +645,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
       )}
 
       {/* ---- Event status banner (flipper mode) ---- */}
-      {mode === "flipper" && flipsData?.event_status?.any_active && (
+      {mode === "flipper" && flipsData?.eventStatus?.anyActive && (
         <Card className="border-orange-500/30 bg-orange-500/5">
           <CardContent className="flex items-start gap-3 p-4">
             <Info className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -644,10 +653,10 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
               <p className="font-medium text-orange-600 dark:text-orange-400">
                 {t("flipperEventActive")}
               </p>
-              {flipsData.event_status.affected_currencies.length > 0 && (
+              {flipsData.eventStatus.affectedCurrencies.length > 0 && (
                 <p className="text-muted-foreground mt-1">
                   {t("flipperAffectedCurrencies")}:{" "}
-                  {flipsData.event_status.affected_currencies.join(", ")}
+                  {flipsData.eventStatus.affectedCurrencies.join(", ")}
                 </p>
               )}
             </div>
@@ -1105,7 +1114,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                   errorKind="upstream_unreachable"
                   onRetry={() => refetchFlips()}
                 />
-              ) : flipsData && flipsData.data_available === false ? (
+              ) : flipsData && flipsData.dataAvailable === false ? (
                 <div className="text-center py-10">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
                   <p className="font-medium text-amber-600 dark:text-amber-400">{t("dataUnavailableTitle")}</p>
@@ -1170,7 +1179,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
                         {/* Spread after fees */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {(opp.spread_after_fees * 100).toFixed(2)}%
+                          {((opp.spread ?? opp.spreadAfterFees) * 100).toFixed(2)}%
                         </span>
 
                         {/* Momentum */}
@@ -1208,7 +1217,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
                         {/* Volume */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {opp.volume_24h.toLocaleString()}
+                          {opp.volume24h.toLocaleString()}
                         </span>
                       </div>
                     ))}
@@ -1231,7 +1240,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                 <ApiErrorFallback errorKind="backend_offline" compact />
               ) : upstreamDegraded ? (
                 <ApiErrorFallback errorKind="upstream_unreachable" compact />
-              ) : triData && triData.data_available === false ? (
+              ) : triData && triData.dataAvailable === false ? (
                 <div className="text-center py-6">
                   <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -1285,23 +1294,23 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                             </span>
                           ))}
                           {/* P1-2: Integer simulation path */}
-                          {tri.integer_simulation && tri.integer_simulation.length > 0 && (
+                          {tri.integerSimulation && tri.integerSimulation.length > 0 && (
                             <span className="text-[9px] text-muted-foreground ml-1" title={t("integerSimTooltip")}>
-                              [{tri.integer_simulation.join("→")}]
+                              [{tri.integerSimulation.join("→")}]
                             </span>
                           )}
                         </div>
 
                         {/* Net profit % (continuous) */}
                         <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400" role="cell">
-                          +{tri.net_profit_pct.toFixed(2)}%
+                          +{tri.netProfitPct.toFixed(2)}%
                         </span>
 
                         {/* P1-2: Quantized profit % */}
                         <span className="text-right font-mono text-xs" role="cell" title={t("quantizedProfitTooltip")}>
-                          {tri.quantized_profit_pct != null ? (
-                            <span className={tri.quantized_profit_pct > 0 ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-red-500"}>
-                              {tri.quantized_profit_pct > 0 ? "+" : ""}{tri.quantized_profit_pct.toFixed(2)}%
+                          {tri.quantizedProfitPct != null ? (
+                            <span className={tri.quantizedProfitPct > 0 ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-red-500"}>
+                              {tri.quantizedProfitPct > 0 ? "+" : ""}{tri.quantizedProfitPct.toFixed(2)}%
                             </span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
@@ -1310,9 +1319,9 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
                         {/* P1-2: Min starting amount */}
                         <span className="text-right font-mono text-xs" role="cell" title={t("minStartTooltip")}>
-                          {tri.min_starting_amount != null && tri.min_starting_amount > 0 ? (
-                            <span className={tri.min_starting_amount > 100 ? "text-amber-600 dark:text-amber-400" : ""}>
-                              {tri.min_starting_amount}
+                          {tri.minStartingAmount != null && tri.minStartingAmount > 0 ? (
+                            <span className={tri.minStartingAmount > 100 ? "text-amber-600 dark:text-amber-400" : ""}>
+                              {tri.minStartingAmount}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
@@ -1341,7 +1350,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
                         {/* Total volume */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {tri.total_volume.toLocaleString()}
+                          {tri.totalVolume.toLocaleString()}
                         </span>
                       </div>
                     ))}

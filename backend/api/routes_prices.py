@@ -23,6 +23,7 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
+from backend.data.pipeline_cache import get_pipeline_cache
 from backend.models.currency import PhaseInfo, CurrencyTier
 
 logger = logging.getLogger(__name__)
@@ -154,67 +155,74 @@ async def get_all_prices():
     from backend.predictors.clustering import CurrencyClusterer
     from backend.models.currency import ClusterLabel
 
-    # Run currency clustering for cluster labels
-    cluster_labels: dict[str, ClusterLabel] = {}
-    try:
-        cluster_price_histories: dict[str, list[float]] = {}
-        cluster_volumes: dict[str, float] = {}
-        cluster_prices_now: dict[str, float] = {}
-        cluster_prices_24h_ago: dict[str, float] = {}
+    # Run currency clustering for cluster labels (cached via PipelineCache)
+    pipeline_cache = get_pipeline_cache()
+    cached_clustering = pipeline_cache.get("price_cluster_labels")
+    if cached_clustering is not None and not cached_clustering.stale:
+        cluster_labels = cached_clustering.value
+    else:
+        cluster_labels: dict[str, ClusterLabel] = {}
+        try:
+            cluster_price_histories: dict[str, list[float]] = {}
+            cluster_volumes: dict[str, float] = {}
+            cluster_prices_now: dict[str, float] = {}
+            cluster_prices_24h_ago: dict[str, float] = {}
 
-        # Use snapshot's prices_in_base for clustering fallback
-        prices_in_base = snapshot.prices_in_base
+            # Use snapshot's prices_in_base for clustering fallback
+            prices_in_base = snapshot.prices_in_base
 
-        # Accumulate volume per currency from rates
-        for key, rate in rates.items():
-            for curr in (rate.currency_from, rate.currency_to):
-                if curr not in cluster_price_histories:
-                    cluster_price_histories[curr] = []
-                    cluster_volumes[curr] = 0.0
-                    cluster_prices_now[curr] = 0.0
-                    cluster_prices_24h_ago[curr] = 0.0
-                vol = float(rate.volume_traded)
-                if vol > cluster_volumes.get(curr, 0):
-                    cluster_volumes[curr] = vol
+            # Accumulate volume per currency from rates
+            for key, rate in rates.items():
+                for curr in (rate.currency_from, rate.currency_to):
+                    if curr not in cluster_price_histories:
+                        cluster_price_histories[curr] = []
+                        cluster_volumes[curr] = 0.0
+                        cluster_prices_now[curr] = 0.0
+                        cluster_prices_24h_ago[curr] = 0.0
+                    vol = float(rate.volume_traded)
+                    if vol > cluster_volumes.get(curr, 0):
+                        cluster_volumes[curr] = vol
 
-        # Reuse snapshot's currencies for price histories
-        for api_id_lower, curr in snapshot.currencies.items():
-            orig_id = curr.get("api_id", api_id_lower)
-            price_logs = curr.get("price_logs", [])
-            if orig_id in cluster_price_histories and price_logs:
-                sorted_logs = sorted(
-                    [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
-                    key=lambda l: l["time"],
+            # Reuse snapshot's currencies for price histories
+            for api_id_lower, curr in snapshot.currencies.items():
+                orig_id = curr.get("api_id", api_id_lower)
+                price_logs = curr.get("price_logs", [])
+                if orig_id in cluster_price_histories and price_logs:
+                    sorted_logs = sorted(
+                        [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
+                        key=lambda l: l["time"],
+                    )
+                    prices = [l["price"] for l in sorted_logs]
+                    if len(prices) >= 2:
+                        cluster_price_histories[orig_id] = prices
+                        cluster_prices_now[orig_id] = prices[-1]
+                        cluster_prices_24h_ago[orig_id] = prices[0]
+
+            # Fill remaining prices from prices_in_base fallback
+            for curr in cluster_price_histories:
+                if cluster_prices_now[curr] == 0:
+                    cluster_prices_now[curr] = prices_in_base.get(curr, 0)
+                if cluster_prices_24h_ago[curr] == 0:
+                    cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
+
+            if len(cluster_price_histories) >= 3:
+                clusterer = CurrencyClusterer(config)
+                output = clusterer.fit(
+                    cluster_price_histories, cluster_volumes,
+                    cluster_prices_now, cluster_prices_24h_ago,
                 )
-                prices = [l["price"] for l in sorted_logs]
-                if len(prices) >= 2:
-                    cluster_price_histories[orig_id] = prices
-                    cluster_prices_now[orig_id] = prices[-1]
-                    cluster_prices_24h_ago[orig_id] = prices[0]
-
-        # Fill remaining prices from prices_in_base fallback
-        for curr in cluster_price_histories:
-            if cluster_prices_now[curr] == 0:
-                cluster_prices_now[curr] = prices_in_base.get(curr, 0)
-            if cluster_prices_24h_ago[curr] == 0:
-                cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
-
-        if len(cluster_price_histories) >= 3:
-            clusterer = CurrencyClusterer(config)
-            output = clusterer.fit(
-                cluster_price_histories, cluster_volumes,
-                cluster_prices_now, cluster_prices_24h_ago,
-            )
-            cluster_labels = {c.currency: c.cluster for c in output.clusters}
-            logger.info("Prices clustering completed: %d currencies assigned", len(cluster_labels))
-        else:
-            logger.warning(
-                "Only %d currencies for clustering (need >=3), using MODERATE default",
-                len(cluster_price_histories),
-            )
-    except Exception as e:
-        logger.error("Clustering in prices route failed: %s", e)
-        cluster_labels = {}
+                cluster_labels = {c.currency: c.cluster for c in output.clusters}
+                logger.info("Prices clustering completed: %d currencies assigned", len(cluster_labels))
+                # Cache the result
+                pipeline_cache.put("price_cluster_labels", cluster_labels)
+            else:
+                logger.warning(
+                    "Only %d currencies for clustering (need >=3), using MODERATE default",
+                    len(cluster_price_histories),
+                )
+        except Exception as e:
+            logger.error("Clustering in prices route failed: %s", e)
+            cluster_labels = {}
 
     pairs_data = []
     for key, rate in rates.items():

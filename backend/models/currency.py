@@ -68,7 +68,7 @@ class PricePoint:
     """A single price observation at a point in time."""
     timestamp: datetime
     price: float           # price in base currency (Exalted)
-    volume: int = 0
+    volume: float = 0.0
 
 
 @dataclass(frozen=True)

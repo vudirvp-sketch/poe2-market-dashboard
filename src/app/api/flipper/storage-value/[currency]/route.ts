@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /** GET /api/flipper/storage-value/[currency] → proxies to FastAPI GET /api/storage-value/{currency}
  *
- *  FIX: When the backend is offline, return storage value with data_available: false
+ *  FIX: When the backend is offline, return storage value with dataAvailable: false
  *  instead of 503.
  */
 export async function GET(
@@ -19,40 +19,40 @@ export async function GET(
     {
       offlineFallback: {
         currency,
-        current_price: 0,
-        projected_price: 0,
-        risk_discount: 0,
-        adjusted_price: 0,
-        net_value_after_fees: 0,
+        currentPrice: 0,
+        projectedPrice: 0,
+        riskDiscount: 0,
+        adjustedPrice: 0,
+        netValueAfterFees: 0,
         ratio: 0,
         decision: "HOLD",
-        data_available: false,
+        dataAvailable: false,
         inputs: {
           momentum: 0,
           volatility: 0,
           acceleration: 0,
-          liquidity_score: 0,
-          horizon_hours: 24,
-          confidence_level: 0.95,
+          liquidityScore: 0,
+          horizonHours: 24,
+          confidenceLevel: 0.95,
         },
       },
       insufficientDataFallback: {
         currency,
-        current_price: 0,
-        projected_price: 0,
-        risk_discount: 0,
-        adjusted_price: 0,
-        net_value_after_fees: 0,
+        currentPrice: 0,
+        projectedPrice: 0,
+        riskDiscount: 0,
+        adjustedPrice: 0,
+        netValueAfterFees: 0,
         ratio: 0,
         decision: "HOLD",
-        data_available: false,
+        dataAvailable: false,
         inputs: {
           momentum: 0,
           volatility: 0,
           acceleration: 0,
-          liquidity_score: 0,
-          horizon_hours: 24,
-          confidence_level: 0.95,
+          liquidityScore: 0,
+          horizonHours: 24,
+          confidenceLevel: 0.95,
         },
       },
     },

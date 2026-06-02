@@ -82,7 +82,7 @@ class ForecastingConfig(BaseModel):
     lightgbm_mape_trigger: float = 0.15
     lightgbm_min_data_points: int = 15  # Minimum points for LightGBM training (lowered from 30 for reduced data)
     forecast_horizon_hours: int = 24
-    confidence_level: float = 0.05
+    significance_level: float = 0.05  # alpha — confidence = 1 - alpha = 0.95
 
 
 class AnomalyConfig(BaseModel):

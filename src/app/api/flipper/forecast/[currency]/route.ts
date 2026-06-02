@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /** GET /api/flipper/forecast/[currency] → proxies to FastAPI GET /api/forecast/{currency}
  *
- *  FIX: When the backend is offline, return forecast with data_available: false
+ *  FIX: When the backend is offline, return forecast with dataAvailable: false
  *  instead of 503. The frontend already handles this state gracefully.
  */
 export async function GET(
@@ -22,22 +22,22 @@ export async function GET(
         horizon: 0,
         models: {},
         disagreement: false,
-        low_confidence: true,
-        is_event_active: false,
-        data_points: 0,
-        fetched_at: new Date().toISOString(),
-        data_available: false,
+        lowConfidence: true,
+        isEventActive: false,
+        dataPoints: 0,
+        fetchedAt: new Date().toISOString(),
+        dataAvailable: false,
       },
       insufficientDataFallback: {
         currency,
         horizon: 0,
         models: {},
         disagreement: false,
-        low_confidence: true,
-        is_event_active: false,
-        data_points: 0,
-        fetched_at: new Date().toISOString(),
-        data_available: false,
+        lowConfidence: true,
+        isEventActive: false,
+        dataPoints: 0,
+        fetchedAt: new Date().toISOString(),
+        dataAvailable: false,
       },
     },
     searchParams,

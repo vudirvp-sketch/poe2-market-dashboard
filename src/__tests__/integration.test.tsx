@@ -73,17 +73,14 @@ const fastapiHealthResponse = {
   status: "ok",
   timestamp: new Date().toISOString(),
   league: "vaal",
-  base_currency: "exalted",
-  active_events: 0,
+  baseCurrency: "exalted",
+  activeEvents: 0,
 };
 
 const fastapiPhaseResponse = {
   phase: "mid",
-  days_since_reference: 14,
-  reference_currency: "exalted",
+  daysSinceRef: 14,
   recommended_strategy: "balanced",
-  min_spread_after_fees: 0.05,
-  max_hold_time: "2h",
 };
 
 const fastapiFlipsResponse = {
@@ -94,15 +91,15 @@ const fastapiFlipsResponse = {
     { currency: "exalted", score: 0.65, momentum: 0.01 },
     { currency: "chaos", score: 0.45, momentum: -0.02 },
   ],
-  fetched_at: new Date().toISOString(),
+  fetchedAt: new Date().toISOString(),
 };
 
 const fastapiPortfolioResponse = {
   method: "risk_parity",
   weights: { divine: 0.4, exalted: 0.35, chaos: 0.25 },
-  expected_risk: 0.15,
-  correlation_warning: false,
-  last_rebalance: new Date().toISOString(),
+  expectedRisk: 0.15,
+  correlationWarning: false,
+  lastRebalance: new Date().toISOString(),
   correlation_matrix: {
     currencies: ["divine", "exalted", "chaos"],
     matrix: [[1.0, 0.7, 0.3], [0.7, 1.0, 0.5], [0.3, 0.5, 1.0]],
@@ -120,16 +117,16 @@ const fastapiForecastResponse = {
       ci_lower: [1.1, 1.15],
       ci_upper: [1.3, 1.35],
       timestamps: ["2025-01-01T00:00:00Z", "2025-01-01T06:00:00Z"],
-      low_confidence: false,
+      lowConfidence: false,
       disagreement: false,
       mape: 0.05,
     },
   },
   disagreement: false,
-  low_confidence: false,
-  is_event_active: false,
-  data_points: 50,
-  fetched_at: new Date().toISOString(),
+  lowConfidence: false,
+  isEventActive: false,
+  dataPoints: 50,
+  fetchedAt: new Date().toISOString(),
 };
 
 // ---------------------------------------------------------------------------
@@ -247,8 +244,8 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
             cluster_to: "stable",
           },
         ],
-        base_currency: "exalted",
-        fetched_at: new Date().toISOString(),
+        baseCurrency: "exalted",
+        fetchedAt: new Date().toISOString(),
       });
       if (url.includes("/triangular")) return Promise.resolve({ cycles: [], total: 0 });
       if (url.includes("/currencies")) return Promise.resolve({ currencies: [] });

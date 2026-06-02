@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 interface HeatmapItem {
   currency: string;
-  change_24h: number;
+  change24h: number;
 }
 
 /** GET /api/flipper/heatmap → proxies to FastAPI GET /api/prices/heatmap
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     const heatmapItems: HeatmapItem[] = (data.currencies ?? []).map(
       (item: Record<string, unknown>) => ({
         currency: (item.text as string) ?? (item.api_id as string) ?? "unknown",
-        change_24h:
+        change24h:
           Array.isArray(item.changes) && item.changes.length > 0
             ? (item.changes[item.changes.length - 1] as number) // last change value = most recent
             : 0,
@@ -104,7 +104,7 @@ async function generateHeatmapFromPoe2Scout(realm: string, league: string): Prom
         if (item.changePercent != null && isFinite(item.changePercent) && item.name) {
           heatmapItems.push({
             currency: item.name,
-            change_24h: item.changePercent,
+            change24h: item.changePercent,
           });
         }
       }
@@ -114,7 +114,7 @@ async function generateHeatmapFromPoe2Scout(realm: string, league: string): Prom
   }
 
   // Sort by absolute change descending (most volatile first)
-  heatmapItems.sort((a, b) => Math.abs(b.change_24h) - Math.abs(a.change_24h));
+  heatmapItems.sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h));
 
   return heatmapItems;
 }

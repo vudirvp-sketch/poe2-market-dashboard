@@ -64,11 +64,8 @@ function renderForecastTab(backendOnline: boolean = true) {
 
 const mockPhaseData = {
   phase: "mid",
-  days_since_reference: 14,
-  reference_currency: "exalted",
+  daysSinceRef: 14,
   recommended_strategy: "balanced",
-  min_spread_after_fees: 0.05,
-  max_hold_time: "2h",
 };
 
 const mockForecastData = {
@@ -87,16 +84,16 @@ const mockForecastData = {
         "2025-01-01T12:00:00Z",
         "2025-01-01T18:00:00Z",
       ],
-      low_confidence: false,
+      lowConfidence: false,
       disagreement: false,
       mape: 0.05,
     },
   },
   disagreement: false,
-  low_confidence: false,
-  is_event_active: false,
-  data_points: 50,
-  fetched_at: "2025-01-01T00:00:00Z",
+  lowConfidence: false,
+  isEventActive: false,
+  dataPoints: 50,
+  fetchedAt: "2025-01-01T00:00:00Z",
 };
 
 const mockAnomaliesData = {
@@ -117,20 +114,20 @@ const mockAnomaliesData = {
 
 const mockStorageData = {
   currency: "divine",
-  current_price: 1.5,
-  projected_price: 1.65,
-  risk_discount: 0.05,
-  adjusted_price: 1.57,
-  net_value_after_fees: 1.48,
+  currentPrice: 1.5,
+  projectedPrice: 1.65,
+  riskDiscount: 0.05,
+  adjustedPrice: 1.57,
+  netValueAfterFees: 1.48,
   ratio: 1.05,
   decision: "HOLD",
   inputs: {
     momentum: 0.02,
     volatility: 0.15,
     acceleration: 0.01,
-    liquidity_score: 0.8,
-    horizon_hours: 24,
-    confidence_level: 0.95,
+    liquidityScore: 0.8,
+    horizonHours: 24,
+    significanceLevel: 0.95,
   },
 };
 
@@ -223,7 +220,7 @@ describe("ForecastTab", () => {
     // Wait for the chart area to show no-data state (backend online, no chart data)
     // The no-data state shows an AlertTriangle icon + message
     await waitFor(() => {
-      // Check for the data_points count from forecast response (which is "50 data points" text)
+      // Check for the dataPoints count from forecast response (which is "50 data points" text)
       // or the "data points" text in the chart header
       const noDataState = document.querySelector(".text-center.py-10");
       expect(noDataState).toBeTruthy();
@@ -303,7 +300,7 @@ describe("ForecastTab", () => {
   it("shows low confidence badge when forecast is low confidence", async () => {
     mockFetchApi.mockImplementation((url: string) => {
       if (url.includes("/phase")) return Promise.resolve(mockPhaseData);
-      if (url.includes("/forecast/")) return Promise.resolve({ ...mockForecastData, low_confidence: true });
+      if (url.includes("/forecast/")) return Promise.resolve({ ...mockForecastData, lowConfidence: true });
       if (url.includes("/anomalies")) return Promise.resolve({ anomalies: [], count: 0, currencies_checked: 10, min_alert_score: 0.5 });
       if (url.includes("/storage-value/")) return Promise.resolve(mockStorageData);
       return Promise.resolve({});

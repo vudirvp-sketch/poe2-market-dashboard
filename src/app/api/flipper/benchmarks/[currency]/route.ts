@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 /** GET /api/flipper/benchmarks/[currency] → proxies to FastAPI GET /api/benchmarks/{currency}
  *
  *  FIX: When the backend is offline or returns 404 (no historical data for
- *  the given currency), return a fallback response with data_available: false
+ *  the given currency), return a fallback response with dataAvailable: false
  *  instead of propagating the error. This eliminates console 404/503 spam
- *  while keeping the UI clean — the frontend already checks data_available.
+ *  while keeping the UI clean — the frontend already checks dataAvailable.
  */
 export async function GET(
   request: NextRequest,
@@ -21,12 +21,12 @@ export async function GET(
 
   const benchmarksFallback = {
     currency,
-    data_available: false,
+    dataAvailable: false,
     low_30d: null,
     high_30d: null,
-    range_position: null,
-    percentile_30d: null,
-    current_vs_avg: null,
+    rangePosition: null,
+    percentile30d: null,
+    currentVsAvg: null,
   };
 
   const res = await proxyWithFallback(

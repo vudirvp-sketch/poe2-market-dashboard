@@ -42,7 +42,7 @@ import { useI18n, type Locale, type TranslationKeys } from "@/lib/i18n";
 // ---------------------------------------------------------------------------
 interface PhaseInfo {
   phase: string;
-  days_since_ref: number;
+  daysSinceRef: number;
   league: string;
 }
 
@@ -114,7 +114,7 @@ function getEffectivePhase(phaseInfo: PhaseInfo | null | undefined): {
 } {
   if (!phaseInfo) return { phase: "", isEstimated: false };
 
-  const days = phaseInfo.days_since_ref;
+  const days = phaseInfo.daysSinceRef;
   const reportedPhase = phaseInfo.phase?.toLowerCase();
 
   // Client-side validation: if backend says "late" but league is clearly young

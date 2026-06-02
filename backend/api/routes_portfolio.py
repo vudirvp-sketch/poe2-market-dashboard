@@ -46,26 +46,28 @@ _current_corr: dict | None = None
 # Fix 2.1: Determine annualization factor based on data frequency
 # ---------------------------------------------------------------------------
 
-def _determine_periods_per_year(log_returns: np.ndarray) -> int:
-    """Determine annualization factor based on data frequency.
-
-    Logic:
-    - If >366 data points → hourly data → 365*24 = 8760
-    - If 30-366 data points → daily data → 365
-    - If <30 data points → insufficient data, use daily as fallback
-
-    This heuristic assumes PriceLogs span ~7 days max.
-    Using sqrt(365) instead of sqrt(8760) for hourly data understates
-    annual volatility by a factor of ~4.9, which invalidates the entire
-    efficient frontier, risk parity weights, and portfolio optimization.
-    """
-    n = log_returns.shape[0]
-    if n > 366:
-        return 365 * 24  # Hourly data
-    elif n >= 30:
-        return 365       # Daily data
+def _determine_periods_per_year(
+    price_logs: dict[str, list[tuple[datetime, float]]]
+) -> int:
+    """Determine data frequency from actual time intervals between observations."""
+    if not price_logs:
+        return 365
+    deltas: list[float] = []
+    for points in price_logs.values():
+        if len(points) < 2:
+            continue
+        for i in range(1, min(len(points), 50)):
+            dt = (points[i][0] - points[i-1][0]).total_seconds()
+            if dt > 0:
+                deltas.append(dt)
+    if not deltas:
+        return 365
+    import statistics
+    median_delta = statistics.median(deltas)
+    if median_delta < 4 * 3600:
+        return 365 * 24
     else:
-        return 365       # Insufficient data, assume daily
+        return 365
 
 
 # ---------------------------------------------------------------------------
@@ -151,11 +153,15 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
         # 3. Currency metadata & price histories (from snapshot's single ByCategory pass)
         currencies = snapshot.currency_metadata
         currency_price_history: dict[str, list[float]] = {}
+        currency_price_logs: dict[str, list[tuple[datetime, float]]] = {}
         for curr in currencies:
             history = snapshot.price_histories.get(curr.api_id.lower(), [])
             if history:
                 currency_price_history[curr.api_id] = [
                     p.price for p in history
+                ]
+                currency_price_logs[curr.api_id] = [
+                    (p.timestamp, p.price) for p in history
                 ]
 
         # 4. Filter to currencies with enough data for portfolio construction
@@ -196,7 +202,7 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
 
         # 6. Run portfolio optimization
         # Fix 2.1: Determine periods_per_year based on data frequency
-        periods_per_year = _determine_periods_per_year(log_returns_matrix)
+        periods_per_year = _determine_periods_per_year(currency_price_logs)
         allocation = optimizer.optimize(
             currency_names=currency_names,
             log_returns=log_returns_matrix,
@@ -413,11 +419,15 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
     # Currency metadata & price histories (from snapshot's single ByCategory pass)
     currencies = snapshot.currency_metadata
     currency_price_history: dict[str, list[float]] = {}
+    currency_price_logs: dict[str, list[tuple[datetime, float]]] = {}
     for curr in currencies:
         history = snapshot.price_histories.get(curr.api_id.lower(), [])
         if history:
             currency_price_history[curr.api_id] = [
                 p.price for p in history
+            ]
+            currency_price_logs[curr.api_id] = [
+                (p.timestamp, p.price) for p in history
             ]
 
     # Filter to eligible currencies
@@ -454,7 +464,7 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
 
     # Compute frontier
     # Fix 2.1: Use _determine_periods_per_year for consistent annualization
-    periods_per_year = _determine_periods_per_year(log_returns_matrix)
+    periods_per_year = _determine_periods_per_year(currency_price_logs)
     frontier_data = compute_efficient_frontier_chart_data(
         log_returns=log_returns_matrix,
         current_weights=current_weights,

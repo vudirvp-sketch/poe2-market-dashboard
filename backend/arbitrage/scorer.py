@@ -114,6 +114,8 @@ def compute_quantized_analysis(
 
     # Recommended listing ratio
     if R_sell > 0:
+        # Fraction from float may have large denominators;
+        # limit_denominator keeps the ratio practical for lot size computation.
         f = Fraction(R_sell).limit_denominator(max_denominator=1000)
         recommended_ratio = (f.numerator, f.denominator)
         brick_resistance = 1.0 / max(f.numerator, f.denominator)

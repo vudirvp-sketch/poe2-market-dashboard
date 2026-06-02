@@ -79,21 +79,21 @@ export function classifySentiment(value: number): "bullish" | "bearish" | "neutr
  */
 export function isFlipDataSuspicious(flip: FlipOpportunity): boolean {
   // All prices identical → likely placeholder data
-  if (flip.bid > 0 && flip.ask > 0 && flip.mid_price > 0 &&
-      flip.bid === flip.ask && flip.bid === flip.mid_price) {
+  if (flip.bid > 0 && flip.ask > 0 && flip.midPrice > 0 &&
+      flip.bid === flip.ask && flip.bid === flip.midPrice) {
     return true;
   }
   // Spread contradicts buy/sell prices
   if (flip.bid > 0 && flip.ask > 0) {
     const actualSpread = Math.abs(flip.ask - flip.bid) /
                          ((flip.bid + flip.ask) / 2);
-    const reportedSpread = flip.spread ?? flip.spread_after_fees;
+    const reportedSpread = flip.spread ?? flip.spreadAfterFees;
     if (reportedSpread > 0 && Math.abs(actualSpread - reportedSpread) > 0.01) {
       return true;
     }
   }
   // Zero prices with non-zero volume → data error
-  if (flip.bid === 0 && flip.volume_24h > 0) return true;
+  if (flip.bid === 0 && flip.volume24h > 0) return true;
   return false;
 }
 
@@ -112,7 +112,7 @@ export function isFlipsResponseSuspicious(
   const allSamePrice = opportunities.every(
     (f) => f.bid === opportunities[0].bid &&
            f.ask === opportunities[0].ask &&
-           f.mid_price === opportunities[0].mid_price,
+           f.midPrice === opportunities[0].midPrice,
   );
   if (allSamePrice && opportunities.length > 1) {
     return {

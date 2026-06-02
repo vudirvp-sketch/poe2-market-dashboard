@@ -36,7 +36,30 @@ interface OverviewCache {
 }
 
 let _overviewCache: OverviewCache | null = null;
-let _revalidationInProgress = false;
+let _revalidationPromise: Promise<void> | null = null;
+
+function isStale(cache: OverviewCache): boolean {
+  return Date.now() - cache.ts >= OVERVIEW_CACHE_TTL;
+}
+
+async function getOrRevalidate(realm: string, league: string): Promise<OverviewCache> {
+  if (_overviewCache && !isStale(_overviewCache)) {
+    return _overviewCache;
+  }
+  if (_revalidationPromise) {
+    await _revalidationPromise;
+    return _overviewCache!;
+  }
+  _revalidationPromise = _revalidateOverviewCache(realm, league).finally(() => {
+    _revalidationPromise = null;
+  });
+  try {
+    await _revalidationPromise;
+  } catch {
+    // Revalidation failed — return stale cache if available
+  }
+  return _overviewCache!;
+}
 
 /**
  * GET /api/poe2/overview?realm=poe2&league=Fate+of+the+Vaal
@@ -67,8 +90,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "realm and league are required" }, { status: 400 });
     }
 
-    const now = Date.now();
-
     // ---- Fetch lightweight data in parallel (always fresh) ----
     const [allItems, pairs, snapshotHistory] = await Promise.all([
       getItems(realm, league).catch(() => [] as PoeItem[]),
@@ -77,44 +98,14 @@ export async function GET(req: NextRequest) {
     ]);
 
     // ---- Check overview cache for heavy ByCategory data ----
-    const cached = _overviewCache;
-    let moversData: {
-      topGainers: PoeItem[];
-      topLosers: PoeItem[];
-      topGainers7d: PoeItem[];
-      topLosers7d: PoeItem[];
-      totalVolume: number;
+    const cachedResult = await getOrRevalidate(realm, league);
+    const moversData = {
+      topGainers: cachedResult.topGainers,
+      topLosers: cachedResult.topLosers,
+      topGainers7d: cachedResult.topGainers7d,
+      topLosers7d: cachedResult.topLosers7d,
+      totalVolume: cachedResult.totalVolume,
     };
-
-    if (cached && now - cached.ts < OVERVIEW_CACHE_TTL) {
-      // Fresh cache hit — use cached movers data
-      moversData = {
-        topGainers: cached.topGainers,
-        topLosers: cached.topLosers,
-        topGainers7d: cached.topGainers7d,
-        topLosers7d: cached.topLosers7d,
-        totalVolume: cached.totalVolume,
-      };
-    } else if (cached && now - cached.ts < OVERVIEW_STALE_TTL) {
-      // Stale-but-usable — return stale, revalidate in background
-      moversData = {
-        topGainers: cached.topGainers,
-        topLosers: cached.topLosers,
-        topGainers7d: cached.topGainers7d,
-        topLosers7d: cached.topLosers7d,
-        totalVolume: cached.totalVolume,
-      };
-      // Fire-and-forget revalidation
-      if (!_revalidationInProgress) {
-        _revalidationInProgress = true;
-        _revalidateOverviewCache(realm, league).finally(() => {
-          _revalidationInProgress = false;
-        });
-      }
-    } else {
-      // No cache or too stale — must fetch
-      moversData = await _fetchMoversData(realm, league);
-    }
 
     const trackedItems = allItems.length;
     const exchangePairs = pairs.length;

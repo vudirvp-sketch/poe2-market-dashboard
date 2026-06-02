@@ -26,9 +26,9 @@ export async function GET() {
       provider: "unreachable",
       timestamp: new Date().toISOString(),
       league: null,
-      base_currency: null,
-      active_events: 0,
-      cache_entries: 0,
+      baseCurrency: null,
+      activeEvents: 0,
+      cacheEntries: 0,
       snapshot: null,
       daily_stats_cache: null,
     });

@@ -89,16 +89,16 @@ const mockPricesData = {
       cluster_to: "volatile_illiquid",
     },
   ],
-  base_currency: "exalted",
-  fetched_at: "2025-01-01T00:00:00Z",
+  baseCurrency: "exalted",
+  fetchedAt: "2025-01-01T00:00:00Z",
 };
 
 const mockTriangularData = {
   cycles: [
     {
       cycle: ["divine", "exalted", "chaos", "divine"],
-      net_profit_pct: 2.5,
-      step_rates: [1.5, 120.0, 0.005],
+      netProfitPct: 2.5,
+      stepRates: [1.5, 120.0, 0.005],
     },
   ],
   total: 1,
@@ -117,8 +117,8 @@ const mockEmptyPricesData = {
   league: "vaal",
   phase: "mid",
   rates: [],
-  base_currency: "exalted",
-  fetched_at: "2025-01-01T00:00:00Z",
+  baseCurrency: "exalted",
+  fetchedAt: "2025-01-01T00:00:00Z",
 };
 
 // ---------------------------------------------------------------------------

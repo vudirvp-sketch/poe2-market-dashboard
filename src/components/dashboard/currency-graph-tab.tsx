@@ -39,7 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
-import { fetchApi, fmt, getFlipperErrorType } from "@/lib/types";
+import { fetchApi, fmt, getFlipperErrorType, type TriangularResponse, type TriangularCycle } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 
 // ---------------------------------------------------------------------------
@@ -62,20 +62,11 @@ interface PricesResponse {
   league: string;
   phase: string;
   rates: PriceRate[];
-  base_currency: string;
-  fetched_at: string;
+  baseCurrency: string;
+  fetchedAt: string;
 }
 
-interface TriangularCycle {
-  cycle: string[];
-  net_profit_pct: number;
-  step_rates: number[];
-}
-
-interface TriangularResponse {
-  cycles: TriangularCycle[];
-  total: number;
-}
+// TriangularCycle and TriangularResponse imported from @/lib/types
 
 interface CurrencyMetadata {
   api_id: string;
@@ -313,8 +304,8 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
   // ---- Compute cycle edges for highlighting ----
   const cycleEdges = useMemo(() => {
     const edges = new Set<string>();
-    if (triangularData?.cycles) {
-      for (const cycle of triangularData.cycles) {
+    if (triangularData?.opportunities) {
+      for (const cycle of triangularData.opportunities) {
         for (let i = 0; i < cycle.cycle.length - 1; i++) {
           edges.add(`${cycle.cycle[i]}->${cycle.cycle[i + 1]}`);
         }
@@ -489,7 +480,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
     const nodeCount = filteredGraphData.nodes.length;
     const edgeCount = filteredGraphData.edges.length;
     const density = nodeCount > 1 ? (2 * edgeCount) / (nodeCount * (nodeCount - 1)) : 0;
-    const cycleCount = triangularData?.cycles?.length ?? 0;
+    const cycleCount = triangularData?.opportunities?.length ?? 0;
     return { nodeCount, edgeCount, density, cycleCount };
   }, [filteredGraphData, triangularData]);
 
@@ -689,7 +680,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                     })}
 
                     {/* Cycle annotations */}
-                    {triangularData?.cycles?.slice(0, 5).map((cycle, idx) => {
+                    {triangularData?.opportunities?.slice(0, 5).map((cycle, idx) => {
                       const cycleNodesInGraph = cycle.cycle.filter(
                         (id) => layoutPositions.has(id),
                       );
@@ -722,7 +713,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                             fontSize={8}
                             fontFamily="monospace"
                           >
-                            Arb: +{cycle.net_profit_pct.toFixed(1)}%
+                            Arb: +{cycle.netProfitPct.toFixed(1)}%
                           </text>
                         </g>
                       );
@@ -808,7 +799,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
           </div>
 
           {/* ---- Detected Arbitrage Cycles ---- */}
-          {triangularData?.cycles && triangularData.cycles.length > 0 && (
+          {triangularData?.opportunities && triangularData.opportunities.length > 0 && (
             <Card>
               <CardHeader className="pb-2 pt-4 px-4">
                 <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
@@ -817,7 +808,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0 space-y-2">
-                {triangularData.cycles.slice(0, 5).map((cycle, idx) => (
+                {triangularData.opportunities.slice(0, 5).map((cycle, idx) => (
                   <div
                     key={idx}
                     className="flex items-center gap-3 py-2 px-3 rounded-lg border border-border/50 hover:bg-muted/20 transition-colors"
@@ -826,7 +817,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                       variant="outline"
                       className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-xs font-semibold shrink-0"
                     >
-                      +{cycle.net_profit_pct.toFixed(2)}%
+                      +{cycle.netProfitPct.toFixed(2)}%
                     </Badge>
                     <span className="text-sm font-mono truncate">
                       {cycle.cycle.join(" → ")}

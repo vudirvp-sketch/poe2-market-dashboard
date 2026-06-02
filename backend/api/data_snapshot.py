@@ -141,6 +141,11 @@ def _compute_transitive_prices(prices_in_base: dict, rates: dict, base: str) -> 
     first path found, not necessarily the best. This is acceptable for fee
     estimation.
     """
+    # NOTE: The BFS uses the first path found to compute transitive prices.
+    # This is not guaranteed to be the highest-volume or most accurate path.
+    # For currencies with many indirect paths, the transitive price may differ
+    # from the most accurate estimate. This is acceptable for tier classification
+    # and portfolio weighting, but should be noted for precision-critical uses.
     from collections import deque
 
     known = set(prices_in_base.keys()) | {base}
@@ -187,7 +192,6 @@ class SnapshotManager:
         self._snapshot_ts: float = 0.0
         self._ttl: float = self._config.data.cache_ttl_prices_minutes * 60.0
         self._lock = asyncio.Lock()
-        self._refresh_in_progress = False
 
     async def get_snapshot(self) -> DataSnapshot:
         """Return the current snapshot, refreshing if stale.

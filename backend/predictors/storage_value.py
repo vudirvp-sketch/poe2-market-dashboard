@@ -28,7 +28,7 @@ def project_value(
     volatility: float,
     liquidity_score: float,
     horizon_hours: int,
-    confidence_level: float,
+    significance_level: float,
     currency: str = "",
     liquidity_normalization: float = 10.0,
     buy_threshold: float = 1.03,
@@ -46,7 +46,7 @@ def project_value(
         volatility: Std of log-returns (ddof=1) from PriceMomentumTracker
         liquidity_score: Liquidity score for the currency
         horizon_hours: How far ahead to project (in hours)
-        confidence_level: VaR confidence level (e.g. 0.05 for 95% one-sided CI)
+        significance_level: VaR significance level / alpha (e.g. 0.05 for 95% one-sided CI)
         currency: Currency API ID (for the result object)
         liquidity_normalization: Normalization divisor for liquidity (default 10.0)
         buy_threshold: Ratio above which decision is BUY/HOLD (default 1.03)
@@ -91,9 +91,9 @@ def project_value(
     projected = current_price * capped_factor
 
     # Step 2: Risk discount (Canonical Formulas Section 6.2)
-    # z = abs(norm.ppf(confidence_level))
-    # For confidence_level=0.05: z = 1.645
-    z = abs(norm.ppf(confidence_level))
+    # z = abs(norm.ppf(significance_level))
+    # For significance_level=0.05: z = 1.645
+    z = abs(norm.ppf(significance_level))
     risk_discount = np.exp(-volatility * z * np.sqrt(horizon_hours))
 
     # Step 3: Liquidity adjustment (Canonical Formulas Section 6.3)

@@ -51,7 +51,7 @@ import {
   ZAxis,
 } from "recharts";
 import { useI18n, type TranslationKeys } from "@/lib/i18n";
-import { fetchApi, getFlipperErrorType } from "@/lib/types";
+import { fetchApi, getFlipperErrorType, type PortfolioData as CanonicalPortfolioData } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 
 // ---------------------------------------------------------------------------
@@ -63,14 +63,8 @@ interface CorrelationMatrix {
   matrix: number[][];
 }
 
-interface PortfolioData {
-  method: "risk_parity" | "min_variance";
-  weights: Record<string, number>;
-  expected_risk: number;
-  correlation_warning: boolean;
-  last_rebalance: string | null;
-  correlation_matrix: CorrelationMatrix | null;
-  data_available?: boolean;
+interface PortfolioData extends CanonicalPortfolioData {
+  correlationMatrix?: CorrelationMatrix | null;
 }
 
 interface FrontierPoint {
@@ -91,9 +85,9 @@ interface CurrentPortfolio {
 
 interface FrontierData {
   frontier: FrontierPoint;
-  individual_assets: IndividualAsset[];
-  current_portfolio: CurrentPortfolio | null;
-  data_available?: boolean;
+  individualAssets: IndividualAsset[];
+  currentPortfolio: CurrentPortfolio | null;
+  dataAvailable?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -299,8 +293,8 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
   }, [frontierData]);
 
   const individualAssetsData = useMemo(() => {
-    if (!frontierData?.individual_assets) return [];
-    return frontierData.individual_assets.map((a) => ({
+    if (!frontierData?.individualAssets) return [];
+    return frontierData.individualAssets.map((a) => ({
       x: a.risk,
       y: a.return,
       z: 80,
@@ -309,10 +303,10 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
   }, [frontierData]);
 
   const currentPortfolioData = useMemo(() => {
-    if (!frontierData?.current_portfolio) return null;
+    if (!frontierData?.currentPortfolio) return null;
     return [{
-      x: frontierData.current_portfolio.risk,
-      y: frontierData.current_portfolio.return,
+      x: frontierData.currentPortfolio.risk,
+      y: frontierData.currentPortfolio.return,
       z: 200,
       name: t("portfolioCurrentPortfolio"),
     }];
@@ -389,7 +383,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
               <CardContent className="px-4 pb-4 pt-0">
                 <p className="text-xl font-bold">
                   {portfolioData
-                    ? `${(portfolioData.expected_risk * 100).toFixed(2)}%`
+                    ? `${(portfolioData.expectedRisk * 100).toFixed(2)}%`
                     : "—"}
                 </p>
               </CardContent>
@@ -402,7 +396,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
-                {portfolioData?.correlation_warning ? (
+                {portfolioData?.correlationWarning ? (
                   <Badge
                     variant="outline"
                     className="border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10 text-sm px-3 py-1"
@@ -424,7 +418,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
           </div>
 
           {/* ---- Correlation shock warning ---- */}
-          {portfolioData?.correlation_warning && (
+          {portfolioData?.correlationWarning && (
             <Card className="border-red-500/30 bg-red-500/5">
               <CardContent className="flex items-start gap-3 p-4">
                 <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
@@ -453,7 +447,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
           </Card>
 
           {/* ---- Data unavailable (graceful) ---- */}
-          {portfolioData && portfolioData.data_available === false && (
+          {portfolioData && portfolioData.dataAvailable === false && (
             <Card className="border-amber-500/30 bg-amber-500/5">
               <CardContent className="text-center py-10">
                 <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
@@ -599,13 +593,13 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                 <p className="text-xs text-muted-foreground mb-3">
                   {t("portfolioCorrelationNote")}
                 </p>
-                {portfolioData?.correlation_matrix?.matrix ? (
+                {portfolioData?.correlationMatrix?.matrix ? (
                   <div className="overflow-x-auto">
                     <table className="text-xs border-collapse" role="table" aria-label={t("portfolioCorrelationMatrix")}>
                       <thead>
                         <tr>
                           <th className="p-1 border border-border bg-muted/50 sticky left-0 z-10 min-w-[60px]" aria-label="Row header" />
-                          {portfolioData.correlation_matrix.currencies.map((cur) => (
+                          {portfolioData.correlationMatrix.currencies.map((cur) => (
                             <th
                               key={cur}
                               className="p-1 border border-border bg-muted/50 text-center font-medium text-muted-foreground min-w-[50px] max-w-[70px] truncate"
@@ -617,7 +611,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                         </tr>
                       </thead>
                       <tbody>
-                        {portfolioData.correlation_matrix.currencies.map((rowCur, i) => (
+                        {portfolioData.correlationMatrix.currencies.map((rowCur, i) => (
                           <tr key={rowCur}>
                             <th
                               className="p-1 border border-border bg-muted/50 text-left font-medium text-muted-foreground sticky left-0 z-10 max-w-[80px] truncate"
@@ -625,7 +619,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                             >
                               {rowCur.length > 8 ? rowCur.slice(0, 7) + "…" : rowCur}
                             </th>
-                            {portfolioData.correlation_matrix!.matrix[i]?.map((corr, j) => {
+                            {portfolioData.correlationMatrix!.matrix[i]?.map((corr, j) => {
                               const bgStyle = { backgroundColor: correlationToColor(corr) };
                               const textClass = textColorForBg(corr);
                               return (
@@ -633,7 +627,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                                   key={`${i}-${j}`}
                                   className={`p-1 border border-border text-center font-mono ${textClass}`}
                                   style={bgStyle}
-                                  title={`${rowCur} × ${portfolioData.correlation_matrix!.currencies[j]}: ${corr.toFixed(4)}`}
+                                  title={`${rowCur} × ${portfolioData.correlationMatrix!.currencies[j]}: ${corr.toFixed(4)}`}
                                 >
                                   {i === j ? "1.00" : corr.toFixed(2)}
                                 </td>
@@ -848,10 +842,10 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
                 </p>
               )}
 
-              {portfolioData?.last_rebalance && (
+              {portfolioData?.lastRebalance && (
                 <p className="text-xs text-muted-foreground">
                   {t("portfolioLastRebalance")}:{" "}
-                  {new Date(portfolioData.last_rebalance).toLocaleString()}
+                  {new Date(portfolioData.lastRebalance).toLocaleString()}
                 </p>
               )}
             </CardContent>

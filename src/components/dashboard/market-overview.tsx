@@ -42,7 +42,7 @@ import { MarketOverviewSkeleton } from "./skeletons";
 
 interface HeatmapItem {
   currency: string;
-  change_24h: number;
+  change24h: number;
 }
 
 // Response shape from /api/poe2/overview
@@ -117,7 +117,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   const heatmapScale = useMemo(() => {
     if (!heatmapData || heatmapData.length === 0) return { min: -10, max: 10 };
     const validValues = heatmapData
-      .map((item) => item.change_24h)
+      .map((item) => item.change24h)
       .filter((v) => v != null && isFinite(v));
     if (validValues.length === 0) return { min: -10, max: 10 };
     // Sort by absolute value
@@ -378,18 +378,18 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                 <div
                   key={item.currency}
                   className="flex flex-col items-center justify-center rounded px-2 py-1 min-w-[60px]"
-                  style={heatmapCellStyle(item.change_24h)}
+                  style={heatmapCellStyle(item.change24h)}
                 >
                   <span className="text-[10px] font-semibold">{item.currency}</span>
                   <span
                     className={`text-[10px] font-mono ${
-                      item.change_24h >= 0
+                      item.change24h >= 0
                         ? "text-emerald-700 dark:text-emerald-300"
                         : "text-red-700 dark:text-red-300"
                     }`}
                   >
-                    {item.change_24h >= 0 ? "+" : ""}
-                    {item.change_24h.toFixed(2)}%
+                    {item.change24h >= 0 ? "+" : ""}
+                    {item.change24h.toFixed(2)}%
                   </span>
                 </div>
               ))}
@@ -563,7 +563,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                       <div className="flex items-center gap-1">
                         <ArrowUpRight className="h-3 w-3 text-emerald-400" />
                         <span className="text-xs font-mono text-emerald-400">
-                          +{pct?.toFixed(1)}%
+                          {pct != null ? `+${pct.toFixed(1)}%` : "—"}
                         </span>
                       </div>
                     </div>
@@ -613,7 +613,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                       <div className="flex items-center gap-1">
                         <ArrowDownRight className="h-3 w-3 text-red-400" />
                         <span className="text-xs font-mono text-red-400">
-                          {pct?.toFixed(1)}%
+                          {pct != null ? `${pct.toFixed(1)}%` : "—"}
                         </span>
                       </div>
                     </div>

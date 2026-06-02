@@ -76,9 +76,9 @@ const mockPortfolioData = {
     chaos: 0.20,
     gold: 0.15,
   },
-  expected_risk: 0.12,
-  correlation_warning: false,
-  last_rebalance: "2025-01-01T00:00:00Z",
+  expectedRisk: 0.12,
+  correlationWarning: false,
+  lastRebalance: "2025-01-01T00:00:00Z",
   correlation_matrix: {
     currencies: ["divine", "exalted", "chaos", "gold"],
     matrix: [
@@ -92,7 +92,7 @@ const mockPortfolioData = {
 
 const mockPortfolioWithCorrelationShock = {
   ...mockPortfolioData,
-  correlation_warning: true,
+  correlationWarning: true,
 };
 
 const mockFrontierData = {

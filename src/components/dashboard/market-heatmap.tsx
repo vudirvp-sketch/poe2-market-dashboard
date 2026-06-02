@@ -30,7 +30,7 @@ import { ApiErrorFallback } from "./api-error-fallback";
 
 interface HeatmapItem {
   currency: string;
-  change_24h: number;
+  change24h: number;
 }
 
 interface MarketHeatmapProps {
@@ -95,7 +95,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
     queryKey: ["heatmap", realm, league],
     queryFn: () =>
       fetchApi<HeatmapItem[]>(
-        `/api/flipper/heatmap?realm=${realm ?? "poe2"}&league=${league ?? "runes"}`,
+        `/api/flipper/heatmap?realm=${realm ?? "poe2"}&league=${league}`,
       ),
     staleTime: 60_000,
     retry: 1,
@@ -107,10 +107,10 @@ export const MarketHeatmap = memo(function MarketHeatmap({
       return { topGainers: [], topLosers: [] };
     }
 
-    const sorted = [...heatmapData].sort((a, b) => b.change_24h - a.change_24h);
-    const gainers = sorted.filter((item) => item.change_24h > 0).slice(0, 5);
+    const sorted = [...heatmapData].sort((a, b) => b.change24h - a.change24h);
+    const gainers = sorted.filter((item) => item.change24h > 0).slice(0, 5);
     const losers = sorted
-      .filter((item) => item.change_24h < 0)
+      .filter((item) => item.change24h < 0)
       .reverse()
       .slice(0, 5);
 
@@ -193,16 +193,16 @@ export const MarketHeatmap = memo(function MarketHeatmap({
               <div
                 key={item.currency}
                 className="relative rounded-md px-2 py-1.5 text-center min-w-[70px] transition-transform hover:scale-105"
-                style={{ backgroundColor: changeToColor(item.change_24h) }}
+                style={{ backgroundColor: changeToColor(item.change24h) }}
                 role="listitem"
-                title={`${item.currency}: ${item.change_24h >= 0 ? "+" : ""}${item.change_24h.toFixed(1)}%`}
+                title={`${item.currency}: ${item.change24h >= 0 ? "+" : ""}${item.change24h.toFixed(1)}%`}
               >
-                <div className={`text-[10px] font-medium truncate ${changeToTextColor(item.change_24h)}`}>
+                <div className={`text-[10px] font-medium truncate ${changeToTextColor(item.change24h)}`}>
                   {item.currency}
                 </div>
-                <div className={`text-xs font-bold ${changeToTextColor(item.change_24h)}`}>
-                  {item.change_24h >= 0 ? "+" : ""}
-                  {item.change_24h.toFixed(1)}%
+                <div className={`text-xs font-bold ${changeToTextColor(item.change24h)}`}>
+                  {item.change24h >= 0 ? "+" : ""}
+                  {item.change24h.toFixed(1)}%
                 </div>
               </div>
             ))}
@@ -259,7 +259,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
                         variant="outline"
                         className="text-[10px] px-1.5 py-0 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
                       >
-                        +{item.change_24h.toFixed(1)}%
+                        +{item.change24h.toFixed(1)}%
                       </Badge>
                     </div>
                   ))}
@@ -290,7 +290,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
                         variant="outline"
                         className="text-[10px] px-1.5 py-0 border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
                       >
-                        {item.change_24h.toFixed(1)}%
+                        {item.change24h.toFixed(1)}%
                       </Badge>
                     </div>
                   ))}

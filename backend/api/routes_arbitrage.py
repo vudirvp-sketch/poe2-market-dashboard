@@ -517,7 +517,7 @@ async def get_triangular_arbitrage(
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
 
-    opportunities = find_triangular_arbitrage(
+    result = find_triangular_arbitrage(
         rates=rates_for_bf,
         prices=prices,
         min_profit_pct=min_profit_pct,
@@ -525,12 +525,9 @@ async def get_triangular_arbitrage(
         snapshot_time=datetime.now(timezone.utc),
         cross_rate_threshold_pct=5.0,
     )
+    opportunities = result.opportunities
+    suspicious_triples = result.suspicious_triples
 
-    # Compute cross-rate divergence summary for the frontend warning
-    from backend.arbitrage.triangular import _compute_cross_rate_divergence
-    suspicious_triples = _compute_cross_rate_divergence(
-        rates_for_bf, threshold_pct=5.0
-    )
     cross_rate_warning = None
     if suspicious_triples:
         affected_currencies = set()

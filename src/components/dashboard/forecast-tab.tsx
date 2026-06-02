@@ -44,7 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
-import { fetchApi, FlipperApiError } from "@/lib/types";
+import { fetchApi, FlipperApiError, type FlipperPhaseResponse, type StorageValueResponse, type StorageValueInputs } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -57,12 +57,12 @@ import { TakeProfitCalculator } from "./take-profit-calculator";
 
 interface ForecastModel {
   currency: string;
-  model_name: string;
-  point_forecast: number[];
-  ci_lower: number[];
-  ci_upper: number[];
+  modelName: string;
+  pointForecast: number[];
+  ciLower: number[];
+  ciUpper: number[];
   timestamps: string[];
-  low_confidence: boolean;
+  lowConfidence: boolean;
   disagreement: boolean;
   mape: number | null;
 }
@@ -72,11 +72,11 @@ interface ForecastResponse {
   horizon: number;
   models: Record<string, ForecastModel>;
   disagreement: boolean;
-  low_confidence: boolean;
-  is_event_active: boolean;
-  data_points: number;
-  fetched_at: string;
-  data_available?: boolean;
+  lowConfidence: boolean;
+  isEventActive: boolean;
+  dataPoints: number;
+  fetchedAt: string;
+  dataAvailable?: boolean;
 }
 
 interface AnomalyAlert {
@@ -93,37 +93,11 @@ interface AnomaliesResponse {
   count: number;
   currencies_checked: number;
   min_alert_score: number;
-  data_available?: boolean;
+  dataAvailable?: boolean;
 }
 
-interface StorageValueResponse {
-  currency: string;
-  current_price: number;
-  projected_price: number;
-  risk_discount: number;
-  adjusted_price: number;
-  net_value_after_fees: number;
-  ratio: number;
-  decision: string;
-  data_available?: boolean;
-  inputs: {
-    momentum: number;
-    volatility: number;
-    acceleration: number;
-    liquidity_score: number;
-    horizon_hours: number;
-    confidence_level: number;
-  };
-}
-
-interface PhaseResponse {
-  phase: string;
-  days_since_reference: number;
-  reference_currency: string;
-  recommended_strategy: string;
-  min_spread_after_fees: number;
-  max_hold_time: string;
-}
+// StorageValueResponse, StorageValueInputs, and FlipperPhaseResponse
+// imported from @/lib/types (canonical camelCase definitions)
 
 interface CurrencyOption {
   api_id: string;
@@ -199,12 +173,12 @@ function ForecastRecommendations({
     // 1. Primary recommendation from storage value decision
     const decision = storageData.decision;
     const ratio = storageData.ratio;
-    const momentum = storageData.inputs.momentum;
-    const volatility = storageData.inputs.volatility;
+    const momentum = storageData.inputs?.momentum ?? 0;
+    const volatility = storageData.inputs?.volatility ?? 0;
 
     // Determine confidence based on model agreement and data quality
     const hasDisagreement = forecastData.disagreement;
-    const isLowConfidence = forecastData.low_confidence;
+    const isLowConfidence = forecastData.lowConfidence;
     const hasAnomaly = (anomaliesData?.anomalies?.length ?? 0) > 0;
     const currencyAnomaly = anomaliesData?.anomalies?.find(
       (a) => a.currency === forecastData.currency
@@ -222,25 +196,25 @@ function ForecastRecommendations({
         reason: ratio > 1
           ? `Storage value ratio ${ratio.toFixed(3)} > 1.0 indicates favorable holding conditions. Momentum: ${momentum > 0 ? "positive" : "negative"} (${momentum.toFixed(4)}).`
           : `Decision is ${decision} but ratio ${ratio.toFixed(3)} is near threshold. Monitor closely for changes.`,
-        priceTarget: storageData.projected_price,
-        timeframe: `${storageData.inputs.horizon_hours}h horizon`,
+        priceTarget: storageData.projectedPrice,
+        timeframe: `${storageData.inputs?.horizonHours ?? "?"}h horizon`,
       });
     } else if (decision === "SELL" || decision === "CONVERT") {
       recs.push({
         action: decision,
         confidence,
         reason: ratio < 1
-          ? `Storage value ratio ${ratio.toFixed(3)} < 1.0 suggests declining value. Projected price: ${formatPrice(storageData.projected_price, baseCurrencyText, baseCurrencyApiId, { digits: 4 })}.`
+          ? `Storage value ratio ${ratio.toFixed(3)} < 1.0 suggests declining value. Projected price: ${formatPrice(storageData.projectedPrice, baseCurrencyText, baseCurrencyApiId, { digits: 4 })}.`
           : `Decision is ${decision} despite ratio near 1.0. Volatility: ${(volatility * 100).toFixed(2)}%.`,
-        priceTarget: storageData.projected_price,
-        timeframe: `${storageData.inputs.horizon_hours}h horizon`,
+        priceTarget: storageData.projectedPrice,
+        timeframe: `${storageData.inputs?.horizonHours ?? "?"}h horizon`,
       });
     }
 
     // 3. Forecast trend recommendation
     const primaryModel = forecastData.models[modelNames[0]];
-    const lastForecast = primaryModel.point_forecast[primaryModel.point_forecast.length - 1];
-    const firstForecast = primaryModel.point_forecast[0];
+    const lastForecast = primaryModel.pointForecast[primaryModel.pointForecast.length - 1];
+    const firstForecast = primaryModel.pointForecast[0];
     if (lastForecast != null && firstForecast != null && firstForecast > 0) {
       const forecastChange = ((lastForecast - firstForecast) / firstForecast) * 100;
       if (Math.abs(forecastChange) > 2) {
@@ -249,7 +223,7 @@ function ForecastRecommendations({
           confidence: isLowConfidence ? "low" : "medium",
           reason: `Forecast trend: ${forecastChange > 0 ? "+" : ""}${forecastChange.toFixed(1)}% over forecast horizon (${modelNames[0]} model). ${isLowConfidence ? "Low confidence flag active." : ""}`,
           priceTarget: lastForecast,
-          timeframe: `${primaryModel.point_forecast.length} periods`,
+          timeframe: `${primaryModel.pointForecast.length} periods`,
         });
       }
     }
@@ -419,9 +393,9 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
   // backendOnline is passed as prop
 
   // ---- Phase info ----
-  const { data: phaseData } = useQuery<PhaseResponse>({
+  const { data: phaseData } = useQuery<FlipperPhaseResponse>({
     queryKey: ["flipper-phase"],
-    queryFn: () => fetchApi<PhaseResponse>("/api/flipper/phase"),
+    queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: backendOnline,
     staleTime: 60_000,
     retry: 1,
@@ -509,10 +483,10 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
       };
 
       for (const [modelName, model] of Object.entries(forecastData.models)) {
-        if (i < model.point_forecast.length) {
-          point[`${modelName}_forecast`] = model.point_forecast[i];
-          point[`${modelName}_ci_lower`] = model.ci_lower[i];
-          point[`${modelName}_ci_upper`] = model.ci_upper[i];
+        if (i < model.pointForecast.length) {
+          point[`${modelName}_forecast`] = model.pointForecast[i];
+          point[`${modelName}_ci_lower`] = model.ciLower[i];
+          point[`${modelName}_ci_upper`] = model.ciUpper[i];
         }
       }
 
@@ -678,12 +652,9 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-muted-foreground">{t("forecastDaysSince")}:</span>
-                <span className="font-mono">{phaseData.days_since_reference}</span>
+                <span className="font-mono">{phaseData.daysSinceRef}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-muted-foreground">{t("forecastStrategy")}:</span>
-                <span className="font-medium capitalize">{phaseData.recommended_strategy}</span>
-              </div>
+              {/* recommended_strategy not in canonical FlipperPhaseResponse; removed */}
             </div>
           </CardContent>
         </Card>
@@ -703,18 +674,18 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                   {t("forecastDisagreement")}
                 </Badge>
               )}
-              {forecastData.low_confidence && (
+              {forecastData.lowConfidence && (
                 <Badge variant="outline" className="text-[10px] border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10">
                   {t("forecastLowConfidence")}
                 </Badge>
               )}
-              {forecastData.is_event_active && (
+              {forecastData.isEventActive && (
                 <Badge variant="outline" className="text-[10px] border-orange-500/50 text-orange-600 dark:text-orange-400 bg-orange-500/10">
                   {t("forecastEventActive")}
                 </Badge>
               )}
               <span className="text-xs text-muted-foreground">
-                {forecastData.data_points} {t("forecastDataPoints")}
+                {forecastData.dataPoints} {t("forecastDataPoints")}
               </span>
             </div>
           )}
@@ -722,7 +693,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
         <CardContent className="px-4 pb-4 pt-0">
           {isLoading ? (
             <Skeleton className="h-[300px] w-full" />
-          ) : forecastData && forecastData.data_available === false ? (
+          ) : forecastData && forecastData.dataAvailable === false ? (
             <div className="text-center py-10">
               <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
               <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -829,9 +800,9 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                         {model.mape !== null ? `${(model.mape * 100).toFixed(2)}%` : "—"}
                       </p>
                       <p>
-                        {t("forecastPoints")}: {model.point_forecast.length}
+                        {t("forecastPoints")}: {model.pointForecast.length}
                       </p>
-                      {model.low_confidence && (
+                      {model.lowConfidence && (
                         <p className="text-amber-600 dark:text-amber-400">
                           {t("forecastModelLowConfidence")}
                         </p>
@@ -866,7 +837,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
             </div>
           ) : !backendOnline ? (
             <ApiErrorFallback errorKind="backend_offline" compact />
-          ) : storageData && storageData.data_available === false ? (
+          ) : storageData && storageData.dataAvailable === false ? (
             <div className="text-center py-6">
               <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-2" aria-hidden="true" />
               <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -920,15 +891,15 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastCurrentPrice")}</p>
-                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.current_price, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
+                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.currentPrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastProjectedPrice")}</p>
-                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.projected_price, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
+                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.projectedPrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastNetAfterFees")}</p>
-                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.net_value_after_fees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
+                  <p className="text-lg font-bold font-mono">{formatPrice(storageData.netValueAfterFees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("forecastRatio")}</p>
@@ -946,9 +917,9 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
 
               {/* Inputs */}
               <div className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <span>{t("forecastMomentumInput")}: {storageData.inputs.momentum.toFixed(4)}</span>
-                <span>{t("forecastVolatilityInput")}: {storageData.inputs.volatility.toFixed(4)}</span>
-                <span>{t("forecastHorizon")}: {storageData.inputs.horizon_hours}h</span>
+                <span>{t("forecastMomentumInput")}: {storageData.inputs?.momentum.toFixed(4)}</span>
+                <span>{t("forecastVolatilityInput")}: {storageData.inputs?.volatility.toFixed(4)}</span>
+                <span>{t("forecastHorizon")}: {storageData.inputs?.horizonHours}h</span>
               </div>
             </div>
           )}
@@ -959,7 +930,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
       {backendOnline && forecastData?.models && storageData && (
         <TakeProfitCalculator
           models={forecastData.models}
-          currentPrice={storageData.current_price}
+          currentPrice={storageData.currentPrice}
           currencyId={selectedCurrency}
           baseCurrencyText={uiState.baseCurrencyText}
           baseCurrencyApiId={uiState.baseCurrencyApiId}
@@ -1011,7 +982,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
             <Skeleton className="h-24 w-full" />
           ) : !backendOnline ? (
             <ApiErrorFallback errorKind="backend_offline" compact />
-          ) : anomaliesData && anomaliesData.data_available === false ? (
+          ) : anomaliesData && anomaliesData.dataAvailable === false ? (
             <div className="text-center py-6">
               <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
               <p className="text-sm font-medium text-amber-600 dark:text-amber-400">

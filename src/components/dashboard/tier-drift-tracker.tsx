@@ -1,35 +1,29 @@
 // ============================================================================
 // Tier Drift Tracker — P3-7
-// Fetches /api/flipper/tiers. Shows tier distribution, drift alerts for
-// currencies that recently changed tier, and a full currency table.
+// Fetches /api/flipper/tiers. Shows tier distribution, tier boundary
+// thresholds, and a full currency table.
+//
+// CRITICAL-1: Now uses canonical CurrencyTier / TiersResponse from @/lib/types.
+//   - currency → apiId
+//   - tier (was string "T1") → tier (number 0-5) for sorting, tierLabel for display
+//   - price → relativePrice
+//   - change_24h → removed (not in backend); shown as "—"
+//   - tier_history → removed (not in backend)
+//   - snapshot_time → removed (not in TiersResponse)
+//   - data_available → dataAvailable
+//   - boundaries from TiersResponse now displayed
 // ============================================================================
 "use client";
 
 import { useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Layers, ArrowUpDown, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { Layers, ArrowUpDown, AlertTriangle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/lib/i18n";
-import { fetchApi, fmt } from "@/lib/types";
+import { fetchApi, fmt, type CurrencyTier, type TiersResponse } from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
-
-// Types (P3-7 specific)
-
-interface CurrencyTier {
-  currency: string;
-  tier: string;
-  price: number;
-  change_24h: number;
-  tier_history?: { timestamp: string; tier: string }[];
-}
-
-interface TiersResponse {
-  tiers: CurrencyTier[];
-  snapshot_time: string;
-  data_available?: boolean;
-}
 
 interface TierDriftTrackerProps {
   backendOnline?: boolean;
@@ -37,12 +31,12 @@ interface TierDriftTrackerProps {
 
 // Helpers
 
-function tierWeight(tier: string): number {
-  const m = tier.match(/^T(\d+)/);
-  return m ? parseInt(m[1], 10) : 99;
-}
-
 const tierColors: Record<string, { badge: string; text: string; dot: string }> = {
+  T0: {
+    badge: "border-blue-500/50 text-blue-600 dark:text-blue-400 bg-blue-500/10",
+    text: "text-blue-600 dark:text-blue-400",
+    dot: "bg-blue-500",
+  },
   T1: {
     badge: "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
     text: "text-emerald-600 dark:text-emerald-400",
@@ -58,18 +52,20 @@ const tierColors: Record<string, { badge: string; text: string; dot: string }> =
     text: "text-red-600 dark:text-red-400",
     dot: "bg-red-500",
   },
+  T4: {
+    badge: "border-purple-500/50 text-purple-600 dark:text-purple-400 bg-purple-500/10",
+    text: "text-purple-600 dark:text-purple-400",
+    dot: "bg-purple-500",
+  },
+  T5: {
+    badge: "border-gray-500/50 text-gray-600 dark:text-gray-400 bg-gray-500/10",
+    text: "text-gray-600 dark:text-gray-400",
+    dot: "bg-gray-500",
+  },
 };
 
-function tierStyle(tier: string) {
-  return tierColors[tier] ?? tierColors.T3;
-}
-
-function detectDrift(item: CurrencyTier): { from: string; to: string } | null {
-  const h = item.tier_history;
-  if (!h || h.length < 2) return null;
-  const last = h[h.length - 1];
-  const prev = h[h.length - 2];
-  return last.tier !== prev.tier ? { from: prev.tier, to: last.tier } : null;
+function tierStyle(tierLabel: string) {
+  return tierColors[tierLabel] ?? tierColors.T3;
 }
 
 // Component
@@ -87,27 +83,26 @@ export const TierDriftTracker = memo(function TierDriftTracker({
     retry: 1,
   });
 
-  // Sort by tier weight, then by price descending
+  // Sort by tier number, then by relativePrice descending
   const sortedTiers = useMemo(() => {
     if (!tiersData?.tiers) return [];
     return [...tiersData.tiers].sort((a, b) => {
-      const tw = tierWeight(a.tier) - tierWeight(b.tier);
-      return tw !== 0 ? tw : b.price - a.price;
+      const tw = a.tier - b.tier;
+      return tw !== 0 ? tw : b.relativePrice - a.relativePrice;
     });
   }, [tiersData?.tiers]);
 
-  // Tier distribution counts
+  // Tier distribution counts (group by tierLabel)
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const item of sortedTiers) counts[item.tier] = (counts[item.tier] ?? 0) + 1;
-    return Object.entries(counts).sort(([a], [b]) => tierWeight(a) - tierWeight(b));
+    for (const item of sortedTiers) counts[item.tierLabel] = (counts[item.tierLabel] ?? 0) + 1;
+    // Sort by tierLabel: T0, T1, T2, ...
+    return Object.entries(counts).sort(([a], [b]) => {
+      const numA = parseInt(a.replace("T", ""), 10);
+      const numB = parseInt(b.replace("T", ""), 10);
+      return numA - numB;
+    });
   }, [sortedTiers]);
-
-  // Currencies with recent tier drift
-  const driftItems = useMemo(() => sortedTiers
-    .map((item) => ({ item, drift: detectDrift(item) }))
-    .filter((d) => d.drift !== null) as { item: CurrencyTier; drift: { from: string; to: string } }[],
-  [sortedTiers]);
 
   // ── Loading ─────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -170,14 +165,14 @@ export const TierDriftTracker = memo(function TierDriftTracker({
     <div className="space-y-4">
       {/* Tier Distribution Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {distribution.map(([tier, count]) => {
-          const style = tierStyle(tier);
+        {distribution.map(([tierLabel, count]) => {
+          const style = tierStyle(tierLabel);
           return (
-            <Card key={tier}>
+            <Card key={tierLabel}>
               <CardHeader className="pb-2 pt-4 px-4">
                 <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                   <span className={`inline-block w-2 h-2 rounded-full ${style.dot}`} />
-                  {tier} Currencies
+                  {tierLabel} Currencies
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
@@ -188,40 +183,27 @@ export const TierDriftTracker = memo(function TierDriftTracker({
         })}
       </div>
 
-      {/* Tier Drift Alerts */}
-      {driftItems.length > 0 && (
+      {/* Tier Boundaries */}
+      {tiersData.boundaries && (
         <Card>
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-              <ArrowUpDown className="h-4 w-4" aria-hidden="true" />
-              Tier Drift — {driftItems.length} Recent Change{driftItems.length > 1 ? "s" : ""}
+              <Layers className="h-4 w-4" aria-hidden="true" />
+              Tier Boundary Thresholds
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">
-            <div className="space-y-1.5 max-h-40 overflow-y-auto">
-              {driftItems.map(({ item, drift }) => {
-                const upgraded = tierWeight(drift.to) < tierWeight(drift.from);
-                const Icon = upgraded ? TrendingUp : TrendingDown;
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {Object.entries(tiersData.boundaries).map(([key, value]) => {
+                const tierNum = key.replace("t", "").replace("Min", "");
+                const label = `T${tierNum}+`;
+                const style = tierStyle(`T${tierNum}`);
                 return (
-                  <div
-                    key={item.currency}
-                    className={`flex items-center justify-between py-1.5 px-3 rounded border ${
-                      upgraded ? "border-emerald-500/20 bg-emerald-500/5" : "border-red-500/20 bg-red-500/5"
-                    }`}
-                  >
-                    <span className="text-xs font-medium flex items-center gap-1.5">
-                      <Icon className={`h-3 w-3 ${upgraded ? "text-emerald-500" : "text-red-500"}`} aria-hidden="true" />
-                      {item.currency}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <Badge variant="outline" className={`text-[9px] px-1 py-0 ${tierStyle(drift.from).badge}`}>
-                        {drift.from}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground">&rarr;</span>
-                      <Badge variant="outline" className={`text-[9px] px-1 py-0 ${tierStyle(drift.to).badge}`}>
-                        {drift.to}
-                      </Badge>
-                    </span>
+                  <div key={key} className="rounded-lg border p-3 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">{label} min</p>
+                    <p className={`text-lg font-bold font-mono ${style.text}`}>
+                      {fmt(value)}
+                    </p>
                   </div>
                 );
               })}
@@ -230,6 +212,18 @@ export const TierDriftTracker = memo(function TierDriftTracker({
         </Card>
       )}
 
+      {/* Historical drift note */}
+      <Card className="border-blue-500/30 bg-blue-500/5">
+        <CardContent className="flex items-start gap-3 p-4">
+          <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="text-sm">
+            <p className="text-muted-foreground">
+              Historical tier drift requires backend time-series data (not yet available).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Currency Tier Table */}
       <Card>
         <CardHeader className="pb-2 pt-4 px-4">
@@ -237,11 +231,6 @@ export const TierDriftTracker = memo(function TierDriftTracker({
             <Layers className="h-4 w-4" aria-hidden="true" />
             All Currencies by Tier
           </CardTitle>
-          {tiersData.snapshot_time && (
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Snapshot: {new Date(tiersData.snapshot_time).toLocaleString()}
-            </p>
-          )}
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
           <div className="max-h-96 overflow-y-auto" role="table" aria-label="Currency tiers">
@@ -255,36 +244,24 @@ export const TierDriftTracker = memo(function TierDriftTracker({
               <span role="columnheader" className="text-right">24h Change</span>
             </div>
             {sortedTiers.map((item) => {
-              const style = tierStyle(item.tier);
-              const drift = detectDrift(item);
+              const style = tierStyle(item.tierLabel);
               return (
                 <div
-                  key={item.currency}
-                  className={`grid grid-cols-[1fr_60px_80px_80px] gap-2 py-1.5 px-2 text-xs border-b border-border/50 hover:bg-muted/20 transition-colors items-center ${
-                    drift ? "bg-amber-500/5" : ""
-                  }`}
+                  key={item.apiId}
+                  className="grid grid-cols-[1fr_60px_80px_80px] gap-2 py-1.5 px-2 text-xs border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
                   role="row"
                 >
-                  <span className="truncate font-medium flex items-center gap-1">
-                    {drift && <ArrowUpDown className="h-3 w-3 text-amber-500 shrink-0" aria-hidden="true" />}
-                    {item.currency}
+                  <span className="truncate font-medium">
+                    {item.apiId}
                   </span>
                   <span>
                     <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${style.badge}`}>
-                      {item.tier}
+                      {item.tierLabel}
                     </Badge>
                   </span>
-                  <span className="text-right font-mono">{fmt(item.price)}</span>
-                  <span className="text-right font-mono">
-                    <span className={
-                      item.change_24h > 0
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : item.change_24h < 0
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-muted-foreground"
-                    }>
-                      {item.change_24h >= 0 ? "+" : ""}{fmt(item.change_24h)}
-                    </span>
+                  <span className="text-right font-mono">{fmt(item.relativePrice)}</span>
+                  <span className="text-right font-mono text-muted-foreground">
+                    —
                   </span>
                 </div>
               );

@@ -26,13 +26,19 @@ from __future__ import annotations
 import logging
 import math
 from datetime import datetime, timezone
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import numpy as np
 
 from backend.models.currency import TriangularOpportunity
 
 logger = logging.getLogger(__name__)
+
+
+class TriangularResult(NamedTuple):
+    """Return type for find_triangular_arbitrage()."""
+    opportunities: list
+    suspicious_triples: list
 
 
 def simulate_cycle_integers(
@@ -73,15 +79,35 @@ def find_min_profitable_start(
     rates: dict[tuple[str, str], float],
     max_start: int = 10000,
 ) -> int:
-    """Find the minimum starting integer amount that yields profit in a cycle.
+    """Binary search for minimum profitable starting capital.
 
-    Returns 0 if no profitable amount found within max_start.
+    Phase 1: Double until profitable (find upper bound).
+    Phase 2: Binary search between last unprofitable and first profitable.
     """
-    for start in range(1, max_start + 1):
-        final, _ = simulate_cycle_integers(cycle, rates, start)
-        if final > start:
-            return start
-    return 0
+    # Phase 1: Find upper bound by doubling
+    lo, hi = 0, 1
+    while hi <= max_start:
+        final, _ = simulate_cycle_integers(cycle, rates, hi)
+        if final > hi:
+            break
+        lo = hi
+        hi *= 2
+
+    if hi > max_start:
+        # Check max_start as last resort
+        final, _ = simulate_cycle_integers(cycle, rates, max_start)
+        return max_start if final > max_start else 0
+
+    # Phase 2: Binary search in [lo, hi]
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        final, _ = simulate_cycle_integers(cycle, rates, mid)
+        if final > mid:
+            hi = mid
+        else:
+            lo = mid
+
+    return hi
 
 
 def _compute_confidence(
@@ -200,7 +226,7 @@ def find_triangular_arbitrage(
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
     cross_rate_threshold_pct: float = 5.0,
-) -> list[TriangularOpportunity]:
+) -> TriangularResult:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
     Simplified: gold/commission fees are EXCLUDED from all calculations.
@@ -275,7 +301,7 @@ def find_triangular_arbitrage(
         edges.append((curr_to_idx[u], curr_to_idx[v], weight, raw_rate, effective_rate, edge_volume))
 
     if n == 0 or len(edges) == 0:
-        return []
+        return TriangularResult(opportunities=[], suspicious_triples=[])
 
     results: list[TriangularOpportunity] = []
     seen_cycles: set[tuple[str, ...]] = set()
@@ -470,4 +496,4 @@ def find_triangular_arbitrage(
                 opp.cycle, opp.continuous_profit_pct,
             )
 
-    return validated_results
+    return TriangularResult(opportunities=validated_results, suspicious_triples=suspicious_triples)

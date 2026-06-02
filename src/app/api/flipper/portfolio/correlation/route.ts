@@ -7,19 +7,19 @@ export const dynamic = "force-dynamic";
  *  P3-3: Returns the correlation matrix for all eligible currencies.
  *  Used by the ComparativeChart component to render a correlation heatmap.
  *
- *  When the backend is offline, returns empty data with data_available: false.
+ *  When the backend is offline, returns empty data with dataAvailable: false.
  */
 export async function GET() {
   return proxyWithFallback("/api/portfolio/correlation", {
     offlineFallback: {
       currencies: [],
       matrix: [],
-      data_available: false,
+      dataAvailable: false,
     },
     insufficientDataFallback: {
       currencies: [],
       matrix: [],
-      data_available: false,
+      dataAvailable: false,
     },
   });
 }
