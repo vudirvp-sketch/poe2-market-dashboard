@@ -4,6 +4,10 @@
 // Normalizes multiple currencies to % change from a reference point and
 // overlays them on a single chart. Also renders a correlation heatmap
 // from portfolio backend data when available.
+//
+// P3-3 update: Replaced HTML <table> correlation display with a visual
+// SVG heatmap featuring gradient colors, cell hover tooltips, and a
+// continuous color scale (red ← gray → green).
 // ============================================================================
 "use client";
 
@@ -91,13 +95,39 @@ function computeCorrelation(
   return covAB / Math.sqrt(varA * varB);
 }
 
-/** P3-3: Color for correlation value in heatmap */
-function correlationColor(value: number): string {
-  if (value > 0.7) return "rgba(34, 197, 94, 0.5)";      // strong positive — green
-  if (value > 0.3) return "rgba(34, 197, 94, 0.25)";     // moderate positive
-  if (value > -0.3) return "rgba(128, 128, 128, 0.1)";   // uncorrelated — gray
-  if (value > -0.7) return "rgba(239, 68, 68, 0.25)";    // moderate negative
-  return "rgba(239, 68, 68, 0.5)";                         // strong negative — red
+/**
+ * P3-3: Continuous color mapping for correlation value.
+ * Uses a smooth gradient: red (-1) → gray (0) → green (+1)
+ * Returns an HSL color string for use in SVG/CSS.
+ */
+function correlationToColor(value: number): string {
+  // Clamp to [-1, 1]
+  const v = Math.max(-1, Math.min(1, value));
+  if (v > 0) {
+    // Positive: interpolate from neutral gray (hsl(0,0%,85%)) to green (hsl(142,71%,45%))
+    // Using a blend approach for smoothness
+    const t = v; // 0..1
+    const h = 142 * t;
+    const s = 10 + 61 * t; // 10% → 71%
+    const l = 85 - 40 * t;  // 85% → 45%
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  } else {
+    // Negative: interpolate from neutral gray (hsl(0,0%,85%)) to red (hsl(0,84%,60%))
+    const t = -v; // 0..1
+    const h = 0;
+    const s = 10 + 74 * t; // 10% → 84%
+    const l = 85 - 25 * t;  // 85% → 60%
+    return `hsl(${h}, ${s}%, ${l}%)`;
+  }
+}
+
+/** P3-3: Text color for readability on the heatmap cell background */
+function correlationTextColor(value: number): string {
+  const v = Math.abs(value);
+  // Dark text for light backgrounds (low correlation), white text for dark (high correlation)
+  if (v > 0.6) return "#ffffff";
+  if (v > 0.3) return "#1f2937";
+  return "#6b7280";
 }
 
 /** P3-3: Backend correlation matrix response shape */
@@ -118,6 +148,7 @@ export const ComparativeChart = memo(function ComparativeChart({
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
   const [showCorrelation, setShowCorrelation] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<{row: number; col: number} | null>(null);
 
   // P3-3: Fetch backend correlation matrix (Step 3 — primary source)
   const { data: backendCorrelation } = useQuery<BackendCorrelationResponse>({
@@ -434,7 +465,7 @@ export const ComparativeChart = memo(function ComparativeChart({
               </ResponsiveContainer>
             </div>
 
-            {/* P3-3: Correlation Heatmap */}
+            {/* P3-3: Correlation Heatmap — SVG-based visual heatmap */}
             {showCorrelation && correlationMatrix && (
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
@@ -447,45 +478,12 @@ export const ComparativeChart = memo(function ComparativeChart({
                     <span className="ml-1 text-emerald-500">({t("comparativeCorrelationBackend") ?? "Backend data"})</span>
                   )}
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="p-1.5 text-left text-muted-foreground" />
-                        {correlationMatrix.names.map((name) => (
-                          <th
-                            key={name}
-                            className="p-1.5 text-center font-medium text-muted-foreground truncate max-w-[80px]"
-                            title={name}
-                          >
-                            {name.length > 8 ? name.slice(0, 7) + "…" : name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {correlationMatrix.names.map((rowName, i) => (
-                        <tr key={rowName}>
-                          <td
-                            className="p-1.5 text-right font-medium text-muted-foreground truncate max-w-[80px]"
-                            title={rowName}
-                          >
-                            {rowName.length > 8 ? rowName.slice(0, 7) + "…" : rowName}
-                          </td>
-                          {correlationMatrix.matrix[i].map((val, j) => (
-                            <td
-                              key={`${i}-${j}`}
-                              className="p-1.5 text-center font-mono text-[10px] border border-border/30"
-                              style={{ backgroundColor: correlationColor(val) }}
-                            >
-                              {i === j ? "1.00" : val.toFixed(2)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <CorrelationHeatmap
+                  names={correlationMatrix.names}
+                  matrix={correlationMatrix.matrix}
+                  hoveredCell={hoveredCell}
+                  onHoverCell={setHoveredCell}
+                />
               </div>
             )}
 
@@ -536,7 +534,7 @@ export const ComparativeChart = memo(function ComparativeChart({
                         >
                           {changePct != null
                             ? `${changePct > 0 ? "+" : ""}${changePct.toFixed(2)}%`
-                            : "—"}
+                            : "\u2014"}
                         </td>
                       </tr>
                     );
@@ -556,3 +554,196 @@ export const ComparativeChart = memo(function ComparativeChart({
     </Card>
   );
 });
+
+// ============================================================================
+// P3-3: SVG-based Correlation Heatmap Component
+//
+// Replaces the old HTML <table> with a visual heatmap featuring:
+//   - Continuous gradient coloring (red ← gray → green)
+//   - Cell hover highlighting with tooltip-style value display
+//   - Diagonal cells styled as self-correlation (always 1.00)
+//   - Responsive sizing that adapts to the number of compared items
+// ============================================================================
+
+interface CorrelationHeatmapProps {
+  names: string[];
+  matrix: number[][];
+  hoveredCell: { row: number; col: number } | null;
+  onHoverCell: (cell: { row: number; col: number } | null) => void;
+}
+
+function CorrelationHeatmap({ names, matrix, hoveredCell, onHoverCell }: CorrelationHeatmapProps) {
+  const n = names.length;
+  if (n < 2) return null;
+
+  // Sizing constants
+  const labelWidth = 80;  // Width for row labels on the left
+  const headerHeight = 60; // Height for column labels on top (rotated text)
+  const cellSize = Math.min(50, Math.max(30, 240 / n)); // Adaptive cell size
+  const totalWidth = labelWidth + n * cellSize;
+  const totalHeight = headerHeight + n * cellSize;
+
+  // Hovered cell info for the tooltip overlay
+  const hoveredValue = hoveredCell !== null
+    ? matrix[hoveredCell.row]?.[hoveredCell.col]
+    : null;
+  const hoveredRowName = hoveredCell !== null ? names[hoveredCell.row] : null;
+  const hoveredColName = hoveredCell !== null ? names[hoveredCell.col] : null;
+
+  return (
+    <div className="overflow-x-auto">
+      <svg
+        width={totalWidth}
+        height={totalHeight}
+        viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        className="w-full max-w-[600px]"
+      >
+        {/* Column headers (rotated -45deg) */}
+        {names.map((name, j) => {
+          const x = labelWidth + j * cellSize + cellSize / 2;
+          const y = headerHeight - 4;
+          const displayName = name.length > 10 ? name.slice(0, 9) + "\u2026" : name;
+          return (
+            <g key={`col-${j}`}>
+              <title>{name}</title>
+              <text
+                x={x}
+                y={y}
+                transform={`rotate(-45, ${x}, ${y})`}
+                textAnchor="start"
+                fontSize={9}
+                fill="currentColor"
+                className="text-muted-foreground"
+              >
+                {displayName}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Row labels */}
+        {names.map((name, i) => {
+          const y = headerHeight + i * cellSize + cellSize / 2;
+          const displayName = name.length > 10 ? name.slice(0, 9) + "\u2026" : name;
+          return (
+            <g key={`row-${i}`}>
+              <title>{name}</title>
+              <text
+                x={labelWidth - 6}
+                y={y + 3}
+                textAnchor="end"
+                fontSize={9}
+                fill="currentColor"
+                className="text-muted-foreground"
+              >
+                {displayName}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Heatmap cells */}
+        {matrix.map((row, i) =>
+          row.map((val, j) => {
+            const x = labelWidth + j * cellSize;
+            const y = headerHeight + i * cellSize;
+            const isDiagonal = i === j;
+            const isHovered = hoveredCell?.row === i && hoveredCell?.col === j;
+            const isRowHovered = hoveredCell?.row === i || hoveredCell?.col === j;
+
+            // Background color
+            const bgColor = isDiagonal
+              ? "hsl(220, 20%, 40%)" // Diagonal: dark slate blue
+              : correlationToColor(val);
+
+            // Border/outline for hovered cells
+            const strokeColor = isHovered
+              ? "#ffffff"
+              : isRowHovered
+              ? "rgba(255,255,255,0.3)"
+              : "rgba(0,0,0,0.1)";
+            const strokeWidth = isHovered ? 2 : 0.5;
+
+            // Text color
+            const textColor = isDiagonal
+              ? "#ffffff"
+              : correlationTextColor(val);
+
+            // Display value
+            const displayVal = isDiagonal ? "1.00" : val.toFixed(2);
+
+            return (
+              <g
+                key={`cell-${i}-${j}`}
+                onMouseEnter={() => onHoverCell({ row: i, col: j })}
+                onMouseLeave={() => onHoverCell(null)}
+                className="cursor-crosshair"
+              >
+                <title>{`${names[i]} vs ${names[j]}: ${isDiagonal ? "1.00" : val.toFixed(3)}`}</title>
+                <rect
+                  x={x + 0.5}
+                  y={y + 0.5}
+                  width={cellSize - 1}
+                  height={cellSize - 1}
+                  rx={3}
+                  ry={3}
+                  fill={bgColor}
+                  stroke={strokeColor}
+                  strokeWidth={strokeWidth}
+                  opacity={isHovered ? 1 : isRowHovered ? 0.95 : 0.85}
+                  style={{ transition: "opacity 0.15s, stroke 0.15s" }}
+                />
+                <text
+                  x={x + cellSize / 2}
+                  y={y + cellSize / 2 + 3.5}
+                  textAnchor="middle"
+                  fontSize={cellSize < 35 ? 8 : 10}
+                  fontWeight={isDiagonal ? "bold" : "normal"}
+                  fontFamily="monospace"
+                  fill={textColor}
+                >
+                  {displayVal}
+                </text>
+              </g>
+            );
+          })
+        )}
+
+        {/* Color scale legend at the bottom of the SVG */}
+        <defs>
+          <linearGradient id="corrGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={correlationToColor(-1)} />
+            <stop offset="50%" stopColor={correlationToColor(0)} />
+            <stop offset="100%" stopColor={correlationToColor(1)} />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* Color scale legend below SVG */}
+      <div className="mt-2 flex items-center gap-2 max-w-[600px]">
+        <span className="text-[9px] text-red-500 font-medium">-1.0</span>
+        <div
+          className="flex-1 h-3 rounded-sm"
+          style={{ background: "linear-gradient(to right, " + correlationToColor(-1) + ", " + correlationToColor(0) + ", " + correlationToColor(1) + ")" }}
+        />
+        <span className="text-[9px] text-emerald-500 font-medium">+1.0</span>
+      </div>
+
+      {/* Hover tooltip — shows the exact correlation for the hovered pair */}
+      {hoveredCell !== null && hoveredValue !== null && hoveredRowName && hoveredColName && (
+        <div className="mt-1 text-[10px] text-muted-foreground font-mono">
+          <span className="font-medium">{hoveredRowName}</span>
+          {" vs "}
+          <span className="font-medium">{hoveredColName}</span>
+          {": "}
+          <span
+            className="font-bold"
+            style={{ color: hoveredCell.row === hoveredCell.col ? "hsl(220, 20%, 60%)" : correlationToColor(hoveredValue) }}
+          >
+            {hoveredCell.row === hoveredCell.col ? "1.000" : hoveredValue.toFixed(3)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}

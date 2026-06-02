@@ -2,10 +2,16 @@
 // Detail Dialog — Item detail with price/volume charts + candlestick toggle
 // Task 6.11 fix: improved chartHeight measurement using ResizeObserver on
 // the actual SVG plot area instead of hardcoded offset
+//
+// P3-2 (continued): Timeframe-aware OHLCV data fetching
+//   - 1D: uses getItemDailyStats (official daily OHLCV from API)
+//   - 1H/4H/1W: uses getMultiTimeframeOHLCV (aggregated from hourly history)
+//   - When timeframe changes, the correct data source is fetched automatically
+//   - Multi-timeframe alignments computed on the actual timeframe-specific data
 // ============================================================================
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart,
@@ -47,6 +53,16 @@ interface DetailDialogProps {
   referenceCurrency?: string;
 }
 
+/** OHLCVCandle — matches the shape returned by /api/poe2/items?action=ohlcv */
+interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 export function DetailDialog({
   item,
   open,
@@ -77,7 +93,7 @@ export function DetailDialog({
     enabled: !!item && open && chartMode === "hourly",
   });
 
-  // Daily OHLCV stats (candlestick)
+  // Daily OHLCV stats (candlestick) — used ONLY when timeframe is 1D
   const { data: dailyStats, isLoading: dailyLoading } = useQuery({
     queryKey: ["itemDaily", realm, league, item?.id, referenceCurrency],
     queryFn: () =>
@@ -89,7 +105,22 @@ export function DetailDialog({
         dayCount: "30",
         referenceCurrency: referenceCurrency || "",
       }),
-    enabled: !!item && open && chartMode === "daily",
+    enabled: !!item && open && chartMode === "daily" && candleTimeframe === "1D",
+  });
+
+  // P3-2: Multi-timeframe OHLCV data — used when timeframe is 1H, 4H, or 1W
+  const { data: multiTfOhlcv, isLoading: multiTfLoading } = useQuery({
+    queryKey: ["itemOhlcv", realm, league, item?.id, candleTimeframe, referenceCurrency],
+    queryFn: () =>
+      fetchApi<OHLCVCandle[]>("/api/poe2/items", {
+        realm,
+        league,
+        action: "ohlcv",
+        itemId: item!.id,
+        timeframe: candleTimeframe,
+        referenceCurrency: referenceCurrency || "",
+      }),
+    enabled: !!item && open && chartMode === "daily" && (candleTimeframe === "1H" || candleTimeframe === "4H" || candleTimeframe === "1W"),
   });
 
   // P1-5: Fetch benchmark data for the detail panel
@@ -102,8 +133,8 @@ export function DetailDialog({
   });
   const benchmark = benchmarkData?.benchmark;
 
-  // P3-2: Convert daily stats to OHLCV data for the standalone CandlestickChart
-  const ohlcvData = useMemo((): OHLCVData[] => {
+  // P3-2: Convert daily stats to OHLCV data — used for 1D timeframe
+  const dailyOhlcvData = useMemo((): OHLCVData[] => {
     if (!dailyStats || !Array.isArray(dailyStats)) return [];
     return dailyStats
       .filter((d) => d.close > 0 && Number.isFinite(d.close))
@@ -117,10 +148,42 @@ export function DetailDialog({
       }));
   }, [dailyStats]);
 
-  // P3-2: Compute multi-timeframe alignment from OHLCV data
+  // P3-2: Convert multi-timeframe OHLCV candles to the OHLCVData format
+  // OHLCVCandle and OHLCVData have the same shape, but we map explicitly for safety
+  const multiTfOhlcvData = useMemo((): OHLCVData[] => {
+    if (!multiTfOhlcv || !Array.isArray(multiTfOhlcv)) return [];
+    return multiTfOhlcv
+      .filter((d) => d.close > 0 && Number.isFinite(d.close))
+      .map((d) => ({
+        time: typeof d.time === "string" ? d.time.slice(0, 16) : String(d.time),
+        open: d.open ?? d.close,
+        high: d.high ?? d.close,
+        low: d.low ?? d.close,
+        close: d.close,
+        volume: d.volume ?? 0,
+      }));
+  }, [multiTfOhlcv]);
+
+  // P3-2: Select the correct OHLCV data based on the active timeframe
+  const ohlcvData = useMemo((): OHLCVData[] => {
+    if (candleTimeframe === "1D") return dailyOhlcvData;
+    return multiTfOhlcvData;
+  }, [candleTimeframe, dailyOhlcvData, multiTfOhlcvData]);
+
+  // P3-2: Compute multi-timeframe alignment from the ACTUAL timeframe-specific OHLCV data
+  // When the user selects 1H/4H/1W, the alignment is computed from real candles at that timeframe,
+  // not from daily data with approximated SMA periods.
   const timeframeAlignments = useMemo((): TimeframeAlignment[] => {
     return computeTimeframeAlignments(ohlcvData);
   }, [ohlcvData]);
+
+  // Handle timeframe change — reset to 1D data when switching back
+  const handleTimeframeChange = useCallback((tf: Timeframe) => {
+    setCandleTimeframe(tf);
+  }, []);
+
+  // Determine loading state for candlestick chart
+  const isCandleLoading = candleTimeframe === "1D" ? dailyLoading : multiTfLoading;
 
   if (!item) return null;
   const fav = isFavorite(item.id);
@@ -389,18 +452,18 @@ export function DetailDialog({
                 message={t("noHistory")}
               />
             )
-          ) : // Daily candlestick mode — P3-2: uses standalone CandlestickChart with MTF alignment
-          dailyLoading ? (
+          ) : // Daily candlestick mode — P3-2: timeframe-aware OHLCV data fetching
+          isCandleLoading ? (
             <ChartSkeleton height={300} />
           ) : ohlcvData.length > 0 ? (
             <div className="mt-4">
               <CandlestickChart
                 data={ohlcvData}
-                title={item.name + " — Daily Candlestick"}
+                title={`${item.name} — ${candleTimeframe} Candlestick`}
                 showVolume={true}
                 overlays={["sma20", "ema12", "rsi14"]}
                 timeframe={candleTimeframe}
-                onTimeframeChange={setCandleTimeframe}
+                onTimeframeChange={handleTimeframeChange}
                 timeframeAlignments={timeframeAlignments}
               />
             </div>

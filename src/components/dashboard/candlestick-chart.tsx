@@ -647,10 +647,51 @@ function MultiTimeframeAlignment({ alignments }: MultiTimeframeAlignmentProps) {
 // ============================================================================
 // P3-2: Multi-timeframe alignment computation utility
 // Computes SMA crossover-based trend direction at each timeframe.
+//
+// UPDATED: Now supports both daily-only and timeframe-specific OHLCV data.
+// When the caller passes timeframe-specific data (e.g. 1H candles from
+// getMultiTimeframeOHLCV), the alignment is computed directly on that data
+// with SMA periods appropriate for the candle resolution.
+// When only daily data is available, the old approximation behavior is used.
 // ============================================================================
 
 /**
- * Compute multi-timeframe alignment from daily OHLCV data.
+ * Infer the likely timeframe of the OHLCV data from the timestamps.
+ * Returns the detected timeframe or "1D" as default.
+ *
+ * Heuristic:
+ *   - If the average gap between consecutive candles is < 2 hours → "1H"
+ *   - If the average gap is 2-6 hours → "4H"
+ *   - If the average gap is 18-30 hours → "1D"
+ *   - If the average gap is 5-10 days → "1W"
+ */
+function inferTimeframe(data: OHLCVData[]): Timeframe {
+  if (data.length < 3) return "1D";
+
+  // Compute average gap in hours between consecutive candles
+  let totalGapHours = 0;
+  let gapCount = 0;
+  for (let i = 1; i < Math.min(data.length, 20); i++) {
+    const t1 = new Date(data[i - 1].time).getTime();
+    const t2 = new Date(data[i].time).getTime();
+    const gapH = (t2 - t1) / (1000 * 60 * 60);
+    if (gapH > 0 && Number.isFinite(gapH)) {
+      totalGapHours += gapH;
+      gapCount++;
+    }
+  }
+
+  if (gapCount === 0) return "1D";
+  const avgGapHours = totalGapHours / gapCount;
+
+  if (avgGapHours < 2) return "1H";
+  if (avgGapHours < 6) return "4H";
+  if (avgGapHours <= 30) return "1D";
+  return "1W";
+}
+
+/**
+ * Compute multi-timeframe alignment from OHLCV data.
  *
  * For each timeframe, we compute a short-term SMA and a long-term SMA
  * on the close prices and determine the trend direction:
@@ -658,15 +699,24 @@ function MultiTimeframeAlignment({ alignments }: MultiTimeframeAlignmentProps) {
  *   - "down": short SMA < long SMA (bearish crossover)
  *   - "neutral": SMAs are too close or insufficient data
  *
- * The timeframe determines how many daily candles are grouped:
- *   - 1H: Not applicable to daily data; uses the last few daily closes with short periods
- *   - 4H: Aggregates ~6.5 hours of daily data (we use short=3, long=7)
- *   - 1D: Uses daily data directly (short=7, long=20)
- *   - 1W: Aggregates weekly (short=4, long=12)
+ * The SMA periods are chosen based on the data resolution:
  *
- * Note: Since we only have daily OHLCV from the API, 1H and 4H are
- * approximations using shorter SMA periods on daily data.
- * For true hourly analysis, use the hourly price history endpoint instead.
+ * When data is timeframe-specific (e.g. 1H candles):
+ *   - Each timeframe row uses the SAME data (the timeframe-specific candles)
+ *   - SMA periods are scaled to the candle resolution:
+ *       1H candles: short=8 (8h), long=24 (24h)
+ *       4H candles: short=6 (24h), long=18 (72h)
+ *       1D candles: short=7 (7d), long=20 (20d)
+ *       1W candles: short=4 (4w), long=12 (12w)
+ *
+ * When only daily data is available (legacy/fallback mode):
+ *   - 1H and 4H use very short SMA periods as approximations
+ *   - 1D uses standard SMA 7/20
+ *   - 1W uses SMA 4/12
+ *
+ * IMPORTANT: The DetailDialog now passes timeframe-specific data when the
+ * user selects 1H/4H/1W, so the alignment arrows reflect real candle data
+ * at the selected resolution — not approximations from daily candles.
  */
 export function computeTimeframeAlignments(data: OHLCVData[]): TimeframeAlignment[] {
   if (!data || data.length < 2) return [];
@@ -674,11 +724,31 @@ export function computeTimeframeAlignments(data: OHLCVData[]): TimeframeAlignmen
   const closes = data.map((d) => d.close);
   const lastPrice = closes[closes.length - 1];
 
+  // Detect the resolution of the incoming data
+  const dataTimeframe = inferTimeframe(data);
+
+  // SMA periods scaled to the detected data resolution.
+  // When we have real 1H candles, we don't need to approximate 1H/4H anymore —
+  // we compute the alignment directly on the correct-resolution data.
+  const resolutionSMA: Record<Timeframe, { short: number; long: number }> = {
+    "1H": { short: 8, long: 24 },    // 8h and 24h SMAs on 1H candles
+    "4H": { short: 6, long: 18 },    // 24h and 72h SMAs on 4H candles
+    "1D": { short: 7, long: 20 },    // 7d and 20d SMAs on daily candles
+    "1W": { short: 4, long: 12 },    // 4w and 12w SMAs on weekly candles
+  };
+
+  // When we have real timeframe-specific data, compute a SINGLE alignment
+  // for the active timeframe (since all 4 rows would show the same data anyway),
+  // plus use the daily-style SMA periods for the "other" timeframes as approximations.
+  // This gives the best of both worlds: accurate alignment for the selected TF,
+  // and reasonable approximations for the others.
+
   const timeframes: { tf: Timeframe; shortPeriod: number; longPeriod: number }[] = [
-    { tf: "1H", shortPeriod: 3, longPeriod: 7 },   // Approx: very short SMAs on daily data
-    { tf: "4H", shortPeriod: 5, longPeriod: 12 },  // Approx: slightly longer
-    { tf: "1D", shortPeriod: 7, longPeriod: 20 },   // Daily: standard SMA 7/20
-    { tf: "1W", shortPeriod: 4, longPeriod: 12 },   // Weekly: longer SMAs
+    // For the timeframe matching our data resolution, use the resolution-appropriate SMA
+    { tf: "1H", shortPeriod: dataTimeframe === "1H" ? 8 : 3, longPeriod: dataTimeframe === "1H" ? 24 : 7 },
+    { tf: "4H", shortPeriod: dataTimeframe === "4H" ? 6 : 5, longPeriod: dataTimeframe === "4H" ? 18 : 12 },
+    { tf: "1D", shortPeriod: dataTimeframe === "1D" ? 7 : 7, longPeriod: dataTimeframe === "1D" ? 20 : 20 },
+    { tf: "1W", shortPeriod: dataTimeframe === "1W" ? 4 : 4, longPeriod: dataTimeframe === "1W" ? 12 : 12 },
   ];
 
   return timeframes.map(({ tf, shortPeriod, longPeriod }) => {
