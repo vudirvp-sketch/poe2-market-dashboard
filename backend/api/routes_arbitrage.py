@@ -477,7 +477,7 @@ async def get_flip_opportunities(
 
 @router.get("/triangular")
 async def get_triangular_arbitrage(
-    min_profit_pct: float = Query(0.1, ge=0.0, description="Min profit % to report"),
+    min_profit_pct: float = Query(1.0, ge=0.0, description="Min profit % to report"),
 ):
     """Return detected triangular arbitrage cycles.
 

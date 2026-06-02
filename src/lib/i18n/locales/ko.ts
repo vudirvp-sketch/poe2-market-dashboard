@@ -169,7 +169,6 @@ const ko: Record<TranslationKeys, string> = {
   tradeSizeDesc: "순이익을 추정할 통화 수량.",
   tradeSizeSlippageModel: "거래 크기 (미끄러짐 모델)",
   tradeSizeSlippageModelDesc: "시장 충격 미끄러짐 추정에 사용. 이익 계산에 영향 없음 (이익은 %로 표시).",
-  cyclesWithPositiveNetProfit: "양의 순이익% 사이클",
 
   // Arbitrage — Confidence indicator (Task 6.9)
   confidence: "신뢰도",

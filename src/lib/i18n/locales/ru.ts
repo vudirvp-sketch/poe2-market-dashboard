@@ -169,7 +169,6 @@ const ru: Record<TranslationKeys, string> = {
   tradeSizeDesc: "Количество валюты для оценки чистой прибыли.",
   tradeSizeSlippageModel: "Размер сделки (модель проскальз.)",
   tradeSizeSlippageModelDesc: "Используется для оценки проскальзывания. Не влияет на расчёт прибыли (прибыль отображается в %).",
-  cyclesWithPositiveNetProfit: "циклов с положительным чистым % прибыли",
 
   // Arbitrage — Confidence indicator (Task 6.9)
   confidence: "\u0414\u043E\u0441\u0442\u043E\u0432\u0435\u0440\u043D.",

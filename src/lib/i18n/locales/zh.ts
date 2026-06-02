@@ -169,7 +169,6 @@ const zh: Record<TranslationKeys, string> = {
   tradeSizeDesc: "用于估算净利润的货币数量。",
   tradeSizeSlippageModel: "交易规模 (滑点模型)",
   tradeSizeSlippageModelDesc: "用于估算市场冲击滑点。不影响利润计算（利润以%显示）。",
-  cyclesWithPositiveNetProfit: "具有正净利润%的循环",
 
   // Arbitrage — Confidence indicator (Task 6.9)
   confidence: "置信度",
