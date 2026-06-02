@@ -7,10 +7,15 @@ import "./globals.css";
 // fonts.gstatic.com which is unreachable in some network environments
 // (behind corporate firewalls, air-gapped CI, etc.). The font files
 // are bundled locally so the build never needs internet access.
+// Fix: Removed Italic font files from src arrays.
+// The dashboard does not use font-style: italic anywhere, so the Italic
+// variants were preloaded by Next.js but never consumed — causing Chrome
+// warnings: "The resource was preloaded using link preload but not used
+// within a few seconds".  The Variable (normal) files already contain all
+// weights from 100 to 900, which is sufficient for the entire UI.
 const geistSans = localFont({
   src: [
     { path: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2", style: "normal" },
-    { path: "../../node_modules/geist/dist/fonts/geist-sans/Geist-Italic[wght].woff2", style: "italic" },
   ],
   variable: "--font-geist-sans",
   weight: "100 900",
@@ -20,7 +25,6 @@ const geistSans = localFont({
 const geistMono = localFont({
   src: [
     { path: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2", style: "normal" },
-    { path: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Italic[wght].woff2", style: "italic" },
   ],
   variable: "--font-geist-mono",
   weight: "100 900",

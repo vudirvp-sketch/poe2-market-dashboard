@@ -139,6 +139,8 @@ const zh: Record<TranslationKeys, string> = {
   // Arbitrage
   arbitrageTheoretical: "套利机会为理论值",
   arbitrageTheoreticalDesc: "市场价格变动迅速。滑点使用平方根影响模型估算。实际结果可能有所不同。交易前请始终确认当前汇率。",
+  arbitrageClientModeNote: "客户端模式使用模拟价差",
+  arbitrageClientModeNoteDesc: "POE2Scout API 仅提供中间价，不提供独立的买价/卖价。同一交易对的正向和反向汇率是完全对称的，因此客户端无法检测到真正的套利。如需真实套利检测，请使用 Flipper 模式（需要后端）。",
   scannedPairs: "已扫描交易对",
   ofTotal: "共 {0} 交易对 (交易量 ≥ {1})",
   currencies: "货币",

@@ -74,6 +74,7 @@ describe("API Types", () => {
       currency2ItemId: 291,
       price: 0.005,
       relativePrice: 0.005,
+      currency2RelativePrice: 1.0,
       volume: 5000,
       change: -0.001,
       changePercent: -15.0,

@@ -139,6 +139,8 @@ const ko: Record<TranslationKeys, string> = {
   // Arbitrage
   arbitrageTheoretical: "채권트라지 기회는 이론적입니다",
   arbitrageTheoreticalDesc: "시장 가격은 빨리 변동됩니다. 미끄러짐은 제곱근 영향 모델로 추정됩니다. 실제 결과는 다를 수 있습니다. 거래 전 항상 현재 환율을 확인하세요.",
+  arbitrageClientModeNote: "클라이언트 모드는 시뮬레이션 스프레드 사용",
+  arbitrageClientModeNoteDesc: "POE2Scout API는 중간 가격만 제공하며 별도의 bid/ask 견적은 제공하지 않습니다. 같은 페어의 정방향과 역방향 환율은 정확히 대칭이므로 클라이언트 측에서 실제 차익거래를 감지할 수 없습니다. 실제 차익거래 감지를 위해서는 Flipper 모드를 사용하세요(백엔드 필요).",
   scannedPairs: "검색된 페어",
   ofTotal: "총 {0} 개 (거래량 ≥ {1})",
   currencies: "통화",

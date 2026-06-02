@@ -4,7 +4,7 @@
 >
 > **VERIFICATION STATUS:** Each data flow is traced from the original POE2Scout API response through the transformation layer to the UI component. Field mappings are documented with examples.
 >
-> **UPDATED:** Document includes complete formula references, algorithm pseudocode, WebSocket flows, and improved endpoint documentation.
+> **LAST UPDATED:** 2026-06-02 — Major revision: new POE2Scout endpoints, restructured backend (SnapshotManager, new modules), updated formulas, new UI components, corrected scheduler intervals.
 
 ---
 
@@ -18,12 +18,21 @@ Browser (React/Next.js)
     │
     └── /api/flipper/* ────→ FastAPI Backend (port 8000)
                                ├── Poe2ScoutProvider ────→ POE2Scout API
-                               ├── DataSnapshot (in-memory, periodic refresh)
+                               │   └── OfficialTradeProvider (OAuth2 fallback, rarely used)
+                               ├── SnapshotManager (replaces DataSnapshot)
+                               │   ├── DataSnapshot dataclass (in-memory, TTL-cached)
+                               │   ├── BFS transitive pricing for missing base pairs
+                               │   └── Tier classification via classify_currencies()
                                ├── HistoricalStore (SQLite, persistent)
-                               ├── Scheduler (background tasks via APScheduler)
-                               ├── Analytics (scoring, forecasting, portfolio)
-                               └── WebSocket (routes_ws.py) ────→ Live updates
+                               ├── DataScheduler (APScheduler, config-driven intervals)
+                               ├── PipelineCache (TTL-based result cache)
+                               ├── DailyStatsCache (LRU + TTL)
+                               ├── ModelStore (LightGBM model persistence to disk)
+                               ├── Analytics (scoring, forecasting, portfolio, anomaly, tiers, benchmarks)
+                               └── WebSocket (routes_ws.py) ────→ Per-endpoint live updates
 ```
+
+**Configuration source:** `backend/config.yaml` (loaded via Pydantic Settings into `AppConfig`). All intervals, thresholds, and model parameters are configurable there.
 
 ---
 
@@ -33,28 +42,178 @@ Browser (React/Next.js)
 
 | Property | Value |
 |----------|-------|
-| **Base URL** | `https://api.poe2scout.com/api` (configurable via `POE2_API_BASE_URL`) |
+| **Base URL** | `https://api.poe2scout.com/api` (configurable via `POE2_API_BASE_URL` or `config.yaml → data.poe2scout_base_url`) |
 | **Swagger UI** | `https://api.poe2scout.com/swagger` |
+| **OpenAPI Spec** | `https://api.poe2scout.com/api/openapi.json` (OpenAPI 3.1.0) |
 | **Authentication** | None (public API) |
 | **Rate Limits** | None for consumers (server handles upstream) |
 | **Response Format** | JSON, PascalCase for most endpoints, **snake_case for `/Realms`** |
 
-**Key Endpoints:**
+**Complete Endpoint List (21 endpoints):**
 
-| Endpoint | Method | Purpose | Response Shape |
-|----------|--------|---------|----------------|
-| `/Realms` | GET | Available realms | `RawRealm[]` (**snake_case!**) |
-| `/{realm}/Leagues` | GET | Leagues for realm | `RawLeague[]` (PascalCase) |
-| `/{realm}/Leagues/{league}/SnapshotPairs` | GET | All currency pairs with prices | `RawSnapshotPair[]` |
-| `/{realm}/Leagues/{league}/Currencies/ByCategory` | GET | Currencies by category (paginated) | `RawPaginatedResponse<RawCurrencyItem>` |
-| `/{realm}/Leagues/{league}/Uniques/ByCategory` | GET | Unique items by category (paginated) | `RawPaginatedResponse<RawUniqueItem>` |
-| `/{realm}/Leagues/{league}/Items/Categories` | GET | All item categories | `RawCategoriesResponse` |
-| `/{realm}/Leagues/{league}/Items/{itemId}/History` | GET | Price history for item | `{PriceHistory: [...], HasMore}` |
-| `/{realm}/Leagues/{league}/Items/{itemId}/DailyStatsHistory` | GET | OHLCV daily stats | `{DailyStats: [...], HasMore}` |
-| `/{realm}/Leagues/{league}/Currencies/Pairs/{id1}/{id2}/History` | GET | Exchange pair history | `{History: [...], Meta}` |
-| `/{realm}/Leagues/{league}/ReferenceCurrencies` | GET | Reference/bridge currencies | `RawReferenceCurrency[]` |
-| `/{realm}/Leagues/{league}/SnapshotHistory` | GET | Market snapshot history | `{Data: [...], Meta}` |
-| `/{realm}/Leagues/{league}/ExchangeSnapshot` | GET | Exchange overview | `ExchangeSnapshot` |
+| # | Endpoint | Method | Purpose | Response Shape |
+|---|----------|--------|---------|----------------|
+| 1 | `/Realms` | GET | Available realms | `RealmOptionResponse[]` (**snake_case!**) |
+| 2 | `/Realms/{Realm}/Filters` | GET | Search filters for realm | `GetFiltersResponse` |
+| 3 | `/Realms/{Realm}/LandingSplashInfo` | GET | Landing splash data | `GetLandingSplashInfoResponse` |
+| 4 | `/{Realm}/Leagues` | GET | Leagues for realm | `GetResponse[]` (PascalCase) |
+| 5 | `/{Realm}/Leagues/{LeagueName}/SnapshotPairs` | GET | All currency pairs with prices | `GetSnapshotPairsResponse[]` |
+| 6 | `/{Realm}/Leagues/{LeagueName}/SnapshotHistory` | GET | Market snapshot history | `GetSnapshotHistoryResponse` |
+| 7 | `/{Realm}/Leagues/{LeagueName}/ReferenceCurrencies` | GET | Reference/bridge currencies | `ReferenceCurrency[]` |
+| 8 | `/{Realm}/Leagues/{LeagueName}/ExchangeSnapshot` | GET | Exchange overview | `GetExchangeSnapshotResponse` |
+| 9 | `/{Realm}/Leagues/{LeagueName}/Items` | GET | All items for league | `GetItemsResponse[]` |
+| 10 | `/{Realm}/Leagues/{LeagueName}/Items/Categories` | GET | Item categories | `GetCategoriesResponse` |
+| 11 | `/{Realm}/Leagues/{LeagueName}/Items/{ItemId}` | GET | Single item by ID | `GetItemsResponse` |
+| 12 | `/{Realm}/Leagues/{LeagueName}/Items/{ItemId}/History` | GET | Price history for item | `GetPriceHistoryResponse` |
+| 13 | `/{Realm}/Leagues/{LeagueName}/Items/{ItemId}/DailyStatsHistory` | GET | OHLCV daily stats | `GetDailyStatsHistoryResponse` |
+| 14 | `/{Realm}/Leagues/{LeagueName}/Items/PriceHistory` | GET | Bulk price histories | `GetItemPriceHistoriesResponse` |
+| 15 | `/{Realm}/Leagues/{LeagueName}/Currencies/ByCategory` | GET | Currencies by category (paginated) | `GetByCategoryResponse` |
+| 16 | `/{Realm}/Leagues/{LeagueName}/Currencies/{ApiId}` | GET | Single currency by ApiId | Currency with PriceLogs |
+| 17 | `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History` | GET | Exchange pair history | `GetPairHistoryResponse` |
+| 18 | `/{Realm}/Leagues/{LeagueName}/Uniques/ByCategory` | GET | Unique items by category (paginated) | `GetUniqueItemsResponse` |
+| 19 | `/` | GET | Root | API info |
+| 20 | `/health/live` | GET | Liveness probe | Health status |
+| 21 | `/health/ready` | GET | Readiness probe | Health status |
+
+**Endpoint Parameter Names (from OpenAPI spec):**
+
+> **NOTE:** The Swagger spec uses PascalCase path parameters: `{Realm}`, `{LeagueName}`, `{ItemId}`, `{CurrencyOneItemId}`, `{CurrencyTwoItemId}`. The base URL already includes `/api`. When constructing URLs in code, use these exact parameter names for the path segments.
+
+**Detailed Response Shapes:**
+
+```typescript
+// /Realms — snake_case!
+interface RealmOptionResponse {
+  value: string;              // e.g. "poe2/poe2" (used as {Realm} path param)
+  label: string;              // e.g. "PoE2"
+  game_api_id: string;        // e.g. "poe2"
+  realm_api_id: string;       // e.g. "poe2"
+  trade_api_path: string;
+  default_league_value: string; // e.g. "vaal" — use this, NOT League.IsCurrent
+}
+
+// /{Realm}/Leagues — PascalCase
+interface GetResponse {  // League
+  Value: string;               // displayName
+  ShortName: string;           // name
+  IsCurrent: boolean;          // ⚠️ ALWAYS FALSE — use default_league_value from realm
+  DivinePrice: number | null;
+  ChaosDivinePrice: number | null;
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+  BaseCurrencyIconUrl: string | null;
+  ExaltedCurrencyText: string;
+  ExaltedCurrencyIconUrl: string;
+  DivineCurrencyText: string;
+  DivineCurrencyIconUrl: string;
+  ChaosCurrencyText: string;
+  ChaosCurrencyIconUrl: string;
+  DefaultCurrency: {
+    ApiId: string;
+    Text: string;
+    IconUrl: string | null;
+    RelativePrice: number;
+  } | null;
+}
+
+// /{Realm}/Leagues/{LeagueName}/Items/Categories
+interface GetCategoriesResponse {
+  UniqueCategories: Array<{ ItemCategoryId: number; ApiId: string; Label: string; Icon: string | null }>;
+  CurrencyCategories: Array<{ CurrencyCategoryId: number; ApiId: string; Label: string; Icon: string | null }>;
+}
+
+// /{Realm}/Leagues/{LeagueName}/Currencies/ByCategory — paginated
+interface GetByCategoryResponse {
+  CurrentPage: number;
+  Pages: number;
+  Total: number;
+  Items: RawCurrencyItem[];
+}
+// Query params: Category (required), ReferenceCurrency?, Search?, Page? (default 1), PerPage? (1–250, default 25)
+
+// /{Realm}/Leagues/{LeagueName}/Uniques/ByCategory — paginated
+interface GetUniqueItemsResponse {
+  CurrentPage: number;
+  Pages: number;
+  Total: number;
+  Items: RawUniqueItem[];
+}
+// Query params: Category (required), ReferenceCurrency?, Search?, Page?, PerPage?
+
+// /{Realm}/Leagues/{LeagueName}/SnapshotPairs
+interface GetSnapshotPairsResponse {
+  CurrencyExchangeSnapshotPairId: number;
+  CurrencyExchangeSnapshotId: number;
+  Volume: number;
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+  CurrencyOne: { CurrencyItemId: number; ItemId: number; CurrencyCategoryId: number; ApiId: string; Text: string; CategoryApiId: string; IconUrl: string | null; ItemMetadata?: any };
+  CurrencyTwo: { CurrencyItemId: number; ItemId: number; CurrencyCategoryId: number; ApiId: string; Text: string; CategoryApiId: string; IconUrl: string | null; ItemMetadata?: any };
+  CurrencyOneData: { ValueTraded: number; RelativePrice: string; StockValue: number; VolumeTraded: number; HighestStock: number };
+  CurrencyTwoData: { ValueTraded: number; RelativePrice: string; StockValue: number; VolumeTraded: number; HighestStock: number };
+}
+
+// /{Realm}/Leagues/{LeagueName}/Items/{ItemId}/History
+interface GetPriceHistoryResponse {
+  PriceHistory: Array<{ Price: number; Time: string; Quantity: number }>;
+  HasMore: boolean;
+}
+// Query params: LogCount (required), EndTime?, ReferenceCurrency?
+
+// /{Realm}/Leagues/{LeagueName}/Items/{ItemId}/DailyStatsHistory
+interface GetDailyStatsHistoryResponse {
+  DailyStats: Array<{ Time: string; Open: number; High: number; Low: number; Close: number; Average: number; Volume: number }>;
+  HasMore: boolean;
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+}
+// Query params: DayCount (required), EndDate?
+
+// /{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History
+interface GetPairHistoryResponse {
+  History: Array<{ Epoch: number; Data: { CurrencyOneData: { ValueTraded: number; RelativePrice: string; StockValue: number; VolumeTraded: number; HighestStock: number }; CurrencyTwoData: { ...same... } } }>;
+  Meta: { HasMore: boolean };
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+}
+// Query params: Limit (required), EndEpoch?
+
+// /{Realm}/Leagues/{LeagueName}/SnapshotHistory
+interface GetSnapshotHistoryResponse {
+  Data: Array<{ Epoch: number; MarketCap: number; Volume: number }>;
+  Meta: { HasMore: boolean };
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+}
+// Query params: Limit (required), EndEpoch?
+
+// /{Realm}/Leagues/{LeagueName}/ExchangeSnapshot
+interface GetExchangeSnapshotResponse {
+  Epoch: number;
+  Volume: number;
+  MarketCap: number;
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+}
+
+// /{Realm}/Leagues/{LeagueName}/ReferenceCurrencies
+interface ReferenceCurrency {
+  ApiId: string;
+  Text: string;
+  IconUrl: string | null;
+  RelativePrice: number;
+}
+
+// /Realms/{Realm}/Filters
+interface GetFiltersResponse {
+  Filters: Array<{ DisplayName: string; Category: string; Identifier: string; ItemKind: string }>;
+}
+
+// /{Realm}/Leagues/{LeagueName}/Items/PriceHistory — bulk
+interface GetItemPriceHistoriesResponse {
+  ItemHistories: Array<{ ItemId: number; History: Array<{ Price: number; Time: string; Quantity: number }> }>;
+}
+```
 
 **Critical Field Naming Conventions:**
 
@@ -70,8 +229,10 @@ snake_case endpoint (/Realms):  value, label, realm_api_id, game_api_id, ...
 3. **League IsCurrent is always false** — use `default_league_value` from realm instead.
 4. **String fields in numeric positions** — Volume, RelativePrice, etc. come as strings from some endpoints. Use `safeParseFloat()`.
 5. **LogCount must be multiple of 4** — ItemHistory API returns 400 otherwise.
-6. **Numeric ItemIds required** — `/Currencies/Pairs/{ItemId1}/{ItemId2}/History` expects integers, not ApiId strings.
+6. **Numeric ItemIds required** — `/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History` expects integers, not ApiId strings.
 7. **Timezone: PriceLogs timestamps are UTC** — assume UTC unless API specifies otherwise.
+8. **RelativePrice "0E-8"** — POE2Scout returns scientific-notation zero for some pairs. `safeParseFloat()` returns `null` for these.
+9. **Realm path parameter** — The `value` field from `/Realms` is used as the `{Realm}` path parameter (e.g., `"poe2/poe2"` for PoE2, but `"poe2"` also works for most endpoints).
 
 ---
 
@@ -82,12 +243,19 @@ snake_case endpoint (/Realms):  value, label, realm_api_id, game_api_id, ...
 ```
 User Browser
     │
+    ├─→ GET /api/poe2/health ─────────────→ poe2api.ts::getHealth()
+    │                                            │
+    │                                        cachedFetch(BASE_URL + "/health/live")
+    │                                            │
+    │                                        return: { status: string; apiBaseUrl: string }
+    │
     ├─→ GET /api/poe2/realms ──────────────→ poe2api.ts::getRealms()
     │                                            │
     │                                        cachedFetch(BASE_URL + "/Realms")
     │                                            │
     │                                        map: RawRealm[] → Realm[]
-    │                                        (extract realm_api_id, game_api_id, default_league_value)
+    │                                        (extract realm_api_id → name, game_api_id → displayName,
+    │                                         default_league_value → defaultLeague)
     │                                            │
     │                                        return: Realm[]
     │
@@ -98,38 +266,62 @@ User Browser
     │                                        map: RawLeague[] → League[]
     │                                        (use ShortName for name, Value for displayName)
     │                                        (mark active using default_league_value)
+    │                                        (extract BaseCurrencyApiId, BaseCurrencyText, DefaultCurrency)
     │                                            │
     │                                        return: League[]
     │
-    ├─→ GET /api/poe2/exchange ──────────────→ poe2api.ts::getExchangeSnapshot()
-    │        ?realm=poe2&league=runes               │
-    │                                        cachedFetch(BASE_URL + "/{realm}/Leagues/{league}/ExchangeSnapshot")
+    ├─→ GET /api/poe2/exchange ──────────────→ poe2api.ts::getSnapshotPairs()
+    │        ?realm=poe2&league=vaal              │
+    │                                        cachedFetch(BASE_URL + "/{realm}/Leagues/{league}/SnapshotPairs")
     │                                            │
-    │                                        return: ExchangeSnapshot (pairs:[], referenceCurrency, timestamp, volume, marketCap)
+    │                                        map: RawSnapshotPair[] → ExchangePair[] (via mapSnapshotPair)
+    │                                        Enrich with 7d changes via buildCurrencyChangeMap()
+    │                                            │
+    │                                        return: ExchangePair[]
     │
     ├─→ GET /api/poe2/currencies ──────────────→ poe2api.ts::getCurrenciesByCategory()
-    │        ?realm=poe2&league=runes&category=currency
+    │        ?realm=poe2&league=vaal&category=currency
     │                                            │
     │                                        If category="all":
     │                                          1. getItemCategories() → currencyCats[]
-    │                                          2. For each cat: fetch all pages (250/page)
+    │                                          2. For each cat: fetch all pages (perPage=250)
     │                                          3. Merge all items, client-side paginate
     │                                        Else:
     │                                          cachedFetch(...)
     │                                            │
-    │                                        map: RawCurrencyItem → PoeItem
+    │                                        map: RawCurrencyItem → PoeItem (via mapCurrencyItem)
     │                                        (computeChangePercent from PriceLogs)
+    │                                        (compute7dChangePercent from PriceLogs)
     │                                        (computeVolume24h from PriceLogs)
     │                                        (mapPriceLogs to history)
+    │                                        (computePreviousPrice + delta → change)
+    │                                        (computePrevious7dPrice + delta → sevenDayPriceChange)
+    │                                        (CurrentPrice / referencePrice → relativePrice)
     │                                            │
     │                                        return: PaginatedResponse<PoeItem>
     │
-    └─→ GET /api/poe2/uniques ──────────────→ poe2api.ts::getUniquesByCategory()
-             ?realm=poe2&league=runes&category=all
-                                          │
-                                          Same logic as currencies — category="all" merges all.
-                                          map: RawUniqueItem → PoeItem
-                                          return: PaginatedResponse<PoeItem>
+    ├─→ GET /api/poe2/uniques ──────────────→ poe2api.ts::getUniquesByCategory()
+    │        ?realm=poe2&league=vaal&category=all
+    │                                            │
+    │                                        Same logic as currencies — category="all" merges all.
+    │                                        map: RawUniqueItem → PoeItem (via mapUniqueItem)
+    │                                        (Text || Name → name, Type → type)
+    │                                        Supports: search parameter for fuzzy search
+    │                                            │
+    │                                        return: PaginatedResponse<PoeItem>
+    │
+    ├─→ GET /api/poe2/items ──────────────→ poe2api.ts::getItems()
+    │        ?realm=poe2&league=vaal              │
+    │                                        cachedFetch(BASE_URL + "/{realm}/Leagues/{league}/Items")
+    │                                            │
+    │                                        return: PoeItem[]
+    │
+    └─→ GET /api/poe2/overview ──────────────→ Combined endpoint
+             ?realm=poe2&league=vaal              │
+                                              Returns:
+                                              ├─ getExchangeSnapshot() → exchange data
+                                              ├─ getSnapshotHistory() → chart data
+                                              └─ getReferenceCurrencies() → reference pills
 ```
 
 ### 2.2 Flipper Analytics Flow (Requires FastAPI Backend)
@@ -137,150 +329,220 @@ User Browser
 ```
 User Browser
     │
-    ├─→ GET /api/flipper/health ────────────→ flipper-proxy.ts::proxyWithFallback()
+    ├─→ GET /api/flipper/health ────────────→ flipper-proxy.ts::proxyToFlipper()
     │                                              │
-    │                                          fetch(FASTAPI_URL + "/api/health")
+    │                                          fetch(FLIPPER_API_URL + "/api/health")
     │                                              │
     │                                          return: FlipperHealthResponse
     │                                          {
     │                                            status: "ok"|"degraded"|"error"|"offline",
     │                                            provider: "reachable"|"unreachable",
-    │                                            snapshot: {snapshot_valid, snapshot_stale, snapshot_age_seconds, last_refresh},
-    │                                            daily_stats_cache: {size, max_size, stale_entries, oldest_entry_age},
-    │                                            version: string,
-    │                                            timestamp: ISO8601 string
+    │                                            timestamp: ISO8601,
+    │                                            league?: string,
+    │                                            base_currency?: string,
+    │                                            active_events?: number,
+    │                                            cache_entries?: number,
+    │                                            snapshot?: {
+    │                                              snapshot_valid, snapshot_stale,
+    │                                              snapshot_age_seconds, last_refresh
+    │                                            },
+    │                                            daily_stats_cache?: {
+    │                                              size, max_size, stale_entries, oldest_entry_age
+    │                                            }
     │                                          }
     │
     ├─→ GET /api/flipper/phase ─────────────→ flipper-proxy.ts
     │                                              │
-    │                                          fetch(FASTAPI_URL + "/api/phase")
+    │                                          fetch(FLIPPER_API_URL + "/api/phase")
     │                                              │
-    │                                          return: PhaseInfo
-    │                                          {current_phase: "standard"|"flashback"|"event", multiplier: float, description: string}
+    │                                          return: FlipperPhaseResponse
+    │                                          { phase: "EARLY"|"MID"|"LATE", days_since_ref: int, league: string }
     │
     ├─→ GET /api/flipper/prices ────────────→ routes_prices.py (FastAPI)
     │                                              │
-    │                                          DataSnapshot.get_prices()
+    │                                          SnapshotManager.get_snapshot().get_prices()
     │                                              │
-    │                                          return: [{currency, bid, ask, mid, volume, momentum, volatility, cluster}, ...]
-
-### 2.2a GET /api/prices — Response Structure
-
-The `/api/prices` endpoint (implemented in `routes_prices.py`) is the primary
-data source for the dashboard. It returns all exchange rates with derived
-metrics computed from DataSnapshot.
-
-**Response shape:**
-
-```json
-{
-  "league": "vaal",
-  "phase": "MID",
-  "rates": [
-    {
-      "pair": "divine/exalted",
-      "currency_from": "divine",
-      "currency_to": "exalted",
-      "raw_rate": 0.123,
-      "volume_traded": 1500,
-      "stock_value": 200.0,
-      "volatility": 0.0234,
-      "momentum": 0.0012,
-      "acceleration": -0.0003,
-      "cluster_from": "moderate",
-      "cluster_to": "stable",
-      "timestamp": "2025-06-02T12:00:00+00:00"
-    }
-  ],
-  "base_currency": "exalted",
-  "stale": false,
-  "data_available": true,
-  "fetched_at": "2025-06-02T12:00:00+00:00"
-}
-```
-
-**Key fields:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `pair` | string | Currency pair key (e.g. "divine/exalted") |
-| `currency_from` | string | Source currency api_id |
-| `currency_to` | string | Target currency api_id |
-| `raw_rate` | float | Exchange rate from→to |
-| `volume_traded` | number | 24h trading volume for this pair |
-| `stock_value` | number | Stock value from snapshot |
-| `volatility` | float | Std of log-returns (from PriceMomentumTracker) |
-| `momentum` | float | Mean of log-returns (from PriceMomentumTracker) |
-| `acceleration` | float | Change in momentum (from PriceMomentumTracker) |
-| `cluster_from` | string | Cluster label for currency_from ("stable"/"moderate"/"volatile") |
-| `cluster_to` | string | Cluster label for currency_to |
-| `timestamp` | string | ISO 8601 timestamp of the rate data |
+    │                                          return: PricesResponse
+    │                                          { league, phase, rates: [{pair, currency_from, currency_to,
+    │                                            raw_rate, volume_traded, stock_value, volatility,
+    │                                            momentum, acceleration, cluster_from, cluster_to,
+    │                                            timestamp}], base_currency, stale, data_available, fetched_at }
+    │
+    ├─→ GET /api/flipper/heatmap ────────────→ routes_prices.py
+    │                                              │
+    │                                          24h price change heatmap data
+    │                                              │
+    │                                          return: HeatmapResponse
+    │
+    ├─→ GET /api/flipper/currencies ─────────→ routes_prices.py
+    │                                              │
+    │                                          Currency metadata from DataSnapshot
+    │                                              │
+    │                                          return: CurrencyInfo[]
+    │
+    ├─→ GET /api/flipper/tiers ─────────────→ routes_prices.py
+    │                                              │
+    │                                          Tier classifications via classify_currencies()
+    │                                              │
+    │                                          return: TiersResponse
+    │                                          { tiers: [{apiId, tier, tierLabel, relativePrice, tierAnchor}],
+    │                                            boundaries: {t0Min..t4Min}, dataAvailable }
+    │
+    ├─→ GET /api/flipper/benchmarks/{currency} → routes_prices.py
+    │                                              │
+    │                                          Historical benchmarks via compute_benchmarks()
+    │                                              │
+    │                                          return: BenchmarksResponse
+    │                                          { currencyApiId, currentPrice,
+    │                                            benchmark: {low30d, high30d, rangePosition,
+    │                                              percentile30d, currentVsAvg}, days, dataAvailable }
     │
     ├─→ GET /api/flipper/flips ──────────────→ routes_arbitrage.py
     │                                              │
-    │                                          scorer.compute_flips()
+    │                                          scorer.compute_flips() + quantized analysis
     │                                              │
     │                                          return: FlipsResponse
-    │                                          {opportunities: [{currency, score, spread, volume_24h, momentum, volatility, cluster, bid, ask, mid}, ...]}
+    │                                          { league, total, opportunities: [{
+    │                                            currency, score, spread, spread_after_fees(DEPRECATED),
+    │                                            volume_24h, momentum, volatility, cluster,
+    │                                            bid, ask, mid_price,
+    │                                            quantized_analysis?: {
+    │                                              qSpreads, minProfitableLot, optimalLotProfitPct,
+    │                                              recommendedRatio, brickResistance, theoreticalSpread
+    │                                            },
+    │                                            tier_distance?
+    │                                          }], event_status: {any_active, affected_currencies, summary},
+    │                                          fetched_at, data_available?, fee_warning? }
     │
     ├─→ GET /api/flipper/triangular ─────────→ routes_arbitrage.py
     │                                              │
     │                                          triangular.find_triangular_arbitrage()
+    │                                          + integer simulation + quantized profit
     │                                              │
     │                                          return: TriangularResponse
+    │                                          { league, total, opportunities: [{
+    │                                            cycle, net_profit_pct, step_rates, total_volume,
+    │                                            confidence, min_starting_amount?,
+    │                                            quantized_profit_pct?, continuous_profit_pct?,
+    │                                            integer_simulation?
+    │                                          }], fetched_at, data_available?, fee_warning? }
     │
     ├─→ GET /api/flipper/forecast/{currency} → routes_forecast.py
     │                                              │
-    │                                          time_series.forecast()
+    │                                          ForecastEngine.forecast() (3 models in parallel)
     │                                              │
-    │                                          return: ForecastResponse
-    │                                          {currency, forecast: [{timestamp, price, lower, upper}, ...], model, horizon}
+    │                                          return: ForecastResponse (per model: SARIMA, Holt-Winters, LightGBM)
+    │                                          { currency, model_name, point_forecast, ci_lower, ci_upper,
+    │                                            timestamps, low_confidence, disagreement, mape }
+    │
+    ├─→ GET /api/flipper/forecast/{currency}/stl → routes_forecast.py
+    │                                              │
+    │                                          STL decomposition of price series
+    │                                              │
+    │                                          return: STL decomposition data
+    │
+    ├─→ GET /api/flipper/anomalies ──────────→ routes_anomalies.py
+    │                                              │
+    │                                          AnomalyDetector.detect_anomalies_batch()
+    │                                          (Z-score, MACD, RSI, STL residual, sustained momentum)
+    │                                              │
+    │                                          return: AnomalyAlert[]
+    │                                          { currency, timestamp, alert_score, triggered_indicators,
+    │                                            direction, is_confirmed }
+    │
+    ├─→ GET /api/flipper/storage-value/{currency} → routes_storage_value.py
+    │                                              │
+    │                                          project_value() — hold/sell decision
+    │                                              │
+    │                                          return: StorageValueResult
+    │                                          { currency, current_price, projected_price,
+    │                                            risk_discount, adjusted_price, net_value_after_fees,
+    │                                            ratio, decision: "BUY_HOLD"|"SELL_CONVERT"|"NEUTRAL" }
     │
     ├─→ GET /api/flipper/portfolio ────────────→ routes_portfolio.py
     │                                              │
-    │                                          portfolio.optimize()
+    │                                          PortfolioOptimizer.optimize()
+    │                                          (risk_parity or min_variance, Ledoit-Wolf shrinkage)
     │                                              │
     │                                          return: PortfolioData
-    │                                          {method, weights: {currency: weight}, expected_risk, correlation_warning, last_rebalance}
+    │                                          { method, weights: {currency: weight}, expected_risk,
+    │                                            correlation_warning, last_rebalance }
+    │
+    ├─→ GET /api/flipper/portfolio/frontier ──→ routes_portfolio.py
+    │                                              │
+    │                                          compute_efficient_frontier_chart_data()
+    │                                              │
+    │                                          return: Efficient frontier data (scatter plot)
+    │
+    ├─→ GET /api/flipper/portfolio/correlation → routes_portfolio.py
+    │                                              │
+    │                                          Correlation matrix for portfolio currencies
+    │                                              │
+    │                                          return: Correlation matrix data
+    │
+    ├─→ POST /api/flipper/portfolio/rebalance → routes_portfolio.py
+    │                                              │
+    │                                          Trigger portfolio rebalance
+    │                                              │
+    │                                          return: Rebalance result
+    │
+    ├─→ GET /api/flipper/recipes ────────────────→ routes_recipes.py
+    │                                              │
+    │                                          find_profitable_recipes()
+    │                                              │
+    │                                          return: RecipeOpportunity[]
+    │                                          { name, inputs, output, input_cost_chaos,
+    │                                            output_value_chaos, profit_chaos, profit_pct }
     │
     ├─→ GET /api/flipper/events ────────────────→ routes_events.py
     │                                              │
     │                                          Load from SQLite via EventManager
     │                                              │
-    │                                          return: Event[]
-    │                                          {id, type, description, created_at, expires_at, is_active, metadata}
+    │                                          return: FlipperEventsSummary
+    │                                          { events: [{id, type, description, created_at,
+    │                                            expires_at, is_active, metadata}], total }
     │
-    ├─→ GET /api/flipper/recipes ────────────────→ routes_recipes.py
+    ├─→ POST /api/flipper/events ────────────────→ routes_events.py
     │                                              │
-    │                                          Return predefined trading recipes
+    │                                          Create new event
     │                                              │
-    │                                          return: Recipe[]
-    │                                          {id, name, steps: [{from, to, expected_rate}], notes}
+    ├─→ DELETE /api/flipper/events/{eventId} ──→ routes_events.py
+    │                                              │
+    │                                          Delete event
     │
-    └─→ WebSocket /ws ────────────────────────────→ routes_ws.py
-                │                                      │
-                │                                  ws_manager.broadcast(data)
-                │                                      │
-                │                                  Client receives live price updates
-                │
-                └─→ Browser subscribes to channels
-                        ├─→ prices: real-time bid/ask updates
-                        ├─→ flips: new opportunity alerts
-                        └─→ events: market event notifications
+    ├─→ POST /api/flipper/events/{eventId}/deactivate → routes_events.py
+    │                                              │
+    │                                          Deactivate event (set is_active=false)
+    │
+    ├─→ WebSocket /ws/storage-value/{currency} → routes_ws.py
+    │        Live storage value updates
+    │
+    ├─→ WebSocket /ws/forecast/{currency} ────→ routes_ws.py
+    │        Live forecast updates
+    │
+    ├─→ WebSocket /ws/anomalies ──────────────→ routes_ws.py
+    │        Live anomaly alerts
+    │
+    ├─→ WebSocket /ws/flips ──────────────────→ routes_ws.py
+    │        Live flip opportunity alerts
+    │
+    └─→ WebSocket /ws/events ─────────────────→ routes_ws.py
+             Live event notifications
 ```
 
 ---
 
 ## §3. Backend Internal Data Flows
 
-### 3.1 Poe2ScoutProvider → DataSnapshot → Analytics
+### 3.1 Poe2ScoutProvider → SnapshotManager → Analytics
 
 ```
 POE2Scout API
     │
     ├─→ Poe2ScoutProvider.get_exchange_rates(league)
     │        │
-    │        cachedFetch("/SnapshotPairs")
+    │        httpx.AsyncClient GET "/SnapshotPairs"
+    │        (10s timeout, semaphore max 5 concurrent, 2 retries on 429)
     │        │
     │        Derive cross-rates from relative_price
     │        │
@@ -292,39 +554,81 @@ POE2Scout API
     │        │
     │        return: CurrencyInfo[]
     │
-    └─→ Poe2ScoutProvider.get_historical_prices(currency, days)
+    ├─→ Poe2ScoutProvider.get_historical_prices(currency, days)
+    │        │
+    │        httpx GET "/Currencies/{currency}"
+    │        │
+    │        return: PricePoint[]
+    │
+    ├─→ Poe2ScoutProvider.get_all_currencies_with_prices(league)
+    │        │
+    │        Fetches all ByCategory currencies across all pages
+    │        │
+    │        return: list[dict]  (raw currency data with prices)
+    │
+    └─→ Poe2ScoutProvider.get_daily_stats(league, item_id, ...)
              │
-             cachedFetch("/Currencies/{currency}")
+             httpx GET "/Items/{item_id}/DailyStatsHistory"
              │
-             return: PricePoint[]
+             return: dict | None
 
 Poe2ScoutProvider
     │
-    ├─→ DataSnapshot.refresh()
+    ├─→ SnapshotManager._refresh()
     │        │
-    │        1. get_exchange_rates() → self._exchange_rates
-    │        2. get_currency_metadata() → self._currencies
-    │        3. For each currency: get_historical_prices() → self._price_histories
-    │        4. Apply clustering (KMeans on volatility, price_change, liquidity)
-    │        5. Compute momentum/volatility per currency
-    │        6. Cache with TTL (default: 5 min)
+    │        1. get_exchange_rates() → snapshot.exchange_rates
+    │        2. get_currency_metadata() → snapshot.currencies + snapshot.currency_metadata
+    │        3. For each currency: get_historical_prices() → snapshot.price_histories
+    │        4. Compute transitive prices via BFS for currencies without direct base pair
+    │           → snapshot.current_prices, snapshot.prices_in_base
+    │        5. Apply clustering (KMeans on volatility, price_change, liquidity)
+    │           → CurrencyClusterer
+    │        6. Compute momentum/volatility/acceleration per currency
+    │           → PriceMomentumTracker
+    │        7. Tier classification via classify_currencies()
+    │           → snapshot.tiers
+    │        8. Cache with TTL (config: cache_ttl_prices_minutes, default 5 min)
     │        │
-    │        return: updated snapshot
+    │        return: updated DataSnapshot
     │
-    ├─→ DataSnapshot.get_prices()
+    ├─→ SnapshotManager.get_snapshot()
     │        │
-    │        return: [{currency, bid, ask, mid, volume, momentum, volatility, cluster}, ...]
+    │        if stale and not refreshing: _refresh()
+    │        │
+    │        return: DataSnapshot
     │
-    └─→ Scheduler (APScheduler, every 5 min)
+    └─→ DataScheduler (APScheduler, config-driven intervals)
              │
-             DataSnapshot.refresh()
+             collect_price_snapshot() — every 30 min (config: price_snapshot_interval_minutes)
+                 │
+                 HistoricalStore.append_prices(snapshot)
+                 │
+                 (broadcast to WebSocket clients)
              │
-             HistoricalStore.append_prices(snapshot)
+             prune_events() — every 15 min (config: event_pruning_interval_minutes)
              │
-             ws_manager.broadcast_snapshot(snapshot)  // Push to WebSocket clients
+             persist_models() — every 30 min (config: model_persistence_interval_minutes)
+                 │
+                 ModelStore.save() — persist LightGBM models to disk
 ```
 
-### 3.2 HistoricalStore (SQLite Persistence)
+### 3.2 DataSnapshot Dataclass
+
+```python
+@dataclass
+class DataSnapshot:
+    exchange_rates: dict[str, ExchangeRate]
+    currencies: list[CurrencyInfo]
+    currency_metadata: list[dict]        # raw currency data with prices
+    price_histories: dict[str, list[PricePoint]]
+    current_prices: dict[str, float]     # currency → price in base currency
+    prices_in_base: dict[str, float]     # transitive prices via BFS
+    tiers: list[CurrencyTier]            # tier classifications
+    fetched_at: datetime
+    valid: bool
+```
+
+### 3.3 HistoricalStore (SQLite Persistence)
 
 ```
 HistoricalStore/
@@ -351,23 +655,47 @@ HistoricalStore/
     │
     ├─→ load_events() ─────────────────────→ SELECT * FROM events WHERE is_active = 1 AND expires_at > NOW()
     │
-    ├─→ prune_expired_events() ─────────────→ UPDATE events SET is_active = 0 WHERE expires_at < NOW()
-    │
-    └─→ prune_old_prices(days=30) ──────────→ DELETE FROM prices_history WHERE timestamp < datetime('now', '-30 days')
-           │
-           └─→ Called by scheduler weekly
+    └─→ prune_expired_events() ─────────────→ UPDATE events SET is_active = 0 WHERE expires_at < NOW()
 ```
 
-### 3.3 Scheduled Tasks (APScheduler)
+### 3.4 Additional Backend Stores
+
+| Store | File | Purpose | TTL / Limits |
+|-------|------|---------|--------------|
+| `PipelineCache` | `backend/data/pipeline_cache.py` | TTL-based cache for computed pipeline results | Configurable per entry |
+| `DailyStatsCache` | `backend/data/daily_stats_cache.py` | LRU + TTL cache for daily OHLCV stats | LRU with max size + per-entry TTL |
+| `ModelStore` | `backend/predictors/model_store.py` | Persist/reload LightGBM models to/from disk | Persisted every 30 min by scheduler |
+
+### 3.5 Scheduled Tasks (APScheduler via DataScheduler)
 
 | Job ID | Schedule | Function | Description |
 |--------|----------|----------|-------------|
-| `snapshot_refresh` | Every 5 min | `DataSnapshot.refresh()` | Fetch fresh data from POE2Scout |
-| `append_to_history` | After snapshot | `HistoricalStore.append_prices()` | Persist snapshot to SQLite |
-| `broadcast_update` | After snapshot | `ws_manager.broadcast()` | Push to WebSocket clients |
-| `prune_events` | Every hour | `EventManager.prune_expired()` | Clean up expired events |
-| `prune_history` | Sunday 3 AM | `HistoricalStore.prune_old_prices()` | Remove prices older than 30 days |
-| `warm_cache` | Every 30 min | `Poe2ScoutProvider.warm_cache()` | Pre-fetch frequently used data |
+| `collect_price_snapshot` | Every 30 min (config: `price_snapshot_interval_minutes`) | `SnapshotManager._refresh()` + `HistoricalStore.append_prices()` | Fetch fresh data, persist to SQLite |
+| `prune_events` | Every 15 min (config: `event_pruning_interval_minutes`) | `EventManager.prune_expired()` | Clean up expired events |
+| `persist_models` | Every 30 min (config: `model_persistence_interval_minutes`) | `ModelStore.save()` | Persist LightGBM models to disk |
+
+> **⚠️ CORRECTION (2026-06-02):** The old version documented a 5-minute snapshot interval and several jobs (broadcast_update, warm_cache, prune_history) that no longer exist. The actual scheduler runs 3 jobs with configurable intervals from `config.yaml`. The `warm_cache` and `prune_history` jobs have been removed. Broadcasting is done inline after snapshot refresh.
+
+### 3.6 Backend Config (config.yaml → Pydantic Settings)
+
+| Config Section | Key Fields | Defaults |
+|----------------|-----------|----------|
+| `data` | `primary_provider="poe2scout"`, `fallback_provider="official"`, `cache_ttl_prices_minutes=5`, `cache_ttl_history_hours=24`, `rate_limit_per_second=1.0`, `historical_retention_days=90` | — |
+| `league` | `league_name="vaal"`, `realm="poe2"`, `phase_early_days=7`, `phase_mid_days=35`, `base_currency="exalted"` | — |
+| `filters` | `min_volume_24h=50`, `max_volatility=0.4`, `max_spread=0.15` | — |
+| `scoring` | `momentum_negative_threshold=-0.01`, `volatility_reference=0.05`, `phase_multiplier_early/mid/late=1.2/1.0/0.9`, `flashback_multiplier=1.5`, `event_multiplier=2.0` | — |
+| `forecasting` | `sarima_seasonal_period=None`, `lightgbm_retrain_interval_hours=6`, `lightgbm_min_data_points=15`, `forecast_horizon_hours=24`, `confidence_level=0.05` | — |
+| `anomaly` | `bonferroni_alpha=0.01`, `alert_score_threshold=0.4`, `rsi_period=14`, `rsi_overbought=70`, `rsi_oversold=30`, `macd_fast/slow/signal=12/26/9` | — |
+| `clustering` | `n_clusters=3`, `recluster_interval_hours=1` | — |
+| `portfolio` | `method="risk_parity"`, `correlation_shock_threshold=0.5`, `ledoit_wolf_shrinkage=True`, `rebalance_interval_hours=24` | — |
+| `events` | `default_expiry_hours=48`, `event_score_penalty=0.5` | — |
+| `scheduler` | `price_snapshot_interval_minutes=30`, `reclustering_interval_hours=1`, `model_persistence_interval_minutes=30`, `event_pruning_interval_minutes=15` | — |
+| `tiers` | `t0_min=50`, `t1_min=10`, `t2_min=1`, `t3_min=0.1`, `t4_min=0.01` | — |
+| `quantization` | `default_lot_sizes=[1,5,10,50,100]`, `max_lot_search=10000`, `brick_resistance_weight=0.2` | — |
+| `storage_value` | `buy_threshold=1.03`, `sell_threshold=0.97`, `liquidity_normalization=10.0` | — |
+| `benchmarks` | `lookback_days=30`, `include_league_lifetime=True` | — |
+
+Singleton: `get_settings() → AppConfig`
 
 ---
 
@@ -387,75 +715,190 @@ interface RawCurrencyItem {
   Text: string;              // e.g. "Divine Orb"
   CategoryApiId: string;     // e.g. "currency"
   IconUrl: string | null;
+  ItemMetadata?: any;
+  PriceLogs: (RawPriceLogEntry | null)[];  // ⚠️ NEWEST FIRST!
+  CurrentPrice: number | null;
+  CurrentQuantity: number | null;
+}
+
+interface RawUniqueItem {
+  UniqueItemId: number;      // ⚠️ Different from CurrencyItemId!
+  ItemId: number;
+  ApiId: string;
+  Text: string;              // Primary name
+  Name: string;              // Alternative name (used as fallback: Text || Name)
+  CategoryApiId: string;
+  Type: string;              // Item type (mapped to PoeItem.type)
+  IconUrl: string | null;
+  IsChanceable?: boolean;
+  ItemMetadata?: any;
   PriceLogs: (RawPriceLogEntry | null)[];  // ⚠️ NEWEST FIRST!
   CurrentPrice: number | null;
   CurrentQuantity: number | null;
 }
 
 interface PoeItem {
-  id: string;                // = String(CurrencyItemId || ItemId) — prefer CurrencyItemId
+  id: string;                // = String(CurrencyItemId || UniqueItemId || ItemId)
   apiId: string;             // = ApiId
-  name: string;              // = Text
-  type: string;              // = CategoryApiId
-  category: string;           // = CategoryApiId
+  name: string;              // = Text (or Text || Name for uniques)
+  type: string;              // = CategoryApiId (or Type for uniques)
+  category: string;          // = CategoryApiId
   iconUrl: string | null;    // = IconUrl
-  price: number | null;       // = CurrentPrice
+  price: number | null;      // = CurrentPrice
   priceChaos: number | null; // = CurrentPrice (PoE2 base = Exalted)
   relativePrice: number | null; // = CurrentPrice / referencePrice
-  change: number | null;     // = currentPrice - previousPrice (from PriceLogs)
-  changePercent: number | null; // = ((now - 24h_ago) / 24h_ago) * 100
-  volume: number | null;     // = sum(Quantity) for last 24h from PriceLogs
-  sevenDayPriceChange: number | null;
-  sevenDayPriceChangePercent: number | null;
-  history: PoeItemHistoryPoint[] | null;
-  dailyStats: DailyStat[] | null;
+  change: number | null;     // = currentPrice - computePreviousPrice(PriceLogs)
+  changePercent: number | null; // = computeChangePercent(PriceLogs) — 24h
+  volume: number | null;     // = computeVolume24h(PriceLogs)
+  sevenDayPriceChange: number | null; // = currentPrice - computePrevious7dPrice(PriceLogs)
+  sevenDayPriceChangePercent: number | null; // = compute7dChangePercent(PriceLogs)
+  history: PoeItemHistoryPoint[] | null; // = mapPriceLogs(PriceLogs)
+  dailyStats: DailyStat[] | null;       // = null (fetched separately)
   lowConfidence: boolean;    // = CurrentQuantity < 5
   listingCount: number | null; // = CurrentQuantity
+  baseType: null;            // Hardcoded null (not in API)
+  links: null;               // Hardcoded null
+  variant: null;             // Hardcoded null
+  levelRequired: null;       // Hardcoded null
 }
 ```
 
 ### 4.2 ExchangePair Transformation
 
 ```typescript
-// Source: RawSnapshotPair from POE2Scout API
+// Source: RawSnapshotPair from POE2Scout API (GetSnapshotPairsResponse)
 // Destination: ExchangePair (src/lib/types.ts)
 
 interface RawSnapshotPair {
   CurrencyExchangeSnapshotPairId: number;
-  CurrencyOne: { ItemId: number; ApiId: string; Text: string; IconUrl: string | null };
-  CurrencyTwo: { ItemId: number; ApiId: string; Text: string; IconUrl: string | null };
-  CurrencyOneData: { RelativePrice: string; VolumeTraded: number; ... };
-  CurrencyTwoData: { RelativePrice: string; VolumeTraded: number; ... };
+  CurrencyExchangeSnapshotId: number;
+  Volume: number;
+  BaseCurrencyApiId: string;
+  BaseCurrencyText: string;
+  CurrencyOne: { CurrencyItemId: number; ItemId: number; CurrencyCategoryId: number; ApiId: string; Text: string; CategoryApiId: string; IconUrl: string | null; ItemMetadata?: any };
+  CurrencyTwo: { ...same structure... };
+  CurrencyOneData: { ValueTraded: number; RelativePrice: string; StockValue: number; VolumeTraded: number; HighestStock: number };
+  CurrencyTwoData: { ValueTraded: number; RelativePrice: string; StockValue: number; VolumeTraded: number; HighestStock: number };
 }
 
 interface ExchangePair {
   id: string;                  // = String(CurrencyExchangeSnapshotPairId)
-  currency1Id: string;          // = CurrencyOne.ApiId (e.g. "divine")
+  currency1Id: string;         // = CurrencyOne.ApiId (e.g. "divine")
   currency1Name: string;       // = CurrencyOne.Text (e.g. "Divine Orb")
-  currency1IconUrl: string | null;
+  currency1IconUrl: string | null; // = CurrencyOne.IconUrl
   currency1ItemId: number;     // = CurrencyOne.ItemId (⚠️ NUMERIC! Use for history API)
   currency2Id: string;
   currency2Name: string;
   currency2IconUrl: string | null;
   currency2ItemId: number;
-  price: number | null;        // = parseFloat(RelativePrice) || null
-  relativePrice: number;        // = price ?? 0
+  price: number | null;        // = safeParseFloat(CurrencyOneData.RelativePrice) — null for "0E-8"
+  relativePrice: number;       // = price ?? 0
   volume: number;              // = CurrencyOneData.VolumeTraded
-  change: number | null;
-  changePercent: number | null;
-  history: ExchangePairHistoryPoint[] | null;
+  change: number | null;       // Enriched later via buildCurrencyChangeMap()
+  changePercent: number | null; // Enriched later via buildCurrencyChangeMap()
+  sevenDayChange: number | null; // Enriched later via buildCurrencyChangeMap()
+  sevenDayChangePercent: number | null; // Enriched later via buildCurrencyChangeMap()
+  history: ExchangePairHistoryPoint[] | null; // Fetched on demand
 }
 ```
 
 **⚠️ CRITICAL:** Use `currency1ItemId` (numeric) for history API calls, NOT `currency1Id` (string ApiId).
 
+### 4.3 OHLCVCandle (exported from poe2api.ts)
+
+```typescript
+// ⚠️ NOTE: This interface is exported from poe2api.ts, NOT types.ts
+export interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+```
+
+### 4.4 Flipper-Specific Types
+
+```typescript
+interface FlipOpportunity {
+  currency: string;
+  score: number;                // 0.0 to 1.0
+  spread: number;               // Raw spread (no fees)
+  spread_after_fees: number;    // ⚠️ DEPRECATED — kept for backward compat
+  volume_24h: number;
+  momentum: number;
+  volatility: number;
+  cluster: string;              // "stable"|"moderate"|"volatile_illiquid"
+  bid: number;
+  ask: number;
+  mid_price: number;
+  quantized_analysis?: QuantizedAnalysis;
+  tier_distance?: number;
+}
+
+interface QuantizedAnalysis {
+  qSpreads: QuantizedSpread[];
+  minProfitableLot: number;
+  optimalLotProfitPct: number;
+  recommendedRatio: number;
+  brickResistance: number;
+  theoreticalSpread: number;
+}
+
+interface QuantizedSpread {
+  lotSize: number;
+  actualCost: number;
+  actualRevenue: number;
+  netProfit: number;
+  grossProfitPct: number;
+  qSpread: number;
+}
+
+interface CurrencyTier {
+  apiId: string;
+  tier: number;          // 0-4
+  tierLabel: string;     // e.g. "T0", "T1", etc.
+  relativePrice: number;
+  tierAnchor: string;    // Name of tier boundary currency
+}
+
+interface HistoricalBenchmark {
+  low30d: number;
+  high30d: number;
+  rangePosition: number; // 0-1, where current price sits in 30d range
+  percentile30d: number;
+  currentVsAvg: number;  // % above/below 30d average
+}
+
+interface AnomalyAlert {
+  currency: string;
+  timestamp: string;
+  alert_score: number;   // 0.0-1.0
+  triggered_indicators: string[];
+  direction: string;     // "up"|"down"|null
+  is_confirmed: boolean;
+}
+
+interface StorageValueResult {
+  currency: string;
+  current_price: number;
+  projected_price: number;
+  risk_discount: number;
+  adjusted_price: number;
+  net_value_after_fees: number;
+  ratio: number;
+  decision: "BUY_HOLD"|"SELL_CONVERT"|"NEUTRAL";
+}
+```
+
 ---
 
 ## §5. Formula Reference (Canonical)
 
-> **IMPORTANT:** All formulas in this section are the authoritative source. When modifying calculations, update this section.
+> **IMPORTANT:** All formulas in this section are the authoritative source. When modifying calculations, update this section AND `PoE2_Flipper_Canonical_Formulas.md`. See the canonical formulas file for full verification examples.
 
-### 5.1 Price Change Calculations
+### 5.1 Price Change Calculations (Frontend)
 
 ```typescript
 // §5.1.1: PriceLogs sorting (MUST DO BEFORE ANY COMPUTATION)
@@ -474,7 +917,6 @@ function computeChangePercent(logs: RawPriceLogEntry[]): number | null {
   const now = sorted[sorted.length - 1];
   const targetTime = new Date(now.Time.getTime() - 24 * 60 * 60 * 1000);
 
-  // Find closest entry to 24h ago
   let closest = sorted[0];
   let minDiff = Infinity;
   for (const log of sorted) {
@@ -482,15 +924,12 @@ function computeChangePercent(logs: RawPriceLogEntry[]): number | null {
     if (diff < minDiff) { minDiff = diff; closest = log; }
   }
 
-  // If data is too sparse (>6h gap), return null
-  if (minDiff > 6 * 60 * 60 * 1000) return null;
-
+  if (minDiff > 6 * 60 * 60 * 1000) return null; // >6h gap → too sparse
   return ((now.Price - closest.Price) / closest.Price) * 100;
 }
 
 // §5.1.3: Compute 7d change percent
-// Formula: ((current_price - price_7d_ago) / price_7d_ago) * 100
-function computeSevenDayChangePercent(logs: RawPriceLogEntry[]): number | null {
+function compute7dChangePercent(logs: RawPriceLogEntry[]): number | null {
   const sorted = sortPriceLogs(logs);
   if (sorted.length < 2) return null;
 
@@ -505,7 +944,6 @@ function computeSevenDayChangePercent(logs: RawPriceLogEntry[]): number | null {
   }
 
   if (minDiff > 12 * 60 * 60 * 1000) return null; // >12h gap
-
   return ((now.Price - closest.Price) / closest.Price) * 100;
 }
 
@@ -524,7 +962,6 @@ function computeVolume24h(logs: RawPriceLogEntry[]): number | null {
 }
 
 // §5.1.5: Relative price
-// Formula: CurrentPrice / ReferenceCurrencyPrice
 function computeRelativePrice(currentPrice: number, referencePrice: number): number {
   if (!currentPrice || !referencePrice) return 0;
   return currentPrice / referencePrice;
@@ -533,327 +970,306 @@ function computeRelativePrice(currentPrice: number, referencePrice: number): num
 
 ### 5.2 Backend Analytics Formulas
 
-#### 5.2.1 Momentum Calculation
+#### 5.2.1 League Phase Detection
 
 ```python
-# Formula: mean(log_returns) over lookback window
-# log_return = ln(price_t / price_t-1)
+# backend/economy/lifecycle.py — PhaseDetector
 
-def compute_momentum(price_history: list[PricePoint], lookback_hours: int = 24) -> float:
-    """
-    Momentum indicator: average logarithmic return.
-    Positive = upward trend, Negative = downward trend.
-    Range: approximately -0.1 to +0.1 for typical currencies.
-    """
-    if len(price_history) < 2:
-        return 0.0
+days_since_reference = floor((current_utc - reference_timestamp) / 86400)
+reference_timestamp = max(league_start_timestamp, last_major_patch_timestamp)
 
-    cutoff = datetime.utcnow() - timedelta(hours=lookback_hours)
-    recent = [p for p in price_history if p.timestamp >= cutoff]
+if days_since_reference <= phase_early_days:   → EARLY   (default: 7 days)
+elif days_since_reference <= phase_mid_days:    → MID     (default: 35 days)
+else:                                            → LATE
 
-    if len(recent) < 2:
-        return 0.0
-
-    log_returns = []
-    for i in range(1, len(recent)):
-        if recent[i-1].price > 0:
-            log_returns.append(math.log(recent[i].price / recent[i-1].price))
-
-    return statistics.mean(log_returns) if log_returns else 0.0
+# Resets on major patch detection
 ```
 
-#### 5.2.2 Volatility Calculation
+#### 5.2.2 Momentum, Volatility, Acceleration
 
 ```python
-# Formula: standard deviation of log_returns (ddof=1)
-# Uses sample standard deviation for better estimation
+# backend/economy/momentum.py — PriceMomentumTracker
+# See PoE2_Flipper_Canonical_Formulas.md §2 for full verification
 
-def compute_volatility(price_history: list[PricePoint], lookback_hours: int = 24) -> float:
-    """
-    Volatility indicator: standard deviation of log returns.
-    Higher = more volatile/risky currency.
-    Range: 0.01 to 0.5+ for extreme cases.
-    """
-    if len(price_history) < 3:
-        return 0.0
+log_returns[i] = ln(P[i+1] / P[i])
 
-    cutoff = datetime.utcnow() - timedelta(hours=lookback_hours)
-    recent = [p for p in price_history if p.timestamp >= cutoff]
-
-    if len(recent) < 3:
-        return 0.0
-
-    log_returns = []
-    for i in range(1, len(recent)):
-        if recent[i-1].price > 0:
-            log_returns.append(math.log(recent[i].price / recent[i-1].price))
-
-    if len(log_returns) < 2:
-        return 0.0
-
-    # Sample standard deviation (ddof=1)
-    mean = statistics.mean(log_returns)
-    variance = sum((x - mean) ** 2 for x in log_returns) / (len(log_returns) - 1)
-    return math.sqrt(variance)
+momentum = mean(log_returns)
+volatility = std(log_returns, ddof=1)  # ⚠️ ddof=1 — Bessel's correction
+acceleration = (log_returns[-1] - log_returns[-m]) / m
+    where m = max(1, floor(len(log_returns) / 4))
 ```
 
-#### 5.2.3 Currency Clustering
-
-> **⚠️ CORRECTION (2026-06-02):** The old version of this section described a
-> threshold heuristic (weighted sum with cutoffs 0.25/0.5). This was **never
-> implemented**. The actual code uses **KMeans clustering** as described below
-> and as documented in `PoE2_Flipper_Canonical_Formulas.md §5`.
+#### 5.2.3 Currency Clustering (KMeans)
 
 ```python
-# KMeans clustering on normalized features (backend/predictors/clustering.py)
-# Features: [volatility_24h, price_change_rate_24h, liquidity_score_24h]
-# All features are min-max normalized to [0,1]; if all identical -> 0.5
+# backend/predictors/clustering.py — CurrencyClusterer
+# See PoE2_Flipper_Canonical_Formulas.md §5 for full verification
 
-from sklearn.cluster import KMeans
+# Features per currency:
+volatility_24h = std(log_returns, ddof=1)
+price_change_rate_24h = (price_now - price_24h_ago) / price_24h_ago
+liquidity_score_24h = log1p(volume_24h) / log1p(max_volume)
 
-def cluster_currencies(
-    price_histories: dict[str, list[float]],
-    volumes_24h: dict[str, float],
-    prices_now: dict[str, float],
-    prices_24h_ago: dict[str, float],
-) -> dict[str, ClusterLabel]:
-    """
-    One-shot clustering: compute features, normalize, run KMeans, assign labels.
+# Min-max normalize to [0,1] (all identical → 0.5)
 
-    Algorithm: KMeans(n_clusters=3, init='k-means++', n_init=10, random_state=42)
+# KMeans(n_clusters=3, init='k-means++', n_init=10, random_state=42)
 
-    Cluster label assignment (post-hoc, centroid-based):
-        stable           = argmin(centroid[:, 0])  # lowest volatility
-        volatile_illiquid = argmax(centroid[:, 0])  # highest volatility
-        moderate          = remaining cluster
-
-    Tiebreaker (if two centroids have volatility difference < 0.1):
-        lower liquidity -> volatile_illiquid
-    """
-    # Step 1: Compute features per currency
-    #   volatility_24h = std(log_returns, ddof=1) over window
-    #   price_change_rate_24h = (price_now - price_24h_ago) / price_24h_ago
-    #   liquidity_score_24h = log1p(volume_24h) / log1p(max_volume)
-
-    # Step 2: Min-max normalize to [0,1]
-
-    # Step 3: KMeans with k=3
-
-    # Step 4: Assign semantic labels based on centroid volatility ordering
+# Label assignment (post-hoc, centroid-based):
+#   stable           = argmin(centroid[:, 0])  # lowest volatility
+#   volatile_illiquid = argmax(centroid[:, 0])  # highest volatility
+#   moderate          = remaining cluster
+# Tiebreaker (volatility diff < 0.1): lower liquidity → volatile_illiquid
 ```
 
-#### 5.2.4 Flip Opportunity Scoring
+#### 5.2.4 Spread Estimation Model
 
-> **⚠️ CORRECTION (2026-06-02):** The old version described a weighted-sum formula
-> with CLUSTER_PENALTIES and PHASE_MULTIPLIERS for standard/flashback/event.
-> This was **never implemented**. The actual scoring follows
-> `PoE2_Flipper_Canonical_Formulas.md §7` — expected profit per trade,
-> scaled by fill probability and penalty factors. Gold fees are excluded.
+> **⚠️ IMPORTANT (Iteration 4):** The previous model used forward/reverse rate gap,
+> which was fundamentally broken (always produced spread=0). The new model uses
+> volume + volatility based estimation.
 
 ```python
+# backend/arbitrage/scorer.py
+# See PoE2_Flipper_Canonical_Formulas.md §7.1.1 for full details
+
+# Step 1: Volume-based spread component
+if volume_24h > 0:
+    volume_spread = 0.05 / (1.0 + log1p(volume_24h) / 8.0)
+else:
+    volume_spread = 0.08  # 8% for zero-volume pairs
+
+# Step 2: Volatility component
+vol_spread = volatility * 0.5
+
+# Step 3: Base spread
+market_spread = volume_spread + vol_spread
+market_spread = max(0.01, min(0.15, market_spread))  # [1%, 15%]
+
+# Step 4: Momentum amplification (capped at 50% wider)
+momentum_24h_raw = abs(exp(momentum * 24) - 1)
+momentum_factor = min(momentum_24h_raw, 0.5)
+total_spread = market_spread * (1.0 + momentum_factor)
+total_spread = min(total_spread, 0.20)  # hard cap at 20%
+
+# Step 5: Derive bid/ask from mid_price and total_spread
+bid = mid_price * (1 - total_spread / 2)
+ask = mid_price * (1 + total_spread / 2)
+```
+
+#### 5.2.5 Flip Opportunity Scoring
+
+```python
+# backend/arbitrage/scorer.py
+# See PoE2_Flipper_Canonical_Formulas.md §7 for full verification
+
 # Score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
 # Output: 0.0 to 1.0
 # Gold/commission fees are EXCLUDED from all calculations.
 
-# From backend/arbitrage/scorer.py:
+spread = (ask - bid) / mid_price
+if spread <= 0: return 0.0
 
-PHASE_MULTIPLIERS = {
-    'early': 1.2,
-    'mid': 1.0,
-    'late': 0.9,
-}
+fill_probability = log1p(volume_24h) / log1p(max_volume)
+fill_probability = min(fill_probability, 1.0)
 
-# League type multipliers (stack on top of phase):
+expected_profit = spread * fill_probability
+
+# Momentum penalty (filter-style, NOT additive)
+if momentum < momentum_neg_threshold:  # default: -0.01
+    momentum_penalty = 0.5
+elif momentum < 0:
+    momentum_penalty = 0.8
+else:
+    momentum_penalty = 1.0
+
+# Volatility penalty
+vol_penalty = 1.0 / (1.0 + (volatility / vol_reference) ** 2)  # default: 0.05
+
+# Phase multiplier
+PHASE_MULTIPLIERS = { 'early': 1.2, 'mid': 1.0, 'late': 0.9 }
+# League type multipliers (stack on top):
 #   standard: 1.0, flashback: 1.5, event: 2.0
 
-def compute_opportunity_score(
-    bid: float, ask: float, mid_price: float,
-    volume_24h: float, max_volume: float,
-    volatility: float, phase_multiplier: float,
-    momentum: float,
-    momentum_neg_threshold: float = -0.01,
-    vol_reference: float = 0.05,
-) -> float:
-    """
-    Compute flip opportunity score.
-
-    Formula (gold fees excluded per project decision):
-        spread = (ask - bid) / mid_price
-        fill_probability = log1p(volume_24h) / log1p(max_volume)
-        expected_profit = spread * fill_probability
-        momentum_penalty:
-            0.5 if momentum < -0.01 (strong negative)
-            0.8 if -0.01 <= momentum < 0 (slight negative)
-            1.0 if momentum >= 0 (positive)
-        vol_penalty = 1.0 / (1.0 + (volatility / vol_reference)^2)
-        score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
-        score = clamp(score, 0.0, 1.0)
-    """
-    spread = (ask - bid) / mid_price
-    fill_probability = log1p(volume_24h) / log1p(max_volume)
-    expected_profit = spread * fill_probability
-
-    if momentum < momentum_neg_threshold:
-        momentum_penalty = 0.5
-    elif momentum < 0:
-        momentum_penalty = 0.8
-    else:
-        momentum_penalty = 1.0
-
-    vol_penalty = 1.0 / (1.0 + (volatility / vol_reference) ** 2)
-
-    score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
-    return min(max(score, 0.0), 1.0)
+score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier
+return clamp(score, 0.0, 1.0)
 ```
 
-#### 5.2.5 Triangular Arbitrage Detection
-
-> **⚠️ CORRECTION (2026-06-02):** The old signature accepted a nested dict
-> `exchange_rates: dict[str, dict[str, float]]`. The actual code uses a flat
-> dict with tuple keys plus a separate prices dict. Gold fees are excluded.
+#### 5.2.6 Quantized Analysis
 
 ```python
-# Uses Bellman-Ford algorithm to detect negative cycles in currency graph
-# From backend/arbitrage/triangular.py:
+# backend/arbitrage/scorer.py — compute_quantized_analysis()
+# For each lot_size in config.default_lot_sizes [1, 5, 10, 50, 100]:
+#   actual_cost = bid * lot_size
+#   actual_revenue = ask * lot_size
+#   net_profit = actual_revenue - actual_cost  # no gold fees
+#   gross_profit_pct = (ask - bid) / mid_price * 100
+#   q_spread = (ask - bid) / mid_price
+#
+# minProfitableLot = smallest lot where net_profit > 0
+# optimalLotProfitPct = max profit_pct across all lots
+# brickResistance = weighted measure of lot size vs spread (weight from config)
+# theoreticalSpread = raw (ask - bid) / mid_price
+```
+
+#### 5.2.7 Tier Classification
+
+```python
+# backend/economy/tiers.py
+# Boundaries from config: t0_min=50, t1_min=10, t2_min=1, t3_min=0.1, t4_min=0.01
+
+def compute_tier(relative_price: float, boundaries: TierBoundaryConfig) -> int:
+    """Returns tier 0-4 based on relative_price vs tier boundaries."""
+    if relative_price >= boundaries.t0_min: return 0
+    if relative_price >= boundaries.t1_min: return 1
+    if relative_price >= boundaries.t2_min: return 2
+    if relative_price >= boundaries.t3_min: return 3
+    if relative_price >= boundaries.t4_min: return 4
+    return 4  # below t4_min still tier 4
+
+def tier_distance(tier_a: int, tier_b: int) -> int:
+    """Absolute difference between tiers — used in flip scoring."""
+    return abs(tier_a - tier_b)
+```
+
+#### 5.2.8 Triangular Arbitrage Detection
+
+```python
+# backend/arbitrage/triangular.py
+# See PoE2_Flipper_Canonical_Formulas.md §8 for full details
 
 def find_triangular_arbitrage(
-    rates: dict[tuple[str, str], float],  # (currency_from, currency_to) -> raw_rate
-    prices: dict[str, float],             # currency -> price in reference currency
+    rates: dict[tuple[str, str], float],  # (from, to) -> raw_rate
+    config: AppConfig,
     min_profit_pct: float = 0.1,
-    pair_volumes: dict[tuple[str, str], float] | None = None,
-    snapshot_time: datetime | None = None,
 ) -> list[TriangularOpportunity]:
     """
-    Find profitable triangular (and multi-hop) arbitrage cycles.
+    Bellman-Ford negative cycle detection.
 
-    Gold/commission fees are EXCLUDED — raw rates are used directly.
-
+    Gold/commission fees are EXCLUDED — raw rates used directly.
     Edge weight: -ln(raw_rate)
-    Cycle validation: simulated profit < min_profit_pct → discarded
 
-    Confidence score based on:
-    - Data freshness (max 1.0 if <5min old, decays)
-    - Volume (bottleneck = min across edges)
-    - Cycle length penalty = 1/len(cycle)
+    Additional outputs:
+    - simulate_cycle_integers(): integer-based simulation for real trading
+    - find_min_profitable_start(): minimum amount to start the cycle
+    - quantized_profit_pct: profit accounting for lot sizes
+    - continuous_profit_pct: theoretical continuous rate
     """
 ```
 
-#### 5.2.6 Portfolio Optimization (Risk Parity)
-
-> **⚠️ CORRECTION (2026-06-02):** Risk parity now uses Ledoit-Wolf shrinkage
-> for the covariance matrix (was using plain sample covariance, which is noisier
-> with small samples). This matches the min_variance method and the original
-> documentation claim.
+#### 5.2.9 Portfolio Optimization
 
 ```python
-# Ledoit-Wolf shrinkage estimator for covariance matrix (now used for BOTH methods)
-# Then optimize for risk parity (equal risk contribution)
+# backend/arbitrage/portfolio.py — PortfolioOptimizer
 
-def optimize_portfolio_risk_parity(
-    price_histories: dict[str, list[PricePoint]],
-    lookback_days: int = 30
-) -> dict[str, float]:
-    """
-    Optimize portfolio weights using risk parity approach.
+# TWO methods: risk_parity (default) and min_variance
+# BOTH use Ledoit-Wolf shrinkage for covariance matrix
 
-    1. Compute log-returns matrix
-    2. Apply Ledoit-Wolf shrinkage to covariance matrix
-    3. Solve for risk-parity weights (each asset contributes equally to portfolio risk)
-    """
-    # Step 1: Compute log returns
-    returns = {}
-    for currency, history in price_histories.items():
-        sorted_history = sorted(history, key=lambda x: x.timestamp)
-        if len(sorted_history) < 10:
-            continue
-        log_returns = []
-        for i in range(1, len(sorted_history)):
-            if sorted_history[i-1].price > 0:
-                log_returns.append(math.log(
-                    sorted_history[i].price / sorted_history[i-1].price
-                ))
-        returns[currency] = log_returns
-
-    if not returns:
-        return {}
-
-    # Find common length
-    min_len = min(len(r) for r in returns.values())
-    returns_matrix = np.array([r[-min_len:] for r in returns.values()])
-
-    # Step 2: Ledoit-Wolf shrinkage
-    cov_matrix = ledoit_wolf_shrinkage(returns_matrix.T)
-
-    # Step 3: Risk parity optimization
+# Risk Parity (equal risk contribution):
+def risk_parity_weights(cov: np.ndarray) -> np.ndarray:
     # Minimize: sum((w_i * marginal_risk_i - portfolio_risk/n)^2)
     # Subject to: sum(w_i) = 1, w_i >= 0
+    # Bounds: (0.01, 1.0) per asset
+    # Initial guess: inverse volatility weights
+    # Method: SLSQP
 
-    def risk_contribution(w, cov):
-        port_vol = np.sqrt(w @ cov @ w)
-        marginal = cov @ w
-        return w * marginal / port_vol
+# Minimum Variance:
+def min_variance_weights(cov: np.ndarray) -> np.ndarray:
+    # Minimize: w^T @ cov @ w
+    # Subject to: sum(w_i) = 1, w_i >= 0
 
-    def risk_parity_objective(w, cov):
-        n = len(w)
-        rc = risk_contribution(w, cov)
-        target_rc = np.ones(n) * (np.sqrt(w @ cov @ w) / n)
-        return np.sum((rc - target_rc) ** 2)
+# Efficient Frontier:
+def compute_efficient_frontier_chart_data(...) -> dict:
+    # Grid of target returns → optimal portfolio weights at each level
 
-    # Initial guess: equal weights
-    n = len(returns)
-    w0 = np.ones(n) / n
-
-    # Optimize
-    result = minimize(
-        risk_parity_objective,
-        w0,
-        args=(cov_matrix,),
-        method='SLSQP',
-        bounds=[(0.01, 0.5) for _ in range(n)],  # Max 50%, min 1% per asset
-        constraints={'type': 'eq', 'fun': lambda w: np.sum(w) - 1}
-    )
-
-    weights = dict(zip(returns.keys(), result.x))
-    return {k: float(v) for k, v in weights.items()}
+# Correlation Shock Detection:
+def detect_correlation_shock(corr_matrix, threshold=0.5) -> bool:
+    # Flag if any off-diagonal element exceeds threshold
 ```
 
-#### 5.2.7 Forecasting
-
-> **⚠️ CORRECTION (2026-06-02):** The old version described a simple binary
-> choice (LightGBM if <50 points, SARIMA otherwise). The actual system runs
-> **three models in parallel** with model agreement checks and event flags.
+#### 5.2.10 Forecasting (Three Models in Parallel)
 
 ```python
-# Three models run in parallel (backend/predictors/time_series.py):
+# backend/predictors/time_series.py — ForecastEngine
+# See PoE2_Flipper_Canonical_Formulas.md §2 for log-return math
+
+# Three models run in parallel:
 # 1. SARIMA — auto_arima with ADF test for stationarity
-# 2. Holt-Winters — exponential smoothing (short-horizon secondary opinion)
-# 3. LightGBM — primary short-horizon model with feature engineering
+# 2. Holt-Winters — exponential smoothing (short-horizon secondary)
+# 3. LightGBM — primary short-horizon with feature engineering
 #
-# All models operate on log-prices; convert back to price space at output.
+# All models operate on log-prices; convert back at output.
 
-class ForecastEngine:
-    def forecast(
-        self, currency, price_series, volumes, timestamps,
-        is_event_active, seasonal_period
-    ) -> dict[str, ForecastResult]:
-        """
-        Run all available forecasting models and return results.
+# Model agreement check:
+# if SARIMA and LightGBM diverge >20%: flag disagreement=True on both
 
-        Strategy:
-        1. Convert prices to log-prices
-        2. Auto-detect seasonal period from data frequency
-        3. Run SARIMA, Holt-Winters, and LightGBM in parallel
-        4. Check model agreement: if SARIMA and LightGBM diverge >20%,
-           flag disagreement=True on both results
+# Event flag behavior:
+# - SARIMA: labeled low_confidence=True when event active
+# - Holt-Winters: disabled entirely when event active
+# - LightGBM: includes is_event_active feature
 
-        Event flag behavior:
-        - SARIMA: labeled low_confidence=True when event active
-        - Holt-Winters: disabled entirely when event active
-        - LightGBM: includes is_event_active feature
+# Additional: STL decomposition endpoint
+# compute_stl_decomposition() for seasonal/trend/residual analysis
+```
 
-        Returns dict: {'sarima': ForecastResult, 'holt_winters': ForecastResult,
-                       'lightgbm': ForecastResult}
-        """
+#### 5.2.11 Anomaly Detection (5 Indicators)
+
+```python
+# backend/predictors/anomaly.py — AnomalyDetector
+# See PoE2_Flipper_Canonical_Formulas.md §4 for full details
+
+# 1. Z-Score with Bonferroni Correction
+#    threshold ≈ 3.41 for N=30 currencies (bonferroni_alpha = 0.01/N)
+
+# 2. MACD (Moving Average Convergence Divergence)
+#    EMA_fast=12, EMA_slow=26, Signal=9
+
+# 3. RSI (Relative Strength Index)
+#    period=14, overbought=70, oversold=30
+
+# 4. STL Residual Anomaly
+#    MAD-based threshold (robust to outliers)
+
+# 5. Sustained Momentum Direction
+#    m=3 consecutive log-returns all positive or all negative
+
+# Ensemble alert scoring:
+# alert_score = sum(weight_i for triggered indicators) — default weight=0.2 each
+# is_confirmed = alert_score >= 0.4
+# direction by majority vote
+```
+
+#### 5.2.12 Projected Value & Hold/Sell Decision
+
+```python
+# backend/predictors/storage_value.py — project_value()
+# See PoE2_Flipper_Canonical_Formulas.md §6 for full verification
+
+projected_price = current_price * exp(log_momentum * horizon_hours)
+
+z = abs(norm.ppf(confidence_level))  # default: 0.05 → z=1.645
+risk_discount = exp(-volatility * z * sqrt(horizon_hours))
+
+liq_factor = min(liquidity_score / liquidity_normalization, 1.0)  # default norm=10.0
+adjusted_price = projected_price * risk_discount * (0.9 + liq_factor * 0.1)
+
+# Gold fees EXCLUDED: net_value = adjusted_price
+ratio = net_value / current_price
+
+if ratio > buy_threshold:   decision = "BUY_HOLD"     # default: 1.03
+elif ratio < sell_threshold: decision = "SELL_CONVERT" # default: 0.97
+else:                        decision = "NEUTRAL"
+```
+
+#### 5.2.13 Historical Benchmarks
+
+```python
+# backend/economy/benchmarks.py — compute_benchmarks()
+
+# Over lookback_days (default: 30):
+# low30d = min price
+# high30d = max price
+# rangePosition = (current - low) / (high - low)   # 0-1
+# percentile30d = percentile rank of current price
+# currentVsAvg = (current - mean) / mean * 100      # % above/below average
 ```
 
 ---
@@ -862,19 +1278,26 @@ class ForecastEngine:
 
 ### 6.1 Frontend Cache (poe2api.ts)
 
-> **⚠️ CORRECTION (2026-06-02):** The old version described an `inflight` field
-> stored inside the cache entry. The actual implementation uses a **separate**
-> `pendingRequests` Map for request deduplication, not an `inflight` field in
-> the cache. The cache only stores `{ data, ts }`.
-
 ```typescript
 // In-memory cache with stale-while-revalidate
 // NOTE: Cache entries do NOT contain an 'inflight' field.
 // Request deduplication uses a SEPARATE Map (pendingRequests).
 const cache = new Map<string, { data: unknown; ts: number }>();
-const CACHE_TTL = 60_000;         // 60s — fresh
-const CACHE_STALE_TTL = 600_000;  // 10min — serve stale, revalidate in background
-const REQUEST_DEDUP_WINDOW = 10_000; // 10s — dedup concurrent identical requests
+const pendingRequests = new Map<string, Promise<unknown>>();
+
+const CACHE_TTL = 60_000;              // 60s — fresh
+const CACHE_STALE_TTL = 600_000;        // 10min — serve stale, revalidate in background
+const MAX_CACHE_SIZE = 500;             // Max entries before LRU eviction
+const FETCH_TIMEOUT = 30_000;           // 30s per request
+const FETCH_RETRIES = 3;                // Max retry attempts
+const REVALIDATION_TTL_MS = 60_000;     // 1min — dedup revalidation calls
+const REQUEST_DEDUP_WINDOW = 10_000;    // 10s — dedup concurrent identical requests
+
+// Change map — separate cache for 7d change enrichment of ExchangePairs
+const CHANGE_MAP_TTL = 5 * 60_000;      // 5min
+const CHANGE_MAP_STALE_TTL = 20 * 60_000; // 20min
+// buildCurrencyChangeMap() fetches ALL ByCategory currencies and builds
+// Map<apiId, CurrencyChangeEntry> for enriching ExchangePair 7d changes
 
 async function cachedFetch<T>(url: string, options?: { maxRetries?: number }): Promise<T> {
   const hit = cache.get(url);
@@ -898,8 +1321,7 @@ async function cachedFetch<T>(url: string, options?: { maxRetries?: number }): P
   // Cache miss or very stale — fetch
   const fetchPromise = doFetch<T>(url, maxRetries)
     .catch((err) => {
-      // Last resort — return very stale data if available
-      if (hit) { return hit.data as T; }
+      if (hit) { return hit.data as T; }  // Last resort — very stale data
       throw err;
     })
     .finally(() => pendingRequests.delete(url));
@@ -912,25 +1334,17 @@ async function cachedFetch<T>(url: string, options?: { maxRetries?: number }): P
 ### 6.2 Backend Cache (Poe2ScoutProvider)
 
 ```python
-class Poe2ScoutProvider:
+class Poe2ScoutProvider(BaseDataProvider):
     def __init__(self):
         self._metadata_cache: dict[str, tuple[list[CurrencyInfo], float]] = {}
         self._metadata_cache_ttl = 3600.0  # 1 hour
         self._exchange_cache: dict[str, tuple[dict, float]] = {}
         self._exchange_cache_ttl = 300.0  # 5 minutes
-
-    async def get_currency_metadata(self, league: str) -> list[CurrencyInfo]:
-        if league in self._metadata_cache:
-            cached_meta, cached_ts = self._metadata_cache[league]
-            if time.time() - cached_ts < self._metadata_cache_ttl:
-                return cached_meta
-
-        result = await self._fetch_all_categories(league)
-        self._metadata_cache[league] = (result, time.time())
-        return result
+        # Uses httpx.AsyncClient with 10s timeout
+        # Semaphore for concurrency control (max 5)
+        # 2 retries on 429 status
 
     def invalidate_cache(self, league: str = None):
-        """Explicit cache invalidation."""
         if league:
             self._metadata_cache.pop(league, None)
             self._exchange_cache.pop(league, None)
@@ -939,32 +1353,23 @@ class Poe2ScoutProvider:
             self._exchange_cache.clear()
 ```
 
-### 6.3 DataSnapshot Cache
+### 6.3 SnapshotManager Cache
 
 ```python
-@dataclass
-class DataSnapshot:
-    _exchange_rates: dict[str, ExchangeRate]
-    _currencies: list[CurrencyInfo]
-    _price_histories: dict[str, list[PricePoint]]
-    _clusters: dict[str, str]
-    _last_refresh: float
-    _refreshing: bool = False
-
-    SNAPSHOT_TTL = 300.0  # 5 minutes
-
-    def is_stale(self) -> bool:
-        return time.time() - self._last_refresh > self.SNAPSHOT_TTL
-
-    def is_refreshing(self) -> bool:
-        return self._refreshing
-
-    async def get_or_refresh(self) -> 'DataSnapshot':
-        """Get snapshot, refresh if stale or not refreshing."""
-        if self.is_stale() and not self.is_refreshing():
-            await self.refresh()
-        return self
+class SnapshotManager:
+    # TTL: config.cache_ttl_prices_minutes * 60 (default: 5 min)
+    # Async lock to prevent concurrent refresh
+    # Stale fallback: if refresh fails, serve stale snapshot
+    # Computes ~16 coordinated API requests per refresh
 ```
+
+### 6.4 Additional Backend Caches
+
+| Cache | File | TTL | Eviction |
+|-------|------|-----|----------|
+| `PipelineCache` | `backend/data/pipeline_cache.py` | Configurable per entry | TTL expiry |
+| `DailyStatsCache` | `backend/data/daily_stats_cache.py` | LRU + per-entry TTL | LRU when full + TTL expiry |
+| `ModelStore` | `backend/predictors/model_store.py` | Persisted to disk | Manual / scheduler (every 30 min) |
 
 ---
 
@@ -973,17 +1378,13 @@ class DataSnapshot:
 ### 7.1 Network Errors (poe2api.ts)
 
 ```typescript
-// unwrapNetworkError: walk AggregateError/cause chain
-// ETIMEDOUT/ECONNRESET → retry with backoff
-// ECONNREFUSED/ENOTFOUND → throw with hint
-
 const FETCH_RETRIES = 3;
 const FETCH_TIMEOUT = 30_000;
-const RETRY_BACKOFF = [1000, 2000, 4000]; // ms
+const RETRY_BACKOFF = [1000, 2000, 4000]; // ms (with jitter)
 
 // 4xx errors (client errors) → don't retry, throw immediately
 // AbortError (timeout) → throw immediately
-// ECONNRESET/EPIPE/ETIMEDOUT → retry with backoff
+// ECONNRESET/EPIPE/ETIMEDOUT → retry with backoff + jitter
 // ECONNREFUSED/ENOTFOUND → throw with hint
 ```
 
@@ -991,59 +1392,37 @@ const RETRY_BACKOFF = [1000, 2000, 4000]; // ms
 
 | Function | Fallback |
 |----------|----------|
-| `getRealms()` | `FALLBACK_REALMS` (poe2, pc, xbox, sony) |
+| `getRealms()` | `FALLBACK_REALMS` (4 entries: poe2, pc, xbox, sony) |
 | `getLeagues()` | `FALLBACK_LEAGUES` (per realm) |
-| `getItemCategories()` | `[{name: "all", displayName: "All", count: 0}]` |
-| `getReferenceCurrencies()` | `[{apiId: "exalted", ...}, {apiId: "divine", ...}, {apiId: "chaos", ...}]` |
+| `getItemCategories()` | `FALLBACK_CATEGORIES` — `[{name: "all", displayName: "All", count: 0}]` |
+| `getReferenceCurrencies()` | `FALLBACK_REFERENCE_CURRENCIES` — exalted, divine, chaos |
 | All other functions | Return empty array `[]` |
+| Dynamic fallbacks | `dynamicRealmsFallback`, `dynamicLeaguesFallback` (auto-cached from live API) |
 
-### 7.2 Backend Offline Detection (flipper-proxy.ts)
+### 7.2 Backend Proxy (flipper-proxy.ts)
 
 ```typescript
-interface proxyOptions {
-  offlineFallback?: T;
-  timeout?: number;
-}
+const FLIPPER_API_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
 
-async function proxyWithFallback<T>(
-  path: string,
-  options: proxyOptions,
-  searchParams: URLSearchParams
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeout ?? 15000);
+async function proxyToFlipper(
+  path: string, searchParams?, method?, body?, maxRetries?
+): Promise<Response>
+  // Default: method="GET", maxRetries=1
+  // Timeout: AbortSignal.timeout(15_000)
+  // Deduplicates concurrent GET requests
+  // Error mapping:
+  //   503 → backend_insufficient_data
+  //   422 → insufficient_data
+  //   5xx → server_error
+  //   timeout → backend_timeout
+  //   ECONNREFUSED → backend_offline
+  //   ECONNRESET → backend_connection_reset
 
-  try {
-    const res = await fetch(FASTAPI_URL + path + "?" + searchParams.toString(), {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      return Response.json(
-        { error_type: mapStatusToErrorType(res.status), ...body },
-        { status: res.status }
-      );
-    }
-    return Response.json(await res.json());
-  } catch (err) {
-    clearTimeout(timeoutId);
-    if (isConnectionError(err)) {
-      return Response.json(
-        { error_type: "backend_offline", detail: "Backend not reachable" },
-        { status: 503 }
-      );
-    }
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      return Response.json(
-        { error_type: "backend_timeout", detail: "Backend request timed out" },
-        { status: 504 }
-      );
-    }
-    return Response.json(options.offlineFallback ?? { error: "Unknown error" }, { status: 500 });
-  }
-}
+async function proxyWithFallback(
+  path: string, fallback, searchParams?, method?, body?
+): Promise<Response>
+  // Returns 200 with fallback data instead of error responses
+  // ProxyFallbackOptions: { offlineFallback, insufficientDataFallback?, catch503? }
 ```
 
 ### 7.3 Error Types Reference
@@ -1057,7 +1436,7 @@ type FlipperErrorType =
   | "insufficient_data"         // General insufficient data
   | "server_error"              // 5xx from backend
   | "upstream_error"            // POE2Scout API error
-  | "validation_error";         // Invalid parameters
+  // Note: "validation_error" removed — 422 now maps to "insufficient_data"
 
 class FlipperApiError extends Error {
   status: number;
@@ -1071,33 +1450,21 @@ class FlipperApiError extends Error {
 
 ## §8. WebSocket Real-Time Updates
 
-### 8.1 Connection Flow
+### 8.1 Per-Endpoint WebSocket Channels
 
-```
-Browser
-    │
-    ├─→ Connect to wss://backend/ws?token=xxx
-    │        │
-    │        ws_manager.register(client, channels)
-    │        │
-    │        Subscribe to channels:
-    │        ├─→ prices: bid/ask updates
-    │        ├─→ flips: new opportunity alerts
-    │        ├─→ events: market events
-    │        └─→ snapshot: periodic market state
-    │
-    └─→ Receive messages
-             │
-             Message format:
-             {
-               channel: string,
-               event: "update" | "alert" | "snapshot",
-               data: unknown,
-               timestamp: ISO8601
-             }
-```
+> **⚠️ CORRECTION (2026-06-02):** The old version described a single `/ws` endpoint
+> with channel subscriptions. The actual implementation uses **per-endpoint WebSocket
+> routes** for more granular live updates.
 
-### 8.2 Server-Side Broadcasting
+| WebSocket Route | Purpose | Data Format |
+|----------------|---------|-------------|
+| `/ws/storage-value/{currency}` | Live storage value updates | `{ currency, current_price, projected_price, ... }` |
+| `/ws/forecast/{currency}` | Live forecast updates | `{ currency, forecast_data, ... }` |
+| `/ws/anomalies` | Live anomaly alerts | `{ currency, alert_score, direction, ... }` |
+| `/ws/flips` | Live flip opportunity alerts | `{ opportunities, ... }` |
+| `/ws/events` | Live event notifications | `{ event_type, description, ... }` |
+
+### 8.2 Server-Side Connection Manager
 
 ```python
 # routes_ws.py
@@ -1122,20 +1489,8 @@ class ConnectionManager:
                 await connection.send_json(message)
             except WebSocketDisconnect:
                 disconnected.append(connection)
-
-        # Clean up disconnected
         for conn in disconnected:
             self.disconnect(conn, [channel])
-
-# Broadcasting from scheduler (every 5 min)
-async def on_snapshot_refreshed(snapshot: DataSnapshot):
-    await ws_manager.broadcast("snapshot", {
-        "event": "snapshot",
-        "data": {
-            "prices": snapshot.get_prices(),
-            "timestamp": datetime.utcnow().isoformat()
-        }
-    })
 ```
 
 ---
@@ -1144,27 +1499,39 @@ async def on_snapshot_refreshed(snapshot: DataSnapshot):
 
 ### 9.1 Event Types
 
+> **⚠️ CORRECTION (2026-06-02):** The old version listed game-event types
+> (`league_start`, `flashback`, `race`, `tempest`, `invasion`). The actual
+> backend uses these event type enums:
+
 | Type | Description | Impact on Scoring |
 |------|-------------|-------------------|
-| `league_start` | New league launched | Phase multiplier = 2.0 |
-| `flashback` | Flashback league | Phase multiplier = 1.5 |
-| `race` | Race event | Phase multiplier = 1.3 |
-| `tempest` |特定类型的天气事件 | Momentum boost +0.1 |
-| `invasion` | Boss invasion | Volatility boost x1.5 |
-| `custom` | User-defined event | Configurable multiplier |
+| `MAJOR_PATCH` | Major game patch release | Phase reset, volatility boost |
+| `MINOR_PATCH` | Minor patch/hotfix | Moderate volatility boost |
+| `STREAMER_HYPE` | Streamer-driven demand spike | Momentum boost for affected currencies |
+| `OTHER` | Custom/user-defined event | Configurable via metadata |
 
 ### 9.2 Event Schema
 
 ```python
-class Event(BaseModel):
-    event_id: str           # Unique identifier (e.g., "evt_2024_001")
-    type: str                # Event type from table above
-    description: str         # Human-readable description
-    created_at: datetime
+class MarketEvent(BaseModel):
+    event_type: EventType        # MAJOR_PATCH | MINOR_PATCH | STREAMER_HYPE | OTHER
+    description: str
+    affected_currencies: list[str] = []
+    timestamp: datetime
     expires_at: datetime
     is_active: bool = True
-    metadata: dict = {}       # Type-specific data
-                            # e.g., {"multiplier": 2.0, "affected_currencies": ["divine", "exalted"]}
+    metadata: dict = {}          # Type-specific data
+                                 # e.g., {"multiplier": 2.0, "affected_currencies": ["divine"]}
+```
+
+### 9.3 Event Manager
+
+```python
+# backend/economy/events.py — EventManager
+# SQLite-backed CRUD with automatic pruning
+# Pruning interval: config.event_pruning_interval_minutes (default: 15 min)
+# Default expiry: config.events.default_expiry_hours (default: 48h)
+# Event score penalty: config.events.event_score_penalty (default: 0.5)
 ```
 
 ---
@@ -1177,17 +1544,14 @@ class Event(BaseModel):
 Frontend API Routes (src/app/api/)
 │
 ├── poe2/                          # Direct POE2Scout proxy (no backend required)
+│   ├── health/route.ts            → getHealth()
 │   ├── realms/route.ts            → getRealms()
-│   ├── leagues/route.ts           → getLeagues(realm)
-│   ├── exchange/route.ts          → getExchangeSnapshot(realm, league)
+│   ├── leagues/route.ts           → getLeagues(realm, defaultLeagueValue)
+│   ├── exchange/route.ts          → getSnapshotPairs(realm, league)
 │   ├── currencies/route.ts        → getCurrenciesByCategory(...)
 │   ├── uniques/route.ts           → getUniquesByCategory(...)
-│   ├── items/route.ts              → getItems(realm, league)
-│   ├── overview/route.ts          → LandingSplashInfo (top items, top currencies)
-│   ├── snapshot-history/route.ts  → getSnapshotHistory(realm, league, hours)
-│   ├── currency-pair-history/route.ts → getCurrencyPairHistory(realm, league, id1, id2, hours)
-│   ├── reference-currencies/route.ts  → getReferenceCurrencies(realm, league)
-│   └── health/route.ts            → Health check (POE2Scout reachability)
+│   ├── items/route.ts             → getItems(realm, league)
+│   └── overview/route.ts          → Combined: getExchangeSnapshot + getSnapshotHistory + getReferenceCurrencies
 │
 └── flipper/                       # FastAPI backend proxy (requires backend)
     ├── health/route.ts            → GET /api/health
@@ -1197,16 +1561,22 @@ Frontend API Routes (src/app/api/)
     ├── heatmap/route.ts           → GET /api/prices/heatmap
     ├── flips/route.ts             → GET /api/arbitrage/flips
     ├── triangular/route.ts        → GET /api/arbitrage/triangular
+    ├── tiers/route.ts             → GET /api/tiers
+    ├── recipes/route.ts           → GET /api/recipes
     ├── forecast/[currency]/route.ts → GET /api/forecast/{currency}
     ├── anomalies/route.ts         → GET /api/anomalies
     ├── storage-value/[currency]/route.ts → GET /api/storage-value/{currency}
+    ├── benchmarks/[currency]/route.ts → GET /api/benchmarks/{currency_api_id}
     ├── portfolio/route.ts         → GET /api/portfolio
+    ├── portfolio/correlation/route.ts → GET /api/portfolio/correlation
     ├── portfolio/frontier/route.ts → GET /api/portfolio/frontier
     ├── portfolio/rebalance/route.ts → POST /api/portfolio/rebalance
-    ├── recipes/route.ts           → GET /api/recipes
     ├── events/route.ts            → GET/POST /api/events
-    ├── events/[eventId]/route.ts  → GET/PUT/DELETE /api/events/{id}
-    └── ws/route.ts                → WebSocket upgrade
+    ├── events/[eventId]/route.ts  → DELETE /api/events/{eventId}
+    ├── events/[eventId]/deactivate/route.ts → POST /api/events/{eventId}/deactivate
+    ├── ws/info/route.ts           → WebSocket connection info
+    ├── auth/start/route.ts        → GET /api/auth/start  (OAuth2 stub, not configured)
+    └── auth/callback/route.ts     → GET /api/auth/callback (OAuth2 stub, not configured)
 ```
 
 ### 10.2 Backend Routes (FastAPI)
@@ -1214,18 +1584,24 @@ Frontend API Routes (src/app/api/)
 ```
 FastAPI Routes (backend/api/)
 │
-├── routes_prices.py          # /api/prices, /api/prices/heatmap, /api/currencies
+├── main.py                    # /api/health — health check with provider status
+├── routes_prices.py           # /api/phase, /api/currencies, /api/prices,
+│                              # /api/prices/heatmap, /api/prices/{pair},
+│                              # /api/tiers, /api/benchmarks/{currency_api_id}
 ├── routes_arbitrage.py        # /api/arbitrage/flips, /api/arbitrage/triangular
-├── routes_forecast.py         # /api/forecast/{currency}
-├── routes_portfolio.py        # /api/portfolio, /api/portfolio/frontier, /api/portfolio/rebalance
-├── routes_events.py           # /api/events, /api/events/{id}
+├── routes_forecast.py         # /api/forecast/{currency}, /api/forecast/{currency}/stl
+├── routes_portfolio.py        # /api/portfolio, /api/portfolio/rebalance,
+│                              # /api/portfolio/frontier, /api/portfolio/correlation
+├── routes_events.py           # /api/events (GET/POST), /api/events/summary (GET),
+│                              # /api/events/{event_id} (GET/DELETE),
+│                              # /api/events/{event_id}/deactivate (POST)
+├── routes_recipes.py          # /api/recipes (GET), /api/recipes/definitions (GET)
 ├── routes_anomalies.py        # /api/anomalies
 ├── routes_storage_value.py    # /api/storage-value/{currency}
-├── routes_phase.py            # /api/phase
-├── routes_recipes.py          # /api/recipes
-├── routes_ws.py               # WebSocket /ws
-├── routes_auth.py             # REMOVED — OAuth2 stub was never configured
-└── main.py                    # App entry, CORS, lifespan events
+├── routes_auth.py             # /api/auth/start, /api/auth/callback, /api/auth/status
+│                              # ⚠️ EXISTS but NOT registered in app — effectively dead code
+└── routes_ws.py               # WebSocket: /ws/storage-value/{currency}, /ws/forecast/{currency},
+                               # /ws/anomalies, /ws/flips, /ws/events
 ```
 
 ### 10.3 POE2Scout API Paths
@@ -1233,22 +1609,27 @@ FastAPI Routes (backend/api/)
 ```
 POE2Scout API (base: https://api.poe2scout.com/api)
 │
-├── Realms                                          # GET — list realms (snake_case!)
-├── {realm}/Leagues                                 # GET — list leagues
-├── {realm}/Leagues/{league}/SnapshotPairs          # GET — all currency pairs
-├── {realm}/Leagues/{league}/SnapshotHistory        # GET — market history
-├── {realm}/Leagues/{league}/ExchangeSnapshot        # GET — exchange overview
-├── {realm}/Leagues/{league}/ReferenceCurrencies    # GET — bridge currencies
-├── {realm}/Leagues/{league}/Items                  # GET — all items
-├── {realm}/Leagues/{league}/Items/Categories       # GET — item categories
-├── {realm}/Leagues/{league}/Items/{itemId}        # GET — single item
-├── {realm}/Leagues/{league}/Items/{itemId}/History # GET — price history (⚠️ multiple of 4)
-├── {realm}/Leagues/{league}/Items/{itemId}/DailyStatsHistory # GET — OHLCV
-├── {realm}/Leagues/{league}/Currencies/ByCategory # GET — currencies (paginated)
-├── {realm}/Leagues/{league}/Currencies/{apiId}    # GET — single currency
-├── {realm}/Leagues/{league}/Currencies/Pairs/{id1}/{id2}/History # GET — pair history
-├── {realm}/Leagues/{league}/Uniques/ByCategory     # GET — uniques (paginated)
-└── Realms/{realm}/Filters                           # GET — realm filters
+├── /                                           # GET — root
+├── /health/live                                # GET — liveness probe
+├── /health/ready                               # GET — readiness probe
+├── /Realms                                     # GET — list realms (snake_case!)
+├── /Realms/{Realm}/Filters                     # GET — realm search filters
+├── /Realms/{Realm}/LandingSplashInfo           # GET — landing splash data
+├── /{Realm}/Leagues                            # GET — list leagues
+├── /{Realm}/Leagues/{LeagueName}/SnapshotPairs # GET — all currency pairs
+├── /{Realm}/Leagues/{LeagueName}/SnapshotHistory # GET — market history
+├── /{Realm}/Leagues/{LeagueName}/ExchangeSnapshot # GET — exchange overview
+├── /{Realm}/Leagues/{LeagueName}/ReferenceCurrencies # GET — bridge currencies
+├── /{Realm}/Leagues/{LeagueName}/Items         # GET — all items
+├── /{Realm}/Leagues/{LeagueName}/Items/Categories # GET — item categories
+├── /{Realm}/Leagues/{LeagueName}/Items/{ItemId} # GET — single item
+├── /{Realm}/Leagues/{LeagueName}/Items/{ItemId}/History # GET — price history (⚠️ LogCount multiple of 4)
+├── /{Realm}/Leagues/{LeagueName}/Items/{ItemId}/DailyStatsHistory # GET — OHLCV
+├── /{Realm}/Leagues/{LeagueName}/Items/PriceHistory # GET — bulk price histories
+├── /{Realm}/Leagues/{LeagueName}/Currencies/ByCategory # GET — currencies (paginated)
+├── /{Realm}/Leagues/{LeagueName}/Currencies/{ApiId} # GET — single currency
+├── /{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History # GET — pair history
+└── /{Realm}/Leagues/{LeagueName}/Uniques/ByCategory # GET — uniques (paginated)
 ```
 
 ---
@@ -1265,6 +1646,8 @@ POE2Scout API (base: https://api.poe2scout.com/api)
 
 3. **Never use string ApiId where numeric ItemId is required** — the CurrencyPairHistory endpoint expects integers.
 
+4. **`/api/flipper/auth/*` routes exist but backend auth is not configured** — these are dead code.
+
 ### §11.2 Response Shape Pitfalls
 
 1. **PriceLogs are newest-first** — always sort before computing changes.
@@ -1272,20 +1655,28 @@ POE2Scout API (base: https://api.poe2scout.com/api)
 3. **League IsCurrent is always false** — use realm's default_league_value.
 4. **Some numeric fields come as strings** — use safeParseFloat() or Number().
 5. **Pagination metadata differs** — API uses `CurrentPage/Pages/Total`, frontend uses `page/totalPages/totalItems`.
+6. **RelativePrice "0E-8"** — POE2Scout returns scientific-notation zero; safeParseFloat returns null.
+7. **RawUniqueItem has UniqueItemId** — different from RawCurrencyItem's CurrencyItemId.
+8. **GetCategoriesResponse has two arrays** — `UniqueCategories` and `CurrencyCategories` (not a flat list).
 
 ### §11.3 Type Mismatches
 
 1. **Frontend uses camelCase** — API returns PascalCase. Transformation happens in poe2api.ts.
 2. **Backend uses snake_case** — Python Pydantic models use snake_case.
 3. **ExchangePair uses numeric ItemId** — not string ApiId for history calls.
-4. **FlipOpportunity.spread is raw** — gold fees are NOT deducted (design decision).
+4. **FlipOpportunity.spread_after_fees is DEPRECATED** — kept for backward compatibility only.
+5. **OHLCVCandle is exported from poe2api.ts** — not types.ts (breaks convention).
+6. **Backend CurrencyTier uses tier_label (snake_case)** — frontend expects tierLabel (camelCase). Proxy route must transform.
 
 ### §11.4 Caching Assumptions
 
 1. **Server-side cache in poe2api.ts** — same request returns same data for 60s.
-2. **Backend DataSnapshot refreshes every 5 min** — analytics lag behind real-time.
+2. **Backend SnapshotManager refreshes every 30 min** (configurable) — analytics lag behind real-time.
 3. **HistoricalStore is SQLite** — persists across restarts, used for forecasting.
 4. **Metadata cache in Poe2ScoutProvider** — 1-hour TTL to avoid N+1 requests.
+5. **Change map cache** — 5min TTL, 20min stale TTL; used to enrich ExchangePair 7d changes.
+6. **LightGBM models persisted to disk** — survive backend restarts; retrained every 6 hours.
+7. **Max cache size is 500 entries** — LRU eviction when exceeded.
 
 ### §11.5 Error Handling Patterns
 
@@ -1293,52 +1684,55 @@ POE2Scout API (base: https://api.poe2scout.com/api)
 2. **Backend offline detection** — check `/api/flipper/health` on mount.
 3. **Graceful degradation** — market tabs work without backend, flipper tabs show offline message.
 4. **Retry with backoff** — transient network errors retry 3 times before failing.
+5. **Stale-while-revalidate** — serve stale data immediately, fetch fresh in background.
+
+### §11.6 Known Discrepancies
+
+1. **Two overlapping helper files:** `src/components/dashboard/flips-helpers.ts` and `src/lib/flipper-helpers.ts` both export `scoreColor()` with different thresholds/Tailwind classes.
+2. **League name default mismatch:** Backend config defaults to `"vaal"`, frontend Zustand store defaults to `"runes"`.
+3. **Backend `FeesConfig` is empty** (`pass`) — gold fee removal left it as a placeholder.
+4. **`routes_auth.py` exists in backend but is NOT registered in app** — effectively dead code.
+5. **`OfficialTradeProvider` exists** but requires `GGG_CLIENT_ID`/`GGG_CLIENT_SECRET` env vars that are "never configured" — dead code unless manually set.
 
 ---
 
 ## §12. Quick Reference: Data → Component
 
-### 12.1 Overview Tab
+### 12.1 Market Overview Tab
 
 ```
-src/components/dashboard/OverviewTab.tsx
+src/components/dashboard/MarketOverview.tsx
     │
-    ├─→ getRealms() → realm selector
-    ├─→ getLeagues(realm) → league selector
-    ├─→ getSnapshotHistory(league) → chart (totalVolume, totalMarketCap over time)
-    └─→ getSnapshotPairs(league) → top pairs table (enriched with history for top 20)
+    ├─→ GET /api/poe2/overview → exchange snapshot, snapshot history, reference currencies
+    ├─→ Realm/league selectors (from store)
+    └─→ getSnapshotHistory() → chart (volume, marketCap over time)
 ```
 
 ### 12.2 Currencies Tab
 
 ```
-src/components/dashboard/CurrenciesTab.tsx
+src/components/dashboard/VirtualCurrencyGrid.tsx
     │
     ├─→ getItemCategories() → category selector
     ├─→ getCurrenciesByCategory(category, page) → virtual scrolling list
     │       │
-    │       Each row:
-    │       ├─→ iconUrl (item icon)
-    │       ├─→ name (item name)
-    │       ├─→ price (current price)
-    │       ├─→ changePercent (24h change, from PriceLogs)
-    │       ├─→ volume (24h volume, from PriceLogs)
-    │       └─→ Click → detail panel
-    └─→ Detail panel:
+    │       Each row: iconUrl, name, price, changePercent, volume
+    │       Click → DetailDialog
+    └─→ DetailDialog:
             ├─→ getItemHistory(itemId) → line chart
-            └─→ getItemDailyStats(itemId) → candlestick chart
+            └─→ getItemDailyStats(itemId) → candlestick chart (with SMA/EMA/RSI/Bollinger overlays)
 ```
 
 ### 12.3 Uniques Tab
 
 ```
-src/components/dashboard/UniquesTab.tsx
+src/components/dashboard/UniqueTable.tsx
     │
     ├─→ getItemCategories() → category selector
     ├─→ getUniquesByCategory(category, page, search) → paginated list with search
     │       │
     │       Each row: iconUrl, name, price
-    └─→ Detail panel:
+    └─→ DetailDialog:
             ├─→ getItemHistory(itemId) → line chart
             └─→ getItemDailyStats(itemId) → candlestick chart
 ```
@@ -1346,52 +1740,105 @@ src/components/dashboard/UniquesTab.tsx
 ### 12.4 Exchange Tab
 
 ```
-src/components/dashboard/ExchangeTab.tsx
+src/components/dashboard/ExchangeTable.tsx
     │
-    ├─→ getExchangeSnapshot() → reference currency selector
-    ├─→ getSnapshotPairs() → pairs table (top 20 enriched with history)
+    ├─→ getSnapshotPairs() → pairs table (enriched with 7d changes)
     │       │
     │       Each row: currency1Name/currency2Name, relativePrice, volume, changePercent
-    │       Click → getCurrencyPairHistory(id1, id2) → chart
+    │       Click → PairDetailDialog
+    ├─→ PairDetailDialog:
+    │       ├─→ getCurrencyPairHistory(id1, id2) → chart
+    │       └─→ getPairDailyStats() → OHLCV chart
     └─→ getReferenceCurrencies() → reference currency pills
 ```
 
-### 12.5 Flips Tab (Requires Backend)
+### 12.5 Arbitrage Tab (Requires Backend)
+
+```
+src/components/dashboard/ArbitrageTab.tsx
+    │
+    ├─→ GET /api/flipper/health → check backend status
+    ├─→ GET /api/flipper/flips → scored opportunities (with quantized_analysis)
+    ├─→ GET /api/flipper/triangular → triangular arbitrage cycles
+    └─→ GET /api/flipper/recipes → vendor recipe profits
+```
+
+### 12.6 Flips Tab (Requires Backend)
 
 ```
 src/components/dashboard/FlipsTab.tsx
     │
     ├─→ GET /api/flipper/health → check backend status
-    │       │
-    │       If offline: show FlipperBackendStatusCard
-    │       If online: continue
-    │
-    ├─→ GET /api/flipper/prices → all prices with clusters
-    │
     ├─→ GET /api/flipper/flips → scored opportunities
     │       │
-    │       Each row: currency, score (color-coded), spread, volume_24h, momentum, cluster
-    │
+    │       Each row: currency, score (color-coded), spread, volume_24h,
+    │                 momentum, cluster, quantized_analysis
+    ├─→ GET /api/flipper/tiers → tier classifications
     ├─→ GET /api/flipper/events → active market events
-    │
-    └─→ WebSocket /ws → live price updates
+    └─→ FlipsDetailDialog → flip detail + storage value data
 ```
 
-### 12.6 Portfolio Tab (Requires Backend)
+### 12.7 Forecast Tab (Requires Backend)
+
+```
+src/components/dashboard/ForecastTab.tsx
+    │
+    ├─→ GET /api/flipper/forecast/{currency} → 3-model forecast (SARIMA, Holt-Winters, LightGBM)
+    ├─→ GET /api/flipper/anomalies → anomaly alerts (Z-score, MACD, RSI, STL, momentum)
+    └─→ GET /api/flipper/currencies → currency list for selector
+```
+
+### 12.8 Portfolio Tab (Requires Backend)
 
 ```
 src/components/dashboard/PortfolioTab.tsx
     │
-    ├─→ GET /api/flipper/portfolio → optimized weights
-    │       │
-    │       Show: pie chart of weights, expected risk, correlation warnings
-    │
-    ├─→ GET /api/flipper/portfolio/frontier → efficient frontier
-    │       │
-    │       Show: scatter plot of risk vs return
-    │
+    ├─→ GET /api/flipper/portfolio → optimized weights (pie chart)
+    ├─→ GET /api/flipper/portfolio/frontier → efficient frontier (scatter plot)
+    ├─→ GET /api/flipper/portfolio/correlation → correlation matrix
     └─→ POST /api/flipper/portfolio/rebalance → apply rebalance
 ```
+
+### 12.9 Currency Graph Tab (Requires Backend)
+
+```
+src/components/dashboard/CurrencyGraphTab.tsx
+    │
+    ├─→ GET /api/flipper/currencies → currency list
+    ├─→ GET /api/flipper/forecast/{currency} → forecast for selected currency
+    └─→ GET /api/flipper/storage-value/{currency} → hold/sell decision
+```
+
+### 12.10 Watchlist Tab
+
+```
+src/components/dashboard/WatchlistTab.tsx
+    │
+    ├─→ Exchange pair data via fetchApi
+    └─→ Zustand store watchlist (persisted)
+```
+
+### 12.11 Recipes Tab (Requires Backend)
+
+```
+src/components/dashboard/RecipesTab.tsx
+    │
+    └─→ GET /api/flipper/recipes → profitable vendor recipes
+```
+
+### 12.12 Utility Components
+
+| Component | Data Sources |
+|-----------|-------------|
+| `MarketHeatmap` | 24h price change data |
+| `TierDriftTracker` | GET /api/flipper/tiers — tier changes over time |
+| `TakeProfitCalculator` | Quantized analysis from flip data |
+| `VolumeLiquidityIndicators` | Volume & liquidity scores |
+| `Sparkline` | Inline mini chart from price history |
+| `CandlestickChart` | OHLCV with SMA/EMA/RSI/Bollinger overlays (src/lib/technical-indicators.ts) |
+| `FlipperStickyBar` | Market sentiment + top flips |
+| `FlipperBackendStatusCard` | Backend health status |
+| `EventsSidebar` | Event management CRUD |
 
 ---
 
@@ -1478,50 +1925,38 @@ if (error) {
 }
 ```
 
-### A.5 Not Using Safe Parse for Numeric Strings
+### A.5 Using DEPRECATED spread_after_fees
 
 **WRONG:**
 ```typescript
-const price = data.CurrentPrice; // String "123.45" — causes type issues
-const volume = data.VolumeTraded; // String "1000000" — arithmetic fails
+// spread_after_fees is DEPRECATED
+const profit = flip.spread_after_fees * flip.volume_24h;
 ```
 
 **CORRECT:**
 ```typescript
-const price = safeParseFloat(data.CurrentPrice); // 123.45
-const volume = safeParseFloat(data.VolumeTraded) || 0; // 1000000
+// Use raw spread (gold fees excluded by design decision)
+const profit = flip.spread * flip.volume_24h;
+// Or use quantized analysis for lot-level profit
+const qAnalysis = flip.quantized_analysis;
+if (qAnalysis) {
+  const optimalLot = qAnalysis.minProfitableLot;
+  const profitPct = qAnalysis.optimalLotProfitPct;
+}
 ```
 
----
+### A.6 Confusing Realm Path Parameter
 
-## Appendix B: Environment Variables
+**WRONG:**
+```typescript
+// Using game_api_id as realm path parameter
+const url = BASE_URL + `/poe2/Leagues`;  // may work but is unreliable
+```
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `POE2_API_BASE_URL` | `https://api.poe2scout.com/api` | POE2Scout API base URL |
-| `FASTAPI_URL` | `http://localhost:8000` | FastAPI backend URL |
-| `CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Allowed CORS origins |
-| `DATABASE_URL` | `sqlite:///./poe2scout.db` | SQLite database path |
-| `SNAPSHOT_REFRESH_INTERVAL` | `300` | Snapshot refresh interval in seconds |
-| `HISTORY_RETENTION_DAYS` | `30` | Days to retain historical prices |
-| `WS_HEARTBEAT_INTERVAL` | `30` | WebSocket heartbeat in seconds |
-
----
-
-## Appendix C: Glossary
-
-| Term | Definition |
-|------|------------|
-| **PriceLog** | Individual price observation with timestamp, price, quantity |
-| **Momentum** | Mean log-return over lookback period (positive=up, negative=down) |
-| **Volatility** | Standard deviation of log-returns (higher=more volatile) |
-| **Spread** | (ask - bid) / mid_price — measure of liquidity |
-| **Cluster** | Classification: stable/moderate/volatile_illiquid |
-| **RelativePrice** | Price expressed in reference currency (e.g., chaos) |
-| **Triangular Arbitrage** | Profitable cycle through 3 currencies |
-| **Risk Parity** | Portfolio optimization where each asset contributes equally to risk |
-| **Ledoit-Wolf Shrinkage** | Method to improve covariance matrix estimation |
-
----
-
-*This document is the single source of truth for data flows in the PoE2 Market Dashboard. Update this file when adding new endpoints, changing data transformations, or modifying algorithms.*
+**CORRECT:**
+```typescript
+// Use the 'value' field from /Realms response
+// For PoE2: value = "poe2/poe2", but "poe2" also typically works
+const realmValue = realm.name;  // extracted from RealmOptionResponse.value
+const url = BASE_URL + `/${realmValue}/Leagues`;
+```

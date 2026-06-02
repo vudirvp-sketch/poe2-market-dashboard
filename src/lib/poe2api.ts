@@ -919,7 +919,8 @@ async function withConcurrencyLimit<T>(
 function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
   // ValueTraded, RelativePrice, StockValue are strings in API response
   // Fix 2.4: Use safeParseFloat instead of parseFloat() || 0
-  const relPrice = safeParseFloat(raw.CurrencyOneData.RelativePrice);
+  const relPrice1 = safeParseFloat(raw.CurrencyOneData.RelativePrice);
+  const relPrice2 = safeParseFloat(raw.CurrencyTwoData.RelativePrice);
   const volTraded = raw.CurrencyOneData.VolumeTraded ?? 0;
 
   return {
@@ -934,8 +935,9 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     currency2Name: raw.CurrencyTwo.Text,
     currency2IconUrl: raw.CurrencyTwo.IconUrl,
     currency2ItemId: raw.CurrencyTwo.ItemId,
-    price: relPrice,                          // Fix 2.4: now number | null
-    relativePrice: relPrice,                   // null when no trade data ("0E-8")
+    price: relPrice1,                          // Fix 2.4: now number | null
+    relativePrice: relPrice1,                   // null when no trade data ("0E-8")
+    currency2RelativePrice: relPrice2,           // price of currency2 in base currency — needed for cross-rate
     volume: volTraded,
     change: null,
     changePercent: null,

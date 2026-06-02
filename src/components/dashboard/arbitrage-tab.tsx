@@ -122,6 +122,14 @@ function estimateSpreadFromVolume(volume: number): number {
 
 const MAX_CYCLE_LEN = 5;
 
+/** Upper bound for realistic arbitrage profit in PoE2.
+ *  Anything above this threshold is a mathematical artifact caused by
+ *  stale data, missing volumes, or the inherent limitation that the API
+ *  provides only mid-prices (no separate bid/ask), so forward and reverse
+ *  rates from the same pair are exact mirrors. Real arbitrage in PoE2
+ *  is at most a few percent. */
+const MAX_REALISTIC_PROFIT_PCT = 50;
+
 function findArbitrageCycles(
   pairs: ExchangePair[],
   tradeSize: number,
@@ -149,13 +157,33 @@ function findArbitrageCycles(
     // §1: Estimate realistic spread from volume (§7.1.1 Canonical Formulas)
     const spreadPct = estimateSpreadFromVolume(pairVolume);
 
-    // Forward edge: c1 → c2 (bid-side: you sell c1 to buy c2)
-    const forwardRate = p.relativePrice ?? 0;
+    // ─── FIX: Correct cross-rate computation ───
+    // POE2Scout API returns RelativePrice for EACH currency in the pair,
+    // expressed in the base currency (e.g. Exalted). The cross-rate
+    // (how many units of c2 you get for 1 unit of c1) is:
+    //   crossRate(c1→c2) = relativePrice_c1 / relativePrice_c2
+    //
+    // Previously the code used `p.relativePrice` (price of c1 in base)
+    // as the forward rate and `1 / p.relativePrice` as the reverse rate.
+    // That produced nonsensical rates when c1 and c2 had very different
+    // base prices, leading to astronomical "profits" like +17,721,170%.
+    const c1Rel = p.relativePrice ?? 0;
+    const c2Rel = p.currency2RelativePrice ?? 0;
+
+    // Skip pairs where either relative price is missing or zero
+    if (c1Rel <= 0 || c2Rel <= 0) continue;
+
+    // Forward edge: c1 → c2 — you sell 1 c1, receive c1Rel/c2Rel units of c2
+    const forwardRate = c1Rel / c2Rel;
+    // Reverse edge: c2 → c1 — you sell 1 c2, receive c2Rel/c1Rel units of c1
+    const reverseRate = c2Rel / c1Rel;
+
     // Time-decay: hoursSinceSnapshot placeholder = 0 (API doesn't provide timestamps per pair)
     const hoursSinceSnapshot = 0;
     const decayFactor = Math.exp(-decayLambda * hoursSinceSnapshot);
 
-    if (forwardRate > 0) {
+    // Forward edge: c1 → c2 (bid-side)
+    {
       // Apply spread: forward rate reduced by half-spread (bid side)
       const spreadAdjustedRate = forwardRate * (1 - spreadPct / 2);
       const edge: GraphEdge = {
@@ -171,8 +199,7 @@ function findArbitrageCycles(
       adj.get(c1)!.push(edge);
     }
 
-    // Reverse edge: c2 → c1 (ask-side: you sell c2 to buy c1)
-    const reverseRate = forwardRate > 0 ? 1 / forwardRate : 0;
+    // Reverse edge: c2 → c1 (ask-side)
     if (reverseRate > 0 && isFinite(reverseRate)) {
       // Apply spread: reverse rate reduced by half-spread (ask side)
       const spreadAdjustedRate = reverseRate * (1 - spreadPct / 2);
@@ -199,10 +226,16 @@ function findArbitrageCycles(
   function dfs(node: string, startNode: string, product: number): void {
     if (path.length > MAX_CYCLE_LEN) return;
 
+    // Prune early: if product is already unrealistic, stop exploring
+    if (product > 1 + MAX_REALISTIC_PROFIT_PCT / 100 + 1) return;
+
     // Check for cycle back to start
     if (node === startNode && path.length >= 2) {
       // §2: Calculate profit as PERCENTAGE, not absolute values
       const grossProfitPct = (product - 1) * 100;
+
+      // Sanity check: reject unrealistic profits
+      if (grossProfitPct > MAX_REALISTIC_PROFIT_PCT) return;
 
       // Total spread cost across all edges in the cycle
       let totalSpreadPct = 0;
@@ -543,6 +576,23 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
           </div>
         </CardContent>
       </Card>
+
+      {/* ---- Client-mode limitation note ---- */}
+      {mode === "client" && (
+        <Card className="border-blue-500/30 bg-blue-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-blue-600 dark:text-blue-400">
+                {t("arbitrageClientModeNote")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("arbitrageClientModeNoteDesc")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ---- Gold fee warning (flipper mode) ---- */}
       {mode === "flipper" && (flipsData?.fee_warning?.gold_fees_excluded || triData?.fee_warning?.gold_fees_excluded) && (

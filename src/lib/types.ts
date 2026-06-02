@@ -89,6 +89,9 @@ export interface ExchangePair {
   price: number | null;
   /** Relative price of currency1 in base currency. null when no trade data ("0E-8"). */
   relativePrice: number | null;
+  /** Relative price of currency2 in base currency. null when no trade data ("0E-8").
+   *  Required for computing correct cross-rates: crossRate(c1→c2) = relativePrice / currency2RelativePrice. */
+  currency2RelativePrice: number | null;
   volume: number;
   change: number | null;
   changePercent: number | null;

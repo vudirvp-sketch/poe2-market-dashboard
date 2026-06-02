@@ -143,6 +143,8 @@ const en = {
   // Arbitrage
   arbitrageTheoretical: "Arbitrage opportunities are theoretical",
   arbitrageTheoreticalDesc: "Market prices change rapidly. Slippage is estimated using a square-root impact model. Actual results may vary. Always verify current rates before trading.",
+  arbitrageClientModeNote: "Client-mode uses simulated spreads",
+  arbitrageClientModeNoteDesc: "POE2Scout API provides only mid-prices, not separate bid/ask quotes. Forward and reverse rates from the same pair are exact mirrors, so genuine arbitrage cannot be detected client-side. For real arbitrage detection, use Flipper mode (requires backend).",
   scannedPairs: "Scanned Pairs",
   ofTotal: "of {0} total (volume \u2265 {1})",
   currencies: "Currencies",
