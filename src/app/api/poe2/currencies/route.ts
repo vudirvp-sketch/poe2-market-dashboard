@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrenciesByCategory, getCurrency, getCurrencyPairHistory, getItemDailyStats, getMultiTimeframeOHLCV } from "@/lib/poe2api";
+import {
+  getCurrenciesByCategory,
+  getCurrency,
+  getCurrencyPairHistory,
+  getItemDailyStats,
+  getMultiTimeframeOHLCV,
+  getPairMultiTimeframeOHLCV,
+  getPairDailyStats,
+} from "@/lib/poe2api";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -51,7 +59,29 @@ export async function GET(req: NextRequest) {
         if (!itemId) return NextResponse.json({ error: "itemId required" }, { status: 400 });
         const timeframe = (searchParams.get("timeframe") as "1H" | "4H" | "1W") || "4H";
         const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
-        const data = await getMultiTimeframeOHLCV(realm, league, itemId, timeframe, referenceCurrency);
+        const logCountParam = searchParams.get("logCount");
+        const logCount = logCountParam ? Number(logCountParam) : undefined;
+        const data = await getMultiTimeframeOHLCV(realm, league, itemId, timeframe, referenceCurrency, logCount);
+        return NextResponse.json(data);
+      }
+      // New: Pair-level OHLCV using both ItemIds for true RelativePrice
+      case "pairOhlcv": {
+        const id1 = searchParams.get("id1");
+        const id2 = searchParams.get("id2");
+        if (!id1 || !id2) return NextResponse.json({ error: "id1 and id2 required" }, { status: 400 });
+        const timeframe = (searchParams.get("timeframe") as "1H" | "4H" | "1W") || "4H";
+        const logCountParam = searchParams.get("logCount");
+        const logCount = logCountParam ? Number(logCountParam) : undefined;
+        const data = await getPairMultiTimeframeOHLCV(realm, league, id1, id2, timeframe, logCount);
+        return NextResponse.json(data);
+      }
+      // New: Pair-level daily stats using both ItemIds
+      case "pairDailyStats": {
+        const id1 = searchParams.get("id1");
+        const id2 = searchParams.get("id2");
+        if (!id1 || !id2) return NextResponse.json({ error: "id1 and id2 required" }, { status: 400 });
+        const dayCount = Number(searchParams.get("limit") || 60);
+        const data = await getPairDailyStats(realm, league, id1, id2, dayCount);
         return NextResponse.json(data);
       }
       default: {

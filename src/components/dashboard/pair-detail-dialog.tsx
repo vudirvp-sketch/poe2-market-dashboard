@@ -2,12 +2,16 @@
 // Currency Pair Detail Dialog (Priority 2.2 → §3.4 Enhanced)
 //
 // P3-2 (continued): Timeframe-aware OHLCV data fetching
-//   - 1D: uses getItemDailyStats (official daily OHLCV from API)
-//   - 1H/4H/1W: uses getMultiTimeframeOHLCV (aggregated from hourly history)
+//   - 1D: uses pairDailyStats (OHLCV from both ItemIds → true pair RelativePrice)
+//   - 1H/4H/1W: uses pairOhlcv (aggregated from CurrencyPairHistory with both ItemIds)
 //   - When timeframe changes, the correct data source is fetched automatically
 //   - Multi-timeframe alignments computed on the actual timeframe-specific data
 //   - Error handling for missing 1H/4H data (insufficient history)
 //   - staleTime optimization to avoid unnecessary refetches
+//
+// OPTIMISTIC UI: When switching timeframes, the previous chart data is kept
+// visible until new data loads, preventing skeleton flash. A subtle loading
+// indicator shows that fresh data is being fetched.
 // ============================================================================
 "use client";
 
@@ -23,7 +27,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { ArrowLeftRight, Activity, Coins } from "lucide-react";
+import { ArrowLeftRight, Activity, Coins, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +39,7 @@ import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
@@ -80,6 +84,9 @@ export function PairDetailDialog({
   // P3-2: Timeframe state for candlestick chart
   const [candleTimeframe, setCandleTimeframe] = useState<Timeframe>("1D");
 
+  // Track previous timeframe for optimistic UI
+  const prevTimeframeRef = useRef<Timeframe>(candleTimeframe);
+
   const { data: pairHistory, isLoading } = useQuery({
     queryKey: [
       "pairHistory",
@@ -101,13 +108,15 @@ export function PairDetailDialog({
     enabled: !!pair && open,
   });
 
-  // P3-2: Daily OHLCV stats (candlestick) — used ONLY when timeframe is 1D
-  const { data: dailyStatsData, isLoading: dailyLoading } = useQuery({
+  // P3-2: Pair Daily OHLCV stats — used ONLY when timeframe is 1D
+  // Uses pairDailyStats action which fetches both ItemIds and computes true pair RelativePrice
+  const { data: dailyStatsData, isLoading: dailyLoading, isFetching: dailyFetching } = useQuery({
     queryKey: [
       "pairDailyStats",
       realm,
       league,
       pair?.currency1ItemId,
+      pair?.currency2ItemId,
     ],
     queryFn: () =>
       fetchApi<Array<{ day: string; open: number; high: number; low: number; close: number; volume: number }>>(
@@ -115,36 +124,43 @@ export function PairDetailDialog({
         {
           realm,
           league,
-          action: "dailyStats",
-          itemId: String(pair!.currency1ItemId),
+          action: "pairDailyStats",
+          id1: String(pair!.currency1ItemId),
+          id2: String(pair!.currency2ItemId),
           limit: "60",
         }
       ),
     enabled: !!pair && open && candleTimeframe === "1D",
     staleTime: 120_000,
     retry: 1,
+    // Optimistic UI: keep previous data while fetching new timeframe
+    placeholderData: (prevData) => prevData,
   });
 
-  // P3-2: Multi-timeframe OHLCV data — used when timeframe is 1H, 4H, or 1W
-  const { data: multiTfOhlcv, isLoading: multiTfLoading } = useQuery({
+  // P3-2: Pair Multi-timeframe OHLCV data — uses both ItemIds for true pair RelativePrice
+  const { data: multiTfOhlcv, isLoading: multiTfLoading, isFetching: multiTfFetching } = useQuery({
     queryKey: [
       "pairOhlcv",
       realm,
       league,
       pair?.currency1ItemId,
+      pair?.currency2ItemId,
       candleTimeframe,
     ],
     queryFn: () =>
       fetchApi<OHLCVCandle[]>("/api/poe2/currencies", {
         realm,
         league,
-        action: "ohlcv",
-        itemId: String(pair!.currency1ItemId),
+        action: "pairOhlcv",
+        id1: String(pair!.currency1ItemId),
+        id2: String(pair!.currency2ItemId),
         timeframe: candleTimeframe,
       }),
     enabled: !!pair && open && (candleTimeframe === "1H" || candleTimeframe === "4H" || candleTimeframe === "1W"),
     staleTime: 120_000,
     retry: 1,
+    // Optimistic UI: keep previous data while fetching new timeframe
+    placeholderData: (prevData) => prevData,
   });
 
   // P3-2: Convert daily stats to OHLCV data — used for 1D timeframe
@@ -188,13 +204,17 @@ export function PairDetailDialog({
     return computeTimeframeAlignments(ohlcvData);
   }, [ohlcvData]);
 
-  // Handle timeframe change
+  // Handle timeframe change with optimistic UI tracking
   const handleTimeframeChange = useCallback((tf: Timeframe) => {
+    prevTimeframeRef.current = candleTimeframe;
     setCandleTimeframe(tf);
-  }, []);
+  }, [candleTimeframe]);
 
   // Determine loading state for candlestick chart
-  const isCandleLoading = candleTimeframe === "1D" ? dailyLoading : multiTfLoading;
+  // With optimistic UI (placeholderData), isLoading is only true on the very first load.
+  // isFetching is true whenever a refetch is in progress (including timeframe switches).
+  const isFirstLoad = candleTimeframe === "1D" ? dailyLoading : multiTfLoading;
+  const isRefetching = candleTimeframe === "1D" ? dailyFetching : multiTfFetching;
 
   // Overall stats (from the loaded history period)
   const stats = useMemo(() => {
@@ -456,12 +476,20 @@ export function PairDetailDialog({
         )}
 
         {/* P3-8 + P3-2: Candlestick Chart with timeframe-aware OHLCV data + alignment */}
-        {isCandleLoading ? (
+        {/* Optimistic UI: show skeleton only on first load; keep previous chart during refetch */}
+        {isFirstLoad && ohlcvData.length === 0 ? (
           <div className="mt-4">
             <ChartSkeleton height={300} />
           </div>
         ) : ohlcvData.length > 0 ? (
-          <div className="mt-4">
+          <div className="mt-4 relative">
+            {/* Subtle refetching indicator — appears only when switching timeframes */}
+            {isRefetching && !isFirstLoad && (
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1 text-xs text-muted-foreground bg-background/80 rounded px-2 py-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {t("loading") || "Loading..."}
+              </div>
+            )}
             <CandlestickChart
               data={ohlcvData}
               title={`${pair.currency1Name}/${pair.currency2Name} — ${candleTimeframe} Candlestick`}

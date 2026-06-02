@@ -1740,15 +1740,16 @@ export async function getMultiTimeframeOHLCV(
   itemId: string,
   timeframe: "1H" | "4H" | "1W",
   referenceCurrency?: string,
+  logCount?: number,
 ): Promise<OHLCVCandle[]> {
   try {
-    // Determine how many hours to fetch based on timeframe
+    // Determine how many hours to fetch based on timeframe (unless overridden by logCount param)
     // 1H: fetch 168 hours (7 days), 4H: fetch 720 hours (30 days), 1W: fetch 2160 hours (90 days)
-    const hourCounts: Record<string, number> = { "1H": 168, "4H": 720, "1W": 2160 };
-    const logCount = hourCounts[timeframe] ?? 720;
+    const defaultHourCounts: Record<string, number> = { "1H": 168, "4H": 720, "1W": 2160 };
+    const effectiveLogCount = logCount ?? defaultHourCounts[timeframe] ?? 720;
 
     // Fetch hourly price history
-    const history = await getItemHistory(realm, league, itemId, logCount, referenceCurrency);
+    const history = await getItemHistory(realm, league, itemId, effectiveLogCount, referenceCurrency);
     if (!history || history.length === 0) return [];
 
     // Sort chronologically (oldest first)
@@ -2097,9 +2098,167 @@ export async function getCurrencyPairHistory(
     { maxRetries: 1 }
   );
 
-  return (raw.History ?? []).map((point) => ({
-    timestamp: new Date(point.Epoch * 1000).toISOString(),
-    relativePrice: parseFloat(point.Data?.CurrencyOneData?.RelativePrice ?? "0") || 0,
-    volume: point.Data?.CurrencyOneData?.VolumeTraded ?? 0,
-  }));
+  return (raw.History ?? []).map((point) => {
+    // Compute the true pair RelativePrice: price of currency1 in terms of currency2.
+    // CurrencyOneData.RelativePrice is in base currency (Exalted).
+    // CurrencyTwoData.RelativePrice is also in base currency.
+    // Pair price = CurrencyOneData.RelativePrice / CurrencyTwoData.RelativePrice
+    const c1RelPrice = safeParseFloat(point.Data?.CurrencyOneData?.RelativePrice);
+    const c2RelPrice = safeParseFloat(point.Data?.CurrencyTwoData?.RelativePrice);
+    const pairRelPrice =
+      c1RelPrice !== null && c2RelPrice !== null && c2RelPrice !== 0
+        ? c1RelPrice / c2RelPrice
+        : (c1RelPrice ?? 0);
+
+    return {
+      timestamp: new Date(point.Epoch * 1000).toISOString(),
+      relativePrice: pairRelPrice,
+      volume: point.Data?.CurrencyOneData?.VolumeTraded ?? 0,
+    };
+  });
+}
+
+// ============================================================================
+// Pair OHLCV — multi-timeframe OHLCV aggregated from CurrencyPairHistory.
+//
+// Unlike getMultiTimeframeOHLCV which uses single-item history (only
+// currency1ItemId), this function uses the CurrencyPairHistory endpoint
+// which includes BOTH ItemIds, producing the true RelativePrice of the pair
+// (price of currency1 expressed in currency2) rather than the absolute
+// price of currency1 in the base currency.
+//
+// This is the correct data source for the PairDetailDialog candlestick chart.
+// ============================================================================
+
+/**
+ * Aggregate pair hourly history into OHLCV candles for a given timeframe.
+ * Uses CurrencyPairHistory which computes the true pair RelativePrice
+ * (currency1 in terms of currency2) from both CurrencyOneData and
+ * CurrencyTwoData returned by the API.
+ */
+export async function getPairMultiTimeframeOHLCV(
+  realm: string,
+  league: string,
+  id1: string | number,
+  id2: string | number,
+  timeframe: "1H" | "4H" | "1W",
+  logCount?: number,
+): Promise<OHLCVCandle[]> {
+  try {
+    // Determine how many hours to fetch based on timeframe (unless overridden)
+    const defaultHourCounts: Record<string, number> = { "1H": 168, "4H": 720, "1W": 2160 };
+    const hoursToFetch = logCount ?? defaultHourCounts[timeframe] ?? 720;
+
+    // Fetch pair hourly history — uses both ItemIds for true pair RelativePrice
+    const history = await getCurrencyPairHistory(realm, league, id1, id2, hoursToFetch);
+    if (!history || history.length === 0) return [];
+
+    // Sort chronologically (oldest first)
+    const sorted = [...history].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    // For 1H, each point IS a candle
+    if (timeframe === "1H") {
+      return sorted.map((p) => ({
+        time: p.timestamp,
+        open: p.relativePrice,
+        high: p.relativePrice,
+        low: p.relativePrice,
+        close: p.relativePrice,
+        volume: p.volume,
+      }));
+    }
+
+    // Group points into candles
+    const groupSize = timeframe === "4H" ? 4 : 168; // 4H = 4 hourly points, 1W = ~168
+    const candles: OHLCVCandle[] = [];
+
+    for (let i = 0; i < sorted.length; i += groupSize) {
+      const group = sorted.slice(i, i + groupSize);
+      if (group.length === 0) continue;
+
+      const prices = group.map((p) => p.relativePrice).filter((p) => p > 0 && Number.isFinite(p));
+      if (prices.length === 0) continue;
+
+      candles.push({
+        time: group[0].timestamp,
+        open: prices[0],
+        high: Math.max(...prices),
+        low: Math.min(...prices),
+        close: prices[prices.length - 1],
+        volume: group.reduce((sum, p) => sum + (p.volume || 0), 0),
+      });
+    }
+
+    return candles;
+  } catch (err) {
+    console.warn("[poe2api] getPairMultiTimeframeOHLCV: failed, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
+/**
+ * Get daily OHLCV stats for a currency PAIR.
+ * Fetches DailyStatsHistory for BOTH currencies and computes the pair price
+ * (currency1 / currency2) for each day.
+ *
+ * Since the DailyStatsHistory API only supports a single itemId, we fetch
+ * daily stats for both currencies and compute the pair price as:
+ *   pairClose = c1Close / c2Close (when c2Close > 0)
+ * This gives a daily-resolution OHLCV of the pair's RelativePrice.
+ */
+export async function getPairDailyStats(
+  realm: string,
+  league: string,
+  itemId1: string | number,
+  itemId2: string | number,
+  dayCount = 60,
+): Promise<Array<{ day: string; open: number; high: number; low: number; close: number; volume: number }>> {
+  try {
+    const [stats1, stats2] = await Promise.all([
+      getItemDailyStats(realm, league, String(itemId1), dayCount),
+      getItemDailyStats(realm, league, String(itemId2), dayCount),
+    ]);
+
+    if (!stats1.length || !stats2.length) return [];
+
+    // Build a map of day -> c2 close for efficient lookup
+    const c2ByDay = new Map<string, { open: number; high: number; low: number; close: number; volume: number }>();
+    for (const d of stats2) {
+      const dayKey = d.day?.slice(0, 10) ?? "";
+      if (dayKey) c2ByDay.set(dayKey, { open: d.open, high: d.high, low: d.low, close: d.close, volume: d.volume });
+    }
+
+    // Compute pair OHLCV by dividing c1 by c2 for each matching day
+    const result: Array<{ day: string; open: number; high: number; low: number; close: number; volume: number }> = [];
+    for (const d1 of stats1) {
+      const dayKey = d1.day?.slice(0, 10) ?? "";
+      if (!dayKey) continue;
+      const d2 = c2ByDay.get(dayKey);
+      if (!d2 || d2.close <= 0) continue;
+
+      // Pair price = c1 / c2. For OHLC we use close/close as the most
+      // reliable ratio, and approximate high/low using close ratios.
+      // This is an approximation — true pair high/low would require tick data.
+      const openPair = d1.open > 0 && d2.open > 0 ? d1.open / d2.open : d1.close / d2.close;
+      const closePair = d1.close / d2.close;
+      const highPair = Math.max(d1.high / d2.low, d1.high / d2.high, closePair, openPair);
+      const lowPair = Math.min(d1.low / d2.high, d1.low / d2.low, closePair, openPair);
+
+      result.push({
+        day: d1.day,
+        open: openPair,
+        high: highPair,
+        low: lowPair,
+        close: closePair,
+        volume: Math.min(d1.volume, d2.volume), // conservatively use the smaller volume
+      });
+    }
+
+    return result;
+  } catch (err) {
+    console.warn("[poe2api] getPairDailyStats: failed, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
 }

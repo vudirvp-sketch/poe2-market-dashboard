@@ -54,7 +54,9 @@ export async function GET(req: NextRequest) {
         if (!itemId) return NextResponse.json({ error: "itemId required" }, { status: 400 });
         const timeframe = (searchParams.get("timeframe") as "1H" | "4H" | "1W") || "4H";
         const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
-        const data = await getMultiTimeframeOHLCV(realm, league, itemId, timeframe, referenceCurrency);
+        const logCountParam = searchParams.get("logCount");
+        const logCount = logCountParam ? Number(logCountParam) : undefined;
+        const data = await getMultiTimeframeOHLCV(realm, league, itemId, timeframe, referenceCurrency, logCount);
         return NextResponse.json(data);
       }
       default: {
