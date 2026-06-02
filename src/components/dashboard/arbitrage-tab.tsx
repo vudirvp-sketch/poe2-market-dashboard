@@ -66,8 +66,8 @@ interface GraphEdge {
 interface ArbitrageCycle {
   route: string[];
   edges: GraphEdge[];
-  grossProfitPct: number;   // gross profit as percentage
-  netProfitPct: number;     // net profit as percentage (after spread + slippage)
+  grossProfitPct: number;   // gross profit % based on mid-rates (before spread & slippage)
+  netProfitPct: number;     // net profit % after deducting spread + slippage
   totalSpreadPct: number;   // total spread cost across all edges (%)
   slippage: number;         // slippage fraction (for display)
   maxVolume: number;
@@ -128,7 +128,7 @@ const MAX_CYCLE_LEN = 5;
  *  provides only mid-prices (no separate bid/ask), so forward and reverse
  *  rates from the same pair are exact mirrors. Real arbitrage in PoE2
  *  is at most a few percent. */
-const MAX_REALISTIC_PROFIT_PCT = 50;
+const MAX_REALISTIC_PROFIT_PCT = 10;
 
 function findArbitrageCycles(
   pairs: ExchangePair[],
@@ -182,14 +182,16 @@ function findArbitrageCycles(
     const hoursSinceSnapshot = 0;
     const decayFactor = Math.exp(-decayLambda * hoursSinceSnapshot);
 
-    // Forward edge: c1 → c2 (bid-side)
+    // Forward edge: c1 → c2
+    // NOTE: We do NOT apply spread to the rate here. The mid-rate is used
+    // as-is, and the full spread cost is subtracted in the net profit
+    // formula below. Previously the code applied half-spread to each rate
+    // AND subtracted full spread from profit — that's double-counting.
     {
-      // Apply spread: forward rate reduced by half-spread (bid side)
-      const spreadAdjustedRate = forwardRate * (1 - spreadPct / 2);
       const edge: GraphEdge = {
         from: c1,
         to: c2,
-        rate: applyFee(spreadAdjustedRate * decayFactor, feeBps),
+        rate: applyFee(forwardRate * decayFactor, feeBps),
         volume: pairVolume,
         spread: spreadPct,
         fromName: p.currency1Name,
@@ -199,14 +201,12 @@ function findArbitrageCycles(
       adj.get(c1)!.push(edge);
     }
 
-    // Reverse edge: c2 → c1 (ask-side)
+    // Reverse edge: c2 → c1
     if (reverseRate > 0 && isFinite(reverseRate)) {
-      // Apply spread: reverse rate reduced by half-spread (ask side)
-      const spreadAdjustedRate = reverseRate * (1 - spreadPct / 2);
       const edge: GraphEdge = {
         from: c2,
         to: c1,
-        rate: applyFee(spreadAdjustedRate * decayFactor, feeBps),
+        rate: applyFee(reverseRate * decayFactor, feeBps),
         volume: pairVolume,
         spread: spreadPct,
         fromName: p.currency2Name,
@@ -254,6 +254,8 @@ function findArbitrageCycles(
       }
 
       // Net profit % = gross profit % - total spread cost % - slippage cost %
+      // NOTE: grossProfitPct is now truly "gross" because we no longer
+      // embed half-spread into edge rates. Spread is subtracted here only.
       const slippagePct = totalSlippage * 100;
       const netProfitPct = grossProfitPct - totalSpreadPct - slippagePct;
 

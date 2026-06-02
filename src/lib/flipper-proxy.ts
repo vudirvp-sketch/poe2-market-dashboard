@@ -279,7 +279,19 @@ export async function proxyWithFallback(
       return Response.json(fallback.offlineFallback);
     }
 
-    // For other error statuses (422, 500, etc.), pass through as-is
+    // For 5xx errors (500, 502, etc.), return fallback instead of propagating.
+    // The backend may be running but crashing (e.g., portfolio _build_portfolio
+    // throws). The frontend already checks data_available: false, so returning
+    // fallback is better than a 500 that causes console errors and React Query
+    // retry storms.
+    if (res.status >= 500) {
+      if (fallback.insufficientDataFallback !== undefined) {
+        return Response.json(fallback.insufficientDataFallback);
+      }
+      return Response.json(fallback.offlineFallback);
+    }
+
+    // For other error statuses (422, 404, etc.), pass through as-is
     return res;
   } catch {
     // Unexpected error — return offline fallback
