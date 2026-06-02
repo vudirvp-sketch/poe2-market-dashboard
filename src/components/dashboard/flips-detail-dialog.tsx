@@ -24,9 +24,10 @@ import {
   decisionBadgeClass,
 } from "./flips-helpers";
 
-function momentumIconLocal(momentum: number) {
-  if (momentum > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
-  if (momentum < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
+function momentumIconLocal(momentum: number | undefined) {
+  const m = momentum ?? 0;
+  if (m > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
+  if (m < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
   return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />;
 }
 
@@ -63,7 +64,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">{t("flipperSpread")}</p>
           <p className="text-lg font-bold font-mono">
-            {((selectedFlip.spread ?? selectedFlip.spreadAfterFees) * 100).toFixed(2)}%
+            {(((selectedFlip.spread ?? selectedFlip.spreadAfterFees) ?? 0) * 100).toFixed(2)}%
           </p>
         </div>
       </div>
@@ -75,15 +76,15 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
           <div className="flex items-center gap-1.5">
             {momentumIconLocal(selectedFlip.momentum)}
             <span className="font-mono text-sm font-medium">
-              {selectedFlip.momentum >= 0 ? "+" : ""}
-              {(selectedFlip.momentum * 100).toFixed(2)}%
+              {(selectedFlip.momentum ?? 0) >= 0 ? "+" : ""}
+              {((selectedFlip.momentum ?? 0) * 100).toFixed(2)}%
             </span>
           </div>
         </div>
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground mb-1">{t("flipperVolatility")}</p>
           <p className="font-mono text-sm font-medium">
-            {selectedFlip.volatility.toFixed(4)}
+            {(selectedFlip.volatility ?? 0).toFixed(4)}
           </p>
         </div>
         <div className="rounded-lg border p-3">
@@ -116,7 +117,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
       {/* Volume */}
       <div className="rounded-lg border p-3">
         <p className="text-xs text-muted-foreground">{t("flipperVolume")} {t("suffix24h")}</p>
-        <p className="text-lg font-bold font-mono">{selectedFlip.volume24h.toLocaleString()}</p>
+        <p className="text-lg font-bold font-mono">{(selectedFlip.volume24h ?? 0).toLocaleString()}</p>
       </div>
 
       {/* P1-1: Quantized Analysis Panel */}

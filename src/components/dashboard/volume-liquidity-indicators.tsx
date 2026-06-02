@@ -379,7 +379,7 @@ export const VolumeLiquidityIndicators = memo(function VolumeLiquidityIndicators
                 role="row"
               >
                 <span className="truncate font-medium">{d.name}</span>
-                <span className="text-right font-mono">{d.volume.toLocaleString()}</span>
+                <span className="text-right font-mono">{(d.volume ?? 0).toLocaleString()}</span>
                 <span className="text-right font-mono">
                   <span className={
                     d.liquidityScore >= 0.7

@@ -362,7 +362,7 @@ export const CandlestickChart = memo(function CandlestickChart({
             <span>{t("candlestickHigh")}: <span className="font-mono">{fmt(hoveredData.high)}</span></span>
             <span>{t("candlestickLow")}: <span className="font-mono">{fmt(hoveredData.low)}</span></span>
             <span>{t("candlestickClose")}: <span className="font-mono font-bold">{fmt(hoveredData.close)}</span></span>
-            <span>{t("candlestickVol")}: <span className="font-mono">{hoveredData.volume.toLocaleString()}</span></span>
+            <span>{t("candlestickVol")}: <span className="font-mono">{(hoveredData.volume ?? 0).toLocaleString()}</span></span>
           </div>
         )}
 

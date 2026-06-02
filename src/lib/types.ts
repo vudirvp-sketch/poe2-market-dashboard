@@ -140,23 +140,31 @@ export interface SnapshotHistoryPoint {
 // Flipper backend shared types (used across dashboard-page, tabs, sidebar)
 // ============================================================================
 
-/** Scored flip opportunity from GET /api/flipper/flips */
+/** Scored flip opportunity from GET /api/flipper/flips
+ *
+ *  ⚠️ DEFENSIVE NULLABILITY: The backend may omit numeric fields (return
+ *  undefined) when data is insufficient (e.g. early league, no volume).
+ *  UI code MUST use `?? 0` or `?.` when accessing these fields to avoid
+ *  runtime TypeError on `.toLocaleString()`, `.toFixed()`, etc.
+ */
 export interface FlipOpportunity {
   currency: string;
   score: number;
   /** Raw spread (ask - bid) / mid_price — no fees deducted.
-   *  Always present in current backend response. Fallback to spreadAfterFees
-   *  is defensive — should not be needed in practice. */
-  spread: number;
+   *  May be undefined when backend has insufficient data. */
+  spread?: number;
   /** @deprecated Use spread instead. Kept for backward compat. */
-  spreadAfterFees: number;
-  volume24h: number;
-  momentum: number;
-  volatility: number;
+  spreadAfterFees?: number;
+  /** 24h trading volume. May be undefined when backend has insufficient data. */
+  volume24h?: number;
+  /** Price momentum. May be undefined when backend has insufficient data. */
+  momentum?: number;
+  /** Volatility measure. May be undefined when backend has insufficient data. */
+  volatility?: number;
   cluster: string;
-  bid: number;
-  ask: number;
-  midPrice: number;
+  bid?: number;
+  ask?: number;
+  midPrice?: number;
   /** P1-1: Quantized analysis (integer-aware spread) */
   quantizedAnalysis?: QuantizedAnalysis;
   /** P1-3: Tier distance between the two currencies */
@@ -209,12 +217,15 @@ export interface FlipsResponse {
   feeWarning?: FeeWarning;
 }
 
-/** Triangular arbitrage cycle from GET /api/flipper/triangular */
+/** Triangular arbitrage cycle from GET /api/flipper/triangular
+ *  ⚠️ DEFENSIVE NULLABILITY: totalVolume may be undefined when backend
+ *  has insufficient data. UI code MUST use `?? 0` before calling methods. */
 export interface TriangularCycle {
   cycle: string[];
   netProfitPct: number;
   stepRates: number[];
-  totalVolume: number;
+  /** Total volume across all edges. May be undefined when backend has insufficient data. */
+  totalVolume?: number;
   confidence: number;
   /** P1-2: Minimum starting capital for integer-profitable cycle */
   minStartingAmount?: number;

@@ -209,7 +209,7 @@ export const CurrencyCard = memo(function CurrencyCard({
         <div className="flex items-center gap-2 mt-1">
           {item.volume != null && (
             <p className="text-xs text-muted-foreground">
-              {t("vol")}: {item.volume.toLocaleString()}
+              {t("vol")}: {(item.volume ?? 0).toLocaleString()}
             </p>
           )}
           {/* P2-4: Liquidity indicator dot */}

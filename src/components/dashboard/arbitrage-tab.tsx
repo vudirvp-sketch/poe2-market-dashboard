@@ -994,7 +994,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                           </span>
 
                           <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                            {cycle.maxVolume.toLocaleString()}
+                            {isFinite(cycle.maxVolume) ? cycle.maxVolume.toLocaleString() : "\u221E"}
                           </span>
                         </div>
                       );
@@ -1173,30 +1173,30 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                                 : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
                             }`}
                           >
-                            {opp.score.toFixed(2)}
+                            {(opp.score ?? 0).toFixed(2)}
                           </Badge>
                         </span>
 
                         {/* Spread after fees */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {((opp.spread ?? opp.spreadAfterFees) * 100).toFixed(2)}%
+                          {(((opp.spread ?? opp.spreadAfterFees) ?? 0) * 100).toFixed(2)}%
                         </span>
 
                         {/* Momentum */}
                         <span className={`text-right font-mono text-xs ${
-                          opp.momentum > 0
+                          (opp.momentum ?? 0) > 0
                             ? "text-emerald-600 dark:text-emerald-400"
-                            : opp.momentum < 0
+                            : (opp.momentum ?? 0) < 0
                             ? "text-red-600 dark:text-red-400"
                             : "text-muted-foreground"
                         }`} role="cell">
-                          {opp.momentum > 0 ? "+" : ""}
-                          {opp.momentum.toFixed(4)}
+                          {(opp.momentum ?? 0) > 0 ? "+" : ""}
+                          {(opp.momentum ?? 0).toFixed(4)}
                         </span>
 
                         {/* Volatility */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {opp.volatility.toFixed(4)}
+                          {(opp.volatility ?? 0).toFixed(4)}
                         </span>
 
                         {/* Cluster */}
@@ -1217,7 +1217,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
                         {/* Volume */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {opp.volume24h.toLocaleString()}
+                          {(opp.volume24h ?? 0).toLocaleString()}
                         </span>
                       </div>
                     ))}
@@ -1350,7 +1350,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
                         {/* Total volume */}
                         <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                          {tri.totalVolume.toLocaleString()}
+                          {(tri.totalVolume ?? 0).toLocaleString()}
                         </span>
                       </div>
                     ))}

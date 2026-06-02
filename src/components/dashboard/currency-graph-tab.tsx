@@ -672,7 +672,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                           <title>
                             {edge.source} → {edge.target}
                             {"\n"}Rate: {fmt(edge.rawRate)}
-                            {"\n"}Volume: {edge.volume.toLocaleString()}
+                            {"\n"}Volume: {(edge.volume ?? 0).toLocaleString()}
                             {edge.isCycleEdge ? `\n${t("graphArbCycleTooltip")}` : ""}
                           </title>
                         </line>
@@ -739,7 +739,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                           }}
                           tabIndex={0}
                           role="button"
-                          aria-label={t("ariaGraphNodeInfo", { "0": node.label, "1": node.volume.toLocaleString(), "2": String(node.degree) })}
+                          aria-label={t("ariaGraphNodeInfo", { "0": node.label, "1": (node.volume ?? 0).toLocaleString(), "2": String(node.degree) })}
                         >
                           <circle
                             cx={pos.x}
@@ -846,7 +846,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                 <div className="rounded-lg border p-3">
                   <p className="text-xs text-muted-foreground">{t("graphNodeVolume")}</p>
                   <p className="text-lg font-bold font-mono">
-                    {selectedNode.volume.toLocaleString()}
+                    {(selectedNode.volume ?? 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-lg border p-3">

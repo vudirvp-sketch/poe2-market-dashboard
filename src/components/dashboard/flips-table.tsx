@@ -37,9 +37,10 @@ import { isFlipDataSuspicious } from "@/lib/flipper-helpers";
 // Local helpers (JSX-dependent)
 // ---------------------------------------------------------------------------
 
-function momentumIcon(momentum: number) {
-  if (momentum > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
-  if (momentum < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
+function momentumIcon(momentum: number | undefined) {
+  const m = momentum ?? 0;
+  if (m > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
+  if (m < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
   return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />;
 }
 
@@ -156,7 +157,7 @@ export const FlipsTable = memo(function FlipsTable({
                     }
                   }}
                   tabIndex={0}
-                  aria-label={t("ariaFlipRowScore", { "0": opp.currency, "1": (opp.score * 100).toFixed(0) })}
+                  aria-label={t("ariaFlipRowScore", { "0": opp.currency, "1": ((opp.score ?? 0) * 100).toFixed(0) })}
                 >
                   {/* Currency pair + suspicious data indicator */}
                   <span className="flex items-center gap-1 text-xs font-medium truncate">
@@ -173,7 +174,7 @@ export const FlipsTable = memo(function FlipsTable({
 
                   {/* Spread (theoretical) */}
                   <span className="text-right font-mono text-xs">
-                    {((opp.spread ?? opp.spreadAfterFees) * 100).toFixed(2)}%
+                    {(((opp.spread ?? opp.spreadAfterFees) ?? 0) * 100).toFixed(2)}%
                   </span>
 
                   {/* P1-1: Q-Spread — quantized spread at min profitable lot */}
@@ -191,8 +192,8 @@ export const FlipsTable = memo(function FlipsTable({
                   <span className="flex items-center justify-end gap-0.5">
                     {momentumIcon(opp.momentum)}
                     <span className="font-mono text-xs">
-                      {opp.momentum >= 0 ? "+" : ""}
-                      {(opp.momentum * 100).toFixed(2)}%
+                      {(opp.momentum ?? 0) >= 0 ? "+" : ""}
+                      {((opp.momentum ?? 0) * 100).toFixed(2)}%
                     </span>
                   </span>
 

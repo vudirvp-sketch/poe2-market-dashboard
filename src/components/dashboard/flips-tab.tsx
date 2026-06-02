@@ -192,8 +192,8 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           bVal = b.tierDistance ?? 0;
           break;
         default:
-          aVal = a[sortField] as number;
-          bVal = b[sortField] as number;
+          aVal = (a[sortField] as number) ?? 0;
+          bVal = (b[sortField] as number) ?? 0;
       }
 
       const multiplier = sortDirection === "desc" ? -1 : 1;
@@ -206,7 +206,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   // ---- Summary stats ----
   const avgScore = useMemo(() => {
     if (!filteredOpportunities.length) return 0;
-    return filteredOpportunities.reduce((sum, o) => sum + o.score, 0) / filteredOpportunities.length;
+    return filteredOpportunities.reduce((sum, o) => sum + (o.score ?? 0), 0) / filteredOpportunities.length;
   }, [filteredOpportunities]);
 
   const bestFlip = filteredOpportunities[0] ?? null;
