@@ -533,6 +533,18 @@ export function fmtChange(pct: number | null | undefined): { text: string; color
   return { text: `${sign}${pct.toFixed(1)}%`, color };
 }
 
+/** Format a fractional value (0–1) as a percentage string, e.g. 0.4567 → "45.67%" */
+export function fmtPct(n: number | null | undefined, digits = 2): string {
+  if (n == null) return "—";
+  return `${(n * 100).toFixed(digits)}%`;
+}
+
+/** Format a volume number with locale-aware thousands separators */
+export function fmtVol(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return n.toLocaleString("en-US");
+}
+
 // ============================================================================
 // Export helpers (CSV/JSON)
 // ============================================================================

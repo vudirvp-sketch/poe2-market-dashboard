@@ -138,7 +138,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
 
   // ---- Triangular data (for cross-rate warning) ----
   const { data: triData } = useQuery<TriangularResponse>({
-    queryKey: ["flipper-triangular-flips-tab"],
+    queryKey: ["flipper-triangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,

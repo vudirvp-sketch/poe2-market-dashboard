@@ -147,7 +147,7 @@ function WeightTooltip({ active, payload, t }: { active?: boolean; payload?: Arr
     <div className="bg-popover border border-border rounded-md px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold">{data.name}</p>
       <p className="text-muted-foreground">
-        {t("portfolioWeight")}: {(data.weight * 100).toFixed(2)}%
+        {t("portfolioWeight")}: {((data.weight ?? 0) * 100).toFixed(2)}%
       </p>
     </div>
   );
@@ -383,7 +383,7 @@ export const PortfolioTab = memo(function PortfolioTab({ backendOnline, upstream
               <CardContent className="px-4 pb-4 pt-0">
                 <p className="text-xl font-bold">
                   {portfolioData
-                    ? `${(portfolioData.expectedRisk * 100).toFixed(2)}%`
+                    ? `${((portfolioData.expectedRisk ?? 0) * 100).toFixed(2)}%`
                     : "—"}
                 </p>
               </CardContent>

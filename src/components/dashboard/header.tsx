@@ -340,7 +340,7 @@ export function Header({
                 <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
                 {referenceCurrencies.map((c) => (
                   <SelectItem key={c.apiId} value={c.apiId}>
-                    {c.text} ({c.relativePrice.toFixed(1)})
+                    {c.text} ({(c.relativePrice ?? 0).toFixed(1)})
                   </SelectItem>
                 ))}
               </SelectContent>

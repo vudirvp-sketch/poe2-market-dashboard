@@ -195,14 +195,14 @@ export const MarketHeatmap = memo(function MarketHeatmap({
                 className="relative rounded-md px-2 py-1.5 text-center min-w-[70px] transition-transform hover:scale-105"
                 style={{ backgroundColor: changeToColor(item.change24h) }}
                 role="listitem"
-                title={`${item.currency}: ${item.change24h >= 0 ? "+" : ""}${item.change24h.toFixed(1)}%`}
+                title={`${item.currency}: ${item.change24h >= 0 ? "+" : ""}${(item.change24h ?? 0).toFixed(1)}%`}
               >
                 <div className={`text-[10px] font-medium truncate ${changeToTextColor(item.change24h)}`}>
                   {item.currency}
                 </div>
                 <div className={`text-xs font-bold ${changeToTextColor(item.change24h)}`}>
-                  {item.change24h >= 0 ? "+" : ""}
-                  {item.change24h.toFixed(1)}%
+                  {(item.change24h ?? 0) >= 0 ? "+" : ""}
+                  {(item.change24h ?? 0).toFixed(1)}%
                 </div>
               </div>
             ))}
@@ -259,7 +259,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
                         variant="outline"
                         className="text-[10px] px-1.5 py-0 border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
                       >
-                        +{item.change24h.toFixed(1)}%
+                        +{(item.change24h ?? 0).toFixed(1)}%
                       </Badge>
                     </div>
                   ))}
@@ -290,7 +290,7 @@ export const MarketHeatmap = memo(function MarketHeatmap({
                         variant="outline"
                         className="text-[10px] px-1.5 py-0 border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
                       >
-                        {item.change24h.toFixed(1)}%
+                        {(item.change24h ?? 0).toFixed(1)}%
                       </Badge>
                     </div>
                   ))}

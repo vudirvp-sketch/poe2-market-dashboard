@@ -57,8 +57,8 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">{t("flipperScore")}</p>
-          <p className={`text-lg font-bold ${scoreColor(selectedFlip.score)}`}>
-            {(selectedFlip.score * 100).toFixed(1)}%
+          <p className={`text-lg font-bold ${scoreColor(selectedFlip.score ?? 0)}`}>
+            {((selectedFlip.score ?? 0) * 100).toFixed(1)}%
           </p>
         </div>
         <div className="rounded-lg border p-3">
@@ -132,8 +132,8 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
           <div className="grid grid-cols-3 gap-3">
             <div>
               <p className="text-[10px] text-muted-foreground">{t("qSpreadDetail")}</p>
-              <p className={`text-sm font-mono font-medium ${selectedFlip.quantizedAnalysis.optimalLotProfitPct > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
-                {selectedFlip.quantizedAnalysis.optimalLotProfitPct.toFixed(2)}%
+              <p className={`text-sm font-mono font-medium ${(selectedFlip.quantizedAnalysis.optimalLotProfitPct ?? 0) > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
+                {(selectedFlip.quantizedAnalysis.optimalLotProfitPct ?? 0).toFixed(2)}%
               </p>
             </div>
             <div>
@@ -147,9 +147,9 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
             <div className="flex items-center gap-1.5">
               <Shield
                 className={`h-4 w-4 ${
-                  selectedFlip.quantizedAnalysis.brickResistance >= 0.5
+                  (selectedFlip.quantizedAnalysis.brickResistance ?? 0) >= 0.5
                     ? "text-emerald-500"
-                    : selectedFlip.quantizedAnalysis.brickResistance >= 0.2
+                    : (selectedFlip.quantizedAnalysis.brickResistance ?? 0) >= 0.2
                     ? "text-amber-500"
                     : "text-red-500"
                 }`}
@@ -157,7 +157,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
               />
               <div>
                 <p className="text-[10px] text-muted-foreground">{t("brickRiskDetail")}</p>
-                <p className="text-sm font-mono font-medium">{(selectedFlip.quantizedAnalysis.brickResistance * 100).toFixed(0)}/100</p>
+                <p className="text-sm font-mono font-medium">{((selectedFlip.quantizedAnalysis.brickResistance ?? 0) * 100).toFixed(0)}/100</p>
               </div>
             </div>
           </div>
@@ -183,7 +183,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
                     <span className="font-mono">{qs.actualCost}</span>
                     <span className="font-mono">{qs.actualRevenue}</span>
                     <span className={`font-mono ${qs.netProfit > 0 ? "text-emerald-600 dark:text-emerald-400" : qs.netProfit < 0 ? "text-red-500" : ""}`}>
-                      {qs.netProfit > 0 ? "+" : ""}{qs.netProfit} ({qs.grossProfitPct.toFixed(1)}%)
+                      {qs.netProfit > 0 ? "+" : ""}{qs.netProfit} ({(qs.grossProfitPct ?? 0).toFixed(1)}%)
                     </span>
                   </React.Fragment>
                 ))}
@@ -192,8 +192,8 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
 
           {/* Theoretical vs Quantized comparison */}
           <div className="text-xs text-muted-foreground border-t pt-2">
-            {t("theoreticalSpread")}: <span className="font-mono">{(selectedFlip.quantizedAnalysis.theoreticalSpread * 100).toFixed(2)}%</span>
-            {selectedFlip.quantizedAnalysis.theoreticalSpread > 0 && selectedFlip.quantizedAnalysis.optimalLotProfitPct <= 0 && (
+            {t("theoreticalSpread")}: <span className="font-mono">{((selectedFlip.quantizedAnalysis.theoreticalSpread ?? 0) * 100).toFixed(2)}%</span>
+            {(selectedFlip.quantizedAnalysis.theoreticalSpread ?? 0) > 0 && (selectedFlip.quantizedAnalysis.optimalLotProfitPct ?? 0) <= 0 && (
               <span className="ml-2 text-amber-600 dark:text-amber-400">{t("quantizedLossWarning")}</span>
             )}
           </div>

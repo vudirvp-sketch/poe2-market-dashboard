@@ -135,8 +135,8 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
                 <span className="font-semibold truncate max-w-[120px]">
                   {bestFlip.currency}
                 </span>
-                <span className={`font-bold ${scoreColor(bestFlip.score)}`}>
-                  {(bestFlip.score * 100).toFixed(0)}%
+                <span className={`font-bold ${scoreColor(bestFlip.score ?? 0)}`}>
+                  {((bestFlip.score ?? 0) * 100).toFixed(0)}%
                 </span>
               </>
             ) : (
@@ -234,7 +234,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
                   variant="outline"
                   className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px] px-1.5 py-0 font-semibold"
                 >
-                  +{bestCycle.netProfitPct.toFixed(2)}%
+                  +{(bestCycle.netProfitPct ?? 0).toFixed(2)}%
                 </Badge>
               </>
             ) : (

@@ -133,12 +133,12 @@ export const FlipsTable = memo(function FlipsTable({
               <span role="columnheader">{t("flipperCurrency")}</span>
               <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
               <span role="columnheader" className="text-right"><SortHeader field="spreadAfterFees" label={t("flipperSpread")} /></span>
-              <span role="columnheader" className="text-right" title={t("qSpreadTooltip")}><SortHeader field="qSpread" label={t("qSpread")} /></span>
+              <span role="columnheader" className="text-right hidden sm:table-cell" title={t("qSpreadTooltip")}><SortHeader field="qSpread" label={t("qSpread")} /></span>
               <span role="columnheader" className="text-right">{t("flipperMomentum")}</span>
-              <span role="columnheader" className="text-right" title={t("minLotTooltip")}><SortHeader field="minLot" label={t("minLot")} /></span>
-              <span role="columnheader" className="text-center" title={t("brickRiskTooltip")}><SortHeader field="brickRisk" label={t("brickRisk")} /></span>
+              <span role="columnheader" className="text-right hidden sm:table-cell" title={t("minLotTooltip")}><SortHeader field="minLot" label={t("minLot")} /></span>
+              <span role="columnheader" className="text-center hidden sm:table-cell" title={t("brickRiskTooltip")}><SortHeader field="brickRisk" label={t("brickRisk")} /></span>
               <span role="columnheader" className="text-center">{t("flipperCluster")}</span>
-              <span role="columnheader" className="text-center" title={t("tierDistanceTooltip")}><SortHeader field="tierDistance" label={t("tierDist")} /></span>
+              <span role="columnheader" className="text-center hidden md:table-cell" title={t("tierDistanceTooltip")}><SortHeader field="tierDistance" label={t("tierDist")} /></span>
               <span role="columnheader" />
             </div>
 
@@ -168,8 +168,8 @@ export const FlipsTable = memo(function FlipsTable({
                   </span>
 
                   {/* Score */}
-                  <span className={`text-center text-xs font-bold ${scoreColor(opp.score)}`}>
-                    {(opp.score * 100).toFixed(1)}%
+                  <span className={`text-center text-xs font-bold ${scoreColor(opp.score ?? 0)}`}>
+                    {((opp.score ?? 0) * 100).toFixed(1)}%
                   </span>
 
                   {/* Spread (theoretical) */}
@@ -178,10 +178,10 @@ export const FlipsTable = memo(function FlipsTable({
                   </span>
 
                   {/* P1-1: Q-Spread — quantized spread at min profitable lot */}
-                  <span className="text-right font-mono text-xs" title={t("qSpreadTooltip")}>
+                  <span className="text-right font-mono text-xs hidden sm:table-cell" title={t("qSpreadTooltip")}>
                     {opp.quantizedAnalysis ? (
-                      <span className={opp.quantizedAnalysis.optimalLotProfitPct > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}>
-                        {opp.quantizedAnalysis.optimalLotProfitPct.toFixed(1)}%
+                      <span className={(opp.quantizedAnalysis.optimalLotProfitPct ?? 0) > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}>
+                        {(opp.quantizedAnalysis.optimalLotProfitPct ?? 0).toFixed(1)}%
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -198,7 +198,7 @@ export const FlipsTable = memo(function FlipsTable({
                   </span>
 
                   {/* P1-1: Min Lot — minimum profitable lot size */}
-                  <span className="text-right font-mono text-xs flex items-center justify-end gap-0.5" title={t("minLotTooltip")}>
+                  <span className="text-right font-mono text-xs flex items-center justify-end gap-0.5 hidden sm:table-cell" title={t("minLotTooltip")}>
                     <Boxes className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     {opp.quantizedAnalysis ? (
                       <span className={opp.quantizedAnalysis.minProfitableLot > 10 ? "text-amber-600 dark:text-amber-400" : ""}>
@@ -210,20 +210,20 @@ export const FlipsTable = memo(function FlipsTable({
                   </span>
 
                   {/* P1-1: Brick Risk — lower = more fragile */}
-                  <span className="flex justify-center" title={t("brickRiskTooltip")}>
+                  <span className="flex justify-center hidden sm:table-cell" title={t("brickRiskTooltip")}>
                     {opp.quantizedAnalysis ? (
                       <span className="flex items-center gap-0.5">
                         <Shield
                           className={`h-3 w-3 ${
-                            opp.quantizedAnalysis.brickResistance >= 0.5
+                            (opp.quantizedAnalysis.brickResistance ?? 0) >= 0.5
                               ? "text-emerald-500"
-                              : opp.quantizedAnalysis.brickResistance >= 0.2
+                              : (opp.quantizedAnalysis.brickResistance ?? 0) >= 0.2
                               ? "text-amber-500"
                               : "text-red-500"
                           }`}
                           aria-hidden="true"
                         />
-                        <span className="text-[10px] font-mono">{(opp.quantizedAnalysis.brickResistance * 100).toFixed(0)}</span>
+                        <span className="text-[10px] font-mono">{((opp.quantizedAnalysis.brickResistance ?? 0) * 100).toFixed(0)}</span>
                       </span>
                     ) : (
                       <span className="text-muted-foreground text-[10px]">—</span>
@@ -241,7 +241,7 @@ export const FlipsTable = memo(function FlipsTable({
                   </span>
 
                   {/* P1-3: Tier Distance */}
-                  <span className="text-center text-xs" title={t("tierDistanceTooltip")}>
+                  <span className="text-center text-xs hidden md:table-cell" title={t("tierDistanceTooltip")}>
                     {opp.tierDistance != null && opp.tierDistance > 0 ? (
                       <Badge
                         variant="outline"

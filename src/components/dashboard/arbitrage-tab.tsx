@@ -840,6 +840,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                       step={0.01}
                       value={decayLambda}
                       onChange={(e) => setDecayLambda(Number(e.target.value) || 0)}
+                      disabled
                     />
                   </div>
 
@@ -867,6 +868,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                       onValueChange={(v) => {
                         if (v === "0") setDecayLambda(0);
                       }}
+                      disabled
                     >
                       <SelectTrigger className="h-9">
                         <SelectValue />

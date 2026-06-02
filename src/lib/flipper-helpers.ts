@@ -12,14 +12,14 @@ import type { FlipOpportunity } from "@/lib/types";
  * Uses score-weighted average momentum to emphasize high-quality flips.
  */
 export function computeSentiment(
-  opportunities: { score: number; momentum: number }[],
+  opportunities: { score: number; momentum?: number }[],
 ): number {
   if (opportunities.length === 0) return 0;
   let totalWeight = 0;
   let weightedSum = 0;
   for (const opp of opportunities) {
     const weight = Math.max(opp.score, 0.01);
-    weightedSum += opp.momentum * weight;
+    weightedSum += (opp.momentum ?? 0) * weight;
     totalWeight += weight;
   }
   return totalWeight > 0 ? weightedSum / totalWeight : 0;
@@ -79,21 +79,21 @@ export function classifySentiment(value: number): "bullish" | "bearish" | "neutr
  */
 export function isFlipDataSuspicious(flip: FlipOpportunity): boolean {
   // All prices identical → likely placeholder data
-  if (flip.bid > 0 && flip.ask > 0 && flip.midPrice > 0 &&
+  if ((flip.bid ?? 0) > 0 && (flip.ask ?? 0) > 0 && (flip.midPrice ?? 0) > 0 &&
       flip.bid === flip.ask && flip.bid === flip.midPrice) {
     return true;
   }
   // Spread contradicts buy/sell prices
-  if (flip.bid > 0 && flip.ask > 0) {
-    const actualSpread = Math.abs(flip.ask - flip.bid) /
-                         ((flip.bid + flip.ask) / 2);
-    const reportedSpread = flip.spread ?? flip.spreadAfterFees;
+  if ((flip.bid ?? 0) > 0 && (flip.ask ?? 0) > 0) {
+    const actualSpread = Math.abs((flip.ask ?? 0) - (flip.bid ?? 0)) /
+                         (((flip.bid ?? 0) + (flip.ask ?? 0)) / 2);
+    const reportedSpread = flip.spread ?? flip.spreadAfterFees ?? 0;
     if (reportedSpread > 0 && Math.abs(actualSpread - reportedSpread) > 0.01) {
       return true;
     }
   }
   // Zero prices with non-zero volume → data error
-  if (flip.bid === 0 && flip.volume24h > 0) return true;
+  if ((flip.bid === 0 || flip.bid == null) && (flip.volume24h ?? 0) > 0) return true;
   return false;
 }
 
@@ -109,11 +109,13 @@ export function isFlipsResponseSuspicious(
   }
 
   // Check if all opportunities have identical prices
-  const allSamePrice = opportunities.every(
-    (f) => f.bid === opportunities[0].bid &&
-           f.ask === opportunities[0].ask &&
-           f.midPrice === opportunities[0].midPrice,
-  );
+  const first = opportunities[0];
+  const allSamePrice = first.bid != null && first.ask != null && first.midPrice != null &&
+    opportunities.every(
+      (f) => f.bid === first.bid &&
+             f.ask === first.ask &&
+             f.midPrice === first.midPrice,
+    );
   if (allSamePrice && opportunities.length > 1) {
     return {
       suspicious: true,

@@ -197,8 +197,8 @@ function ForecastRecommendations({
         action: decision,
         confidence,
         reason: ratio > 1
-          ? t("forecastRecStorageRatioFavorable", { "0": ratio.toFixed(3), "1": momentum > 0 ? t("forecastRecPositive") : t("forecastRecNegative"), "2": momentum.toFixed(4) })
-          : t("forecastRecStorageRatioNearThreshold", { "0": decision, "1": ratio.toFixed(3) }),
+          ? t("forecastRecStorageRatioFavorable", { "0": (ratio ?? 0).toFixed(3), "1": momentum > 0 ? t("forecastRecPositive") : t("forecastRecNegative"), "2": (momentum ?? 0).toFixed(4) })
+          : t("forecastRecStorageRatioNearThreshold", { "0": decision, "1": (ratio ?? 0).toFixed(3) }),
         priceTarget: storageData.projectedPrice,
         timeframe: t("forecastRecHorizon", { "0": horizonHours }),
       });
@@ -207,7 +207,7 @@ function ForecastRecommendations({
         action: decision,
         confidence,
         reason: ratio < 1
-          ? t("forecastRecStorageRatioDeclining", { "0": ratio.toFixed(3), "1": formatPrice(storageData.projectedPrice, baseCurrencyText, baseCurrencyApiId, { digits: 4 }) })
+          ? t("forecastRecStorageRatioDeclining", { "0": (ratio ?? 0).toFixed(3), "1": formatPrice(storageData.projectedPrice, baseCurrencyText, baseCurrencyApiId, { digits: 4 }) })
           : t("forecastRecStorageRatioVolatility", { "0": decision, "1": (volatility * 100).toFixed(2) }),
         priceTarget: storageData.projectedPrice,
         timeframe: t("forecastRecHorizon", { "0": horizonHours }),
@@ -242,7 +242,7 @@ function ForecastRecommendations({
         confidence: currencyAnomaly.is_confirmed ? "high" : "low",
         reason: t("forecastRecAnomalyDetected", {
           "0": direction,
-          "1": currencyAnomaly.alert_score.toFixed(2),
+          "1": (currencyAnomaly.alert_score ?? 0).toFixed(2),
           "2": currencyAnomaly.triggered_indicators.join(", "),
           "3": currencyAnomaly.is_confirmed ? t("forecastRecAnomalyConfirmed") : t("forecastRecAnomalyUnconfirmed"),
         }),
@@ -921,15 +921,15 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                       ? "text-red-600 dark:text-red-400"
                       : ""
                   }`}>
-                    {storageData.ratio.toFixed(4)}
+                    {(storageData.ratio ?? 0).toFixed(4)}
                   </p>
                 </div>
               </div>
 
               {/* Inputs */}
               <div className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <span>{t("forecastMomentumInput")}: {storageData.inputs?.momentum.toFixed(4)}</span>
-                <span>{t("forecastVolatilityInput")}: {storageData.inputs?.volatility.toFixed(4)}</span>
+                <span>{t("forecastMomentumInput")}: {(storageData.inputs?.momentum ?? 0).toFixed(4)}</span>
+                <span>{t("forecastVolatilityInput")}: {(storageData.inputs?.volatility ?? 0).toFixed(4)}</span>
                 <span>{t("forecastHorizon")}: {storageData.inputs?.horizonHours}h</span>
               </div>
             </div>
@@ -1041,7 +1041,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-muted-foreground">
-                        {t("forecastAlertScore")}: {anomaly.alert_score.toFixed(2)}
+                        {t("forecastAlertScore")}: {(anomaly.alert_score ?? 0).toFixed(2)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {t("forecastIndicators")}: {anomaly.triggered_indicators.join(", ")}
