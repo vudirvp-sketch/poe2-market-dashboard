@@ -630,6 +630,80 @@ const zh: Record<TranslationKeys, string> = {
 
   // P2-4: Liquidity Indicators
   liquidityScoreTooltip: "流动性: {0}%——基于成交量与库存比",
+
+  // P2-2: Heatmap & Market Tops
+  heatmapMarketTops: "市场热门",
+  heatmapTopGainers: "涨幅榜",
+  heatmapTopLosers: "跌幅榜",
+  heatmapColorLegend: "颜色强度 = 24小时变化幅度",
+
+  // P2-3: Take-Profit Calculator
+  takeProfitTitle: "止盈和止损计算器",
+  takeProfitBasedOnCI: "基于 {0} 的预测置信区间",
+  takeProfitPositionSize: "仓位大小",
+  takeProfitDirection: "方向",
+  takeProfitLong: "做多",
+  takeProfitShort: "做空",
+  takeProfitRiskReward: "风险/收益",
+  takeProfitEntryPrice: "入场价",
+  takeProfitPositionValue: "仓位价值",
+  takeProfitLevels: "止盈水平",
+  takeProfitStopLoss: "止损水平",
+  takeProfitConservative: "保守",
+  takeProfitOptimistic: "乐观",
+  takeProfitAggressive: "激进",
+  takeProfitPessimistic: "悲观",
+
+  // P2-4: Volume & Liquidity
+  volumeLiquidityTitle: "成交量与流动性",
+  volumeLiquidityTotalPairs: "总交易对",
+  volumeLiquidityAvgLiquidity: "平均流动性",
+  volumeLiquidityHighLiquidity: "高流动性交易对",
+  volumeLiquidityAnomalies: "成交量异常",
+  volumeLiquidityDetailed: "详细流动性数据",
+
+  // P3-1: Technical Indicators
+  technicalIndicatorsTitle: "技术指标",
+  indicatorSMA20: "SMA 20",
+  indicatorEMA12: "EMA 12",
+  indicatorEMA26: "EMA 26",
+  indicatorRSI14: "RSI 14",
+  indicatorOverbought: "超买",
+  indicatorOversold: "超卖",
+
+  // P3-5: Watchlist P&L
+  pnl: "盈亏",
+  entryPrice: "入场",
+  currentPriceShort: "现价",
+
+  // P3-8: Candlestick Chart
+  candlestickChartTitle: "K线图",
+  candlestickNoData: "没有K线图所需的OHLCV数据",
+  candlestickOpen: "开",
+  candlestickHigh: "高",
+  candlestickLow: "低",
+  candlestickClose: "收",
+  candlestickVol: "量",
+  candlestickBullish: "看涨",
+  candlestickBearish: "看跌",
+
+  // P3-2: Multi-Timeframe Alignment
+  mtfAlignmentTitle: "多时间框架对齐",
+  mtfUp: "上涨",
+  mtfDown: "下跌",
+  mtfNeutral: "中性",
+  mtfAllBullish: "所有时间框架看涨——强势上升趋势",
+  mtfAllBearish: "所有时间框架看跌——强势下降趋势",
+  mtfMostlyBullish: "短期上涨，注意高级别时间框架的阻力",
+  mtfMostlyBearish: "短期下跌，注意高级别时间框架的支撑",
+  mtfMixedSignals: "时间框架信号混杂——无明显趋势",
+
+  // P3-3: Comparative Analytics
+  comparativeTitle: "比较分析",
+  comparativeNoData: "选择要比较的货币",
+  comparativeCorrelationMatrix: "相关性矩阵",
+  comparativeCorrelationNote: "颜色编码：绿色=正相关，红色=负相关，灰色=无相关",
+  comparativeCorrelationUnavailable: "相关性矩阵需要后端数据",
 };
 
 export default zh;

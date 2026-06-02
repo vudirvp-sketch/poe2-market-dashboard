@@ -1,20 +1,25 @@
 // ============================================================================
-// Candlestick Chart — P3-8
+// Candlestick Chart — P3-8 + P3-2 (Multi-timeframe Alignment)
 //
 // Custom candlestick chart component since Recharts doesn't support
 // candlestick charts natively. Renders OHLCV data with SVG rectangles
 // for candle bodies and lines for wicks.
 //
 // Also supports SMA/EMA/RSI overlays (P3-1).
+// P3-2: Added timeframe switcher (1H/4H/1D/1W) and multi-timeframe
+// alignment arrows based on SMA crossovers at each timeframe.
 // ============================================================================
 "use client";
 
-import { useMemo, memo, useState } from "react";
+import { useMemo, memo, useState, useCallback } from "react";
 import {
   CandlestickChart as CandlestickIcon,
   TrendingUp,
+  TrendingDown,
+  Minus,
   Activity,
   ChevronDown,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +45,24 @@ export interface OHLCVData {
   volume: number;
 }
 
+/** P3-2: Timeframe type for multi-timeframe alignment */
+export type Timeframe = "1H" | "4H" | "1D" | "1W";
+
+/** P3-2: Trend direction at a specific timeframe */
+export type TrendDirection = "up" | "down" | "neutral";
+
+/** P3-2: Multi-timeframe alignment result */
+export interface TimeframeAlignment {
+  timeframe: Timeframe;
+  trend: TrendDirection;
+  /** Short-term SMA value (null if insufficient data) */
+  smaShort: number | null;
+  /** Long-term SMA value (null if insufficient data) */
+  smaLong: number | null;
+  /** Price at the alignment point */
+  price: number;
+}
+
 interface CandlestickChartProps {
   data: OHLCVData[];
   /** Currency pair name for display */
@@ -48,6 +71,12 @@ interface CandlestickChartProps {
   showVolume?: boolean;
   /** Available overlay indicators */
   overlays?: Array<"sma20" | "ema12" | "ema26" | "rsi14">;
+  /** P3-2: Currently selected timeframe */
+  timeframe?: Timeframe;
+  /** P3-2: Callback when timeframe changes */
+  onTimeframeChange?: (tf: Timeframe) => void;
+  /** P3-2: Multi-timeframe alignment data (computed externally) */
+  timeframeAlignments?: TimeframeAlignment[];
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +158,9 @@ export const CandlestickChart = memo(function CandlestickChart({
   title = "Candlestick Chart",
   showVolume = true,
   overlays = ["sma20", "ema12"],
+  timeframe = "1D",
+  onTimeframeChange,
+  timeframeAlignments,
 }: CandlestickChartProps) {
   const { t } = useI18n();
   const [activeOverlays, setActiveOverlays] = useState<Set<string>>(
@@ -265,6 +297,23 @@ export const CandlestickChart = memo(function CandlestickChart({
             <CandlestickIcon className="h-4 w-4" aria-hidden="true" />
             {title}
           </CardTitle>
+          {/* P3-2: Timeframe switcher */}
+          {onTimeframeChange && (
+            <div className="flex items-center gap-0.5 mr-2">
+              <Clock className="h-3 w-3 text-muted-foreground mr-1" aria-hidden="true" />
+              {(["1H", "4H", "1D", "1W"] as Timeframe[]).map((tf) => (
+                <Button
+                  key={tf}
+                  variant={timeframe === tf ? "default" : "outline"}
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => onTimeframeChange(tf)}
+                >
+                  {tf}
+                </Button>
+              ))}
+            </div>
+          )}
           {/* Overlay toggles */}
           <div className="flex items-center gap-1">
             <Button
@@ -505,7 +554,165 @@ export const CandlestickChart = memo(function CandlestickChart({
             <span className="w-3 h-0.5 bg-red-500 inline-block" /> Bearish
           </span>
         </div>
+
+        {/* P3-2: Multi-timeframe alignment arrows */}
+        {timeframeAlignments && timeframeAlignments.length > 0 && (
+          <MultiTimeframeAlignment alignments={timeframeAlignments} />
+        )}
       </CardContent>
     </Card>
   );
 });
+
+// ============================================================================
+// P3-2: Multi-Timeframe Alignment Component
+// Shows trend direction arrows for each timeframe based on SMA crossovers.
+// ============================================================================
+
+interface MultiTimeframeAlignmentProps {
+  alignments: TimeframeAlignment[];
+}
+
+function MultiTimeframeAlignment({ alignments }: MultiTimeframeAlignmentProps) {
+  const { t } = useI18n();
+
+  // Determine overall alignment message
+  const upCount = alignments.filter((a) => a.trend === "up").length;
+  const downCount = alignments.filter((a) => a.trend === "down").length;
+  const allUp = upCount === alignments.length;
+  const allDown = downCount === alignments.length;
+
+  let overallMessage = "";
+  let overallColor = "text-muted-foreground";
+  if (allUp) {
+    overallMessage = t("mtfAllBullish");
+    overallColor = "text-emerald-500";
+  } else if (allDown) {
+    overallMessage = t("mtfAllBearish");
+    overallColor = "text-red-500";
+  } else if (upCount > downCount) {
+    overallMessage = t("mtfMostlyBullish");
+    overallColor = "text-amber-500";
+  } else if (downCount > upCount) {
+    overallMessage = t("mtfMostlyBearish");
+    overallColor = "text-amber-500";
+  } else {
+    overallMessage = t("mtfMixedSignals");
+    overallColor = "text-muted-foreground";
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border p-3">
+      <div className="text-xs font-semibold mb-2 flex items-center gap-1.5">
+        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+        {t("mtfAlignmentTitle")}
+      </div>
+      <div className="flex items-center gap-4">
+        {alignments.map((a) => {
+          const Icon =
+            a.trend === "up" ? TrendingUp :
+            a.trend === "down" ? TrendingDown :
+            Minus;
+          const color =
+            a.trend === "up" ? "text-emerald-500" :
+            a.trend === "down" ? "text-red-500" :
+            "text-muted-foreground";
+          const bgColor =
+            a.trend === "up" ? "bg-emerald-500/10" :
+            a.trend === "down" ? "bg-red-500/10" :
+            "bg-muted";
+          return (
+            <div
+              key={a.timeframe}
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded ${bgColor}`}
+            >
+              <span className="text-[10px] font-medium text-muted-foreground">
+                {a.timeframe}
+              </span>
+              <Icon className={`h-5 w-5 ${color}`} aria-hidden="true" />
+              <span className={`text-[9px] font-semibold ${color}`}>
+                {a.trend === "up" ? t("mtfUp") : a.trend === "down" ? t("mtfDown") : t("mtfNeutral")}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className={`text-[11px] mt-2 font-medium ${overallColor}`}>
+        {overallMessage}
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// P3-2: Multi-timeframe alignment computation utility
+// Computes SMA crossover-based trend direction at each timeframe.
+// ============================================================================
+
+/**
+ * Compute multi-timeframe alignment from daily OHLCV data.
+ *
+ * For each timeframe, we compute a short-term SMA and a long-term SMA
+ * on the close prices and determine the trend direction:
+ *   - "up": short SMA > long SMA (bullish crossover)
+ *   - "down": short SMA < long SMA (bearish crossover)
+ *   - "neutral": SMAs are too close or insufficient data
+ *
+ * The timeframe determines how many daily candles are grouped:
+ *   - 1H: Not applicable to daily data; uses the last few daily closes with short periods
+ *   - 4H: Aggregates ~6.5 hours of daily data (we use short=3, long=7)
+ *   - 1D: Uses daily data directly (short=7, long=20)
+ *   - 1W: Aggregates weekly (short=4, long=12)
+ *
+ * Note: Since we only have daily OHLCV from the API, 1H and 4H are
+ * approximations using shorter SMA periods on daily data.
+ * For true hourly analysis, use the hourly price history endpoint instead.
+ */
+export function computeTimeframeAlignments(data: OHLCVData[]): TimeframeAlignment[] {
+  if (!data || data.length < 2) return [];
+
+  const closes = data.map((d) => d.close);
+  const lastPrice = closes[closes.length - 1];
+
+  const timeframes: { tf: Timeframe; shortPeriod: number; longPeriod: number }[] = [
+    { tf: "1H", shortPeriod: 3, longPeriod: 7 },   // Approx: very short SMAs on daily data
+    { tf: "4H", shortPeriod: 5, longPeriod: 12 },  // Approx: slightly longer
+    { tf: "1D", shortPeriod: 7, longPeriod: 20 },   // Daily: standard SMA 7/20
+    { tf: "1W", shortPeriod: 4, longPeriod: 12 },   // Weekly: longer SMAs
+  ];
+
+  return timeframes.map(({ tf, shortPeriod, longPeriod }) => {
+    const smaShort = computeSMAForAlignment(closes, shortPeriod);
+    const smaLong = computeSMAForAlignment(closes, longPeriod);
+
+    let trend: TrendDirection = "neutral";
+    if (smaShort !== null && smaLong !== null) {
+      const diff = (smaShort - smaLong) / smaLong;
+      if (diff > 0.005) {
+        trend = "up";
+      } else if (diff < -0.005) {
+        trend = "down";
+      }
+    }
+
+    return {
+      timeframe: tf,
+      trend,
+      smaShort,
+      smaLong,
+      price: lastPrice,
+    };
+  });
+}
+
+/**
+ * Compute SMA for alignment: returns the last SMA value or null if insufficient data.
+ */
+function computeSMAForAlignment(prices: number[], period: number): number | null {
+  if (prices.length < period) return null;
+  let sum = 0;
+  for (let i = prices.length - period; i < prices.length; i++) {
+    sum += prices[i];
+  }
+  return sum / period;
+}

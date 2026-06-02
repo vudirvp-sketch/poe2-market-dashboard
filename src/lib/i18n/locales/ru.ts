@@ -635,6 +635,80 @@ const ru: Record<TranslationKeys, string> = {
 
   // P2-4: Liquidity Indicators
   liquidityScoreTooltip: "Ликвидность: {0}% — на основе соотношения объёма к запасу",
+
+  // P2-2: Heatmap & Market Tops
+  heatmapMarketTops: "Топы рынка",
+  heatmapTopGainers: "Топ роста",
+  heatmapTopLosers: "Топ падения",
+  heatmapColorLegend: "Интенсивность цвета = величина изменения за 24ч",
+
+  // P2-3: Take-Profit Calculator
+  takeProfitTitle: "Калькулятор тейк-профит и стоп-лосс",
+  takeProfitBasedOnCI: "На основе доверительных интервалов прогноза для {0}",
+  takeProfitPositionSize: "Размер позиции",
+  takeProfitDirection: "Направление",
+  takeProfitLong: "Лонг",
+  takeProfitShort: "Шорт",
+  takeProfitRiskReward: "Риск/Прибыль",
+  takeProfitEntryPrice: "Цена входа",
+  takeProfitPositionValue: "Стоимость позиции",
+  takeProfitLevels: "Уровни тейк-профит",
+  takeProfitStopLoss: "Уровни стоп-лосс",
+  takeProfitConservative: "Консервативный",
+  takeProfitOptimistic: "Оптимистичный",
+  takeProfitAggressive: "Агрессивный",
+  takeProfitPessimistic: "Пессимистичный",
+
+  // P2-4: Volume & Liquidity
+  volumeLiquidityTitle: "Объём и ликвидность",
+  volumeLiquidityTotalPairs: "Всего пар",
+  volumeLiquidityAvgLiquidity: "Средняя ликвидность",
+  volumeLiquidityHighLiquidity: "Пары с высокой ликвидностью",
+  volumeLiquidityAnomalies: "Аномалии объёма",
+  volumeLiquidityDetailed: "Подробные данные ликвидности",
+
+  // P3-1: Technical Indicators
+  technicalIndicatorsTitle: "Технические индикаторы",
+  indicatorSMA20: "SMA 20",
+  indicatorEMA12: "EMA 12",
+  indicatorEMA26: "EMA 26",
+  indicatorRSI14: "RSI 14",
+  indicatorOverbought: "Перекупленность",
+  indicatorOversold: "Перепроданность",
+
+  // P3-5: Watchlist P&L
+  pnl: "П&У",
+  entryPrice: "Вход",
+  currentPriceShort: "Текущая",
+
+  // P3-8: Candlestick Chart
+  candlestickChartTitle: "Свечной график",
+  candlestickNoData: "Нет OHLCV данных для свечного графика",
+  candlestickOpen: "О",
+  candlestickHigh: "Х",
+  candlestickLow: "Н",
+  candlestickClose: "З",
+  candlestickVol: "Об",
+  candlestickBullish: "Бычий",
+  candlestickBearish: "Медвежий",
+
+  // P3-2: Multi-Timeframe Alignment
+  mtfAlignmentTitle: "Выравнивание таймфреймов",
+  mtfUp: "Рост",
+  mtfDown: "Падение",
+  mtfNeutral: "Нейтрально",
+  mtfAllBullish: "Все таймфреймы бычьи — сильный восходящий тренд",
+  mtfAllBearish: "Все таймфреймы медвежьи — сильный нисходящий тренд",
+  mtfMostlyBullish: "Краткосрочно растёт, следите за сопротивлением на старших таймфреймах",
+  mtfMostlyBearish: "Краткосрочно падает, следите за поддержкой на старших таймфреймах",
+  mtfMixedSignals: "Смешанные сигналы по таймфреймам — нет явного тренда",
+
+  // P3-3: Comparative Analytics
+  comparativeTitle: "Сравнительная аналитика",
+  comparativeNoData: "Выберите валюты для сравнения",
+  comparativeCorrelationMatrix: "Матрица корреляции",
+  comparativeCorrelationNote: "Цветовое кодирование: зелёный = положительная корреляция, красный = отрицательная, серый = без корреляции",
+  comparativeCorrelationUnavailable: "Матрица корреляции требует данных бэкенда",
 };
 
 export default ru;

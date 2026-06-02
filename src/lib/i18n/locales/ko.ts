@@ -630,6 +630,80 @@ const ko: Record<TranslationKeys, string> = {
 
   // P2-4: Liquidity Indicators
   liquidityScoreTooltip: "유동성: {0}% — 거래량/재고 비율 기준",
+
+  // P2-2: Heatmap & Market Tops
+  heatmapMarketTops: "시장 상위",
+  heatmapTopGainers: "상승 상위",
+  heatmapTopLosers: "하락 상위",
+  heatmapColorLegend: "색상 강도 = 24시간 변동 폭",
+
+  // P2-3: Take-Profit Calculator
+  takeProfitTitle: "익절 및 손절 계산기",
+  takeProfitBasedOnCI: "{0}의 예측 신뢰 구간 기반",
+  takeProfitPositionSize: "포지션 크기",
+  takeProfitDirection: "방향",
+  takeProfitLong: "롱",
+  takeProfitShort: "숏",
+  takeProfitRiskReward: "리스크/수익",
+  takeProfitEntryPrice: "진입가",
+  takeProfitPositionValue: "포지션 가치",
+  takeProfitLevels: "익절 레벨",
+  takeProfitStopLoss: "손절 레벨",
+  takeProfitConservative: "보수적",
+  takeProfitOptimistic: "낙관적",
+  takeProfitAggressive: "공격적",
+  takeProfitPessimistic: "비관적",
+
+  // P2-4: Volume & Liquidity
+  volumeLiquidityTitle: "거래량 및 유동성",
+  volumeLiquidityTotalPairs: "총 페어",
+  volumeLiquidityAvgLiquidity: "평균 유동성",
+  volumeLiquidityHighLiquidity: "고유동성 페어",
+  volumeLiquidityAnomalies: "거래량 이상",
+  volumeLiquidityDetailed: "상세 유동성 데이터",
+
+  // P3-1: Technical Indicators
+  technicalIndicatorsTitle: "기술 지표",
+  indicatorSMA20: "SMA 20",
+  indicatorEMA12: "EMA 12",
+  indicatorEMA26: "EMA 26",
+  indicatorRSI14: "RSI 14",
+  indicatorOverbought: "과매수",
+  indicatorOversold: "과매도",
+
+  // P3-5: Watchlist P&L
+  pnl: "손익",
+  entryPrice: "진입",
+  currentPriceShort: "현재가",
+
+  // P3-8: Candlestick Chart
+  candlestickChartTitle: "캔들스틱 차트",
+  candlestickNoData: "캔들스틱 차트에 사용할 OHLCV 데이터 없음",
+  candlestickOpen: "시",
+  candlestickHigh: "고",
+  candlestickLow: "저",
+  candlestickClose: "종",
+  candlestickVol: "거",
+  candlestickBullish: "강세",
+  candlestickBearish: "약세",
+
+  // P3-2: Multi-Timeframe Alignment
+  mtfAlignmentTitle: "다중 타임프레임 정렬",
+  mtfUp: "상승",
+  mtfDown: "하락",
+  mtfNeutral: "중립",
+  mtfAllBullish: "모든 타임프레임 강세 — 강한 상승 추세",
+  mtfAllBearish: "모든 타임프레임 약세 — 강한 하락 추세",
+  mtfMostlyBullish: "단기 상승 중, 상위 타임프레임 저항 주의",
+  mtfMostlyBearish: "단기 하락 중, 상위 타임프레임 지지 주의",
+  mtfMixedSignals: "타임프레임 간 혼합 신호 — 명확한 추세 없음",
+
+  // P3-3: Comparative Analytics
+  comparativeTitle: "비교 분석",
+  comparativeNoData: "비교할 통화를 선택하세요",
+  comparativeCorrelationMatrix: "상관관계 매트릭스",
+  comparativeCorrelationNote: "색상 코딩: 녹색 = 양의 상관관계, 빨간색 = 음의 상관관계, 회색 = 무상관",
+  comparativeCorrelationUnavailable: "상관관계 매트릭스는 백엔드 데이터가 필요합니다",
 };
 
 export default ko;

@@ -675,6 +675,11 @@ const en = {
   indicatorOverbought: "Overbought",
   indicatorOversold: "Oversold",
 
+  // ---- P3-5: Watchlist P&L ----
+  pnl: "P&L",
+  entryPrice: "Entry",
+  currentPriceShort: "Current",
+
   // ---- P3-8: Candlestick Chart ----
   candlestickChartTitle: "Candlestick Chart",
   candlestickNoData: "No OHLCV data available for candlestick chart",
@@ -685,6 +690,24 @@ const en = {
   candlestickVol: "Vol",
   candlestickBullish: "Bullish",
   candlestickBearish: "Bearish",
+
+  // ---- P3-2: Multi-Timeframe Alignment ----
+  mtfAlignmentTitle: "Multi-Timeframe Alignment",
+  mtfUp: "Up",
+  mtfDown: "Down",
+  mtfNeutral: "Neutral",
+  mtfAllBullish: "All timeframes bullish — strong uptrend",
+  mtfAllBearish: "All timeframes bearish — strong downtrend",
+  mtfMostlyBullish: "Short-term rising, watch for resistance at higher timeframes",
+  mtfMostlyBearish: "Short-term falling, watch for support at higher timeframes",
+  mtfMixedSignals: "Mixed signals across timeframes — no clear trend",
+
+  // ---- P3-3: Comparative Analytics ----
+  comparativeTitle: "Comparative Analytics",
+  comparativeNoData: "Select currencies to compare",
+  comparativeCorrelationMatrix: "Correlation Matrix",
+  comparativeCorrelationNote: "Color-coded: green = positive correlation, red = negative, gray = uncorrelated",
+  comparativeCorrelationUnavailable: "Correlation matrix requires backend data",
 } as const;
 
 export default en;

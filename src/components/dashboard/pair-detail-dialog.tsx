@@ -32,7 +32,7 @@ import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
 import { EmptyState } from "./empty-state";
-import { CandlestickChart, type OHLCVData } from "./candlestick-chart";
+import { CandlestickChart, type OHLCVData, type Timeframe, computeTimeframeAlignments, type TimeframeAlignment } from "./candlestick-chart";
 
 const TIME_RANGE_LIMITS: Record<"7d" | "30d" | "90d", string> = {
   "7d": "168",
@@ -59,6 +59,8 @@ export function PairDetailDialog({
   const reducedMotion = useReducedMotion();
   const { uiState } = useDashboardStore();
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
+  // P3-2: Timeframe state for candlestick chart
+  const [candleTimeframe, setCandleTimeframe] = useState<Timeframe>("1D");
 
   const { data: pairHistory, isLoading } = useQuery({
     queryKey: [
@@ -122,6 +124,11 @@ export function PairDetailDialog({
         volume: d.Volume ?? 0,
       }));
   }, [dailyStatsData]);
+
+  // P3-2: Compute multi-timeframe alignment from OHLCV data
+  const timeframeAlignments = useMemo((): TimeframeAlignment[] => {
+    return computeTimeframeAlignments(ohlcvData);
+  }, [ohlcvData]);
 
   // Overall stats (from the loaded history period)
   const stats = useMemo(() => {
@@ -385,7 +392,7 @@ export function PairDetailDialog({
           />
         )}
 
-        {/* P3-8: Candlestick Chart with SMA/EMA/RSI overlays */}
+        {/* P3-8: Candlestick Chart with SMA/EMA/RSI overlays + P3-2: Timeframe switcher & alignment */}
         {ohlcvData.length > 0 && (
           <div className="mt-4">
             <CandlestickChart
@@ -393,6 +400,9 @@ export function PairDetailDialog({
               title={`${pair.currency1Name}/${pair.currency2Name} — Daily Candlestick`}
               showVolume={true}
               overlays={["sma20", "ema12", "rsi14"]}
+              timeframe={candleTimeframe}
+              onTimeframeChange={setCandleTimeframe}
+              timeframeAlignments={timeframeAlignments}
             />
           </div>
         )}

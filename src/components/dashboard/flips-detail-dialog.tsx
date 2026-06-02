@@ -8,7 +8,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, Shield, Cubes } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, Shield, Boxes } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { fmt } from "@/lib/types";
@@ -123,7 +123,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
       {selectedFlip.quantized_analysis && (
         <div className="rounded-lg border p-3 space-y-3">
           <h4 className="text-xs font-semibold flex items-center gap-1.5">
-            <Cubes className="h-3.5 w-3.5" aria-hidden="true" />
+            <Boxes className="h-3.5 w-3.5" aria-hidden="true" />
             {t("quantizedAnalysisTitle")}
           </h4>
           

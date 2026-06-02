@@ -15,7 +15,7 @@ import {
   Minus,
   ChevronRight,
   Shield,
-  Cubes,
+  Boxes,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -198,7 +198,7 @@ export const FlipsTable = memo(function FlipsTable({
 
                   {/* P1-1: Min Lot — minimum profitable lot size */}
                   <span className="text-right font-mono text-xs flex items-center justify-end gap-0.5" title={t("minLotTooltip")}>
-                    <Cubes className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                    <Boxes className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     {opp.quantized_analysis ? (
                       <span className={opp.quantized_analysis.minProfitableLot > 10 ? "text-amber-600 dark:text-amber-400" : ""}>
                         {opp.quantized_analysis.minProfitableLot > 0 ? `×${opp.quantized_analysis.minProfitableLot}` : "✗"}

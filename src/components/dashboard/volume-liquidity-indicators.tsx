@@ -237,7 +237,7 @@ export const VolumeLiquidityIndicators = memo(function VolumeLiquidityIndicators
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">
-            <p className={`text-2xl font-bold ${(avgLiquidity * 100).toFixed(0) >= 50 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+            <p className={`text-2xl font-bold ${Number((avgLiquidity * 100).toFixed(0)) >= 50 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
               {(avgLiquidity * 100).toFixed(0)}%
             </p>
           </CardContent>
