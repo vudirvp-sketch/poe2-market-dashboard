@@ -943,10 +943,10 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
               <Info className="h-4 w-4" aria-hidden="true" />
-              Forecast Recommendations
+              {t("forecastRecommendationsTitle")}
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Based on ensemble forecast, storage value decision, and anomaly detection
+              {t("forecastRecommendationsDesc")}
             </p>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">

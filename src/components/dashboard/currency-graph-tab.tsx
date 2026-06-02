@@ -673,7 +673,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                             {edge.source} → {edge.target}
                             {"\n"}Rate: {fmt(edge.rawRate)}
                             {"\n"}Volume: {edge.volume.toLocaleString()}
-                            {edge.isCycleEdge ? "\n[ARB CYCLE]" : ""}
+                            {edge.isCycleEdge ? `\n${t("graphArbCycleTooltip")}` : ""}
                           </title>
                         </line>
                       );
@@ -713,7 +713,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
                             fontSize={8}
                             fontFamily="monospace"
                           >
-                            Arb: +{cycle.netProfitPct.toFixed(1)}%
+                            {t("graphArbCycleLabel", { "0": cycle.netProfitPct.toFixed(1) })}
                           </text>
                         </g>
                       );

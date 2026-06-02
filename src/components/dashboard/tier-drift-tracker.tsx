@@ -111,7 +111,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Layers className="h-4 w-4" aria-hidden="true" />
-            Tier Drift Tracker
+            {t("tierDriftTrackerTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -128,7 +128,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Layers className="h-4 w-4" aria-hidden="true" />
-            Tier Drift Tracker
+            {t("tierDriftTrackerTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -148,7 +148,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Layers className="h-4 w-4" aria-hidden="true" />
-            Tier Drift Tracker
+            {t("tierDriftTrackerTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -172,7 +172,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
               <CardHeader className="pb-2 pt-4 px-4">
                 <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                   <span className={`inline-block w-2 h-2 rounded-full ${style.dot}`} />
-                  {tierLabel} Currencies
+                  {t("tierDriftCurrencies", { "0": tierLabel })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
@@ -189,7 +189,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
               <Layers className="h-4 w-4" aria-hidden="true" />
-              Tier Boundary Thresholds
+              {t("tierBoundaryThresholds")}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">
@@ -200,7 +200,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
                 const style = tierStyle(`T${tierNum}`);
                 return (
                   <div key={key} className="rounded-lg border p-3 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">{label} min</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("tierBoundaryMin", { "0": label })}</p>
                     <p className={`text-lg font-bold font-mono ${style.text}`}>
                       {fmt(value)}
                     </p>
@@ -218,7 +218,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
           <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="text-sm">
             <p className="text-muted-foreground">
-              Historical tier drift requires backend time-series data (not yet available).
+              {t("tierDriftHistoricalNote")}
             </p>
           </div>
         </CardContent>
@@ -229,7 +229,7 @@ export const TierDriftTracker = memo(function TierDriftTracker({
         <CardHeader className="pb-2 pt-4 px-4">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Layers className="h-4 w-4" aria-hidden="true" />
-            All Currencies by Tier
+            {t("tierDriftAllCurrencies")}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -238,10 +238,10 @@ export const TierDriftTracker = memo(function TierDriftTracker({
               className="grid grid-cols-[1fr_60px_80px_80px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10"
               role="row"
             >
-              <span role="columnheader">Currency</span>
-              <span role="columnheader">Tier</span>
-              <span role="columnheader" className="text-right">Price</span>
-              <span role="columnheader" className="text-right">24h Change</span>
+              <span role="columnheader">{t("portfolioCurrency")}</span>
+              <span role="columnheader">{t("tierDist")}</span>
+              <span role="columnheader" className="text-right">{t("price")}</span>
+              <span role="columnheader" className="text-right">{t("change24h")}</span>
             </div>
             {sortedTiers.map((item) => {
               const style = tierStyle(item.tierLabel);

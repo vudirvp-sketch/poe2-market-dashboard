@@ -140,16 +140,19 @@ class TestVolatility:
         assert result.volatility != vol_ddof0  # Should differ for small N
 
     def test_volatility_zero_for_constant_prices(self):
-        """If prices don't change, volatility should be at the minimum floor (0.01)."""
+        """If prices don't change, volatility should be at the minimum floor (0.001)."""
         tracker = PriceMomentumTracker(window_size=24)
         for _ in range(5):
             tracker.update(100)
 
         result = tracker.compute()
-        # The min_volatility floor (0.01) prevents zero volatility to avoid
+        # The min_volatility floor (0.001) prevents zero volatility to avoid
         # degrading momentum-assisted models. With constant prices, the
-        # true volatility is 0.0, but the floor returns 0.01.
-        assert result.volatility == 0.01
+        # true volatility is 0.0, but the floor returns 0.001.
+        # NOTE: Floor was lowered from 0.01 (1%) to 0.001 (0.1%) because
+        # the old 1% floor systematically inflated volatility for stable
+        # currencies, depressing flip scores and storage-value estimates.
+        assert result.volatility == 0.001
 
 
 class TestAcceleration:

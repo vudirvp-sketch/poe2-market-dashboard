@@ -830,7 +830,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     <p className="text-xs text-muted-foreground">{t("timeDecayDesc")}</p>
                     {/* Fix 3.1: Show that decay is currently inactive */}
                     <p className="text-xs text-amber-600 dark:text-amber-400">
-                      ⚠ No effect — API does not provide snapshot timestamps
+                      {t("decayNoEffect")}
                     </p>
                     <Input
                       id="arb-decay-lambda"
@@ -872,8 +872,8 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0">0 — No decay</SelectItem>
-                        <SelectItem value="custom">Custom (use input)</SelectItem>
+                        <SelectItem value="0">{t("decayOptionNone")}</SelectItem>
+                        <SelectItem value="custom">{t("decayOptionCustom")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

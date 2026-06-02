@@ -451,7 +451,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                         borderRadius: "8px",
                         fontSize: "12px",
                       }}
-                      formatter={(v: number) => [`${v > 0 ? "+" : ""}${v.toFixed(1)}%`, "Change"]}
+                      formatter={(v: number) => [`${v > 0 ? "+" : ""}${v.toFixed(1)}%`, t("change")]}
                     />
                     <Bar dataKey="change" radius={[0, 4, 4, 0]} isAnimationActive={!reducedMotion}>
                       {topMoversBarData.map((entry, idx) => (
