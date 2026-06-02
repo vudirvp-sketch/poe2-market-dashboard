@@ -58,6 +58,7 @@ interface GraphEdge {
   to: string;
   rate: number;
   volume: number;
+  spread: number; // market spread applied to this edge
   fromName: string;
   toName: string;
 }
@@ -65,9 +66,10 @@ interface GraphEdge {
 interface ArbitrageCycle {
   route: string[];
   edges: GraphEdge[];
-  grossProfit: number;
-  netProfit: number;
-  slippage: number;
+  grossProfitPct: number;   // gross profit as percentage
+  netProfitPct: number;     // net profit as percentage (after spread + slippage)
+  totalSpreadPct: number;   // total spread cost across all edges (%)
+  slippage: number;         // slippage fraction (for display)
   maxVolume: number;
   confidence: number;
 }
@@ -100,6 +102,20 @@ function applyFee(rate: number, feeBps: number): number {
   return rate * (1 - feeBps / 10_000);
 }
 
+/** Estimate market spread from volume, following §7.1.1 Canonical Formulas.
+ *  volume_spread = 0.05 / (1 + log1p(volume) / 8)
+ *  Result clamped to [0.01, 0.15] — 1% to 15%
+ *  Returns the spread as a fraction (e.g. 0.03 = 3%). */
+function estimateSpreadFromVolume(volume: number): number {
+  let volumeSpread: number;
+  if (volume > 0) {
+    volumeSpread = 0.05 / (1 + Math.log1p(volume) / 8);
+  } else {
+    volumeSpread = 0.08; // 8% for zero-volume pairs
+  }
+  return Math.max(0.01, Math.min(0.15, volumeSpread));
+}
+
 // ---------------------------------------------------------------------------
 // Cycle-finding (DFS Bellman-Ford variant) — Client-side
 // ---------------------------------------------------------------------------
@@ -119,25 +135,35 @@ function findArbitrageCycles(
   const names = new Map<string, string>();
 
   for (const p of pairs) {
-    if ((p.volume ?? 0) < minVolume) continue;
+    const pairVolume = p.volume ?? 0;
+    if (pairVolume < minVolume) continue;
+
+    // §3: Liquidity filter — edge must support tradeSize × 2
+    if (pairVolume < tradeSize * 2) continue;
 
     const c1 = p.currency1Id;
     const c2 = p.currency2Id;
     names.set(c1, p.currency1Name);
     names.set(c2, p.currency2Name);
 
-    // Forward edge: c1 → c2
+    // §1: Estimate realistic spread from volume (§7.1.1 Canonical Formulas)
+    const spreadPct = estimateSpreadFromVolume(pairVolume);
+
+    // Forward edge: c1 → c2 (bid-side: you sell c1 to buy c2)
     const forwardRate = p.relativePrice ?? 0;
     // Time-decay: hoursSinceSnapshot placeholder = 0 (API doesn't provide timestamps per pair)
     const hoursSinceSnapshot = 0;
     const decayFactor = Math.exp(-decayLambda * hoursSinceSnapshot);
 
     if (forwardRate > 0) {
+      // Apply spread: forward rate reduced by half-spread (bid side)
+      const spreadAdjustedRate = forwardRate * (1 - spreadPct / 2);
       const edge: GraphEdge = {
         from: c1,
         to: c2,
-        rate: applyFee(forwardRate * decayFactor, feeBps),
-        volume: p.volume ?? 0,
+        rate: applyFee(spreadAdjustedRate * decayFactor, feeBps),
+        volume: pairVolume,
+        spread: spreadPct,
         fromName: p.currency1Name,
         toName: p.currency2Name,
       };
@@ -145,14 +171,17 @@ function findArbitrageCycles(
       adj.get(c1)!.push(edge);
     }
 
-    // Reverse edge: c2 → c1
+    // Reverse edge: c2 → c1 (ask-side: you sell c2 to buy c1)
     const reverseRate = forwardRate > 0 ? 1 / forwardRate : 0;
     if (reverseRate > 0 && isFinite(reverseRate)) {
+      // Apply spread: reverse rate reduced by half-spread (ask side)
+      const spreadAdjustedRate = reverseRate * (1 - spreadPct / 2);
       const edge: GraphEdge = {
         from: c2,
         to: c1,
-        rate: applyFee(reverseRate * decayFactor, feeBps),
-        volume: p.volume ?? 0,
+        rate: applyFee(spreadAdjustedRate * decayFactor, feeBps),
+        volume: pairVolume,
+        spread: spreadPct,
         fromName: p.currency2Name,
         toName: p.currency1Name,
       };
@@ -172,15 +201,16 @@ function findArbitrageCycles(
 
     // Check for cycle back to start
     if (node === startNode && path.length >= 2) {
-      // product already includes the full cycle multiplication
-      const grossProfit = (product - 1) * tradeSize;
+      // §2: Calculate profit as PERCENTAGE, not absolute values
+      const grossProfitPct = (product - 1) * 100;
 
+      // Total spread cost across all edges in the cycle
+      let totalSpreadPct = 0;
       // Estimate total slippage across all edges in the cycle
       let totalSlippage = 0;
-      // Fix 4.16: Renamed from minVolume to bottleneckVolume to avoid shadowing
-      // the function parameter minVolume (filter threshold)
       let bottleneckVolume = Infinity;
       for (const edge of pathEdges) {
+        totalSpreadPct += edge.spread * 100; // spread per edge in %
         const edgeSlippage = estimateSlippage(
           tradeSize,
           edge.volume,
@@ -190,19 +220,27 @@ function findArbitrageCycles(
         if (edge.volume < bottleneckVolume) bottleneckVolume = edge.volume;
       }
 
-      // Net profit = gross - slippage cost
-      const slippageCost = totalSlippage * tradeSize;
-      const netProfit = grossProfit - slippageCost;
+      // Net profit % = gross profit % - total spread cost % - slippage cost %
+      const slippagePct = totalSlippage * 100;
+      const netProfitPct = grossProfitPct - totalSpreadPct - slippagePct;
 
-      // Confidence: how well the bottleneck volume supports the trade size
-      const confidence = Math.min(1, bottleneckVolume / tradeSize);
+      // §4: Minimum profit threshold based on cycle length
+      // Each step introduces ~2% noise from relativePrice inaccuracy
+      const minProfitPct = pathEdges.length * 2.0;
+      if (netProfitPct < minProfitPct) return;
 
-      if (netProfit > 0) {
+      // §5: Confidence with volume and length penalty
+      const volumeConfidence = Math.min(1, bottleneckVolume / (tradeSize * 2));
+      const lengthPenalty = 1 / Math.sqrt(pathEdges.length);
+      const confidence = volumeConfidence * lengthPenalty;
+
+      if (netProfitPct > 0) {
         results.push({
           route: [...path],
           edges: [...pathEdges],
-          grossProfit,
-          netProfit,
+          grossProfitPct,
+          netProfitPct,
+          totalSpreadPct,
           slippage: totalSlippage,
           maxVolume: bottleneckVolume,
           confidence,
@@ -244,8 +282,8 @@ function findArbitrageCycles(
     dfs(startNode, startNode, 1);
   }
 
-  // Sort by net profit descending, take top 50
-  results.sort((a, b) => b.netProfit - a.netProfit);
+  // Sort by net profit % descending, take top 50
+  results.sort((a, b) => b.netProfitPct - a.netProfitPct);
   return results.slice(0, 50);
 }
 
@@ -652,12 +690,12 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                     />
                   </div>
 
-                  {/* Trade Size */}
+                  {/* Trade Size — used as slippage model parameter, not position size */}
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium" htmlFor="arb-trade-size">
-                      {t("tradeSizeForProfit")}
+                      {t("tradeSizeSlippageModel")}
                     </label>
-                    <p className="text-xs text-muted-foreground">{t("tradeSizeDesc")}</p>
+                    <p className="text-xs text-muted-foreground">{t("tradeSizeSlippageModelDesc")}</p>
                     <Input
                       id="arb-trade-size"
                       type="number"
@@ -792,12 +830,13 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                 </div>
               ) : (
                 <div className="space-y-0" role="table" aria-label={t("arbitrageOpportunities")}>
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
+                  {/* Table header — §8: profit shown as %, not absolute */}
+                  <div className="grid grid-cols-[1fr_50px_75px_75px_70px_75px_80px_90px] gap-2 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10" role="row">
                     <span role="columnheader">{t("route")}</span>
                     <span className="text-center" role="columnheader">{t("len")}</span>
-                    <span className="text-right" role="columnheader">{t("netProfit")}</span>
-                    <span className="text-right" role="columnheader">{t("gross")}</span>
+                    <span className="text-right" role="columnheader">{t("netProfitPct")}</span>
+                    <span className="text-right" role="columnheader">{t("grossPct")}</span>
+                    <span className="text-right" role="columnheader">{t("spreadPct")}</span>
                     <span className="text-right" role="columnheader">{t("slippage")}</span>
                     <span className="text-center" role="columnheader">{t("confidence")}</span>
                     <span className="text-right" role="columnheader">{t("maxVol")}</span>
@@ -816,7 +855,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                       return (
                         <div
                           key={idx}
-                          className="grid grid-cols-[1fr_60px_80px_80px_80px_80px_100px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
+                          className="grid grid-cols-[1fr_50px_75px_75px_70px_75px_80px_90px] gap-2 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center"
                           role="row"
                         >
                           <div className="flex items-center gap-1 flex-wrap min-w-0" role="cell">
@@ -837,11 +876,15 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                           </span>
 
                           <span className="text-right font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400" role="cell">
-                            +{fmt(cycle.netProfit)}
+                            +{cycle.netProfitPct.toFixed(2)}%
                           </span>
 
                           <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
-                            {fmt(cycle.grossProfit)}
+                            {cycle.grossProfitPct.toFixed(2)}%
+                          </span>
+
+                          <span className="text-right font-mono text-xs text-muted-foreground" role="cell">
+                            {cycle.totalSpreadPct.toFixed(2)}%
                           </span>
 
                           <span className="text-right font-mono text-xs text-muted-foreground" role="cell">

@@ -3,17 +3,15 @@ Triangular Arbitrage Detection using Bellman-Ford negative cycle detection.
 
 From PoE2_Flipper_Canonical_Formulas.md §8 (simplified: gold fees excluded):
 
-Edge weight formula (gold/commission excluded per project decision):
-    effective_rate(u→v) = raw_rate(u→v)
-    weight(u→v) = -ln(raw_rate(u→v))
+Edge weight formula (§7: with realistic spread model):
+    spread = estimateSpreadFromVolume(edge_volume)  # §7.1.1
+    effective_rate(u→v) = raw_rate(u→v) * (1 - spread / 2)
+    weight(u→v) = -ln(effective_rate(u→v))
 
-NOTE: Gold/commission fees have been intentionally excluded from all
-calculations. The raw exchange rate is used directly without fee
-deduction. This simplifies the model and avoids the complexity of
-direction-dependent fee asymmetry.
+Low-liquidity edges (volume < MIN_EDGE_VOLUME=50) are filtered out (§6b).
 
 After detecting a negative cycle, validate by simulating with raw rates.
-If simulated profit < 0.1%, discard (numerical artifact).
+If simulated profit < min_profit_pct (default 1.0%), discard (numerical artifact).
 
 QUANTIZED VALIDATION (P1-2):
   The continuous profit from Bellman-Ford can be misleading — PoE2 exchange
@@ -138,19 +136,23 @@ def _compute_confidence(
 def find_triangular_arbitrage(
     rates: dict[tuple[str, str], float],
     prices: dict[str, float],
-    min_profit_pct: float = 0.1,
+    min_profit_pct: float = 1.0,    # §6a: increased from 0.1% to 1.0% (0.1% is numerical artifact)
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
 ) -> list[TriangularOpportunity]:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
     Simplified: gold/commission fees are EXCLUDED from all calculations.
-    The raw exchange rate is used directly (no fee deduction on edges).
+    A realistic spread model (§7.1.1) is applied to edge weights to avoid
+    false positives from spreadless reverse rates.
+
+    Edge weight: -ln(effective_rate) where effective_rate = raw_rate * (1 - spread/2)
+    Low-liquidity edges (volume < 50) are filtered out (§6b).
 
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
         prices: Current price of each currency in the reference currency
-        min_profit_pct: Minimum profit percentage to report (default 0.1%)
+        min_profit_pct: Minimum profit percentage to report (default 1.0%)
         pair_volumes: Optional volume data per edge
         snapshot_time: When the snapshot data was taken
 
@@ -166,15 +168,38 @@ def find_triangular_arbitrage(
     n = len(currencies)
     curr_to_idx = {c: i for i, c in enumerate(currencies)}
 
-    # Build edge list — gold fees EXCLUDED, use raw_rate directly
+    # §6b: Minimum edge volume — skip illiquid pairs
+    MIN_EDGE_VOLUME = 50
+
+    # Build edge list with spread model (§7)
     volumes_map = pair_volumes or {}
     edges = []
     for (u, v), raw_rate in rates.items():
         if raw_rate <= 0:
             continue
-        weight = -np.log(raw_rate)
+
         edge_volume = volumes_map.get((u, v), 0.0)
-        edges.append((curr_to_idx[u], curr_to_idx[v], weight, raw_rate, edge_volume))
+
+        # §6b: Filter out low-liquidity edges
+        if edge_volume < MIN_EDGE_VOLUME:
+            continue
+
+        # §7: Estimate spread from volume (§7.1.1 Canonical Formulas)
+        if edge_volume > 0:
+            volume_spread = 0.05 / (1.0 + math.log1p(edge_volume) / 8.0)
+        else:
+            volume_spread = 0.08  # 8% for zero-volume pairs
+        market_spread = max(0.01, min(0.15, volume_spread))
+
+        # Effective rate = raw_rate * (1 - spread/2)
+        # This models the bid-side: you sell from_currency and buy to_currency
+        # The spread represents the bid-ask gap in a market without market makers
+        effective_rate = raw_rate * (1 - market_spread / 2)
+        if effective_rate <= 0:
+            continue
+
+        weight = -np.log(effective_rate)
+        edges.append((curr_to_idx[u], curr_to_idx[v], weight, raw_rate, effective_rate, edge_volume))
 
     if n == 0 or len(edges) == 0:
         return []

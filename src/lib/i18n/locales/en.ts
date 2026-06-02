@@ -156,7 +156,10 @@ const en = {
   route: "Route",
   len: "Len",
   netProfit: "Net Profit",
+  netProfitPct: "Net %",
   gross: "Gross",
+  grossPct: "Gross %",
+  spreadPct: "Spread",
   slippage: "Slippage",
   maxVol: "Max Vol",
   net: "net",
@@ -168,6 +171,9 @@ const en = {
   baseSlippageDesc: "Base slippage per trade. 10 = 0.1%.",
   tradeSizeForProfit: "Trade Size (for profit estimate)",
   tradeSizeDesc: "Currency amount to estimate net profit for.",
+  tradeSizeSlippageModel: "Trade Size (slippage model)",
+  tradeSizeSlippageModelDesc: "Used to estimate market impact slippage. Does not affect profit calculation (profit is shown as %).",
+  cyclesWithPositiveNetProfit: "cycles with positive net profit %",
 
   // Arbitrage — Confidence indicator (Task 6.9)
   confidence: "Confidence",

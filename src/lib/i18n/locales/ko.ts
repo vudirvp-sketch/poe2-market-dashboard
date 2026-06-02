@@ -152,7 +152,10 @@ const ko: Record<TranslationKeys, string> = {
   route: "경로",
   len: "길이",
   netProfit: "순이익",
+  netProfitPct: "순이익 %",
   gross: "총이익",
+  grossPct: "총이익 %",
+  spreadPct: "스프레드",
   slippage: "미끄러짐",
   maxVol: "최대 량",
   net: "순",
@@ -164,6 +167,9 @@ const ko: Record<TranslationKeys, string> = {
   baseSlippageDesc: "거래당 기본 미끄러짐. 10 = 0.1%.",
   tradeSizeForProfit: "거래 크기 (이익 추정용)",
   tradeSizeDesc: "순이익을 추정할 통화 수량.",
+  tradeSizeSlippageModel: "거래 크기 (미끄러짐 모델)",
+  tradeSizeSlippageModelDesc: "시장 충격 미끄러짐 추정에 사용. 이익 계산에 영향 없음 (이익은 %로 표시).",
+  cyclesWithPositiveNetProfit: "양의 순이익% 사이클",
 
   // Arbitrage — Confidence indicator (Task 6.9)
   confidence: "신뢰도",

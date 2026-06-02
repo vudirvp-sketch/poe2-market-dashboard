@@ -152,7 +152,10 @@ const zh: Record<TranslationKeys, string> = {
   route: "路径",
   len: "步长",
   netProfit: "净利润",
+  netProfitPct: "净利 %",
   gross: "毛利",
+  grossPct: "毛利 %",
+  spreadPct: "价差",
   slippage: "滑点",
   maxVol: "最大量",
   net: "净",
@@ -164,6 +167,9 @@ const zh: Record<TranslationKeys, string> = {
   baseSlippageDesc: "每笔交易的基础滑点。10 = 0.1%。",
   tradeSizeForProfit: "交易规模 (利润估算)",
   tradeSizeDesc: "用于估算净利润的货币数量。",
+  tradeSizeSlippageModel: "交易规模 (滑点模型)",
+  tradeSizeSlippageModelDesc: "用于估算市场冲击滑点。不影响利润计算（利润以%显示）。",
+  cyclesWithPositiveNetProfit: "具有正净利润%的循环",
 
   // Arbitrage — Confidence indicator (Task 6.9)
   confidence: "置信度",
