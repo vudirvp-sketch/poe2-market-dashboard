@@ -1,5 +1,13 @@
 // ============================================================================
 // Currency Pair Detail Dialog (Priority 2.2 → §3.4 Enhanced)
+//
+// P3-2 (continued): Timeframe-aware OHLCV data fetching
+//   - 1D: uses getItemDailyStats (official daily OHLCV from API)
+//   - 1H/4H/1W: uses getMultiTimeframeOHLCV (aggregated from hourly history)
+//   - When timeframe changes, the correct data source is fetched automatically
+//   - Multi-timeframe alignments computed on the actual timeframe-specific data
+//   - Error handling for missing 1H/4H data (insufficient history)
+//   - staleTime optimization to avoid unnecessary refetches
 // ============================================================================
 "use client";
 
@@ -27,7 +35,7 @@ import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
@@ -39,6 +47,16 @@ const TIME_RANGE_LIMITS: Record<"7d" | "30d" | "90d", string> = {
   "30d": "720",
   "90d": "2160",
 };
+
+/** OHLCVCandle — matches the shape returned by /api/poe2/currencies?action=ohlcv */
+interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
 
 interface PairDetailDialogProps {
   pair: ExchangePair | null;
@@ -76,7 +94,6 @@ export function PairDetailDialog({
         realm,
         league,
         action: "pairHistory",
-        // Use numeric ItemIds — the CurrencyPairHistory API expects integers, not ApiId strings
         id1: String(pair!.currency1ItemId),
         id2: String(pair!.currency2ItemId),
         limit: TIME_RANGE_LIMITS[timeRange],
@@ -84,58 +101,104 @@ export function PairDetailDialog({
     enabled: !!pair && open,
   });
 
-  // P3-8: Fetch daily OHLCV stats for candlestick chart
-  const { data: dailyStatsData } = useQuery({
+  // P3-2: Daily OHLCV stats (candlestick) — used ONLY when timeframe is 1D
+  const { data: dailyStatsData, isLoading: dailyLoading } = useQuery({
     queryKey: [
       "pairDailyStats",
       realm,
       league,
       pair?.currency1ItemId,
-      pair?.currency2ItemId,
     ],
     queryFn: () =>
-      fetchApi<Array<{ Date: string; Open: number; High: number; Low: number; Close: number; Volume: number }>>(
+      fetchApi<Array<{ day: string; open: number; high: number; low: number; close: number; volume: number }>>(
         "/api/poe2/currencies",
         {
           realm,
           league,
           action: "dailyStats",
-          // Use the first currency's ItemId for daily stats
           itemId: String(pair!.currency1ItemId),
           limit: "60",
         }
       ),
-    enabled: !!pair && open,
+    enabled: !!pair && open && candleTimeframe === "1D",
     staleTime: 120_000,
     retry: 1,
   });
 
-  // Convert daily stats to OHLCV data for the CandlestickChart component
-  const ohlcvData = useMemo((): OHLCVData[] => {
+  // P3-2: Multi-timeframe OHLCV data — used when timeframe is 1H, 4H, or 1W
+  const { data: multiTfOhlcv, isLoading: multiTfLoading } = useQuery({
+    queryKey: [
+      "pairOhlcv",
+      realm,
+      league,
+      pair?.currency1ItemId,
+      candleTimeframe,
+    ],
+    queryFn: () =>
+      fetchApi<OHLCVCandle[]>("/api/poe2/currencies", {
+        realm,
+        league,
+        action: "ohlcv",
+        itemId: String(pair!.currency1ItemId),
+        timeframe: candleTimeframe,
+      }),
+    enabled: !!pair && open && (candleTimeframe === "1H" || candleTimeframe === "4H" || candleTimeframe === "1W"),
+    staleTime: 120_000,
+    retry: 1,
+  });
+
+  // P3-2: Convert daily stats to OHLCV data — used for 1D timeframe
+  const dailyOhlcvData = useMemo((): OHLCVData[] => {
     if (!dailyStatsData || !Array.isArray(dailyStatsData)) return [];
     return dailyStatsData
-      .filter((d) => d.Close > 0 && Number.isFinite(d.Close))
+      .filter((d) => d.close > 0 && Number.isFinite(d.close))
       .map((d) => ({
-        time: d.Date?.slice(0, 10) ?? "",
-        open: d.Open ?? d.Close,
-        high: d.High ?? d.Close,
-        low: d.Low ?? d.Close,
-        close: d.Close,
-        volume: d.Volume ?? 0,
+        time: d.day?.slice(0, 10) ?? "",
+        open: d.open ?? d.close,
+        high: d.high ?? d.close,
+        low: d.low ?? d.close,
+        close: d.close,
+        volume: d.volume ?? 0,
       }));
   }, [dailyStatsData]);
 
-  // P3-2: Compute multi-timeframe alignment from OHLCV data
+  // P3-2: Convert multi-timeframe OHLCV candles to the OHLCVData format
+  const multiTfOhlcvData = useMemo((): OHLCVData[] => {
+    if (!multiTfOhlcv || !Array.isArray(multiTfOhlcv)) return [];
+    return multiTfOhlcv
+      .filter((d) => d.close > 0 && Number.isFinite(d.close))
+      .map((d) => ({
+        time: typeof d.time === "string" ? d.time.slice(0, 16) : String(d.time),
+        open: d.open ?? d.close,
+        high: d.high ?? d.close,
+        low: d.low ?? d.close,
+        close: d.close,
+        volume: d.volume ?? 0,
+      }));
+  }, [multiTfOhlcv]);
+
+  // P3-2: Select the correct OHLCV data based on the active timeframe
+  const ohlcvData = useMemo((): OHLCVData[] => {
+    if (candleTimeframe === "1D") return dailyOhlcvData;
+    return multiTfOhlcvData;
+  }, [candleTimeframe, dailyOhlcvData, multiTfOhlcvData]);
+
+  // P3-2: Compute multi-timeframe alignment from the ACTUAL timeframe-specific OHLCV data
   const timeframeAlignments = useMemo((): TimeframeAlignment[] => {
     return computeTimeframeAlignments(ohlcvData);
   }, [ohlcvData]);
 
+  // Handle timeframe change
+  const handleTimeframeChange = useCallback((tf: Timeframe) => {
+    setCandleTimeframe(tf);
+  }, []);
+
+  // Determine loading state for candlestick chart
+  const isCandleLoading = candleTimeframe === "1D" ? dailyLoading : multiTfLoading;
+
   // Overall stats (from the loaded history period)
   const stats = useMemo(() => {
     if (!pairHistory || pairHistory.length === 0) return null;
-    // Filter out zero prices — the first snapshot hour often has RelativePrice=0
-    // (no trades yet in a new league), which would skew min/avg/spread.
-    // Also filter out NaN/Infinity values that can appear from malformed API data.
     const prices = pairHistory
       .map((p) => p.relativePrice)
       .filter((p) => p > 0 && Number.isFinite(p));
@@ -392,19 +455,50 @@ export function PairDetailDialog({
           />
         )}
 
-        {/* P3-8: Candlestick Chart with SMA/EMA/RSI overlays + P3-2: Timeframe switcher & alignment */}
-        {ohlcvData.length > 0 && (
+        {/* P3-8 + P3-2: Candlestick Chart with timeframe-aware OHLCV data + alignment */}
+        {isCandleLoading ? (
+          <div className="mt-4">
+            <ChartSkeleton height={300} />
+          </div>
+        ) : ohlcvData.length > 0 ? (
           <div className="mt-4">
             <CandlestickChart
               data={ohlcvData}
-              title={`${pair.currency1Name}/${pair.currency2Name} — Daily Candlestick`}
+              title={`${pair.currency1Name}/${pair.currency2Name} — ${candleTimeframe} Candlestick`}
               showVolume={true}
               overlays={["sma20", "ema12", "rsi14"]}
               timeframe={candleTimeframe}
-              onTimeframeChange={setCandleTimeframe}
+              onTimeframeChange={handleTimeframeChange}
               timeframeAlignments={timeframeAlignments}
             />
           </div>
+        ) : (
+          open && (
+            <div className="mt-4">
+              {/* Show timeframe switcher even when data is missing, so user can switch */}
+              <div className="flex items-center gap-1 mb-2">
+                {(["1H", "4H", "1D", "1W"] as Timeframe[]).map((tf) => (
+                  <Button
+                    key={tf}
+                    variant={candleTimeframe === tf ? "default" : "outline"}
+                    size="sm"
+                    className="h-6 text-[10px] px-2"
+                    onClick={() => handleTimeframeChange(tf)}
+                  >
+                    {tf}
+                  </Button>
+                ))}
+              </div>
+              <EmptyState
+                kind="noResults"
+                message={
+                  candleTimeframe !== "1D"
+                    ? t("noTimeframeData")
+                    : t("noPairHistory")
+                }
+              />
+            </div>
+          )
         )}
       </DialogContent>
     </Dialog>

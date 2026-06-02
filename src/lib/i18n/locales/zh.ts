@@ -92,6 +92,7 @@ const zh: Record<TranslationKeys, string> = {
   spread: "价差",
   relativePriceOverTime: "相对价格走势",
   noPairHistory: "无对历史数据",
+  noTimeframeData: "该时间周期数据不足。请切换到1D或更长周期。",
 
   // Comparison Dialog
   itemComparison: "物品对比",

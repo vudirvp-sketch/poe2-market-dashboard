@@ -96,6 +96,7 @@ const en = {
   spread: "Spread",
   relativePriceOverTime: "Relative Price Over Time",
   noPairHistory: "No pair history available",
+  noTimeframeData: "Insufficient data for this timeframe. Try switching to 1D or a longer period.",
 
   // Comparison Dialog
   itemComparison: "Item Comparison",

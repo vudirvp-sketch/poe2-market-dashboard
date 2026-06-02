@@ -92,6 +92,7 @@ const ko: Record<TranslationKeys, string> = {
   spread: "스프레드",
   relativePriceOverTime: "시간별 상대 가격",
   noPairHistory: "페어 히스토리 없음",
+  noTimeframeData: "이 타임프레임에 대한 데이터가 부족합니다. 1D 또는 더 긴 기간으로 전환해 보세요.",
 
   // Comparison Dialog
   itemComparison: "아이템 비교",

@@ -106,6 +106,8 @@ export function DetailDialog({
         referenceCurrency: referenceCurrency || "",
       }),
     enabled: !!item && open && chartMode === "daily" && candleTimeframe === "1D",
+    staleTime: 120_000,
+    retry: 1,
   });
 
   // P3-2: Multi-timeframe OHLCV data — used when timeframe is 1H, 4H, or 1W
@@ -121,6 +123,8 @@ export function DetailDialog({
         referenceCurrency: referenceCurrency || "",
       }),
     enabled: !!item && open && chartMode === "daily" && (candleTimeframe === "1H" || candleTimeframe === "4H" || candleTimeframe === "1W"),
+    staleTime: 120_000,
+    retry: 1,
   });
 
   // P1-5: Fetch benchmark data for the detail panel
