@@ -122,109 +122,125 @@ async def _build_portfolio(config: AppConfig, method_override: str | None = None
     2. Get historical data for each currency to compute log-returns
     3. Build the log-returns matrix
     4. Run PortfolioOptimizer
+
+    FIX: Wrapped in comprehensive error handling to prevent 500 errors.
+    Common failure modes:
+    - sklearn LedoitWolf with too few data points
+    - numpy.linalg errors from singular/near-singular covariance matrices
+    - Missing data in snapshot
     """
     global _previous_corr
 
-    detector = _get_phase_detector()
-    optimizer = PortfolioOptimizer(config)
-
-    # 1. Get unified data snapshot (single coordinated API pass)
-    snapshot = await get_snapshot()
-
-    # 2. Exchange rates
-    rates = snapshot.exchange_rates
-    if not rates:
-        return PortfolioAllocation(
-            weights={},
-            expected_risk=0.0,
-            method=method_override or config.portfolio.method,
-            correlation_warning=False,
-        )
-
-    # 3. Currency metadata & price histories (from snapshot's single ByCategory pass)
-    currencies = snapshot.currency_metadata
-    currency_price_history: dict[str, list[float]] = {}
-    for curr in currencies:
-        history = snapshot.price_histories.get(curr.api_id.lower(), [])
-        if history:
-            currency_price_history[curr.api_id] = [
-                p.price for p in history
-            ]
-
-    # 4. Filter to currencies with enough data for portfolio construction
-    min_history_length = 5  # need at least 5 price points for log-returns
-    eligible_currencies = {
-        api_id: prices
-        for api_id, prices in currency_price_history.items()
-        if len(prices) >= min_history_length
-    }
-
-    if len(eligible_currencies) < 2:
-        return PortfolioAllocation(
-            weights={},
-            expected_risk=0.0,
-            method=method_override or config.portfolio.method,
-            correlation_warning=False,
-        )
-
-    # 5. Build aligned log-returns matrix
-    # Find the shortest common history length
-    min_len = min(len(p) for p in eligible_currencies.values())
-
-    currency_names = sorted(eligible_currencies.keys())
-    n_currencies = len(currency_names)
-    log_returns_list = []
-
-    for name in currency_names:
-        prices = eligible_currencies[name][-min_len:]
-        prices_arr = np.array(prices, dtype=float)
-        # Avoid log(0) or negative prices
-        prices_safe = np.maximum(prices_arr, 1e-10)
-        log_prices = np.log(prices_safe)
-        log_ret = np.diff(log_prices)
-        log_returns_list.append(log_ret)
-
-    # T×N matrix (T periods, N assets)
-    log_returns_matrix = np.column_stack(log_returns_list)
-
-    # 6. Run portfolio optimization
-    # Fix 2.1: Determine periods_per_year based on data frequency
-    periods_per_year = _determine_periods_per_year(log_returns_matrix)
-    allocation = optimizer.optimize(
-        currency_names=currency_names,
-        log_returns=log_returns_matrix,
-        previous_corr=_previous_corr,
-        periods_per_year=periods_per_year,
-        method_override=method_override,
-    )
-
-    # Store current correlation matrix for next comparison
-    # AND build the serialized version for the API response (so it's
-    # available on the very first request, not just after the second).
     try:
-        corr_matrix = np.corrcoef(log_returns_matrix, rowvar=False)
-        if corr_matrix.ndim == 0:
-            corr_matrix = np.array([[1.0]])
-        _previous_corr = corr_matrix
+        detector = _get_phase_detector()
+        optimizer = PortfolioOptimizer(config)
 
-        # Build serialized correlation matrix for the response
-        if corr_matrix.shape[0] == len(currency_names):
-            corr_rows = []
-            for i in range(len(currency_names)):
-                row = []
-                for j in range(len(currency_names)):
-                    row.append(round(float(corr_matrix[i, j]), 4))
-                corr_rows.append(row)
-            global _current_corr
-            _current_corr = {
-                "currencies": currency_names,
-                "matrix": corr_rows,
-            }
+        # 1. Get unified data snapshot (single coordinated API pass)
+        snapshot = await get_snapshot()
+
+        # 2. Exchange rates
+        rates = snapshot.exchange_rates
+        if not rates:
+            return PortfolioAllocation(
+                weights={},
+                expected_risk=0.0,
+                method=method_override or config.portfolio.method,
+                correlation_warning=False,
+            )
+
+        # 3. Currency metadata & price histories (from snapshot's single ByCategory pass)
+        currencies = snapshot.currency_metadata
+        currency_price_history: dict[str, list[float]] = {}
+        for curr in currencies:
+            history = snapshot.price_histories.get(curr.api_id.lower(), [])
+            if history:
+                currency_price_history[curr.api_id] = [
+                    p.price for p in history
+                ]
+
+        # 4. Filter to currencies with enough data for portfolio construction
+        min_history_length = 5  # need at least 5 price points for log-returns
+        eligible_currencies = {
+            api_id: prices
+            for api_id, prices in currency_price_history.items()
+            if len(prices) >= min_history_length
+        }
+
+        if len(eligible_currencies) < 2:
+            return PortfolioAllocation(
+                weights={},
+                expected_risk=0.0,
+                method=method_override or config.portfolio.method,
+                correlation_warning=False,
+            )
+
+        # 5. Build aligned log-returns matrix
+        # Find the shortest common history length
+        min_len = min(len(p) for p in eligible_currencies.values())
+
+        currency_names = sorted(eligible_currencies.keys())
+        n_currencies = len(currency_names)
+        log_returns_list = []
+
+        for name in currency_names:
+            prices = eligible_currencies[name][-min_len:]
+            prices_arr = np.array(prices, dtype=float)
+            # Avoid log(0) or negative prices
+            prices_safe = np.maximum(prices_arr, 1e-10)
+            log_prices = np.log(prices_safe)
+            log_ret = np.diff(log_prices)
+            log_returns_list.append(log_ret)
+
+        # T×N matrix (T periods, N assets)
+        log_returns_matrix = np.column_stack(log_returns_list)
+
+        # 6. Run portfolio optimization
+        # Fix 2.1: Determine periods_per_year based on data frequency
+        periods_per_year = _determine_periods_per_year(log_returns_matrix)
+        allocation = optimizer.optimize(
+            currency_names=currency_names,
+            log_returns=log_returns_matrix,
+            previous_corr=_previous_corr,
+            periods_per_year=periods_per_year,
+            method_override=method_override,
+        )
+
+        # Store current correlation matrix for next comparison
+        # AND build the serialized version for the API response (so it's
+        # available on the very first request, not just after the second).
+        try:
+            corr_matrix = np.corrcoef(log_returns_matrix, rowvar=False)
+            if corr_matrix.ndim == 0:
+                corr_matrix = np.array([[1.0]])
+            _previous_corr = corr_matrix
+
+            # Build serialized correlation matrix for the response
+            if corr_matrix.shape[0] == len(currency_names):
+                corr_rows = []
+                for i in range(len(currency_names)):
+                    row = []
+                    for j in range(len(currency_names)):
+                        row.append(round(float(corr_matrix[i, j]), 4))
+                    corr_rows.append(row)
+                global _current_corr
+                _current_corr = {
+                    "currencies": currency_names,
+                    "matrix": corr_rows,
+                }
+        except Exception as e:
+            logger.debug("Failed to compute/serialize correlation matrix: %s", e)
+            _previous_corr = None
+
+        return allocation
     except Exception as e:
-        logger.debug("Failed to compute/serialize correlation matrix: %s", e)
-        _previous_corr = None
-
-    return allocation
+        logger.error("_build_portfolio failed: %s", e, exc_info=True)
+        # Return an empty allocation instead of raising 500
+        return PortfolioAllocation(
+            weights={},
+            expected_risk=0.0,
+            method=method_override or config.portfolio.method,
+            correlation_warning=False,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -266,6 +282,24 @@ async def get_portfolio():
                     "data_available": False,
                     "last_rebalance": None,
                     "correlation_matrix": None,
+                }
+        except Exception as e:
+            # FIX: Catch ALL exceptions from _build_portfolio to prevent 500.
+            # Common causes: sklearn LedoitWolf fails with few data points,
+            # numpy.linalg errors from singular matrices, etc.
+            logger.error("Portfolio rebuild failed with unexpected error: %s", e)
+            if _last_allocation is not None:
+                logger.warning("Returning cached allocation after unexpected error.")
+            else:
+                return {
+                    "method": config.portfolio.method,
+                    "weights": {},
+                    "expected_risk": 0,
+                    "correlation_warning": False,
+                    "data_available": False,
+                    "last_rebalance": None,
+                    "correlation_matrix": None,
+                    "error": str(e),
                 }
 
     if _last_allocation is None:
@@ -312,7 +346,11 @@ async def rebalance_portfolio(method: str | None = Query(default=None)):
     global _last_allocation
 
     config = get_settings()
-    _last_allocation = await _build_portfolio(config, method_override=method)
+    try:
+        _last_allocation = await _build_portfolio(config, method_override=method)
+    except Exception as e:
+        logger.error("Portfolio rebalance failed: %s", e)
+        _last_allocation = None
 
     if _last_allocation is None:
         return {

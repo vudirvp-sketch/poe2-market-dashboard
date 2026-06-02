@@ -613,6 +613,28 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
         </Card>
       )}
 
+      {/* ---- Cross-rate inconsistency warning (flipper mode) ---- */}
+      {mode === "flipper" && triData?.cross_rate_warning && triData.cross_rate_warning.suspicious_triples_count > 0 && (
+        <Card className="border-red-500/30 bg-red-500/5" role="alert" aria-live="polite">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-red-600 dark:text-red-400">
+                {t("crossRateWarningTitle")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("crossRateWarningDesc")}
+              </p>
+              {triData.cross_rate_warning.affected_currencies.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("flipperAffectedCurrencies")}: {triData.cross_rate_warning.affected_currencies.join(", ")}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ---- Event status banner (flipper mode) ---- */}
       {mode === "flipper" && flipsData?.event_status?.any_active && (
         <Card className="border-orange-500/30 bg-orange-500/5">

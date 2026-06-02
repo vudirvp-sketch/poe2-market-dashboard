@@ -133,12 +133,73 @@ def _compute_confidence(
     return confidence
 
 
+def _compute_cross_rate_divergence(
+    rates: dict[tuple[str, str], float],
+    threshold_pct: float = 5.0,
+) -> set[tuple[str, str, str]]:
+    """Detect cross-rate inconsistencies that produce false arbitrage signals.
+
+    For every triple (A, B, C) where all three direct rates exist:
+        implied_A_C = rate(A→B) * rate(B→C)
+        direct_A_C = rate(A→C)
+        divergence_pct = |implied_A_C - direct_A_C| / direct_A_C * 100
+
+    If divergence_pct > threshold_pct, the triple is flagged as "suspicious".
+    Any detected arbitrage cycle that passes through a suspicious triple
+    is likely a false positive caused by inconsistent relative_price data
+    across pairs, not a real market inefficiency.
+
+    Args:
+        rates: Dict mapping (currency_from, currency_to) to raw exchange rate
+        threshold_pct: Divergence threshold in percent (default 5%)
+
+    Returns:
+        Set of suspicious triples as frozensets of 3 currency names.
+    """
+    suspicious_triples: set[frozenset[str]] = set()
+
+    # Build adjacency for quick lookup
+    rate_lookup = dict(rates)  # (from, to) -> rate
+
+    # For every triple of currencies with all edges present
+    all_currencies = set()
+    for (u, v) in rates:
+        all_currencies.add(u)
+        all_currencies.add(v)
+    all_currencies = sorted(all_currencies)
+
+    for a in all_currencies:
+        for b in all_currencies:
+            if b == a:
+                continue
+            r_ab = rate_lookup.get((a, b))
+            if r_ab is None or r_ab <= 0:
+                continue
+            for c in all_currencies:
+                if c == a or c == b:
+                    continue
+                r_bc = rate_lookup.get((b, c))
+                if r_bc is None or r_bc <= 0:
+                    continue
+                r_ac = rate_lookup.get((a, c))
+                if r_ac is None or r_ac <= 0:
+                    continue
+
+                implied_ac = r_ab * r_bc
+                divergence = abs(implied_ac - r_ac) / r_ac * 100
+                if divergence > threshold_pct:
+                    suspicious_triples.add(frozenset([a, b, c]))
+
+    return suspicious_triples
+
+
 def find_triangular_arbitrage(
     rates: dict[tuple[str, str], float],
     prices: dict[str, float],
     min_profit_pct: float = 1.0,    # §6a: increased from 0.1% to 1.0% (0.1% is numerical artifact)
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
+    cross_rate_threshold_pct: float = 5.0,
 ) -> list[TriangularOpportunity]:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
@@ -149,12 +210,21 @@ def find_triangular_arbitrage(
     Edge weight: -ln(effective_rate) where effective_rate = raw_rate * (1 - spread/2)
     Low-liquidity edges (volume < 50) are filtered out (§6b).
 
+    Cross-rate validation: Before returning results, each detected cycle is
+    checked against a cross-rate divergence map. If the cycle passes through
+    a triple where the implied cross-rate diverges from the direct rate by
+    more than cross_rate_threshold_pct (default 5%), the cycle is flagged
+    as suspicious and its profit is discounted.
+
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
         prices: Current price of each currency in the reference currency
         min_profit_pct: Minimum profit percentage to report (default 1.0%)
         pair_volumes: Optional volume data per edge
         snapshot_time: When the snapshot data was taken
+        cross_rate_threshold_pct: Divergence threshold for cross-rate
+            inconsistency detection (default 5%). Cycles involving triples
+            with >5% implied-vs-direct divergence are flagged.
 
     Returns:
         List of TriangularOpportunity objects
@@ -169,7 +239,10 @@ def find_triangular_arbitrage(
     curr_to_idx = {c: i for i, c in enumerate(currencies)}
 
     # §6b: Minimum edge volume — skip illiquid pairs
-    MIN_EDGE_VOLUME = 50
+    # RAISED from 50 to 200 for more aggressive filtering of illiquid pairs
+    # (e.g. Armourer's Scrap volume ~1700 still passes, but very low-volume
+    # pairs with 50-200 volume are typically too noisy for reliable arbitrage)
+    MIN_EDGE_VOLUME = 200
 
     # Build edge list with spread model (§7)
     volumes_map = pair_volumes or {}
@@ -326,6 +399,39 @@ def find_triangular_arbitrage(
                     confidence=confidence,
                     continuous_profit_pct=profit_pct,
                 ))
+
+    # ── Cross-rate validation ──
+    # Compute suspicious triples where implied cross-rates diverge from
+    # direct rates by >threshold%. Any cycle that passes through such a
+    # triple is likely a false positive from inconsistent relative_price
+    # data, not a real market inefficiency.
+    suspicious_triples = _compute_cross_rate_divergence(
+        rates, threshold_pct=cross_rate_threshold_pct
+    )
+    if suspicious_triples:
+        logger.info(
+            "Cross-rate validation: %d suspicious triples detected (threshold=%.1f%%)",
+            len(suspicious_triples), cross_rate_threshold_pct,
+        )
+
+    # Filter out cycles that pass through suspicious triples
+    filtered_results: list[TriangularOpportunity] = []
+    for opp in results:
+        cycle_currencies = set(opp.cycle)
+        is_suspicious = False
+        for triple in suspicious_triples:
+            if triple.issubset(cycle_currencies):
+                is_suspicious = True
+                break
+        if is_suspicious:
+            logger.info(
+                "Discarding cycle %s: passes through cross-rate-inconsistent triple "
+                "(profit=%.2f%% likely false positive)",
+                opp.cycle, opp.net_profit_pct,
+            )
+            continue
+        filtered_results.append(opp)
+    results = filtered_results
 
     # P1-2: Validate detected cycles with integer simulation
     validated_results: list[TriangularOpportunity] = []

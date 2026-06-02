@@ -225,6 +225,12 @@ export interface TriangularCycle {
 }
 
 /** Response shape from GET /api/flipper/triangular */
+export interface CrossRateWarning {
+  suspicious_triples_count: number;
+  affected_currencies: string[];
+  message: string;
+}
+
 export interface TriangularResponse {
   league: string;
   total: number;
@@ -234,6 +240,8 @@ export interface TriangularResponse {
   data_available?: boolean;
   /** Warning about gold fees being excluded from calculations */
   fee_warning?: FeeWarning;
+  /** Warning about cross-rate inconsistencies causing false positives */
+  cross_rate_warning?: CrossRateWarning | null;
 }
 
 /** Response shape from GET /api/flipper/health */

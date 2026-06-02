@@ -404,13 +404,18 @@ async def get_flip_opportunities(
         try:
             opportunities = await _build_flip_opportunities(config)
             pipeline_cache.put("flip_opportunities", opportunities)
+        except HTTPException:
+            raise
         except Exception as e:
             logger.warning("Failed to recompute flip_opportunities: %s", e)
             if cached is not None:
                 logger.info("Returning stale cache for flip_opportunities")
                 opportunities = cached.value
             else:
-                raise
+                # Return empty result instead of 500 — the frontend can handle
+                # data_available: false gracefully
+                logger.error("No cache available for flip_opportunities, returning empty: %s", e)
+                opportunities = []
 
     filtered = [
         o for o in opportunities
@@ -518,7 +523,29 @@ async def get_triangular_arbitrage(
         min_profit_pct=min_profit_pct,
         pair_volumes=pair_volumes,
         snapshot_time=datetime.now(timezone.utc),
+        cross_rate_threshold_pct=5.0,
     )
+
+    # Compute cross-rate divergence summary for the frontend warning
+    from backend.arbitrage.triangular import _compute_cross_rate_divergence
+    suspicious_triples = _compute_cross_rate_divergence(
+        rates_for_bf, threshold_pct=5.0
+    )
+    cross_rate_warning = None
+    if suspicious_triples:
+        affected_currencies = set()
+        for triple in suspicious_triples:
+            affected_currencies.update(triple)
+        cross_rate_warning = {
+            "suspicious_triples_count": len(suspicious_triples),
+            "affected_currencies": sorted(affected_currencies),
+            "message": (
+                f"{len(suspicious_triples)} currency triples have >5% "
+                "cross-rate divergence (implied vs direct rates). "
+                "Some detected cycles may be false positives from "
+                "inconsistent relative_price data between pairs."
+            ),
+        }
 
     return {
         "league": config.league.league_name,
@@ -543,6 +570,7 @@ async def get_triangular_arbitrage(
             "message": "Gold/commission fees are NOT included in profit calculations. "
                        "Actual profit may be lower or even negative after fees.",
         },
+        "cross_rate_warning": cross_rate_warning,
         "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }

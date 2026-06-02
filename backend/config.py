@@ -59,7 +59,7 @@ class FeesConfig(BaseModel):
 
 
 class FiltersConfig(BaseModel):
-    min_volume_24h: int = 50
+    min_volume_24h: int = 200  # RAISED from 50 to 200: more aggressive low-liquidity filtering
     max_volatility: float = 0.4
     max_spread: float = 0.15  # Max allowed spread for quick filter
     exclude_volatile_illiquid: bool = False

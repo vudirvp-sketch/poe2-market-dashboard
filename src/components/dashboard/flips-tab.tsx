@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, getFlipperErrorType } from "@/lib/types";
+import type { TriangularResponse } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 import { useFlipperWebSocket } from "@/hooks/use-websocket";
 import { FlipsTable } from "./flips-table";
@@ -131,6 +132,15 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       );
     },
     enabled: backendOnline && !!selectedFlip && detailOpen,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // ---- Triangular data (for cross-rate warning) ----
+  const { data: triData } = useQuery<TriangularResponse>({
+    queryKey: ["flipper-triangular-flips-tab"],
+    queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
+    enabled: backendOnline,
     staleTime: 60_000,
     retry: 1,
   });
@@ -267,6 +277,28 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
               <p className="text-muted-foreground mt-1">
                 {t("flipsGoldFeesExcludedDesc")}
               </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ---- Cross-rate inconsistency warning ---- */}
+      {triData?.cross_rate_warning && triData.cross_rate_warning.suspicious_triples_count > 0 && (
+        <Card className="border-red-500/30 bg-red-500/5" role="alert" aria-live="polite">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-red-600 dark:text-red-400">
+                {t("crossRateWarningTitle")}
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {t("crossRateWarningDesc")}
+              </p>
+              {triData.cross_rate_warning.affected_currencies.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("flipperAffectedCurrencies")}: {triData.cross_rate_warning.affected_currencies.join(", ")}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
