@@ -31,6 +31,8 @@ const ru: Record<TranslationKeys, string> = {
   exchangePairs: "\u041E\u0431\u043C\u0435\u043D\u043D\u044B\u0445 \u043F\u0430\u0440",
   medianChange24h: "Медианное изменение 24ч",
   marketVolumeTrend: "\u0422\u0440\u0435\u043D\u0434 \u043E\u0431\u044A\u0451\u043C\u0430 \u0440\u044B\u043D\u043A\u0430 (7 \u0434\u043D\u0435\u0439)",
+  timeframe24h: "24\u0447",
+  timeframe7d: "7\u0434",
   topMovers: "\u0422\u043E\u043F \u0434\u0432\u0438\u0436\u0435\u043D\u0438\u0439",
   topGainers: "\u0422\u043E\u043F \u0440\u043E\u0441\u0442\u0430",
   topLosers: "\u0422\u043E\u043F \u043F\u0430\u0434\u0435\u043D\u0438\u044F",
@@ -255,7 +257,7 @@ const ru: Record<TranslationKeys, string> = {
   disableAutoRefresh: "\u041E\u0442\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u0430\u0432\u0442\u043E\u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435",
   enableAutoRefresh: "\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u0430\u0432\u0442\u043E\u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435",
 
-  // Arbitrage \u2014 Flipper Mode
+  // Arbitrage — Flipper Mode
   arbitrageModeClient: "Простой арбитраж",
   arbitrageModeFlipper: "Flipper (Бэкенд)",
   flipperBackendOnline: "Бэкенд онлайн",
@@ -339,10 +341,6 @@ const ru: Record<TranslationKeys, string> = {
   forecastWsConnecting: "Live: подключение…",
   forecastWsDisconnected: "Live: отключено",
   forecastLastUpdate: "Последнее обновление",
-
-  // Timeframes
-  timeframe24h: "24\u0447",
-  timeframe7d: "7\u0434",
 
   // Flips Tab
   tabFlips: "\u0424\u043B\u0438\u043F\u044B",
@@ -500,10 +498,6 @@ const ru: Record<TranslationKeys, string> = {
   stickyBarNeutral: "Нейтральный",
   stickyBarCorrelationShock: "Корр. шок",
 
-  // ---- Data Available (graceful unavailable) ----
-  dataUnavailableTitle: "Данные временно недоступны",
-  dataUnavailableDesc: "API POE2Scout может быть недоступен или не имеет данных для этого запроса. Это не ошибка — попробуйте позже.",
-
   // ---- Overview Heatmap ----
   overviewHeatmap: "Тепловая карта цен (24ч)",
 
@@ -511,7 +505,11 @@ const ru: Record<TranslationKeys, string> = {
   topMoversChart: "Диаграмма топ-движений",
   categoryDistribution: "Распределение по категориям",
 
-  // ---- Plural keys (3 forms for Russian) ----
+  // ---- Data Available (graceful unavailable) ----
+  dataUnavailableTitle: "Данные временно недоступны",
+  dataUnavailableDesc: "API POE2Scout может быть недоступен или не имеет данных для этого запроса. Это не ошибка — попробуйте позже.",
+
+  // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
   _pl_alertsCount: "\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u044F ({0})|\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u0435 ({0})|\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u044F ({0})|\u041E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u0439 ({0})",
   _pl_items: "\u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432|\u043F\u0440\u0435\u0434\u043C\u0435\u0442|\u043F\u0440\u0435\u0434\u043C\u0435\u0442\u0430|\u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432",
   _pl_scannedPairs: "\u041F\u0440\u043E\u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u043F\u0430\u0440|\u041F\u0440\u043E\u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u0430 \u043F\u0430\u0440\u0430|\u041F\u0440\u043E\u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u043F\u0430\u0440\u044B|\u041F\u0440\u043E\u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u043F\u0430\u0440",
@@ -520,31 +518,30 @@ const ru: Record<TranslationKeys, string> = {
   _pl_pairCompare: "\u0421\u0440\u0430\u0432\u043D\u0438\u0442\u044C \u043F\u0430\u0440\u044B ({0})|\u0421\u0440\u0430\u0432\u043D\u0438\u0442\u044C \u043F\u0430\u0440\u0443 ({0})|\u0421\u0440\u0430\u0432\u043D\u0438\u0442\u044C \u043F\u0430\u0440\u044B ({0})|\u0421\u0440\u0430\u0432\u043D\u0438\u0442\u044C \u043F\u0430\u0440\u044B ({0})",
 
   // ---- Recipes Tab ----
+  recipesTitle: "\u0420\u0435\u0446\u0435\u043F\u0442\u044B \u0432\u0435\u043D\u0434\u043E\u0440\u043E\u0432",
+  recipesProfitableCount: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u0435 \u0440\u0435\u0446\u0435\u043F\u0442\u044B",
+  recipesBestProfit: "\u041B\u0443\u0447\u0448\u0430\u044F \u043F\u0440\u0438\u0431\u044B\u043B\u044C",
   recipesTotalChecked: "\u0420\u0435\u0446\u0435\u043F\u0442\u044B \u043F\u0440\u043E\u0432\u0435\u0440\u0435\u043D\u044B",
   recipesDescription: "\u0412\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438 \u043F\u0440\u0438\u0431\u044B\u043B\u0438 \u043F\u043E \u0440\u0435\u0446\u0435\u043F\u0442\u0430\u043C \u0432\u0435\u043D\u0434\u043E\u0440\u043E\u0432 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0442\u0435\u043A\u0443\u0449\u0438\u0445 \u0440\u044B\u043D\u043E\u0447\u043D\u044B\u0445 \u0446\u0435\u043D",
   recipesNoData: "\u041D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445 \u043E \u0440\u0435\u0446\u0435\u043F\u0442\u0430\u0445",
   recipesNoDataDesc: "\u0414\u0430\u043D\u043D\u044B\u0435 \u0440\u0435\u0446\u0435\u043F\u0442\u043E\u0432 \u0442\u0440\u0435\u0431\u0443\u044E\u0442 \u0440\u0430\u0431\u043E\u0447\u0435\u0433\u043E \u0431\u044D\u043A\u0435\u043D\u0434\u0430 \u0441 \u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E\u0439 \u0438\u0441\u0442\u043E\u0440\u0438\u0435\u0439 \u0446\u0435\u043D. \u0423\u0431\u0435\u0434\u0438\u0442\u0435\u0441\u044C, \u0447\u0442\u043E \u0431\u044D\u043A\u0435\u043D\u0434 \u0437\u0430\u043F\u0443\u0449\u0435\u043D.",
+  recipesNoProfitable: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u0445 \u0440\u0435\u0446\u0435\u043F\u0442\u043E\u0432 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E",
+  recipesNoProfitableDesc: "\u0422\u0435\u043A\u0443\u0449\u0438\u0435 \u0440\u044B\u043D\u043E\u0447\u043D\u044B\u0435 \u0446\u0435\u043D\u044B \u043D\u0435 \u0434\u0435\u043B\u0430\u044E\u0442 \u043D\u0438 \u043E\u0434\u0438\u043D \u0440\u0435\u0446\u0435\u043F\u0442 \u0432\u0435\u043D\u0434\u043E\u0440\u0430 \u043F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u043C. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u043E\u0437\u0436\u0435, \u043A\u043E\u0433\u0434\u0430 \u0446\u0435\u043D\u044B \u0438\u0437\u043C\u0435\u043D\u044F\u0442\u0441\u044F.",
   recipesName: "\u0420\u0435\u0446\u0435\u043F\u0442",
   recipesInputCost: "\u0421\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u0432\u0445\u043E\u0434\u0430",
   recipesOutputValue: "\u0421\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u0432\u044B\u0445\u043E\u0434\u0430",
-  recipesStatus: "\u0421\u0442\u0430\u0442\u0443\u0441",
-  recipesMissingPrices: "\u041D\u0435\u0442 \u0446\u0435\u043D",
-  recipesMissingDesc: "\u041D\u0435\u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0438\u043D\u0433\u0440\u0435\u0434\u0438\u0435\u043D\u0442\u044B \u0440\u0435\u0446\u0435\u043F\u0442\u0430 \u043D\u0435 \u0438\u043C\u0435\u044E\u0442 \u0442\u0435\u043A\u0443\u0449\u0438\u0445 \u0446\u0435\u043D. \u041E\u0446\u0435\u043D\u043A\u0430 \u043F\u0440\u0438\u0431\u044B\u043B\u0438 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u043F\u043E\u043B\u043D\u043E\u0439.",
-
-  recipesTitle: "\u0420\u0435\u0446\u0435\u043F\u0442\u044B \u0432\u0435\u043D\u0434\u043E\u0440\u043E\u0432",
-  recipesProfitableCount: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u0435 \u0440\u0435\u0446\u0435\u043F\u0442\u044B",
-  recipesBestProfit: "\u041B\u0443\u0447\u0448\u0430\u044F \u043F\u0440\u0438\u0431\u044B\u043B\u044C",
-  recipesNoProfitable: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u0445 \u0440\u0435\u0446\u0435\u043F\u0442\u043E\u0432 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E",
-  recipesNoProfitableDesc: "\u0422\u0435\u043A\u0443\u0449\u0438\u0435 \u0440\u044B\u043D\u043E\u0447\u043D\u044B\u0435 \u0446\u0435\u043D\u044B \u043D\u0435 \u0434\u0435\u043B\u0430\u044E\u0442 \u043D\u0438 \u043E\u0434\u0438\u043D \u0440\u0435\u0446\u0435\u043F\u0442 \u0432\u0435\u043D\u0434\u043E\u0440\u0430 \u043F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u043C. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u043E\u0437\u0436\u0435, \u043A\u043E\u0433\u0434\u0430 \u0446\u0435\u043D\u044B \u0438\u0437\u043C\u0435\u043D\u044F\u0442\u0441\u044F.",
   recipesProfit: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C",
   recipesProfitPct: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C %",
+  recipesStatus: "\u0421\u0442\u0430\u0442\u0443\u0441",
   recipesProfitable: "\u041F\u0440\u0438\u0431\u044B\u043B\u044C\u043D\u044B\u0439",
   recipesUnprofitable: "\u0423\u0431\u044B\u0442\u043E\u0447\u043D\u044B\u0439",
+  recipesMissingPrices: "\u041D\u0435\u0442 \u0446\u0435\u043D",
   recipesMissingTitle: "{0} \u0440\u0435\u0446\u0435\u043F\u0442\u043E\u0432 \u0431\u0435\u0437 \u0446\u0435\u043D",
+  recipesMissingDesc: "\u041D\u0435\u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0438\u043D\u0433\u0440\u0435\u0434\u0438\u0435\u043D\u0442\u044B \u0440\u0435\u0446\u0435\u043F\u0442\u0430 \u043D\u0435 \u0438\u043C\u0435\u044E\u0442 \u0442\u0435\u043A\u0443\u0449\u0438\u0445 \u0446\u0435\u043D. \u041E\u0446\u0435\u043D\u043A\u0430 \u043F\u0440\u0438\u0431\u044B\u043B\u0438 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u043F\u043E\u043B\u043D\u043E\u0439.",
   recipesShowUnprofitable: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C {0} \u0443\u0431\u044B\u0442\u043E\u0447\u043D\u044B\u0445 \u0440\u0435\u0446\u0435\u043F\u0442\u043E\u0432",
   recipesHideUnprofitable: "\u0421\u043A\u0440\u044B\u0442\u044C \u0443\u0431\u044B\u0442\u043E\u0447\u043D\u044B\u0435 \u0440\u0435\u0446\u0435\u043F\u0442\u044B",
 
-  // ---- \u00A72.3: Extended Filters ----
+  // ---- §2.3: Extended Filters ----
   filters: "\u0424\u0438\u043B\u044C\u0442\u0440\u044B",
   minVolume: "\u041C\u0438\u043D \u043E\u0431\u044A\u0451\u043C",
   maxVolume: "\u041C\u0430\u043A\u0441 \u043E\u0431\u044A\u0451\u043C",
@@ -552,10 +549,10 @@ const ru: Record<TranslationKeys, string> = {
   maxChange: "\u041C\u0430\u043A\u0441 \u0438\u0437\u043C. %",
   resetFilters: "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C \u0444\u0438\u043B\u044C\u0442\u0440\u044B",
 
-  // ---- \u00A72.5: Fuzzy Search ----
+  // ---- §2.5: Fuzzy Search ----
   searchNoResults: "\u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E",
 
-  // ---- \u00A72.6: Watchlist Tab Enhanced ----
+  // ---- §2.6: Watchlist Tab Enhanced ----
   sharpMovements: "\u0420\u0435\u0437\u043A\u0438\u0435 \u0434\u0432\u0438\u0436\u0435\u043D\u0438\u044F",
   searchWatchlist: "\u041F\u043E\u0438\u0441\u043A \u0432 \u0441\u043F\u0438\u0441\u043A\u0435...",
   added: "\u0414\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u043E",
@@ -593,7 +590,7 @@ const ru: Record<TranslationKeys, string> = {
   backToExchange: "Назад к обмену",
   pairDetailTitle: "Детали пары",
 
-  // P1-5: Benchmark & Range Position
+  // ---- P1-5: Benchmark & Range Position ----
   range30d: "30д Диапазон",
   range30dAriaLabel: "Позиция в 30-дневном диапазоне",
   benchmark30dTitle: "30-дневный бенчмарк",
@@ -603,11 +600,11 @@ const ru: Record<TranslationKeys, string> = {
   benchmarkVsAvg: "Ср. знач.",
   benchmarkRangePosition: "Позиция в диапазоне",
 
-  // P1-4: Base Currency Phase Hint
+  // ---- P1-4: Base Currency Phase Hint ----
   baseCurrencyPhaseHint: "Рассмотрите Divine для дорогих предметов",
   baseCurrencyPhaseHintTooltip: "В MID/LATE фазе дорогие предметы обычно оцениваются в Divine Orbs. Смена базовой валюты упрощает чтение цен.",
 
-  // P1-1: Quantized Scorer UI
+  // ---- P1-1: Quantized Scorer UI ----
   qSpread: "К-Спред",
   qSpreadTooltip: "Квантованный спред — фактический процент прибыли после округления до целых чисел при минимальном прибыльном лоте",
   minLot: "Мин Лот",
@@ -617,7 +614,7 @@ const ru: Record<TranslationKeys, string> = {
   tierDist: "Тир",
   tierDistanceTooltip: "Расстояние между тирами двух валют. Выше = больший риск квантования при кросс-тир торговле.",
 
-  // P1-1: Quantized Detail Panel
+  // ---- P1-1: Quantized Detail Panel ----
   quantizedAnalysisTitle: "Квантованный анализ",
   qSpreadDetail: "К-Спред (Оптимальный)",
   minLotDetail: "Мин прибыльный лот",
@@ -632,27 +629,27 @@ const ru: Record<TranslationKeys, string> = {
   quantizedNoProfit: "Нет прибыльного лота",
   quantizedLossWarning: "Теоретический спред положительный, но округление делает это убыточным!",
 
-  // P1-3: Tier Distance Detail
+  // ---- P1-3: Tier Distance Detail ----
   tierDistanceDetail: "Расстояние между тир: Δ{0}",
   tierDistanceWarning: "Кросс-тир флип — высокий риск квантования из-за большой разницы в стоимости валют.",
 
-  // P1-2: Quantized Triangular Arbitrage
+  // ---- P1-2: Quantized Triangular Arbitrage ----
   quantizedProfit: "К-Профит",
   quantizedProfitTooltip: "Прибыль % проверена через целочисленное моделирование. Непрерывная прибыль может быть положительной, а целочисленная — убыточной.",
   minStart: "Мин Старт",
   minStartTooltip: "Минимальный стартовый капитал (в целых единицах), необходимый для прибыльности этого цикла после округления.",
   integerSimTooltip: "Путь целочисленного моделирования — суммы на каждом шаге при минимальном прибыльном старте.",
 
-  // P2-4: Liquidity Indicators
+  // ---- P2-4: Liquidity Indicators ----
   liquidityScoreTooltip: "Ликвидность: {0}% — на основе соотношения объёма к запасу",
 
-  // P2-2: Heatmap & Market Tops
+  // ---- P2-2: Heatmap & Market Tops ----
   heatmapMarketTops: "Топы рынка",
   heatmapTopGainers: "Топ роста",
   heatmapTopLosers: "Топ падения",
   heatmapColorLegend: "Интенсивность цвета = величина изменения за 24ч",
 
-  // P2-3: Take-Profit Calculator
+  // ---- P2-3: Take-Profit Calculator ----
   takeProfitTitle: "Калькулятор тейк-профит и стоп-лосс",
   takeProfitBasedOnCI: "На основе доверительных интервалов прогноза для {0}",
   takeProfitPositionSize: "Размер позиции",
@@ -669,7 +666,7 @@ const ru: Record<TranslationKeys, string> = {
   takeProfitAggressive: "Агрессивный",
   takeProfitPessimistic: "Пессимистичный",
 
-  // P2-4: Volume & Liquidity
+  // ---- P2-4: Volume & Liquidity ----
   volumeLiquidityTitle: "Объём и ликвидность",
   volumeLiquidityTotalPairs: "Всего пар",
   volumeLiquidityAvgLiquidity: "Средняя ликвидность",
@@ -677,7 +674,7 @@ const ru: Record<TranslationKeys, string> = {
   volumeLiquidityAnomalies: "Аномалии объёма",
   volumeLiquidityDetailed: "Подробные данные ликвидности",
 
-  // P3-1: Technical Indicators
+  // ---- P3-1: Technical Indicators ----
   technicalIndicatorsTitle: "Технические индикаторы",
   indicatorSMA20: "SMA 20",
   indicatorEMA12: "EMA 12",
@@ -686,12 +683,12 @@ const ru: Record<TranslationKeys, string> = {
   indicatorOverbought: "Перекупленность",
   indicatorOversold: "Перепроданность",
 
-  // P3-5: Watchlist P&L
+  // ---- P3-5: Watchlist P&L ----
   pnl: "П&У",
   entryPrice: "Вход",
   currentPriceShort: "Текущая",
 
-  // P3-8: Candlestick Chart
+  // ---- P3-8: Candlestick Chart ----
   candlestickChartTitle: "Свечной график",
   candlestickNoData: "Нет OHLCV данных для свечного графика",
   candlestickOpen: "О",
@@ -702,7 +699,7 @@ const ru: Record<TranslationKeys, string> = {
   candlestickBullish: "Бычий",
   candlestickBearish: "Медвежий",
 
-  // P3-2: Multi-Timeframe Alignment
+  // ---- P3-2: Multi-Timeframe Alignment ----
   mtfAlignmentTitle: "Выравнивание таймфреймов",
   mtfUp: "Рост",
   mtfDown: "Падение",
@@ -713,13 +710,36 @@ const ru: Record<TranslationKeys, string> = {
   mtfMostlyBearish: "Краткосрочно падает, следите за поддержкой на старших таймфреймах",
   mtfMixedSignals: "Смешанные сигналы по таймфреймам — нет явного тренда",
 
-  // P3-3: Comparative Analytics
+  // ---- P3-3: Comparative Analytics ----
   comparativeTitle: "Сравнительная аналитика",
   comparativeNoData: "Выберите валюты для сравнения",
   comparativeCorrelationMatrix: "Матрица корреляции",
   comparativeCorrelationNote: "Цветовое кодирование: зелёный = положительная корреляция, красный = отрицательная, серый = без корреляции",
   comparativeCorrelationUnavailable: "Матрица корреляции требует данных бэкенда",
   comparativeCorrelationBackend: "Данные бэкенда",
+
+  // ---- P3-6: Forecast Recommendations ----
+  forecastRecommendationsTitle: "Рекомендации по прогнозу",
+  forecastRecommendationsDesc: "На основе ансамблевого прогноза, решения Storage Value и обнаружения аномалий",
+  forecastConfidenceLabel: "{0} достоверность",
+  forecastTargetPrice: "Целевая: {0}",
+
+  // ---- Decay settings (arbitrage-tab) ----
+  decayNoEffect: "Без эффекта — API не предоставляет временные метки снимков",
+  decayOptionNone: "0 — Без спада",
+  decayOptionCustom: "Пользовательский (введите значение)",
+
+  // ---- P3-7: Tier Drift Tracker ----
+  tierDriftTrackerTitle: "Трекер дрейфа тиров",
+  tierDriftCurrencies: "{0} валют",
+  tierBoundaryThresholds: "Пороговые значения тиров",
+  tierBoundaryMin: "{0} мин",
+  tierDriftHistoricalNote: "Исторический дрейф тиров требует данных временных рядов бэкенда (пока недоступно).",
+  tierDriftAllCurrencies: "Все валюты по тирам",
+
+  // ---- Currency Graph — SVG labels ----
+  graphArbCycleLabel: "Арб: +{0}%",
+  graphArbCycleTooltip: "[АРБ. ЦИКЛ]",
 };
 
 export default ru;

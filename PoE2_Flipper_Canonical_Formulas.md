@@ -493,13 +493,14 @@ This assumes momentum continues at its current rate. `exp()` converts from log-s
 ### 6.2 Risk Discount
 
 ```
-z = abs(norm.ppf(confidence_level))    # e.g., 1.645 for confidence_level=0.05
+z = abs(norm.ppf(significance_level))    # e.g., 1.645 for significance_level=0.05
 
 risk_discount = exp(-volatility * z * sqrt(horizon_hours))
 ```
 
 **Where:**
-- `confidence_level` = 0.05 means "5% chance the actual price is below projected × risk_discount" (one-sided VaR)
+- `significance_level` = 0.05 (alpha) means "5% chance the actual price is below projected × risk_discount" (one-sided VaR). The corresponding confidence level is 1 - alpha = 0.95 (95%).
+- **Naming note:** This field was previously called `confidence_level` in `config.yaml` and `backend/config.py`. It has been renamed to `significance_level` to correctly reflect that the value 0.05 is alpha (significance), NOT the confidence level (which would be 0.95). See HIGH-7 in the implementation plan.
 - `norm.ppf(0.05) ≈ -1.645`, so `abs(norm.ppf(0.05)) = 1.645`
 - For volatility=0.02 and horizon=24h: `risk_discount = exp(-0.02 * 1.645 * sqrt(24)) ≈ 0.851`
 
@@ -556,7 +557,7 @@ from scipy.stats import norm
 
 def project_value(current_price: float, log_momentum: float, volatility: float,
                   liquidity_score: float, horizon_hours: int,
-                  confidence_level: float, gold_fee_fraction: float,
+                  significance_level: float,
                   liquidity_norm: float = 10.0,
                   buy_threshold: float = 1.03,
                   sell_threshold: float = 0.97) -> tuple[float, str]:
@@ -564,15 +565,16 @@ def project_value(current_price: float, log_momentum: float, volatility: float,
     projected = current_price * np.exp(log_momentum * horizon_hours)
 
     # Step 2: Risk discount (one-sided VaR-style)
-    z = abs(norm.ppf(confidence_level))
+    # significance_level (alpha) = 0.05 → 95% confidence
+    z = abs(norm.ppf(significance_level))
     risk_discount = np.exp(-volatility * z * np.sqrt(horizon_hours))
 
     # Step 3: Liquidity adjustment
     liq_factor = min(liquidity_score / liquidity_norm, 1.0)
     adjusted = projected * risk_discount * (0.9 + liq_factor * 0.1)
 
-    # Step 4: After fees
-    net_value = adjusted * (1 - gold_fee_fraction)
+    # Step 4: After fees (gold fees excluded — see §6.4 DEPRECATED note)
+    net_value = adjusted   # gold_fee_fraction removed from codebase
 
     # Step 5: Decision
     ratio = net_value / current_price
@@ -594,16 +596,15 @@ log_momentum = 0.001 (0.1% per hour)
 volatility = 0.02
 liquidity_score = 8.0
 horizon_hours = 24
-confidence_level = 0.05
-gold_fee_fraction = 0.05
+significance_level = 0.05    # alpha — confidence = 1 - 0.05 = 0.95
 
 projected = 100 * exp(0.001 * 24) = 100 * exp(0.024) ≈ 102.43
 z = abs(norm.ppf(0.05)) = 1.645
 risk_discount = exp(-0.02 * 1.645 * sqrt(24)) = exp(-0.1612) ≈ 0.851
 liq_factor = 8.0/10.0 = 0.8
 adjusted = 102.43 * 0.851 * (0.9 + 0.8*0.1) = 102.43 * 0.851 * 0.98 ≈ 85.39
-net_value = 85.39 * (1 - 0.05) = 85.39 * 0.95 ≈ 81.12
-ratio = 81.12 / 100 = 0.8112 < 0.97 → SELL/CONVERT
+net_value = adjusted = 85.39    (gold fees excluded per §6.4)
+ratio = 85.39 / 100 = 0.8539 < 0.97 → SELL/CONVERT
 ```
 
 Note: With this volatility and horizon, the risk discount is severe, making the sell decision expected. Lower volatility or shorter horizon would change the outcome.

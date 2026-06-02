@@ -715,6 +715,29 @@ const zh: Record<TranslationKeys, string> = {
   comparativeCorrelationNote: "颜色编码：绿色=正相关，红色=负相关，灰色=无相关",
   comparativeCorrelationUnavailable: "相关性矩阵需要后端数据",
   comparativeCorrelationBackend: "后端数据",
+
+  // ---- P3-6: Forecast Recommendations ----
+  forecastRecommendationsTitle: "预测建议",
+  forecastRecommendationsDesc: "基于集成预测、Storage Value决策和异常检测",
+  forecastConfidenceLabel: "{0} 置信度",
+  forecastTargetPrice: "目标价: {0}",
+
+  // ---- Decay settings (arbitrage-tab) ----
+  decayNoEffect: "无效果 — API不提供快照时间戳",
+  decayOptionNone: "0 — 无衰减",
+  decayOptionCustom: "自定义（输入值）",
+
+  // ---- P3-7: Tier Drift Tracker ----
+  tierDriftTrackerTitle: "层级漂移追踪",
+  tierDriftCurrencies: "{0} 种货币",
+  tierBoundaryThresholds: "层级边界阈值",
+  tierBoundaryMin: "{0} 最低",
+  tierDriftHistoricalNote: "历史层级漂移需要后端时间序列数据（暂不可用）。",
+  tierDriftAllCurrencies: "按层级查看所有货币",
+
+  // ---- Currency Graph — SVG labels ----
+  graphArbCycleLabel: "套利: +{0}%",
+  graphArbCycleTooltip: "[套利循环]",
 };
 
 export default zh;

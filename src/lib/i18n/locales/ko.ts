@@ -715,6 +715,29 @@ const ko: Record<TranslationKeys, string> = {
   comparativeCorrelationNote: "색상 코딩: 녹색 = 양의 상관관계, 빨간색 = 음의 상관관계, 회색 = 무상관",
   comparativeCorrelationUnavailable: "상관관계 매트릭스는 백엔드 데이터가 필요합니다",
   comparativeCorrelationBackend: "백엔드 데이터",
+
+  // ---- P3-6: Forecast Recommendations ----
+  forecastRecommendationsTitle: "예측 추천",
+  forecastRecommendationsDesc: "앙상블 예측, Storage Value 결정 및 이상 탐지 기반",
+  forecastConfidenceLabel: "{0} 신뢰도",
+  forecastTargetPrice: "목표가: {0}",
+
+  // ---- Decay settings (arbitrage-tab) ----
+  decayNoEffect: "효과 없음 — API가 스냅샷 타임스탬프를 제공하지 않음",
+  decayOptionNone: "0 — 감쇠 없음",
+  decayOptionCustom: "사용자 지정 (값 입력)",
+
+  // ---- P3-7: Tier Drift Tracker ----
+  tierDriftTrackerTitle: "티어 드리프트 트래커",
+  tierDriftCurrencies: "{0} 통화",
+  tierBoundaryThresholds: "티어 경계 임계값",
+  tierBoundaryMin: "{0} 최소",
+  tierDriftHistoricalNote: "역사적 티어 드리프트는 백엔드 시계열 데이터가 필요합니다 (아직 사용 불가).",
+  tierDriftAllCurrencies: "티어별 모든 통화",
+
+  // ---- Currency Graph — SVG labels ----
+  graphArbCycleLabel: "차익: +{0}%",
+  graphArbCycleTooltip: "[차익거래 사이클]",
 };
 
 export default ko;

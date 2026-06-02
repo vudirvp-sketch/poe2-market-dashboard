@@ -339,15 +339,15 @@ User Browser
     │                                            provider: "reachable"|"unreachable",
     │                                            timestamp: ISO8601,
     │                                            league?: string,
-    │                                            base_currency?: string,
-    │                                            active_events?: number,
-    │                                            cache_entries?: number,
+    │                                            baseCurrency?: string,          // was base_currency
+    │                                            activeEvents?: number,          // was active_events
+    │                                            cacheEntries?: number,          // was cache_entries
     │                                            snapshot?: {
-    │                                              snapshot_valid, snapshot_stale,
-    │                                              snapshot_age_seconds, last_refresh
+    │                                              snapshotValid, snapshotStale,  // transformed by proxy
+    │                                              snapshotAgeSeconds, lastRefresh
     │                                            },
-    │                                            daily_stats_cache?: {
-    │                                              size, max_size, stale_entries, oldest_entry_age
+    │                                            dailyStatsCache?: {             // was daily_stats_cache
+    │                                              size, maxSize, staleEntries, oldestEntryAge
     │                                            }
     │                                          }
     │
@@ -403,16 +403,16 @@ User Browser
     │                                              │
     │                                          return: FlipsResponse
     │                                          { league, total, opportunities: [{
-    │                                            currency, score, spread, spread_after_fees(DEPRECATED),
-    │                                            volume_24h, momentum, volatility, cluster,
-    │                                            bid, ask, mid_price,
-    │                                            quantized_analysis?: {
+    │                                            currency, score, spread, spreadAfterFees(DEPRECATED),
+    │                                            volume24h, momentum, volatility, cluster,
+    │                                            bid, ask, midPrice,
+    │                                            quantizedAnalysis?: {
     │                                              qSpreads, minProfitableLot, optimalLotProfitPct,
     │                                              recommendedRatio, brickResistance, theoreticalSpread
     │                                            },
-    │                                            tier_distance?
-    │                                          }], event_status: {any_active, affected_currencies, summary},
-    │                                          fetched_at, data_available?, fee_warning? }
+    │                                            tierDistance?
+    │                                          }], eventStatus: {anyActive, affectedCurrencies, summary},
+    │                                          fetchedAt, dataAvailable?, feeWarning? }
     │
     ├─→ GET /api/flipper/triangular ─────────→ routes_arbitrage.py
     │                                              │
@@ -421,11 +421,11 @@ User Browser
     │                                              │
     │                                          return: TriangularResponse
     │                                          { league, total, opportunities: [{
-    │                                            cycle, net_profit_pct, step_rates, total_volume,
-    │                                            confidence, min_starting_amount?,
-    │                                            quantized_profit_pct?, continuous_profit_pct?,
-    │                                            integer_simulation?
-    │                                          }], fetched_at, data_available?, fee_warning? }
+    │                                            cycle, netProfitPct, stepRates, totalVolume,
+    │                                            confidence, minStartingAmount?,
+    │                                            quantizedProfitPct?, continuousProfitPct?,
+    │                                            integerSimulation?
+    │                                          }], fetchedAt, dataAvailable?, feeWarning? }
     │
     ├─→ GET /api/flipper/forecast/{currency} → routes_forecast.py
     │                                              │
@@ -447,16 +447,16 @@ User Browser
     │                                          (Z-score, MACD, RSI, STL residual, sustained momentum)
     │                                              │
     │                                          return: AnomalyAlert[]
-    │                                          { currency, timestamp, alert_score, triggered_indicators,
-    │                                            direction, is_confirmed }
+    │                                          { currency, timestamp, alertScore, triggeredIndicators,
+    │                                            direction, isConfirmed }
     │
     ├─→ GET /api/flipper/storage-value/{currency} → routes_storage_value.py
     │                                              │
     │                                          project_value() — hold/sell decision
     │                                              │
     │                                          return: StorageValueResult
-    │                                          { currency, current_price, projected_price,
-    │                                            risk_discount, adjusted_price, net_value_after_fees,
+    │                                          { currency, currentPrice, projectedPrice,
+    │                                            riskDiscount, adjustedPrice, netValueAfterFees,
     │                                            ratio, decision: "BUY_HOLD"|"SELL_CONVERT"|"NEUTRAL" }
     │
     ├─→ GET /api/flipper/portfolio ────────────→ routes_portfolio.py
@@ -465,8 +465,8 @@ User Browser
     │                                          (risk_parity or min_variance, Ledoit-Wolf shrinkage)
     │                                              │
     │                                          return: PortfolioData
-    │                                          { method, weights: {currency: weight}, expected_risk,
-    │                                            correlation_warning, last_rebalance }
+    │                                          { method, weights: {currency: weight}, expectedRisk,
+    │                                            correlationWarning, lastRebalance }
     │
     ├─→ GET /api/flipper/portfolio/frontier ──→ routes_portfolio.py
     │                                              │
@@ -681,10 +681,10 @@ HistoricalStore/
 | Config Section | Key Fields | Defaults |
 |----------------|-----------|----------|
 | `data` | `primary_provider="poe2scout"`, `fallback_provider="official"`, `cache_ttl_prices_minutes=5`, `cache_ttl_history_hours=24`, `rate_limit_per_second=1.0`, `historical_retention_days=90` | — |
-| `league` | `league_name="vaal"`, `realm="poe2"`, `phase_early_days=7`, `phase_mid_days=35`, `base_currency="exalted"` | — |
-| `filters` | `min_volume_24h=50`, `max_volatility=0.4`, `max_spread=0.15` | — |
+| `league` | `league_name="runes"`, `realm="poe2"`, `phase_early_days=7`, `phase_mid_days=35`, `base_currency="exalted"` | — |
+| `filters` | `min_volume_24h=200`, `max_volatility=0.4`, `max_spread=0.15` | — |
 | `scoring` | `momentum_negative_threshold=-0.01`, `volatility_reference=0.05`, `phase_multiplier_early/mid/late=1.2/1.0/0.9`, `flashback_multiplier=1.5`, `event_multiplier=2.0` | — |
-| `forecasting` | `sarima_seasonal_period=None`, `lightgbm_retrain_interval_hours=6`, `lightgbm_min_data_points=15`, `forecast_horizon_hours=24`, `confidence_level=0.05` | — |
+| `forecasting` | `sarima_seasonal_period=None`, `lightgbm_retrain_interval_hours=6`, `lightgbm_min_data_points=15`, `forecast_horizon_hours=24`, `significance_level=0.05` | — |  
 | `anomaly` | `bonferroni_alpha=0.01`, `alert_score_threshold=0.4`, `rsi_period=14`, `rsi_overbought=70`, `rsi_oversold=30`, `macd_fast/slow/signal=12/26/9` | — |
 | `clustering` | `n_clusters=3`, `recluster_interval_hours=1` | — |
 | `portfolio` | `method="risk_parity"`, `correlation_shock_threshold=0.5`, `ledoit_wolf_shrinkage=True`, `rebalance_interval_hours=24` | — |
@@ -825,16 +825,16 @@ interface FlipOpportunity {
   currency: string;
   score: number;                // 0.0 to 1.0
   spread: number;               // Raw spread (no fees)
-  spread_after_fees: number;    // ⚠️ DEPRECATED — kept for backward compat
-  volume_24h: number;
+  spreadAfterFees: number;      // ⚠️ DEPRECATED — kept for backward compat
+  volume24h: number;            // was volume_24h in backend response (transformed by proxy)
   momentum: number;
   volatility: number;
   cluster: string;              // "stable"|"moderate"|"volatile_illiquid"
   bid: number;
   ask: number;
-  mid_price: number;
-  quantized_analysis?: QuantizedAnalysis;
-  tier_distance?: number;
+  midPrice: number;             // was mid_price in backend response (transformed by proxy)
+  quantizedAnalysis?: QuantizedAnalysis;  // was quantized_analysis (transformed by proxy)
+  tierDistance?: number;        // was tier_distance (transformed by proxy)
 }
 
 interface QuantizedAnalysis {
@@ -874,19 +874,19 @@ interface HistoricalBenchmark {
 interface AnomalyAlert {
   currency: string;
   timestamp: string;
-  alert_score: number;   // 0.0-1.0
-  triggered_indicators: string[];
-  direction: string;     // "up"|"down"|null
-  is_confirmed: boolean;
+  alertScore: number;          // 0.0-1.0 (was alert_score, transformed by proxy)
+  triggeredIndicators: string[];  // was triggered_indicators (transformed by proxy)
+  direction: string;           // "up"|"down"|null
+  isConfirmed: boolean;        // was is_confirmed (transformed by proxy)
 }
 
 interface StorageValueResult {
   currency: string;
-  current_price: number;
-  projected_price: number;
-  risk_discount: number;
-  adjusted_price: number;
-  net_value_after_fees: number;
+  currentPrice: number;         // was current_price (transformed by proxy)
+  projectedPrice: number;       // was projected_price (transformed by proxy)
+  riskDiscount: number;         // was risk_discount (transformed by proxy)
+  adjustedPrice: number;        // was adjusted_price (transformed by proxy)
+  netValueAfterFees: number;    // was net_value_after_fees (transformed by proxy)
   ratio: number;
   decision: "BUY_HOLD"|"SELL_CONVERT"|"NEUTRAL";
 }
@@ -1245,7 +1245,7 @@ def detect_correlation_shock(corr_matrix, threshold=0.5) -> bool:
 
 projected_price = current_price * exp(log_momentum * horizon_hours)
 
-z = abs(norm.ppf(confidence_level))  # default: 0.05 → z=1.645
+z = abs(norm.ppf(significance_level))  # default: 0.05 → z=1.645  (renamed from confidence_level — see HIGH-7)
 risk_discount = exp(-volatility * z * sqrt(horizon_hours))
 
 liq_factor = min(liquidity_score / liquidity_normalization, 1.0)  # default norm=10.0

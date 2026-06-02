@@ -719,6 +719,29 @@ const en = {
   comparativeCorrelationNote: "Color-coded: green = positive correlation, red = negative, gray = uncorrelated",
   comparativeCorrelationUnavailable: "Correlation matrix requires backend data",
   comparativeCorrelationBackend: "Backend data",
+
+  // ---- P3-6: Forecast Recommendations ----
+  forecastRecommendationsTitle: "Forecast Recommendations",
+  forecastRecommendationsDesc: "Based on ensemble forecast, storage value decision, and anomaly detection",
+  forecastConfidenceLabel: "{0} confidence",
+  forecastTargetPrice: "Target: {0}",
+
+  // ---- Decay settings (arbitrage-tab) ----
+  decayNoEffect: "No effect — API does not provide snapshot timestamps",
+  decayOptionNone: "0 — No decay",
+  decayOptionCustom: "Custom (use input)",
+
+  // ---- P3-7: Tier Drift Tracker ----
+  tierDriftTrackerTitle: "Tier Drift Tracker",
+  tierDriftCurrencies: "{0} Currencies",
+  tierBoundaryThresholds: "Tier Boundary Thresholds",
+  tierBoundaryMin: "{0} min",
+  tierDriftHistoricalNote: "Historical tier drift requires backend time-series data (not yet available).",
+  tierDriftAllCurrencies: "All Currencies by Tier",
+
+  // ---- Currency Graph — SVG labels ----
+  graphArbCycleLabel: "Arb: +{0}%",
+  graphArbCycleTooltip: "[ARB CYCLE]",
 } as const;
 
 export default en;
