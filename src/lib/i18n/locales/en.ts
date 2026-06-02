@@ -708,6 +708,7 @@ const en = {
   comparativeCorrelationMatrix: "Correlation Matrix",
   comparativeCorrelationNote: "Color-coded: green = positive correlation, red = negative, gray = uncorrelated",
   comparativeCorrelationUnavailable: "Correlation matrix requires backend data",
+  comparativeCorrelationBackend: "Backend data",
 } as const;
 
 export default en;

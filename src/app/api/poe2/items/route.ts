@@ -5,6 +5,7 @@ import {
   getItem,
   getItemHistory,
   getItemDailyStats,
+  getMultiTimeframeOHLCV,
 } from "@/lib/poe2api";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,14 @@ export async function GET(req: NextRequest) {
         const dayCount = Number(searchParams.get("dayCount") || 30);
         const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
         const data = await getItemDailyStats(realm, league, itemId, dayCount, referenceCurrency);
+        return NextResponse.json(data);
+      }
+      case "ohlcv": {
+        const itemId = searchParams.get("itemId");
+        if (!itemId) return NextResponse.json({ error: "itemId required" }, { status: 400 });
+        const timeframe = (searchParams.get("timeframe") as "1H" | "4H" | "1W") || "4H";
+        const referenceCurrency = searchParams.get("referenceCurrency") || undefined;
+        const data = await getMultiTimeframeOHLCV(realm, league, itemId, timeframe, referenceCurrency);
         return NextResponse.json(data);
       }
       default: {

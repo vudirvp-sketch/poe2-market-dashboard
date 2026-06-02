@@ -100,6 +100,13 @@ function correlationColor(value: number): string {
   return "rgba(239, 68, 68, 0.5)";                         // strong negative — red
 }
 
+/** P3-3: Backend correlation matrix response shape */
+interface BackendCorrelationResponse {
+  currencies: string[];
+  matrix: number[][];
+  data_available: boolean;
+}
+
 export const ComparativeChart = memo(function ComparativeChart({
   realm,
   league,
@@ -111,6 +118,14 @@ export const ComparativeChart = memo(function ComparativeChart({
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
   const [showCorrelation, setShowCorrelation] = useState(false);
+
+  // P3-3: Fetch backend correlation matrix (Step 3 — primary source)
+  const { data: backendCorrelation } = useQuery<BackendCorrelationResponse>({
+    queryKey: ["portfolio-correlation"],
+    queryFn: () => fetchApi<BackendCorrelationResponse>("/api/flipper/portfolio/correlation"),
+    staleTime: 120_000,
+    retry: 0,
+  });
 
   // Resolve item metadata from allItems
   const comparedItems = useMemo(() => {
@@ -205,10 +220,42 @@ export const ComparativeChart = memo(function ComparativeChart({
   }, [histories.data, comparedItems]);
 
   // P3-3: Compute correlation matrix from aligned series data
+  // Priority: backend correlation matrix > client-side computation
   const correlationMatrix = useMemo(() => {
     if (seriesMeta.length < 2) return null;
 
-    // Align time series for correlation
+    // P3-3 Step 3: Try to use backend correlation matrix
+    if (backendCorrelation?.data_available && backendCorrelation.currencies.length >= 2) {
+      // Map compared item apiIds to backend currency names
+      const comparedApiIds = comparedItems.map((item) => item.apiId?.toLowerCase());
+      const backendCurrencies = backendCorrelation.currencies.map((c) => c.toLowerCase());
+
+      // Find indices of compared currencies in the backend matrix
+      const indices: number[] = [];
+      const names: string[] = [];
+      for (const item of comparedItems) {
+        const idx = backendCurrencies.indexOf(item.apiId?.toLowerCase() ?? "");
+        if (idx >= 0) {
+          indices.push(idx);
+          names.push(item.name);
+        }
+      }
+
+      if (indices.length >= 2) {
+        // Extract sub-matrix for compared currencies only
+        const subMatrix: number[][] = [];
+        for (const rowIdx of indices) {
+          const row: number[] = [];
+          for (const colIdx of indices) {
+            row.push(backendCorrelation.matrix[rowIdx]?.[colIdx] ?? 0);
+          }
+          subMatrix.push(row);
+        }
+        return { names, matrix: subMatrix, source: "backend" as const };
+      }
+    }
+
+    // Fallback: client-side computation from % change data
     const alignedSeries: { name: string; values: number[] }[] = seriesMeta.map((s) => ({
       name: s.name,
       values: s.points.map((p) => p.pctChange),
@@ -236,8 +283,8 @@ export const ComparativeChart = memo(function ComparativeChart({
       matrix.push(row);
     }
 
-    return { names, matrix };
-  }, [seriesMeta]);
+    return { names, matrix, source: "client" as const };
+  }, [seriesMeta, backendCorrelation, comparedItems]);
 
   if (comparisonIds.length < 2) {
     return (
@@ -396,6 +443,9 @@ export const ComparativeChart = memo(function ComparativeChart({
                 </h4>
                 <p className="text-[10px] text-muted-foreground mb-2">
                   {t("comparativeCorrelationNote")}
+                  {"source" in correlationMatrix && correlationMatrix.source === "backend" && (
+                    <span className="ml-1 text-emerald-500">({t("comparativeCorrelationBackend") ?? "Backend data"})</span>
+                  )}
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs border-collapse">

@@ -709,6 +709,7 @@ const ru: Record<TranslationKeys, string> = {
   comparativeCorrelationMatrix: "Матрица корреляции",
   comparativeCorrelationNote: "Цветовое кодирование: зелёный = положительная корреляция, красный = отрицательная, серый = без корреляции",
   comparativeCorrelationUnavailable: "Матрица корреляции требует данных бэкенда",
+  comparativeCorrelationBackend: "Данные бэкенда",
 };
 
 export default ru;

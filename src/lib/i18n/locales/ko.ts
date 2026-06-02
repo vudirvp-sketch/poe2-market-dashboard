@@ -704,6 +704,7 @@ const ko: Record<TranslationKeys, string> = {
   comparativeCorrelationMatrix: "상관관계 매트릭스",
   comparativeCorrelationNote: "색상 코딩: 녹색 = 양의 상관관계, 빨간색 = 음의 상관관계, 회색 = 무상관",
   comparativeCorrelationUnavailable: "상관관계 매트릭스는 백엔드 데이터가 필요합니다",
+  comparativeCorrelationBackend: "백엔드 데이터",
 };
 
 export default ko;

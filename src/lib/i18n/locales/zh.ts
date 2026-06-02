@@ -704,6 +704,7 @@ const zh: Record<TranslationKeys, string> = {
   comparativeCorrelationMatrix: "相关性矩阵",
   comparativeCorrelationNote: "颜色编码：绿色=正相关，红色=负相关，灰色=无相关",
   comparativeCorrelationUnavailable: "相关性矩阵需要后端数据",
+  comparativeCorrelationBackend: "后端数据",
 };
 
 export default zh;

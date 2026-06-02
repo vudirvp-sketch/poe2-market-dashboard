@@ -1712,6 +1712,90 @@ export async function getItemDailyStats(realm: string, league: string, itemId: s
   }
 }
 
+// ============================================================================
+// P3-2: Multi-timeframe OHLCV aggregation from hourly price history
+//
+// The POE2Scout API provides hourly price history via /Items/{ItemId}/History.
+// This function fetches that data and aggregates it into OHLCV candles for
+// 1H (raw), 4H (4 candles → 1), and 1W (~168 candles → 1) timeframes.
+//
+// For 1D candles, use getItemDailyStats() which returns official daily OHLCV
+// from the DailyStatsHistory endpoint — it's more accurate than aggregating
+// hourly data.
+// ============================================================================
+
+export interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+/** Aggregate hourly price history points into OHLCV candles for a given timeframe */
+export async function getMultiTimeframeOHLCV(
+  realm: string,
+  league: string,
+  itemId: string,
+  timeframe: "1H" | "4H" | "1W",
+  referenceCurrency?: string,
+): Promise<OHLCVCandle[]> {
+  try {
+    // Determine how many hours to fetch based on timeframe
+    // 1H: fetch 168 hours (7 days), 4H: fetch 720 hours (30 days), 1W: fetch 2160 hours (90 days)
+    const hourCounts: Record<string, number> = { "1H": 168, "4H": 720, "1W": 2160 };
+    const logCount = hourCounts[timeframe] ?? 720;
+
+    // Fetch hourly price history
+    const history = await getItemHistory(realm, league, itemId, logCount, referenceCurrency);
+    if (!history || history.length === 0) return [];
+
+    // Sort chronologically (oldest first)
+    const sorted = [...history].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    // For 1H, each point IS a candle
+    if (timeframe === "1H") {
+      return sorted.map((p) => ({
+        time: p.timestamp,
+        open: p.price,
+        high: p.price,
+        low: p.price,
+        close: p.price,
+        volume: p.volume,
+      }));
+    }
+
+    // Group points into candles
+    const groupSize = timeframe === "4H" ? 4 : 168; // 4H = 4 hourly points, 1W = ~168
+    const candles: OHLCVCandle[] = [];
+
+    for (let i = 0; i < sorted.length; i += groupSize) {
+      const group = sorted.slice(i, i + groupSize);
+      if (group.length === 0) continue;
+
+      const prices = group.map((p) => p.price).filter((p) => p > 0);
+      if (prices.length === 0) continue;
+
+      candles.push({
+        time: group[0].timestamp,
+        open: prices[0],
+        high: Math.max(...prices),
+        low: Math.min(...prices),
+        close: prices[prices.length - 1],
+        volume: group.reduce((sum, p) => sum + (p.volume || 0), 0),
+      });
+    }
+
+    return candles;
+  } catch (err) {
+    console.warn("[poe2api] getMultiTimeframeOHLCV: failed, returning empty.", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
 // --- Uniques (paginated) ---
 // Category=all returns EMPTY results from the API.
 // When category is "all", we fetch ALL unique categories and merge results.

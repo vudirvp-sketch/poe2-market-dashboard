@@ -426,3 +426,56 @@ async def get_efficient_frontier(n_points: int = Query(default=50, ge=10, le=200
     )
 
     return frontier_data
+
+
+# ---------------------------------------------------------------------------
+# P3-3: Standalone correlation matrix endpoint
+# ---------------------------------------------------------------------------
+
+@router.get("/correlation")
+async def get_correlation_matrix():
+    """Return the correlation matrix for all eligible currencies.
+
+    This endpoint computes the Pearson correlation matrix from log-returns
+    of all currencies with sufficient price history. It's used by the
+    ComparativeChart component to render a correlation heatmap.
+
+    Returns:
+        currencies: list of currency API IDs
+        matrix: N×N correlation matrix (2D array of floats)
+        data_available: whether sufficient data was available
+    """
+    config = get_settings()
+
+    # Return cached correlation if available and fresh
+    if _current_corr is not None and _current_corr.get("currencies"):
+        # Check if the cached data is fresh enough (< 5 minutes old)
+        if _last_allocation is not None and _last_allocation.last_rebalance is not None:
+            hours_since = (
+                datetime.now(timezone.utc) - _last_allocation.last_rebalance
+            ).total_seconds() / 3600
+            if hours_since < config.portfolio.rebalance_interval_hours:
+                return {
+                    "currencies": _current_corr["currencies"],
+                    "matrix": _current_corr["matrix"],
+                    "data_available": True,
+                }
+
+    # Otherwise, rebuild portfolio to get fresh correlation data
+    try:
+        await _build_portfolio(config)
+    except HTTPException:
+        pass
+
+    if _current_corr is not None and _current_corr.get("currencies"):
+        return {
+            "currencies": _current_corr["currencies"],
+            "matrix": _current_corr["matrix"],
+            "data_available": True,
+        }
+
+    return {
+        "currencies": [],
+        "matrix": [],
+        "data_available": False,
+    }

@@ -5,7 +5,7 @@
 // ============================================================================
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart,
@@ -17,8 +17,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  ComposedChart,
-  Line,
 } from "recharts";
 import { TrendingUp, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +36,7 @@ import { useI18n } from "@/lib/i18n";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
 import { EmptyState } from "./empty-state";
+import { CandlestickChart, type OHLCVData, type Timeframe, computeTimeframeAlignments, type TimeframeAlignment } from "./candlestick-chart";
 
 interface DetailDialogProps {
   item: PoeItem | null;
@@ -57,69 +56,11 @@ export function DetailDialog({
   referenceCurrency,
 }: DetailDialogProps) {
   const [chartMode, setChartMode] = useState<"hourly" | "daily">("hourly");
+  // P3-2: Timeframe state for candlestick chart
+  const [candleTimeframe, setCandleTimeframe] = useState<Timeframe>("1D");
   const { isFavorite, toggleFavorite, uiState } = useDashboardStore();
   const { t } = useI18n();
   const reducedMotion = useReducedMotion();
-
-  // Task 6.11: Accurate chart height measurement via ResizeObserver
-  // Instead of hardcoded `chartHeight - 30`, we observe the actual rendered
-  // SVG container and derive the plot area height from it.
-  const candlestickContainerRef = useRef<HTMLDivElement>(null);
-  const [candlestickChartHeight, setCandlestickChartHeight] = useState(270);
-  // Track the actual chart plot area using a ResizeObserver on the Recharts SVG
-  const chartSvgRef = useRef<SVGSVGElement | null>(null);
-
-  // Measure the actual chart area after render
-  useEffect(() => {
-    if (!open || chartMode !== "daily" || !candlestickContainerRef.current) return;
-
-    // The ResponsiveContainer creates a wrapper div; we need the SVG inside it
-    const measureChart = () => {
-      const container = candlestickContainerRef.current;
-      if (!container) return;
-
-      // Try to find the SVG rendered by ResponsiveContainer
-      const svg = container.querySelector(".recharts-surface") as SVGSVGElement | null;
-      if (svg) {
-        chartSvgRef.current = svg;
-        // The plot area height = SVG height - top margin - bottom margin (X axis)
-        // Recharts default margins are typically { top: 5, right: 5, bottom: 5, left: 5 }
-        // But with XAxis visible, bottom is ~30px. We use the actual SVG clientHeight.
-        const svgHeight = svg.clientHeight || svg.getBoundingClientRect().height;
-        if (svgHeight > 0) {
-          // Subtract typical axis/padding height: XAxis (~30px) + top padding (~5px)
-          const plotAreaHeight = svgHeight - 35;
-          if (plotAreaHeight > 50) {
-            setCandlestickChartHeight(plotAreaHeight);
-          }
-        }
-      } else {
-        // Fallback: use container height minus estimated axis/padding
-        const containerHeight = container.clientHeight;
-        if (containerHeight > 0) {
-          const plotAreaHeight = containerHeight - 50; // XAxis + padding
-          if (plotAreaHeight > 50) {
-            setCandlestickChartHeight(plotAreaHeight);
-          }
-        }
-      }
-    };
-
-    // Delay measurement to allow Recharts to render
-    const timer = setTimeout(measureChart, 100);
-
-    // Also observe container resize for responsive updates
-    const container = candlestickContainerRef.current;
-    const observer = new ResizeObserver(() => {
-      measureChart();
-    });
-    if (container) observer.observe(container);
-
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-    };
-  }, [chartMode, open]);
 
   // Hourly price history
   const { data: detailHistory, isLoading: detailHistoryLoading } = useQuery({
@@ -160,6 +101,26 @@ export function DetailDialog({
     retry: 0,
   });
   const benchmark = benchmarkData?.benchmark;
+
+  // P3-2: Convert daily stats to OHLCV data for the standalone CandlestickChart
+  const ohlcvData = useMemo((): OHLCVData[] => {
+    if (!dailyStats || !Array.isArray(dailyStats)) return [];
+    return dailyStats
+      .filter((d) => d.close > 0 && Number.isFinite(d.close))
+      .map((d) => ({
+        time: d.day?.slice(0, 10) ?? "",
+        open: d.open ?? d.close,
+        high: d.high ?? d.close,
+        low: d.low ?? d.close,
+        close: d.close,
+        volume: d.volume ?? 0,
+      }));
+  }, [dailyStats]);
+
+  // P3-2: Compute multi-timeframe alignment from OHLCV data
+  const timeframeAlignments = useMemo((): TimeframeAlignment[] => {
+    return computeTimeframeAlignments(ohlcvData);
+  }, [ohlcvData]);
 
   if (!item) return null;
   const fav = isFavorite(item.id);
@@ -428,66 +389,20 @@ export function DetailDialog({
                 message={t("noHistory")}
               />
             )
-          ) : // Daily candlestick mode
+          ) : // Daily candlestick mode — P3-2: uses standalone CandlestickChart with MTF alignment
           dailyLoading ? (
             <ChartSkeleton height={300} />
-          ) : dailyStats && dailyStats.length > 0 ? (
-            <div className="mt-4 space-y-4">
-              {/* Candlestick chart using ComposedChart */}
-              <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("dailyCandlestickTitle")}
-                </h4>
-                <div ref={candlestickContainerRef} className="h-[300px]">
-                  <CandlestickChart data={dailyStats} chartHeight={candlestickChartHeight} reducedMotion={reducedMotion} />
-                </div>
-              </div>
-
-              {/* Daily volume */}
-              <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-                  <Activity className="h-4 w-4" aria-hidden="true" /> {t("dailyVolume")}
-                </h4>
-                <div className="h-[120px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={dailyStats}>
-                      <XAxis
-                        dataKey="day"
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(v: string) =>
-                          new Date(v).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        }
-                      />
-                      <YAxis
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(v: number) =>
-                          v >= 1000
-                            ? `${(v / 1000).toFixed(0)}k`
-                            : String(v)
-                        }
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "8px",
-                          fontSize: "12px",
-                        }}
-                        formatter={(value: number) => [value.toLocaleString(), t("volume")]}
-                      />
-                      <Bar
-                        dataKey="volume"
-                        fill="#6366f1"
-                        radius={[2, 2, 0, 0]}
-                        isAnimationActive={!reducedMotion}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+          ) : ohlcvData.length > 0 ? (
+            <div className="mt-4">
+              <CandlestickChart
+                data={ohlcvData}
+                title={item.name + " — Daily Candlestick"}
+                showVolume={true}
+                overlays={["sma20", "ema12", "rsi14"]}
+                timeframe={candleTimeframe}
+                onTimeframeChange={setCandleTimeframe}
+                timeframeAlignments={timeframeAlignments}
+              />
             </div>
           ) : (
             <EmptyState
@@ -498,117 +413,5 @@ export function DetailDialog({
         </>
       </DialogContent>
     </Dialog>
-  );
-}
-
-// ============================================================================
-// Custom Candlestick Chart using Recharts ComposedChart
-// Task 6.11: chartHeight is now measured dynamically via ResizeObserver
-// ============================================================================
-function CandlestickChart({ data, chartHeight = 270, reducedMotion = false }: { data: DailyStat[]; chartHeight?: number; reducedMotion?: boolean }) {
-  // For proper candlestick rendering, we use custom shapes
-  const chartData = data.map((d) => ({
-    ...d,
-    dayLabel: new Date(d.day).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
-    // Calculate wick positions (high-low range) and body (open-close range)
-    bodyBottom: Math.min(d.open, d.close),
-    bodyTop: Math.max(d.open, d.close),
-    isUp: d.close >= d.open,
-  }));
-
-  // Compute Y-axis scale from data for accurate y-positioning
-  const allPrices = data.flatMap((d) => [d.high, d.low]);
-  const minPrice = Math.min(...allPrices);
-  const maxPrice = Math.max(...allPrices);
-  const range = maxPrice - minPrice || 1;
-
-  // Custom candlestick shape — uses measured chartHeight for Y-coordinate mapping
-  const CandlestickShape = (props: { x?: number; y?: number; width?: number; height?: number; payload?: typeof chartData[0] }) => {
-    const { x = 0, width = 0, payload } = props;
-    if (!payload) return null;
-
-    const computedChartHeight = Math.max(chartHeight, 100); // Use the dynamically measured height
-    const yScale = (val: number) => computedChartHeight - ((val - minPrice) / range) * computedChartHeight;
-    const barWidth = Math.min(width * 0.6, 12);
-    const centerX = x + width / 2;
-
-    const color = payload.isUp ? "#34d399" : "#f87171";
-    const fillColor = payload.isUp ? "rgba(52, 211, 153, 0.3)" : "rgba(248, 113, 113, 0.3)";
-
-    return (
-      <g>
-        {/* Wick (high-low line) */}
-        <line
-          x1={centerX}
-          x2={centerX}
-          y1={yScale(payload.high)}
-          y2={yScale(payload.low)}
-          stroke={color}
-          strokeWidth={1}
-        />
-        {/* Body (open-close rectangle) */}
-        <rect
-          x={centerX - barWidth / 2}
-          y={yScale(payload.bodyTop)}
-          width={barWidth}
-          height={Math.max(yScale(payload.bodyBottom) - yScale(payload.bodyTop), 1)}
-          fill={fillColor}
-          stroke={color}
-          strokeWidth={1}
-        />
-      </g>
-    );
-  };
-
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-        <XAxis
-          dataKey="dayLabel"
-          tick={{ fontSize: 10 }}
-        />
-        <YAxis
-          tick={{ fontSize: 10 }}
-          domain={["auto", "auto"]}
-          tickFormatter={(v: number) => fmt(v, 1)}
-        />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "hsl(var(--card))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: "8px",
-            fontSize: "12px",
-          }}
-          formatter={(_value: number, _name: string, props: { payload?: DailyStat }) => {
-            const d = props.payload;
-            if (!d) return ["", ""];
-            return [
-              <span key="o">
-                O: {fmt(d.open)} H: {fmt(d.high)} L: {fmt(d.low)} C: {fmt(d.close)}
-              </span>,
-              "OHLC",
-            ];
-          }}
-        />
-        <Bar
-          dataKey="close"
-          shape={<CandlestickShape />}
-          isAnimationActive={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="close"
-          stroke="#8b5cf6"
-          strokeWidth={1}
-          dot={false}
-          strokeOpacity={0.5}
-          isAnimationActive={!reducedMotion}
-        />
-      </ComposedChart>
-    </ResponsiveContainer>
   );
 }

@@ -46,6 +46,7 @@ import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
 import { MarketHeatmap } from "@/components/dashboard/market-heatmap";
 import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
+import { ComparativeChart } from "@/components/dashboard/comparative-chart";
 
 // Heavy tab components — lazy-loaded via next/dynamic to reduce initial bundle size.
 // These tabs use Recharts (forecast, portfolio) or complex force-layout (graph)
@@ -967,6 +968,16 @@ export function Dashboard() {
                   realm={realm}
                   league={effectiveLeague}
                   backendOnline={flipperBackendOnline}
+                />
+              </ErrorBoundary>
+
+              {/* P3-3: Comparative Analytics — integrated into Overview tab */}
+              <ErrorBoundary fallbackTitle="Comparative Analytics">
+                <ComparativeChart
+                  realm={realm}
+                  league={effectiveLeague}
+                  referenceCurrency={referenceCurrency}
+                  allItems={allItems ?? []}
                 />
               </ErrorBoundary>
             </TabsContent>
