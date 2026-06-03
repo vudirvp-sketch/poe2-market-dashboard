@@ -93,10 +93,18 @@ function getEndpoints(realm: string, league: string): EndpointConfig[] {
     { path: `/${realm}/Leagues/${league}/Items/Categories`, label: "Categories" },
 
     // ── Currency first page (has PriceLogs for change computation) ──
-    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=currency&Page=1&PerPage=250`, label: "Currencies ByCategory (currency)" },
+    // NOTE: Reduced from PerPage=250 to PerPage=50 to keep snapshot under 500 KB.
+    // 50 items is enough for the initial dashboard display; the rest will be
+    // fetched on-demand once the user navigates to the Currencies tab.
+    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=currency&Page=1&PerPage=50`, label: "Currencies ByCategory (currency)" },
 
-    // ── Items first page ──
-    { path: `/${realm}/Leagues/${league}/Items?Page=1&PerPage=50`, label: "Items (page 1)" },
+    // ── Items ──
+    // NOTE: The /Items endpoint returns ALL items in a flat array (ignores
+    // pagination params).  With 1200+ items it takes ~437 KB which exceeds
+    // our 500 KB budget.  We include it as a non-critical endpoint and
+    // post-process it below to keep only the first 25 items in the snapshot.
+    // The full dataset will be fetched on-demand once the API is reachable.
+    { path: `/${realm}/Leagues/${league}/Items?Page=1&PerPage=25`, label: "Items (truncated)" },
   ];
 }
 
@@ -131,6 +139,20 @@ async function main(): Promise<void> {
       if (endpoint.critical) {
         console.error(`\n  CRITICAL endpoint "${endpoint.label}" failed. Aborting.`);
         process.exit(1);
+      }
+    }
+  }
+
+  // ── Post-process: truncate large arrays to keep snapshot under 500 KB ──
+
+  for (const [url, entry] of Object.entries(entries)) {
+    // The /Items endpoint returns ALL items (ignores pagination).
+    // Truncate to 25 items to stay under the size budget.
+    if (url.includes("/Items?") && Array.isArray(entry.data)) {
+      const original = (entry.data as unknown[]).length;
+      if (original > 25) {
+        (entry as { data: unknown[] }).data = (entry.data as unknown[]).slice(0, 25);
+        console.log(`  Truncated /Items from ${original} to 25 entries`);
       }
     }
   }
