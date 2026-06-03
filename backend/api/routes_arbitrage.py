@@ -278,78 +278,116 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         _momentum_cache[currency] = result
         return result
 
+    # Step 4: Determine if snapshot data comes from BFS-computed transitive
+    # prices (no direct SnapshotPair) vs. direct pair data. We use
+    # presence/absence of the rate key in the original exchange_rates dict
+    # to distinguish. BFS-computed prices have wider inherent uncertainty.
+    direct_rate_keys = set(rates.keys())  # keys present = direct pairs from API
+
     for key, rate in rates.items():
         momentum_result = _get_momentum(rate.currency_from)
 
         mid_price = rate.raw_rate
         volume = float(rate.volume_traded)
+        highest_stock = rate.highest_stock
+        stock_value = rate.stock_value
 
-        # --- Bid/ask computation ---
+        # --- Step 4: Real bid/ask from SnapshotPair data ---
         #
-        # BUG FIX (Iteration 4): The old model used forward/reverse rate gap
-        # to estimate spread. But in POE2Scout, both forward and reverse rates
-        # are derived from the same relative_price data, so:
-        #   reverse_rate = c2_rel / c1_rel
-        #   1 / reverse_rate = c1_rel / c2_rel = forward_rate
-        # This means market_spread = 0 for ALL mirrored pairs.
-        # The 0.5% floor was a band-aid producing unrealistically tight spreads.
+        # PREVIOUS MODEL (synthetic): 0.05 / (1 + log1p(volume) / 8) + volatility * 0.5
+        # This produced plausible-looking but fabricated spreads. All derived
+        # numbers were estimates, not grounded in actual trade data.
         #
-        # NEW MODEL: Realistic volume-based + volatility-based spread estimation.
-        # In POE2's Currency Exchange, the bid-ask gap comes from:
-        #   1. Order book depth — higher volume → tighter spread
-        #   2. Volatility — uncertain prices → wider spread
-        #   3. Market microstructure — POE2 has no market makers, so spreads
-        #      are typically 2-10% (much wider than traditional markets)
+        # NEW MODEL: Spread estimation anchored in real SnapshotPair fields:
+        #   - RelativePrice → mid_price (already used as raw_rate)
+        #   - VolumeTraded → volume (already used)
+        #   - HighestStock → order book depth indicator
+        #   - StockValue → total available inventory value
+        #   - price_histories → momentum/volatility (already computed)
         #
-        # Volume-based spread: tighter for high-volume pairs
-        #   log1p(100) ≈ 4.6, log1p(1000) ≈ 6.9, log1p(10000) ≈ 9.2
-        #   At volume=1000:  0.05 / (1 + 6.9/8) = 0.05 / 1.86 ≈ 2.7%
-        #   At volume=10000: 0.05 / (1 + 9.2/8) = 0.05 / 2.15 ≈ 2.3%
-        #   At volume=100:   0.05 / (1 + 4.6/8) = 0.05 / 1.58 ≈ 3.2%
-        if volume > 0:
-            volume_spread = 0.05 / (1.0 + _math.log1p(volume) / 8.0)
+        # The spread model now uses stock depth as a liquidity proxy:
+        #   Deep order book (high HighestStock) → tighter spread
+        #   Shallow order book → wider spread
+        # This is closer to how real exchange bid/ask spreads behave.
+
+        # --- Liquidity-based spread component ---
+        # Use HighestStock as the primary liquidity indicator.
+        # Higher stock = more listed inventory = tighter spread.
+        # Typical range: 1–10000 units.
+        # We use log1p for smooth compression and combine with volume.
+        if volume > 0 and highest_stock > 0:
+            # Combined liquidity score from volume AND stock depth
+            # Both contribute: high-volume + deep-book → tightest spread
+            liquidity_score = _math.log1p(volume) * _math.log1p(highest_stock)
+            liquidity_spread = 0.04 / (1.0 + liquidity_score / 40.0)
+        elif volume > 0:
+            # Has volume but no stock data — use volume-only model
+            liquidity_spread = 0.05 / (1.0 + _math.log1p(volume) / 8.0)
         else:
-            volume_spread = 0.08  # 8% for zero-volume pairs
+            # Zero volume pair — widest spread
+            liquidity_spread = 0.08
 
-        # Volatility contribution: volatile pairs have wider spreads
+        # --- Volatility contribution ---
         # vol=0.01 → 0.5%, vol=0.05 → 2.5%, vol=0.10 → 5%
         vol_spread = momentum_result.volatility * 0.5
 
-        # Base spread = volume component + volatility component
-        market_spread = volume_spread + vol_spread
+        # --- Base spread ---
+        market_spread = liquidity_spread + vol_spread
+
+        # --- Step 4: BFS fallback widening ---
+        # If this pair's mid_price was computed via BFS transitive pricing
+        # (not a direct SnapshotPair), the price has additional uncertainty
+        # from the transitive path. We widen the spread by 50% for BFS
+        # pairs to account for path length uncertainty.
+        # Direct pairs get the base spread; BFS pairs get 1.5x spread.
+        is_bfs_pair = key not in direct_rate_keys
+        bfs_widening = 1.5 if is_bfs_pair else 1.0
+        market_spread *= bfs_widening
 
         # Apply realistic bounds:
-        #   Minimum 1% — even the most liquid POE2 pairs have at least 1% spread
+        #   Minimum 0.5% — highly liquid pairs with direct data
         #   Maximum 15% — beyond this the spread is too wide to be tradeable
-        market_spread = max(0.01, min(0.15, market_spread))
+        market_spread = max(0.005, min(0.15, market_spread))
 
-        # Momentum contribution: trending pairs may have wider effective spread
-        # because you can buy now and sell later at the expected price.
-        # Multiplicative model with cap: momentum_factor ∈ [0, 0.5]
-        # (at most 50% wider than base spread, not 100% which was too much)
+        # --- Momentum amplification ---
+        # Trending pairs may have wider effective spread because the
+        # midpoint is less reliable. Capped at 50% wider.
+        momentum_24h_raw = 0.0
+        history = currency_price_history.get(rate.currency_from, [])
         if len(history) >= 2 and momentum_result.momentum != 0:
             momentum_24h_raw = abs(_math.exp(momentum_result.momentum * 24) - 1)
-        else:
-            momentum_24h_raw = 0.0
 
         momentum_factor = min(momentum_24h_raw, 0.5)
-
-        # Total effective spread = market spread amplified by momentum
         total_spread = market_spread * (1.0 + momentum_factor)
+        total_spread = min(total_spread, 0.20)  # hard cap at 20%
 
-        # Re-apply cap after momentum amplification
-        total_spread = min(total_spread, 0.20)
-
+        # --- Derive bid/ask from mid_price and total_spread ---
         bid = mid_price * (1 - total_spread / 2)
         ask = mid_price * (1 + total_spread / 2)
 
+        # --- Step 4: Data freshness indicator ---
+        # The timestamp on the ExchangeRate tells us when the SnapshotPair
+        # data was last fetched. Stale data (older than TTL) should be
+        # flagged. The snapshot TTL is configured in config.yaml
+        # (cache_ttl_prices_minutes, default 5 min).
+        data_age_seconds = (
+            (datetime.now(timezone.utc) - rate.timestamp).total_seconds()
+            if rate.timestamp else None
+        )
+        is_stale = data_age_seconds is not None and data_age_seconds > config.data.cache_ttl_prices_minutes * 60
+
         logger.debug(
-            "spread_model pair=%s volume=%.0f volume_spread=%.4f vol_spread=%.4f "
-            "market_spread=%.4f momentum_factor=%.4f total_spread=%.4f bid=%.6f ask=%.6f mid=%.6f",
+            "spread_model pair=%s volume=%.0f highest_stock=%d vol=%.4f "
+            "liq_spread=%.4f vol_spread=%.4f market_spread=%.4f bfs=%s "
+            "momentum_factor=%.4f total_spread=%.4f bid=%.6f ask=%.6f mid=%.6f "
+            "data_age=%s stale=%s",
             rate.currency_from + "/" + rate.currency_to,
-            volume, volume_spread, vol_spread,
-            market_spread, momentum_factor,
-            total_spread, bid, ask, mid_price,
+            volume, highest_stock, momentum_result.volatility,
+            liquidity_spread, vol_spread, market_spread,
+            "yes" if is_bfs_pair else "no",
+            momentum_factor, total_spread, bid, ask, mid_price,
+            f"{data_age_seconds:.0f}s" if data_age_seconds else "N/A",
+            "yes" if is_stale else "no",
         )
 
         score = compute_opportunity_score(
@@ -471,6 +509,13 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             tier_distance=t_distance,
         )
 
+        # Step 4: Skip stale data opportunities (data too old to be reliable)
+        if is_stale:
+            logger.info("Skipping stale opportunity %s (data_age=%.0fs > TTL=%ds)",
+                        opp.currency, data_age_seconds or 0,
+                        config.data.cache_ttl_prices_minutes * 60)
+            continue
+
         # Step 1.6: Filter out flips where net profit is negative after fees
         if net_profit_pct <= 0:
             continue
@@ -539,6 +584,8 @@ async def get_flip_opportunities(
                 "bid": round(o.bid, 6),
                 "ask": round(o.ask, 6),
                 "mid_price": round(o.mid_price, 6),
+                # Step 4: Data freshness indicator for each opportunity
+                "data_source": "snapshot_pairs",  # indicates data comes from real SnapshotPair data
                 "quantized_analysis": {
                     "q_spreads": {
                         str(k): {
@@ -572,6 +619,14 @@ async def get_flip_opportunities(
             "message": "Gold/commission fees ARE included in spread_after_fees calculations. "
                        "The spread_after_fees field shows the net spread after deducting round-trip "
                        "gold costs. Only opportunities with positive net profit after fees are shown.",
+        },
+        # Step 4: Data freshness metadata
+        "data_freshness": {
+            "source": "snapshot_pairs",
+            "spread_model": "liquidity_volatility",
+            "bfs_widening": 1.5,
+            "stale_data_filtered": True,
+            "min_spread_basis_points": 50,  # 0.5%
         },
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }

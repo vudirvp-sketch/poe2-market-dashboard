@@ -12,13 +12,8 @@ import {
   GitCompare,
   Bell,
   Zap,
-  LineChart,
   TrendingUp,
-  Briefcase,
   Network,
-  LayoutGrid,
-  List,
-  Filter,
   Keyboard,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,45 +43,11 @@ import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidi
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
 
-// Heavy tab components — lazy-loaded via next/dynamic to reduce initial bundle size.
-// These tabs use Recharts (forecast, portfolio) or complex force-layout (graph)
-// which add significant JS weight. Users rarely visit all tabs in one session,
-// so deferring these imports improves Time-to-Interactive significantly.
+// Heavy tab component — lazy-loaded via next/dynamic to reduce initial bundle size.
+// Step 2: Removed ForecastTab and PortfolioTab (garbage code — forecast was unreliable,
+// portfolio was mock-only). CurrencyGraphTab kept as it provides real value.
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// 4.4: Replaced all animate-pulse divs with proper <Skeleton> components
-// for consistent shimmer animation and better a11y (Skeleton has aria-busy)
-const ForecastTab = dynamic(
-  () => import("@/components/dashboard/forecast-tab").then((m) => ({ default: m.ForecastTab })),
-  {
-    loading: () => (
-      <div className="space-y-4">
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-[300px] w-full" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    ),
-  },
-);
-
-const PortfolioTab = dynamic(
-  () => import("@/components/dashboard/portfolio-tab").then((m) => ({ default: m.PortfolioTab })),
-  {
-    loading: () => (
-      <div className="space-y-4">
-        <Skeleton className="h-20 w-full" />
-        <div className="grid grid-cols-3 gap-4">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-48 w-full" />
-      </div>
-    ),
-  },
-);
 
 const CurrencyGraphTab = dynamic(
   () => import("@/components/dashboard/currency-graph-tab").then((m) => ({ default: m.CurrencyGraphTab })),
@@ -137,7 +98,6 @@ import type {
   FlipperHealthResponse,
   FlipperPhaseResponse,
   FlipperEventsSummary,
-  PortfolioData,
 } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
@@ -280,20 +240,9 @@ export function Dashboard() {
     retry: 1,
   });
 
-  // ============================================================================
-  // Flipper portfolio data (for sticky bar correlationWarning)
-  // 4.2: Moved from FlipperStickyBar to dashboard-page to avoid redundant
-  // fetch when PortfolioTab is not mounted. The sticky bar now receives
-  // correlationWarning as a prop instead of making its own query.
-  // ============================================================================
-  const { data: flipperPortfolioData } = useQuery<PortfolioData>({
-    queryKey: ["flipper-portfolio"],
-    queryFn: () => fetchApi<PortfolioData>("/api/flipper/portfolio"),
-    enabled: flipperBackendOnline,
-    staleTime: 60_000,
-    // No refetchInterval — PortfolioTab polls this key when visible
-    retry: 1,
-  });
+  // Step 2: Removed flipperPortfolioData query — Portfolio tab was garbage code
+  // (mock correlation matrix, premature optimization feature). The sticky bar
+  // now defaults to correlationWarning=false.
 
   // ============================================================================
   // Flipper events count (for header events button indicator)
@@ -648,7 +597,8 @@ export function Dashboard() {
   // §3.2: Keyboard Shortcuts
   // ============================================================================
   // Tab index mapping for shortcuts 1–9 (matching visible tab order)
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "forecast", "portfolio", "graph", "watchlist"];
+  // Step 2: Removed "forecast" and "portfolio" from TAB_MAP
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -848,7 +798,7 @@ export function Dashboard() {
         baseCurrencyText={uiState.baseCurrencyText}
       />
 
-      <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={flipperPortfolioData?.correlationWarning ?? false} wsStatus={wsStatus} />
+      <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={false} wsStatus={wsStatus} />
 
       {/* Main content — id for skip-to-content a11y link */}
       <main id="main-content" className="max-w-[1600px] mx-auto px-4 py-4" role="main">
@@ -887,12 +837,7 @@ export function Dashboard() {
                 <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
                   <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
                 </TabsTrigger>
-                <TabsTrigger value="forecast" className="gap-1.5" aria-label={t("tabForecast")}>
-                  <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabForecast")}
-                </TabsTrigger>
-                <TabsTrigger value="portfolio" className="gap-1.5" aria-label={t("tabPortfolio")}>
-                  <Briefcase className="h-4 w-4" aria-hidden="true" /> {t("tabPortfolio")}
-                </TabsTrigger>
+                {/* Step 2: Removed forecast and portfolio tabs (garbage code) */}
                 <TabsTrigger value="graph" className="gap-1.5" aria-label={t("tabGraph")}>
                   <Network className="h-4 w-4" aria-hidden="true" /> {t("tabGraph")}
                 </TabsTrigger>
@@ -1389,18 +1334,7 @@ export function Dashboard() {
             </TabsContent>
 
             {/* ============ FORECAST TAB ============ */}
-            <TabsContent value="forecast">
-              <ErrorBoundary fallbackTitle={t("fallbackForecasts")}>
-                <ForecastTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
-              </ErrorBoundary>
-            </TabsContent>
-
-            {/* ============ PORTFOLIO TAB ============ */}
-            <TabsContent value="portfolio">
-              <ErrorBoundary fallbackTitle={t("fallbackPortfolio")}>
-                <PortfolioTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
-              </ErrorBoundary>
-            </TabsContent>
+            {/* Step 2: Removed forecast and portfolio TabsContent (garbage code) */}
 
             {/* ============ CURRENCY GRAPH TAB ============ */}
             <TabsContent value="graph">

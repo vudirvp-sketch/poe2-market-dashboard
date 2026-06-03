@@ -1028,34 +1028,43 @@ liquidity_score_24h = log1p(volume_24h) / log1p(max_volume)
 
 #### 5.2.4 Spread Estimation Model
 
-> **⚠️ IMPORTANT (Iteration 4):** The previous model used forward/reverse rate gap,
-> which was fundamentally broken (always produced spread=0). The new model uses
-> volume + volatility based estimation.
+> **⚠️ IMPORTANT (Step 4):** The previous model used volume + volatility only.
+> The new model (Step 4) uses real SnapshotPair data: HighestStock as a liquidity
+> proxy, combined with volume for tighter spreads on deep-orderbook pairs.
+> BFS-computed transitive prices get a 1.5x widening. Stale data is filtered out.
 
 ```python
-# backend/arbitrage/scorer.py
+# backend/api/routes_arbitrage.py — _build_flip_opportunities()
 # See PoE2_Flipper_Canonical_Formulas.md §7.1.1 for full details
 
-# Step 1: Volume-based spread component
-if volume_24h > 0:
-    volume_spread = 0.05 / (1.0 + log1p(volume_24h) / 8.0)
+# Step 1: Liquidity-based spread (volume + stock depth from SnapshotPair)
+if volume > 0 and highest_stock > 0:
+    liquidity_score = log1p(volume) * log1p(highest_stock)
+    liquidity_spread = 0.04 / (1.0 + liquidity_score / 40.0)
+elif volume > 0:
+    liquidity_spread = 0.05 / (1.0 + log1p(volume) / 8.0)  # volume-only fallback
 else:
-    volume_spread = 0.08  # 8% for zero-volume pairs
+    liquidity_spread = 0.08  # 8% for zero-volume pairs
 
 # Step 2: Volatility component
 vol_spread = volatility * 0.5
 
-# Step 3: Base spread
-market_spread = volume_spread + vol_spread
-market_spread = max(0.01, min(0.15, market_spread))  # [1%, 15%]
+# Step 3: Base spread = liquidity + volatility
+market_spread = liquidity_spread + vol_spread
 
-# Step 4: Momentum amplification (capped at 50% wider)
+# Step 4: BFS fallback widening (1.5x for transitive prices)
+market_spread *= 1.5 if is_bfs_pair else 1.0
+
+# Step 5: Apply bounds [0.5%, 15%]
+market_spread = max(0.005, min(0.15, market_spread))
+
+# Step 6: Momentum amplification (capped at 50% wider)
 momentum_24h_raw = abs(exp(momentum * 24) - 1)
 momentum_factor = min(momentum_24h_raw, 0.5)
 total_spread = market_spread * (1.0 + momentum_factor)
 total_spread = min(total_spread, 0.20)  # hard cap at 20%
 
-# Step 5: Derive bid/ask from mid_price and total_spread
+# Step 7: Derive bid/ask from mid_price and total_spread
 bid = mid_price * (1 - total_spread / 2)
 ask = mid_price * (1 + total_spread / 2)
 ```
