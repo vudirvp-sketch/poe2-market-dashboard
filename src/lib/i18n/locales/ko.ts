@@ -505,6 +505,10 @@ const ko: Record<TranslationKeys, string> = {
   dataUnavailableTitle: "데이터를 일시적으로 사용할 수 없습니다",
   dataUnavailableDesc: "POE2Scout API에 연결할 수 없거나 이 요청에 대한 데이터가 없습니다. 오류가 아닙니다 — 나중에 다시 시도하세요.",
 
+  // ---- Flipper Collecting Data (better UX for dataAvailable:false) ----
+  flipperCollectingDataTitle: "백엔드가 시장 데이터를 수집 중입니다",
+  flipperCollectingDataDesc: "Flipper 백엔드가 실행 중이지만 결과를 생성할 만큼 데이터가 충분히 누적되지 않았습니다. 백엔드가 방금 시작되었거나 업스트림 API가 일시적으로 느린 경우 발생합니다. 데이터는 보통 백엔드 시작 후 2-5분 내에 사용 가능합니다.",
+
   // ---- Overview Heatmap ----
   overviewHeatmap: "가격 히트맵 (24시)",
 

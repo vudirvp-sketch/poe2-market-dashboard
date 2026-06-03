@@ -505,6 +505,10 @@ const zh: Record<TranslationKeys, string> = {
   dataUnavailableTitle: "数据暂时不可用",
   dataUnavailableDesc: "POE2Scout API 可能无法访问或没有此请求的数据。这不是错误 — 请稍后重试。",
 
+  // ---- Flipper Collecting Data (better UX for dataAvailable:false) ----
+  flipperCollectingDataTitle: "后端正在收集市场数据",
+  flipperCollectingDataDesc: "Flipper 后端正在运行，但尚未积累足够的数据来生成结果。这通常发生在后端刚启动或上游 API 暂时响应缓慢时。数据通常在后端启动后 2-5 分钟内可用。",
+
   // ---- Overview Heatmap ----
   overviewHeatmap: "价格热力图 (24小时)",
 

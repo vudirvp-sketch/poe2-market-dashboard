@@ -1,13 +1,21 @@
 // ============================================================================
 // Arbitrage Flipper Triangular — Triangular arbitrage cycles table
 // Extracted from arbitrage-tab.tsx (ШАГ 3 refactoring)
+//
+// FIX: Better UX for data unavailable states:
+//   - When backend is online but data not yet collected → show
+//     "collecting data" message with auto-retry hint
+//   - When backend is offline → show backend_offline error
+//   - When upstream is degraded → show upstream_unreachable error
+//   - When there are genuinely no cycles → show "no cycles detected"
 // ============================================================================
 "use client";
 
 import { memo } from "react";
-import { AlertTriangle, ArrowRight, Layers } from "lucide-react";
+import { AlertTriangle, ArrowRight, Layers, RefreshCw, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import type { TriangularResponse } from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
@@ -54,13 +62,24 @@ export const ArbitrageFlipperTriangular = memo(function ArbitrageFlipperTriangul
           <ApiErrorFallback errorKind="upstream_unreachable" compact />
         ) : triData && triData.dataAvailable === false ? (
           <div className="text-center py-6">
-            <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
+            <Clock className="h-8 w-8 text-amber-500 mx-auto mb-2" aria-hidden="true" />
             <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-              {t("dataUnavailableTitle")}
+              {t("flipperCollectingDataTitle")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("dataUnavailableDesc")}
+              {t("flipperCollectingDataDesc")}
             </p>
+            {onRetry && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-3 h-7 text-xs gap-1.5"
+                onClick={onRetry}
+              >
+                <RefreshCw className="h-3 w-3" aria-hidden="true" />
+                {t("tryAgain")}
+              </Button>
+            )}
           </div>
         ) : triError ? (
           <ApiErrorFallback

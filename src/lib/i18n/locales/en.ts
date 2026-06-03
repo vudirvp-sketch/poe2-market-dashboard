@@ -512,6 +512,10 @@ const en = {
   dataUnavailableTitle: "Data currently unavailable",
   dataUnavailableDesc: "The POE2Scout API may be unreachable or has no data for this request. This is not an error — try again later.",
 
+  // ---- Flipper Collecting Data (better UX for dataAvailable:false) ----
+  flipperCollectingDataTitle: "Backend is collecting market data",
+  flipperCollectingDataDesc: "The Flipper backend is running but has not yet accumulated enough data to generate results. This happens when the backend just started or the upstream API is temporarily slow. Data is usually available within 2–5 minutes after the backend starts.",
+
   // ---- Plural keys (pipe-separated: singular|plural for EN, form1|form2|form3 for RU) ----
   _pl_alertsCount: "Alerts ({0})|Alert ({0})|Alerts ({0})",
   _pl_items: "items|item|items",

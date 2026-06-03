@@ -1,13 +1,20 @@
 // ============================================================================
 // Arbitrage Flipper Flips — Flipper-mode scored flip opportunities table
 // Extracted from arbitrage-tab.tsx (ШАГ 3 refactoring)
+//
+// FIX: Better UX for data unavailable states:
+//   - When backend is online but data not yet collected → show
+//     "collecting data" message with retry button
+//   - When backend is offline → show backend_offline error
+//   - When upstream is degraded → show upstream_unreachable error
 // ============================================================================
 "use client";
 
 import { memo } from "react";
-import { AlertTriangle, TrendingUp } from "lucide-react";
+import { AlertTriangle, TrendingUp, RefreshCw, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import type { FlipsResponse } from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
@@ -60,11 +67,22 @@ export const ArbitrageFlipperFlips = memo(function ArbitrageFlipperFlips({
           />
         ) : flipsData && flipsData.dataAvailable === false ? (
           <div className="text-center py-10">
-            <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
-            <p className="font-medium text-amber-600 dark:text-amber-400">{t("dataUnavailableTitle")}</p>
+            <Clock className="h-10 w-10 text-amber-500 mx-auto mb-3" aria-hidden="true" />
+            <p className="font-medium text-amber-600 dark:text-amber-400">{t("flipperCollectingDataTitle")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              {t("dataUnavailableDesc")}
+              {t("flipperCollectingDataDesc")}
             </p>
+            {onRetry && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-3 h-8 text-xs gap-1.5"
+                onClick={onRetry}
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("tryAgain")}
+              </Button>
+            )}
           </div>
         ) : flipsError ? (
           <ApiErrorFallback
