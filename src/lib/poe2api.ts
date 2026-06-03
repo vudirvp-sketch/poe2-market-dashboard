@@ -1273,10 +1273,18 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
   try {
     const raw = await cachedFetch<RawLeague[]>(`${BASE_URL}/${encodeURIComponent(realm)}/Leagues`);
 
-    // API IsCurrent is always false. We determine the active league
-    // by getting the realm's default_league_value and matching it.
+    // Determine the active league. Strategy:
+    // 1. If ANY league has IsCurrent=true, use ONLY IsCurrent (ignore default_league_value).
+    //    This handles the POE2Scout bug where /Realms returns an outdated
+    //    default_league_value (e.g. "Fate of the Vaal") while /Leagues correctly
+    //    sets IsCurrent=true for the current league ("Runes of Aldur").
+    // 2. If NO league has IsCurrent=true (historically the API always returned false),
+    //    fall back to matching default_league_value from the /Realms endpoint.
+    //
     // Fix 5.4: If defaultLeagueValue is provided by the caller, skip the /Realms request
-    if (!defaultLeagueValue) {
+    const hasAnyIsCurrent = raw.some((l) => l.IsCurrent);
+
+    if (!hasAnyIsCurrent && !defaultLeagueValue) {
       try {
         const realms = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
         const matchingRealm = realms.find((r) =>
@@ -1286,7 +1294,7 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
           defaultLeagueValue = matchingRealm.default_league_value;
         }
       } catch {
-        // If realms fetch fails, fall back to IsCurrent
+        // If realms fetch fails, no fallback for active detection
       }
     }
 
@@ -1300,12 +1308,13 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
       displayName: l.Value,
       startAt: null,
       endAt: null,
-      // Mark league as active if IsCurrent is true OR it matches the
-      // realm's default_league_value (fallback when IsCurrent is always false).
-      // Priority: IsCurrent=true > defaultLeagueValue match.
-      // When both conditions match different leagues, IsCurrent is more reliable
-      // because the realm's default_league_value may be outdated.
-      active: l.IsCurrent || (defaultLeagueValue ? l.Value === defaultLeagueValue : false),
+      // Active league determination:
+      // - When any league has IsCurrent=true: use ONLY IsCurrent (default_league_value
+      //   from /Realms may be outdated — known POE2Scout bug)
+      // - When no league has IsCurrent=true: fall back to defaultLeagueValue matching
+      active: hasAnyIsCurrent
+        ? l.IsCurrent
+        : (defaultLeagueValue ? l.Value === defaultLeagueValue : false),
       // Pass base currency info from league for reference currency
       baseCurrencyApiId: l.BaseCurrencyApiId,
       baseCurrencyText: l.BaseCurrencyText,

@@ -15,14 +15,14 @@ import { expect, type Page } from "@playwright/test";
 // ---------------------------------------------------------------------------
 
 export const MOCK_REALMS = [
-  { name: "poe2", displayName: "PoE2", defaultLeague: "Standard" },
+  { name: "poe2", displayName: "PoE2", defaultLeague: "Runes of Aldur" },
   { name: "pc", displayName: "PoE1 PC", defaultLeague: "Standard" },
 ];
 
 export const MOCK_LEAGUES = [
   {
-    name: "Standard",
-    displayName: "Standard",
+    name: "runes",
+    displayName: "Runes of Aldur",
     startAt: null,
     endAt: null,
     active: true,
@@ -36,8 +36,23 @@ export const MOCK_LEAGUES = [
     },
   },
   {
-    name: "Hardcore",
-    displayName: "Hardcore",
+    name: "runeshc",
+    displayName: "HC Runes of Aldur",
+    startAt: null,
+    endAt: null,
+    active: false,
+    baseCurrencyApiId: "exalted",
+    baseCurrencyText: "Exalted Orb",
+    defaultCurrency: {
+      apiId: "exalted",
+      text: "Exalted Orb",
+      iconUrl: null,
+      relativePrice: 1,
+    },
+  },
+  {
+    name: "standard",
+    displayName: "Standard",
     startAt: null,
     endAt: null,
     active: false,
