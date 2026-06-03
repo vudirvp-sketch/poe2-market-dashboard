@@ -796,7 +796,7 @@ function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): nu
   if (validLogs.length < 2) return null;
 
   // Sort chronologically (oldest first) — API may return newest-first
-  validLogs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
+  sortPriceLogsByTime(validLogs);
 
   const now = validLogs[validLogs.length - 1];
   const oneDayAgo = new Date(new Date(now.Time).getTime() - 24 * 60 * 60 * 1000);
@@ -833,7 +833,7 @@ function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): 
   if (validLogs.length < 2) return null;
 
   // Sort chronologically (oldest first) — API may return newest-first
-  validLogs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
+  sortPriceLogsByTime(validLogs);
 
   const now = validLogs[validLogs.length - 1];
   const sevenDaysAgo = new Date(new Date(now.Time).getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -868,7 +868,7 @@ function computeVolume24h(logs: (RawPriceLogEntry | null)[] | undefined): number
   if (validLogs.length === 0) return null;
 
   // Sort chronologically (oldest first) — API may return newest-first
-  validLogs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
+  sortPriceLogsByTime(validLogs);
 
   const latest = new Date(validLogs[validLogs.length - 1].Time);
   const oneDayAgo = new Date(latest.getTime() - 24 * 60 * 60 * 1000);
@@ -893,16 +893,14 @@ function computePreviousPrice(logs: (RawPriceLogEntry | null)[] | undefined): nu
   const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (validLogs.length < 2) return null;
   // Sort chronologically (oldest first)
-  const sorted = [...validLogs].sort(
-    (a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime()
-  );
-  // sorted[0] = oldest, sorted[last] = most recent (current)
+  sortPriceLogsByTime(validLogs);
+  // validLogs[0] = oldest, validLogs[last] = most recent (current)
   // For 24h change: find the entry closest to 24h ago
-  const now = sorted[sorted.length - 1];
+  const now = validLogs[validLogs.length - 1];
   const targetTime = new Date(now.Time).getTime() - 24 * 60 * 60 * 1000;
-  let closest = sorted[0];
+  let closest = validLogs[0];
   let closestDiff = Infinity;
-  for (const log of sorted) {
+  for (const log of validLogs) {
     const diff = Math.abs(new Date(log.Time).getTime() - targetTime);
     if (diff < closestDiff) {
       closestDiff = diff;
@@ -918,14 +916,12 @@ function computePrevious7dPrice(logs: (RawPriceLogEntry | null)[] | undefined): 
   if (!logs || logs.length < 2) return null;
   const validLogs = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (validLogs.length < 2) return null;
-  const sorted = [...validLogs].sort(
-    (a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime()
-  );
-  const now = sorted[sorted.length - 1];
+  sortPriceLogsByTime(validLogs);
+  const now = validLogs[validLogs.length - 1];
   const targetTime = new Date(now.Time).getTime() - 7 * 24 * 60 * 60 * 1000;
-  let closest = sorted[0];
+  let closest = validLogs[0];
   let closestDiff = Infinity;
-  for (const log of sorted) {
+  for (const log of validLogs) {
     const diff = Math.abs(new Date(log.Time).getTime() - targetTime);
     if (diff < closestDiff) {
       closestDiff = diff;
@@ -1043,7 +1039,7 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
   const valid = logs.filter((l): l is RawPriceLogEntry => l !== null);
   if (valid.length === 0) return null;
   // Sort chronologically (oldest first) — API returns newest-first
-  valid.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
+  sortPriceLogsByTime(valid);
   return valid.map((l) => ({
     timestamp: l.Time,
     price: l.Price,
@@ -1070,6 +1066,28 @@ function safeParseFloat(value: string | number | null | undefined): number | nul
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+// ============================================================================
+// Step 2.7: Shared sort helpers — eliminate duplicate .sort() comparators
+// ============================================================================
+
+/** Step 2.7: Shared sort helper — sort PriceLogs chronologically (oldest first).
+ *  Mutates the array in-place (same as the inline .sort() calls it replaces). */
+function sortPriceLogsByTime(logs: RawPriceLogEntry[]): void {
+  logs.sort((a, b) => new Date(a.Time).getTime() - new Date(b.Time).getTime());
+}
+
+/** Step 2.7: Shared sort helper — sort PoeItem[] by price descending (most expensive first).
+ *  Mutates the array in-place. */
+function sortPoeItemsByPriceDesc(items: PoeItem[]): void {
+  items.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+}
+
+/** Step 2.7: Shared sort helper — sort history-like arrays by timestamp ascending.
+ *  Returns a new sorted array (non-mutating), matching the [...items].sort() pattern it replaces. */
+function sortByTimestampAsc<T extends { timestamp: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 }
 
 // ============================================================================
@@ -1952,9 +1970,7 @@ export async function getMultiTimeframeOHLCV(
     if (!history || history.length === 0) return [];
 
     // Sort chronologically (oldest first)
-    const sorted = [...history].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    const sorted = sortByTimestampAsc(history);
 
     // For 1H, each point IS a candle
     if (timeframe === "1H") {
@@ -2120,7 +2136,7 @@ async function getUniquesAllCategories(
   }
 
   // Sort by price descending (most expensive first)
-  allItems.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+  sortPoeItemsByPriceDesc(allItems);
 
   // Client-side pagination
   const startIdx = (page - 1) * perPage;
@@ -2255,7 +2271,7 @@ async function getCurrenciesAllCategories(
   }
 
   // Sort by price descending
-  allItems.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+  sortPoeItemsByPriceDesc(allItems);
 
   // Client-side pagination
   const startIdx = (page - 1) * perPage;
@@ -2353,9 +2369,7 @@ export async function getPairMultiTimeframeOHLCV(
     if (!history || history.length === 0) return [];
 
     // Sort chronologically (oldest first)
-    const sorted = [...history].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    const sorted = sortByTimestampAsc(history);
 
     // For 1H, each point IS a candle
     if (timeframe === "1H") {

@@ -24,9 +24,11 @@ import {
   AlertTriangle,
   Clock,
   Coins,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { FlipsSkeleton } from "@/components/dashboard/skeletons";
 import {
   Select,
@@ -97,8 +99,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   // Filter state
   const [minScore, setMinScore] = useState(0);
   const [minVolume, setMinVolume] = useState(0);
+  const [minSpread, setMinSpread] = useState(0);
   const [clusterFilter, setClusterFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Sort state
   const [sortField, setSortField] = useState<SortField>("score");
@@ -168,6 +172,11 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       filtered = filtered.filter((o) => (o.volume24h ?? 0) >= minVolume);
     }
 
+    // Min Spread filter
+    if (minSpread > 0) {
+      filtered = filtered.filter((o) => (o.spread ?? 0) >= minSpread);
+    }
+
     // Cluster filter
     if (clusterFilter !== "all") {
       filtered = filtered.filter((o) => o.cluster === clusterFilter);
@@ -214,7 +223,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     });
 
     return sorted;
-  }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection]);
+  }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection, minScore, minVolume, minSpread]);
 
   // ---- Summary stats ----
   const avgScore = useMemo(() => {
@@ -246,6 +255,15 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     }
     return isFlipsResponseSuspicious(flipsData.opportunities);
   }, [flipsData?.opportunities]);
+
+  // Auto-refresh every 30 seconds when enabled
+  useEffect(() => {
+    if (!autoRefresh || !backendOnline) return;
+    const interval = setInterval(() => {
+      invalidateFlips();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, backendOnline, invalidateFlips]);
 
   // §0.4: Stale data detection — check if fetched_at is older than 10 minutes
   const [isStale, setIsStale] = useState(false);
@@ -484,6 +502,39 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
                 <SelectItem value="volatile_illiquid">{t("flipsClusterVolatile")}</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Min Spread */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground" htmlFor="flips-min-spread">
+              {t("flipperMinSpread") || "Min Spread"}
+            </label>
+            <Input
+              id="flips-min-spread"
+              type="number"
+              min={0}
+              max={1}
+              step={0.01}
+              value={minSpread}
+              onChange={(e) => { setMinSpread(Number(e.target.value) || 0); setPage(1); }}
+              className="w-20 h-8 text-xs"
+            />
+          </div>
+
+          {/* Auto-refresh toggle */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground" htmlFor="flips-auto-refresh">
+              {t("autoRefresh") || "Auto"}
+            </label>
+            <Button
+              id="flips-auto-refresh"
+              variant={autoRefresh ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+            >
+              <RefreshCw className={`h-3 w-3 ${autoRefresh ? "animate-spin" : ""}`} />
+            </Button>
           </div>
 
           {/* Search */}

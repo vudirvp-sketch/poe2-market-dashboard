@@ -196,7 +196,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     cluster_labels: dict[str, ClusterLabel] = {}
 
     try:
-        cached_clustering = pipeline_cache.get("cluster_labels")
+        cached_clustering = pipeline_cache.get("arbitrage_cluster_labels")
         if cached_clustering is not None and not cached_clustering.stale:
             cluster_labels = cached_clustering.value
         else:
@@ -241,7 +241,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
                 logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
                 # Cache the result
-                pipeline_cache.put("cluster_labels", cluster_labels)
+                pipeline_cache.put("arbitrage_cluster_labels", cluster_labels)
             else:
                 logger.warning(
                     "Only %d currencies for clustering (need >=3), using MODERATE default",

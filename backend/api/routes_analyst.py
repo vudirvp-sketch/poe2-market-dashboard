@@ -1,0 +1,224 @@
+"""
+API routes for League Analyst — trends, anomalies, league comparison, and auto-generated facts.
+
+Endpoint:
+    GET /api/analyst/summary — Comprehensive league analysis summary
+"""
+
+from __future__ import annotations
+
+import logging
+import math
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+
+from fastapi import APIRouter, Query
+
+from backend.config import get_settings
+from backend.api.data_snapshot import get_snapshot
+from backend.data.pipeline_cache import get_pipeline_cache
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/analyst", tags=["analyst"])
+
+
+def _compute_trends(prices_in_base: dict[str, float],
+                    price_histories: dict[str, list]) -> list[dict]:
+    """Compute 24h and 7d trend data for all currencies."""
+    trends = []
+    for api_id, history_points in price_histories.items():
+        if len(history_points) < 2:
+            continue
+        
+        prices = [p.price for p in history_points]
+        if len(prices) < 2:
+            continue
+        
+        current = prices[-1]
+        
+        # 24h change
+        price_24h_ago = prices[0] if len(prices) >= 2 else None
+        change_24h = None
+        if price_24h_ago and price_24h_ago > 0:
+            change_24h = ((current - price_24h_ago) / price_24h_ago) * 100
+        
+        # Simple trend direction
+        if change_24h is not None:
+            if change_24h > 2:
+                direction = "up"
+            elif change_24h < -2:
+                direction = "down"
+            else:
+                direction = "stable"
+        else:
+            direction = "unknown"
+        
+        trends.append({
+            "api_id": api_id,
+            "current_price": current,
+            "change_24h_pct": round(change_24h, 2) if change_24h is not None else None,
+            "direction": direction,
+        })
+    
+    # Sort by absolute change (most volatile first)
+    trends.sort(key=lambda t: abs(t.get("change_24h_pct") or 0), reverse=True)
+    return trends
+
+
+def _detect_anomalies_simple(prices_in_base: dict[str, float],
+                              price_histories: dict[str, list]) -> list[dict]:
+    """Simple anomaly detection based on z-score of price changes."""
+    anomalies = []
+    for api_id, history_points in price_histories.items():
+        if len(history_points) < 5:
+            continue
+        
+        prices = [p.price for p in history_points]
+        if len(prices) < 5:
+            continue
+        
+        # Compute price changes
+        changes = [prices[i] - prices[i-1] for i in range(1, len(prices)) if prices[i-1] > 0]
+        if not changes:
+            continue
+        
+        mean_change = sum(changes) / len(changes)
+        std_change = (sum((c - mean_change) ** 2 for c in changes) / len(changes)) ** 0.5
+        
+        if std_change < 1e-10:
+            continue
+        
+        # Check if the latest change is anomalous (|z-score| > 2)
+        latest_change = changes[-1] if changes else 0
+        z_score = (latest_change - mean_change) / std_change
+        
+        if abs(z_score) > 2.0:
+            anomalies.append({
+                "api_id": api_id,
+                "z_score": round(z_score, 2),
+                "direction": "spike_up" if z_score > 0 else "spike_down",
+                "current_price": prices[-1],
+                "change_pct": round((latest_change / prices[-2]) * 100, 2) if len(prices) >= 2 and prices[-2] > 0 else None,
+            })
+    
+    # Sort by absolute z-score (most anomalous first)
+    anomalies.sort(key=lambda a: abs(a["z_score"]), reverse=True)
+    return anomalies[:20]  # Top 20
+
+
+def _generate_facts(trends: list[dict], anomalies: list[dict],
+                    snapshot_data: dict) -> list[dict]:
+    """Auto-generate interesting facts about the league economy."""
+    facts = []
+    
+    # Fact: biggest movers
+    big_movers_up = [t for t in trends if t.get("direction") == "up"][:3]
+    big_movers_down = [t for t in trends if t.get("direction") == "down"][:3]
+    
+    if big_movers_up:
+        top = big_movers_up[0]
+        facts.append({
+            "type": "trend",
+            "icon": "up",
+            "text": f"{top['api_id']} is the biggest gainer (+{top.get('change_24h_pct', 0):.1f}% in 24h)",
+            "severity": "info",
+        })
+    
+    if big_movers_down:
+        top = big_movers_down[0]
+        facts.append({
+            "type": "trend",
+            "icon": "down",
+            "text": f"{top['api_id']} is the biggest loser ({top.get('change_24h_pct', 0):.1f}% in 24h)",
+            "severity": "warning",
+        })
+    
+    # Fact: anomaly count
+    if anomalies:
+        facts.append({
+            "type": "anomaly",
+            "icon": "alert",
+            "text": f"{len(anomalies)} currencies showing unusual price activity",
+            "severity": "warning" if len(anomalies) > 5 else "info",
+        })
+    
+    # Fact: market activity
+    total_currencies = snapshot_data.get("total_currencies", 0)
+    total_pairs = snapshot_data.get("total_pairs", 0)
+    if total_currencies > 0:
+        facts.append({
+            "type": "market",
+            "icon": "chart",
+            "text": f"Tracking {total_currencies} currencies across {total_pairs} trading pairs",
+            "severity": "info",
+        })
+    
+    # Fact: stable currencies count
+    stable_count = len([t for t in trends if t.get("direction") == "stable"])
+    if stable_count > 0:
+        facts.append({
+            "type": "market",
+            "icon": "shield",
+            "text": f"{stable_count} currencies holding stable (less than 2% change)",
+            "severity": "info",
+        })
+    
+    return facts
+
+
+@router.get("/summary")
+async def get_league_summary():
+    """Comprehensive league analysis: trends, anomalies, and auto-generated facts."""
+    config = get_settings()
+    snapshot = await get_snapshot()
+    
+    # Build summary metadata
+    total_currencies = len(snapshot.prices_in_base)
+    total_pairs = len(snapshot.exchange_rates)
+    
+    # Compute trends
+    pipeline_cache = get_pipeline_cache()
+    cached_trends = pipeline_cache.get("analyst_trends")
+    if cached_trends is not None and not cached_trends.stale:
+        trends = cached_trends.value
+    else:
+        trends = _compute_trends(snapshot.prices_in_base, snapshot.price_histories)
+        pipeline_cache.put("analyst_trends", trends)
+    
+    # Detect anomalies
+    cached_anomalies = pipeline_cache.get("analyst_anomalies")
+    if cached_anomalies is not None and not cached_anomalies.stale:
+        anomalies = cached_anomalies.value
+    else:
+        anomalies = _detect_anomalies_simple(snapshot.prices_in_base, snapshot.price_histories)
+        pipeline_cache.put("analyst_anomalies", anomalies)
+    
+    # Generate facts
+    snapshot_data = {
+        "total_currencies": total_currencies,
+        "total_pairs": total_pairs,
+    }
+    facts = _generate_facts(trends, anomalies, snapshot_data)
+    
+    # Trend summary
+    up_count = len([t for t in trends if t.get("direction") == "up"])
+    down_count = len([t for t in trends if t.get("direction") == "down"])
+    stable_count = len([t for t in trends if t.get("direction") == "stable"])
+    
+    return {
+        "league": config.league.league_name,
+        "summary": {
+            "total_currencies": total_currencies,
+            "total_pairs": total_pairs,
+            "trending_up": up_count,
+            "trending_down": down_count,
+            "stable": stable_count,
+            "anomaly_count": len(anomalies),
+        },
+        "trends": trends[:30],  # Top 30 by volatility
+        "anomalies": anomalies,
+        "facts": facts,
+        "data_available": total_currencies > 0,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+    }

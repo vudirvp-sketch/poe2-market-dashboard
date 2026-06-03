@@ -13,8 +13,13 @@ import {
   Bell,
   Zap,
   TrendingUp,
+  Route,
   Network,
   Keyboard,
+  LineChart,
+  Filter,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +42,8 @@ import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
 import { FlipsTab } from "@/components/dashboard/flips-tab";
+import { OptimizerTab } from "@/components/dashboard/optimizer-tab";
+import { AnalystTab } from "@/components/dashboard/analyst-tab";
 import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
 import { MarketHeatmap } from "@/components/dashboard/market-heatmap";
 import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
@@ -598,7 +605,7 @@ export function Dashboard() {
   // ============================================================================
   // Tab index mapping for shortcuts 1–9 (matching visible tab order)
   // Step 2: Removed "forecast" and "portfolio" from TAB_MAP
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "graph", "watchlist"];
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -837,7 +844,12 @@ export function Dashboard() {
                 <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
                   <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
                 </TabsTrigger>
-                {/* Step 2: Removed forecast and portfolio tabs (garbage code) */}
+                <TabsTrigger value="optimizer" className="gap-1.5" aria-label={t("tabOptimizer") || "Optimizer"}>
+                  <Route className="h-4 w-4" aria-hidden="true" /> {t("tabOptimizer") || "Optimizer"}
+                </TabsTrigger>
+                <TabsTrigger value="analyst" className="gap-1.5" aria-label={t("tabAnalyst") || "Analyst"}>
+                  <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabAnalyst") || "Analyst"}
+                </TabsTrigger>
                 <TabsTrigger value="graph" className="gap-1.5" aria-label={t("tabGraph")}>
                   <Network className="h-4 w-4" aria-hidden="true" /> {t("tabGraph")}
                 </TabsTrigger>
@@ -1330,6 +1342,20 @@ export function Dashboard() {
               {/* P3-7: Tier Drift Tracker */}
               <ErrorBoundary fallbackTitle={t("fallbackTierDrift")}>
                 <TierDriftTracker backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ OPTIMIZER TAB ============ */}
+            <TabsContent value="optimizer">
+              <ErrorBoundary fallbackTitle="Optimizer Error">
+                <OptimizerTab backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ ANALYST TAB ============ */}
+            <TabsContent value="analyst">
+              <ErrorBoundary fallbackTitle="Analyst Error">
+                <AnalystTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 

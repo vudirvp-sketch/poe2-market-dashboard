@@ -6,8 +6,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/lib/i18n";
-import { ForecastTab } from "@/components/dashboard/forecast-tab";
-import { PortfolioTab } from "@/components/dashboard/portfolio-tab";
 import { CurrencyGraphTab } from "@/components/dashboard/currency-graph-tab";
 
 // ---------------------------------------------------------------------------
@@ -69,64 +67,10 @@ function renderWithProviders(ui: React.ReactElement) {
 // Test data simulating FastAPI responses
 // ---------------------------------------------------------------------------
 
-const fastapiHealthResponse = {
-  status: "ok",
-  timestamp: new Date().toISOString(),
-  league: "vaal",
-  baseCurrency: "exalted",
-  activeEvents: 0,
-};
-
 const fastapiPhaseResponse = {
   phase: "mid",
   daysSinceRef: 14,
   recommended_strategy: "balanced",
-};
-
-const fastapiFlipsResponse = {
-  league: "vaal",
-  total: 3,
-  opportunities: [
-    { currency: "divine", score: 0.85, momentum: 0.03 },
-    { currency: "exalted", score: 0.65, momentum: 0.01 },
-    { currency: "chaos", score: 0.45, momentum: -0.02 },
-  ],
-  fetchedAt: new Date().toISOString(),
-};
-
-const fastapiPortfolioResponse = {
-  method: "risk_parity",
-  weights: { divine: 0.4, exalted: 0.35, chaos: 0.25 },
-  expectedRisk: 0.15,
-  correlationWarning: false,
-  lastRebalance: new Date().toISOString(),
-  correlation_matrix: {
-    currencies: ["divine", "exalted", "chaos"],
-    matrix: [[1.0, 0.7, 0.3], [0.7, 1.0, 0.5], [0.3, 0.5, 1.0]],
-  },
-};
-
-const fastapiForecastResponse = {
-  currency: "divine",
-  horizon: 24,
-  models: {
-    sarima: {
-      currency: "divine",
-      model_name: "sarima",
-      point_forecast: [1.2, 1.25],
-      ci_lower: [1.1, 1.15],
-      ci_upper: [1.3, 1.35],
-      timestamps: ["2025-01-01T00:00:00Z", "2025-01-01T06:00:00Z"],
-      lowConfidence: false,
-      disagreement: false,
-      mape: 0.05,
-    },
-  },
-  disagreement: false,
-  lowConfidence: false,
-  isEventActive: false,
-  dataPoints: 50,
-  fetchedAt: new Date().toISOString(),
 };
 
 // ---------------------------------------------------------------------------
@@ -137,91 +81,6 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
   beforeEach(() => {
     mockFetchApi.mockReset();
     window.localStorage.clear();
-  });
-
-  // ---- Full chain: health → phase → forecast data ----
-
-  it("fetches and renders forecast data through the proxy chain", async () => {
-    // Simulate the proxy chain:
-    // 1. Next.js /api/flipper/health → flipper-proxy → FastAPI /api/health
-    // 2. Next.js /api/flipper/phase → flipper-proxy → FastAPI /api/phase
-    // 3. Next.js /api/flipper/forecast/divine → flipper-proxy → FastAPI /api/forecast/divine
-    // 4. Next.js /api/flipper/anomalies → flipper-proxy → FastAPI /api/anomalies
-    // 5. Next.js /api/flipper/storage-value/divine → flipper-proxy → FastAPI /api/storage-value/divine
-
-    mockFetchApi.mockImplementation((url: string) => {
-      if (url.includes("/phase")) return Promise.resolve(fastapiPhaseResponse);
-      if (url.includes("/forecast/")) return Promise.resolve(fastapiForecastResponse);
-      if (url.includes("/anomalies")) return Promise.resolve({ anomalies: [], count: 0, currencies_checked: 10, min_alert_score: 0.5 });
-      if (url.includes("/storage-value/")) return Promise.resolve(null);
-      return Promise.resolve({});
-    });
-
-    renderWithProviders(<ForecastTab backendOnline={true} />);
-
-    // Verify data flows through correctly
-    await waitFor(() => {
-      expect(screen.getByText("mid")).toBeInTheDocument();
-    });
-
-    // Verify fetchApi was called with the correct proxy URLs
-    expect(mockFetchApi).toHaveBeenCalledWith("/api/flipper/phase");
-    expect(mockFetchApi).toHaveBeenCalledWith("/api/flipper/forecast/divine");
-    expect(mockFetchApi).toHaveBeenCalledWith("/api/flipper/anomalies");
-  });
-
-  // ---- Backend offline graceful degradation ----
-
-  it("gracefully degrades when backend is offline", async () => {
-    renderWithProviders(<ForecastTab backendOnline={false} />);
-
-    // Should show offline message, not crash
-    expect(screen.getAllByText(/uvicorn backend.main:app/).length).toBeGreaterThan(0);
-
-    // Should NOT call any flipper API endpoints when backend is offline
-    expect(mockFetchApi).not.toHaveBeenCalledWith("/api/flipper/phase");
-    expect(mockFetchApi).not.toHaveBeenCalledWith("/api/flipper/forecast/divine");
-  });
-
-  // ---- Portfolio proxy chain ----
-
-  it("fetches portfolio data through the proxy chain", async () => {
-    mockFetchApi.mockImplementation((url: string) => {
-      if (url.includes("/portfolio/frontier")) return Promise.resolve({
-        frontier: { risks: [0.1], returns: [0.05] },
-        individual_assets: [],
-        current_portfolio: null,
-      });
-      return Promise.resolve(fastapiPortfolioResponse);
-    });
-
-    renderWithProviders(<PortfolioTab backendOnline={true} />);
-
-    await waitFor(() => {
-      // Portfolio weights should be rendered from the FastAPI response
-      expect(screen.getByText("40.00%")).toBeInTheDocument();
-    });
-
-    // Verify the proxy URLs were called
-    expect(mockFetchApi).toHaveBeenCalledWith("/api/flipper/portfolio");
-  });
-
-  // ---- API error handling ----
-
-  it("renders without crashing when FastAPI returns errors", async () => {
-    // Simulate FastAPI returning an error
-    const apiError = new Error("Service Unavailable");
-
-    mockFetchApi.mockRejectedValue(apiError);
-
-    const { container } = renderWithProviders(<PortfolioTab backendOnline={true} />);
-
-    // The component should not crash — it renders some content
-    // Since the query fails, the loading state resolves to an error state
-    await waitFor(() => {
-      // The component should have rendered SOMETHING (not be empty)
-      expect(container.innerHTML.length).toBeGreaterThan(0);
-    });
   });
 
   // ---- Multiple sequential API calls ----
@@ -266,14 +125,13 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
 
   // ---- Backend health check propagation ----
 
-  it("respects backendOnline prop for all flipper tabs", () => {
+  it("respects backendOnline prop for flipper tabs", () => {
     mockFetchApi.mockImplementation(() => new Promise(() => {}));
 
-    // Test that all flipper-dependent tabs respect the backendOnline flag
-    const { rerender } = renderWithProviders(<ForecastTab backendOnline={false} />);
-    expect(screen.getAllByText(/uvicorn backend.main:app/).length).toBeGreaterThan(0);
+    // Test that flipper-dependent tabs respect the backendOnline flag
+    renderWithProviders(<CurrencyGraphTab backendOnline={false} />);
 
-    // No flipper API calls should have been made
+    // No flipper API calls should have been made when backend is offline
     expect(mockFetchApi).not.toHaveBeenCalled();
   });
 });

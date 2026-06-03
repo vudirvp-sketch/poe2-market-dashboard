@@ -225,6 +225,30 @@ export interface FlipsResponse {
   feeWarning?: FeeWarning;
 }
 
+/** Step 6: Scanner scan parameters (echoed back from API) */
+export interface ScannerParams {
+  minScore: number;
+  maxScore: number;
+  minVolume: number;
+  maxSpread: number;
+  minSpread: number;
+  cluster: string | null;
+  currency: string | null;
+  sortBy: string;
+  sortDir: string;
+  limit: number;
+}
+
+/** Step 6: Response from GET /api/flipper/scanner/scan */
+export interface ScannerScanResponse {
+  league: string;
+  total: number;
+  opportunities: FlipOpportunity[];
+  scanParams: ScannerParams;
+  dataAvailable: boolean;
+  fetchedAt: string;
+}
+
 /** Triangular arbitrage cycle from GET /api/flipper/triangular
  *  ⚠️ DEFENSIVE NULLABILITY: totalVolume may be undefined when backend
  *  has insufficient data. UI code MUST use `?? 0` before calling methods. */
@@ -551,6 +575,83 @@ export function fmtPct(n: number | null | undefined, digits = 2): string {
 export function fmtVol(n: number | null | undefined): string {
   if (n == null) return "—";
   return n.toLocaleString("en-US");
+}
+
+// ============================================================================
+// Step 5: Currency Optimizer types
+// ============================================================================
+
+/** Response from GET /api/flipper/optimizer/path */
+export interface OptimizerPathResponse {
+  fromCurrency: string;
+  toCurrency: string;
+  amount: number;
+  path: string[];
+  stepRates: number[];
+  effectiveRate: number;
+  outputAmount: number;
+  directRate: number | null;
+  directOutputAmount: number | null;
+  pathAdvantagePct: number | null;
+  hops: number;
+  dataAvailable: boolean;
+  fetchedAt: string;
+}
+
+/** Response from GET /api/flipper/optimizer/matrix */
+export interface OptimizerMatrixResponse {
+  currencies: string[];
+  matrix: (number | null)[][];
+  size: number;
+  dataAvailable: boolean;
+  fetchedAt: string;
+}
+
+// ============================================================================
+// Step 7: League Analyst types
+// ============================================================================
+
+/** Currency trend data */
+export interface CurrencyTrend {
+  apiId: string;
+  currentPrice: number;
+  change24hPct: number | null;
+  direction: "up" | "down" | "stable" | "unknown";
+}
+
+/** Detected price anomaly */
+export interface PriceAnomaly {
+  apiId: string;
+  zScore: number;
+  direction: "spike_up" | "spike_down";
+  currentPrice: number;
+  changePct: number | null;
+}
+
+/** Auto-generated league fact */
+export interface LeagueFact {
+  type: "trend" | "anomaly" | "market";
+  icon: string;
+  text: string;
+  severity: "info" | "warning";
+}
+
+/** Response from GET /api/flipper/analyst/summary */
+export interface AnalystSummaryResponse {
+  league: string;
+  summary: {
+    totalCurrencies: number;
+    totalPairs: number;
+    trendingUp: number;
+    trendingDown: number;
+    stable: number;
+    anomalyCount: number;
+  };
+  trends: CurrencyTrend[];
+  anomalies: PriceAnomaly[];
+  facts: LeagueFact[];
+  dataAvailable: boolean;
+  fetchedAt: string;
 }
 
 // ============================================================================

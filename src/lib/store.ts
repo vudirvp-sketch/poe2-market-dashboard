@@ -147,7 +147,7 @@ function validateUIState(raw: unknown): PersistedUIState {
   // Validate activeTab
   const validTabs = [
     "overview", "currencies", "uniques", "exchange",
-    "arbitrage", "flips", "forecast", "portfolio",
+    "arbitrage", "flips", "optimizer", "analyst", "forecast", "portfolio",
     "graph", "watchlist",
   ];
   const activeTab = validTabs.includes(stored.activeTab as string)

@@ -260,6 +260,24 @@ try:
 except ImportError:
     logger.debug("Storage value router not available yet")
 
+try:
+    from backend.api.routes_optimizer import router as optimizer_router
+    app.include_router(optimizer_router)
+except ImportError:
+    logger.debug("Optimizer router not available yet")
+
+try:
+    from backend.api.routes_scanner import router as scanner_router
+    app.include_router(scanner_router)
+except ImportError:
+    logger.debug("Scanner router not available yet")
+
+try:
+    from backend.api.routes_analyst import router as analyst_router
+    app.include_router(analyst_router)
+except ImportError:
+    logger.debug("Analyst router not available yet")
+
 # WebSocket routes for live updates
 try:
     from backend.api.routes_ws import router as ws_router
