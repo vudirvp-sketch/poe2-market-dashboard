@@ -18,7 +18,7 @@ interface HeatmapItem {
  *
  *  Query parameters:
  *    realm  — POE2 realm (default: "poe2")
- *    league — League short name (default: "vaal")
+ *    league — League short name (default: "runes")
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

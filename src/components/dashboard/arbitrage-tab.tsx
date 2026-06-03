@@ -1,11 +1,7 @@
 // ============================================================================
 // Arbitrage Tab — Flipper-scored arbitrage opportunities + triangular cycles
-//
-// Step 2: Removed client-side arbitrage mode and dummy settings.
-// The client-side mode used a naive cycle-finding algorithm with synthetic
-// slippage/fee parameters that don't reflect POE2's exchange mechanics.
-// The flipper backend provides properly scored opportunities using real
-// volume/volatility/momentum data with gold fee accounting.
+// Uses the flipper backend for properly scored opportunities with real
+// volume/volatility/momentum data and gold fee accounting.
 // ============================================================================
 "use client";
 

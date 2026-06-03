@@ -126,7 +126,8 @@ test.describe("Smoke Tests", () => {
     // effectiveLeague resolves to a non-empty string. Without this wait,
     // the heatmap title lookup may fire while the "Select a realm and
     // league" placeholder is still showing.
-    await expect(page.locator('[role="tab"]')).toBeVisible({ timeout: 10000 });
+    // Use .first() to avoid strict mode violation — there are 10 tab buttons.
+    await expect(page.locator('[role="tab"]').first()).toBeVisible({ timeout: 10000 });
 
     // Wait for the overview data to load (mocked via installApiMocks)
     // The MarketHeatmap component always renders its card title, even during loading.

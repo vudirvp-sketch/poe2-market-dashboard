@@ -94,7 +94,7 @@ interface RealmOptionResponse {
   game_api_id: string;        // e.g. "poe2"
   realm_api_id: string;       // e.g. "poe2"
   trade_api_path: string;
-  default_league_value: string; // e.g. "vaal" — use this, NOT League.IsCurrent
+  default_league_value: string; // e.g. "runes" — use this, NOT League.IsCurrent
 }
 
 // /{Realm}/Leagues — PascalCase
@@ -432,19 +432,19 @@ User Browser
     │                                            integerSimulation?
     │                                          }], fetchedAt, dataAvailable?, feeWarning? }
     │
-    ├─→ GET /api/flipper/forecast/{currency} → routes_forecast.py
+    ├─→ ~~GET /api/flipper/forecast/{currency} → routes_forecast.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          ForecastEngine.forecast() (3 models in parallel)
+    │                                          ~~ForecastEngine.forecast() (3 models in parallel)~~
     │                                              │
-    │                                          return: ForecastResponse (per model: SARIMA, Holt-Winters, LightGBM)
-    │                                          { currency, model_name, point_forecast, ci_lower, ci_upper,
-    │                                            timestamps, low_confidence, disagreement, mape }
+    │                                          ~~return: ForecastResponse (per model: SARIMA, Holt-Winters, LightGBM)~~
+    │                                          ~~{ currency, model_name, point_forecast, ci_lower, ci_upper,
+    │                                            timestamps, low_confidence, disagreement, mape }~~
     │
-    ├─→ GET /api/flipper/forecast/{currency}/stl → routes_forecast.py
+    ├─→ ~~GET /api/flipper/forecast/{currency}/stl → routes_forecast.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          STL decomposition of price series
+    │                                          ~~STL decomposition of price series~~
     │                                              │
-    │                                          return: STL decomposition data
+    │                                          ~~return: STL decomposition data~~
     │
     ├─→ GET /api/flipper/anomalies ──────────→ routes_anomalies.py
     │                                              │
@@ -464,40 +464,40 @@ User Browser
     │                                            riskDiscount, adjustedPrice, netValueAfterFees,
     │                                            ratio, decision: "BUY_HOLD"|"SELL_CONVERT"|"NEUTRAL" }
     │
-    ├─→ GET /api/flipper/portfolio ────────────→ routes_portfolio.py
+    ├─→ ~~GET /api/flipper/portfolio ────────────→ routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          PortfolioOptimizer.optimize()
-    │                                          (risk_parity or min_variance, Ledoit-Wolf shrinkage)
+    │                                          ~~PortfolioOptimizer.optimize()~~
+    │                                          ~~(risk_parity or min_variance, Ledoit-Wolf shrinkage)~~
     │                                              │
-    │                                          return: PortfolioData
-    │                                          { method, weights: {currency: weight}, expectedRisk,
-    │                                            correlationWarning, lastRebalance }
+    │                                          ~~return: PortfolioData~~
+    │                                          ~~{ method, weights: {currency: weight}, expectedRisk,
+    │                                            correlationWarning, lastRebalance }~~
     │
-    ├─→ GET /api/flipper/portfolio/frontier ──→ routes_portfolio.py
+    ├─→ ~~GET /api/flipper/portfolio/frontier ──→ routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          compute_efficient_frontier_chart_data()
+    │                                          ~~compute_efficient_frontier_chart_data()~~
     │                                              │
-    │                                          return: Efficient frontier data (scatter plot)
+    │                                          ~~return: Efficient frontier data (scatter plot)~~
     │
-    ├─→ GET /api/flipper/portfolio/correlation → routes_portfolio.py
+    ├─→ ~~GET /api/flipper/portfolio/correlation → routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          Correlation matrix for portfolio currencies
+    │                                          ~~Correlation matrix for portfolio currencies~~
     │                                              │
-    │                                          return: Correlation matrix data
+    │                                          ~~return: Correlation matrix data~~
     │
-    ├─→ POST /api/flipper/portfolio/rebalance → routes_portfolio.py
+    ├─→ ~~POST /api/flipper/portfolio/rebalance → routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          Trigger portfolio rebalance
+    │                                          ~~Trigger portfolio rebalance~~
     │                                              │
-    │                                          return: Rebalance result
+    │                                          ~~return: Rebalance result~~
     │
-    ├─→ GET /api/flipper/recipes ────────────────→ routes_recipes.py
+    ├─→ ~~GET /api/flipper/recipes ────────────────→ routes_recipes.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
-    │                                          find_profitable_recipes()
+    │                                          ~~find_profitable_recipes()~~
     │                                              │
-    │                                          return: RecipeOpportunity[]
-    │                                          { name, inputs, output, input_cost_chaos,
-    │                                            output_value_chaos, profit_chaos, profit_pct }
+    │                                          ~~return: RecipeOpportunity[]~~
+    │                                          ~~{ name, inputs, output, input_cost_chaos,
+    │                                            output_value_chaos, profit_chaos, profit_pct }~~
     │
     ├─→ GET /api/flipper/events ────────────────→ routes_events.py
     │                                              │
@@ -1603,13 +1603,13 @@ FastAPI Routes (backend/api/)
 │                              # /api/prices/heatmap, /api/prices/{pair},
 │                              # /api/tiers, /api/benchmarks/{currency_api_id}
 ├── routes_arbitrage.py        # /api/arbitrage/flips, /api/arbitrage/triangular
-├── routes_forecast.py         # /api/forecast/{currency}, /api/forecast/{currency}/stl
-├── routes_portfolio.py        # /api/portfolio, /api/portfolio/rebalance,
+├── ~~routes_forecast.py~~      # ⛔ DEPRECATED — file does not exist; /api/forecast/{currency}, /api/forecast/{currency}/stl
+├── ~~routes_portfolio.py~~     # ⛔ DEPRECATED — file does not exist; /api/portfolio, /api/portfolio/rebalance,
 │                              # /api/portfolio/frontier, /api/portfolio/correlation
 ├── routes_events.py           # /api/events (GET/POST), /api/events/summary (GET),
 │                              # /api/events/{event_id} (GET/DELETE),
 │                              # /api/events/{event_id}/deactivate (POST)
-├── routes_recipes.py          # /api/recipes (GET), /api/recipes/definitions (GET)
+├── ~~routes_recipes.py~~       # ⛔ DEPRECATED — file does not exist; /api/recipes (GET), /api/recipes/definitions (GET)
 ├── routes_anomalies.py        # /api/anomalies
 ├── routes_storage_value.py    # /api/storage-value/{currency}
 ├── routes_auth.py             # /api/auth/start, /api/auth/callback, /api/auth/status
@@ -1703,7 +1703,7 @@ POE2Scout API (base: https://api.poe2scout.com/api)
 ### §11.6 Known Discrepancies
 
 1. **Two overlapping helper files:** `src/components/dashboard/flips-helpers.ts` and `src/lib/flipper-helpers.ts` both export `scoreColor()` with different thresholds/Tailwind classes.
-2. **League name default mismatch:** Backend config defaults to `"vaal"`, frontend Zustand store defaults to `"runes"`.
+2. **League name default mismatch (RESOLVED):** Backend config now defaults to `"runes"`, frontend Zustand store defaults to `"runes"`. (Previously backend defaulted to `"vaal"` while frontend used `"runes"`.)
 3. **Backend `FeesConfig` is empty** (`pass`) — gold fee removal left it as a placeholder.
 4. **`routes_auth.py` exists in backend but is NOT registered in app** — effectively dead code.
 5. **`OfficialTradeProvider` exists** but requires `GGG_CLIENT_ID`/`GGG_CLIENT_SECRET` env vars that are "never configured" — dead code unless manually set.

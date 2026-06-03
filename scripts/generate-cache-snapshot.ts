@@ -13,7 +13,7 @@
 // Environment variables:
 //   POE2_API_BASE_URL — Override the API base URL
 //   POE2_SNAPSHOT_REALM — Realm to snapshot (default: "poe2")
-//   POE2_SNAPSHOT_LEAGUE — League to snapshot (default: "vaal")
+//   POE2_SNAPSHOT_LEAGUE — League to snapshot (default: "runes")
 // ============================================================================
 
 import * as fs from "fs";
@@ -23,7 +23,7 @@ import * as path from "path";
 
 const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
 const SNAPSHOT_REALM = process.env.POE2_SNAPSHOT_REALM || "poe2";
-const SNAPSHOT_LEAGUE = process.env.POE2_SNAPSHOT_LEAGUE || "vaal";
+const SNAPSHOT_LEAGUE = process.env.POE2_SNAPSHOT_LEAGUE || "runes";
 const OUTPUT_PATH = path.resolve(__dirname, "../src/data/cache-snapshot.json");
 const FETCH_TIMEOUT = 30_000; // 30 seconds
 

@@ -1386,8 +1386,7 @@ export function Dashboard() {
               </ErrorBoundary>
             </TabsContent>
 
-            {/* ============ FORECAST TAB ============ */}
-            {/* Step 2: Removed forecast and portfolio TabsContent (garbage code) */}
+            {/* ============ FORECAST TAB (removed) ============ */}
 
             {/* ============ CURRENCY GRAPH TAB ============ */}
             <TabsContent value="graph">
