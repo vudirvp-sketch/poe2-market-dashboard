@@ -43,7 +43,7 @@ test.describe("Accessibility Checks", () => {
 
     const tabs = tabList.locator('[role="tab"]');
     const tabCount = await tabs.count();
-    // 10 tabs: Overview, Currencies, Uniques, Exchange, Arbitrage, Flips, Forecast, Portfolio, Graph, Watchlist
+    // 10 tabs: Overview, Currencies, Uniques, Exchange, Arbitrage, Flips, Optimizer, Analyst, Graph, Watchlist
     expect(tabCount).toBe(10);
   });
 

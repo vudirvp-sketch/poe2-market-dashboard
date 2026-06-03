@@ -125,3 +125,58 @@ class TestOpportunityScoring:
         """With reasonable parameters, expected profit should be > 0."""
         spread = (105 - 95) / 100  # raw spread, no fee deduction
         assert spread > 0
+
+
+class TestPhaseMultiplier:
+    """Test the get_phase_multiplier function."""
+
+    def test_early_phase_multiplier(self):
+        """EARLY phase should return 1.2 (default config)."""
+        multiplier = get_phase_multiplier(LeaguePhase.EARLY)
+        assert multiplier == 1.2
+
+    def test_mid_phase_multiplier(self):
+        """MID phase should return 1.0 (default config)."""
+        multiplier = get_phase_multiplier(LeaguePhase.MID)
+        assert multiplier == 1.0
+
+    def test_late_phase_multiplier(self):
+        """LATE phase should return 0.9 (default config)."""
+        multiplier = get_phase_multiplier(LeaguePhase.LATE)
+        assert multiplier == 0.9
+
+    def test_phase_multiplier_ordering(self):
+        """EARLY > MID > LATE multipliers."""
+        m_early = get_phase_multiplier(LeaguePhase.EARLY)
+        m_mid = get_phase_multiplier(LeaguePhase.MID)
+        m_late = get_phase_multiplier(LeaguePhase.LATE)
+        assert m_early > m_mid > m_late
+
+
+class TestHourlyVolatilityScaling:
+    """Test that hourly volatility is scaled by sqrt(24)."""
+
+    def test_hourly_vol_reduces_score_vs_daily(self):
+        """Same numeric volatility value should produce different scores
+        depending on whether it's labeled hourly or daily.
+
+        Hourly volatility gets scaled by sqrt(24), increasing the
+        effective volatility, which reduces the vol_penalty and thus
+        the score.
+        """
+        score_daily = compute_opportunity_score(
+            bid=95, ask=105, mid_price=100,
+            volume_24h=500, max_volume=2000,
+            volatility=0.03,
+            phase_multiplier=1.0, momentum=0.002,
+            volatility_period="daily",
+        )
+        score_hourly = compute_opportunity_score(
+            bid=95, ask=105, mid_price=100,
+            volume_24h=500, max_volume=2000,
+            volatility=0.03,
+            phase_multiplier=1.0, momentum=0.002,
+            volatility_period="hourly",
+        )
+        # Hourly volatility is scaled up → higher effective vol → lower score
+        assert score_daily > score_hourly

@@ -173,13 +173,18 @@ test.describe("CORS Proxy + Snapshot Fallback", () => {
     // The FlipperStickyBar should not be visible when the backend is offline
     // (it returns null when backendOnline is false)
     // We can't easily test for absence of a specific React component,
-    // but we can verify that the sticky bar text doesn't appear
-    const stickyBarBestFlip = page.locator("text=Best Flip");
-    const stickyBarSentiment = page.locator("text=Sentiment");
+    // but we can verify that the sticky bar text doesn't appear.
+    // The text is i18n'd: "Лучший флип" (ru) / "Best Flip" (en)
+    const stickyBarBestFlip = page.locator("text=Лучший флип");
+    const stickyBarBestFlipEn = page.locator("text=Best Flip");
+    const stickyBarSentiment = page.locator("text=Сентимент");
+    const stickyBarSentimentEn = page.locator("text=Sentiment");
 
     // These should NOT be visible since the backend is offline
     await expect(stickyBarBestFlip).not.toBeVisible({ timeout: 5000 });
+    await expect(stickyBarBestFlipEn).not.toBeVisible({ timeout: 5000 });
     await expect(stickyBarSentiment).not.toBeVisible({ timeout: 5000 });
+    await expect(stickyBarSentimentEn).not.toBeVisible({ timeout: 5000 });
   });
 
   test("WebSocket badge is not shown when backend is offline", async ({ page }) => {
@@ -188,12 +193,17 @@ test.describe("CORS Proxy + Snapshot Fallback", () => {
     await page.waitForTimeout(3000);
 
     // The WS badge should not appear when backend is offline
+    // The text is i18n'd: "WS Подключено" (ru) / "WS Connected" (en)
     const wsBadge = page.locator("text=Live");
     const wsConnecting = page.locator("text=Connecting");
+    const wsBadgeRu = page.locator("text=Подключено");
+    const wsConnectingRu = page.locator("text=Подключение");
 
     // Neither should be visible — the entire sticky bar is hidden
     await expect(wsBadge).not.toBeVisible({ timeout: 5000 });
     await expect(wsConnecting).not.toBeVisible({ timeout: 5000 });
+    await expect(wsBadgeRu).not.toBeVisible({ timeout: 5000 });
+    await expect(wsConnectingRu).not.toBeVisible({ timeout: 5000 });
   });
 });
 

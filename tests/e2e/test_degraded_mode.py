@@ -27,17 +27,26 @@ from backend.models.currency import (
     CurrencyInfo,
     ExchangeRate,
     PricePoint,
-    PriceQuote,
 )
 
 
 # ---------------------------------------------------------------------------
 # Failing mock provider — simulates upstream unreachable
 # (kept here because it's used by TestFlakyProvider.unit tests below)
+#
+# IMPORTANT: BaseDataProvider contract says "Return None or empty list
+# on failure — never raise." This provider violates that contract by
+# raising ConnectionError, which is intentional — it tests that the
+# system can handle providers that DO raise exceptions (defensive coding).
 # ---------------------------------------------------------------------------
 
 class FailingPoe2ScoutProvider(BaseDataProvider):
-    """Mock provider that always fails — simulates upstream unreachable."""
+    """Mock provider that always fails — simulates upstream unreachable.
+
+    NOTE: This intentionally raises exceptions (violates the BaseDataProvider
+    contract) to verify that callers handle exceptions defensively. In production,
+    providers should return None/empty, but this tests the error-handling path.
+    """
 
     def name(self) -> str:
         return "failing_mock"
@@ -45,7 +54,7 @@ class FailingPoe2ScoutProvider(BaseDataProvider):
     async def close(self) -> None:
         pass
 
-    async def get_current_price(self, currency_pair: str) -> PriceQuote | None:
+    async def get_current_price(self, currency_pair: str):
         raise ConnectionError("upstream_unreachable: Connection refused")
 
     async def get_exchange_rates(self, league: str) -> dict:
@@ -361,7 +370,7 @@ class TestDailyStatsCacheFlakyIntegration:
         self, daily_stats_cache_with_flaky_provider
     ):
         """When provider breaks, DailyStatsCache should serve stale data."""
-        cache = daily_stats_cache_with_flaky_provider
+        cache, client, provider = daily_stats_cache_with_flaky_provider
 
         # Populate cache with a successful fetch
         async def working_fetch(league: str, item_id: str, days: int):
@@ -373,7 +382,10 @@ class TestDailyStatsCacheFlakyIntegration:
         # Wait for TTL expiry
         await asyncio.sleep(0.6)
 
-        # Now simulate provider failure
+        # Break the provider (simulating upstream failure)
+        provider.break_provider()
+
+        # Now fetch should fall back to stale data
         async def broken_fetch(league: str, item_id: str, days: int):
             raise ConnectionError("upstream_unreachable: API down")
 

@@ -17,10 +17,12 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import patch
 
+from backend.data.providers.base import BaseDataProvider
 from backend.models.currency import (
     CurrencyInfo,
     ExchangeRate,
     PricePoint,
+    PriceQuote,
 )
 
 
@@ -60,7 +62,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 # FlakyPoe2ScoutProvider — works initially, then breaks on demand
 # ---------------------------------------------------------------------------
 
-class FlakyPoe2ScoutProvider:
+class FlakyPoe2ScoutProvider(BaseDataProvider):
     """Mock provider that works initially, then fails after break_provider().
 
     This simulates the real-world scenario where the upstream API
@@ -82,7 +84,7 @@ class FlakyPoe2ScoutProvider:
     async def close(self) -> None:
         pass
 
-    async def get_current_price(self, currency_pair: str):
+    async def get_current_price(self, currency_pair: str) -> PriceQuote | None:
         if self._broken:
             raise ConnectionError("upstream_unreachable: API down")
         return None
@@ -303,8 +305,9 @@ def daily_stats_cache_with_flaky_provider(flaky_client):
     from backend.data.daily_stats_cache import DailyStatsCache
     from cachetools import TTLCache
 
+    client, provider = flaky_client
     cache = DailyStatsCache()
     cache._ttl = 0.5  # 500ms TTL — fast but not too aggressive for async tests
     cache._cache = TTLCache(maxsize=256, ttl=cache._ttl)  # Must recreate TTLCache with new TTL
-    yield cache
+    yield cache, client, provider
     cache.invalidate()

@@ -172,6 +172,87 @@ export async function installApiMocks(page: Page): Promise<void> {
       body: JSON.stringify({ error: "backend_offline" }),
     });
   });
+
+  // Flipper optimizer — 503 (backend offline)
+  await page.route("**/api/flipper/optimizer/**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper analyst — 503 (backend offline)
+  await page.route("**/api/flipper/analyst/**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper flips — 503 (backend offline)
+  await page.route("**/api/flipper/flips**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper storage-value — 503 (backend offline)
+  await page.route("**/api/flipper/storage-value/**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper tiers — 503 (backend offline)
+  await page.route("**/api/flipper/tiers**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper benchmarks — 503 (backend offline)
+  await page.route("**/api/flipper/benchmarks/**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper anomalies — 503 (backend offline)
+  await page.route("**/api/flipper/anomalies**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper currencies — 503 (backend offline)
+  await page.route("**/api/flipper/currencies**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper prices — 503 (backend offline)
+  await page.route("**/api/flipper/prices**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

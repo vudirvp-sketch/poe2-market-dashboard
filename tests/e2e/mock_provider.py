@@ -32,6 +32,27 @@ class MockPoe2ScoutProvider(BaseDataProvider):
     async def close(self) -> None:
         pass
 
+    async def get_current_price(self, currency_pair: str) -> PriceQuote | None:
+        """Return a mock current price for a currency pair."""
+        # Simple mock: return a deterministic price quote for known pairs
+        base_prices = {"divine": 220.0, "exalted": 1.0, "chaos": 0.1}
+        parts = currency_pair.split("/")
+        if len(parts) != 2:
+            return None
+        from_currency, to_currency = parts[0].strip(), parts[1].strip()
+        from_price = base_prices.get(from_currency)
+        to_price = base_prices.get(to_currency)
+        if from_price is None or to_price is None:
+            return None
+        mid = from_price / to_price
+        return PriceQuote(
+            pair=currency_pair,
+            bid=mid * 0.95,
+            ask=mid * 1.05,
+            mid_price=mid,
+            volume_24h=1000,
+        )
+
     async def get_exchange_rates(self, league: str) -> dict:
         return {
             ("exalted", "chaos"): ExchangeRate(
@@ -150,3 +171,29 @@ class MockPoe2ScoutProvider(BaseDataProvider):
             )
             for i in range(7)
         ]
+
+    async def get_daily_stats(
+        self,
+        league: str,
+        item_id: int,
+        day_count: int = 30,
+        end_date: str | None = None,
+    ) -> dict | None:
+        """Return minimal deterministic daily stats for testing."""
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        return {
+            "item_id": item_id,
+            "league": league,
+            "days": [
+                {
+                    "day": (now - timedelta(days=i)).strftime("%Y-%m-%d"),
+                    "open": 220.0 + i * 0.5,
+                    "high": 225.0 + i * 0.5,
+                    "low": 215.0 + i * 0.5,
+                    "close": 220.0 + i * 0.5,
+                    "volume": 1000 - i * 10,
+                }
+                for i in range(day_count)
+            ],
+        }

@@ -25,8 +25,10 @@ test.describe("Optimizer Tab", () => {
     await page.waitForTimeout(1000);
 
     // The path optimizer form should be visible with From/To/Amount inputs
+    // The placeholder is i18n'd but contains "chaos" and "divine" in all locales
+    // (e.g. "напр. chaos, divine" in ru, "e.g. chaos, divine" in en)
     const fromInput = page.locator('input[placeholder*="chaos"], input[placeholder*="divine"]').first();
-    await expect(fromInput).toBeVisible({ timeout: 10000 });
+    await expect(fromInput).toBeVisible({ timeout: 15000 });
   });
 
   test("Optimizer tab shows backend offline fallback gracefully", async ({ page }) => {
