@@ -63,26 +63,34 @@ async def check_provider_health():
 
     Caches the result for HEALTH_CHECK_INTERVAL seconds to avoid
     hitting the upstream API on every incoming request.
+    
+    NOTE: This function no longer raises HTTPException on failure.
+    The health status is tracked via _provider_healthy and exposed
+    through /api/health. Callers should check _provider_healthy
+    instead of relying on exceptions.
     """
     global _provider_healthy, _last_health_check
     now = time.monotonic()
     if now - _last_health_check < HEALTH_CHECK_INTERVAL:
-        if not _provider_healthy:
-            raise HTTPException(status_code=503, detail="Upstream API unreachable")
         return
 
     _last_health_check = now
     try:
         from backend.api.shared import get_provider
         provider = get_provider()
-        # Quick connectivity check — fetch exchange rates
-        rates = await provider.get_exchange_rates(get_settings().league.league_name)
+        # Quick connectivity check — fetch exchange rates with a short timeout
+        import asyncio
+        rates = await asyncio.wait_for(
+            provider.get_exchange_rates(get_settings().league.league_name),
+            timeout=15.0
+        )
         _provider_healthy = rates is not None and len(rates) > 0
-    except Exception:
+    except asyncio.TimeoutError:
+        logger.warning("Health check timed out (15s) — marking provider as unreachable")
         _provider_healthy = False
-
-    if not _provider_healthy:
-        raise HTTPException(status_code=503, detail="Upstream API unreachable")
+    except Exception as e:
+        logger.warning("Health check failed: %s — marking provider as unreachable", e)
+        _provider_healthy = False
 
 
 # ---------------------------------------------------------------------------

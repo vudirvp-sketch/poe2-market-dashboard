@@ -44,7 +44,7 @@ const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api
 // ---------- Stale-while-revalidate cache ----------
 const cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 60_000;          // 60s fresh
-const CACHE_STALE_TTL = 600_000;   // 10min — serve stale up to this age
+const CACHE_STALE_TTL = 1_800_000;  // 30min — serve stale up to this age
 const MAX_CACHE_SIZE = 500;
 
 // Fix 4.6: Periodic cleanup of stale entries that are well past their TTL
@@ -60,7 +60,14 @@ let cacheWriteCounter = 0;
 
 // ---------- Fetch with timeout + retry ----------
 const FETCH_TIMEOUT = 30_000; // 30 seconds (increased from 20 to reduce ECONNRESET)
-const FETCH_RETRIES = 3; // Increased from 2 to give more chances on transient errors
+const FETCH_RETRIES = 2; // Reduced from 3 — circuit breaker now handles sustained failures
+
+// ---------- Circuit breaker (prevents hammering a dead upstream) ----------
+let circuitBreakerOpen = false;
+let circuitBreakerOpenSince = 0;
+const CIRCUIT_BREAKER_COOLDOWN = 60_000; // 60s — try again after this period
+let consecutiveFailures = 0;
+const CIRCUIT_BREAKER_THRESHOLD = 3; // Open after 3 consecutive failures
 
 // ---------- Request deduplication (Fix 3) ----------
 const pendingRequests = new Map<string, Promise<unknown>>();
@@ -208,6 +215,16 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Circuit breaker: skip upstream request if we know it's down
+    if (circuitBreakerOpen) {
+      const elapsed = Date.now() - circuitBreakerOpenSince;
+      if (elapsed < CIRCUIT_BREAKER_COOLDOWN) {
+        // Still in cooldown — throw immediately so cachedFetch can use stale cache
+        throw new Error(`Circuit breaker open — upstream API unreachable (retry in ${Math.round((CIRCUIT_BREAKER_COOLDOWN - elapsed) / 1000)}s)`);
+      }
+      // Cooldown expired — try one request to test the waters
+      circuitBreakerOpen = false;
+    }
     try {
       const res = await fetchWithTimeout(url, FETCH_TIMEOUT);
 
@@ -236,6 +253,13 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
       }
 
       const data = (await res.json()) as T;
+
+      // Reset circuit breaker on success
+      consecutiveFailures = 0;
+      if (circuitBreakerOpen) {
+        circuitBreakerOpen = false;
+        console.info("[poe2api] Circuit breaker CLOSED — upstream API is reachable again.");
+      }
 
       // Enforce cache size limit
       if (cache.size > MAX_CACHE_SIZE) {
@@ -292,16 +316,29 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
 
       // If this is a transient error, log and retry with exponential backoff + jitter
       if (isTransientNetworkError) {
+        consecutiveFailures++;
+        if (consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
+          circuitBreakerOpen = true;
+          circuitBreakerOpenSince = Date.now();
+          console.warn(
+            `[poe2api] Circuit breaker OPENED — upstream API appears unreachable. ` +
+            `Will retry in ${CIRCUIT_BREAKER_COOLDOWN / 1000}s. Consecutive failures: ${consecutiveFailures}`
+          );
+        }
+
         // Don't wait if this was the last attempt — nothing left to retry
         if (attempt >= maxRetries) break;
 
         const baseDelay = 500 * Math.pow(2, attempt);
         const jitter = Math.random() * 500; // 0–500ms random jitter
         const delay = Math.min(baseDelay + jitter, 5000);
-        console.warn(
-          `[poe2api] Transient network error on attempt ${attempt + 1}/${maxRetries + 1}: ` +
-          `${lastError.message}. Retrying in ${Math.round(delay)}ms...`
-        );
+        // Only log on first and last attempt to reduce console spam
+        if (attempt === 0 || attempt >= maxRetries - 1) {
+          console.warn(
+            `[poe2api] Transient network error on attempt ${attempt + 1}/${maxRetries + 1}: ` +
+            `${lastError.message}. Retrying in ${Math.round(delay)}ms...`
+          );
+        }
         await new Promise((r) => setTimeout(r, delay));
         continue; // Skip the generic backoff below
       }
@@ -980,7 +1017,7 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 // ============================================================================
 
 const FALLBACK_REALMS: Realm[] = [
-  { name: "poe2", displayName: "PoE2", defaultLeague: "Runes of Aldur" },
+  { name: "poe2", displayName: "PoE2", defaultLeague: "Fate of the Vaal" },
   { name: "pc", displayName: "PoE1 PC", defaultLeague: "Mirage" },
   { name: "xbox", displayName: "PoE1 XBOX", defaultLeague: "Mirage" },
   { name: "sony", displayName: "PoE1 PS", defaultLeague: "Mirage" },
@@ -988,10 +1025,10 @@ const FALLBACK_REALMS: Realm[] = [
 
 const FALLBACK_LEAGUES: Record<string, League[]> = {
   poe2: [
-    { name: "runes", displayName: "Runes of Aldur", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
-    { name: "runeshc", displayName: "Runes of Aldur Hardcore", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
-    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "vaal", displayName: "Fate of the Vaal", startAt: null, endAt: null, active: true, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "vaalhc", displayName: "HC Fate of the Vaal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "runes", displayName: "Runes of Aldur", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
+    { name: "runeshc", displayName: "HC Runes of Aldur", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "abyssal", displayName: "Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "abyssalhc", displayName: "HC Rise of the Abyssal", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
     { name: "hunt", displayName: "Dawn of the Hunt", startAt: null, endAt: null, active: false, baseCurrencyApiId: "exalted", baseCurrencyText: "Exalted Orb", defaultCurrency: { apiId: "exalted", text: "Exalted Orb", iconUrl: null, relativePrice: 1 } },
@@ -2263,4 +2300,15 @@ export async function getPairDailyStats(
     console.warn("[poe2api] getPairDailyStats: failed, returning empty.", err instanceof Error ? err.message : err);
     return [];
   }
+}
+
+/** Check if the circuit breaker is currently open (upstream likely unreachable) */
+export function isCircuitBreakerOpen(): boolean {
+  if (!circuitBreakerOpen) return false;
+  // If cooldown expired, it's not really open anymore
+  if (Date.now() - circuitBreakerOpenSince >= CIRCUIT_BREAKER_COOLDOWN) {
+    circuitBreakerOpen = false;
+    return false;
+  }
+  return true;
 }

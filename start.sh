@@ -158,20 +158,32 @@ if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
     PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
     FLIPPER_PID=$!
 
-    # Wait for backend to start with retry loop (up to 15 seconds)
+    # Wait for backend to start with retry loop (up to 30 seconds)
+    # The backend may take longer when poe2scout.com is unreachable
+    # (it tries to connect, times out, then starts in degraded mode)
     _BACKEND_OK=0
-    for i in $(seq 1 15); do
+    for i in $(seq 1 30); do
         sleep 1
-        if curl -s --max-time 2 http://localhost:8000/api/health &>/dev/null; then
+        if curl -s --max-time 3 http://localhost:8000/api/health &>/dev/null; then
             _BACKEND_OK=1
             info "Flipper backend started on http://localhost:8000 (after ${i}s)"
+            break
+        fi
+        # Check if the process is still running
+        if ! kill -0 "$FLIPPER_PID" 2>/dev/null; then
+            warn "Flipper backend process died! Check flipper-backend.log for errors."
             break
         fi
     done
 
     if [ "$_BACKEND_OK" -eq 0 ]; then
-        warn "Flipper backend may not have started after 15 seconds. Check flipper-backend.log"
-        warn "The backend might still be starting. Try refreshing the page in 10-20 seconds."
+        if kill -0 "$FLIPPER_PID" 2>/dev/null; then
+            warn "Flipper backend is still starting (degraded mode — upstream API may be unreachable)."
+            warn "It will become available shortly. Dashboard will work with cached data."
+        else
+            warn "Flipper backend failed to start. Check flipper-backend.log for errors."
+            warn "The dashboard will still work in frontend-only mode (no analytics)."
+        fi
     fi
     echo ""
 else
