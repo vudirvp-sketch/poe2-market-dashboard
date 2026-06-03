@@ -52,7 +52,7 @@ function renderCurrencyGraphTab(backendOnline: boolean = true) {
 // ---------------------------------------------------------------------------
 
 const mockPricesData = {
-  league: "vaal",
+  league: "runes",
   phase: "mid",
   rates: [
     {
@@ -94,7 +94,7 @@ const mockPricesData = {
 };
 
 const mockTriangularData = {
-  league: "vaal",
+  league: "runes",
   total: 1,
   opportunities: [
     {
@@ -117,7 +117,7 @@ const mockCurrenciesData = {
 };
 
 const mockEmptyPricesData = {
-  league: "vaal",
+  league: "runes",
   phase: "mid",
   rates: [],
   baseCurrency: "exalted",

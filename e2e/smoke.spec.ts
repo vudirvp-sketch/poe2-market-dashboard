@@ -129,6 +129,18 @@ test.describe("Smoke Tests", () => {
     // Use .first() to avoid strict mode violation — there are 10 tab buttons.
     await expect(page.locator('[role="tab"]').first()).toBeVisible({ timeout: 10000 });
 
+    // CRITICAL: The default activeTab is "exchange", but the MarketHeatmap lives
+    // on the "overview" tab. We must click the Overview tab first.
+    // The tab text is i18n'd: "Обзор" (ru), "Overview" (en), "概览" (zh), "개요" (ko).
+    const overviewTab = page.locator('[role="tab"]').filter({
+      hasText: /^Обзор$|^Overview$|^概览$|^개요$/,
+    }).first();
+    await overviewTab.click();
+
+    // Wait for the tab panel to mount after switching — the heatmap component
+    // only renders inside the overview TabsContent.
+    await page.waitForLoadState("networkidle");
+
     // Wait for the overview data to load (mocked via installApiMocks)
     // The MarketHeatmap component always renders its card title, even during loading.
     // The title is i18n'd: "Тепловая карта цен (24ч)" in ru, "Price Heatmap (24h)" in en,

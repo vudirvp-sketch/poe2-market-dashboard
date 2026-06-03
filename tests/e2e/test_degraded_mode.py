@@ -186,7 +186,7 @@ class TestFlakyProvider:
         provider = FlakyPoe2ScoutProvider()
 
         # Should work initially
-        result = await provider.get_exchange_rates("vaal")
+        result = await provider.get_exchange_rates("runes")
         assert len(result) > 0
 
         # Break the provider
@@ -194,7 +194,7 @@ class TestFlakyProvider:
 
         # Should now fail
         with pytest.raises(ConnectionError, match="upstream_unreachable"):
-            await provider.get_exchange_rates("vaal")
+            await provider.get_exchange_rates("runes")
 
     async def test_flaky_provider_metadata_then_fails(self):
         """Metadata should work initially, then fail after break."""
@@ -203,23 +203,23 @@ class TestFlakyProvider:
         provider = FlakyPoe2ScoutProvider()
 
         # Works initially
-        result = await provider.get_currency_metadata("vaal")
+        result = await provider.get_currency_metadata("runes")
         assert len(result) > 0
 
         provider.break_provider()
 
         with pytest.raises(ConnectionError, match="upstream_unreachable"):
-            await provider.get_currency_metadata("vaal")
+            await provider.get_currency_metadata("runes")
 
     async def test_failing_provider_always_errors(self):
         """FailingPoe2ScoutProvider should always raise ConnectionError."""
         provider = FailingPoe2ScoutProvider()
 
         with pytest.raises(ConnectionError):
-            await provider.get_exchange_rates("vaal")
+            await provider.get_exchange_rates("runes")
 
         with pytest.raises(ConnectionError):
-            await provider.get_currency_metadata("vaal")
+            await provider.get_currency_metadata("runes")
 
 
 # ---------------------------------------------------------------------------
@@ -289,14 +289,14 @@ class TestDailyStatsCacheStaleBehaviour:
 
         # First call — cache miss, fetch succeeds
         result = await daily_stats_cache.get_or_fetch(
-            mock_fetch, "vaal", "divine", 30
+            mock_fetch, "runes", "divine", 30
         )
         assert result.stale is False
         assert result.value == {"data": "fetch_1"}
 
         # Second call — cache hit (still fresh)
         result = await daily_stats_cache.get_or_fetch(
-            mock_fetch, "vaal", "divine", 30
+            mock_fetch, "runes", "divine", 30
         )
         assert result.stale is False
         assert call_count == 1  # No extra fetch
@@ -309,7 +309,7 @@ class TestDailyStatsCacheStaleBehaviour:
             raise ConnectionError("upstream_unreachable: API down")
 
         result = await daily_stats_cache.get_or_fetch(
-            failing_fetch, "vaal", "divine", 30
+            failing_fetch, "runes", "divine", 30
         )
         assert result.stale is True
         assert result.value == {"data": "fetch_1"}
@@ -322,7 +322,7 @@ class TestDailyStatsCacheStaleBehaviour:
             raise ConnectionError("upstream_unreachable: API down")
 
         result = await daily_stats_cache.get_or_fetch(
-            failing_fetch, "vaal", "unknown_item", 30
+            failing_fetch, "runes", "unknown_item", 30
         )
         assert result.value is None
         assert result.stale is False
@@ -335,7 +335,7 @@ class TestDailyStatsCacheStaleBehaviour:
             return {"data": "test"}
 
         # Populate cache
-        await daily_stats_cache.get_or_fetch(mock_fetch, "vaal", "divine", 30)
+        await daily_stats_cache.get_or_fetch(mock_fetch, "runes", "divine", 30)
         assert daily_stats_cache.stats()["size"] == 1
 
         # Invalidate
@@ -367,7 +367,7 @@ class TestDailyStatsCacheFlakyIntegration:
         async def working_fetch(league: str, item_id: str, days: int):
             return {"days": [{"day": "2025-01-20", "open": 220, "close": 222}]}
 
-        result = await cache.get_or_fetch(working_fetch, "vaal", "divine", 30)
+        result = await cache.get_or_fetch(working_fetch, "runes", "divine", 30)
         assert result.stale is False
 
         # Wait for TTL expiry
@@ -377,6 +377,6 @@ class TestDailyStatsCacheFlakyIntegration:
         async def broken_fetch(league: str, item_id: str, days: int):
             raise ConnectionError("upstream_unreachable: API down")
 
-        result = await cache.get_or_fetch(broken_fetch, "vaal", "divine", 30)
+        result = await cache.get_or_fetch(broken_fetch, "runes", "divine", 30)
         assert result.stale is True
         assert result.value is not None

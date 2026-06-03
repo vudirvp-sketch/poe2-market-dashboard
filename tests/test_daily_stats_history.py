@@ -219,7 +219,7 @@ class TestDailyStatsCacheIntegration:
         # First call — cache miss, should fetch
         result1 = await cache.get_or_fetch(
             provider.get_daily_stats,
-            "vaal", 42, 30,
+            "runes", 42, 30,
         )
         assert result1.value is not None
         assert result1.stale is False
@@ -228,7 +228,7 @@ class TestDailyStatsCacheIntegration:
         # Second call — should hit cache
         result2 = await cache.get_or_fetch(
             provider.get_daily_stats,
-            "vaal", 42, 30,
+            "runes", 42, 30,
         )
         assert result2.value is not None
         assert result2.stale is False
@@ -245,7 +245,7 @@ class TestDailyStatsCacheIntegration:
 
         await cache.get_or_fetch(
             provider.get_daily_stats,
-            "vaal", 42, 30,
+            "runes", 42, 30,
         )
         assert cache.stats()["size"] == 1
 
@@ -267,7 +267,7 @@ class TestDailyStatsCacheIntegration:
 
         # First call succeeds
         result1 = await cache.get_or_fetch(
-            fetch_fn, "vaal", 42, 30,
+            fetch_fn, "runes", 42, 30,
         )
         assert result1.value is not None
         assert result1.stale is False
@@ -277,7 +277,7 @@ class TestDailyStatsCacheIntegration:
 
         # Second call fails — should get stale value
         result2 = await cache.get_or_fetch(
-            fetch_fn, "vaal", 42, 30,
+            fetch_fn, "runes", 42, 30,
         )
         assert result2.value is not None
         assert result2.stale is True

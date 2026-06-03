@@ -47,17 +47,17 @@ describe("poe2api CORS proxy fallback", () => {
   });
 
   it("handles URLs with query parameters", () => {
-    const originalUrl = `${BASE_URL}/poe2/Leagues/vaal/SnapshotPairs?Limit=24`;
+    const originalUrl = `${BASE_URL}/poe2/Leagues/runes/SnapshotPairs?Limit=24`;
     const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
     expect(proxyUrl).toBe(
-      "https://poe2scout-proxy.example.workers.dev/api/poe2/Leagues/vaal/SnapshotPairs?Limit=24"
+      "https://poe2scout-proxy.example.workers.dev/api/poe2/Leagues/runes/SnapshotPairs?Limit=24"
     );
     expect(proxyUrl).toContain("Limit=24");
   });
 
   it("handles URLs with path segments after BASE_URL", () => {
-    const originalUrl = `${BASE_URL}/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250`;
+    const originalUrl = `${BASE_URL}/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250`;
     const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
     expect(proxyUrl).toContain("Currencies/ByCategory");
@@ -79,10 +79,10 @@ describe("poe2api CORS proxy fallback", () => {
     const paths = [
       "/Realms",
       "/poe2/Leagues",
-      "/poe2/Leagues/vaal/ExchangeSnapshot",
-      "/poe2/Leagues/vaal/SnapshotHistory?Limit=168",
-      "/poe2/Leagues/vaal/ReferenceCurrencies",
-      "/poe2/Leagues/vaal/Items/Categories",
+      "/poe2/Leagues/runes/ExchangeSnapshot",
+      "/poe2/Leagues/runes/SnapshotHistory?Limit=168",
+      "/poe2/Leagues/runes/ReferenceCurrencies",
+      "/poe2/Leagues/runes/Items/Categories",
     ];
 
     for (const path of paths) {

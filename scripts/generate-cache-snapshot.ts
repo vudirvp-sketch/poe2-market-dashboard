@@ -155,6 +155,17 @@ async function main(): Promise<void> {
         console.log(`  Truncated /Items from ${original} to 25 entries`);
       }
     }
+
+    // The /SnapshotPairs endpoint can return hundreds of pairs (each with
+    // nested fields). Truncate to 30 pairs — enough for the initial
+    // exchange view; the rest will be fetched on-demand.
+    if (url.includes("/SnapshotPairs") && Array.isArray(entry.data)) {
+      const original = (entry.data as unknown[]).length;
+      if (original > 30) {
+        (entry as { data: unknown[] }).data = (entry.data as unknown[]).slice(0, 30);
+        console.log(`  Truncated /SnapshotPairs from ${original} to 30 entries`);
+      }
+    }
   }
 
   // ── Build snapshot ──

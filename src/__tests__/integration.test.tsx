@@ -88,7 +88,7 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
   it("makes multiple sequential API calls for graph tab", async () => {
     mockFetchApi.mockImplementation((url: string) => {
       if (url.includes("/prices")) return Promise.resolve({
-        league: "vaal",
+        league: "runes",
         phase: "mid",
         rates: [
           {

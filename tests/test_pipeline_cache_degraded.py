@@ -216,7 +216,7 @@ class TestDailyStatsCacheDegraded:
             raise ConnectionError("Upstream API unreachable")
 
         # First call succeeds
-        result1 = await cache.get_or_fetch(fetch_fn, "vaal", "divine", 30)
+        result1 = await cache.get_or_fetch(fetch_fn, "runes", "divine", 30)
         assert result1.value is not None
         assert result1.stale is False
 
@@ -224,7 +224,7 @@ class TestDailyStatsCacheDegraded:
         cache._cache.clear()
 
         # Second call fails — should get stale value
-        result2 = await cache.get_or_fetch(fetch_fn, "vaal", "divine", 30)
+        result2 = await cache.get_or_fetch(fetch_fn, "runes", "divine", 30)
         assert result2.value is not None
         assert result2.stale is True
 
@@ -239,7 +239,7 @@ class TestDailyStatsCacheDegraded:
         async def fetch_fn(league, item_id, days):
             raise ConnectionError("Upstream API unreachable")
 
-        result = await cache.get_or_fetch(fetch_fn, "vaal", "divine", 30)
+        result = await cache.get_or_fetch(fetch_fn, "runes", "divine", 30)
         assert result.value is None
         assert result.stale is False
 
@@ -259,13 +259,13 @@ class TestDailyStatsCacheDegraded:
             raise ConnectionError("API still down")
 
         # First call succeeds
-        await cache.get_or_fetch(fetch_fn, "vaal", "divine", 30)
+        await cache.get_or_fetch(fetch_fn, "runes", "divine", 30)
 
         # Clear cache to force re-fetch
         cache._cache.clear()
 
         # Multiple failures — stale should still be available
         for _ in range(3):
-            result = await cache.get_or_fetch(fetch_fn, "vaal", "divine", 30)
+            result = await cache.get_or_fetch(fetch_fn, "runes", "divine", 30)
             assert result.value is not None
             assert result.stale is True

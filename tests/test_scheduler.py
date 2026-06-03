@@ -78,7 +78,7 @@ def config(tmp_path):
     return AppConfig(
         data=DataConfig(),
         league=LeagueConfig(
-            league_name="vaal",
+            league_name="runes",
             base_currency="exalted",
         ),
         scheduler=SchedulerConfig(
@@ -137,7 +137,7 @@ class TestCollectPriceSnapshot:
         self, scheduler, historical_store
     ):
         """Price snapshot collection should write data to HistoricalStore."""
-        mock_rates = await MockProvider().get_exchange_rates("vaal")
+        mock_rates = await MockProvider().get_exchange_rates("runes")
         mock_snapshot = _make_mock_snapshot(mock_rates)
 
         with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
@@ -145,7 +145,7 @@ class TestCollectPriceSnapshot:
         assert count > 0, "Should write at least one snapshot"
 
         # Verify data was written to SQLite
-        latest = await historical_store.get_latest_prices("vaal")
+        latest = await historical_store.get_latest_prices("runes")
         assert len(latest) > 0, "HistoricalStore should contain price data"
 
     @pytest.mark.asyncio
@@ -153,7 +153,7 @@ class TestCollectPriceSnapshot:
         self, scheduler, historical_store
     ):
         """collect_price_snapshot should return the number of snapshots written."""
-        mock_rates = await MockProvider().get_exchange_rates("vaal")
+        mock_rates = await MockProvider().get_exchange_rates("runes")
         mock_snapshot = _make_mock_snapshot(mock_rates)
 
         with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
@@ -182,7 +182,7 @@ class TestCollectPriceSnapshot:
         self, scheduler, historical_store
     ):
         """Multiple collections within the same 5-minute bucket should deduplicate."""
-        mock_rates = await MockProvider().get_exchange_rates("vaal")
+        mock_rates = await MockProvider().get_exchange_rates("runes")
         mock_snapshot = _make_mock_snapshot(mock_rates)
 
         with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
@@ -191,7 +191,7 @@ class TestCollectPriceSnapshot:
 
         # Both should succeed (count > 0) but the store should not have
         # duplicated rows for the same 5-minute bucket
-        latest = await historical_store.get_latest_prices("vaal")
+        latest = await historical_store.get_latest_prices("runes")
         # Each currency should appear at most once per 5-min bucket
         currency_counts = {}
         for row in latest:

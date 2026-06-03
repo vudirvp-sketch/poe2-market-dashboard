@@ -227,8 +227,8 @@ describe("Overview route aggregation logic", () => {
     const testCases = [
       { realm: null, league: null, shouldFail: true },
       { realm: "poe2", league: null, shouldFail: true },
-      { realm: null, league: "Vaal", shouldFail: true },
-      { realm: "poe2", league: "Vaal", shouldFail: false },
+      { realm: null, league: "Runes", shouldFail: true },
+      { realm: "poe2", league: "Runes", shouldFail: false },
     ] as const;
 
     for (const tc of testCases) {

@@ -276,7 +276,7 @@ User Browser
     │                                        return: League[]
     │
     ├─→ GET /api/poe2/exchange ──────────────→ poe2api.ts::getSnapshotPairs()
-    │        ?realm=poe2&league=vaal              │
+    │        ?realm=poe2&league=runes              │
     │                                        cachedFetch(BASE_URL + "/{realm}/Leagues/{league}/SnapshotPairs")
     │                                            │
     │                                        map: RawSnapshotPair[] → ExchangePair[] (via mapSnapshotPair)
@@ -285,7 +285,7 @@ User Browser
     │                                        return: ExchangePair[]
     │
     ├─→ GET /api/poe2/currencies ──────────────→ poe2api.ts::getCurrenciesByCategory()
-    │        ?realm=poe2&league=vaal&category=currency
+    │        ?realm=poe2&league=runes&category=currency
     │                                            │
     │                                        If category="all":
     │                                          1. getItemCategories() → currencyCats[]
@@ -306,7 +306,7 @@ User Browser
     │                                        return: PaginatedResponse<PoeItem>
     │
     ├─→ GET /api/poe2/uniques ──────────────→ poe2api.ts::getUniquesByCategory()
-    │        ?realm=poe2&league=vaal&category=all
+    │        ?realm=poe2&league=runes&category=all
     │                                            │
     │                                        Same logic as currencies — category="all" merges all.
     │                                        map: RawUniqueItem → PoeItem (via mapUniqueItem)
@@ -316,13 +316,13 @@ User Browser
     │                                        return: PaginatedResponse<PoeItem>
     │
     ├─→ GET /api/poe2/items ──────────────→ poe2api.ts::getItems()
-    │        ?realm=poe2&league=vaal              │
+    │        ?realm=poe2&league=runes              │
     │                                        cachedFetch(BASE_URL + "/{realm}/Leagues/{league}/Items")
     │                                            │
     │                                        return: PoeItem[]
     │
     └─→ GET /api/poe2/overview ──────────────→ Combined endpoint
-             ?realm=poe2&league=vaal              │
+             ?realm=poe2&league=runes              │
                                               Returns:
                                               ├─ getExchangeSnapshot() → exchange data
                                               ├─ getSnapshotHistory() → chart data

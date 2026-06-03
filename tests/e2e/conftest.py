@@ -270,12 +270,12 @@ def daily_stats_cache():
 
     Usage:
         cache = daily_stats_cache
-        result = await cache.get_or_fetch(my_fetch_fn, "vaal", "divine", 30)
+        result = await cache.get_or_fetch(my_fetch_fn, "runes", "divine", 30)
         assert result.stale is False
 
         # Wait for TTL expiry, then check stale behaviour
         import time; time.sleep(0.15)
-        result = await cache.get_or_fetch(my_fetch_fn, "vaal", "divine", 30)
+        result = await cache.get_or_fetch(my_fetch_fn, "runes", "divine", 30)
         assert result.stale is True
     """
     from backend.data.daily_stats_cache import DailyStatsCache

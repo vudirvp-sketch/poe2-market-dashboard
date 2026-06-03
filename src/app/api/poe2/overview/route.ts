@@ -62,7 +62,7 @@ async function getOrRevalidate(realm: string, league: string): Promise<OverviewC
 }
 
 /**
- * GET /api/poe2/overview?realm=poe2&league=Fate+of+the+Vaal
+ * GET /api/poe2/overview?realm=poe2&league=Runes+of+Aldur
  *
  * Returns aggregated overview data:
  *   - topGainers: top 10 items by positive 24h changePercent
