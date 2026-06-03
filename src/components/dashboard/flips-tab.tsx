@@ -83,6 +83,9 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   useFlipperWebSocket({
     onFlipsUpdate: () => {
       invalidateFlips();
+      // Bug 13 fix: Also invalidate triangular data when flips update via WS,
+      // since triangular arbitrage uses the same snapshot data.
+      queryClient.invalidateQueries({ queryKey: ["flipper-triangular"] });
     },
     onAnomaly: () => {
       queryClient.invalidateQueries({ queryKey: ["flipper-anomalies"] });
@@ -117,8 +120,6 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     error: flipsErrorObj,
     refetch: refetchFlips,
   } = useFlipsQuery({
-    minScore,
-    minVolume,
     enabled: backendOnline,
   });
 
@@ -137,11 +138,14 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   });
 
   // ---- Triangular data (for cross-rate warning) ----
+  // Bug 13 fix: Added refetchInterval so triangular data auto-refreshes.
+  // This ensures the cross-rate warning stays current with the latest data.
   const { data: triData } = useQuery<TriangularResponse>({
     queryKey: ["flipper-triangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 

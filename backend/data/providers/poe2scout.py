@@ -345,19 +345,17 @@ class Poe2ScoutProvider(BaseDataProvider):
                 if my_data is None or other_data is None:
                     continue
 
-                # Derive cross-rate from relative_prices:
-                # If from_rel and to_rel are both in base_currency terms,
-                # then the rate from→to = from_rel / to_rel
-                # (consistent with get_exchange_rates() forward_rate = c1_rel / c2_rel)
-                from_rel = float(other_data.relative_price) if other_data.relative_price else 0
-                to_rel = float(my_data.relative_price) if my_data.relative_price else 0
+                # Bug 23 fix: Use Decimal arithmetic for rate derivation.
+                # Keep Decimal through the division, convert to float at the end.
+                from_rel_decimal = other_data.relative_price if other_data.relative_price else None
+                to_rel_decimal = my_data.relative_price if my_data.relative_price else None
 
-                if from_rel <= 0 or to_rel <= 0:
+                if from_rel_decimal is None or to_rel_decimal is None or from_rel_decimal <= 0 or to_rel_decimal <= 0:
                     # Fallback: skip — volume-based rate derivation is unreliable
                     # (volume ratio is NOT an exchange rate)
                     continue
                 else:
-                    raw_rate = from_rel / to_rel
+                    raw_rate = float(from_rel_decimal / to_rel_decimal)
 
                 # Estimate bid/ask spread from pair data
                 # The POE2Scout API doesn't provide explicit bid/ask;
@@ -477,43 +475,50 @@ class Poe2ScoutProvider(BaseDataProvider):
             c1_data = pair.currency_one_data
             c2_data = pair.currency_two_data
 
-            # Derive cross-rates from relative_price
-            # relative_price = price of this currency in base_currency units
-            c1_rel = float(c1_data.relative_price) if c1_data.relative_price else 0
-            c2_rel = float(c2_data.relative_price) if c2_data.relative_price else 0
+            # Bug 23 fix: Use Decimal arithmetic for rate derivation to
+            # avoid float precision loss. POE2Scout returns relative_price
+            # as Decimal strings like "0.1234567890". Converting to float
+            # before division compounds rounding errors, especially for
+            # small relative_price values (e.g. 0.0001). We now keep the
+            # Decimal through the division and only convert the final
+            # rate to float at the output stage.
+            c1_rel_decimal = c1_data.relative_price if c1_data.relative_price else None
+            c2_rel_decimal = c2_data.relative_price if c2_data.relative_price else None
+
+            if (
+                c1_rel_decimal is None
+                or c2_rel_decimal is None
+                or c1_rel_decimal <= 0
+                or c2_rel_decimal <= 0
+            ):
+                continue
 
             # Forward rate: 1 unit of c1 → how many c2
             # = c1_rel / c2_rel (c1 is worth c1_rel base, each c2 is worth c2_rel base)
-            if c1_rel > 0 and c2_rel > 0:
-                forward_rate = c1_rel / c2_rel
-            else:
-                # No reliable fallback — volume ratio is NOT an exchange rate
-                continue
+            forward_rate_decimal = c1_rel_decimal / c2_rel_decimal
+            forward_rate = float(forward_rate_decimal)
 
             forward_key = f"{c1_id}/{c2_id}"
             rates[forward_key] = ExchangeRate(
                 currency_from=c1_id,
                 currency_to=c2_id,
                 raw_rate=forward_rate,
-                volume_traded=int(float(c1_data.volume_traded) if c1_data.volume_traded else 0),
+                volume_traded=int(c1_data.volume_traded) if c1_data.volume_traded else 0,
                 stock_value=float(c1_data.stock_value) if c1_data.stock_value else 0,
                 highest_stock=c1_data.highest_stock,
                 timestamp=datetime.now(timezone.utc),
             )
 
             # Reverse rate
-            if c2_rel > 0 and c1_rel > 0:
-                reverse_rate = c2_rel / c1_rel
-            else:
-                # No reliable fallback
-                continue
+            reverse_rate_decimal = c2_rel_decimal / c1_rel_decimal
+            reverse_rate = float(reverse_rate_decimal)
 
             reverse_key = f"{c2_id}/{c1_id}"
             rates[reverse_key] = ExchangeRate(
                 currency_from=c2_id,
                 currency_to=c1_id,
                 raw_rate=reverse_rate,
-                volume_traded=int(float(c2_data.volume_traded) if c2_data.volume_traded else 0),
+                volume_traded=int(c2_data.volume_traded) if c2_data.volume_traded else 0,
                 stock_value=float(c2_data.stock_value) if c2_data.stock_value else 0,
                 highest_stock=c2_data.highest_stock,
                 timestamp=datetime.now(timezone.utc),

@@ -104,13 +104,15 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     error: flipsErrorObj,
     refetch: refetchFlips,
   } = useFlipsQuery({
-    minScore: 0,    // Bug 2.4 fix: always fetch full data; filter client-side
-    minVolume: 0,   // Bug 2.4 fix: always fetch full data; filter client-side
     enabled: mode === "flipper" && backendOnline,
     refetchInterval: false,  // no polling in arbitrage-tab; flips-tab polls
   });
 
   // ---- Flipper: triangular arbitrage ----
+  // Bug 13 fix: Added refetchInterval so triangular data auto-refreshes
+  // even without WebSocket updates. Matches the polling pattern used by
+  // useFlipsQuery. The staleTime matches (60s) and refetchInterval (60s)
+  // ensures data stays fresh when the tab is visible.
   const {
     data: triData,
     isLoading: triLoading,
@@ -122,6 +124,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: mode === "flipper" && backendOnline,
     staleTime: 60_000,
+    refetchInterval: 60_000,
     retry: 1,
   });
 

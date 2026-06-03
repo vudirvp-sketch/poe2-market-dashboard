@@ -25,7 +25,7 @@ from backend.api.shared import get_provider as _get_provider, get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
 from backend.economy.events import get_event_manager, EventManager
-from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier, compute_quantized_analysis
+from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
 from backend.predictors.clustering import CurrencyClusterer
@@ -130,7 +130,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     # 3. Get phase info
     phase_info = detector.get_phase_info()
-    phase_multiplier = get_phase_multiplier(phase_info.phase, config)
+    # Bug 26 fix: Use PhaseDetector.get_phase_multiplier() which accounts for
+    # LeagueType (standard/flashback/event). Previously, scorer.get_phase_multiplier()
+    # was used which only considered EARLY/MID/LATE, making the LeagueType multiplier
+    # (flashback=1.5, event=2.0) dead code.
+    phase_multiplier = detector.get_phase_multiplier()
 
     # 4. Compute max volume across all pairs for fill probability normalization
     max_volume = max(

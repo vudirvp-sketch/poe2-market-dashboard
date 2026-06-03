@@ -439,11 +439,69 @@ class HistoricalStore:
 # ---------------------------------------------------------------------------
 
 _instance: HistoricalStore | None = None
+_instance_config_id: int | None = None  # Bug 27: Track config identity
 
 
 def get_historical_store(config: AppConfig | None = None) -> HistoricalStore:
-    """Return the global HistoricalStore instance (lazily created)."""
-    global _instance
-    if _instance is None:
-        _instance = HistoricalStore(config=config)
+    """Return the global HistoricalStore instance (lazily created).
+
+    Bug 27 fix: The singleton now respects config changes. If a different
+    config object is passed after the singleton was already created, a
+    warning is logged and the instance is recreated. This ensures that
+    custom configs (e.g., for testing or different retention_days) are
+    not silently ignored.
+
+    Use reset_historical_store() to force recreation (e.g., in tests).
+    """
+    global _instance, _instance_config_id
+
+    config_id = id(config) if config is not None else 0
+
+    if _instance is not None:
+        # Singleton exists — check if config changed
+        if config is not None and _instance_config_id != config_id:
+            logger.warning(
+                "HistoricalStore singleton already created with a different config. "
+                "Recreating with new config (retention_days=%d, db_path=%s).",
+                config.data.historical_retention_days if config else 90,
+                getattr(config, 'db_path', 'default') if config else 'default',
+            )
+            # Close old instance before replacing
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Can't await in sync context — schedule cleanup
+                    loop.create_task(_instance.close())
+                else:
+                    loop.run_until_complete(_instance.close())
+            except Exception:
+                pass  # Best-effort cleanup
+            _instance = None
+        else:
+            return _instance
+
+    _instance = HistoricalStore(config=config)
+    _instance_config_id = config_id
     return _instance
+
+
+def reset_historical_store() -> None:
+    """Force recreation of the HistoricalStore singleton on next access.
+
+    Useful for testing or when the config has fundamentally changed
+    (e.g., after hot-reloading config.yaml).
+    """
+    global _instance, _instance_config_id
+    if _instance is not None:
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(_instance.close())
+            else:
+                loop.run_until_complete(_instance.close())
+        except Exception:
+            pass  # Best-effort cleanup
+    _instance = None
+    _instance_config_id = None

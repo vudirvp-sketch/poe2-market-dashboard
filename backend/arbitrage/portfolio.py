@@ -512,10 +512,11 @@ class PortfolioOptimizer:
             method = "risk_parity"
 
         # Correlation shock detection (§10.3)
-        # FIX: Now automatically manages previous correlation matrix state.
-        # Previously, `previous_corr` was always None because nobody persisted
-        # it between calls. We now cache the last correlation matrix internally
-        # so shock detection actually works.
+        # Bug 24 fix: Use caller-provided previous_corr if available, otherwise
+        # fall back to the module-level cache. Previously, the module-level
+        # cache (_previous_correlation_matrices) ALWAYS overwrote the caller's
+        # previous_corr parameter, making it impossible for callers to supply
+        # their own correlation matrix (e.g., from a persistent store).
         current_corr = np.corrcoef(log_returns, rowvar=False)
         # Ensure 2D for single asset
         if current_corr.ndim == 0:
@@ -523,7 +524,12 @@ class PortfolioOptimizer:
 
         # Build a cache key from the sorted currency names
         currencies_key = ",".join(sorted(currency_names))
-        previous_corr = _previous_correlation_matrices.get(currencies_key)
+
+        # Bug 24 fix: Only use module-level cache if the caller didn't provide
+        # previous_corr. If the caller provides one, use it (they may have
+        # loaded it from a persistent store for cross-session detection).
+        if previous_corr is None:
+            previous_corr = _previous_correlation_matrices.get(currencies_key)
 
         if previous_corr is not None and previous_corr.shape == current_corr.shape:
             correlation_warning = detect_correlation_shock(
