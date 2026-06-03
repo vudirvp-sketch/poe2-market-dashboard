@@ -232,15 +232,18 @@ def find_triangular_arbitrage(
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
     cross_rate_threshold_pct: float = 5.0,
+    gold_cost_per_unit: dict[str, int] | None = None,
+    gold_to_chaos_rate: float = 0.0,
 ) -> TriangularResult:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
-    Simplified: gold/commission fees are EXCLUDED from all calculations.
-    A realistic spread model (§7.1.1) is applied to edge weights to avoid
-    false positives from spreadless reverse rates.
+    Step 3.4: Gold fee accounting is now ACTIVE. Edge weights include
+    direction-dependent gold fee fractions per §8 of Canonical Formulas.
+    Only cycles with positive net profit after gold fees are reported.
 
-    Edge weight: -ln(effective_rate) where effective_rate = raw_rate * (1 - spread/2)
-    Low-liquidity edges (volume < 50) are filtered out (§6b).
+    Edge weight: -ln(effective_rate) where:
+      effective_rate = raw_rate * (1 - market_spread/2 - gold_fee_fraction)
+    Low-liquidity edges (volume < 200) are filtered out.
 
     Cross-rate validation: Before returning results, each detected cycle is
     checked against a cross-rate divergence map. If the cycle passes through
@@ -257,6 +260,8 @@ def find_triangular_arbitrage(
         cross_rate_threshold_pct: Divergence threshold for cross-rate
             inconsistency detection (default 5%). Cycles involving triples
             with >5% implied-vs-direct divergence are flagged.
+        gold_cost_per_unit: Per-unit gold cost for each currency API ID
+        gold_to_chaos_rate: Chaos value of 1 gold coin
 
     Returns:
         List of TriangularOpportunity objects
@@ -296,10 +301,29 @@ def find_triangular_arbitrage(
             volume_spread = 0.08  # 8% for zero-volume pairs
         market_spread = max(0.01, min(0.15, volume_spread))
 
-        # Effective rate = raw_rate * (1 - spread/2)
-        # This models the bid-side: you sell from_currency and buy to_currency
-        # The spread represents the bid-ask gap in a market without market makers
-        effective_rate = raw_rate * (1 - market_spread / 2)
+        # Step 3.4: Compute gold fee fraction for direction u→v
+        # Fee depends on what you RECEIVE (currency v)
+        gold_fee_frac = 0.0
+        if gold_cost_per_unit and gold_to_chaos_rate > 0:
+            cost_per_unit = gold_cost_per_unit.get(v, gold_cost_per_unit.get(
+                v.lower(), gold_cost_per_unit.get(
+                    v.replace(" ", "_").lower(), 200
+                )
+            ))
+            qty_v = raw_rate  # for 1 unit of u, you receive raw_rate units of v
+            price_v = prices.get(v, 0)
+            if price_v > 0 and qty_v > 0:
+                trade_value_chaos = qty_v * price_v
+                gold_fee_chaos = cost_per_unit * qty_v * gold_to_chaos_rate
+                gold_fee_frac = gold_fee_chaos / trade_value_chaos if trade_value_chaos > 0 else 0
+
+        # Effective rate = raw_rate * (1 - market_spread/2 - gold_fee_fraction)
+        # Market spread models the bid-ask gap; gold_fee_fraction models the
+        # direction-dependent gold cost per §8 of Canonical Formulas.
+        total_deduction = market_spread / 2 + gold_fee_frac
+        if total_deduction >= 1.0:
+            continue  # Fees eat all profit
+        effective_rate = raw_rate * (1 - total_deduction)
         if effective_rate <= 0:
             continue
 

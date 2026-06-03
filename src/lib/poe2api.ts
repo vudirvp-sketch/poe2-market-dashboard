@@ -779,7 +779,16 @@ interface RawDailyStat {
  *  is more than 6 hours away from the 24h target, return null instead of
  *  an inaccurate percentage.
  */
-const MAX_TIME_DRIFT_MS = 6 * 60 * 60 * 1000; // 6 hours
+/** Max time drift for lookback — scales with lookback period.
+ *  For 1h lookback: 30 min. For 24h: 6h. For 7d: 18h.
+ *  Formula: max(30min, lookbackMs * 0.1)
+ */
+function getMaxTimeDriftMs(lookbackMs: number): number {
+  return Math.max(30 * 60 * 1000, lookbackMs * 0.1);
+}
+
+/** Legacy constant kept for backward compat — equals 6h drift (for 24h lookback) */
+const MAX_TIME_DRIFT_MS = 6 * 60 * 60 * 1000;
 
 function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
@@ -803,8 +812,9 @@ function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): nu
     }
   }
 
-  // Fix 2.6: If the closest entry is too far from the target time, data is insufficient
-  if (closestDiff > MAX_TIME_DRIFT_MS) return null;
+  // Fix 2.6 + Step 1.2: Scale drift tolerance with lookback period
+  const maxDrift24h = getMaxTimeDriftMs(24 * 60 * 60 * 1000);
+  if (closestDiff > maxDrift24h) return null;
 
   if (closest.Price === 0) return null;
   return ((now.Price - closest.Price) / closest.Price) * 100;
@@ -815,7 +825,7 @@ function computeChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): nu
  *  IMPORTANT: The POE2Scout API returns PriceLogs in REVERSE chronological
  *  order (newest entry first). We must sort by timestamp first.
  *
- *  Fix 2.6: Same MAX_TIME_DRIFT_MS threshold applied (6h tolerance).
+ *  Step 1.2: Scale drift tolerance with lookback (18h for 7d instead of fixed 6h).
  */
 function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): number | null {
   if (!logs || logs.length === 0) return null;
@@ -838,8 +848,10 @@ function compute7dChangePercent(logs: (RawPriceLogEntry | null)[] | undefined): 
     }
   }
 
-  // Fix 2.6: If the closest entry is too far from the target time, data is insufficient
-  if (closestDiff > MAX_TIME_DRIFT_MS) return null;
+  // Step 1.2: Scale drift tolerance with lookback period
+  // 7d lookback = 604800000ms → 0.1 * 604800000 = 60480000ms ≈ 16.8h
+  const maxDrift7d = getMaxTimeDriftMs(7 * 24 * 60 * 60 * 1000);
+  if (closestDiff > maxDrift7d) return null;
 
   if (closest.Price === 0) return null;
   return ((now.Price - closest.Price) / closest.Price) * 100;
@@ -954,7 +966,8 @@ function mapCurrencyItem(item: RawCurrencyItem, referencePrice?: number): PoeIte
     category: item.CategoryApiId || "",
     iconUrl: item.IconUrl,
     price: currentPrice,
-    priceChaos: currentPrice,
+    chaosEquivalentRate: currentPrice,  // Step 1.1: Renamed from priceChaos — this is a rate, not a price
+    priceChaos: currentPrice,  // backward compat
     relativePrice: relPrice,
     change,
     changePercent,
@@ -1001,7 +1014,8 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
     category: raw.CategoryApiId || "",
     iconUrl: raw.IconUrl,
     price: currentPrice,
-    priceChaos: currentPrice,
+    chaosEquivalentRate: currentPrice,  // Step 1.1: Renamed from priceChaos — this is a rate, not a price
+    priceChaos: currentPrice,  // backward compat
     relativePrice: relPrice,
     change,
     changePercent,
@@ -1033,7 +1047,8 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
   return valid.map((l) => ({
     timestamp: l.Time,
     price: l.Price,
-    priceChaos: l.Price,
+    priceChaos: l.Price,  // backward compat
+    chaosEquivalentRate: l.Price,  // Step 1.1: Renamed — this is a rate
     relativePrice: l.Price,
     volume: l.Quantity,
   }));
@@ -1763,7 +1778,8 @@ export async function getItems(realm: string, league: string): Promise<PoeItem[]
     category: item.CategoryApiId || "",
     iconUrl: item.IconUrl,
     price: item.CurrentPrice,
-    priceChaos: item.CurrentPrice,
+    chaosEquivalentRate: item.CurrentPrice,
+    priceChaos: item.CurrentPrice,  // backward compat
     relativePrice: item.CurrentPrice,
     change: null,
     changePercent: null,
@@ -1833,7 +1849,8 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
     category: raw.CategoryApiId || "",
     iconUrl: raw.IconUrl,
     price: raw.CurrentPrice,
-    priceChaos: raw.CurrentPrice,
+    chaosEquivalentRate: raw.CurrentPrice,
+    priceChaos: raw.CurrentPrice,  // backward compat
     relativePrice: raw.CurrentPrice,
     change: null,
     changePercent: null,
@@ -1863,7 +1880,8 @@ export async function getItemHistory(realm: string, league: string, itemId: stri
     return (raw.PriceHistory ?? []).map((p) => ({
       timestamp: p.Time,
       price: p.Price,
-      priceChaos: p.Price,
+      priceChaos: p.Price,  // backward compat
+      chaosEquivalentRate: p.Price,
       relativePrice: p.Price,
       volume: p.Quantity,
     }));

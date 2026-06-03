@@ -45,9 +45,13 @@ league:
     - verisium                        # Runes of Aldur league
     - vaal                            # Runes of Aldur league
 
-# Gold fee configuration — intentionally empty. Gold fees are NOT used in
-# current scoring/arbitrage calculations (see gold_costs.py DEPRECATED notice).
-fees: {}
+# Gold fee configuration — Step 3: Re-enabled gold fee accounting.
+# The gold_to_chaos_rate is extracted dynamically from POE2Scout's data
+# (chaosEquivalent of "Gold Coin"). If unavailable, fixed_gold_to_chaos_rate is used.
+fees:
+  gold_to_chaos_rate_source: "dynamic"  # "dynamic" (from POE2Scout) or "fixed"
+  fixed_gold_to_chaos_rate: 0.002       # Fallback: ~0.002 Chaos per Gold (current estimate)
+  unknown_item_gold_cost: 200           # Per-unit gold cost for currencies not in the verified table
 
 filters:
   min_volume_24h: 200  # Match raised default in config.py

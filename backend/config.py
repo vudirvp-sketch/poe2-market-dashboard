@@ -63,9 +63,19 @@ class LeagueConfig(BaseModel):
 
 
 class FeesConfig(BaseModel):
-    """Fees configuration — currently unused after gold fee removal.
-    Kept as a placeholder for future fee models if needed."""
-    pass
+    """Fees configuration — gold fee accounting for PoE2 Currency Exchange.
+    
+    Step 3: Re-enabled gold fee accounting. The gold_to_chaos_rate is
+    extracted dynamically from POE2Scout's /economy response (the 
+    chaosEquivalent value for "Gold Coin"). If unavailable, the 
+    fixed_gold_to_chaos_rate fallback is used.
+    """
+    # Source for gold_to_chaos_rate: "dynamic" (from POE2Scout) or "fixed" (from config)
+    gold_to_chaos_rate_source: str = "dynamic"
+    # Fallback when POE2Scout data is unavailable. Current estimate ~0.15-0.25 Chaos/Gold.
+    fixed_gold_to_chaos_rate: float = 0.002
+    # Default per-unit gold cost for currencies not in the verified table
+    unknown_item_gold_cost: int = 200
 
 
 class FiltersConfig(BaseModel):

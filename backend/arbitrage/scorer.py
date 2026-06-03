@@ -1,19 +1,24 @@
 """
 Opportunity Scoring — expected profit scoring for flip opportunities.
 
-From PoE2_Flipper_Canonical_Formulas.md §7 (simplified: gold fees excluded):
+From PoE2_Flipper_Canonical_Formulas.md §7 (raw spread for scoring):
 
 The score is based on one concept with clear financial meaning:
 expected profit per trade, scaled by probability of fill.
 
-Formula (simplified — gold/commission excluded per project decision):
+Formula (raw spread — gold fees are deducted at the route level):
     spread = (ask - bid) / mid_price
     expected_profit = spread * fill_probability
     score = expected_profit * momentum_penalty * vol_penalty * phase_multiplier * tier_penalty
     score = clamp(score, 0.0, 1.0)
 
+Step 3: Gold fee accounting is now handled at the route level
+(routes_arbitrage.py), where net_spread = spread - total_fee_fraction.
+The scorer still uses raw spread for ranking, but the route filters out
+opportunities with net_profit_pct <= 0 after gold fees.
+
 Where:
-- spread = (ask - bid) / mid_price  (raw spread, no fee deduction)
+- spread = (ask - bid) / mid_price  (raw spread, no fee deduction here)
 - fill_probability = log1p(volume_24h) / log1p(max_volume)
 - momentum_penalty: filter-style (0.5 if very negative, 0.8 if slightly negative, 1.0 if positive)
 - vol_penalty = 1.0 / (1.0 + (volatility / vol_reference)^2)
@@ -26,11 +31,6 @@ QUANTIZED SCORING (P1-1):
   due to ceil()/floor() rounding. The quantized scorer computes the actual
   integer profit at each lot size and uses the effective spread from the
   minimum profitable lot for the final score.
-
-NOTE: Gold/commission fees have been intentionally excluded from all
-calculations to simplify the scoring model and avoid the complexity
-of direction-dependent fee asymmetry. The raw spread is used instead
-of spread_after_fees.
 """
 
 from __future__ import annotations
