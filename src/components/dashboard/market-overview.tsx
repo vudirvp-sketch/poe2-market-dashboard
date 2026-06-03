@@ -39,6 +39,7 @@ import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
 import { useState, useMemo } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { MarketOverviewSkeleton } from "./skeletons";
+import { DataFreshnessBadge } from "./data-freshness-badge";
 
 interface HeatmapItem {
   currency: string;
@@ -80,7 +81,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   // Single aggregated overview query — replaces 3 separate queries
   // and uses the new /api/poe2/overview endpoint which fetches
   // currencies+uniques with PriceLogs for proper top movers data.
-  const { data: overview, isLoading: overviewLoading } = useQuery<OverviewResponse>({
+  const { data: overview, isLoading: overviewLoading, dataUpdatedAt: overviewFetchedAt } = useQuery<OverviewResponse>({
     queryKey: ["overview", realm, league],
     queryFn: () =>
       fetchApi<OverviewResponse>("/api/poe2/overview", { realm, league }),
@@ -225,6 +226,13 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
 
   return (
     <div className="space-y-6">
+      {/* Data freshness badge for POE2Scout API tab */}
+      {overviewFetchedAt > 0 && (
+        <DataFreshnessBadge
+          fetchedAt={new Date(overviewFetchedAt).toISOString()}
+          dataAvailable={!!overview}
+        />
+      )}
       {/* §2.1: KPI Cards — 4 cards in a row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" aria-live="polite" aria-label={t("marketOverviewStats")}>
         <Card>

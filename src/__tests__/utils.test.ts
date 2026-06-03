@@ -27,7 +27,8 @@ describe("fmt", () => {
   });
 
   it("formats 0 correctly", () => {
-    expect(fmt(0)).toBe("0.00");
+    // fmt(0) returns "0" by design (special case for zero to avoid "0.00")
+    expect(fmt(0)).toBe("0");
   });
 
   it("formats numbers below 1000 without rounding up", () => {

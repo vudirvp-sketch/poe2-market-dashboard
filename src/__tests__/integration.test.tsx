@@ -106,7 +106,7 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
         baseCurrency: "exalted",
         fetchedAt: new Date().toISOString(),
       });
-      if (url.includes("/triangular")) return Promise.resolve({ cycles: [], total: 0 });
+      if (url.includes("/triangular")) return Promise.resolve({ opportunities: [], total: 0, fetchedAt: new Date().toISOString() });
       if (url.includes("/currencies")) return Promise.resolve({ currencies: [] });
       return Promise.resolve({});
     });

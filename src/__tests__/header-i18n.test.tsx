@@ -3,11 +3,15 @@
 // Verifies that the Header component correctly responds to locale changes
 // and that the language toggle cycles through all 4 locales.
 //
+// IMPORTANT: The language toggle and theme toggle are inside the "More" (⋮)
+// dropdown menu. Tests must first open this menu before interacting with
+// the language button.
+//
 // Parameterized: tests derive expected strings from a locale data map
 // instead of hardcoding the default locale, so they won't break if
 // DEFAULT_LOCALE changes in the i18n module.
 // ============================================================================
-import { renderWithProviders, screen, act } from "./test-utils";
+import { renderWithProviders, screen, act, fireEvent } from "./test-utils";
 import { Header } from "@/components/dashboard/header";
 import type { Locale } from "@/lib/i18n";
 
@@ -16,6 +20,7 @@ import type { Locale } from "@/lib/i18n";
 // ---------------------------------------------------------------------------
 const LOCALE_DATA: Record<Locale, {
   appTitle: string;
+  moreMenu: string;
   switchLanguage: string;
   localeLabel: string;
   refreshData: string;
@@ -23,6 +28,7 @@ const LOCALE_DATA: Record<Locale, {
 }> = {
   ru: {
     appTitle: "PoE2 Маркет",
+    moreMenu: "Ещё",
     switchLanguage: "Переключить язык",
     localeLabel: "RU",
     refreshData: "Обновить данные",
@@ -30,6 +36,7 @@ const LOCALE_DATA: Record<Locale, {
   },
   en: {
     appTitle: "PoE2 Market",
+    moreMenu: "More options",
     switchLanguage: "Switch language",
     localeLabel: "EN",
     refreshData: "Refresh data",
@@ -37,6 +44,7 @@ const LOCALE_DATA: Record<Locale, {
   },
   zh: {
     appTitle: "PoE2 市场",
+    moreMenu: "更多选项",
     switchLanguage: "切换语言",
     localeLabel: "中",
     refreshData: "刷新数据",
@@ -44,6 +52,7 @@ const LOCALE_DATA: Record<Locale, {
   },
   ko: {
     appTitle: "PoE2 시장",
+    moreMenu: "더 보기",
     switchLanguage: "언어 변경",
     localeLabel: "한",
     refreshData: "데이터 새로고침",
@@ -92,6 +101,42 @@ function nextLocale(current: Locale): Locale {
 }
 
 // ---------------------------------------------------------------------------
+// Helper: open the "More" dropdown menu to reveal language/theme buttons
+// ---------------------------------------------------------------------------
+function openMoreMenu(currentLocale: Locale = DEFAULT_LOCALE) {
+  const moreButton = screen.getByLabelText(LOCALE_DATA[currentLocale].moreMenu);
+  act(() => {
+    moreButton.click();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Helper: find the language toggle button (must open More menu first)
+// The button text is: "{t('switchLanguage')} ({LOCALE_LABELS[locale]})"
+// ---------------------------------------------------------------------------
+function getLanguageButton(currentLocale: Locale = DEFAULT_LOCALE): HTMLElement {
+  // The language button has the switchLanguage text and locale label
+  // It's a <button role="menuitem"> inside the More dropdown
+  const buttons = screen.getAllByRole("menuitem");
+  return buttons.find((btn) =>
+    btn.textContent?.includes(LOCALE_DATA[currentLocale].switchLanguage) ||
+    btn.textContent?.includes(LOCALE_DATA[currentLocale].localeLabel)
+  ) ?? buttons[buttons.length - 1];
+}
+
+// ---------------------------------------------------------------------------
+// Helper: click the language toggle to cycle to the next locale.
+// The "More" dropdown stays open after clicking the language button
+// (the click handler only calls cycleLocale(), it doesn't close the dropdown).
+// So we only need to open it ONCE, then click the language button repeatedly.
+// ---------------------------------------------------------------------------
+function cycleLocaleOnce(currentLocale: Locale): Locale {
+  const langButton = getLanguageButton(currentLocale);
+  act(() => { langButton.click(); });
+  return nextLocale(currentLocale);
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -120,7 +165,10 @@ describe("Header i18n integration", () => {
     it(`shows the current locale label (${LOCALE_DATA[DEFAULT_LOCALE].localeLabel} by default)`, () => {
       renderWithProviders(<Header {...baseProps} />);
 
-      const localeButton = screen.getByLabelText(LOCALE_DATA[DEFAULT_LOCALE].switchLanguage);
+      // Open the "More" menu to reveal the language button
+      openMoreMenu(DEFAULT_LOCALE);
+
+      const localeButton = getLanguageButton(DEFAULT_LOCALE);
       expect(localeButton).toBeInTheDocument();
       expect(localeButton).toHaveTextContent(LOCALE_DATA[DEFAULT_LOCALE].localeLabel);
     });
@@ -128,28 +176,25 @@ describe("Header i18n integration", () => {
     it(`cycles from ${DEFAULT_LOCALE} → ${nextLocale(DEFAULT_LOCALE)} on click`, () => {
       renderWithProviders(<Header {...baseProps} />);
 
-      const localeButton = screen.getByLabelText(LOCALE_DATA[DEFAULT_LOCALE].switchLanguage);
+      // Open the "More" menu
+      openMoreMenu(DEFAULT_LOCALE);
 
-      act(() => {
-        localeButton.click();
-      });
-
-      const next = nextLocale(DEFAULT_LOCALE);
+      // Click the language button — locale changes, dropdown stays open
+      const next = cycleLocaleOnce(DEFAULT_LOCALE);
       expect(screen.getByText(LOCALE_DATA[next].appTitle)).toBeInTheDocument();
     });
 
     it("cycles through all 4 locales (full round-trip)", () => {
       renderWithProviders(<Header {...baseProps} />);
 
+      // Open the "More" menu ONCE — it stays open after language clicks
+      openMoreMenu(DEFAULT_LOCALE);
+
       let currentLocale: Locale = DEFAULT_LOCALE;
 
       // Click through all 4 locales
       for (let i = 0; i < LOCALE_ORDER.length; i++) {
-        const next = nextLocale(currentLocale);
-
-        act(() => {
-          screen.getByLabelText(LOCALE_DATA[currentLocale].switchLanguage).click();
-        });
+        const next = cycleLocaleOnce(currentLocale);
 
         // Verify we're now on the next locale
         expect(screen.getByText(LOCALE_DATA[next].appTitle)).toBeInTheDocument();
@@ -170,16 +215,14 @@ describe("Header i18n integration", () => {
         renderWithProviders(<Header {...baseProps} />);
 
         // Navigate to the target locale
+        // Open the More menu once, then cycle through
+        openMoreMenu(DEFAULT_LOCALE);
         let current: Locale = DEFAULT_LOCALE;
         while (current !== targetLocale) {
-          const next = nextLocale(current);
-          act(() => {
-            screen.getByLabelText(LOCALE_DATA[current].switchLanguage).click();
-          });
-          current = next;
+          current = cycleLocaleOnce(current);
         }
 
-        // The refresh button should have the target locale's text
+        // The refresh button should have the target locale's aria-label
         expect(screen.getByLabelText(LOCALE_DATA[targetLocale].refreshData)).toBeInTheDocument();
       });
     });
@@ -187,14 +230,11 @@ describe("Header i18n integration", () => {
     it("shows search placeholder in Chinese when locale is ZH", () => {
       renderWithProviders(<Header {...baseProps} />);
 
-      // Navigate to ZH
+      // Navigate to ZH — open More menu once, then cycle through
+      openMoreMenu(DEFAULT_LOCALE);
       let current: Locale = DEFAULT_LOCALE;
       while (current !== "zh") {
-        const next = nextLocale(current);
-        act(() => {
-          screen.getByLabelText(LOCALE_DATA[current].switchLanguage).click();
-        });
-        current = next;
+        current = cycleLocaleOnce(current);
       }
 
       // Search input should have Chinese placeholder
@@ -204,11 +244,11 @@ describe("Header i18n integration", () => {
   });
 
   describe("accessibility labels", () => {
-    it("has aria-label on the language toggle button", () => {
+    it("has aria-label on the More menu button", () => {
       renderWithProviders(<Header {...baseProps} />);
 
-      const localeButton = screen.getByLabelText(LOCALE_DATA[DEFAULT_LOCALE].switchLanguage);
-      expect(localeButton).toHaveAttribute("aria-label", LOCALE_DATA[DEFAULT_LOCALE].switchLanguage);
+      const moreButton = screen.getByLabelText(LOCALE_DATA[DEFAULT_LOCALE].moreMenu);
+      expect(moreButton).toHaveAttribute("aria-label", LOCALE_DATA[DEFAULT_LOCALE].moreMenu);
     });
 
     it("has aria-label on the refresh button", () => {
@@ -221,10 +261,9 @@ describe("Header i18n integration", () => {
     it("updates aria-label when locale changes", () => {
       renderWithProviders(<Header {...baseProps} />);
 
-      // Switch to English
-      act(() => {
-        screen.getByLabelText(LOCALE_DATA[DEFAULT_LOCALE].switchLanguage).click();
-      });
+      // Switch to English via the More menu
+      openMoreMenu(DEFAULT_LOCALE);
+      cycleLocaleOnce(DEFAULT_LOCALE);
 
       // The refresh button's aria-label should now be in English
       const refreshButton = screen.getByLabelText(LOCALE_DATA.en.refreshData);

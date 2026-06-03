@@ -12,11 +12,8 @@ Provides:
     GET /api/prices/{pair}      — price for a specific pair
     GET /api/arbitrage/flips    — scored flip opportunities
     GET /api/arbitrage/triangular — triangular arbitrage cycles
-    GET /api/forecast/{currency} — price forecast for a currency
     GET /api/anomalies          — anomaly detection across currencies
     GET /api/storage-value/{currency} — projected value and hold/sell decision
-    GET /api/portfolio          — portfolio allocation
-    GET /api/portfolio/frontier — efficient frontier data
     POST /api/events            — create a manual event flag
     GET /api/events             — list active events
     GET /api/health             — health check
@@ -36,8 +33,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
-from backend.api.routes_forecast import router as forecast_router
-from backend.api.routes_portfolio import router as portfolio_router
 from backend.api.routes_events import router as events_router
 from backend.config import get_settings
 
@@ -243,8 +238,6 @@ app.add_middleware(
 # Register routers
 app.include_router(prices_router)
 app.include_router(arbitrage_router)
-app.include_router(forecast_router)
-app.include_router(portfolio_router)
 app.include_router(events_router)
 
 # Phase 2: Register new routers (will be created below)

@@ -94,14 +94,17 @@ const mockPricesData = {
 };
 
 const mockTriangularData = {
-  cycles: [
+  league: "vaal",
+  total: 1,
+  opportunities: [
     {
       cycle: ["divine", "exalted", "chaos", "divine"],
       netProfitPct: 2.5,
       stepRates: [1.5, 120.0, 0.005],
+      confidence: 0.85,
     },
   ],
-  total: 1,
+  fetchedAt: "2025-01-01T00:00:00Z",
 };
 
 const mockCurrenciesData = {
@@ -179,7 +182,7 @@ describe("CurrencyGraphTab", () => {
   it("shows no-nodes message when prices return empty rates", async () => {
     mockFetchApi.mockImplementation((url: string) => {
       if (url.includes("/prices")) return Promise.resolve(mockEmptyPricesData);
-      if (url.includes("/triangular")) return Promise.resolve({ cycles: [], total: 0 });
+      if (url.includes("/triangular")) return Promise.resolve({ opportunities: [], total: 0, fetchedAt: new Date().toISOString() });
       if (url.includes("/currencies")) return Promise.resolve(mockCurrenciesData);
       return Promise.resolve({});
     });
@@ -305,7 +308,7 @@ describe("CurrencyGraphTab", () => {
   it("does not render cycles section when no cycles detected", async () => {
     mockFetchApi.mockImplementation((url: string) => {
       if (url.includes("/prices")) return Promise.resolve(mockPricesData);
-      if (url.includes("/triangular")) return Promise.resolve({ cycles: [], total: 0 });
+      if (url.includes("/triangular")) return Promise.resolve({ opportunities: [], total: 0, fetchedAt: new Date().toISOString() });
       if (url.includes("/currencies")) return Promise.resolve(mockCurrenciesData);
       return Promise.resolve({});
     });

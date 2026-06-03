@@ -88,6 +88,7 @@ import {
   ExchangeTableSkeleton,
 } from "@/components/dashboard/skeletons";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { DataFreshnessBadge } from "@/components/dashboard/data-freshness-badge";
 
 import {
   fetchApi,
@@ -386,6 +387,7 @@ export function Dashboard() {
     isLoading: currenciesLoading,
     refetch: refetchCurrencies,
     error: currenciesError,
+    dataUpdatedAt: currenciesFetchedAt,
   } = useQuery({
     queryKey: [
       "currencies",
@@ -431,6 +433,7 @@ export function Dashboard() {
     isLoading: uniquesLoading,
     refetch: refetchUniques,
     error: uniquesError,
+    dataUpdatedAt: uniquesFetchedAt,
   } = useQuery({
     queryKey: [
       "uniques",
@@ -465,6 +468,7 @@ export function Dashboard() {
     isLoading: exchangeLoading,
     refetch: refetchExchange,
     error: exchangeError,
+    dataUpdatedAt: exchangeFetchedAt,
   } = useQuery({
     queryKey: ["exchange", realm, effectiveLeague],
     queryFn: () =>
@@ -980,6 +984,13 @@ export function Dashboard() {
 
             {/* ============ CURRENCIES TAB ============ */}
             <TabsContent value="currencies">
+              {/* Data freshness badge for POE2Scout API tab */}
+              {currenciesFetchedAt > 0 && (
+                <DataFreshnessBadge
+                  fetchedAt={new Date(currenciesFetchedAt).toISOString()}
+                  dataAvailable={!!currenciesData}
+                />
+              )}
               {isLoading ? (
                 <CurrencyGridSkeleton count={currenciesPerPage} />
               ) : activeError && !currenciesData ? (
@@ -1037,6 +1048,13 @@ export function Dashboard() {
 
             {/* ============ UNIQUES TAB ============ */}
             <TabsContent value="uniques">
+              {/* Data freshness badge for POE2Scout API tab */}
+              {uniquesFetchedAt > 0 && (
+                <DataFreshnessBadge
+                  fetchedAt={new Date(uniquesFetchedAt).toISOString()}
+                  dataAvailable={!!uniquesData}
+                />
+              )}
               {isLoading ? (
                 <UniqueTableSkeleton rows={15} />
               ) : activeError && !uniquesData ? (
@@ -1079,6 +1097,13 @@ export function Dashboard() {
 
             {/* ============ EXCHANGE TAB ============ */}
             <TabsContent value="exchange">
+              {/* Data freshness badge for POE2Scout API tab */}
+              {exchangeFetchedAt > 0 && (
+                <DataFreshnessBadge
+                  fetchedAt={new Date(exchangeFetchedAt).toISOString()}
+                  dataAvailable={!!exchangeData}
+                />
+              )}
               {isLoading ? (
                 <ExchangeTableSkeleton rows={15} />
               ) : activeError && !exchangeData ? (

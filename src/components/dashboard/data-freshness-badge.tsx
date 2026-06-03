@@ -16,7 +16,7 @@
 // ============================================================================
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import { Clock, AlertTriangle, Database } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
@@ -79,9 +79,19 @@ export const DataFreshnessBadge = memo(function DataFreshnessBadge({
 }: DataFreshnessBadgeProps) {
   const { t } = useI18n();
 
+  // Auto-refresh: re-evaluate freshness every 60 seconds so the badge
+  // transitions from LIVE → STALE → CACHED without user interaction.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!fetchedAt) return;
+    const interval = setInterval(() => setTick((v) => v + 1), 60_000);
+    return () => clearInterval(interval);
+  }, [fetchedAt]);
+
+  // tick is included in deps to force re-computation every minute
   const level = useMemo(
-    () => computeFreshness(fetchedAt, dataAvailable, fromCache),
-    [fetchedAt, dataAvailable, fromCache],
+    () => { void tick; return computeFreshness(fetchedAt, dataAvailable, fromCache); },
+    [fetchedAt, dataAvailable, fromCache, tick],
   );
 
   // Config per level
@@ -112,15 +122,16 @@ export const DataFreshnessBadge = memo(function DataFreshnessBadge({
 
   const { icon, label, className } = config[level];
 
-  // Format the "fetched X min ago" text
+  // Format the "fetched X min ago" text (tick forces re-computation every minute)
   const ageText = useMemo(() => {
+    void tick;
     if (!fetchedAt) return null;
     const fetched = new Date(fetchedAt).getTime();
     if (isNaN(fetched)) return null;
     const ageMin = Math.round((Date.now() - fetched) / 60_000);
     if (ageMin < 1) return t("dataFreshnessJustNow");
     return t("dataFreshnessAgeMinutes", { "0": String(ageMin) });
-  }, [fetchedAt, t]);
+  }, [fetchedAt, t, tick]);
 
   if (compact) {
     return (

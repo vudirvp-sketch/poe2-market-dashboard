@@ -74,8 +74,9 @@ test.describe("Smoke Tests", () => {
 
   test("language switcher is accessible via More menu", async ({ page }) => {
     // The language switcher is inside the "More" (⋮) dropdown menu.
-    // First open the More menu, then verify the Globe button is visible.
-    const moreButton = page.locator('button[aria-label="More options"]').first();
+    // The More button aria-label is i18n'd ("Ещё" in ru, "More options" in en).
+    // Use a resilient selector: the MoreVertical icon button with aria-expanded.
+    const moreButton = page.locator('button[aria-label="Ещё"], button[aria-label="More options"], button[aria-label="更多选项"], button[aria-label="더 보기"]').first();
     await expect(moreButton).toBeVisible({ timeout: 5000 });
     await moreButton.click();
     await page.waitForTimeout(500);
@@ -85,10 +86,15 @@ test.describe("Smoke Tests", () => {
     await expect(globeButton).toBeVisible({ timeout: 5000 });
   });
 
-  test("theme toggle button is visible", async ({ page }) => {
-    // After mount, the theme toggle should be visible (Sun or Moon icon)
-    // Wait a moment for client-side hydration
-    await page.waitForTimeout(1000);
+  test("theme toggle button is accessible via More menu", async ({ page }) => {
+    // The theme toggle is inside the "More" (⋮) dropdown menu.
+    // First open the More menu, then verify the Sun/Moon button is visible.
+    const moreButton = page.locator('button[aria-label="Ещё"], button[aria-label="More options"], button[aria-label="更多选项"], button[aria-label="더 보기"]').first();
+    await expect(moreButton).toBeVisible({ timeout: 5000 });
+    await moreButton.click();
+    await page.waitForTimeout(500);
+
+    // After the dropdown opens, the theme toggle (Sun or Moon icon) should be visible
     const themeButton = page.locator('button:has(svg.lucide-sun), button:has(svg.lucide-moon)').first();
     await expect(themeButton).toBeVisible({ timeout: 5000 });
   });
@@ -116,8 +122,10 @@ test.describe("Smoke Tests", () => {
     await leagueOption.click();
     await page.waitForTimeout(2000);
 
-    // Wait for the heatmap card to appear — it contains the grid icon
-    const heatmapCard = page.locator('text=Price Heatmap').first();
+    // Wait for the heatmap card to appear — it contains the i18n'd heatmap title
+    // The title is i18n'd: "Тепловая карта цен (24ч)" in ru, "Price Heatmap (24h)" in en
+    // Use a regex-based text matcher that accepts either locale
+    const heatmapCard = page.locator(':text("Тепловая карта цен"), :text("Price Heatmap")').first();
     await expect(heatmapCard).toBeVisible({ timeout: 15000 });
 
     // The "Market Tops" section should NOT contain the raw English string
