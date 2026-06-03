@@ -39,7 +39,7 @@ import type {
 } from "./types";
 
 // ---------- Configurable API Base URL ----------
-const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
+export const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
 
 // ---------- CORS Proxy fallback ----------
 // When the direct API call fails with ECONNRESET/ETIMEDOUT (common from
@@ -60,10 +60,29 @@ let corsProxyLastCheck = 0;
 const CORS_PROXY_CONFIRM_TTL = 5 * 60_000; // Re-confirm every 5 minutes
 
 // ---------- Stale-while-revalidate cache ----------
-const cache = new Map<string, { data: unknown; ts: number }>();
-const CACHE_TTL = 60_000;          // 60s fresh
-const CACHE_STALE_TTL = 1_800_000;  // 30min — serve stale up to this age
+export const cache = new Map<string, { data: unknown; ts: number }>();
+export const CACHE_TTL = 60_000;          // 60s fresh
+export const CACHE_STALE_TTL = 1_800_000;  // 30min — serve stale up to this age
 const MAX_CACHE_SIZE = 500;
+
+/**
+ * Pre-populate a cache entry from an external source (e.g., snapshot file).
+ *
+ * This is used by the cache-prepopulator to seed the in-memory cache with
+ * data from a JSON snapshot so the dashboard works even when the upstream
+ * API is unreachable on first load.
+ *
+ * Entries inserted this way should have `ts` set to
+ * `Date.now() - CACHE_STALE_TTL + 60_000` so they are considered "stale
+ * but usable" — cachedFetch will serve them immediately while triggering
+ * background revalidation.
+ */
+export function prepopulateCacheEntry(url: string, data: unknown, ts: number): void {
+  // Don't overwrite entries that are fresher than what we're inserting
+  const existing = cache.get(url);
+  if (existing && existing.ts >= ts) return;
+  cache.set(url, { data, ts });
+}
 
 // Fix 4.6: Periodic cleanup of stale entries that are well past their TTL
 function cleanupStaleCacheEntries(): void {
@@ -2432,4 +2451,59 @@ export function isCircuitBreakerOpen(): boolean {
     return false;
   }
   return true;
+}
+
+// ============================================================================
+// Auto-prepopulate cache from snapshot (server-side only)
+//
+// When the app starts and the POE2Scout API is unreachable (e.g., blocked
+// in Russia), the dashboard would show empty data. This block reads a
+// pre-built snapshot JSON file at module load time and pre-populates the
+// in-memory cache so the dashboard has data to show immediately.
+//
+// Entries are marked as "stale but usable" so cachedFetch will serve them
+// right away while triggering background revalidation when the API becomes
+// reachable.
+// ============================================================================
+
+if (typeof window === "undefined" && typeof globalThis !== "undefined") {
+  try {
+    // Use dynamic require to avoid bundling fs in client builds
+    const _fs = require("fs") as typeof import("fs");
+    const _path = require("path") as typeof import("path");
+    const snapshotPath = _path.resolve(__dirname, "../data/cache-snapshot.json");
+
+    if (_fs.existsSync(snapshotPath)) {
+      const raw = _fs.readFileSync(snapshotPath, "utf-8");
+      const snapshot = JSON.parse(raw) as {
+        version: number;
+        timestamp: string;
+        entries: Record<string, { data: unknown; ts: number }>;
+      };
+
+      if (snapshot.version === 1 && snapshot.entries) {
+        // Set ts so entries are "stale but usable" — the system will try to
+        // revalidate them in the background while serving the snapshot data
+        const staleTs = Date.now() - CACHE_STALE_TTL + 60_000;
+        let count = 0;
+        for (const [url, entry] of Object.entries(snapshot.entries)) {
+          prepopulateCacheEntry(url, entry.data, entry.ts ?? staleTs);
+          count++;
+        }
+        if (count > 0) {
+          console.info(
+            `[poe2api] Pre-populated cache with ${count} entries from snapshot ` +
+            `(timestamp: ${snapshot.timestamp})`
+          );
+        }
+      }
+    }
+  } catch (err) {
+    // Non-critical — if the snapshot can't be read, the app still works;
+    // it just won't have pre-populated data
+    console.warn(
+      "[poe2api] Failed to pre-populate cache from snapshot:",
+      err instanceof Error ? err.message : err
+    );
+  }
 }

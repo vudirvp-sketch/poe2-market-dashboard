@@ -10,12 +10,30 @@
 // - Retry with exponential backoff on transient errors (ECONNRESET, timeout)
 // - Better error categorization for frontend (offline, timeout, insufficient_data, server_error)
 // - Request deduplication for concurrent identical requests
+// - CORS proxy fallback: when the backend can't reach poe2scout.com directly
+//   (e.g. if the Next.js server and backend are both behind a blocked network),
+//   we try through the Cloudflare Worker CORS proxy. The backend itself talks
+//   to poe2scout.com — this fallback helps when the backend's own connection
+//   to poe2scout.com is blocked.
 // ============================================================================
 
 import { NextResponse } from "next/server";
 import { transformKeys } from "./case-transform";
 
 const FLIPPER_API_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
+
+// CORS Proxy for backend — if the flipper backend also can't reach poe2scout.com
+// (same blocked network), it will return degraded/unreachable status. We can't
+// proxy through CORS here directly (the backend makes its own API calls), but
+// we track the fallback hint so the frontend can inform the user.
+const FLIPPER_CORS_PROXY_URL = process.env.FLIPPER_CORS_PROXY_URL || "";
+
+// Circuit breaker for flipper-backend requests
+let flipperCircuitBreakerOpen = false;
+let flipperCircuitBreakerOpenSince = 0;
+const FLIPPER_CB_COOLDOWN = 60_000; // 60s
+let flipperConsecutiveFailures = 0;
+const FLIPPER_CB_THRESHOLD = 5; // Open after 5 consecutive failures
 
 // --- Request deduplication ---
 const pendingRequests = new Map<string, Promise<Response>>();
@@ -69,6 +87,28 @@ async function _doProxyWithRetry(
 ): Promise<Response> {
   let lastError: Error | null = null;
 
+  // Circuit breaker: skip request if backend is known-down
+  if (flipperCircuitBreakerOpen) {
+    const elapsed = Date.now() - flipperCircuitBreakerOpenSince;
+    if (elapsed < FLIPPER_CB_COOLDOWN) {
+      const retryIn = Math.round((FLIPPER_CB_COOLDOWN - elapsed) / 1000);
+      return NextResponse.json(
+        {
+          error: "Flipper backend unavailable",
+          error_type: "backend_offline",
+          detail: `Circuit breaker open — backend unreachable (retry in ${retryIn}s)`,
+          hint: "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000",
+          cors_proxy_hint: FLIPPER_CORS_PROXY_URL
+            ? "Backend upstream (poe2scout.com) may be blocked. Configure POE2_CORS_PROXY_URL for the frontend."
+            : undefined,
+        },
+        { status: 503 },
+      );
+    }
+    // Cooldown expired — try one request to test
+    flipperCircuitBreakerOpen = false;
+  }
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const fetchOptions: RequestInit = {
@@ -91,6 +131,13 @@ async function _doProxyWithRetry(
 
       const res = await fetch(url, fetchOptions);
 
+      // Reset circuit breaker on any HTTP response (even errors)
+      // — the backend is reachable, just returning errors
+      flipperConsecutiveFailures = 0;
+      if (flipperCircuitBreakerOpen) {
+        flipperCircuitBreakerOpen = false;
+      }
+
       // ── Backend responded, but with 503 (insufficient data, etc.) ──
       if (res.status === 503) {
         let data: Record<string, unknown>;
@@ -99,6 +146,16 @@ async function _doProxyWithRetry(
         } catch {
           data = { detail: "Service Unavailable" };
         }
+
+        // If the backend reports that poe2scout.com is unreachable,
+        // add a CORS proxy hint so the frontend can suggest a fix
+        const providerStatus = data.provider as string | undefined;
+        if (providerStatus === "unreachable" && FLIPPER_CORS_PROXY_URL) {
+          data.cors_proxy_hint =
+            "Backend cannot reach poe2scout.com. " +
+            "Configure the backend to use a CORS proxy or set POE2_CORS_PROXY_URL for the frontend.";
+        }
+
         return NextResponse.json(
           {
             ...data,
@@ -166,8 +223,26 @@ async function _doProxyWithRetry(
         msg.includes("timeout") ||
         msg.includes("aborted");
 
+      // Update circuit breaker on connection failures
+      flipperConsecutiveFailures++;
+      if (flipperConsecutiveFailures >= FLIPPER_CB_THRESHOLD) {
+        flipperCircuitBreakerOpen = true;
+        flipperCircuitBreakerOpenSince = Date.now();
+        console.warn(
+          `[flipper-proxy] Circuit breaker OPENED — backend appears unreachable. ` +
+          `Will retry in ${FLIPPER_CB_COOLDOWN / 1000}s. Consecutive failures: ${flipperConsecutiveFailures}`
+        );
+      }
+
       if (isTransient && attempt < maxRetries) {
-        const delay = 500 * Math.pow(2, attempt);
+        // Exponential backoff with jitter
+        const baseDelay = 500 * Math.pow(2, attempt);
+        const jitter = Math.random() * 300;
+        const delay = Math.min(baseDelay + jitter, 5000);
+        console.warn(
+          `[flipper-proxy] Transient error on attempt ${attempt + 1}/${maxRetries + 1}: ` +
+          `${msg}. Retrying in ${Math.round(delay)}ms...`
+        );
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
@@ -190,15 +265,22 @@ async function _doProxyWithRetry(
     errorType = "backend_connection_reset";
   }
 
-  return NextResponse.json(
-    {
-      error: "Flipper backend unavailable",
-      error_type: errorType,
-      detail: message,
-      hint: "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000",
-    },
-    { status: 503 },
-  );
+  const response: Record<string, unknown> = {
+    error: "Flipper backend unavailable",
+    error_type: errorType,
+    detail: message,
+    hint: "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000",
+  };
+
+  // If the backend is offline AND a CORS proxy is configured, add a hint
+  // that the upstream (poe2scout.com) might also be blocked
+  if (FLIPPER_CORS_PROXY_URL && (errorType === "backend_offline" || errorType === "backend_connection_reset")) {
+    response.cors_proxy_hint =
+      "If the backend cannot reach poe2scout.com, set POE2_CORS_PROXY_URL " +
+      "in your .env.local to your Cloudflare Worker URL.";
+  }
+
+  return NextResponse.json(response, { status: 503 });
 }
 
 // ============================================================================

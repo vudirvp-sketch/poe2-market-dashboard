@@ -1,0 +1,426 @@
+{
+  "version": 1,
+  "timestamp": "2026-06-03T00:00:00Z",
+  "entries": {
+    "https://api.poe2scout.com/api/Realms": {
+      "data": [
+        {
+          "value": "Fate of the Vaal",
+          "label": "Fate of the Vaal",
+          "game_api_id": "poe2",
+          "realm_api_id": "poe2",
+          "trade_api_path": "/trade2",
+          "default_league_value": "Fate of the Vaal"
+        },
+        {
+          "value": "Mirage",
+          "label": "Mirage",
+          "game_api_id": "poe",
+          "realm_api_id": "pc",
+          "trade_api_path": "/trade",
+          "default_league_value": "Mirage"
+        },
+        {
+          "value": "Mirage",
+          "label": "Mirage",
+          "game_api_id": "poe",
+          "realm_api_id": "xbox",
+          "trade_api_path": "/trade",
+          "default_league_value": "Mirage"
+        },
+        {
+          "value": "Mirage",
+          "label": "Mirage",
+          "game_api_id": "poe",
+          "realm_api_id": "sony",
+          "trade_api_path": "/trade",
+          "default_league_value": "Mirage"
+        }
+      ],
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues": {
+      "data": [
+        {
+          "Value": "Fate of the Vaal",
+          "ShortName": "vaal",
+          "IsCurrent": false,
+          "DivinePrice": 0,
+          "ChaosDivinePrice": 0,
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "BaseCurrencyIconUrl": null,
+          "ExaltedCurrencyText": "Exalted Orb",
+          "ExaltedCurrencyIconUrl": null,
+          "DivineCurrencyText": "Divine Orb",
+          "DivineCurrencyIconUrl": null,
+          "ChaosCurrencyText": "Chaos Orb",
+          "ChaosCurrencyIconUrl": null,
+          "DefaultCurrency": {
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "IconUrl": null,
+            "RelativePrice": 1
+          }
+        },
+        {
+          "Value": "HC Fate of the Vaal",
+          "ShortName": "vaalhc",
+          "IsCurrent": false,
+          "DivinePrice": 0,
+          "ChaosDivinePrice": 0,
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "BaseCurrencyIconUrl": null,
+          "ExaltedCurrencyText": "Exalted Orb",
+          "ExaltedCurrencyIconUrl": null,
+          "DivineCurrencyText": "Divine Orb",
+          "DivineCurrencyIconUrl": null,
+          "ChaosCurrencyText": "Chaos Orb",
+          "ChaosCurrencyIconUrl": null,
+          "DefaultCurrency": {
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "IconUrl": null,
+            "RelativePrice": 1
+          }
+        },
+        {
+          "Value": "Runes of Aldur",
+          "ShortName": "runes",
+          "IsCurrent": false,
+          "DivinePrice": 0,
+          "ChaosDivinePrice": 0,
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "BaseCurrencyIconUrl": null,
+          "ExaltedCurrencyText": "Exalted Orb",
+          "ExaltedCurrencyIconUrl": null,
+          "DivineCurrencyText": "Divine Orb",
+          "DivineCurrencyIconUrl": null,
+          "ChaosCurrencyText": "Chaos Orb",
+          "ChaosCurrencyIconUrl": null,
+          "DefaultCurrency": {
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "IconUrl": null,
+            "RelativePrice": 1
+          }
+        },
+        {
+          "Value": "Standard",
+          "ShortName": "standard",
+          "IsCurrent": false,
+          "DivinePrice": 0,
+          "ChaosDivinePrice": 0,
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "BaseCurrencyIconUrl": null,
+          "ExaltedCurrencyText": "Exalted Orb",
+          "ExaltedCurrencyIconUrl": null,
+          "DivineCurrencyText": "Divine Orb",
+          "DivineCurrencyIconUrl": null,
+          "ChaosCurrencyText": "Chaos Orb",
+          "ChaosCurrencyIconUrl": null,
+          "DefaultCurrency": {
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "IconUrl": null,
+            "RelativePrice": 1
+          }
+        },
+        {
+          "Value": "Hardcore",
+          "ShortName": "hardcore",
+          "IsCurrent": false,
+          "DivinePrice": 0,
+          "ChaosDivinePrice": 0,
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "BaseCurrencyIconUrl": null,
+          "ExaltedCurrencyText": "Exalted Orb",
+          "ExaltedCurrencyIconUrl": null,
+          "DivineCurrencyText": "Divine Orb",
+          "DivineCurrencyIconUrl": null,
+          "ChaosCurrencyText": "Chaos Orb",
+          "ChaosCurrencyIconUrl": null,
+          "DefaultCurrency": {
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "IconUrl": null,
+            "RelativePrice": 1
+          }
+        }
+      ],
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/ExchangeSnapshot": {
+      "data": {
+        "Epoch": 1748908800,
+        "Volume": "3231895.00000000",
+        "MarketCap": "158420000.00000000",
+        "BaseCurrencyApiId": "exalted",
+        "BaseCurrencyText": "Exalted Orb"
+      },
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotPairs": {
+      "data": [
+        {
+          "CurrencyExchangeSnapshotPairId": 1,
+          "CurrencyExchangeSnapshotId": 1,
+          "Volume": "1683.00000000",
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "CurrencyOne": {
+            "CurrencyItemId": 1,
+            "ItemId": 1,
+            "CurrencyCategoryId": 1,
+            "ApiId": "divine",
+            "Text": "Divine Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null
+          },
+          "CurrencyTwo": {
+            "CurrencyItemId": 2,
+            "ItemId": 2,
+            "CurrencyCategoryId": 1,
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null
+          },
+          "CurrencyOneData": {
+            "ValueTraded": "523.45000000",
+            "RelativePrice": "0.13000000",
+            "StockValue": "68.05000000",
+            "VolumeTraded": 1683,
+            "HighestStock": 52
+          },
+          "CurrencyTwoData": {
+            "ValueTraded": "4026.54000000",
+            "RelativePrice": "1.00000000",
+            "StockValue": "523.45000000",
+            "VolumeTraded": 4026,
+            "HighestStock": 387
+          }
+        },
+        {
+          "CurrencyExchangeSnapshotPairId": 2,
+          "CurrencyExchangeSnapshotId": 1,
+          "Volume": "952.00000000",
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "CurrencyOne": {
+            "CurrencyItemId": 3,
+            "ItemId": 3,
+            "CurrencyCategoryId": 1,
+            "ApiId": "chaos",
+            "Text": "Chaos Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null
+          },
+          "CurrencyTwo": {
+            "CurrencyItemId": 2,
+            "ItemId": 2,
+            "CurrencyCategoryId": 1,
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null
+          },
+          "CurrencyOneData": {
+            "ValueTraded": "28560.00000000",
+            "RelativePrice": "0.00420000",
+            "StockValue": "119.95000000",
+            "VolumeTraded": 952,
+            "HighestStock": 284
+          },
+          "CurrencyTwoData": {
+            "ValueTraded": "119.95000000",
+            "RelativePrice": "1.00000000",
+            "StockValue": "28560.00000000",
+            "VolumeTraded": 119,
+            "HighestStock": 952
+          }
+        },
+        {
+          "CurrencyExchangeSnapshotPairId": 3,
+          "CurrencyExchangeSnapshotId": 1,
+          "Volume": "340.00000000",
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "CurrencyOne": {
+            "CurrencyItemId": 4,
+            "ItemId": 4,
+            "CurrencyCategoryId": 2,
+            "ApiId": "chance",
+            "Text": "Chance Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null
+          },
+          "CurrencyTwo": {
+            "CurrencyItemId": 2,
+            "ItemId": 2,
+            "CurrencyCategoryId": 1,
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null
+          },
+          "CurrencyOneData": {
+            "ValueTraded": "6.80000000",
+            "RelativePrice": "0.02000000",
+            "StockValue": "0.34000000",
+            "VolumeTraded": 340,
+            "HighestStock": 120
+          },
+          "CurrencyTwoData": {
+            "ValueTraded": "0.34000000",
+            "RelativePrice": "1.00000000",
+            "StockValue": "6.80000000",
+            "VolumeTraded": 0,
+            "HighestStock": 340
+          }
+        }
+      ],
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/SnapshotHistory?Limit=24": {
+      "data": {
+        "Data": [
+          { "Epoch": 1748822400, "MarketCap": "155200000.00000000", "Volume": "3150000.00000000" },
+          { "Epoch": 1748826000, "MarketCap": "155800000.00000000", "Volume": "3180000.00000000" },
+          { "Epoch": 1748829600, "MarketCap": "156100000.00000000", "Volume": "3195000.00000000" },
+          { "Epoch": 1748833200, "MarketCap": "155900000.00000000", "Volume": "3201000.00000000" },
+          { "Epoch": 1748836800, "MarketCap": "156500000.00000000", "Volume": "3210000.00000000" },
+          { "Epoch": 1748840400, "MarketCap": "157200000.00000000", "Volume": "3225000.00000000" },
+          { "Epoch": 1748844000, "MarketCap": "156800000.00000000", "Volume": "3190000.00000000" },
+          { "Epoch": 1748847600, "MarketCap": "157500000.00000000", "Volume": "3208000.00000000" },
+          { "Epoch": 1748851200, "MarketCap": "158000000.00000000", "Volume": "3215000.00000000" },
+          { "Epoch": 1748854800, "MarketCap": "157800000.00000000", "Volume": "3198000.00000000" },
+          { "Epoch": 1748858400, "MarketCap": "158200000.00000000", "Volume": "3220000.00000000" },
+          { "Epoch": 1748862000, "MarketCap": "158600000.00000000", "Volume": "3230000.00000000" },
+          { "Epoch": 1748865600, "MarketCap": "158100000.00000000", "Volume": "3218000.00000000" },
+          { "Epoch": 1748869200, "MarketCap": "158800000.00000000", "Volume": "3240000.00000000" },
+          { "Epoch": 1748872800, "MarketCap": "159200000.00000000", "Volume": "3250000.00000000" },
+          { "Epoch": 1748876400, "MarketCap": "158900000.00000000", "Volume": "3235000.00000000" },
+          { "Epoch": 1748880000, "MarketCap": "159500000.00000000", "Volume": "3260000.00000000" },
+          { "Epoch": 1748883600, "MarketCap": "159100000.00000000", "Volume": "3245000.00000000" },
+          { "Epoch": 1748887200, "MarketCap": "159800000.00000000", "Volume": "3270000.00000000" },
+          { "Epoch": 1748890800, "MarketCap": "159500000.00000000", "Volume": "3255000.00000000" },
+          { "Epoch": 1748894400, "MarketCap": "160000000.00000000", "Volume": "3280000.00000000" },
+          { "Epoch": 1748898000, "MarketCap": "159700000.00000000", "Volume": "3265000.00000000" },
+          { "Epoch": 1748901600, "MarketCap": "160200000.00000000", "Volume": "3290000.00000000" },
+          { "Epoch": 1748905200, "MarketCap": "158420000.00000000", "Volume": "3231895.00000000" }
+        ],
+        "Meta": { "HasMore": true },
+        "BaseCurrencyApiId": "exalted",
+        "BaseCurrencyText": "Exalted Orb"
+      },
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/ReferenceCurrencies": {
+      "data": [
+        { "ApiId": "exalted", "Text": "Exalted Orb", "IconUrl": null, "RelativePrice": 1 },
+        { "ApiId": "divine", "Text": "Divine Orb", "IconUrl": null, "RelativePrice": 0.13 },
+        { "ApiId": "chaos", "Text": "Chaos Orb", "IconUrl": null, "RelativePrice": 0.0042 }
+      ],
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/Items/Categories": {
+      "data": {
+        "UniqueCategories": [
+          { "ItemCategoryId": 1, "ApiId": "armour", "Label": "Armour", "Icon": "armour" },
+          { "ItemCategoryId": 2, "ApiId": "weapon", "Label": "Weapons", "Icon": "weapon" },
+          { "ItemCategoryId": 3, "ApiId": "accessory", "Label": "Accessories", "Icon": "accessory" },
+          { "ItemCategoryId": 4, "ApiId": "jewel", "Label": "Jewels", "Icon": "jewel" }
+        ],
+        "CurrencyCategories": [
+          { "CurrencyCategoryId": 1, "ApiId": "currency", "Label": "Currency", "Icon": "currency" },
+          { "CurrencyCategoryId": 2, "ApiId": "essence", "Label": "Essences", "Icon": "essence" },
+          { "CurrencyCategoryId": 3, "ApiId": "rune", "Label": "Runes", "Icon": "rune" },
+          { "CurrencyCategoryId": 4, "ApiId": "vaal", "Label": "Vaal", "Icon": "vaal" }
+        ]
+      },
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/Currencies/ByCategory?Category=currency&Page=1&PerPage=250": {
+      "data": {
+        "CurrentPage": 1,
+        "Pages": 1,
+        "Total": 3,
+        "Items": [
+          {
+            "CurrencyItemId": 2,
+            "ItemId": 2,
+            "CurrencyCategoryId": 1,
+            "ApiId": "exalted",
+            "Text": "Exalted Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null,
+            "PriceLogs": [
+              { "Price": 1.0, "Time": "2026-06-02T00:00:00Z", "Quantity": 500 },
+              { "Price": 1.0, "Time": "2026-06-01T00:00:00Z", "Quantity": 450 }
+            ],
+            "CurrentPrice": 1.0,
+            "CurrentQuantity": 500
+          },
+          {
+            "CurrencyItemId": 1,
+            "ItemId": 1,
+            "CurrencyCategoryId": 1,
+            "ApiId": "divine",
+            "Text": "Divine Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null,
+            "PriceLogs": [
+              { "Price": 0.13, "Time": "2026-06-02T00:00:00Z", "Quantity": 200 },
+              { "Price": 0.135, "Time": "2026-06-01T00:00:00Z", "Quantity": 180 }
+            ],
+            "CurrentPrice": 0.13,
+            "CurrentQuantity": 200
+          },
+          {
+            "CurrencyItemId": 3,
+            "ItemId": 3,
+            "CurrencyCategoryId": 1,
+            "ApiId": "chaos",
+            "Text": "Chaos Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": null,
+            "ItemMetadata": null,
+            "PriceLogs": [
+              { "Price": 0.0042, "Time": "2026-06-02T00:00:00Z", "Quantity": 1500 },
+              { "Price": 0.0044, "Time": "2026-06-01T00:00:00Z", "Quantity": 1400 }
+            ],
+            "CurrentPrice": 0.0042,
+            "CurrentQuantity": 1500
+          }
+        ]
+      },
+      "ts": 1748908800000
+    },
+    "https://api.poe2scout.com/api/poe2/Leagues/vaal/Items?Page=1&PerPage=50": {
+      "data": {
+        "CurrentPage": 1,
+        "Pages": 10,
+        "Total": 500,
+        "Items": [
+          { "ItemId": 101, "CategoryApiId": "armour", "Text": "Windscream Boots", "Name": "Windscream", "Type": "Armour", "ApiId": "windscream", "CurrentPrice": 15.5, "IconUrl": null },
+          { "ItemId": 102, "CategoryApiId": "weapon", "Text": "Hezmana Bloodlust", "Name": "Hezmana", "Type": "Weapon", "ApiId": "hezmana", "CurrentPrice": 8.2, "IconUrl": null },
+          { "ItemId": 103, "CategoryApiId": "accessory", "Text": "Kaom's Sign", "Name": "Kaom's Sign", "Type": "Accessory", "ApiId": "kaoms-sign", "CurrentPrice": 3.1, "IconUrl": null }
+        ]
+      },
+      "ts": 1748908800000
+    }
+  }
+}

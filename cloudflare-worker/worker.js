@@ -7,12 +7,16 @@
 //   the API is blocked (e.g. Russian IPs). The Worker runs on Cloudflare's
 //   edge network, which is not subject to the same blocking.
 //
-// DEPLOYMENT:
+// DEPLOYMENT (quick):
 //   1. Install Wrangler CLI:  npm install -g wrangler
 //   2. Login:                 wrangler login
 //   3. Deploy:                wrangler deploy
 //   4. Note the output URL (e.g. https://poe2scout-proxy.your-account.workers.dev)
-//   5. In your .env.local:    POE2_API_BASE_URL=https://poe2scout-proxy.your-account.workers.dev/api
+//   5. In your .env.local:    POE2_CORS_PROXY_URL=https://poe2scout-proxy.your-account.workers.dev/api
+//
+// DEPLOYMENT (custom domain):
+//   See wrangler.toml — uncomment and edit the `routes` section.
+//   Then: wrangler deploy
 //
 // RATE LIMITS (Free Tier):
 //   - 100,000 requests/day
@@ -24,6 +28,7 @@
 //   - Passes through all query parameters
 //   - Preserves original response status codes and headers
 //   - Adds CORS headers for browser compatibility
+//   - Request logging for monitoring
 // ============================================================================
 
 const UPSTREAM_BASE = 'https://api.poe2scout.com/api';
@@ -43,8 +48,47 @@ function isOriginAllowed(origin) {
   return ALLOWED_ORIGINS.some(pattern => pattern.test(origin));
 }
 
+// ============================================================================
+// Analytics / Logging
+// ============================================================================
+// Track request counts by path prefix for monitoring.
+// This data is stored in-memory (resets on Worker restart) and is accessible
+// via GET /__analytics (only from allowed origins).
+
+const analytics = {
+  totalRequests: 0,
+  upstreamSuccesses: 0,
+  upstreamFailures: 0,
+  byPath: {},       // { "/Realms": 42, "/poe2/Leagues": 15, ... }
+  byStatus: {},     // { "200": 100, "502": 3, ... }
+  startTime: Date.now(),
+  lastRequest: null,
+};
+
+function trackRequest(pathname, status, durationMs) {
+  analytics.totalRequests++;
+  analytics.lastRequest = new Date().toISOString();
+
+  if (status >= 200 && status < 400) {
+    analytics.upstreamSuccesses++;
+  } else {
+    analytics.upstreamFailures++;
+  }
+
+  // Extract the API path segment for grouping (e.g., "/Realms", "/{realm}/Leagues")
+  const segments = pathname.replace(/^\/api/, '').split('/').filter(Boolean);
+  const pathKey = segments.length >= 2
+    ? `/${segments[0]}/${segments[1]}`
+    : segments.length === 1
+      ? `/${segments[0]}`
+      : '/';
+
+  analytics.byPath[pathKey] = (analytics.byPath[pathKey] || 0) + 1;
+  analytics.byStatus[String(status)] = (analytics.byStatus[String(status)] || 0) + 1;
+}
+
 export default {
-  async fetch(request) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
 
@@ -61,14 +105,32 @@ export default {
       });
     }
 
+    // ── Analytics endpoint (for monitoring) ──
+    if (url.pathname === '/__analytics' || url.pathname === '/api/__analytics') {
+      const uptime = Math.round((Date.now() - analytics.startTime) / 1000);
+      return new Response(JSON.stringify({
+        uptime_seconds: uptime,
+        total_requests: analytics.totalRequests,
+        upstream_successes: analytics.upstreamSuccesses,
+        upstream_failures: analytics.upstreamFailures,
+        success_rate: analytics.totalRequests > 0
+          ? (analytics.upstreamSuccesses / analytics.totalRequests * 100).toFixed(1) + '%'
+          : 'N/A',
+        by_path: analytics.byPath,
+        by_status: analytics.byStatus,
+        last_request: analytics.lastRequest,
+        worker_version: '1.1.0',
+      }, null, 2), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': isOriginAllowed(origin) ? (origin || '*') : '',
+        },
+      });
+    }
+
     // Build upstream URL: /api/* paths map to poe2scout API
-    // The worker serves at https://worker.dev/api/... so the path already
-    // includes /api. We strip the /api prefix and forward the rest.
     let upstreamPath = url.pathname;
 
-    // If the worker is deployed at /, the path is /api/Realms, /api/poe2/Leagues, etc.
-    // We need to forward the full path to the upstream (which already has /api base).
-    // So we just pass the path as-is to the upstream.
     const upstreamUrl = new URL(upstreamPath + url.search, UPSTREAM_BASE);
 
     // Only allow GET requests (the POE2Scout API is read-only)
@@ -87,13 +149,15 @@ export default {
       });
     }
 
+    const requestStart = Date.now();
+
     try {
       // Forward request to POE2Scout API with original headers (minus host)
       const upstreamHeaders = new Headers(request.headers);
       upstreamHeaders.delete('Host');
       upstreamHeaders.delete('Origin');
       upstreamHeaders.delete('Referer');
-      upstreamHeaders.set('User-Agent', 'PoE2-Market-Dashboard-Proxy/1.0');
+      upstreamHeaders.set('User-Agent', 'PoE2-Market-Dashboard-Proxy/1.1.0');
       upstreamHeaders.set('Accept', 'application/json');
 
       const upstreamResponse = await fetch(upstreamUrl.toString(), {
@@ -105,11 +169,21 @@ export default {
       // Read the response body
       const responseBody = await upstreamResponse.text();
 
+      // Track analytics
+      const duration = Date.now() - requestStart;
+      trackRequest(upstreamPath, upstreamResponse.status, duration);
+
+      // Log slow requests (over 5 seconds)
+      if (duration > 5000) {
+        console.log(`[SLOW] ${upstreamPath} took ${duration}ms (status ${upstreamResponse.status})`);
+      }
+
       // Build response headers with CORS
       const responseHeaders = new Headers();
       responseHeaders.set('Content-Type', upstreamResponse.headers.get('Content-Type') || 'application/json');
       responseHeaders.set('Cache-Control', upstreamResponse.headers.get('Cache-Control') || 'public, max-age=60');
-      responseHeaders.set('X-Proxy-Version', '1.0.0');
+      responseHeaders.set('X-Proxy-Version', '1.1.0');
+      responseHeaders.set('X-Response-Time', `${duration}ms`);
 
       // Add CORS headers if origin is allowed
       if (isOriginAllowed(origin)) {
@@ -124,6 +198,10 @@ export default {
         headers: responseHeaders,
       });
     } catch (err) {
+      // Track analytics
+      const duration = Date.now() - requestStart;
+      trackRequest(upstreamPath, 502, duration);
+
       // Upstream fetch failed (network error, timeout, etc.)
       return new Response(JSON.stringify({
         error: 'Upstream fetch failed',
@@ -134,6 +212,7 @@ export default {
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': isOriginAllowed(origin) ? (origin || '*') : '',
+          'X-Response-Time': `${duration}ms`,
         },
       });
     }

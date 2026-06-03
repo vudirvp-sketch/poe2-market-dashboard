@@ -9,7 +9,53 @@
 #   4. Deploy:                 wrangler deploy
 #
 # After deploying, note the URL from the output and set it in .env.local:
-#   POE2_API_BASE_URL=https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api
+#   POE2_CORS_PROXY_URL=https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api
+#
+# ─── CUSTOM DOMAIN ───────────────────────────────────────────────────────
+#
+# To use your own domain (e.g. poe2api.yourdomain.com) instead of the
+# default .workers.dev URL, follow these steps:
+#
+# Step 1: Add your domain to Cloudflare
+#   - Log in to https://dash.cloudflare.com
+#   - Click "Add a Site" and enter your domain
+#   - Follow the DNS setup instructions (change nameservers at your registrar)
+#   - Wait for DNS to propagate (can take up to 24 hours)
+#
+# Step 2: Uncomment the routes section below and edit
+#   - Replace "yourdomain.com" with your actual domain
+#   - Replace "poe2api" with your desired subdomain
+#   - The zone_name must match a domain active in your Cloudflare account
+#
+# Step 3: Deploy
+#   wrangler deploy
+#
+# Step 4: Update your .env.local
+#   POE2_CORS_PROXY_URL=https://poe2api.yourdomain.com/api
+#   # OR (if you use the root domain):
+#   POE2_API_BASE_URL=https://poe2api.yourdomain.com/api
+#
+# NOTES:
+#   - The custom domain must use Cloudflare DNS (orange-clouded / proxied)
+#   - SSL is automatically provided by Cloudflare
+#   - The .workers.dev URL continues to work alongside the custom domain
+#   - You can add multiple routes if needed (e.g., different subdomains)
+#
+# ─── ANALYTICS ──────────────────────────────────────────────────────────
+#
+# The worker includes built-in request analytics accessible at:
+#   https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/__analytics
+#
+# This returns JSON with:
+#   - total_requests, upstream_successes, upstream_failures
+#   - by_path: request counts grouped by API path
+#   - by_status: response status code distribution
+#   - uptime_seconds, last_request timestamp
+#
+# Analytics are in-memory only (reset on Worker restart).
+# For persistent analytics, use Cloudflare Analytics dashboard:
+#   https://dash.cloudflare.com → Workers → your-worker → Metrics
+#
 # ============================================================================
 
 name = "poe2scout-proxy"
@@ -17,9 +63,23 @@ main = "worker.js"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Uncomment and adjust if you want a custom route on your own domain:
+# ─── Custom Domain Routes ───────────────────────────────────────────────
+# Uncomment ONE of the following options and edit to match your domain:
+#
+# Option A: Subdomain route (e.g. poe2api.yourdomain.com/api/*)
 # routes = [
-#   { pattern = "poe2api.yourdomain.com/*", zone_name = "yourdomain.com" }
+#   { pattern = "poe2api.yourdomain.com/api/*", zone_name = "yourdomain.com" }
+# ]
+#
+# Option B: Path route on existing domain (e.g. yourdomain.com/poe2api/*)
+# routes = [
+#   { pattern = "yourdomain.com/poe2api/*", zone_name = "yourdomain.com" }
+# ]
+#
+# Option C: Multiple routes (e.g. both subdomain and path)
+# routes = [
+#   { pattern = "poe2api.yourdomain.com/*", zone_name = "yourdomain.com" },
+#   { pattern = "www.yourdomain.com/poe2proxy/*", zone_name = "yourdomain.com" }
 # ]
 
 # Worker limits (free tier defaults — no need to change):
