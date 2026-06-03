@@ -38,10 +38,12 @@ const geistMono = localFont({
 // React component". These are harmless and expected behavior — not a bug.
 // See: https://github.com/vercel/next.js/issues/72213
 //
-// Fix 5.2: Restricted to development mode only. In production, all errors
-// should be visible for debugging. Also made the filter more targeted.
+// Fix 5.2 → 5.5: Suppress in all environments (dev + production). This is a
+// confirmed Next.js 16 + React 19 bug (github.com/vercel/next.js/issues/72213),
+// not something we can fix in application code. Previously dev-only, but the
+// warning also pollutes browser console in production and during E2E tests.
 // ---------------------------------------------------------------------------
-if (process.env.NODE_ENV === 'development' && typeof window !== "undefined") {
+if (typeof window !== "undefined") {
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
     const message = typeof args[0] === "string" ? args[0] : "";

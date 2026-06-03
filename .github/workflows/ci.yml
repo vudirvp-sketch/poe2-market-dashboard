@@ -108,6 +108,55 @@ jobs:
           PYTHONPATH: .
 
   # ──────────────────────────────────────────────────────
+  # Job 5: Update Cache Snapshot (on push to main only)
+  # ──────────────────────────────────────────────────────
+  update-cache-snapshot:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate cache snapshot
+        run: npx tsx scripts/generate-cache-snapshot.ts
+        env:
+          POE2_API_BASE_URL: https://api.poe2scout.com/api
+          POE2_SNAPSHOT_REALM: poe2
+          POE2_SNAPSHOT_LEAGUE: runes
+
+      - name: Check for snapshot changes
+        id: snapshot-diff
+        run: |
+          if git diff --quiet src/data/cache-snapshot.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in cache snapshot."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Cache snapshot has been updated."
+            git diff --stat src/data/cache-snapshot.json
+          fi
+
+      - name: Commit and push updated snapshot
+        if: steps.snapshot-diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/cache-snapshot.json
+          git commit -m "chore: update cache-snapshot.json [skip ci]"
+          git push
+
+  # ──────────────────────────────────────────────────────
   # Job 4: Playwright E2E Tests (after build)
   # ──────────────────────────────────────────────────────
   test-e2e:

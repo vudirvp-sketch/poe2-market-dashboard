@@ -134,8 +134,10 @@ test.describe("Smoke Tests", () => {
     // by default now. However, we still click to be safe in case the user
     // has a persisted tab preference from a previous session.
     // The tab text is i18n'd: "Обзор" (ru), "Overview" (en), "概览" (zh), "개요" (ko).
+    // NOTE: TabsTrigger contains an SVG icon + text, so textContent may have
+    // surrounding whitespace. Do NOT use ^$ anchors — use partial match instead.
     const overviewTab = page.locator('[role="tab"]').filter({
-      hasText: /^Обзор$|^Overview$|^概览$|^개요$/,
+      hasText: /Обзор|Overview|概览|개요/,
     }).first();
     await overviewTab.click();
 

@@ -1232,6 +1232,25 @@ let dynamicRealmsFallback: Realm[] | null = null;
 const dynamicLeaguesFallback: Map<string, League[]> = new Map();
 
 // --- Realms ---
+
+/**
+ * Fix 5.5: Hardcoded overrides for POE2Scout /Realms default_league_value bug.
+ * The /Realms endpoint returns an outdated default_league_value for some realms
+ * (e.g., "Fate of the Vaal" instead of "Runes of Aldur" for poe2).
+ * When we detect a known-stale value, we replace it with the correct one.
+ *
+ * Map key: `${realm_api_id}:${stale_default_league_value}`
+ * Map value: corrected default_league_value
+ *
+ * This table should be updated whenever a new league launches and the
+ * POE2Scout /Realms endpoint hasn't been updated yet.
+ * TODO: Remove entries once POE2Scout maintainers fix the /Realms endpoint.
+ */
+const DEFAULT_LEAGUE_OVERRIDES: Record<string, string> = {
+  "poe2:Fate of the Vaal": "Runes of Aldur",
+  "poe2:vaal": "Runes of Aldur",
+};
+
 export async function getRealms(): Promise<Realm[]> {
   try {
     const raw = await cachedFetch<RawRealm[]>(`${BASE_URL}/Realms`);
@@ -1247,10 +1266,21 @@ export async function getRealms(): Promise<Realm[]> {
         displayName = r.realm_api_id;
       }
 
+      // Apply override if the API returned a known-stale default_league_value
+      let defaultLeague = r.default_league_value || undefined;
+      const overrideKey = `${r.realm_api_id}:${defaultLeague}`;
+      if (defaultLeague && DEFAULT_LEAGUE_OVERRIDES[overrideKey]) {
+        console.warn(
+          `[poe2api] getRealms: overriding stale default_league_value "${defaultLeague}" → "${DEFAULT_LEAGUE_OVERRIDES[overrideKey]}" for realm "${name}". ` +
+          `See POE2Scout /Realms bug.`
+        );
+        defaultLeague = DEFAULT_LEAGUE_OVERRIDES[overrideKey];
+      }
+
       return {
         name,
         displayName,
-        defaultLeague: r.default_league_value || undefined,
+        defaultLeague,
       };
     });
     // Update dynamic fallback with live data

@@ -134,9 +134,14 @@ test.describe("CORS Proxy + Snapshot Fallback", () => {
     const options = page.locator('[role="option"]');
     const optionCount = await options.count();
 
-    if (optionCount > 0) {
-      // Snapshot data is available — select the first option
-      await options.first().click();
+    // Filter out disabled options (e.g. "__loading__" or "__none__" placeholders)
+    // that appear when the API is blocked and data hasn't loaded yet.
+    const enabledOptions = page.locator('[role="option"]:not([data-disabled])');
+    const enabledOptionCount = await enabledOptions.count();
+
+    if (enabledOptionCount > 0) {
+      // Snapshot data is available — select the first enabled option
+      await enabledOptions.first().click();
       await page.waitForTimeout(1000);
 
       // The league combobox should now be populated too
@@ -144,11 +149,11 @@ test.describe("CORS Proxy + Snapshot Fallback", () => {
       await leagueCombobox.click();
       await page.waitForTimeout(500);
 
-      const leagueOptions = page.locator('[role="option"]');
-      const leagueOptionCount = await leagueOptions.count();
+      const leagueEnabledOptions = page.locator('[role="option"]:not([data-disabled])');
+      const leagueEnabledOptionCount = await leagueEnabledOptions.count();
 
-      if (leagueOptionCount > 0) {
-        await leagueOptions.first().click();
+      if (leagueEnabledOptionCount > 0) {
+        await leagueEnabledOptions.first().click();
         await page.waitForTimeout(2000);
 
         // After selecting realm+league, the dashboard tabs should appear

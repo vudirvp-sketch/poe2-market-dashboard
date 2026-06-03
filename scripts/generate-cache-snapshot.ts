@@ -143,9 +143,24 @@ async function main(): Promise<void> {
     }
   }
 
-  // ── Post-process: truncate large arrays to keep snapshot under 500 KB ──
+  // ── Post-process: fix known /Realms bugs and truncate large arrays ──
 
   for (const [url, entry] of Object.entries(entries)) {
+    // Fix: POE2Scout /Realms returns stale default_league_value (e.g. "Fate of the Vaal"
+    // instead of "Runes of Aldur" for poe2). Override in the snapshot so the
+    // dashboard has the correct value even when /Realms data is stale.
+    if (url.includes("/Realms") && Array.isArray(entry.data)) {
+      const realms = entry.data as Array<Record<string, unknown>>;
+      for (const realm of realms) {
+        if (realm.realm_api_id === "poe2" &&
+            typeof realm.default_league_value === "string" &&
+            (realm.default_league_value === "Fate of the Vaal" || realm.default_league_value === "vaal")) {
+          console.log(`  Fixed stale default_league_value "${realm.default_league_value}" → "Runes of Aldur" for poe2 realm`);
+          realm.default_league_value = "Runes of Aldur";
+        }
+      }
+    }
+
     // The /Items endpoint returns ALL items (ignores pagination).
     // Truncate to 25 items to stay under the size budget.
     if (url.includes("/Items?") && Array.isArray(entry.data)) {

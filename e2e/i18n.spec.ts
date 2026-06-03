@@ -16,8 +16,12 @@ import { installApiMocks, selectRealmAndLeague } from "./fixtures";
  * The Globe icon button is a menu item inside the dropdown.
  */
 async function openMoreAndGetGlobeButton(page: import("@playwright/test").Page) {
-  // Click the "More" button (⋮ icon) to open the dropdown menu
-  const moreButton = page.locator('button[aria-label="More options"]').first();
+  // Click the "More" button (⋮ icon) to open the dropdown menu.
+  // The aria-label is i18n'd: "Ещё" (ru), "More options" (en), "更多选项" (zh), "더 보기" (ko).
+  // Must use a multi-locale selector because the default locale is "ru".
+  const moreButton = page.locator(
+    'button[aria-label="Ещё"], button[aria-label="More options"], button[aria-label="更多选项"], button[aria-label="더 보기"]'
+  ).first();
   await expect(moreButton).toBeVisible({ timeout: 10000 });
   await moreButton.click();
   await page.waitForTimeout(500);
