@@ -500,6 +500,12 @@ const zh: Record<TranslationKeys, string> = {
   stickyBarBearish: "看跌",
   stickyBarNeutral: "中性",
   stickyBarCorrelationShock: "相关性冲击",
+  stickyBarWsConnected: "WS: 实时",
+  stickyBarWsConnecting: "WS: 连接中…",
+  stickyBarWsDisconnected: "WS: 离线",
+  wsStatusConnected: "WebSocket 已连接",
+  wsStatusConnecting: "WebSocket 连接中…",
+  wsStatusDisconnected: "WebSocket 已断开",
 
   // ---- Data Available (graceful unavailable) ----
   dataUnavailableTitle: "数据暂时不可用",

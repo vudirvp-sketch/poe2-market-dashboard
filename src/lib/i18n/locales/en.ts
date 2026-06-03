@@ -500,6 +500,12 @@ const en = {
   stickyBarBearish: "Bearish",
   stickyBarNeutral: "Neutral",
   stickyBarCorrelationShock: "Corr. Shock",
+  stickyBarWsConnected: "WS: Live",
+  stickyBarWsConnecting: "WS: Connecting",
+  stickyBarWsDisconnected: "WS: Off",
+  wsStatusConnected: "WebSocket connected",
+  wsStatusConnecting: "WebSocket connecting…",
+  wsStatusDisconnected: "WebSocket disconnected",
 
   // ---- Overview Heatmap ----
   overviewHeatmap: "Price Heatmap (24h)",

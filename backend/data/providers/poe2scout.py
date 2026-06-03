@@ -63,11 +63,38 @@ def _normalize_api_id(api_id: str) -> str:
 
 
 class Poe2ScoutProvider(BaseDataProvider):
-    """Primary data provider backed by the POE2Scout public API."""
+    """Primary data provider backed by the POE2Scout public API.
+
+    Supports CORS proxy fallback: when the primary POE2Scout API is
+    unreachable (e.g. blocked in the backend's network), the provider
+    can automatically retry requests through a Cloudflare Worker proxy
+    configured via ``data.cors_proxy_url`` in config.yaml or the
+    ``POE2SCOUT_CORS_PROXY_URL`` environment variable.
+
+    The fallback only triggers on connection-level errors (network
+    unreachable, timeout, DNS failure). HTTP error responses from the
+    upstream API (4xx, 5xx) do NOT trigger the proxy fallback — those
+    indicate the API itself is responding, possibly with an error.
+    """
 
     def __init__(self, config: AppConfig | None = None):
         self._config = config or get_settings()
         self._base_url = self._config.data.poe2scout_base_url.rstrip("/")
+
+        # CORS proxy fallback URL — empty string means disabled.
+        # Set via config.yaml (data.cors_proxy_url) or env var
+        # POE2SCOUT_CORS_PROXY_URL. The proxy URL should end with /api
+        # (e.g. "https://poe2scout-proxy.your-account.workers.dev/api").
+        self._cors_proxy_url = self._config.data.cors_proxy_url.rstrip("/") if self._config.data.cors_proxy_url else ""
+        self._cors_proxy_enabled = self._config.data.cors_proxy_fallback_enabled
+
+        # Track whether the last attempt to the primary URL failed with
+        # a connection error. If so, subsequent requests go directly to
+        # the proxy (skip the primary URL) for a cooldown period.
+        self._primary_unreachable = False
+        self._primary_unreachable_since: float = 0.0
+        self._primary_cooldown = 300.0  # 5 minutes — try primary again after this
+
         # CRITICAL: realm must be "poe2" for POE2Scout API path, NOT "poe2/pc"
         # The /Realms endpoint returns value="poe2/poe2" but the actual path
         # parameter uses the simplified segment "poe2".
@@ -128,14 +155,85 @@ class Poe2ScoutProvider(BaseDataProvider):
     # Low-level request with retry and rate limiting
     # ------------------------------------------------------------------
 
+    def _should_try_proxy_first(self) -> bool:
+        """Check if we should skip the primary URL and go directly to proxy.
+
+        After a connection error to the primary URL, we set _primary_unreachable
+        and avoid hitting it again for _primary_cooldown seconds. This prevents
+        every request from paying the timeout penalty when the primary is blocked.
+        """
+        if not self._primary_unreachable:
+            return False
+        now = time.monotonic()
+        if now - self._primary_unreachable_since > self._primary_cooldown:
+            # Cooldown expired — try primary again
+            logger.info("Primary URL cooldown expired — will try direct again")
+            self._primary_unreachable = False
+            return False
+        return True
+
     async def _request(
         self, path: str, params: dict | None = None
     ) -> dict | list | None:
         """Make a rate-limited request with exponential backoff on 429.
 
         Enforces a minimum interval between requests based on rate_limit_per_second.
+
+        CORS proxy fallback:
+          If the primary URL fails with a connection error (network unreachable,
+          DNS failure, timeout) and a CORS proxy URL is configured, the request
+          is automatically retried through the proxy. Once the primary URL is
+          detected as unreachable, subsequent requests go directly to the proxy
+          for a cooldown period (5 minutes) to avoid repeated timeout penalties.
         """
-        url = f"{self._base_url}/{path}"
+        # Decide whether to try primary or go straight to proxy
+        try_proxy_first = self._should_try_proxy_first()
+
+        if try_proxy_first and self._cors_proxy_url:
+            # Primary is known-unreachable — try proxy directly
+            result = await self._do_request(self._cors_proxy_url, path, params)
+            if result is not None:
+                return result
+            # Proxy also failed — fall through to try primary (maybe it's back)
+            logger.warning("Proxy request also failed for %s — trying primary", path)
+
+        # Try primary URL
+        result = await self._do_request(self._base_url, path, params)
+        if result is not None:
+            # Primary worked — clear unreachable flag
+            if self._primary_unreachable:
+                self._primary_unreachable = False
+                logger.info("Primary URL recovered — clearing unreachable flag")
+            return result
+
+        # Primary failed with a connection error — try proxy if available
+        if self._cors_proxy_url and self._cors_proxy_enabled:
+            logger.info(
+                "Primary URL failed for %s — retrying through CORS proxy: %s",
+                path, self._cors_proxy_url,
+            )
+            result = await self._do_request(self._cors_proxy_url, path, params)
+            if result is not None:
+                # Mark primary as unreachable so we skip it next time
+                self._primary_unreachable = True
+                self._primary_unreachable_since = time.monotonic()
+                logger.info(
+                    "CORS proxy succeeded — marking primary as unreachable for %.0fs",
+                    self._primary_cooldown,
+                )
+                return result
+
+        return None
+
+    async def _do_request(
+        self, base_url: str, path: str, params: dict | None = None
+    ) -> dict | list | None:
+        """Execute a single HTTP request against the given base URL.
+
+        Returns None on connection errors or HTTP errors (4xx/5xx).
+        Returns parsed JSON on success.
+        """
+        url = f"{base_url}/{path}"
         client = await self._get_client()
 
         # Fix 7 (POE2-FIX-SPEC): reduce max_retries from 3 to 2

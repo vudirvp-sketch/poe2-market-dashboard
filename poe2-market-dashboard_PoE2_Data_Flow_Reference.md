@@ -4,7 +4,7 @@
 >
 > **VERIFICATION STATUS:** Each data flow is traced from the original POE2Scout API response through the transformation layer to the UI component. Field mappings are documented with examples.
 >
-> **LAST UPDATED:** 2026-06-02 — Major revision: new POE2Scout endpoints, restructured backend (SnapshotManager, new modules), updated formulas, new UI components, corrected scheduler intervals.
+> **LAST UPDATED:** 2026-06-03 — Added CORS proxy fallback (§11), Cloudflare Worker guide (§12), WebSocket status UI, pre-populated cache docs.
 
 ---
 
@@ -15,10 +15,15 @@ Browser (React/Next.js)
     │
     ├── /api/poe2/*   ────→ POE2Scout API (api.poe2scout.com/api)
     │                          (Server-side fetch, cache, PascalCase→camelCase)
+    │                          ↓ on connection error
+    │                          CORS Proxy (Cloudflare Worker)
+    │                          ↓ on connection error
+    │                          Pre-populated cache (cache-snapshot.json)
     │
     └── /api/flipper/* ────→ FastAPI Backend (port 8000)
                                ├── Poe2ScoutProvider ────→ POE2Scout API
-                               │   └── OfficialTradeProvider (OAuth2 fallback, rarely used)
+                               │   ├─ (fallback) ────→ CORS Proxy (Cloudflare Worker)
+                               │   └─ OfficialTradeProvider (OAuth2 fallback, rarely used)
                                ├── SnapshotManager (replaces DataSnapshot)
                                │   ├── DataSnapshot dataclass (in-memory, TTL-cached)
                                │   ├── BFS transitive pricing for missing base pairs
@@ -680,7 +685,7 @@ HistoricalStore/
 
 | Config Section | Key Fields | Defaults |
 |----------------|-----------|----------|
-| `data` | `primary_provider="poe2scout"`, `fallback_provider="official"`, `cache_ttl_prices_minutes=5`, `cache_ttl_history_hours=24`, `rate_limit_per_second=1.0`, `historical_retention_days=90` | — |
+| `data` | `primary_provider="poe2scout"`, `fallback_provider="official"`, `poe2scout_base_url`, `cors_proxy_url=""`, `cors_proxy_fallback_enabled=True`, `cache_ttl_prices_minutes=5`, `cache_ttl_history_hours=24`, `rate_limit_per_second=1.0`, `historical_retention_days=90` | — |
 | `league` | `league_name="runes"`, `realm="poe2"`, `phase_early_days=7`, `phase_mid_days=35`, `base_currency="exalted"` | — |
 | `filters` | `min_volume_24h=200`, `max_volatility=0.4`, `max_spread=0.15` | — |
 | `scoring` | `momentum_negative_threshold=-0.01`, `volatility_reference=0.05`, `phase_multiplier_early/mid/late=1.2/1.0/0.9`, `flashback_multiplier=1.5`, `event_multiplier=2.0` | — |
@@ -1960,3 +1965,327 @@ const url = BASE_URL + `/poe2/Leagues`;  // may work but is unreliable
 const realmValue = realm.name;  // extracted from RealmOptionResponse.value
 const url = BASE_URL + `/${realmValue}/Leagues`;
 ```
+
+---
+
+## §11. CORS Proxy & Network Resilience (Updated 2026-06-03)
+
+### 11.1 Problem Statement
+
+POE2Scout API (`api.poe2scout.com`) is blocked in some regions (notably Russia). Both the frontend and backend need a way to route requests through a CORS proxy running on Cloudflare's edge network, which is not subject to the same blocking.
+
+### 11.2 Three-Layer Resilience Architecture
+
+```
+Layer 1: Frontend (poe2api.ts)
+  ┌─────────────────────────────────────────────────────────┐
+  │ cachedFetch(BASE_URL + path)                            │
+  │   ↓ on connection error                                │
+  │ cachedFetch(CORS_PROXY_URL + path)  ← Cloudflare Worker│
+  │   ↓ on connection error                                │
+  │ return snapshot data from cache-snapshot.json           │
+  └─────────────────────────────────────────────────────────┘
+
+Layer 2: Frontend → Backend proxy (flipper-proxy.ts)
+  ┌─────────────────────────────────────────────────────────┐
+  │ proxyToFlipper(path)                                    │
+  │   → fetch(FLIPPER_API_URL + path, { signal: 15s })     │
+  │   → Circuit breaker: 5 consecutive failures → 60s open │
+  │   → proxyWithFallback() returns 200 with fallback data  │
+  └─────────────────────────────────────────────────────────┘
+
+Layer 3: Backend CORS proxy fallback (Poe2ScoutProvider)
+  ┌─────────────────────────────────────────────────────────┐
+  │ _request(path)                                          │
+  │   → _do_request(BASE_URL + path)                        │
+  │   ↓ on connection error                                │
+  │   → _do_request(CORS_PROXY_URL + path)  ← Cloudflare   │
+  │   → Marks primary as unreachable for 5 min cooldown    │
+  │   → After cooldown, retries primary automatically      │
+  └─────────────────────────────────────────────────────────┘
+```
+
+### 11.3 Pre-populated Cache (cache-snapshot.json)
+
+**Purpose:** The dashboard must show data even when the POE2Scout API is completely unreachable. The `cache-snapshot.json` file is a pre-fetched snapshot of key API responses that is loaded at server startup.
+
+**Location:** `src/data/cache-snapshot.json`
+
+**Format:**
+```json
+{
+  "version": 1,
+  "timestamp": "2026-06-03T00:00:00Z",
+  "entries": {
+    "https://api.poe2scout.com/api/Realms": {
+      "data": [...],
+      "ts": 1748908800000
+    }
+  }
+}
+```
+
+**Loading:** `src/lib/cache-prepopulator.ts::prepopulateCache()` reads the snapshot on server startup and inserts entries into the `poe2api.ts` in-memory cache. Entries are marked as "stale but usable" so `cachedFetch` serves them immediately while triggering background revalidation.
+
+**Regeneration:** Run `npx tsx scripts/generate-cache-snapshot.ts` when the API is reachable. This fetches fresh data and overwrites the snapshot file. Commit the updated file to the repository.
+
+**Endpoints snapshot includes:**
+- `/Realms` (critical)
+- `/{realm}/Leagues` (critical)
+- `/{realm}/Leagues/{league}/ExchangeSnapshot`
+- `/{realm}/Leagues/{league}/SnapshotPairs`
+- `/{realm}/Leagues/{league}/SnapshotHistory?Limit=24`
+- `/{realm}/Leagues/{league}/ReferenceCurrencies`
+- `/{realm}/Leagues/{league}/Items/Categories`
+- `/{realm}/Leagues/{league}/Currencies/ByCategory?Category=currency&Page=1&PerPage=250`
+- `/{realm}/Leagues/{league}/Items?Page=1&PerPage=50`
+
+### 11.4 Circuit Breaker in flipper-proxy.ts
+
+The frontend proxy to the FastAPI backend uses a circuit breaker pattern to avoid hammering an unreachable backend:
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `FLIPPER_CB_THRESHOLD` | 5 | Open after 5 consecutive failures |
+| `FLIPPER_CB_COOLDOWN` | 60,000 ms | Wait 60s before trying again |
+| `flipperCircuitBreakerOpen` | boolean | Tracks open/closed state |
+| `flipperConsecutiveFailures` | number | Running count of failures |
+
+**Flow:**
+1. On each connection failure → increment `flipperConsecutiveFailures`
+2. When `flipperConsecutiveFailures >= 5` → set `flipperCircuitBreakerOpen = true`, record timestamp
+3. While open → return 503 immediately with `error_type: "backend_offline"`
+4. After 60s cooldown → set `flipperCircuitBreakerOpen = false`, try one request
+5. On any successful HTTP response → reset `flipperConsecutiveFailures = 0`
+
+### 11.5 Backend CORS Proxy Fallback (Poe2ScoutProvider)
+
+**Config fields (in `config.yaml → data`):**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cors_proxy_url` | string | `""` | Cloudflare Worker URL, e.g. `"https://poe2scout-proxy.xxx.workers.dev/api"` |
+| `cors_proxy_fallback_enabled` | bool | `true` | Enable automatic fallback on connection errors |
+
+**Env var overrides (take precedence over config.yaml):**
+- `POE2SCOUT_BASE_URL` — overrides `data.poe2scout_base_url`
+- `POE2SCOUT_CORS_PROXY_URL` — overrides `data.cors_proxy_url`
+
+**Fallback logic in `Poe2ScoutProvider._request()`:**
+1. Check if primary URL is known-unreachable (`_should_try_proxy_first()`)
+   - If yes and cooldown hasn't expired (5 min) → try proxy directly
+2. Try primary URL (`_do_request(base_url, path)`)
+   - If success → clear unreachable flag, return data
+3. If primary fails → try CORS proxy (`_do_request(cors_proxy_url, path)`)
+   - If proxy succeeds → mark primary as unreachable, set cooldown
+4. If both fail → return None
+
+**Cooldown:** When primary is detected as unreachable, subsequent requests skip the primary and go directly to the proxy for 5 minutes (`_primary_cooldown = 300.0`). After cooldown, the primary is retried automatically.
+
+### 11.6 WebSocket Status UI Notification
+
+**Problem:** `use-websocket.ts` exports `status`, `reconnectCount`, and `lastError`, but the UI components had no visual indicator of the WebSocket connection state.
+
+**Solution:** Added a WS status badge to both `FlipperBackendStatusCard` and `FlipperStickyBar`:
+
+| WS Status | Color | Icon | Text |
+|-----------|-------|------|------|
+| `connected` | Green | `WifiHigh` | "WS: Live" |
+| `connecting` | Amber | `Loader2` (spinning) | "WS: Connecting" |
+| `disconnected` | Gray | `Wifi` | "WS: Off" |
+
+**Props added:**
+- `FlipperBackendStatusCard`: `wsStatus?: WebSocketStatus`
+- `FlipperStickyBar`: `wsStatus?: WebSocketStatus`
+
+**i18n keys added** (all 4 locales — en, ru, zh, ko):
+- `stickyBarWsConnected`, `stickyBarWsConnecting`, `stickyBarWsDisconnected`
+- `wsStatusConnected`, `wsStatusConnecting`, `wsStatusDisconnected`
+
+---
+
+## §12. Cloudflare Worker Setup — Step-by-Step Guide
+
+This section describes how to deploy the CORS proxy Cloudflare Worker for regions where `api.poe2scout.com` is blocked.
+
+### 12.1 Prerequisites
+
+1. A **Cloudflare account** (free tier is sufficient)
+2. **Node.js** 18+ installed on your machine
+3. The `poe2-market-dashboard` repository cloned locally
+
+### 12.2 Step 1: Install Wrangler CLI
+
+```bash
+npm install -g wrangler
+```
+
+Verify installation:
+```bash
+wrangler --version
+```
+
+### 12.3 Step 2: Login to Cloudflare
+
+```bash
+wrangler login
+```
+
+This opens a browser window. Authorize the Wrangler CLI to access your Cloudflare account. After authorization, you'll see a success message in the terminal.
+
+### 12.4 Step 3: Configure the Worker
+
+Navigate to the `cloudflare-worker/` directory in the repository:
+
+```bash
+cd cloudflare-worker/
+```
+
+Review `wrangler.toml` — the default configuration should work as-is:
+
+```toml
+name = "poe2scout-proxy"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+```
+
+**If you want a custom domain** (optional), uncomment one of the `routes` sections in `wrangler.toml` and edit it to match your domain. See the comments in the file for Options A, B, and C.
+
+### 12.5 Step 4: Deploy the Worker
+
+```bash
+wrangler deploy
+```
+
+The output will include the Worker URL:
+```
+Published poe2scout-proxy (x.xx sec)
+  https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev
+```
+
+**Write down this URL** — you need it for the next step.
+
+### 12.6 Step 5: Verify the Worker
+
+Test the proxy in your browser or with curl:
+
+```bash
+# Test that the proxy forwards requests correctly
+curl https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api/health/live
+
+# Test analytics endpoint
+curl https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/__analytics
+```
+
+You should get a JSON response from the POE2Scout API.
+
+### 12.7 Step 6: Configure the Dashboard
+
+**Option A: Frontend-only (for browser users behind the block)**
+
+Create or edit `.env.local` in the project root:
+
+```bash
+# .env.local
+POE2_CORS_PROXY_URL=https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api
+```
+
+This makes the frontend `poe2api.ts` fall back to the proxy when the direct API is unreachable.
+
+**Option B: Backend CORS proxy (for the FastAPI backend behind the block)**
+
+Edit `config.yaml`:
+
+```yaml
+data:
+  cors_proxy_url: "https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api"
+  cors_proxy_fallback_enabled: true
+```
+
+OR set the environment variable (takes precedence):
+
+```bash
+export POE2SCOUT_CORS_PROXY_URL=https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api
+```
+
+**Option C: Both frontend and backend (recommended for full coverage)**
+
+```bash
+# .env.local
+POE2_CORS_PROXY_URL=https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api
+```
+
+```yaml
+# config.yaml
+data:
+  cors_proxy_url: "https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api"
+  cors_proxy_fallback_enabled: true
+```
+
+### 12.8 Step 7: Restart Services
+
+After configuration changes, restart both services:
+
+```bash
+# Restart Next.js frontend
+# (Ctrl+C the dev server, then:)
+npm run dev
+
+# Restart FastAPI backend
+# (Ctrl+C uvicorn, then:)
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 12.9 Step 10: Verify End-to-End
+
+1. Open `https://localhost:3000` in your browser
+2. Check the browser console — you should NOT see connection errors to `api.poe2scout.com`
+3. If the API is blocked, requests should go through the Worker proxy instead
+4. Check the backend logs — you should see "retrying through CORS proxy" messages if the primary URL is unreachable
+
+### 12.10 Custom Domain (Optional)
+
+If you own a domain managed by Cloudflare:
+
+1. Log in to `https://dash.cloudflare.com`
+2. Add your domain (if not already added)
+3. Edit `cloudflare-worker/wrangler.toml` — uncomment and edit the `routes` section:
+
+```toml
+routes = [
+  { pattern = "poe2api.yourdomain.com/api/*", zone_name = "yourdomain.com" }
+]
+```
+
+4. Redeploy: `wrangler deploy`
+5. Update your `.env.local` and `config.yaml` to use the custom domain URL
+
+### 12.11 Monitoring
+
+The Worker includes built-in analytics accessible at:
+```
+https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/__analytics
+```
+
+Returns JSON with request counts, success rates, and path distributions. Note: analytics are in-memory only and reset on Worker restart.
+
+For persistent monitoring, use the Cloudflare dashboard:
+```
+https://dash.cloudflare.com → Workers → poe2scout-proxy → Metrics
+```
+
+### 12.12 Rate Limits (Free Tier)
+
+| Limit | Value |
+|-------|-------|
+| Requests/day | 100,000 |
+| CPU time/request | 10 ms |
+| Script size | 1 MB |
+| Number of Workers | 10 |
+
+These limits are generous for a single-user or small-team dashboard. If you need more, upgrade to the Workers Paid plan ($5/month for 10M requests).
+
+---
+
+> **LAST UPDATED:** 2026-06-03 — Added §11 (CORS Proxy & Network Resilience), §12 (Cloudflare Worker Setup Guide), updated §3.6 with `cors_proxy_url` and `cors_proxy_fallback_enabled` config fields.

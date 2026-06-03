@@ -25,6 +25,16 @@ class DataConfig(BaseModel):
     primary_provider: str = "poe2scout"
     fallback_provider: str = "official"
     poe2scout_base_url: str = "https://api.poe2scout.com/api"
+    # CORS proxy URL for backend — when poe2scout.com is blocked in the
+    # backend's network, set this to a Cloudflare Worker URL so the
+    # Poe2ScoutProvider can route requests through the proxy.
+    # Example: "https://poe2scout-proxy.your-account.workers.dev/api"
+    # Can also be set via POE2SCOUT_CORS_PROXY_URL env var (takes precedence).
+    cors_proxy_url: str = ""
+    # Enable automatic fallback to CORS proxy when primary URL fails.
+    # When True, _request() will retry through cors_proxy_url on
+    # connection errors (not on 4xx/5xx responses from the API itself).
+    cors_proxy_fallback_enabled: bool = True
     cache_ttl_prices_minutes: float = 5
     cache_ttl_history_hours: int = 24
     cache_ttl_metadata_hours: int = 1
@@ -180,13 +190,30 @@ class AppConfig(BaseModel):
 
 
 def load_config_from_yaml(yaml_path: str | Path) -> AppConfig:
-    """Load configuration from a YAML file, using defaults for missing keys."""
+    """Load configuration from a YAML file, using defaults for missing keys.
+
+    Environment variable overrides (take precedence over config.yaml):
+      POE2SCOUT_BASE_URL    — overrides data.poe2scout_base_url
+      POE2SCOUT_CORS_PROXY_URL — overrides data.cors_proxy_url
+    """
+    import os
+
     path = Path(yaml_path)
     if path.exists():
         with open(path, "r", encoding="utf-8") as f:
             raw = yaml.safe_load(f) or {}
     else:
         raw = {}
+
+    # Apply environment variable overrides
+    env_base_url = os.environ.get("POE2SCOUT_BASE_URL")
+    if env_base_url:
+        raw.setdefault("data", {})["poe2scout_base_url"] = env_base_url.rstrip("/")
+
+    env_cors_proxy = os.environ.get("POE2SCOUT_CORS_PROXY_URL")
+    if env_cors_proxy:
+        raw.setdefault("data", {})["cors_proxy_url"] = env_cors_proxy.rstrip("/")
+
     return AppConfig(**raw)
 
 

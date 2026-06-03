@@ -500,6 +500,12 @@ const ko: Record<TranslationKeys, string> = {
   stickyBarBearish: "약세",
   stickyBarNeutral: "중립",
   stickyBarCorrelationShock: "상관 충격",
+  stickyBarWsConnected: "WS: 실시간",
+  stickyBarWsConnecting: "WS: 연결 중…",
+  stickyBarWsDisconnected: "WS: 오프라인",
+  wsStatusConnected: "WebSocket 연결됨",
+  wsStatusConnecting: "WebSocket 연결 중…",
+  wsStatusDisconnected: "WebSocket 연결 끊김",
 
   // ---- Data Available (graceful unavailable) ----
   dataUnavailableTitle: "데이터를 일시적으로 사용할 수 없습니다",

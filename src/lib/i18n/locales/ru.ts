@@ -463,6 +463,12 @@ const ru: Record<TranslationKeys, string> = {
   stickyBarBearish: "Медвежий",
   stickyBarNeutral: "Нейтральный",
   stickyBarCorrelationShock: "Корр. шок",
+  stickyBarWsConnected: "WS: Live",
+  stickyBarWsConnecting: "WS: Подключение…",
+  stickyBarWsDisconnected: "WS: Откл.",
+  wsStatusConnected: "WebSocket подключен",
+  wsStatusConnecting: "WebSocket подключение…",
+  wsStatusDisconnected: "WebSocket отключен",
   // ---- Overview Heatmap ----
   overviewHeatmap: "Тепловая карта цен (24ч)",
   // ---- §3.5: Additional Overview Visualizations ----
