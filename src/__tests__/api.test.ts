@@ -41,7 +41,7 @@ describe("API Types", () => {
       category: "currency",
       iconUrl: null,
       price: 1,
-      priceChaos: 1,
+      chaosEquivalentRate: 1,
       relativePrice: 1,
       change: 0.05,
       changePercent: 5.0,

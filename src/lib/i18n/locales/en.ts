@@ -872,6 +872,13 @@ const en = {
   analystDataFetched: "Data fetched",
   analystPartialData: "Partial data",
   analystError: "Failed to load league analyst data. The backend may be experiencing issues.",
+
+  // ---- Upstream Blocked Hints (i18n replacement for hardcoded Russian) ----
+  upstreamBlockedTitle: "POE2Scout API is unreachable from your IP.",
+  upstreamBlockedStep1: "1) VPN — connect to a server outside the blocked region",
+  upstreamBlockedStep2: "2) CORS proxy — set in .env.local:",
+  upstreamBlockedStep3: "3) Cloudflare Worker — create a Worker that proxies requests to api.poe2scout.com",
+  upstreamBlockedStep4: "4) Restart the server after making changes",
 } as const;
 
 export default en;

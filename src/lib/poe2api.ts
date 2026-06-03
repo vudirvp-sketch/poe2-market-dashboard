@@ -962,8 +962,7 @@ function mapCurrencyItem(item: RawCurrencyItem, referencePrice?: number): PoeIte
     category: item.CategoryApiId || "",
     iconUrl: item.IconUrl,
     price: currentPrice,
-    chaosEquivalentRate: currentPrice,  // Step 1.1: Renamed from priceChaos — this is a rate, not a price
-    priceChaos: currentPrice,  // backward compat
+    chaosEquivalentRate: currentPrice,
     relativePrice: relPrice,
     change,
     changePercent,
@@ -1010,8 +1009,7 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
     category: raw.CategoryApiId || "",
     iconUrl: raw.IconUrl,
     price: currentPrice,
-    chaosEquivalentRate: currentPrice,  // Step 1.1: Renamed from priceChaos — this is a rate, not a price
-    priceChaos: currentPrice,  // backward compat
+    chaosEquivalentRate: currentPrice,
     relativePrice: relPrice,
     change,
     changePercent,
@@ -1043,8 +1041,7 @@ function mapPriceLogs(logs: (RawPriceLogEntry | null)[] | undefined): PoeItemHis
   return valid.map((l) => ({
     timestamp: l.Time,
     price: l.Price,
-    priceChaos: l.Price,  // backward compat
-    chaosEquivalentRate: l.Price,  // Step 1.1: Renamed — this is a rate
+    chaosEquivalentRate: l.Price,
     relativePrice: l.Price,
     volume: l.Quantity,
   }));
@@ -1797,7 +1794,6 @@ export async function getItems(realm: string, league: string): Promise<PoeItem[]
     iconUrl: item.IconUrl,
     price: item.CurrentPrice,
     chaosEquivalentRate: item.CurrentPrice,
-    priceChaos: item.CurrentPrice,  // backward compat
     relativePrice: item.CurrentPrice,
     change: null,
     changePercent: null,
@@ -1868,7 +1864,6 @@ export async function getItem(realm: string, league: string, itemId: string): Pr
     iconUrl: raw.IconUrl,
     price: raw.CurrentPrice,
     chaosEquivalentRate: raw.CurrentPrice,
-    priceChaos: raw.CurrentPrice,  // backward compat
     relativePrice: raw.CurrentPrice,
     change: null,
     changePercent: null,
@@ -1898,7 +1893,6 @@ export async function getItemHistory(realm: string, league: string, itemId: stri
     return (raw.PriceHistory ?? []).map((p) => ({
       timestamp: p.Time,
       price: p.Price,
-      priceChaos: p.Price,  // backward compat
       chaosEquivalentRate: p.Price,
       relativePrice: p.Price,
       volume: p.Quantity,

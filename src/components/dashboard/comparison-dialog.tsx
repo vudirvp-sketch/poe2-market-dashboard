@@ -115,7 +115,7 @@ export function ComparisonDialog({
       const points = (h.data || []).map((p) => ({
         timestamp: p.timestamp,
         pctChange: 0,
-        rawPrice: p.relativePrice ?? p.priceChaos ?? 0,
+        rawPrice: p.relativePrice ?? p.chaosEquivalentRate ?? 0,
       }));
 
       // Normalize to % change from first data point

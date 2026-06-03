@@ -115,7 +115,7 @@ export function FuzzySearch({
         id: item.id,
         name: item.name,
         secondary: item.type || item.category,
-        price: fmt(item.relativePrice ?? item.priceChaos),
+        price: fmt(item.relativePrice ?? item.chaosEquivalentRate),
         changeText: chg.text,
         changeColor: chg.color,
         iconUrl: item.iconUrl,

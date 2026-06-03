@@ -57,7 +57,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
   const { t } = useI18n();
   const chg = fmtChange(item.changePercent);
   const sparkData =
-    item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) || [];
+    item.history?.map((h) => h.relativePrice ?? h.chaosEquivalentRate ?? 0) || [];
   const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison, uiState } =
     useDashboardStore();
   const fav = isFavorite(item.id);
@@ -169,7 +169,7 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
         <div className="flex items-end justify-between">
           <div>
             <p className="text-lg font-bold">
-              {formatPrice(item.relativePrice ?? item.priceChaos, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+              {formatPrice(item.relativePrice ?? item.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
             </p>
             <p className={`text-xs font-medium ${chg.color}`}>{chg.text}</p>
           </div>

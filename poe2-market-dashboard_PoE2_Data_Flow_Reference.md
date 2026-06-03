@@ -750,7 +750,7 @@ interface PoeItem {
   category: string;          // = CategoryApiId
   iconUrl: string | null;    // = IconUrl
   price: number | null;      // = CurrentPrice
-  priceChaos: number | null; // = CurrentPrice (PoE2 base = Exalted)
+  chaosEquivalentRate: number | null; // = CurrentPrice (chaos-equivalent rate)
   relativePrice: number | null; // = CurrentPrice / referencePrice
   change: number | null;     // = currentPrice - computePreviousPrice(PriceLogs)
   changePercent: number | null; // = computeChangePercent(PriceLogs) — 24h

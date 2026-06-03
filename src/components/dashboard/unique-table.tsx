@@ -146,7 +146,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         ),
         cell: ({ row }) => (
           <span className={`font-mono ${isCompact ? "text-xs" : ""}`}>
-            {formatPrice(row.original.relativePrice ?? row.original.priceChaos, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+            {formatPrice(row.original.relativePrice ?? row.original.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
           </span>
         ),
       },
@@ -195,7 +195,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
         cell: ({ row }) => {
           const item = row.original;
           const sparkData =
-            item.history?.map((h) => h.relativePrice ?? h.priceChaos ?? 0) ||
+            item.history?.map((h) => h.relativePrice ?? h.chaosEquivalentRate ?? 0) ||
             [];
           return (
             <Sparkline

@@ -186,14 +186,14 @@ export function ApiErrorFallback({
       )}
       {kind === "upstream_unreachable" && (
         <div className="text-xs text-muted-foreground mb-4 max-w-md space-y-1">
-          <p><b>POE2Scout API недоступен с вашего IP.</b> Возможные решения:</p>
-          <p>1) VPN — подключитесь к серверу вне РФ</p>
-          <p>2) CORS-прокси — в <code>.env.local</code> укажите:</p>
+          <p><b>{t("upstreamBlockedTitle")}</b></p>
+          <p>{t("upstreamBlockedStep1")}</p>
+          <p>{t("upstreamBlockedStep2")}</p>
           <code className="block bg-muted px-2 py-1 rounded text-xs">
-            POE2_API_BASE_URL=https://ваш-прокси.example.com/api
+            POE2_API_BASE_URL=https://your-proxy.example.com/api
           </code>
-          <p>3) Cloudflare Worker — создайте Worker, который проксирует запросы к api.poe2scout.com</p>
-          <p>4) Перезапустите сервер после изменений</p>
+          <p>{t("upstreamBlockedStep3")}</p>
+          <p>{t("upstreamBlockedStep4")}</p>
         </div>
       )}
       {onRetry && (

@@ -43,8 +43,6 @@ export interface PoeItem {
    *  This is POE2Scout's modeled estimate of what 1 unit is worth in Chaos —
    *  it is a RATE (ratio), not a direct tradeable price. */
   chaosEquivalentRate: number | null;
-  /** @deprecated Use chaosEquivalentRate instead. Kept for backward compat. */
-  priceChaos: number | null;
   relativePrice: number | null;
   change: number | null;
   changePercent: number | null;
@@ -64,8 +62,6 @@ export interface PoeItem {
 export interface PoeItemHistoryPoint {
   timestamp: string;
   price: number;
-  /** @deprecated Use chaosEquivalentRate instead. */
-  priceChaos: number;
   /** Chaos-equivalent rate at this point in time. */
   chaosEquivalentRate: number;
   relativePrice: number;

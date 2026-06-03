@@ -209,7 +209,7 @@ export function PriceAlertDialog({
                 );
                 const currentPrice =
                   currentItem?.relativePrice ??
-                  currentItem?.priceChaos ??
+                  currentItem?.chaosEquivalentRate ??
                   null;
 
                 return (

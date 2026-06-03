@@ -65,7 +65,7 @@ export function usePriceAlerts({ realm, league, pollInterval }: UsePriceAlertsOp
       const item = itemMap.get(alert.itemId);
       if (!item) continue;
 
-      const currentPrice = item.relativePrice ?? item.priceChaos ?? item.price;
+      const currentPrice = item.relativePrice ?? item.chaosEquivalentRate ?? item.price;
       if (currentPrice == null) continue;
 
       // Check condition

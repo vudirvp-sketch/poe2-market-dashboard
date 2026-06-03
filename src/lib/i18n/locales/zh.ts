@@ -868,6 +868,12 @@ const zh: Record<TranslationKeys, string> = {
   analystDataFetched: "数据已获取",
   analystPartialData: "部分数据",
   analystError: "加载联赛分析数据失败。后端可能存在问题。",
+
+  upstreamBlockedTitle: "POE2Scout API 无法从您的 IP 访问。",
+  upstreamBlockedStep1: "1) VPN — 连接到不受限制地区的服务器",
+  upstreamBlockedStep2: "2) CORS 代理 — 在 .env.local 中设置：",
+  upstreamBlockedStep3: "3) Cloudflare Worker — 创建代理 api.poe2scout.com 请求的 Worker",
+  upstreamBlockedStep4: "4) 修改后重启服务器",
 };
 
 export default zh;

@@ -205,13 +205,13 @@ export const ComparativeChart = memo(function ComparativeChart({
 
     const series: SeriesData[] = histories.data.map((h, idx) => {
       const item = comparedItems.find((i) => i.id === h.itemId);
-      const rawPrices = (h.data || []).map((p) => p.relativePrice ?? p.priceChaos ?? 0);
+      const rawPrices = (h.data || []).map((p) => p.relativePrice ?? p.chaosEquivalentRate ?? 0);
       const pctChanges = normalizeToPercentChange(rawPrices);
 
       const points = (h.data || []).map((p, i) => ({
         timestamp: p.timestamp,
         pctChange: pctChanges[i] ?? 0,
-        rawPrice: p.relativePrice ?? p.priceChaos ?? 0,
+        rawPrice: p.relativePrice ?? p.chaosEquivalentRate ?? 0,
       }));
 
       return {

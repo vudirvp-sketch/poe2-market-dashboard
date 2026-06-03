@@ -695,7 +695,7 @@ export function Dashboard() {
         const data = currenciesData.items.map((i) => ({
           name: i.name,
           type: i.type,
-          price: i.relativePrice ?? i.priceChaos,
+          price: i.relativePrice ?? i.chaosEquivalentRate,
           changePercent: i.changePercent,
           volume: i.volume,
         }));
@@ -706,7 +706,7 @@ export function Dashboard() {
         const data = uniquesData.items.map((i) => ({
           name: i.name,
           type: i.type,
-          price: i.relativePrice ?? i.priceChaos,
+          price: i.relativePrice ?? i.chaosEquivalentRate,
           changePercent: i.changePercent,
           sevenDayChange: i.sevenDayPriceChangePercent,
           volume: i.volume,

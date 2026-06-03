@@ -230,7 +230,7 @@ export function DetailDialog({
             <div className="rounded-lg bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground">{t("priceLabel")}</p>
               <p className="text-lg font-bold font-mono">
-                {formatPrice(item.relativePrice ?? item.priceChaos, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+                {formatPrice(item.relativePrice ?? item.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3">
