@@ -22,7 +22,6 @@ import {
   Minus,
   Activity,
   RefreshCw,
-  Clock,
   LineChart,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +41,7 @@ import type {
   LeagueFact,
 } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
+import { DataFreshnessBadge } from "./data-freshness-badge";
 
 // ---------------------------------------------------------------------------
 // Component Props
@@ -370,14 +370,14 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
         </div>
       )}
 
-      {/* ---- Data freshness ---- */}
+      {/* ---- Data freshness — compact badge replaces inline Clock+text ---- */}
       {analystData?.fetchedAt && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" aria-hidden="true" />
-          <span>
-            {t("analystDataFetched") || "Data fetched"}:{" "}
-            {new Date(analystData.fetchedAt).toLocaleTimeString()}
-          </span>
+        <div className="flex items-center gap-2">
+          <DataFreshnessBadge
+            fetchedAt={analystData.fetchedAt}
+            dataAvailable={analystData.dataAvailable}
+            compact
+          />
           {!analystData.dataAvailable && (
             <Badge variant="outline" className="text-xs ml-2">
               {t("analystPartialData") || "Partial data"}

@@ -105,7 +105,7 @@ test.describe("Smoke Tests", () => {
     const comboboxes = page.locator('button[role="combobox"]');
     await expect(comboboxes.first()).toBeVisible({ timeout: 10000 });
 
-    // Click the first combobox (realm) and pick PoE2
+    // Click the first combobox (realm) and pick first option
     await comboboxes.first().click();
     await page.waitForTimeout(500);
     const realmOption = page.locator('[role="option"]:not([data-disabled])').first();
@@ -120,6 +120,13 @@ test.describe("Smoke Tests", () => {
     const leagueOption = page.locator('[role="option"]:not([data-disabled])').first();
     await expect(leagueOption).toBeVisible({ timeout: 5000 });
     await leagueOption.click();
+
+    // CRITICAL: Wait for the tabs to render (meaning effectiveLeague is set).
+    // The MarketHeatmap is inside TabsContent which only mounts when
+    // effectiveLeague resolves to a non-empty string. Without this wait,
+    // the heatmap title lookup may fire while the "Select a realm and
+    // league" placeholder is still showing.
+    await expect(page.locator('[role="tab"]')).toBeVisible({ timeout: 10000 });
 
     // Wait for the overview data to load (mocked via installApiMocks)
     // The MarketHeatmap component always renders its card title, even during loading.

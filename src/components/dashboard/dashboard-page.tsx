@@ -51,8 +51,8 @@ import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
 
 // Heavy tab component — lazy-loaded via next/dynamic to reduce initial bundle size.
-// Step 2: Removed ForecastTab and PortfolioTab (garbage code — forecast was unreliable,
-// portfolio was mock-only). CurrencyGraphTab kept as it provides real value.
+// ForecastTab and PortfolioTab were removed (forecast was unreliable, portfolio was mock-only).
+// CurrencyGraphTab kept as it provides real value.
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -248,9 +248,8 @@ export function Dashboard() {
     retry: 1,
   });
 
-  // Step 2: Removed flipperPortfolioData query — Portfolio tab was garbage code
-  // (mock correlation matrix, premature optimization feature). The sticky bar
-  // now defaults to correlationWarning=false.
+  // Portfolio data query removed — the Portfolio tab used a mock correlation matrix.
+  // FlipperStickyBar now defaults to correlationWarning=false.
 
   // ============================================================================
   // Flipper events count (for header events button indicator)
@@ -608,7 +607,7 @@ export function Dashboard() {
   // §3.2: Keyboard Shortcuts
   // ============================================================================
   // Tab index mapping for shortcuts 1–9 (matching visible tab order)
-  // Step 2: Removed "forecast" and "portfolio" from TAB_MAP
+  // "forecast" and "portfolio" removed from TAB_MAP
   const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)

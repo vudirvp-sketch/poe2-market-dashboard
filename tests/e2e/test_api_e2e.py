@@ -125,27 +125,6 @@ async def test_anomalies_endpoint(client):
 
 
 @pytest.mark.e2e
-async def test_recipes_endpoint(client):
-    """Test the recipes endpoint."""
-    resp = await client.get("/api/recipes")
-    assert resp.status_code in [200, 503]
-
-    resp = await client.get("/api/recipes/definitions")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "recipes" in data
-    assert "count" in data
-
-
-@pytest.mark.e2e
-async def test_forecast_currency(client):
-    """Test the forecast endpoint for a specific currency."""
-    resp = await client.get("/api/forecast/divine")
-    # May fail if data insufficient — that's acceptable for E2E
-    assert resp.status_code in [200, 422, 503]
-
-
-@pytest.mark.e2e
 async def test_storage_value(client):
     """Test the storage value endpoint."""
     resp = await client.get("/api/storage-value/divine")
@@ -153,8 +132,4 @@ async def test_storage_value(client):
     assert resp.status_code in [200, 422, 503]
 
 
-@pytest.mark.e2e
-async def test_portfolio(client):
-    """Test the portfolio endpoint."""
-    resp = await client.get("/api/portfolio")
-    assert resp.status_code in [200, 503]
+

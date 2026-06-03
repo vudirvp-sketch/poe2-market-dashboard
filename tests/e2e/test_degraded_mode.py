@@ -93,14 +93,6 @@ class TestDegradedMode:
         # 200 (cached data) or 503 (no data available) are acceptable
         assert resp.status_code in [200, 503]
 
-    async def test_forecast_endpoint_handles_upstream_failure(self, client):
-        """Forecast endpoint should handle upstream failure gracefully.
-
-        May return 422 (insufficient data) or 503, but should NOT crash.
-        """
-        resp = await client.get("/api/forecast/divine")
-        assert resp.status_code in [200, 422, 503]
-
     async def test_anomalies_endpoint_handles_upstream_failure(self, client):
         """Anomalies endpoint should handle upstream failure gracefully."""
         resp = await client.get("/api/anomalies")

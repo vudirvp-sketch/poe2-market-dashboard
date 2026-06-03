@@ -35,6 +35,7 @@ import type {
 import { ApiErrorFallback } from "./api-error-fallback";
 import { ArbitrageFlipperFlips } from "./arbitrage-flipper-flips";
 import { ArbitrageFlipperTriangular } from "./arbitrage-flipper-triangular";
+import { DataFreshnessBadge } from "./data-freshness-badge";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -126,7 +127,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
   return (
     <div className="space-y-4">
-      {/* ---- Backend Status + Refresh ---- */}
+      {/* ---- Backend Status + Refresh + Freshness Badge ---- */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Backend status indicator */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -143,6 +144,15 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
             ? t("flipperBackendOnline")
             : t("flipperBackendOffline")}
         </div>
+
+        {/* Data freshness badge — compact for flipper tabs */}
+        {backendOnline && flipsData?.fetchedAt && (
+          <DataFreshnessBadge
+            fetchedAt={flipsData.fetchedAt}
+            dataAvailable={flipsData.dataAvailable}
+            compact
+          />
+        )}
 
         {/* Refresh button */}
         {backendOnline && (

@@ -16,7 +16,6 @@ import {
   Route,
   Grid3x3,
   TrendingUp,
-  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ import type {
   OptimizerMatrixResponse,
 } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
+import { DataFreshnessBadge } from "./data-freshness-badge";
 
 // ---------------------------------------------------------------------------
 // Component Props
@@ -318,14 +318,14 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
                 </div>
               </div>
 
-              {/* Data freshness */}
+              {/* Data freshness — compact badge replaces inline Clock+text */}
               {pathData.fetchedAt && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" aria-hidden="true" />
-                  <span>
-                    {t("optimizerDataFetched") || "Data fetched"}:{" "}
-                    {new Date(pathData.fetchedAt).toLocaleTimeString()}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <DataFreshnessBadge
+                    fetchedAt={pathData.fetchedAt}
+                    dataAvailable={pathData.dataAvailable}
+                    compact
+                  />
                   {!pathData.dataAvailable && (
                     <Badge variant="outline" className="text-xs ml-2">
                       {t("optimizerPartialData") || "Partial data"}
@@ -474,15 +474,15 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
                 </div>
               </div>
 
-              {/* Data freshness */}
+              {/* Data freshness — compact badge replaces inline Clock+text */}
               {matrixData.fetchedAt && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" aria-hidden="true" />
-                  <span>
-                    {t("optimizerDataFetched") || "Data fetched"}:{" "}
-                    {new Date(matrixData.fetchedAt).toLocaleTimeString()}
-                  </span>
-                  <span className="ml-2">
+                <div className="flex items-center gap-2">
+                  <DataFreshnessBadge
+                    fetchedAt={matrixData.fetchedAt}
+                    dataAvailable={matrixData.dataAvailable}
+                    compact
+                  />
+                  <span className="text-xs text-muted-foreground">
                     {matrixData.size} × {matrixData.size} {t("optimizerCurrencies") || "currencies"}
                   </span>
                   {!matrixData.dataAvailable && (
