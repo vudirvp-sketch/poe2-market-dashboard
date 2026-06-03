@@ -123,6 +123,40 @@ export async function installApiMocks(page: Page): Promise<void> {
       ]),
     });
   });
+
+  // POE2 Overview — return minimal mock so MarketOverview doesn't hang
+  await page.route("**/api/poe2/overview**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        topGainers: [],
+        topLosers: [],
+        topGainers7d: [],
+        topLosers7d: [],
+        stats: { totalVolume: 0, trackedItems: 0, exchangePairs: 0 },
+        snapshotHistory: [],
+      }),
+    });
+  });
+
+  // Flipper portfolio/correlation — return empty so ComparativeChart doesn't hang
+  await page.route("**/api/flipper/portfolio/correlation**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper triangular — 503 (backend offline)
+  await page.route("**/api/flipper/triangular**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

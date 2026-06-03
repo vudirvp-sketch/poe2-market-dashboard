@@ -120,19 +120,18 @@ test.describe("Smoke Tests", () => {
     const leagueOption = page.locator('[role="option"]:not([data-disabled])').first();
     await expect(leagueOption).toBeVisible({ timeout: 5000 });
     await leagueOption.click();
-    await page.waitForTimeout(2000);
 
-    // Wait for the heatmap card to appear — it contains the i18n'd heatmap title
-    // The title is i18n'd: "Тепловая карта цен (24ч)" in ru, "Price Heatmap (24h)" in en
-    // Use a regex-based text matcher that accepts either locale
-    const heatmapCard = page.locator(':text("Тепловая карта цен"), :text("Price Heatmap")').first();
-    await expect(heatmapCard).toBeVisible({ timeout: 15000 });
+    // Wait for the overview data to load (mocked via installApiMocks)
+    // The MarketHeatmap component always renders its card title, even during loading.
+    // The title is i18n'd: "Тепловая карта цен (24ч)" in ru, "Price Heatmap (24h)" in en,
+    // "价格热力图 (24小时)" in zh, "가격 히트맵 (24시)" in ko.
+    // Use getByText with regex to match across all locales.
+    const heatmapTitle = page.getByText(/Тепловая карта цен|Price Heatmap|价格热力图|가격 히트맵/).first();
+    await expect(heatmapTitle).toBeVisible({ timeout: 20000 });
 
     // The "Market Tops" section should NOT contain the raw English string
-    // "Market Tops — Gainers & Losers" (it should be i18n-translated)
-    // In Russian default locale, it should show "Топы рынка — Рост и падение"
-    // In English, it should show "Market Tops — Gainers & Losers"
-    // We just verify the section is present with the Trophy icon
+    // "Market Tops — Gainers & Losers" (it should be i18n-translated).
+    // We just verify the section is present with the Trophy icon.
     const marketTops = page.locator('svg.lucide-trophy').first();
     await expect(marketTops).toBeVisible({ timeout: 10000 });
   });

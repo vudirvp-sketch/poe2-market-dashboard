@@ -221,30 +221,6 @@ export interface FlipsResponse {
   feeWarning?: FeeWarning;
 }
 
-/** Step 6: Scanner scan parameters (echoed back from API) */
-export interface ScannerParams {
-  minScore: number;
-  maxScore: number;
-  minVolume: number;
-  maxSpread: number;
-  minSpread: number;
-  cluster: string | null;
-  currency: string | null;
-  sortBy: string;
-  sortDir: string;
-  limit: number;
-}
-
-/** Step 6: Response from GET /api/flipper/scanner/scan */
-export interface ScannerScanResponse {
-  league: string;
-  total: number;
-  opportunities: FlipOpportunity[];
-  scanParams: ScannerParams;
-  dataAvailable: boolean;
-  fetchedAt: string;
-}
-
 /** Triangular arbitrage cycle from GET /api/flipper/triangular
  *  ⚠️ DEFENSIVE NULLABILITY: totalVolume may be undefined when backend
  *  has insufficient data. UI code MUST use `?? 0` before calling methods. */
@@ -320,16 +296,6 @@ export interface FlipperPhaseResponse {
   dataAvailable?: boolean;
 }
 
-/** Response shape from GET /api/flipper/portfolio */
-export interface PortfolioData {
-  method: "risk_parity" | "min_variance";
-  weights: Record<string, number>;
-  expectedRisk: number;
-  correlationWarning: boolean;
-  lastRebalance: string | null;
-  dataAvailable?: boolean;
-}
-
 /** Summary shape from GET /api/flipper/events?active_only=true (count only) */
 export interface FlipperEventsSummary {
   events: { eventId: string }[];
@@ -368,11 +334,6 @@ export interface ExchangeSnapshot {
   timestamp: string;
   volume: number;
   marketCap: number;
-}
-
-export interface LandingSplashInfo {
-  topItems: PoeItem[];
-  topCurrencies: PoeItem[];
 }
 
 // ============================================================================

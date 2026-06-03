@@ -231,6 +231,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
         <DataFreshnessBadge
           fetchedAt={new Date(overviewFetchedAt).toISOString()}
           dataAvailable={!!overview}
+          compact
         />
       )}
       {/* §2.1: KPI Cards — 4 cards in a row */}

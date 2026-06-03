@@ -989,6 +989,7 @@ export function Dashboard() {
                 <DataFreshnessBadge
                   fetchedAt={new Date(currenciesFetchedAt).toISOString()}
                   dataAvailable={!!currenciesData}
+                  compact={uiState.denseMode}
                 />
               )}
               {isLoading ? (
@@ -1053,6 +1054,7 @@ export function Dashboard() {
                 <DataFreshnessBadge
                   fetchedAt={new Date(uniquesFetchedAt).toISOString()}
                   dataAvailable={!!uniquesData}
+                  compact={uiState.denseMode}
                 />
               )}
               {isLoading ? (
@@ -1102,6 +1104,7 @@ export function Dashboard() {
                 <DataFreshnessBadge
                   fetchedAt={new Date(exchangeFetchedAt).toISOString()}
                   dataAvailable={!!exchangeData}
+                  compact={uiState.denseMode}
                 />
               )}
               {isLoading ? (
