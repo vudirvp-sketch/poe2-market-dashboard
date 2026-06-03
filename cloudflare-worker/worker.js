@@ -38,9 +38,11 @@ const ALLOWED_ORIGINS = [
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
   /^https:\/\/.*\.chatglm\.site$/,           // z.ai preview domains
+  /^https:\/\/.*\.space-z\.ai$/,             // z.ai workspace preview domains
   /^https:\/\/.*\.vercel\.app$/,             // Vercel deployments
   /^https:\/\/poe2scout\.com$/,              // poe2scout itself
   /^https?:\/\/.*\.local(:\d+)?$/,           // local network
+  /^https?:\/\/.*\.workers\.dev$/,           // Cloudflare Workers (self & other workers)
 ];
 
 function isOriginAllowed(origin) {
