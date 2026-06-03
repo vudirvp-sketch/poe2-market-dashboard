@@ -1,0 +1,28 @@
+# ============================================================================
+# Cloudflare Worker Configuration — PoE2Scout CORS Proxy
+# ============================================================================
+#
+# Before deploying:
+#   1. Install Wrangler CLI:  npm install -g wrangler
+#   2. Login to Cloudflare:   wrangler login
+#   3. Change "poe2scout-proxy" to your preferred worker name
+#   4. Deploy:                 wrangler deploy
+#
+# After deploying, note the URL from the output and set it in .env.local:
+#   POE2_API_BASE_URL=https://poe2scout-proxy.YOUR-ACCOUNT.workers.dev/api
+# ============================================================================
+
+name = "poe2scout-proxy"
+main = "worker.js"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Uncomment and adjust if you want a custom route on your own domain:
+# routes = [
+#   { pattern = "poe2api.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
+
+# Worker limits (free tier defaults — no need to change):
+# - 100,000 requests/day
+# - 10ms CPU time per invocation
+# - 1MB script size

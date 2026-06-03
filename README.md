@@ -111,6 +111,10 @@ Overview | Currencies | Uniques | Exchange | Arbitrage | Flips | Recipes | Forec
 │   │   ├── i18n/            # Internationalization (en, ru, zh, ko — ~460 keys each)
 │   │   └── store.ts         # Zustand store (comparison, favorites, alerts)
 │   └── hooks/               # Custom React hooks (use-api-with-retry, use-debounce, use-online-status, use-price-alerts, use-reduced-motion)
+├── cloudflare-worker/       # CORS proxy for bypassing regional API blocking
+│   ├── worker.js            # Cloudflare Worker — proxies api.poe2scout.com requests
+│   ├── wrangler.toml        # Wrangler deployment config
+│   └── package.json         # NPM package with deploy scripts
 ├── e2e/                     # Playwright E2E tests (smoke, navigation, accessibility, i18n)
 ├── src/__tests__/           # Jest unit tests
 ├── tests/                   # Python pytest backend tests
@@ -177,6 +181,60 @@ npm run lint      # Lint check
 - **Unit tests** (Jest): `src/__tests__/` — API helpers, i18n, store, utils
 - **E2E tests** (Playwright): `e2e/` — smoke, navigation, accessibility, i18n
 - **Backend tests** (pytest): `tests/` — scorer, triangular, forecast, portfolio, events, anomaly, recipe, scheduler
+
+## Bypassing Regional IP Blocking (Russia)
+
+The POE2Scout API (`api.poe2scout.com`) is blocked from Russian IPs. The dashboard includes several resilience mechanisms:
+
+1. **Circuit breaker** — stops hammering the API after 3 consecutive failures
+2. **Stale-while-revalidate cache** — serves cached data up to 30 minutes old while revalidating in background
+3. **Hardcoded fallback** — realms/leagues data is pre-populated so the UI always has selectors
+4. **Dynamic fallback** — last successful API response is cached in memory and served when upstream is unreachable
+
+### Cloudflare Worker CORS Proxy (Recommended)
+
+A ready-to-deploy Cloudflare Worker is included in `cloudflare-worker/`. It proxies requests to the POE2Scout API through Cloudflare's edge network, bypassing regional blocking.
+
+**Deployment (5 minutes, free):**
+
+```bash
+# 1. Register at https://dash.cloudflare.com/sign-up (free, email only)
+# 2. Install Wrangler CLI
+npm install -g wrangler
+
+# 3. Login to Cloudflare
+cd cloudflare-worker
+wrangler login
+
+# 4. Deploy
+wrangler deploy
+# Output: https://poe2scout-proxy.your-account.workers.dev
+
+# 5. Configure your dashboard
+# Add to .env.local:
+POE2_CORS_PROXY_URL=https://poe2scout-proxy.your-account.workers.dev/api
+```
+
+**Free tier limits:**
+- 100,000 requests/day (enough for personal use)
+- 10ms CPU time per request
+- 1MB script size
+- Up to 10 Workers
+
+**How it works:** When a direct API call fails with ECONNRESET/ETIMEDOUT, the dashboard automatically retries through the CORS proxy. No code changes needed — just set the environment variable.
+
+### Alternative: Set POE2_API_BASE_URL directly
+
+If you deploy the worker, you can also set `POE2_API_BASE_URL` directly to the worker URL (instead of using the fallback mechanism). All API traffic will go through Cloudflare.
+
+```bash
+# .env.local — ALL requests go through the proxy
+POE2_API_BASE_URL=https://poe2scout-proxy.your-account.workers.dev/api
+```
+
+### Alternative: VPN
+
+The simplest option. Connect a VPN on the server and restart the dashboard. No code changes needed.
 
 ## Graceful Degradation
 

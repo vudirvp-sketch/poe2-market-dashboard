@@ -41,6 +41,24 @@ import type {
 // ---------- Configurable API Base URL ----------
 const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
 
+// ---------- CORS Proxy fallback ----------
+// When the direct API call fails with ECONNRESET/ETIMEDOUT (common from
+// Russian IPs where api.poe2scout.com is blocked), automatically retry
+// through a CORS proxy if one is configured.
+//
+// Set POE2_CORS_PROXY_URL in .env.local to your Cloudflare Worker URL
+// (e.g. https://poe2scout-proxy.your-account.workers.dev/api)
+//
+// The proxy URL replaces BASE_URL for retry requests only.
+// If POE2_CORS_PROXY_URL is not set, this feature is disabled and
+// behavior is identical to before.
+const CORS_PROXY_URL = process.env.POE2_CORS_PROXY_URL || "";
+
+// Track whether we've confirmed the proxy works (to avoid retrying a dead proxy)
+let corsProxyConfirmed = false;
+let corsProxyLastCheck = 0;
+const CORS_PROXY_CONFIRM_TTL = 5 * 60_000; // Re-confirm every 5 minutes
+
 // ---------- Stale-while-revalidate cache ----------
 const cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 60_000;          // 60s fresh
@@ -208,6 +226,94 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
 }
 
 // ============================================================================
+// CORS Proxy Fallback — retry through a Cloudflare Worker when direct API
+// access is blocked (ECONNRESET / ETIMEDOUT from Russian IPs)
+// ============================================================================
+
+/**
+ * Try to fetch a URL through the configured CORS proxy.
+ *
+ * This is called as a last resort when the direct API request fails with
+ * a network error that suggests the API is blocked (ECONNRESET, ETIMEDOUT,
+ * ECONNREFUSED, ENOTFOUND).
+ *
+ * How it works:
+ * 1. Replaces BASE_URL in the original URL with CORS_PROXY_URL
+ * 2. Fetches through the proxy with the same timeout
+ * 3. On success, caches the result (same as direct fetch) and marks proxy as confirmed
+ * 4. On failure, returns null (caller should proceed with its own error handling)
+ *
+ * @param originalUrl  The URL that failed directly
+ * @param originalError  The error from the direct attempt
+ * @returns  T on success, null on failure (caller handles null)
+ */
+async function tryCorsProxyFallback<T>(originalUrl: string, originalError: Error): Promise<T | null> {
+  // No proxy configured — skip entirely
+  if (!CORS_PROXY_URL) return null;
+
+  // If proxy was previously confirmed but the TTL hasn't expired,
+  // we can use it. If it was never confirmed, we'll try once.
+  // If it was confirmed but TTL expired, re-confirm.
+  const now = Date.now();
+  if (corsProxyConfirmed && now - corsProxyLastCheck > CORS_PROXY_CONFIRM_TTL) {
+    corsProxyConfirmed = false;
+  }
+
+  // Build the proxy URL by replacing BASE_URL with CORS_PROXY_URL
+  let proxyUrl: string;
+  if (originalUrl.startsWith(BASE_URL)) {
+    proxyUrl = CORS_PROXY_URL + originalUrl.slice(BASE_URL.length);
+  } else {
+    // URL doesn't start with BASE_URL (unexpected), try prefixing anyway
+    proxyUrl = CORS_PROXY_URL + "/" + originalUrl.replace(/^https?:\/\/[^/]+/, "");
+  }
+
+  console.info(
+    `[poe2api] Direct API failed (${originalError.message}), trying CORS proxy: ${proxyUrl}`
+  );
+
+  try {
+    const res = await fetchWithTimeout(proxyUrl, FETCH_TIMEOUT);
+
+    if (!res.ok) {
+      console.warn(
+        `[poe2api] CORS proxy returned ${res.status} ${res.statusText} for ${proxyUrl}`
+      );
+      // Don't mark proxy as dead — it might just be a transient issue
+      return null;
+    }
+
+    const data = (await res.json()) as T;
+
+    // Success! Cache the result under the ORIGINAL URL so subsequent
+    // cachedFetch calls find it without needing the proxy again
+    cache.set(originalUrl, { data, ts: Date.now() });
+
+    // Mark proxy as confirmed working
+    corsProxyConfirmed = true;
+    corsProxyLastCheck = Date.now();
+
+    // Reset circuit breaker since we have a working path to the API
+    if (circuitBreakerOpen) {
+      circuitBreakerOpen = false;
+      consecutiveFailures = 0;
+      console.info("[poe2api] Circuit breaker CLOSED — CORS proxy is working.");
+    }
+
+    console.info(`[poe2api] CORS proxy succeeded for ${originalUrl}`);
+    return data;
+  } catch (proxyErr: unknown) {
+    const unwrappedProxyErr = unwrapNetworkError(proxyErr);
+    console.warn(
+      `[poe2api] CORS proxy also failed for ${proxyUrl}: ${unwrappedProxyErr.message}`
+    );
+    // Mark proxy as unconfirmed so we don't waste time on it in the near future
+    corsProxyConfirmed = false;
+    return null;
+  }
+}
+
+// ============================================================================
 // Fix 2: doFetch — actual fetch logic with retry + cache population
 // ============================================================================
 
@@ -219,6 +325,11 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
     if (circuitBreakerOpen) {
       const elapsed = Date.now() - circuitBreakerOpenSince;
       if (elapsed < CIRCUIT_BREAKER_COOLDOWN) {
+        // Upstream is known-down. Try CORS proxy if available before giving up.
+        if (CORS_PROXY_URL) {
+          const proxyResult = await tryCorsProxyFallback<T>(url, new Error(`Circuit breaker open`));
+          if (proxyResult !== null) return proxyResult;
+        }
         // Still in cooldown — throw immediately so cachedFetch can use stale cache
         throw new Error(`Circuit breaker open — upstream API unreachable (retry in ${Math.round((CIRCUIT_BREAKER_COOLDOWN - elapsed) / 1000)}s)`);
       }
@@ -306,10 +417,14 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
 
       // Non-recoverable network errors (server not reachable at all)
       if (lastError.message.includes("ECONNREFUSED") || lastError.message.includes("ENOTFOUND")) {
+        // ── Try CORS proxy fallback before giving up completely ──
+        const proxyResult = await tryCorsProxyFallback<T>(url, lastError);
+        if (proxyResult !== null) return proxyResult;
+
         throw new Error(
           `Cannot reach poe2scout.com API — ${url}. ` +
           `Error: ${lastError.message}. ` +
-          `Try setting POE2_API_BASE_URL=${BASE_URL} in .env.local ` +
+          `Try setting POE2_API_BASE_URL in .env.local to a CORS proxy URL ` +
           `or use a VPN to access poe2scout.com.`
         );
       }
@@ -326,8 +441,14 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
           );
         }
 
-        // Don't wait if this was the last attempt — nothing left to retry
-        if (attempt >= maxRetries) break;
+        // ── Try CORS proxy fallback on transient errors (ECONNRESET, ETIMEDOUT) ──
+        // This is the main use case: API is blocked by Russian ISP.
+        // We try the CORS proxy before giving up on the last retry attempt.
+        if (attempt >= maxRetries) {
+          const proxyResult = await tryCorsProxyFallback<T>(url, lastError);
+          if (proxyResult !== null) return proxyResult;
+          break; // No proxy available, give up
+        }
 
         const baseDelay = 500 * Math.pow(2, attempt);
         const jitter = Math.random() * 500; // 0–500ms random jitter

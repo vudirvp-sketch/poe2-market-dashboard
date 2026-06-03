@@ -1,0 +1,14 @@
+{
+  "name": "poe2scout-cors-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker CORS proxy for PoE2Scout API — bypasses regional IP blocking",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0"
+  }
+}
