@@ -879,6 +879,13 @@ const en = {
   upstreamBlockedStep2: "2) CORS proxy — set in .env.local:",
   upstreamBlockedStep3: "3) Cloudflare Worker — create a Worker that proxies requests to api.poe2scout.com",
   upstreamBlockedStep4: "4) Restart the server after making changes",
+
+  // ---- Data Freshness Badge (graceful degradation indicator) ----
+  dataFreshnessLive: "Live",
+  dataFreshnessStale: "Stale data",
+  dataFreshnessCached: "Cached data",
+  dataFreshnessJustNow: "just now",
+  dataFreshnessAgeMinutes: "{0} min ago",
 } as const;
 
 export default en;

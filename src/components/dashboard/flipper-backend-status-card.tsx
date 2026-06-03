@@ -18,6 +18,12 @@
 //   shows the current WebSocket connection state: connected (green),
 //   connecting (yellow), or disconnected (gray). This gives the user
 //   instant feedback on whether live updates are flowing.
+//
+// Data freshness badge (added):
+//   When fetchedAt is provided, a DataFreshnessBadge shows the age of
+//   the displayed data: Live (green), Stale data (yellow), Cached data (red).
+//   This completes the graceful degradation chain:
+//     flipper-proxy → proxyWithFallback() → cache-prepopulator → badge
 // ============================================================================
 "use client";
 
@@ -28,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import type { WebSocketStatus } from "@/hooks/use-websocket";
+import { DataFreshnessBadge } from "./data-freshness-badge";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -40,6 +47,10 @@ interface FlipperBackendStatusCardProps {
   insufficientData?: boolean;
   /** WebSocket connection status (from use-websocket.ts) */
   wsStatus?: WebSocketStatus;
+  /** ISO timestamp when the data was last fetched from the backend */
+  fetchedAt?: string | null;
+  /** Whether the backend reports data as available */
+  dataAvailable?: boolean | null;
   onRefresh?: () => void;
 }
 
@@ -52,6 +63,8 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
   upstreamDegraded,
   insufficientData,
   wsStatus,
+  fetchedAt,
+  dataAvailable,
   onRefresh,
 }: FlipperBackendStatusCardProps) {
   const { t } = useI18n();
@@ -99,7 +112,7 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
 
   return (
     <>
-      {/* ---- Backend status + Refresh + WS badge ---- */}
+      {/* ---- Backend status + Refresh + WS badge + Freshness badge ---- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Circle
@@ -119,6 +132,15 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
               {wsBadgeConfig.icon}
               <span className="ml-0.5">{wsBadgeConfig.badgeText}</span>
             </Badge>
+          )}
+
+          {/* Data freshness badge — shows Live/Stale/Cached */}
+          {backendOnline && fetchedAt && (
+            <DataFreshnessBadge
+              fetchedAt={fetchedAt}
+              dataAvailable={dataAvailable}
+              compact
+            />
           )}
         </div>
 

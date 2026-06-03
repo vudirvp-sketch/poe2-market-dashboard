@@ -874,6 +874,13 @@ const zh: Record<TranslationKeys, string> = {
   upstreamBlockedStep2: "2) CORS 代理 — 在 .env.local 中设置：",
   upstreamBlockedStep3: "3) Cloudflare Worker — 创建代理 api.poe2scout.com 请求的 Worker",
   upstreamBlockedStep4: "4) 修改后重启服务器",
+
+  // ---- Data Freshness Badge (数据新鲜度指示器) ----
+  dataFreshnessLive: "实时",
+  dataFreshnessStale: "数据过期",
+  dataFreshnessCached: "缓存数据",
+  dataFreshnessJustNow: "刚刚",
+  dataFreshnessAgeMinutes: "{0}分钟前",
 };
 
 export default zh;

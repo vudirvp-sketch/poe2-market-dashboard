@@ -44,7 +44,7 @@ interface ForecastModel {
 }
 
 interface TakeProfitCalculatorProps {
-  /** The forecast response models (from parent forecast-tab) */
+  /** The forecast response models */
   models: Record<string, ForecastModel>;
   /** Current price of the selected currency */
   currentPrice: number;

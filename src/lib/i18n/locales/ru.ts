@@ -807,6 +807,13 @@ const ru: Record<TranslationKeys, string> = {
   upstreamBlockedStep2: "2) CORS-прокси — в .env.local укажите:",
   upstreamBlockedStep3: "3) Cloudflare Worker — создайте Worker, который проксирует запросы к api.poe2scout.com",
   upstreamBlockedStep4: "4) Перезапустите сервер после изменений",
+
+  // ---- Data Freshness Badge (индикатор свежести данных) ----
+  dataFreshnessLive: "Актуально",
+  dataFreshnessStale: "Устаревшие данные",
+  dataFreshnessCached: "Кэшированные данные",
+  dataFreshnessJustNow: "только что",
+  dataFreshnessAgeMinutes: "{0} мин назад",
 };
 
 export default ru;

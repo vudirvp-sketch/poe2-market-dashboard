@@ -145,6 +145,8 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
         insufficientData={pathInsufficientData || matrixInsufficientData}
+        fetchedAt={pathData?.fetchedAt ?? matrixData?.fetchedAt}
+        dataAvailable={pathData?.dataAvailable ?? matrixData?.dataAvailable}
         onRefresh={() => {
           refetchPath();
           refetchMatrix();

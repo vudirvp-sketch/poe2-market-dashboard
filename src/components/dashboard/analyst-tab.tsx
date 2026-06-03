@@ -167,6 +167,8 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
         insufficientData={insufficientData}
+        fetchedAt={analystData?.fetchedAt}
+        dataAvailable={analystData?.dataAvailable}
         onRefresh={() => refetchAnalyst()}
       />
 

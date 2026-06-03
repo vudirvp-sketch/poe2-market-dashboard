@@ -293,6 +293,8 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
         backendOnline={backendOnline}
         upstreamDegraded={upstreamDegraded}
         insufficientData={insufficientData}
+        fetchedAt={flipsData?.fetchedAt}
+        dataAvailable={flipsData?.dataAvailable}
         onRefresh={() => refetchFlips()}
       />
 

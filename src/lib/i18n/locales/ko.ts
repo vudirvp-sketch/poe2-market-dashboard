@@ -874,6 +874,13 @@ const ko: Record<TranslationKeys, string> = {
   upstreamBlockedStep2: "2) CORS 프록시 — .env.local에 설정:",
   upstreamBlockedStep3: "3) Cloudflare Worker — api.poe2scout.com 요청을 프록시하는 Worker 생성",
   upstreamBlockedStep4: "4) 변경 후 서버 재시작",
+
+  // ---- Data Freshness Badge (데이터 신선도 표시기) ----
+  dataFreshnessLive: "실시간",
+  dataFreshnessStale: "지연 데이터",
+  dataFreshnessCached: "캐시 데이터",
+  dataFreshnessJustNow: "방금",
+  dataFreshnessAgeMinutes: "{0}분 전",
 };
 
 export default ko;

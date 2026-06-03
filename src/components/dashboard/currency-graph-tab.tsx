@@ -64,6 +64,7 @@ interface PricesResponse {
   rates: PriceRate[];
   baseCurrency: string;
   fetchedAt: string;
+  dataAvailable?: boolean;
 }
 
 // TriangularCycle and TriangularResponse imported from @/lib/types
@@ -512,6 +513,8 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
         backendOnline={backendOnline}
         upstreamDegraded={upstreamDegraded}
         insufficientData={insufficientData}
+        fetchedAt={pricesData?.fetchedAt}
+        dataAvailable={pricesData?.dataAvailable}
         onRefresh={() => refetchPrices()}
       />
 
