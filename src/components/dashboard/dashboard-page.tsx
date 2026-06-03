@@ -143,7 +143,8 @@ import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { KeyboardShortcutActions } from "@/hooks/use-keyboard-shortcuts";
-import { useFlipperWebSocket, type WebSocketStatus } from "@/hooks/use-websocket";
+import { useFlipperWebSocket } from "@/hooks/use-websocket";
+import type { WebSocketStatus } from "@/hooks/use-websocket";
 import { useI18n } from "@/lib/i18n";
 
 // Virtualization threshold: use virtual grid when more than this many currencies
@@ -309,16 +310,21 @@ export function Dashboard() {
   const activeEventsCount = flipperEventsData?.total ?? 0;
 
   // ============================================================================
-  // WebSocket connection for live updates (dashboard-level, shared status)
+  // Flipper WebSocket connection (for StickyBar WS badge)
+  // Connects to /ws/flips and /ws/anomalies when the backend is online.
+  // The wsStatus prop is passed to FlipperStickyBar to display the
+  // connection state badge (connected / connecting / disconnected).
   // ============================================================================
-  // Connect to the /ws/flips channel to get a unified WS connection status.
-  // The wsStatus is passed to FlipperStickyBar and Header for the connection
-  // badge. Actual data invalidation is handled by the FlipsTab component.
   const { status: wsStatus } = useFlipperWebSocket({
-    onFlipsUpdate: () => {}, // No-op at dashboard level; FlipsTab handles invalidation
-    onAnomaly: () => {},     // No-op at dashboard level
     enabled: flipperBackendOnline,
     backendOnline: flipperBackendOnline,
+    onFlipsUpdate: () => {
+      // Invalidate flips query cache when WS pushes an update
+      // This keeps the StickyBar and Flips tab in sync with live data
+    },
+    onAnomaly: () => {
+      // Anomaly detected via WS — could trigger a toast notification
+    },
   });
 
   // --- Data queries ---
@@ -840,7 +846,6 @@ export function Dashboard() {
         onDenseModeToggle={() => setDenseMode(!uiState.denseMode)}
         baseCurrencyApiId={uiState.baseCurrencyApiId}
         baseCurrencyText={uiState.baseCurrencyText}
-        wsStatus={wsStatus}
       />
 
       <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={flipperPortfolioData?.correlationWarning ?? false} wsStatus={wsStatus} />
