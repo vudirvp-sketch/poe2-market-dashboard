@@ -146,10 +146,15 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     prices = dict(snapshot.prices_in_base)  # shallow copy — prevents mutation of shared state
 
     if "chaos" in prices and config.league.base_currency != "chaos":
-        exalted_to_chaos = prices.get("chaos", 1.0)
-        for k in list(prices.keys()):
-            if k != "chaos":
-                prices[k] = prices[k] * exalted_to_chaos
+        # prices["chaos"] is the price of 1 chaos in base_currency (e.g. 0.1 exalted)
+        # To convert from exalted-based to chaos-based, multiply by (1 / chaos_price)
+        # i.e. exalted_to_chaos = 1 / prices["chaos"]
+        chaos_in_base = prices.get("chaos", 0)
+        if chaos_in_base and chaos_in_base > 0:
+            base_to_chaos = 1.0 / chaos_in_base
+            for k in list(prices.keys()):
+                if k != "chaos":
+                    prices[k] = prices[k] * base_to_chaos
 
     # 6. Run currency clustering
     # FIX: Cache clustering result with pipeline_cache instead of recreating
@@ -224,15 +229,25 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     import math as _math
 
-    for key, rate in rates.items():
-        # Fix: case-insensitive history lookup — snapshot keys are lowercase
-        history = currency_price_history.get(rate.currency_from, [])
+    # Cache momentum results per currency to avoid recomputing the same
+    # currency's momentum N times (once per pair it appears in)
+    _momentum_cache: dict[str, object] = {}
+
+    def _get_momentum(currency: str):
+        if currency in _momentum_cache:
+            return _momentum_cache[currency]
+        history = currency_price_history.get(currency, [])
         if not history:
-            history = currency_price_history.get(rate.currency_from.lower(), [])
+            history = currency_price_history.get(currency.lower(), [])
         tracker = PriceMomentumTracker(window_size=24, history=history)
         for price in history:
             tracker.update(price)
-        momentum_result = tracker.compute()
+        result = tracker.compute()
+        _momentum_cache[currency] = result
+        return result
+
+    for key, rate in rates.items():
+        momentum_result = _get_momentum(rate.currency_from)
 
         mid_price = rate.raw_rate
         volume = float(rate.volume_traded)
@@ -508,10 +523,13 @@ async def get_triangular_arbitrage(
     # Build prices in a consistent reference currency.
     prices = dict(snapshot.prices_in_base)  # shallow copy
     if "chaos" in prices and config.league.base_currency != "chaos":
-        base_to_chaos = prices.get("chaos", 1.0)
-        for k in list(prices.keys()):
-            if k != "chaos":
-                prices[k] = prices[k] * base_to_chaos
+        # Same conversion as in _build_flip_opportunities: invert chaos price
+        chaos_in_base = prices.get("chaos", 0)
+        if chaos_in_base and chaos_in_base > 0:
+            base_to_chaos = 1.0 / chaos_in_base
+            for k in list(prices.keys()):
+                if k != "chaos":
+                    prices[k] = prices[k] * base_to_chaos
 
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():

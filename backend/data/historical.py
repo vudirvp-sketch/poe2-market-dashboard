@@ -163,11 +163,15 @@ class HistoricalStore:
         ask: float | None = None,
         timestamp: datetime | None = None,
     ) -> None:
-        """Write a single price snapshot."""
+        """Write a single price snapshot.
+
+        Uses INSERT OR IGNORE to avoid duplicates based on the
+        idx_price_snapshot_dedup unique index (rounded to 5-min bucket).
+        """
         db = await self._ensure_db()
         ts = (timestamp or datetime.now(timezone.utc)).isoformat()
         await db.execute(
-            """INSERT INTO price_snapshots
+            """INSERT OR IGNORE INTO price_snapshots
                (timestamp, league, currency, price, volume_24h, bid, ask)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (ts, league, currency, price, volume_24h, bid, ask),

@@ -55,11 +55,12 @@ export const ArbitrageClientTable = memo(function ArbitrageClientTable({
     return pairs.filter((p) => (p.volume ?? 0) >= minVolume).length;
   }, [pairs, minVolume]);
 
-  // Deduplicate cycles by route signature
+  // Deduplicate cycles — preserve direction: ["A","B","C"] and ["A","C","B"]
+  // are different arbitrage paths. Only remove exact route duplicates.
   const uniqueCycles = useMemo(() => {
     const seen = new Set<string>();
     return cycles.filter((c) => {
-      const sig = [...c.route].sort().join("-");
+      const sig = c.route.join("-");
       if (seen.has(sig)) return false;
       seen.add(sig);
       return true;

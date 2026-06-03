@@ -81,11 +81,33 @@ class DataScheduler:
             base = self._config.league.base_currency
             prices_in_base: dict[str, float] = {base: 1.0}
 
+            # First pass: direct rates from base
             for key, rate in rates.items():
                 if rate.currency_from == base and rate.raw_rate > 0:
                     prices_in_base[rate.currency_to] = 1.0 / rate.raw_rate   # price in base
                 elif rate.currency_to == base and rate.raw_rate > 0:
                     prices_in_base[rate.currency_from] = rate.raw_rate         # price in base
+
+            # Second pass: BFS to fill transitive prices for currencies
+            # without a direct base rate (e.g., derived through another currency)
+            changed = True
+            max_iterations = 5  # safety limit
+            while changed and max_iterations > 0:
+                changed = False
+                max_iterations -= 1
+                for key, rate in rates.items():
+                    c1 = rate.currency_from
+                    c2 = rate.currency_to
+                    if rate.raw_rate <= 0:
+                        continue
+                    # If c1 has a price but c2 doesn't
+                    if c1 in prices_in_base and c2 not in prices_in_base:
+                        prices_in_base[c2] = prices_in_base[c1] / rate.raw_rate
+                        changed = True
+                    # If c2 has a price but c1 doesn't
+                    if c2 in prices_in_base and c1 not in prices_in_base:
+                        prices_in_base[c1] = prices_in_base[c2] * rate.raw_rate
+                        changed = True
 
             # Build snapshots
             snapshots = []

@@ -346,20 +346,18 @@ class Poe2ScoutProvider(BaseDataProvider):
                     continue
 
                 # Derive cross-rate from relative_prices:
-                # If from_price and to_price are both in base_currency terms,
-                # then the rate from→to = to_price / from_price
+                # If from_rel and to_rel are both in base_currency terms,
+                # then the rate from→to = from_rel / to_rel
+                # (consistent with get_exchange_rates() forward_rate = c1_rel / c2_rel)
                 from_rel = float(other_data.relative_price) if other_data.relative_price else 0
                 to_rel = float(my_data.relative_price) if my_data.relative_price else 0
 
                 if from_rel <= 0 or to_rel <= 0:
-                    # Fallback: use volume-based rate derivation
-                    vol_self = float(my_data.volume_traded) if my_data.volume_traded else 1
-                    vol_other = float(other_data.volume_traded) if other_data.volume_traded else 0
-                    if vol_self <= 0:
-                        continue
-                    raw_rate = vol_other / vol_self
+                    # Fallback: skip — volume-based rate derivation is unreliable
+                    # (volume ratio is NOT an exchange rate)
+                    continue
                 else:
-                    raw_rate = to_rel / from_rel
+                    raw_rate = from_rel / to_rel
 
                 # Estimate bid/ask spread from pair data
                 # The POE2Scout API doesn't provide explicit bid/ask;
@@ -489,12 +487,8 @@ class Poe2ScoutProvider(BaseDataProvider):
             if c1_rel > 0 and c2_rel > 0:
                 forward_rate = c1_rel / c2_rel
             else:
-                # Fallback to volume-based derivation
-                vol1 = float(c1_data.volume_traded) if c1_data.volume_traded else 1
-                vol2 = float(c2_data.volume_traded) if c2_data.volume_traded else 0
-                if vol1 <= 0:
-                    continue
-                forward_rate = vol2 / vol1
+                # No reliable fallback — volume ratio is NOT an exchange rate
+                continue
 
             forward_key = f"{c1_id}/{c2_id}"
             rates[forward_key] = ExchangeRate(
@@ -511,11 +505,8 @@ class Poe2ScoutProvider(BaseDataProvider):
             if c2_rel > 0 and c1_rel > 0:
                 reverse_rate = c2_rel / c1_rel
             else:
-                vol2 = float(c2_data.volume_traded) if c2_data.volume_traded else 0
-                vol1 = float(c1_data.volume_traded) if c1_data.volume_traded else 1
-                if vol2 <= 0:
-                    continue
-                reverse_rate = vol1 / vol2
+                # No reliable fallback
+                continue
 
             reverse_key = f"{c2_id}/{c1_id}"
             rates[reverse_key] = ExchangeRate(

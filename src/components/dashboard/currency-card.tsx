@@ -59,7 +59,12 @@ export const CurrencyCard = memo(function CurrencyCard({
   const benchmark = benchmarkData?.benchmark;
 
   // P2-4: Compute liquidity score from volume data
-  const liquidityScore = item.volume != null && item.volume > 0 ? computeLiquidityScore(item.volume, Math.max(item.volume, 1)) : null;
+  // FIX: Previous version passed item.volume as both volumeTraded and highestStock,
+  // which always produced ~1.0. Now uses a fixed reference scale (10000) so that
+  // volume=100 → ~0.46, volume=1000 → ~0.77, volume=10000 → ~1.0
+  const liquidityScore = item.volume != null && item.volume > 0
+    ? computeLiquidityScore(item.volume, 10000)
+    : null;
 
   // Prefetch detail history on hover
   const handleMouseEnter = useCallback(() => {

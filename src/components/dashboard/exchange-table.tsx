@@ -341,10 +341,16 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       </span>
                     </div>
                   </td>
-                  {/* Rate */}
+                  {/* Rate — cross-rate: how many currency2 per 1 unit of currency1 */}
                   <td className="px-3 py-2 text-right">
                     <span className="text-xl font-bold font-mono">
-                      {formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+                      {formatPrice(
+                        pair.relativePrice && pair.currency2RelativePrice && pair.currency2RelativePrice > 0
+                          ? pair.relativePrice / pair.currency2RelativePrice
+                          : pair.relativePrice ?? 0,
+                        uiState.baseCurrencyText,
+                        uiState.baseCurrencyApiId,
+                      )}
                     </span>
                   </td>
                   {/* Change */}

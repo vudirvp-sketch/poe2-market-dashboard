@@ -81,18 +81,18 @@ interface ForecastResponse {
 
 interface AnomalyAlert {
   currency: string;
-  alert_score: number;
-  triggered_indicators: string[];
+  alertScore: number;
+  triggeredIndicators: string[];
   direction: string;
-  is_confirmed: boolean;
+  isConfirmed: boolean;
   timestamp: string;
 }
 
 interface AnomaliesResponse {
   anomalies: AnomalyAlert[];
   count: number;
-  currencies_checked: number;
-  min_alert_score: number;
+  currenciesChecked: number;
+  minAlertScore: number;
   dataAvailable?: boolean;
 }
 
@@ -100,7 +100,7 @@ interface AnomaliesResponse {
 // imported from @/lib/types (canonical camelCase definitions)
 
 interface CurrencyOption {
-  api_id: string;
+  apiId: string;
   text: string;
 }
 
@@ -113,26 +113,26 @@ interface CurrencyOption {
 // ---------------------------------------------------------------------------
 
 const POPULAR_CURRENCIES: CurrencyOption[] = [
-  { api_id: "exalted", text: "Exalted Orb" },
-  { api_id: "divine", text: "Divine Orb" },
-  { api_id: "chaos", text: "Chaos Orb" },
-  { api_id: "gold", text: "Gold" },
-  { api_id: "regret", text: "Orb of Regret" },
-  { api_id: "chance", text: "Orb of Chance" },
-  { api_id: "alch", text: "Orb of Alchemy" },
-  { api_id: "scour", text: "Orb of Scouring" },
-  { api_id: "fusing", text: "Orb of Fusing" },
-  { api_id: "jeweller", text: "Jeweller's Orb" },
-  { api_id: "chrome", text: "Chromatic Orb" },
-  { api_id: "vaal", text: "Vaal Orb" },
-  { api_id: "blessed", text: "Blessed Orb" },
-  { api_id: "chisel", text: "Cartographer's Chisel" },
-  { api_id: "regal", text: "Regal Orb" },
-  { api_id: "aug", text: "Orb of Augmentation" },
-  { api_id: "trans", text: "Transmutation Orb" },
-  { api_id: "altar", text: "Breachstone" },
-  { api_id: "mirror", text: "Mirror of Kalandra" },
-  { api_id: "annul", text: "Orb of Annulment" },
+  { apiId: "exalted", text: "Exalted Orb" },
+  { apiId: "divine", text: "Divine Orb" },
+  { apiId: "chaos", text: "Chaos Orb" },
+  { apiId: "gold", text: "Gold" },
+  { apiId: "regret", text: "Orb of Regret" },
+  { apiId: "chance", text: "Orb of Chance" },
+  { apiId: "alch", text: "Orb of Alchemy" },
+  { apiId: "scour", text: "Orb of Scouring" },
+  { apiId: "fusing", text: "Orb of Fusing" },
+  { apiId: "jeweller", text: "Jeweller's Orb" },
+  { apiId: "chrome", text: "Chromatic Orb" },
+  { apiId: "vaal", text: "Vaal Orb" },
+  { apiId: "blessed", text: "Blessed Orb" },
+  { apiId: "chisel", text: "Cartographer's Chisel" },
+  { apiId: "regal", text: "Regal Orb" },
+  { apiId: "aug", text: "Orb of Augmentation" },
+  { apiId: "trans", text: "Transmutation Orb" },
+  { apiId: "altar", text: "Breachstone" },
+  { apiId: "mirror", text: "Mirror of Kalandra" },
+  { apiId: "annul", text: "Orb of Annulment" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -239,12 +239,12 @@ function ForecastRecommendations({
       const direction = currencyAnomaly.direction;
       recs.push({
         action: direction === "up" ? "HOLD" : direction === "down" ? "SELL" : "WAIT",
-        confidence: currencyAnomaly.is_confirmed ? "high" : "low",
+        confidence: currencyAnomaly.isConfirmed ? "high" : "low",
         reason: t("forecastRecAnomalyDetected", {
           "0": direction,
-          "1": (currencyAnomaly.alert_score ?? 0).toFixed(2),
-          "2": currencyAnomaly.triggered_indicators.join(", "),
-          "3": currencyAnomaly.is_confirmed ? t("forecastRecAnomalyConfirmed") : t("forecastRecAnomalyUnconfirmed"),
+          "1": (currencyAnomaly.alertScore ?? 0).toFixed(2),
+          "2": currencyAnomaly.triggeredIndicators.join(", "),
+          "3": currencyAnomaly.isConfirmed ? t("forecastRecAnomalyConfirmed") : t("forecastRecAnomalyUnconfirmed"),
         }),
         priceTarget: null,
         timeframe: t("forecastRecImmediate"),
@@ -363,7 +363,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
     queryKey: ["flipper-currencies"],
     queryFn: async () => {
       try {
-        const data = await fetchApi<Array<{ api_id: string; text: string }>>("/api/flipper/currencies");
+        const data = await fetchApi<Array<{ apiId: string; text: string }>>("/api/flipper/currencies");
         return Array.isArray(data) ? data : [];
       } catch {
         return [];
@@ -545,7 +545,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               </SelectTrigger>
               <SelectContent>
                 {currencyOptions.map((c) => (
-                  <SelectItem key={c.api_id} value={c.api_id}>
+                  <SelectItem key={c.apiId} value={c.apiId}>
                     {c.text}
                   </SelectItem>
                 ))}
@@ -930,7 +930,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
               <div className="text-xs text-muted-foreground grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <span>{t("forecastMomentumInput")}: {(storageData.inputs?.momentum ?? 0).toFixed(4)}</span>
                 <span>{t("forecastVolatilityInput")}: {(storageData.inputs?.volatility ?? 0).toFixed(4)}</span>
-                <span>{t("forecastHorizon")}: {storageData.inputs?.horizonHours}h</span>
+                <span>{t("forecastHorizon")}: {storageData.inputs?.horizonHours ?? "?"}h</span>
               </div>
             </div>
           )}
@@ -983,7 +983,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
             <p className="text-xs text-muted-foreground mt-1">
               {t("forecastAnomalyDesc", {
                 "0": String(anomaliesData.count),
-                "1": String(anomaliesData.currencies_checked),
+                "1": String(anomaliesData.currenciesChecked),
               })}
             </p>
           )}
@@ -1033,7 +1033,7 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                         {anomaly.direction === "up" ? "↑" : anomaly.direction === "down" ? "↓" : "→"}{" "}
                         {anomaly.direction}
                       </Badge>
-                      {anomaly.is_confirmed && (
+                      {anomaly.isConfirmed && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
                           {t("forecastConfirmed")}
                         </Badge>
@@ -1041,19 +1041,19 @@ export const ForecastTab = memo(function ForecastTab({ backendOnline, upstreamDe
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-muted-foreground">
-                        {t("forecastAlertScore")}: {(anomaly.alert_score ?? 0).toFixed(2)}
+                        {t("forecastAlertScore")}: {(anomaly.alertScore ?? 0).toFixed(2)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {t("forecastIndicators")}: {anomaly.triggered_indicators.join(", ")}
+                        {t("forecastIndicators")}: {anomaly.triggeredIndicators.join(", ")}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <AlertTriangle
                       className={`h-4 w-4 ${
-                        anomaly.alert_score >= 0.7
+                        anomaly.alertScore >= 0.7
                           ? "text-red-500"
-                          : anomaly.alert_score >= 0.4
+                          : anomaly.alertScore >= 0.4
                           ? "text-amber-500"
                           : "text-muted-foreground"
                       }`}

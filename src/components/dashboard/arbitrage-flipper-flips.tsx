@@ -175,9 +175,9 @@ export const ArbitrageFlipperFlips = memo(function ArbitrageFlipperFlips({
                     <Badge
                       variant="outline"
                       className={`text-[10px] px-1.5 py-0 font-semibold ${
-                        opp.cluster === "SAFE"
+                        opp.cluster === "stable"
                           ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                          : opp.cluster === "RISKY"
+                          : opp.cluster === "volatile_illiquid"
                           ? "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10"
                           : "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
                       }`}

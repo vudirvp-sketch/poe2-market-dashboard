@@ -244,6 +244,8 @@ async def get_all_prices():
             "volatility": round(from_momentum.get("volatility", 0.0), 6),
             "momentum": round(from_momentum.get("momentum", 0.0), 6),
             "acceleration": round(from_momentum.get("acceleration", 0.0), 6),
+            "to_volatility": round(to_momentum.get("volatility", 0.0), 6),
+            "to_momentum": round(to_momentum.get("momentum", 0.0), 6),
             "cluster_from": from_cluster,
             "cluster_to": to_cluster,
             "timestamp": rate.timestamp.isoformat() if rate.timestamp else None,
@@ -469,7 +471,7 @@ async def get_benchmarks(
         if not item_id:
             raise HTTPException(status_code=404, detail=f"No item_id for currency: {currency_api_id}")
 
-        daily_stats_raw = await provider.get_daily_stats_history(league, item_id, day_count=days)
+        daily_stats_raw = await provider.get_daily_stats(league, item_id, day_count=days)
     except Exception as e:
         logger.error("Failed to fetch daily stats for %s: %s", currency_api_id, e)
         raise HTTPException(status_code=503, detail=f"Failed to fetch historical data: {e}")
@@ -477,8 +479,37 @@ async def get_benchmarks(
     if not daily_stats_raw:
         raise HTTPException(status_code=404, detail=f"No historical data for currency: {currency_api_id}")
 
+    # Normalize PascalCase API response to snake_case for compute_benchmarks()
+    # POE2Scout DailyStatsHistory returns: Time, Open, High, Low, Close, Average, Volume
+    if isinstance(daily_stats_raw, list):
+        daily_stats = [
+            {
+                "close": d.get("Close") or d.get("close", 0),
+                "high": d.get("High") or d.get("high", 0),
+                "low": d.get("Low") or d.get("low", 0),
+                "open": d.get("Open") or d.get("open", 0),
+                "average": d.get("Average") or d.get("average", 0),
+                "volume": d.get("Volume") or d.get("volume", 0),
+            }
+            for d in daily_stats_raw
+        ]
+    else:
+        # If the response is a dict with a nested list, extract it
+        items = daily_stats_raw.get("items") or daily_stats_raw.get("Items") or []
+        daily_stats = [
+            {
+                "close": d.get("Close") or d.get("close", 0),
+                "high": d.get("High") or d.get("high", 0),
+                "low": d.get("Low") or d.get("low", 0),
+                "open": d.get("Open") or d.get("open", 0),
+                "average": d.get("Average") or d.get("average", 0),
+                "volume": d.get("Volume") or d.get("volume", 0),
+            }
+            for d in items
+        ]
+
     from backend.economy.benchmarks import compute_benchmarks
-    benchmark = compute_benchmarks(daily_stats_raw, current_price)
+    benchmark = compute_benchmarks(daily_stats, current_price)
 
     if benchmark is None:
         return {

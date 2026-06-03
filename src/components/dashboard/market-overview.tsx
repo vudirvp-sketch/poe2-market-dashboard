@@ -383,13 +383,13 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                   <span className="text-[10px] font-semibold">{item.currency}</span>
                   <span
                     className={`text-[10px] font-mono ${
-                      item.change24h >= 0
+                      item.change24h != null && item.change24h >= 0
                         ? "text-emerald-700 dark:text-emerald-300"
                         : "text-red-700 dark:text-red-300"
                     }`}
                   >
-                    {item.change24h >= 0 ? "+" : ""}
-                    {item.change24h.toFixed(2)}%
+                    {item.change24h != null && item.change24h >= 0 ? "+" : ""}
+                    {item.change24h != null ? item.change24h.toFixed(2) : "—"}%
                   </span>
                 </div>
               ))}

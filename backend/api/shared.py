@@ -49,9 +49,16 @@ def get_phase_detector() -> PhaseDetector:
 
 
 def get_forecast_engine(config: AppConfig | None = None) -> ForecastEngine:
-    """Return the global ForecastEngine singleton."""
+    """Return the global ForecastEngine singleton.
+
+    BUG FIX: The previous version had `if config is not None` which
+    always evaluated to True when callers passed config=get_settings(),
+    causing the engine to be recreated on every call and destroying
+    trained LightGBM models. Now the engine is only created once.
+    Call get_forecast_engine() without arguments to retrieve the singleton.
+    """
     global _forecast_engine
-    if _forecast_engine is None or config is not None:
+    if _forecast_engine is None:
         _forecast_engine = ForecastEngine(config)
     return _forecast_engine
 

@@ -374,7 +374,7 @@ export function useWebSocket<T = Record<string, unknown>>(
             if (mountedRef.current) {
               reconnectCountRef.current += 1;
               setReconnectCount(reconnectCountRef.current);
-              connect();
+              connectRef.current();
             }
           }, finalDelay);
         }

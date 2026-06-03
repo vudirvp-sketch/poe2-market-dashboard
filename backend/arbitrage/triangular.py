@@ -149,10 +149,16 @@ def _compute_confidence(
     # 2. Volume score
     volume_score = min(1.0, np.log1p(total_volume) / np.log1p(1000))
 
-    # 3. Cycle length penalty (3-node = 0.33, 4-node = 0.25)
-    length_penalty = 1.0 / len(cycle_names)
+    # 3. Cycle length penalty — use number of unique nodes, not list length
+    #    cycle_names includes the closing node (e.g. ["A","B","C","A"] = 4 items, 3 nodes)
+    #    So unique nodes = len(cycle_names) - 1 if the first and last elements match
+    unique_nodes = len(set(cycle_names))
+    if unique_nodes < 2:
+        unique_nodes = max(len(cycle_names) - 1, 2)
+    length_penalty = 1.0 / unique_nodes
 
     # 4. Combine with normalization so a 3-node cycle with fresh, high-volume data ≈ 1.0
+    #    For 3 nodes: 1/3 * 3 = 1.0; for 4 nodes: 1/4 * 3 = 0.75
     confidence = freshness * volume_score * length_penalty * 3.0
     confidence = min(1.0, confidence)
 

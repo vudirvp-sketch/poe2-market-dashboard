@@ -36,6 +36,7 @@ import { fetchApi } from "@/lib/types";
 import type {
   ExchangePair,
   TriangularResponse,
+  FlipperPhaseResponse,
 } from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
 import { findArbitrageCycles } from "./arbitrage-helpers";
@@ -120,6 +121,15 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     queryKey: ["flipper-triangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: mode === "flipper" && backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // ---- Flipper: phase info ----
+  const { data: phaseData } = useQuery<FlipperPhaseResponse>({
+    queryKey: ["flipper-phase"],
+    queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
+    enabled: backendOnline,
     staleTime: 60_000,
     retry: 1,
   });
@@ -426,7 +436,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
                   {t("flipperPhase")}
                 </div>
                 <p className="text-2xl font-bold capitalize mt-1">
-                  {league ?? "—"}
+                  {phaseData?.phase ?? league ?? "—"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {t("flipperPhaseDesc")}
