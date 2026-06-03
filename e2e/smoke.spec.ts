@@ -129,8 +129,10 @@ test.describe("Smoke Tests", () => {
     // Use .first() to avoid strict mode violation — there are 10 tab buttons.
     await expect(page.locator('[role="tab"]').first()).toBeVisible({ timeout: 10000 });
 
-    // CRITICAL: The default activeTab is "exchange", but the MarketHeatmap lives
-    // on the "overview" tab. We must click the Overview tab first.
+    // NOTE: The default activeTab is "overview" (changed from "exchange").
+    // The MarketHeatmap lives on the "overview" tab, so it should be visible
+    // by default now. However, we still click to be safe in case the user
+    // has a persisted tab preference from a previous session.
     // The tab text is i18n'd: "Обзор" (ru), "Overview" (en), "概览" (zh), "개요" (ko).
     const overviewTab = page.locator('[role="tab"]').filter({
       hasText: /^Обзор$|^Overview$|^概览$|^개요$/,

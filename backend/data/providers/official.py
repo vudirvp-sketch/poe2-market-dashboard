@@ -50,6 +50,7 @@ from backend.models.currency import (
     PricePoint,
     PriceQuote,
 )
+from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -442,7 +443,20 @@ class OfficialTradeProvider(BaseDataProvider):
             headers = {"Authorization": f"Bearer {token}"}
 
             # GGG currency exchange API
-            url = f"{GGG_TRADE_BASE}/exchange/Vaal"
+            # League name in GGG Trade API uses the FULL display name
+            # (e.g. "Runes of Aldur"), not the POE2Scout ShortName ("runes").
+            # Map known ShortNames to GGG league IDs.
+            _poe2scout_to_ggg_league = {
+                "runes": "Runes of Aldur",
+                "runeshc": "HC Runes of Aldur",
+                "vaal": "Fate of the Vaal",
+                "vaalhc": "HC Fate of the Vaal",
+                "standard": "Standard",
+                "hardcore": "Hardcore",
+            }
+            league_short = get_settings().league.league_name
+            ggg_league = _poe2scout_to_ggg_league.get(league_short, league_short)
+            url = f"{GGG_TRADE_BASE}/exchange/{ggg_league}"
             body = {
                 "exchange": {
                     "want": [parts[1]],

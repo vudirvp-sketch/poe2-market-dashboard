@@ -45,9 +45,9 @@ class DataConfig(BaseModel):
 class LeagueConfig(BaseModel):
     league_name: str = "runes"  # Override in config.yaml when league changes
     realm: str = "poe2"  # POE2Scout API realm path segment: "poe2" (NOT "poe2/pc")
-    league_start_date: str = "2025-01-15T00:00:00Z"
-    phase_early_days: int = 7
-    phase_mid_days: int = 35
+    league_start_date: str = "2026-03-07T00:00:00Z"  # Runes of Aldur launch date — update when a new league starts
+    phase_early_days: int = 14  # Runes of Aldur: 14 days early phase (code default was 7)
+    phase_mid_days: int = 42
     base_currency: str = "exalted"
     # Known POE2 currency categories for ByCategory pagination
     currency_categories: list[str] = Field(default_factory=lambda: [

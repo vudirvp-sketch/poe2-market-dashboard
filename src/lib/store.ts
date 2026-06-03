@@ -73,7 +73,7 @@ export interface PersistedUIState {
 
 const DEFAULT_UI_STATE: PersistedUIState = {
   _version: 4,
-  activeTab: "exchange",
+  activeTab: "overview",
   exchange: {
     viewMode: "table",
     sortField: "volume",
