@@ -731,6 +731,8 @@ const ko: Record<TranslationKeys, string> = {
   comparativeCorrelationNote: "색상 코딩: 녹색 = 양의 상관관계, 빨간색 = 음의 상관관계, 회색 = 무상관",
   comparativeCorrelationUnavailable: "상관관계 매트릭스는 백엔드 데이터가 필요합니다",
   comparativeCorrelationBackend: "백엔드 데이터",
+  comparativeNoCorrelation: "상관관계 데이터 없음:",
+  comparativeNotInExchange: "환율 거래소에 없음",
 
   // ---- P3-6: Forecast Recommendations ----
   forecastRecommendationsTitle: "예측 추천",

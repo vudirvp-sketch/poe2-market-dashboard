@@ -777,6 +777,71 @@ class Poe2ScoutProvider(BaseDataProvider):
             return None
         return data
 
+    async def get_bulk_price_histories(self, league: str) -> dict[int, list[PricePoint]]:
+        """Fetch price histories for ALL items via the bulk /Items/PriceHistory endpoint.
+
+        The ByCategory endpoint returns PriceLogs as arrays of null — it's a known
+        API quirk.  The bulk /Items/PriceHistory endpoint is the ONLY reliable way
+        to get actual price data for all items in a single request.
+
+        Returns:
+            dict mapping ItemId → list[PricePoint] (sorted chronologically)
+        """
+        effective_league = league or self._league
+        result: dict[int, list[PricePoint]] = {}
+
+        try:
+            data = await self._request(
+                f"{self._realm}/Leagues/{effective_league}/Items/PriceHistory"
+            )
+            if data is None:
+                logger.warning("Bulk /Items/PriceHistory returned no data")
+                return result
+
+            item_histories = data.get("ItemHistories", [])
+            for entry in item_histories:
+                item_id = entry.get("ItemId")
+                if item_id is None:
+                    continue
+                history = entry.get("History", [])
+                points: list[PricePoint] = []
+                for point in history:
+                    price_raw = point.get("Price")
+                    time_raw = point.get("Time")
+                    qty_raw = point.get("Quantity", 0)
+                    if price_raw is None or time_raw is None:
+                        continue
+                    try:
+                        price = float(price_raw)
+                        if isinstance(time_raw, str):
+                            ts = datetime.fromisoformat(
+                                time_raw.replace("Z", "+00:00")
+                            )
+                        elif isinstance(time_raw, datetime):
+                            ts = time_raw
+                        else:
+                            continue
+                        points.append(PricePoint(
+                            timestamp=ts,
+                            price=price,
+                            volume=float(qty_raw) if qty_raw else 0.0,
+                        ))
+                    except (ValueError, TypeError):
+                        continue
+                if points:
+                    # Sort chronologically (oldest first)
+                    points.sort(key=lambda p: p.timestamp)
+                    result[item_id] = points
+
+            logger.info(
+                "Bulk price history: %d items with data out of %d entries",
+                len(result), len(item_histories),
+            )
+        except Exception as e:
+            logger.error("get_bulk_price_histories failed: %s", e)
+
+        return result
+
     async def get_all_currencies_with_prices(self, league: str) -> list[dict]:
         """Fetch all currencies across all categories with their current prices.
 

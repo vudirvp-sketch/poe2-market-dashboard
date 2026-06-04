@@ -735,6 +735,8 @@ const en = {
   comparativeCorrelationNote: "Color-coded: green = positive correlation, red = negative, gray = uncorrelated",
   comparativeCorrelationUnavailable: "Correlation matrix requires backend data",
   comparativeCorrelationBackend: "Backend data",
+  comparativeNoCorrelation: "No correlation data available for:",
+  comparativeNotInExchange: "not traded on currency exchange",
 
   // ---- P3-6: Forecast Recommendations ----
   forecastRecommendationsTitle: "Forecast Recommendations",

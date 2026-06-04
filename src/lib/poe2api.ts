@@ -1003,7 +1003,11 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
 
   return {
     id: String(raw.ItemId || raw.UniqueItemId),
-    apiId: raw.CategoryApiId,
+    // BUG FIX: Unique items don't have an ApiId field in the POE2Scout API.
+    // CategoryApiId (e.g. "armour") is shared by ALL items in the same category,
+    // which breaks deduplication, ComparativeChart correlation lookups, and
+    // benchmark calls. Use ItemId as a stable, unique identifier instead.
+    apiId: String(raw.ItemId || raw.UniqueItemId),
     name: raw.Text || raw.Name,
     type: raw.Type || "",
     category: raw.CategoryApiId || "",

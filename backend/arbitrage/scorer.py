@@ -69,9 +69,31 @@ def compute_quantized_analysis(
     In PoE2 exchange:
       - You list "Have X of B, Want Y of A" → you pay ceil(N * R_buy) of B
       - You list "Have Y of A, Want X of B" → you receive floor(N * R_sell) of B
+
+    BUG FIX (2026-06-04): Automatic rate scaling for integer math stability.
+    When rates are close to 1.0 (e.g. R_buy=1.005, R_sell=0.995 after
+    normalization), ceil(1.005)=2 and floor(0.995)=0, producing -100%
+    gross_profit_pct at small lot sizes regardless of the actual spread.
+    We scale the rates so that the smallest integer unit (1) is negligible
+    relative to the spread. gross_profit_pct converges to the continuous
+    value as the scale factor increases.
     """
     if lot_sizes is None:
         lot_sizes = DEFAULT_LOT_SIZES
+
+    # BUG FIX: Scale rates to prevent -100% gross_profit_pct from integer rounding.
+    # When rates are close to 1.0 (e.g. after normalization to mid_price=1.0),
+    # ceil(1.005) = 2 and floor(0.995) = 0, making N=1 always show -100%.
+    # Scale so that the cost of 1 lot is at least MIN_LOT_COST units,
+    # which makes the rounding error negligible relative to the spread.
+    MIN_LOT_COST = 1000.0
+    if mid_price > 0 and R_buy > 0:
+        cost_at_1 = math.ceil(R_buy)
+        if cost_at_1 < MIN_LOT_COST:
+            scale = MIN_LOT_COST / R_buy
+            R_buy *= scale
+            R_sell *= scale
+            mid_price *= scale
 
     theoretical_spread = (R_sell - R_buy) / mid_price if mid_price > 0 else 0.0
 

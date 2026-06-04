@@ -261,6 +261,12 @@ export const ComparativeChart = memo(function ComparativeChart({
       const comparedApiIds = comparedItems.map((item) => item.apiId?.toLowerCase());
       const backendCurrencies = backendCorrelation.currencies.map((c) => c.toLowerCase());
 
+      // BUG FIX (2026-06-04): Track which items have no correlation data
+      // (e.g. uniques whose apiId is a numeric ItemId, not a currency api_id
+      // like "divine", "chaos"). The backend correlation matrix only covers
+      // currency exchange items, not unique items.
+      const itemsWithoutCorrelation: string[] = [];
+
       // Find indices of compared currencies in the backend matrix
       const indices: number[] = [];
       const names: string[] = [];
@@ -269,6 +275,8 @@ export const ComparativeChart = memo(function ComparativeChart({
         if (idx >= 0) {
           indices.push(idx);
           names.push(item.name);
+        } else {
+          itemsWithoutCorrelation.push(item.name);
         }
       }
 
@@ -282,7 +290,12 @@ export const ComparativeChart = memo(function ComparativeChart({
           }
           subMatrix.push(row);
         }
-        return { names, matrix: subMatrix, source: "backend" as const };
+        return {
+          names,
+          matrix: subMatrix,
+          source: "backend" as const,
+          itemsWithoutCorrelation: itemsWithoutCorrelation.length > 0 ? itemsWithoutCorrelation : undefined,
+        };
       }
     }
 
@@ -478,6 +491,19 @@ export const ComparativeChart = memo(function ComparativeChart({
                     <span className="ml-1 text-emerald-500">({t("comparativeCorrelationBackend")})</span>
                   )}
                 </p>
+                {/* BUG FIX (2026-06-04): Show "no correlation data" warning for items
+                    not in the backend correlation matrix (e.g. uniques). These items
+                    use numeric ItemIds as apiId which don't match the currency exchange
+                    api_ids like "divine", "chaos" used by the backend. */}
+                {"itemsWithoutCorrelation" in correlationMatrix && correlationMatrix.itemsWithoutCorrelation && (
+                  <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400">
+                    <span className="font-medium">⚠</span>{" "}
+                    {t("comparativeNoCorrelation") || "No correlation data available for:"}{" "}
+                    {correlationMatrix.itemsWithoutCorrelation.join(", ")}
+                    {" "}
+                    ({t("comparativeNotInExchange") || "not traded on currency exchange"})
+                  </div>
+                )}
                 <CorrelationHeatmap
                   names={correlationMatrix.names}
                   matrix={correlationMatrix.matrix}

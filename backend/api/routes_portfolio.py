@@ -27,7 +27,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 # Minimum number of price points required to compute correlation
-MIN_PRICE_POINTS = 5
+# Lowered from 5 to 3 to improve coverage for recently-added currencies
+# that may have short price histories. With 3 points we get 2 log-returns,
+# which is the absolute minimum for correlation.
+MIN_PRICE_POINTS = 3
 
 # Minimum number of currencies required for a meaningful matrix
 MIN_CURRENCIES = 2
@@ -55,6 +58,7 @@ async def get_correlation_matrix():
     snapshot = await get_snapshot()
 
     if not snapshot.price_histories:
+        logger.warning("Correlation: snapshot.price_histories is empty — no data available")
         return {
             "currencies": [],
             "matrix": [],
@@ -64,9 +68,11 @@ async def get_correlation_matrix():
     # Collect price histories for eligible currencies
     # Use % change from first point (same as ComparativeChart does client-side)
     currency_returns: dict[str, list[float]] = {}
+    skipped_reasons: dict[str, str] = {}
 
     for api_id_lower, points in snapshot.price_histories.items():
         if len(points) < MIN_PRICE_POINTS:
+            skipped_reasons[api_id_lower] = f"too few points ({len(points)} < {MIN_PRICE_POINTS})"
             continue
 
         # Extract prices sorted by timestamp (they should already be sorted)
@@ -89,6 +95,13 @@ async def get_correlation_matrix():
             currency_returns[orig_id] = log_returns
 
     if len(currency_returns) < MIN_CURRENCIES:
+        logger.warning(
+            "Correlation: only %d eligible currencies (need %d). "
+            "Skipped %d currencies: %s",
+            len(currency_returns), MIN_CURRENCIES,
+            len(skipped_reasons),
+            "; ".join(f"{k}: {v}" for k, v in list(skipped_reasons.items())[:5]),
+        )
         return {
             "currencies": [],
             "matrix": [],
@@ -100,6 +113,13 @@ async def get_correlation_matrix():
     min_len = min(len(currency_returns[c]) for c in currencies)
 
     if min_len < MIN_PRICE_POINTS - 1:
+        logger.warning(
+            "Correlation: aligned min_len=%d is too short (need %d). "
+            "%d currencies with lengths: %s",
+            min_len, MIN_PRICE_POINTS - 1,
+            len(currencies),
+            ", ".join(f"{c}:{len(currency_returns[c])}" for c in currencies[:5]),
+        )
         return {
             "currencies": [],
             "matrix": [],

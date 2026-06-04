@@ -418,10 +418,15 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         spread_value = (ask - bid) / mid_price if mid_price > 0 else 0.0
 
         # P1-1: Compute quantized analysis for this pair
+        # BUG FIX (2026-06-04): Pass actual ask/bid/mid_price instead of
+        # normalizing to mid_price=1.0. Normalized rates (R_buy≈1.005,
+        # R_sell≈0.995) caused ceil(1.005)=2 and floor(0.995)=0, producing
+        # -100% gross_profit_pct at every lot size. compute_quantized_analysis()
+        # now has internal scaling to handle any rate magnitude correctly.
         quantized = compute_quantized_analysis(
-            R_buy=ask / mid_price if mid_price > 0 else 0,  # buy rate (you pay more)
-            R_sell=bid / mid_price if mid_price > 0 else 0,  # sell rate (you receive less)
-            mid_price=1.0,  # Rates are already normalized relative to mid_price
+            R_buy=ask if mid_price > 0 else 0,  # buy rate (you pay ask price)
+            R_sell=bid if mid_price > 0 else 0,  # sell rate (you receive bid price)
+            mid_price=mid_price if mid_price > 0 else 1.0,  # actual mid_price
             lot_sizes=config.quantization.default_lot_sizes,
             max_lot_search=config.quantization.max_lot_search,
         )

@@ -354,6 +354,62 @@ class SnapshotManager:
             if points:
                 price_histories[api_id.lower()] = points
 
+        # --- Step 4.5: Fill price histories for SnapshotPair currencies not in ByCategory ---
+        # BUG FIX (2026-06-04): Currencies that appear in SnapshotPairs (46 pairs)
+        # but whose ItemId doesn't map to any ByCategory category will have NO
+        # price_histories. This causes zero momentum/volatility in arbitrage
+        # calculations and empty correlation matrices. We fetch their individual
+        # price histories from /Currencies/{ApiId} to fill the gap.
+        snapshot_pair_currencies: set[str] = set()
+        for key, rate in snapshot.exchange_rates.items():
+            if rate.currency_from:
+                snapshot_pair_currencies.add(rate.currency_from.lower())
+            if rate.currency_to:
+                snapshot_pair_currencies.add(rate.currency_to.lower())
+
+        missing_currencies = snapshot_pair_currencies - set(price_histories.keys())
+        if missing_currencies:
+            logger.info(
+                "SnapshotPairs coverage: %d currencies missing from ByCategory, "
+                "fetching individual price histories: %s",
+                len(missing_currencies),
+                sorted(missing_currencies)[:10],  # log first 10 to avoid spam
+            )
+            for api_id_lower in missing_currencies:
+                try:
+                    # Try the original-case api_id (from exchange_rates)
+                    orig_id = api_id_lower
+                    for rate in snapshot.exchange_rates.values():
+                        if rate.currency_from and rate.currency_from.lower() == api_id_lower:
+                            orig_id = rate.currency_from
+                            break
+                        if rate.currency_to and rate.currency_to.lower() == api_id_lower:
+                            orig_id = rate.currency_to
+                            break
+
+                    points_ind = await provider.get_historical_prices(orig_id, days=7)
+                    if points_ind:
+                        price_histories[api_id_lower] = points_ind
+                        logger.debug(
+                            "Filled price history for %s: %d points",
+                            api_id_lower, len(points_ind),
+                        )
+                except Exception as e:
+                    logger.debug(
+                        "Could not fetch individual price history for %s: %s",
+                        api_id_lower, e,
+                    )
+
+        # Log coverage summary
+        covered = snapshot_pair_currencies & set(price_histories.keys())
+        logger.info(
+            "SnapshotPairs coverage: %d/%d currencies have price histories "
+            "(ByCategory: %d, individual fetch: %d)",
+            len(covered), len(snapshot_pair_currencies),
+            len(covered - missing_currencies),
+            len(missing_currencies & set(price_histories.keys())),
+        )
+
         snapshot.currencies = currencies
         snapshot.currency_metadata = currency_metadata
         snapshot.price_histories = price_histories

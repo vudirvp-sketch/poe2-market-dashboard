@@ -671,6 +671,8 @@ const ru: Record<TranslationKeys, string> = {
   comparativeCorrelationNote: "Цветовое кодирование: зелёный = положительная корреляция, красный = отрицательная, серый = без корреляции",
   comparativeCorrelationUnavailable: "Матрица корреляции требует данных бэкенда",
   comparativeCorrelationBackend: "Данные бэкенда",
+  comparativeNoCorrelation: "Нет данных корреляции для:",
+  comparativeNotInExchange: "не торгуются на валютной бирже",
   // ---- P3-6: Forecast Recommendations ----
   forecastRecommendationsTitle: "Рекомендации по прогнозу",
   forecastRecommendationsDesc: "На основе ансамблевого прогноза, решения Storage Value и обнаружения аномалий",
