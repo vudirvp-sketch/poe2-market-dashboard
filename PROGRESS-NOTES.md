@@ -1,5 +1,34 @@
 # PoE2 Market Dashboard — Fix Progress Notes
 
+## Session 5 — 2026-06-05
+
+### ✅ 1. Fix cache-snapshot.json default_league_value format
+**Files:** `src/data/cache-snapshot.json`, `scripts/generate-cache-snapshot.ts`
+**Root Cause:** The POE2Scout `/Realms` API returns `default_league_value: "Runes of Aldur"` (displayName format) for the poe2 realm. However, the dashboard expects ShortName format ("runes") for consistency with FALLBACK_REALMS, DEFAULT_LEAGUE_OVERRIDES, and getLeagues() matching logic. The generate-cache-snapshot.ts script only handled "Fate of the Vaal" and "vaal" but not "Runes of Aldur".
+**Fix:**
+- Added "Runes of Aldur" to the `STALE_VALUES` set in generate-cache-snapshot.ts (replaced inline check with a Set for extensibility)
+- Patched cache-snapshot.json directly: `"Runes of Aldur"` → `"runes"`
+- This ensures the pre-populated cache uses ShortName format so the dashboard works correctly even when the upstream API is unreachable
+
+### ✅ 2. Fix DEFAULT_LEAGUE_OVERRIDES — add displayName format entry
+**File:** `src/lib/poe2api.ts`
+**Root Cause:** When the POE2Scout API returns `default_league_value: "Runes of Aldur"` (displayName format), the DEFAULT_LEAGUE_OVERRIDES table had no matching entry. Only "Fate of the Vaal" and "vaal" were handled. This meant the displayName format would pass through unmodified, potentially causing getLeagues() to incorrectly mark a league as active (matching l.Value instead of l.ShortName).
+**Fix:** Added `"poe2:Runes of Aldur": "runes"` to DEFAULT_LEAGUE_OVERRIDES. Now all three known POE2Scout formats are handled:
+- `"Fate of the Vaal"` (stale displayName from previous league)
+- `"vaal"` (stale ShortName from previous league)
+- `"Runes of Aldur"` (current displayName — correct league but wrong format)
+
+### ✅ 3. Create CI/CD workflow
+**File:** `.github/workflows/ci.yml` (NEW)
+**What:** Created a GitHub Actions CI workflow with 4 jobs:
+1. **frontend** — Node.js setup, npm ci, tsc --noEmit, Jest unit tests
+2. **backend** — Python setup, pip install, pytest
+3. **cache-snapshot** — Regenerate cache-snapshot.json, warn if stale (continue-on-error: true)
+4. **e2e** — Playwright tests (only on push to main, not PRs)
+**Note:** The cache-snapshot job has `continue-on-error: true` so API unavailability does not block PRs.
+
+---
+
 ## Session 4 — 2026-06-04
 
 ### ✅ 1. Fix i18n E2E test failures — Globe button doesn't close More menu
@@ -225,6 +254,11 @@ Currently `activeTab: "overview"` in `store.ts` (updated in a previous session).
 
 | File | Change | Session |
 |------|--------|---------|
+| `src/data/cache-snapshot.json` | Fix default_league_value "Runes of Aldur" → "runes" (ShortName format) | 5 |
+| `scripts/generate-cache-snapshot.ts` | Add "Runes of Aldur" to STALE_VALUES set; refactor inline check to Set | 5 |
+| `src/lib/poe2api.ts` | Add "poe2:Runes of Aldur": "runes" to DEFAULT_LEAGUE_OVERRIDES | 5 |
+| `.github/workflows/ci.yml` | Create CI/CD workflow (frontend, backend, cache-snapshot, e2e jobs) | 5 |
+| `PROGRESS-NOTES.md` | Document Session 5 changes | 5 |
 | `src/components/dashboard/header.tsx` | Fix Globe button onClick to close More menu after locale switch | 4 |
 | `backend/api/routes_portfolio.py` | Suppress ConstantInputWarning: pre-check constant arrays, np.errstate | 4 |
 | `config.yaml` | Add verisium + vaal currency categories | 4 |

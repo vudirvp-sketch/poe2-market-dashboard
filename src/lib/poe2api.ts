@@ -1252,11 +1252,14 @@ const dynamicLeaguesFallback: Map<string, League[]> = new Map();
  * TODO: Remove entries once POE2Scout maintainers fix the /Realms endpoint.
  */
 const DEFAULT_LEAGUE_OVERRIDES: Record<string, string> = {
-  // /Realms returns "Fate of the Vaal" (displayName) — override to ShortName "runes"
-  // so that getLeagues can match against l.ShortName or l.Value.
+  // /Realms returns "Fate of the Vaal" (stale displayName) — override to ShortName "runes"
   "poe2:Fate of the Vaal": "runes",
-  // /Realms returns "vaal" (ShortName) — override to "runes" (current ShortName)
+  // /Realms returns "vaal" (stale ShortName) — override to "runes" (current ShortName)
   "poe2:vaal": "runes",
+  // /Realms returns "Runes of Aldur" (correct league but displayName format) —
+  // override to ShortName "runes" for consistency with getLeagues() matching logic,
+  // FALLBACK_REALMS, and cache-snapshot.json format
+  "poe2:Runes of Aldur": "runes",
 };
 
 export async function getRealms(): Promise<Realm[]> {

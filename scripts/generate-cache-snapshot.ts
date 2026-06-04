@@ -157,11 +157,18 @@ async function main(): Promise<void> {
     // DEFAULT_LEAGUE_OVERRIDES in poe2api.ts, which all use ShortName format.
     if (url.includes("/Realms") && Array.isArray(entry.data)) {
       const realms = entry.data as Array<Record<string, unknown>>;
+      // Known stale/incorrect default_league_value formats returned by POE2Scout /Realms:
+      // - "Fate of the Vaal" (stale displayName from previous league)
+      // - "vaal" (stale ShortName from previous league)
+      // - "Runes of Aldur" (current displayName — correct league but wrong format;
+      //   should be ShortName "runes" for consistency with FALLBACK_REALMS,
+      //   DEFAULT_LEAGUE_OVERRIDES, and getLeagues() matching logic)
+      const STALE_VALUES = new Set(["Fate of the Vaal", "vaal", "Runes of Aldur"]);
       for (const realm of realms) {
         if (realm.realm_api_id === "poe2" &&
             typeof realm.default_league_value === "string" &&
-            (realm.default_league_value === "Fate of the Vaal" || realm.default_league_value === "vaal")) {
-          console.log(`  Fixed stale default_league_value "${realm.default_league_value}" → "runes" for poe2 realm`);
+            STALE_VALUES.has(realm.default_league_value)) {
+          console.log(`  Fixed default_league_value "${realm.default_league_value}" → "runes" for poe2 realm`);
           realm.default_league_value = "runes";
         }
       }

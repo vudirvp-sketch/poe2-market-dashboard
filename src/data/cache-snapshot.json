@@ -34,7 +34,7 @@
           "game_api_id": "poe2",
           "realm_api_id": "poe2",
           "trade_api_path": "trade2",
-          "default_league_value": "Runes of Aldur"
+          "default_league_value": "runes"
         }
       ],
       "ts": 1780590115527
