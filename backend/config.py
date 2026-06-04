@@ -43,18 +43,18 @@ class DataConfig(BaseModel):
 
 
 class LeagueConfig(BaseModel):
-    league_name: str = "runes"  # Override in config.yaml when league changes
+    league_name: str = "vaal"  # Override in config.yaml when league changes
     realm: str = "poe2"  # POE2Scout API realm path segment: "poe2" (NOT "poe2/pc")
-    league_start_date: str = "2026-03-07T00:00:00Z"  # Runes of Aldur launch date — update when a new league starts
-    phase_early_days: int = 14  # Runes of Aldur: 14 days early phase (code default was 7)
-    phase_mid_days: int = 42
+    league_start_date: str = "2026-05-31T00:00:00Z"  # Fate of the Vaal launch date — update when a new league starts
+    phase_early_days: int = 14  # Early phase: 14 days from league start
+    phase_mid_days: int = 42  # Mid phase: up to 42 days
     base_currency: str = "exalted"
     # Known POE2 currency categories for ByCategory pagination
+    # Updated for Fate of the Vaal league (vaal) — verified against API /Items/Categories
     currency_categories: list[str] = Field(default_factory=lambda: [
         "currency", "fragments", "runes", "essences", "ultimatum",
         "expedition", "ritual", "vaultkeys", "breach", "abyss",
         "uncutgems", "lineagesupportgems", "delirium", "incursion", "idol",
-        "verisium", "vaal",  # Runes of Aldur league categories
     ])
 
     @property
@@ -79,7 +79,7 @@ class FeesConfig(BaseModel):
 
 
 class FiltersConfig(BaseModel):
-    min_volume_24h: int = 200  # RAISED from 50 to 200: more aggressive low-liquidity filtering
+    min_volume_24h: int = 20  # Lowered from 200 for early-league compatibility (4-day-old league has low volumes)
     max_volatility: float = 0.4
     max_spread: float = 0.15  # Max allowed spread for quick filter
     exclude_volatile_illiquid: bool = False

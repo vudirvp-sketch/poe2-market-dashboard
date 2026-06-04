@@ -19,11 +19,10 @@ data:
   historical_retention_days: 90
 
 league:
-  league_name: "runes"
-  realm: "poe2"                    # POE2Scout API realm path segment — NOT "poe2/pc" (that's the RealmOption.value, not the path param)
-  league_start_date: "2026-03-07T00:00:00Z"  # Runes of Aldur launch date — update when a new league starts
-  # Note: Fate of the Vaal started 2026-04-03, Runes of Aldur started 2026-03-07
-  # Override: 14 days for this league (code default is 7)
+  league_name: "vaal"                # Fate of the Vaal — current league (ShortName from API)
+  realm: "poe2"                      # POE2Scout API realm path segment — NOT "poe2/pc" (that's the RealmOption.value, not the path param)
+  league_start_date: "2026-05-31T00:00:00Z"  # Fate of the Vaal launch date — update when a new league starts
+  # Override: 14 days for early phase
   phase_early_days: 14
   phase_mid_days: 42
   base_currency: "exalted"
@@ -43,8 +42,6 @@ league:
     - delirium
     - incursion
     - idol
-    - verisium                        # Runes of Aldur league
-    - vaal                            # Runes of Aldur league
 
 # Gold fee configuration — Step 3: Re-enabled gold fee accounting.
 # The gold_to_chaos_rate is extracted dynamically from POE2Scout's data
@@ -55,7 +52,7 @@ fees:
   unknown_item_gold_cost: 200           # Per-unit gold cost for currencies not in the verified table
 
 filters:
-  min_volume_24h: 200  # Match raised default in config.py
+  min_volume_24h: 20  # Lowered from 200 for early-league compatibility (4-day-old league has low volumes)
   max_volatility: 0.4
   max_spread: 0.15  # Max allowed spread for quick filter
   exclude_volatile_illiquid: false

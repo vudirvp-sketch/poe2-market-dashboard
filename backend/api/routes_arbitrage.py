@@ -36,6 +36,7 @@ from backend.models.currency import (
     ClusterLabel,
 )
 from backend.economy.tiers import tier_penalty, tier_distance
+from backend.economy.events import get_event_manager
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     6. Apply quick filter
     """
     detector = _get_phase_detector()
+    pipeline_cache = get_pipeline_cache()
 
     # 1. Use DataSnapshot instead of N+1 API calls
     snapshot = await get_snapshot()
