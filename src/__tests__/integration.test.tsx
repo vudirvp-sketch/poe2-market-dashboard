@@ -2,11 +2,24 @@
 // Integration tests — Next.js proxy routes ↔ FastAPI backend.
 // Tests the full proxy chain: Next.js API route → flipper-proxy → FastAPI.
 // Uses MSW (Mock Service Worker) to mock the FastAPI backend responses.
+//
+// Improved from 2 tests to broader coverage of:
+//   - Sequential API calls for graph tab
+//   - Backend health check propagation
+//   - Offline state rendering
+//   - FlipperErrorType handling
+//   - BackendOnline flag behavior
 // ============================================================================
-import { render, screen, waitFor } from "@testing-library/react";
+
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/lib/i18n";
 import { CurrencyGraphTab } from "@/components/dashboard/currency-graph-tab";
+import {
+  FlipperApiError,
+  getFlipperErrorType,
+  type FlipperErrorType,
+} from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Mock fetchApi to simulate the full proxy chain
@@ -16,7 +29,6 @@ const mockFetchApi = jest.fn();
 jest.mock("@/lib/types", () => ({
   ...jest.requireActual("@/lib/types"),
   fetchApi: (...args: unknown[]) => mockFetchApi(...args),
-  getFlipperErrorType: jest.fn().mockReturnValue(null),
   fmt: (n: number) => n.toFixed(4),
 }));
 
@@ -73,6 +85,39 @@ const fastapiPhaseResponse = {
   recommended_strategy: "balanced",
 };
 
+const fastapiPricesResponse = {
+  league: "runes",
+  phase: "mid",
+  rates: [
+    {
+      pair: "divine-exalted",
+      currency_from: "divine",
+      currency_to: "exalted",
+      raw_rate: 1.5,
+      volume_traded: 500,
+      volatility: 0.15,
+      momentum: 0.02,
+      cluster_from: "stable",
+      cluster_to: "stable",
+    },
+  ],
+  baseCurrency: "exalted",
+  fetchedAt: new Date().toISOString(),
+};
+
+const fastapiTriangularResponse = {
+  opportunities: [],
+  total: 0,
+  fetchedAt: new Date().toISOString(),
+};
+
+const fastapiCurrenciesResponse = {
+  currencies: [
+    { apiId: "exalted", text: "Exalted Orb", cluster: "stable" },
+    { apiId: "divine", text: "Divine Orb", cluster: "stable" },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Integration tests
 // ---------------------------------------------------------------------------
@@ -87,27 +132,9 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
 
   it("makes multiple sequential API calls for graph tab", async () => {
     mockFetchApi.mockImplementation((url: string) => {
-      if (url.includes("/prices")) return Promise.resolve({
-        league: "runes",
-        phase: "mid",
-        rates: [
-          {
-            pair: "divine-exalted",
-            currency_from: "divine",
-            currency_to: "exalted",
-            raw_rate: 1.5,
-            volume_traded: 500,
-            volatility: 0.15,
-            momentum: 0.02,
-            cluster_from: "stable",
-            cluster_to: "stable",
-          },
-        ],
-        baseCurrency: "exalted",
-        fetchedAt: new Date().toISOString(),
-      });
-      if (url.includes("/triangular")) return Promise.resolve({ opportunities: [], total: 0, fetchedAt: new Date().toISOString() });
-      if (url.includes("/currencies")) return Promise.resolve({ currencies: [] });
+      if (url.includes("/prices")) return Promise.resolve(fastapiPricesResponse);
+      if (url.includes("/triangular")) return Promise.resolve(fastapiTriangularResponse);
+      if (url.includes("/currencies")) return Promise.resolve(fastapiCurrenciesResponse);
       return Promise.resolve({});
     });
 
@@ -133,5 +160,120 @@ describe("Integration: Next.js ↔ FastAPI proxy chain", () => {
 
     // No flipper API calls should have been made when backend is offline
     expect(mockFetchApi).not.toHaveBeenCalled();
+  });
+
+  // ---- Backend online renders data correctly ----
+
+  it("renders currency data when backend is online and responds", async () => {
+    mockFetchApi.mockImplementation((url: string) => {
+      if (url.includes("/prices")) return Promise.resolve(fastapiPricesResponse);
+      if (url.includes("/triangular")) return Promise.resolve(fastapiTriangularResponse);
+      if (url.includes("/currencies")) return Promise.resolve(fastapiCurrenciesResponse);
+      return Promise.resolve({});
+    });
+
+    renderWithProviders(<CurrencyGraphTab backendOnline={true} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Currencies")).toBeInTheDocument();
+    });
+
+    // Should have made API calls when backend is online
+    expect(mockFetchApi).toHaveBeenCalled();
+  });
+
+  // ---- Error propagation from backend ----
+
+  it("handles FlipperApiError from fetchApi correctly", async () => {
+    const error = new FlipperApiError(503, JSON.stringify({
+      error: "Backend unavailable",
+      error_type: "backend_offline",
+      hint: "Start the FastAPI backend",
+    }));
+
+    expect(error.status).toBe(503);
+    expect(error.errorType).toBe("backend_offline");
+    expect(getFlipperErrorType(error)).toBe("backend_offline");
+  });
+
+  it("distinguishes backend_offline from backend_insufficient_data errors", () => {
+    const offlineError = new FlipperApiError(503, JSON.stringify({
+      error_type: "backend_offline",
+    }));
+    const insufficientError = new FlipperApiError(503, JSON.stringify({
+      error_type: "backend_insufficient_data",
+    }));
+
+    expect(getFlipperErrorType(offlineError)).toBe("backend_offline");
+    expect(getFlipperErrorType(insufficientError)).toBe("backend_insufficient_data");
+    expect(getFlipperErrorType(offlineError)).not.toBe(getFlipperErrorType(insufficientError));
+  });
+
+  // ---- API call sequence verification ----
+
+  it("prices endpoint is called before triangular when backend is online", async () => {
+    const callOrder: string[] = [];
+    mockFetchApi.mockImplementation((url: string) => {
+      callOrder.push(url);
+      if (url.includes("/prices")) return Promise.resolve(fastapiPricesResponse);
+      if (url.includes("/triangular")) return Promise.resolve(fastapiTriangularResponse);
+      if (url.includes("/currencies")) return Promise.resolve(fastapiCurrenciesResponse);
+      return Promise.resolve({});
+    });
+
+    renderWithProviders(<CurrencyGraphTab backendOnline={true} />);
+
+    await waitFor(() => {
+      expect(callOrder.length).toBeGreaterThan(0);
+    });
+
+    // At least the prices call should have been made
+    expect(callOrder.some(u => u.includes("/prices"))).toBe(true);
+  });
+
+  // ---- Empty data handling ----
+
+  it("handles empty opportunities from backend gracefully", async () => {
+    mockFetchApi.mockImplementation((url: string) => {
+      if (url.includes("/prices")) return Promise.resolve({
+        ...fastapiPricesResponse,
+        rates: [],
+      });
+      if (url.includes("/triangular")) return Promise.resolve({
+        ...fastapiTriangularResponse,
+        opportunities: [],
+      });
+      if (url.includes("/currencies")) return Promise.resolve({
+        currencies: [],
+      });
+      return Promise.resolve({});
+    });
+
+    renderWithProviders(<CurrencyGraphTab backendOnline={true} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Currencies")).toBeInTheDocument();
+    });
+
+    // Component should still render without crashing even with empty data
+    expect(mockFetchApi).toHaveBeenCalled();
+  });
+
+  // ---- FlipperApiError classification round-trip ----
+
+  it("FlipperApiError classification matches all expected error types", () => {
+    const testCases: Array<{ status: number; body: string; expected: FlipperErrorType }> = [
+      { status: 503, body: JSON.stringify({ error_type: "backend_offline" }), expected: "backend_offline" },
+      { status: 503, body: JSON.stringify({ error_type: "backend_insufficient_data" }), expected: "backend_insufficient_data" },
+      { status: 503, body: JSON.stringify({ error_type: "backend_timeout" }), expected: "backend_timeout" },
+      { status: 422, body: JSON.stringify({ detail: "Not enough data" }), expected: "insufficient_data" },
+      { status: 502, body: "Bad Gateway", expected: "upstream_error" },
+      { status: 500, body: "Internal Server Error", expected: "server_error" },
+    ];
+
+    for (const tc of testCases) {
+      const err = new FlipperApiError(tc.status, tc.body);
+      expect(err.errorType).toBe(tc.expected);
+    }
   });
 });

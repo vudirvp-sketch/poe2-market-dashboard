@@ -4,7 +4,7 @@
 >
 > **VERIFICATION STATUS:** Each data flow is traced from the original POE2Scout API response through the transformation layer to the UI component. Field mappings are documented with examples.
 >
-> **LAST UPDATED:** 2026-06-03 — Added CORS proxy fallback (§11), Cloudflare Worker guide (§12), WebSocket status UI, pre-populated cache docs.
+> **LAST UPDATED:** 2026-06-05 — Exported error type constants, BACKEND_OFFLINE_HINT, buildCorsProxyUrl(), CORS_PROXY_CONFIRM_TTL from flipper-proxy.ts and poe2api.ts for testability. Tests now import from real modules instead of duplicating values.
 
 ---
 
@@ -2313,4 +2313,4 @@ These limits are generous for a single-user or small-team dashboard. If you need
 
 ---
 
-> **LAST UPDATED:** 2026-06-03 — Added §11 (CORS Proxy & Network Resilience), §12 (Cloudflare Worker Setup Guide), updated §3.6 with `cors_proxy_url` and `cors_proxy_fallback_enabled` config fields.
+> **LAST UPDATED:** 2026-06-05 — Exported error type constants, BACKEND_OFFLINE_HINT, buildCorsProxyUrl(), CORS_PROXY_CONFIRM_TTL from flipper-proxy.ts and poe2api.ts for testability. Tests now import from real modules instead of duplicating values.

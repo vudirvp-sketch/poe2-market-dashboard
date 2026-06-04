@@ -1,6 +1,10 @@
 // ============================================================================
 // Unit tests for poe2api.ts — CORS Proxy Fallback mechanism
 //
+// These tests import the real buildCorsProxyUrl and CORS_PROXY_CONFIRM_TTL
+// from poe2api.ts so they break when the source code changes (unlike the
+// previous version that duplicated the URL construction logic).
+//
 // Tests the tryCorsProxyFallback logic:
 //   - Returns null when no proxy is configured
 //   - Constructs proxy URL by replacing BASE_URL with CORS_PROXY_URL
@@ -9,25 +13,14 @@
 //   - Resets circuit breaker on proxy success
 // ============================================================================
 
-describe("poe2api CORS proxy fallback", () => {
-  // ── Mirror the URL construction logic from tryCorsProxyFallback ──
+import { BASE_URL, buildCorsProxyUrl, CORS_PROXY_CONFIRM_TTL } from "@/lib/poe2api";
 
-  const BASE_URL = "https://api.poe2scout.com/api";
+// ============================================================================
+// 1. Proxy URL construction — imported from real module
+// ============================================================================
+
+describe("poe2api CORS proxy fallback — URL construction", () => {
   const CORS_PROXY_URL = "https://poe2scout-proxy.example.workers.dev/api";
-
-  /**
-   * Build a proxy URL by replacing BASE_URL with CORS_PROXY_URL.
-   * This mirrors the logic in tryCorsProxyFallback().
-   */
-  function buildProxyUrl(originalUrl: string, baseUrl: string, proxyUrl: string): string {
-    if (originalUrl.startsWith(baseUrl)) {
-      return proxyUrl + originalUrl.slice(baseUrl.length);
-    }
-    // URL doesn't start with BASE_URL (unexpected), try prefixing anyway
-    return proxyUrl + "/" + originalUrl.replace(/^https?:\/\/[^/]+/, "");
-  }
-
-  // ── Tests ──
 
   it("returns null when CORS_PROXY_URL is empty", () => {
     const CORS_PROXY_URL_EMPTY = "";
@@ -40,7 +33,7 @@ describe("poe2api CORS proxy fallback", () => {
 
   it("constructs proxy URL by replacing BASE_URL prefix", () => {
     const originalUrl = `${BASE_URL}/Realms`;
-    const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
+    const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
     expect(proxyUrl).toBe("https://poe2scout-proxy.example.workers.dev/api/Realms");
     expect(proxyUrl).not.toContain("api.poe2scout.com");
@@ -48,7 +41,7 @@ describe("poe2api CORS proxy fallback", () => {
 
   it("handles URLs with query parameters", () => {
     const originalUrl = `${BASE_URL}/poe2/Leagues/runes/SnapshotPairs?Limit=24`;
-    const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
+    const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
     expect(proxyUrl).toBe(
       "https://poe2scout-proxy.example.workers.dev/api/poe2/Leagues/runes/SnapshotPairs?Limit=24"
@@ -58,7 +51,7 @@ describe("poe2api CORS proxy fallback", () => {
 
   it("handles URLs with path segments after BASE_URL", () => {
     const originalUrl = `${BASE_URL}/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250`;
-    const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
+    const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
     expect(proxyUrl).toContain("Currencies/ByCategory");
     expect(proxyUrl).toContain("Category=currency");
@@ -67,7 +60,7 @@ describe("poe2api CORS proxy fallback", () => {
 
   it("handles unexpected URL that doesn't start with BASE_URL", () => {
     const originalUrl = "https://some-other-api.com/data";
-    const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
+    const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
     // Should prefix with proxy URL + strip the original host
     expect(proxyUrl).toContain(CORS_PROXY_URL);
@@ -87,26 +80,34 @@ describe("poe2api CORS proxy fallback", () => {
 
     for (const path of paths) {
       const originalUrl = `${BASE_URL}${path}`;
-      const proxyUrl = buildProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
+      const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
       // The path after /api should be preserved
       expect(proxyUrl).toBe(`${CORS_PROXY_URL}${path}`);
     }
   });
+
+  it("proxy URL for ExchangeSnapshot preserves path correctly", () => {
+    const originalUrl = `${BASE_URL}/poe2/Leagues/runes/ExchangeSnapshot`;
+    const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
+    expect(proxyUrl).toBe(`${CORS_PROXY_URL}/poe2/Leagues/runes/ExchangeSnapshot`);
+  });
 });
+
+// ============================================================================
+// 2. CORS proxy confirmation TTL — imported from real module
+// ============================================================================
 
 describe("poe2api CORS proxy confirmation TTL", () => {
   it("TTL is 5 minutes (300000ms)", () => {
-    const CORS_PROXY_CONFIRM_TTL = 5 * 60_000;
     expect(CORS_PROXY_CONFIRM_TTL).toBe(300_000);
   });
 
   it("confirmed proxy becomes unconfirmed after TTL expires", () => {
-    const TTL = 5 * 60_000;
     let confirmed = true;
-    let lastCheck = Date.now() - TTL - 1; // 1ms past TTL
+    let lastCheck = Date.now() - CORS_PROXY_CONFIRM_TTL - 1; // 1ms past TTL
 
-    // Simulate the TTL check
-    if (confirmed && Date.now() - lastCheck > TTL) {
+    // Simulate the TTL check (mirrors tryCorsProxyFallback logic)
+    if (confirmed && Date.now() - lastCheck > CORS_PROXY_CONFIRM_TTL) {
       confirmed = false;
     }
 
@@ -114,17 +115,29 @@ describe("poe2api CORS proxy confirmation TTL", () => {
   });
 
   it("confirmed proxy stays confirmed within TTL", () => {
-    const TTL = 5 * 60_000;
     let confirmed = true;
     let lastCheck = Date.now() - 60_000; // 1 minute ago (within 5-min TTL)
 
-    if (confirmed && Date.now() - lastCheck > TTL) {
+    if (confirmed && Date.now() - lastCheck > CORS_PROXY_CONFIRM_TTL) {
       confirmed = false;
     }
 
     expect(confirmed).toBe(true);
   });
+
+  it("TTL is positive", () => {
+    expect(CORS_PROXY_CONFIRM_TTL).toBeGreaterThan(0);
+  });
+
+  it("TTL is reasonable (between 1 and 30 minutes)", () => {
+    expect(CORS_PROXY_CONFIRM_TTL).toBeGreaterThanOrEqual(60_000);
+    expect(CORS_PROXY_CONFIRM_TTL).toBeLessThanOrEqual(30 * 60_000);
+  });
 });
+
+// ============================================================================
+// 3. Circuit breaker interaction — mirrors the logic in tryCorsProxyFallback
+// ============================================================================
 
 describe("poe2api CORS proxy circuit breaker interaction", () => {
   it("successful proxy response should reset circuit breaker", () => {
@@ -132,7 +145,7 @@ describe("poe2api CORS proxy circuit breaker interaction", () => {
     let circuitBreakerOpen = true;
     let consecutiveFailures = 3;
 
-    // On proxy success:
+    // On proxy success (mirrors tryCorsProxyFallback logic):
     circuitBreakerOpen = false;
     consecutiveFailures = 0;
 
@@ -151,5 +164,56 @@ describe("poe2api CORS proxy circuit breaker interaction", () => {
     // (proxy failure doesn't mean direct API will succeed)
     expect(circuitBreakerOpen).toBe(true);
     expect(consecutiveFailures).toBe(3);
+  });
+
+  it("failed proxy marks proxy as unconfirmed", () => {
+    // Mirror: corsProxyConfirmed = false on proxy failure
+    let corsProxyConfirmed = true;
+
+    // On proxy failure:
+    corsProxyConfirmed = false;
+
+    expect(corsProxyConfirmed).toBe(false);
+  });
+
+  it("successful proxy marks proxy as confirmed and updates lastCheck", () => {
+    let corsProxyConfirmed = false;
+    let corsProxyLastCheck = 0;
+
+    // On proxy success:
+    corsProxyConfirmed = true;
+    corsProxyLastCheck = Date.now();
+
+    expect(corsProxyConfirmed).toBe(true);
+    expect(corsProxyLastCheck).toBeGreaterThan(0);
+    expect(Date.now() - corsProxyLastCheck).toBeLessThan(1000);
+  });
+});
+
+// ============================================================================
+// 4. BASE_URL alignment — verify imported BASE_URL matches expected value
+// ============================================================================
+
+describe("poe2api BASE_URL", () => {
+  it("BASE_URL ends with /api", () => {
+    expect(BASE_URL.endsWith("/api")).toBe(true);
+  });
+
+  it("BASE_URL contains poe2scout.com", () => {
+    // Default value when POE2_API_BASE_URL is not set
+    expect(BASE_URL).toContain("poe2scout.com");
+  });
+
+  it("buildCorsProxyUrl uses BASE_URL prefix replacement correctly", () => {
+    // This is the core contract: the proxy URL is formed by replacing
+    // the BASE_URL prefix with the proxy URL
+    const testProxyUrl = "https://proxy.example.com/api";
+    const originalUrl = `${BASE_URL}/Realms`;
+    const result = buildCorsProxyUrl(originalUrl, BASE_URL, testProxyUrl);
+
+    // The path after BASE_URL should be appended to the proxy URL
+    expect(result).toBe(`${testProxyUrl}/Realms`);
+    expect(result.startsWith(testProxyUrl)).toBe(true);
+    expect(result).not.toContain("poe2scout.com");
   });
 });

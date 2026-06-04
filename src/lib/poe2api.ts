@@ -57,7 +57,7 @@ const CORS_PROXY_URL = process.env.POE2_CORS_PROXY_URL || "";
 // Track whether we've confirmed the proxy works (to avoid retrying a dead proxy)
 let corsProxyConfirmed = false;
 let corsProxyLastCheck = 0;
-const CORS_PROXY_CONFIRM_TTL = 5 * 60_000; // Re-confirm every 5 minutes
+export const CORS_PROXY_CONFIRM_TTL = 5 * 60_000; // Re-confirm every 5 minutes
 
 // ---------- Stale-while-revalidate cache ----------
 export const cache = new Map<string, { data: unknown; ts: number }>();
@@ -266,6 +266,23 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
  * @param originalError  The error from the direct attempt
  * @returns  T on success, null on failure (caller handles null)
  */
+/**
+ * Build a CORS proxy URL by replacing BASE_URL with the proxy URL prefix.
+ * Extracted from tryCorsProxyFallback for testability.
+ *
+ * @param originalUrl  The URL that failed directly
+ * @param baseUrl      The base URL to replace (default: BASE_URL from poe2api)
+ * @param proxyUrl     The CORS proxy URL prefix
+ * @returns            The proxied URL string
+ */
+export function buildCorsProxyUrl(originalUrl: string, baseUrl: string, proxyUrl: string): string {
+  if (originalUrl.startsWith(baseUrl)) {
+    return proxyUrl + originalUrl.slice(baseUrl.length);
+  }
+  // URL doesn't start with BASE_URL (unexpected), try prefixing anyway
+  return proxyUrl + "/" + originalUrl.replace(/^https?:\/\/[^/]+/, "");
+}
+
 async function tryCorsProxyFallback<T>(originalUrl: string, originalError: Error): Promise<T | null> {
   // No proxy configured — skip entirely
   if (!CORS_PROXY_URL) return null;
@@ -279,13 +296,7 @@ async function tryCorsProxyFallback<T>(originalUrl: string, originalError: Error
   }
 
   // Build the proxy URL by replacing BASE_URL with CORS_PROXY_URL
-  let proxyUrl: string;
-  if (originalUrl.startsWith(BASE_URL)) {
-    proxyUrl = CORS_PROXY_URL + originalUrl.slice(BASE_URL.length);
-  } else {
-    // URL doesn't start with BASE_URL (unexpected), try prefixing anyway
-    proxyUrl = CORS_PROXY_URL + "/" + originalUrl.replace(/^https?:\/\/[^/]+/, "");
-  }
+  const proxyUrl = buildCorsProxyUrl(originalUrl, BASE_URL, CORS_PROXY_URL);
 
   console.info(
     `[poe2api] Direct API failed (${originalError.message}), trying CORS proxy: ${proxyUrl}`

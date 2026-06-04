@@ -20,22 +20,38 @@
 import { NextResponse } from "next/server";
 import { transformKeys } from "./case-transform";
 
-const FLIPPER_API_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
+export const FLIPPER_API_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
 
 // CORS Proxy for backend — if the flipper backend also can't reach poe2scout.com
 // (same blocked network), it will return degraded/unreachable status. We can't
 // proxy through CORS here directly (the backend makes its own API calls), but
 // we track the fallback hint so the frontend can inform the user.
-const FLIPPER_CORS_PROXY_URL = process.env.FLIPPER_CORS_PROXY_URL || "";
+export const FLIPPER_CORS_PROXY_URL = process.env.FLIPPER_CORS_PROXY_URL || "";
 
 // Circuit breaker for flipper-backend requests
 let flipperCircuitBreakerOpen = false;
 let flipperCircuitBreakerOpenSince = 0;
 let flipperCircuitBreakerCooldownMs = 60_000; // P1-2: starts at 60s, grows exponentially
-const FLIPPER_CB_INITIAL_COOLDOWN = 60_000; // 60s
-const FLIPPER_CB_MAX_COOLDOWN = 300_000; // P1-2: max 5 minutes
+export const FLIPPER_CB_INITIAL_COOLDOWN = 60_000; // 60s
+export const FLIPPER_CB_MAX_COOLDOWN = 300_000; // P1-2: max 5 minutes
 let flipperConsecutiveFailures = 0;
-const FLIPPER_CB_THRESHOLD = 5; // Open after 5 consecutive failures
+export const FLIPPER_CB_THRESHOLD = 5; // Open after 5 consecutive failures
+
+// --- Exported constants for testing & consumer alignment ---
+/** Error type used when the backend is unreachable (connection refused / circuit breaker open) */
+export const ERROR_TYPE_OFFLINE = "backend_offline";
+/** Error type used when the backend returns 503 (not enough data yet) */
+export const ERROR_TYPE_INSUFFICIENT = "backend_insufficient_data";
+/** Error type used when the backend returns 422 (unprocessable entity / insufficient data for forecast) */
+export const ERROR_TYPE_UNPROCESSABLE = "insufficient_data";
+/** Error type used when the backend returns 5xx (but not 503) */
+export const ERROR_TYPE_SERVER = "server_error";
+/** Error type used when connection is reset */
+export const ERROR_TYPE_CONNECTION_RESET = "backend_connection_reset";
+/** Error type used when request times out */
+export const ERROR_TYPE_TIMEOUT = "backend_timeout";
+/** Hint shown to users when the backend is offline */
+export const BACKEND_OFFLINE_HINT = "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000";
 
 // P1-2: Circuit breaker state for debugging
 let flipperCircuitBreakerState: "closed" | "open" | "half-open" = "closed";
@@ -118,9 +134,9 @@ async function _doProxyWithRetry(
       return NextResponse.json(
         {
           error: "Flipper backend unavailable",
-          error_type: "backend_offline",
+          error_type: ERROR_TYPE_OFFLINE,
           detail: `Circuit breaker open — backend unreachable (retry in ${retryIn}s)`,
-          hint: "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000",
+          hint: BACKEND_OFFLINE_HINT,
           cors_proxy_hint: FLIPPER_CORS_PROXY_URL
             ? "Backend upstream (poe2scout.com) may be blocked. Configure POE2_CORS_PROXY_URL for the frontend."
             : undefined,
@@ -156,7 +172,7 @@ async function _doProxyWithRetry(
       return NextResponse.json(
         {
           error: "Flipper backend unavailable",
-          error_type: "backend_offline",
+          error_type: ERROR_TYPE_OFFLINE,
           detail: `Circuit breaker open — health probe failed (retry in ${Math.round(flipperCircuitBreakerCooldownMs / 1000)}s)`,
           circuit_breaker_state: flipperCircuitBreakerState,
         },
@@ -220,7 +236,7 @@ async function _doProxyWithRetry(
         return NextResponse.json(
           {
             ...data,
-            error_type: "backend_insufficient_data",
+            error_type: ERROR_TYPE_INSUFFICIENT,
           },
           { status: 503 },
         );
@@ -237,7 +253,7 @@ async function _doProxyWithRetry(
         return NextResponse.json(
           {
             ...data,
-            error_type: "insufficient_data",
+            error_type: ERROR_TYPE_UNPROCESSABLE,
           },
           { status: 422 },
         );
@@ -261,7 +277,7 @@ async function _doProxyWithRetry(
         return NextResponse.json(
           {
             ...data,
-            error_type: "server_error",
+            error_type: ERROR_TYPE_SERVER,
           },
           { status: res.status },
         );
@@ -319,25 +335,25 @@ async function _doProxyWithRetry(
   const message = lastError?.message || "Unknown error";
 
   // Classify the error type for better frontend UX
-  let errorType = "backend_offline";
+  let errorType = ERROR_TYPE_OFFLINE;
   if (message.includes("timeout") || message.includes("ETIMEDOUT") || message.includes("aborted")) {
-    errorType = "backend_timeout";
+    errorType = ERROR_TYPE_TIMEOUT;
   } else if (message.includes("ECONNREFUSED")) {
-    errorType = "backend_offline";
+    errorType = ERROR_TYPE_OFFLINE;
   } else if (message.includes("ECONNRESET") || message.includes("socket hang up")) {
-    errorType = "backend_connection_reset";
+    errorType = ERROR_TYPE_CONNECTION_RESET;
   }
 
   const response: Record<string, unknown> = {
     error: "Flipper backend unavailable",
     error_type: errorType,
     detail: message,
-    hint: "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000",
+    hint: BACKEND_OFFLINE_HINT,
   };
 
   // If the backend is offline AND a CORS proxy is configured, add a hint
   // that the upstream (poe2scout.com) might also be blocked
-  if (FLIPPER_CORS_PROXY_URL && (errorType === "backend_offline" || errorType === "backend_connection_reset")) {
+  if (FLIPPER_CORS_PROXY_URL && (errorType === ERROR_TYPE_OFFLINE || errorType === ERROR_TYPE_CONNECTION_RESET)) {
     response.cors_proxy_hint =
       "If the backend cannot reach poe2scout.com, set POE2_CORS_PROXY_URL " +
       "in your .env.local to your Cloudflare Worker URL.";
