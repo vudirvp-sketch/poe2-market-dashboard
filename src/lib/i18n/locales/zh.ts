@@ -870,6 +870,12 @@ const zh: Record<TranslationKeys, string> = {
   analystDataFetched: "数据已获取",
   analystPartialData: "部分数据",
   analystError: "加载联赛分析数据失败。后端可能存在问题。",
+  analystFallbackNotice: "简化分析 — 启动分析后端以获取完整功能（翻转、评分、预测）。",
+  analystFallbackBadge: "简化版",
+
+  // ---- Optimizer Offline (需要后端) ----
+  optimizerOfflineTitle: "优化器需要分析后端",
+  optimizerOfflineDesc: "货币路径优化器和汇率矩阵需要 FastAPI 分析后端来计算最优转换路径和成对汇率。启动后端以启用这些功能。",
 
   upstreamBlockedTitle: "POE2Scout API 无法从您的 IP 访问。",
   upstreamBlockedStep1: "1) VPN — 连接到不受限制地区的服务器",

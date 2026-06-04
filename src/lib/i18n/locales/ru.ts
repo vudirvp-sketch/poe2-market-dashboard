@@ -803,6 +803,12 @@ const ru: Record<TranslationKeys, string> = {
   analystDataFetched: "Данные получены",
   analystPartialData: "Частичные данные",
   analystError: "Не удалось загрузить данные аналитики лиги. Возможны проблемы с бэкендом.",
+  analystFallbackNotice: "Упрощённый анализ — запустите аналитический бэкенд для полного функционала (флипы, скоринг, прогнозы).",
+  analystFallbackBadge: "Упрощённо",
+
+  // ---- Optimizer Offline (бэкенд обязателен) ----
+  optimizerOfflineTitle: "Оптимизатор требует аналитический бэкенд",
+  optimizerOfflineDesc: "Оптимизатор путей конвертации и матрица курсов требуют запущенного FastAPI бэкенда для вычисления оптимальных путей и парных курсов. Запустите бэкенд для доступа к этим функциям.",
 
   upstreamBlockedTitle: "POE2Scout API недоступен с вашего IP.",
   upstreamBlockedStep1: "1) VPN — подключитесь к серверу вне РФ",

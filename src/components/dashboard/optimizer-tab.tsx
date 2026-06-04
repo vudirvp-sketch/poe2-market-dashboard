@@ -203,6 +203,27 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
         }}
       />
 
+      {/* Backend offline notice — optimizer requires the analytics backend */}
+      {!backendOnline && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Route className="h-5 w-5 text-amber-500 shrink-0" aria-hidden="true" />
+              <h3 className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                {t("optimizerOfflineTitle") || "Optimizer requires the analytics backend"}
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("optimizerOfflineDesc") ||
+                "The Currency Path Optimizer and Rate Matrix require the FastAPI analytics backend to compute optimal conversion paths and pairwise rates. Start the backend to enable these features."}
+            </p>
+            <code className="text-xs block bg-muted px-2 py-1 rounded">
+              uvicorn backend.main:app --reload --port 8000
+            </code>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ================================================================ */}
       {/* Section A: Currency Path Optimizer                               */}
       {/* ================================================================ */}

@@ -189,7 +189,14 @@ export function Dashboard() {
     clearExchangeExtendedFilters,
     setDenseMode,
     setBaseCurrency,
+    _hydrated: storeHydrated,
   } = useDashboardStore();
+
+  // SSR/hydration safety: baseCurrencyApiId may differ between server and client.
+  // With ssr: false this is already mitigated, but we add an explicit guard:
+  // don't use baseCurrency values from the store until hydration completes.
+  const safeBaseCurrencyApiId = storeHydrated ? uiState.baseCurrencyApiId : null;
+  const safeBaseCurrencyText = storeHydrated ? uiState.baseCurrencyText : null;
 
   // §3.5: Toggle .dense-mode class on <html> when global dense mode changes
   useEffect(() => {
@@ -346,6 +353,19 @@ export function Dashboard() {
     }
   }, [league, leagues]);
 
+  // Reference currencies — moved BEFORE the useEffect that depends on it
+  // to avoid the "used before declaration" TypeScript error.
+  const { data: referenceCurrencies } = useQuery({
+    queryKey: ["referenceCurrencies", realm, effectiveLeague],
+    queryFn: () =>
+      fetchApi<ReferenceCurrency[]>("/api/poe2/exchange", {
+        realm,
+        league: effectiveLeague,
+        action: "reference",
+      }),
+    enabled: !!effectiveLeague,
+  });
+
   // Phase 0.2 + P0-2: Update base currency in store when league changes.
   // Only update if the store doesn't already have a user-selected base currency,
   // OR if the currently selected currency doesn't exist in the new league.
@@ -356,7 +376,8 @@ export function Dashboard() {
         // P0-2: Check if the user's selected reference currency still exists
         // in the new league's reference currencies. If it does, keep it.
         // If not, reset to the league default.
-        const userBaseApiId = uiState.baseCurrencyApiId;
+        // SSR guard: only check user selection after store hydration completes.
+        const userBaseApiId = safeBaseCurrencyApiId;
         if (userBaseApiId && referenceCurrencies) {
           const existsInNewLeague = referenceCurrencies.some(
             (c) => c.apiId === userBaseApiId
@@ -376,19 +397,7 @@ export function Dashboard() {
         setReferenceCurrency("");
       }
     }
-  }, [leagues, effectiveLeague, setBaseCurrency, referenceCurrencies]);
-
-  // Reference currencies
-  const { data: referenceCurrencies } = useQuery({
-    queryKey: ["referenceCurrencies", realm, effectiveLeague],
-    queryFn: () =>
-      fetchApi<ReferenceCurrency[]>("/api/poe2/exchange", {
-        realm,
-        league: effectiveLeague,
-        action: "reference",
-      }),
-    enabled: !!effectiveLeague,
-  });
+  }, [leagues, effectiveLeague, setBaseCurrency, referenceCurrencies, safeBaseCurrencyApiId]);
 
   // All items (for comparison resolution + overview + alerts)
   const { data: allItems } = useQuery({
@@ -843,8 +852,8 @@ export function Dashboard() {
         }}
         denseMode={uiState.denseMode}
         onDenseModeToggle={() => setDenseMode(!uiState.denseMode)}
-        baseCurrencyApiId={uiState.baseCurrencyApiId}
-        baseCurrencyText={uiState.baseCurrencyText}
+        baseCurrencyApiId={safeBaseCurrencyApiId}
+        baseCurrencyText={safeBaseCurrencyText}
       />
 
       <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={false} wsStatus={wsStatus} />
@@ -1421,7 +1430,7 @@ export function Dashboard() {
             {/* ============ ANALYST TAB ============ */}
             <TabsContent value="analyst">
               <ErrorBoundary fallbackTitle="Analyst Error">
-                <AnalystTab backendOnline={flipperBackendOnline} />
+                <AnalystTab backendOnline={flipperBackendOnline} realm={realm} league={effectiveLeague} />
               </ErrorBoundary>
             </TabsContent>
 

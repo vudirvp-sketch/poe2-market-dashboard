@@ -7,6 +7,12 @@
 //   B) Auto-generated Facts — list of insight cards with icons and severity badges
 //   C) Top Movers + Anomalies — side-by-side lists of volatile and anomalous
 //      currencies with direction badges and z-scores
+//
+// Fallback mode: When the FastAPI backend is offline (backendOnline=false),
+// this tab fetches a simplified analysis from the Next.js API route
+// /api/poe2/analyst-fallback, which computes trends/anomalies directly from
+// POE2Scout API data. The fallback data is marked with _fallback=true and
+// shows a "simplified analysis" badge so users know it's not the full backend.
 // ============================================================================
 "use client";
 
@@ -23,6 +29,7 @@ import {
   Activity,
   RefreshCw,
   LineChart,
+  Info,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +57,10 @@ import { DataFreshnessBadge } from "./data-freshness-badge";
 interface AnalystTabProps {
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Current realm (for fallback API route) */
+  realm?: string;
+  /** Current league (for fallback API route) */
+  league?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,9 +99,10 @@ interface SummaryCardDef {
 // Component
 // ---------------------------------------------------------------------------
 
-export function AnalystTab({ backendOnline }: AnalystTabProps) {
+export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
   const { t } = useI18n();
 
+  // Primary query: FastAPI backend analyst summary
   const {
     data: analystData,
     isLoading: analystLoading,
@@ -106,45 +118,70 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
     retry: 1,
   });
 
+  // Fallback query: Next.js API route that computes analyst data from POE2Scout directly
+  const {
+    data: fallbackData,
+    isLoading: fallbackLoading,
+    isError: fallbackError,
+    refetch: refetchFallback,
+  } = useQuery<AnalystSummaryResponse & { _fallback?: boolean }>({
+    queryKey: ["analyst-fallback", realm, league],
+    queryFn: () =>
+      fetchApi<AnalystSummaryResponse & { _fallback?: boolean }>(
+        "/api/poe2/analyst-fallback",
+        { realm: realm || "poe2", league: league || "" }
+      ),
+    enabled: !backendOnline && !!league,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    retry: 1,
+  });
+
+  // Merge: use backend data when available, otherwise fallback data
+  const isUsingFallback = !backendOnline && fallbackData != null;
+  const activeData = analystData ?? fallbackData ?? null;
+  const isLoading = backendOnline ? analystLoading : fallbackLoading;
+  const hasError = backendOnline ? analystError : fallbackError;
+
   const insufficientData =
     analystError && getFlipperErrorType(analystErrorObj) === "backend_insufficient_data";
 
   // ---- Summary cards data ----
-  const summaryCards: SummaryCardDef[] = analystData
+  const summaryCards: SummaryCardDef[] = activeData
     ? [
         {
           label: t("analystTotalCurrencies") || "Total Currencies",
-          value: analystData.summary.totalCurrencies,
+          value: activeData.summary.totalCurrencies,
           icon: <Coins className="h-5 w-5 text-muted-foreground" aria-hidden="true" />,
           colorClass: "text-foreground",
         },
         {
           label: t("analystTotalPairs") || "Total Pairs",
-          value: analystData.summary.totalPairs,
+          value: activeData.summary.totalPairs,
           icon: <ArrowLeftRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />,
           colorClass: "text-foreground",
         },
         {
           label: t("analystTrendingUp") || "Trending Up",
-          value: analystData.summary.trendingUp,
+          value: activeData.summary.trendingUp,
           icon: <TrendingUp className="h-5 w-5 text-emerald-500" aria-hidden="true" />,
           colorClass: "text-emerald-500",
         },
         {
           label: t("analystTrendingDown") || "Trending Down",
-          value: analystData.summary.trendingDown,
+          value: activeData.summary.trendingDown,
           icon: <TrendingDown className="h-5 w-5 text-red-500" aria-hidden="true" />,
           colorClass: "text-red-500",
         },
         {
           label: t("analystStable") || "Stable",
-          value: analystData.summary.stable,
+          value: activeData.summary.stable,
           icon: <Minus className="h-5 w-5 text-sky-500" aria-hidden="true" />,
           colorClass: "text-sky-500",
         },
         {
           label: t("analystAnomalies") || "Anomalies",
-          value: analystData.summary.anomalyCount,
+          value: activeData.summary.anomalyCount,
           icon: <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />,
           colorClass: "text-amber-500",
         },
@@ -152,13 +189,13 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
     : [];
 
   // ---- Top movers (first 10 trending currencies) ----
-  const topMovers: CurrencyTrend[] = (analystData?.trends ?? []).slice(0, 10);
+  const topMovers: CurrencyTrend[] = (activeData?.trends ?? []).slice(0, 10);
 
   // ---- Anomalies ----
-  const anomalies: PriceAnomaly[] = analystData?.anomalies ?? [];
+  const anomalies: PriceAnomaly[] = activeData?.anomalies ?? [];
 
   // ---- Facts ----
-  const facts: LeagueFact[] = analystData?.facts ?? [];
+  const facts: LeagueFact[] = activeData?.facts ?? [];
 
   // ---- Render ----
   return (
@@ -167,15 +204,31 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
       <FlipperBackendStatusCard
         backendOnline={backendOnline}
         insufficientData={insufficientData}
-        fetchedAt={analystData?.fetchedAt}
-        dataAvailable={analystData?.dataAvailable}
-        onRefresh={() => refetchAnalyst()}
+        fetchedAt={activeData?.fetchedAt}
+        dataAvailable={activeData?.dataAvailable}
+        onRefresh={() => {
+          if (backendOnline) refetchAnalyst();
+          else refetchFallback();
+        }}
       />
+
+      {/* Fallback mode badge — shown when using simplified analysis without backend */}
+      {isUsingFallback && (
+        <Card className="border-sky-500/30 bg-sky-500/5">
+          <CardContent className="p-3 flex items-center gap-2">
+            <Info className="h-4 w-4 text-sky-500 shrink-0" aria-hidden="true" />
+            <span className="text-xs text-muted-foreground">
+              {t("analystFallbackNotice") ||
+                "Simplified analysis — start the analytics backend for full insights (flips, scoring, forecasting)."}
+            </span>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ================================================================ */}
       {/* Section A: Summary Cards                                         */}
       {/* ================================================================ */}
-      {analystLoading && (
+      {isLoading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
@@ -188,7 +241,7 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
         </div>
       )}
 
-      {analystData && !analystLoading && (
+      {activeData && !isLoading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {summaryCards.map((card) => (
             <Card key={card.label}>
@@ -209,7 +262,7 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
       {/* ================================================================ */}
       {/* Section B: Auto-generated Facts                                  */}
       {/* ================================================================ */}
-      {analystData && facts.length > 0 && (
+      {activeData && facts.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -250,7 +303,7 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
       {/* ================================================================ */}
       {/* Section C: Top Movers + Anomalies                                */}
       {/* ================================================================ */}
-      {analystData && (
+      {activeData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ---- Top Movers ---- */}
           <Card>
@@ -371,23 +424,28 @@ export function AnalystTab({ backendOnline }: AnalystTabProps) {
       )}
 
       {/* ---- Data freshness — compact badge replaces inline Clock+text ---- */}
-      {analystData?.fetchedAt && (
+      {activeData?.fetchedAt && (
         <div className="flex items-center gap-2">
           <DataFreshnessBadge
-            fetchedAt={analystData.fetchedAt}
-            dataAvailable={analystData.dataAvailable}
+            fetchedAt={activeData.fetchedAt}
+            dataAvailable={activeData.dataAvailable}
             compact
           />
-          {!analystData.dataAvailable && (
+          {!activeData.dataAvailable && (
             <Badge variant="outline" className="text-xs ml-2">
               {t("analystPartialData") || "Partial data"}
+            </Badge>
+          )}
+          {isUsingFallback && (
+            <Badge variant="outline" className="text-xs ml-2 border-sky-500/50 text-sky-600 dark:text-sky-400">
+              {t("analystFallbackBadge") || "Simplified"}
             </Badge>
           )}
         </div>
       )}
 
       {/* ---- Error state (not insufficient-data) ---- */}
-      {analystError && !insufficientData && backendOnline && (
+      {hasError && !insufficientData && !isUsingFallback && (
         <Card className="border-red-500/30 bg-red-500/5" role="alert">
           <CardContent className="p-4 text-sm text-red-600 dark:text-red-400">
             {t("analystError") || "Failed to load league analyst data. The backend may be experiencing issues."}

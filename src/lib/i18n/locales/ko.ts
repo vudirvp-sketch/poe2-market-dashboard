@@ -870,6 +870,12 @@ const ko: Record<TranslationKeys, string> = {
   analystDataFetched: "데이터 조회됨",
   analystPartialData: "부분 데이터",
   analystError: "리그 분석 데이터를 로딩하지 못했습니다. 백엔드에 문제가 있을 수 있습니다.",
+  analystFallbackNotice: "간소화된 분석 — 전체 기능(플립, 스코어링, 예측)을 위해 분석 백엔드를 시작하세요.",
+  analystFallbackBadge: "간소화",
+
+  // ---- Optimizer Offline (백엔드 필요) ----
+  optimizerOfflineTitle: "옵티마이저에 분석 백엔드가 필요합니다",
+  optimizerOfflineDesc: "통화 경로 최적화기 및 환율 매트릭스는 최적의 변환 경로와 쌍별 환율을 계산하기 위해 FastAPI 분석 백엔드가 필요합니다. 백엔드를 시작하여 이 기능을 활성화하세요.",
 
   upstreamBlockedTitle: "POE2Scout API에 현재 IP에서 접근할 수 없습니다.",
   upstreamBlockedStep1: "1) VPN — 차단되지 않은 지역 서버에 연결",

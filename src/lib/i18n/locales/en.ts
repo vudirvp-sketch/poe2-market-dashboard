@@ -874,6 +874,12 @@ const en = {
   analystDataFetched: "Data fetched",
   analystPartialData: "Partial data",
   analystError: "Failed to load league analyst data. The backend may be experiencing issues.",
+  analystFallbackNotice: "Simplified analysis — start the analytics backend for full insights (flips, scoring, forecasting).",
+  analystFallbackBadge: "Simplified",
+
+  // ---- Optimizer Offline (backend required) ----
+  optimizerOfflineTitle: "Optimizer requires the analytics backend",
+  optimizerOfflineDesc: "The Currency Path Optimizer and Rate Matrix require the FastAPI analytics backend to compute optimal conversion paths and pairwise rates. Start the backend to enable these features.",
 
   // ---- Upstream Blocked Hints (i18n replacement for hardcoded Russian) ----
   upstreamBlockedTitle: "POE2Scout API is unreachable from your IP.",
