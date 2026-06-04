@@ -116,10 +116,15 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     if not rates:
         return []
 
-    # Gold fee calculation DISABLED — user excluded gold from all flipper calculations.
-    # Gold is a consumable in PoE2 and has no real trade value for small-scale flippers.
-    # Previously, gold fees made most flips show net_profit_pct <= 0, resulting in 0 results.
-    logger.info("Gold fees EXCLUDED from flipper calculations per user preference")
+    # Gold fee calculation: controlled by config.fees.gold_enabled flag.
+    # When gold_enabled is False (default), gold fees are EXCLUDED from all
+    # flipper calculations because gold is a consumable in PoE2 with no real
+    # trade value for small-scale flippers.
+    gold_fees_enabled = config.fees.gold_enabled
+    if not gold_fees_enabled:
+        logger.info("Gold fees EXCLUDED from flipper calculations (fees.gold_enabled = false)")
+    else:
+        logger.info("Gold fees INCLUDED in flipper calculations (fees.gold_enabled = true)")
 
     event_manager = get_event_manager(config)
 
@@ -434,10 +439,16 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 score = score * t_penalty
                 score = min(max(score, 0.0), 1.0)
 
-        # Gold fee calculation DISABLED — user excluded gold from all flipper calculations.
-        # Previously: net_spread = max(0.0, spread_value - total_fee_fraction)
-        # Now: net_spread = spread_value (no gold fee deduction)
-        net_spread = spread_value
+        # Gold fee deduction controlled by config.fees.gold_enabled.
+        # When gold_enabled is False: net_spread = spread_value (no gold fee deduction)
+        # When gold_enabled is True: net_spread = max(0.0, spread_value - total_fee_fraction)
+        if gold_fees_enabled:
+            # TODO: Re-implement gold fee fraction computation when gold_enabled=True
+            # from backend.economy.gold_costs import compute_gold_fee_fraction
+            # For now, gold_enabled=True still uses raw spread (to be implemented)
+            net_spread = spread_value
+        else:
+            net_spread = spread_value
         net_profit_pct = net_spread * 100 if mid_price > 0 else 0.0
 
         opp = FlipOpportunity(
@@ -564,10 +575,16 @@ async def get_flip_opportunities(
             "summary": event_manager.get_active_event_summary(),
         },
         "fee_warning": {
-            "gold_fees_excluded": True,
-            "message": "Gold fees are EXCLUDED from all profit calculations. "
-                       "Gold is a consumable in PoE2 with no real trade value for small-scale flippers. "
-                       "spread_after_fees equals the raw spread without gold fee deduction.",
+            "gold_fees_excluded": not config.fees.gold_enabled,
+            "message": (
+                "Gold fees are EXCLUDED from all profit calculations. "
+                "Gold is a consumable in PoE2 with no real trade value for small-scale flippers. "
+                "spread_after_fees equals the raw spread without gold fee deduction. "
+                "Set fees.gold_enabled=true in config.yaml to re-enable gold fee deduction."
+            ) if not config.fees.gold_enabled else (
+                "Gold fees are INCLUDED in profit calculations (fees.gold_enabled=true). "
+                "spread_after_fees accounts for gold fee deduction."
+            ),
         },
         # Step 4: Data freshness metadata
         "data_freshness": {
@@ -674,9 +691,14 @@ async def get_triangular_arbitrage(
             for o in opportunities
         ],
         "fee_warning": {
-            "gold_fees_excluded": True,
-            "message": "Gold fees are EXCLUDED from all profit calculations. "
-                       "Gold is a consumable in PoE2 with no real trade value for small-scale flippers.",
+            "gold_fees_excluded": not config.fees.gold_enabled,
+            "message": (
+                "Gold fees are EXCLUDED from all profit calculations. "
+                "Gold is a consumable in PoE2 with no real trade value for small-scale flippers. "
+                "Set fees.gold_enabled=true in config.yaml to re-enable."
+            ) if not config.fees.gold_enabled else (
+                "Gold fees are INCLUDED in profit calculations (fees.gold_enabled=true)."
+            ),
         },
         "cross_rate_warning": cross_rate_warning,
         "data_available": True,

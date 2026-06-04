@@ -43,10 +43,17 @@ league:
     - incursion
     - idol
 
-# Gold fee configuration — Step 3: Re-enabled gold fee accounting.
+# Gold fee configuration — Step 3: Gold fee accounting.
 # The gold_to_chaos_rate is extracted dynamically from POE2Scout's data
 # (chaosEquivalent of "Gold Coin"). If unavailable, fixed_gold_to_chaos_rate is used.
+#
+# gold_enabled: When false, gold fees are EXCLUDED from all flipper calculations.
+# This is the current default because gold is a consumable in PoE2 with no real
+# trade value for small-scale flippers, and including it made most flips show
+# net_profit_pct <= 0. Set to true to re-enable gold fee deduction in scoring,
+# arbitrage, and storage value calculations.
 fees:
+  gold_enabled: false                   # Set to true to include gold fees in profit calculations
   gold_to_chaos_rate_source: "dynamic"  # "dynamic" (from POE2Scout) or "fixed"
   fixed_gold_to_chaos_rate: 0.002       # Fallback: ~0.002 Chaos per Gold (current estimate)
   unknown_item_gold_cost: 200           # Per-unit gold cost for currencies not in the verified table

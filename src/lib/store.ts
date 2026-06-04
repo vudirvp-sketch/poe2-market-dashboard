@@ -88,7 +88,7 @@ const DEFAULT_UI_STATE: PersistedUIState = {
     },
   },
   watchlist: [],
-  league: "runes",
+  league: "vaal",
   denseMode: false,
   baseCurrencyApiId: null,
   baseCurrencyText: null,

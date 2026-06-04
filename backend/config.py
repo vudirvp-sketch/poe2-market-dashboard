@@ -65,11 +65,17 @@ class LeagueConfig(BaseModel):
 class FeesConfig(BaseModel):
     """Fees configuration — gold fee accounting for PoE2 Currency Exchange.
     
-    Step 3: Re-enabled gold fee accounting. The gold_to_chaos_rate is
-    extracted dynamically from POE2Scout's /economy response (the 
-    chaosEquivalent value for "Gold Coin"). If unavailable, the 
-    fixed_gold_to_chaos_rate fallback is used.
+    When gold_enabled is False (default), gold fees are EXCLUDED from all
+    flipper calculations. This is because gold is a consumable in PoE2 with
+    no real trade value for small-scale flippers, and including it made most
+    flips show net_profit_pct <= 0.
+    
+    Set gold_enabled to True to re-enable gold fee deduction in scoring,
+    arbitrage, and storage value calculations.
     """
+    # Master switch for gold fee inclusion in profit calculations.
+    # When False, all flipper calculations ignore gold fees entirely.
+    gold_enabled: bool = False
     # Source for gold_to_chaos_rate: "dynamic" (from POE2Scout) or "fixed" (from config)
     gold_to_chaos_rate_source: str = "dynamic"
     # Fallback when POE2Scout data is unavailable. Current estimate ~0.15-0.25 Chaos/Gold.

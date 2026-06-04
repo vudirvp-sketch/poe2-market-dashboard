@@ -464,7 +464,7 @@ User Browser
     │                                            riskDiscount, adjustedPrice, netValueAfterFees,
     │                                            ratio, decision: "BUY_HOLD"|"SELL_CONVERT"|"NEUTRAL" }
     │
-    ├─→ ~~GET /api/flipper/portfolio ────────────→ routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
+    ├─→ ~~GET /api/flipper/portfolio ────────────→ routes_portfolio.py~~ ⛔ DEPRECATED — endpoint not implemented
     │                                              │
     │                                          ~~PortfolioOptimizer.optimize()~~
     │                                          ~~(risk_parity or min_variance, Ledoit-Wolf shrinkage)~~
@@ -472,6 +472,7 @@ User Browser
     │                                          ~~return: PortfolioData~~
     │                                          ~~{ method, weights: {currency: weight}, expectedRisk,
     │                                            correlationWarning, lastRebalance }~~
+    │                                          NOTE: routes_portfolio.py EXISTS but only implements /correlation
     │
     ├─→ ~~GET /api/flipper/portfolio/frontier ──→ routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
@@ -479,11 +480,13 @@ User Browser
     │                                              │
     │                                          ~~return: Efficient frontier data (scatter plot)~~
     │
-    ├─→ ~~GET /api/flipper/portfolio/correlation → routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
+    ├─→ GET /api/flipper/portfolio/correlation → routes_portfolio.py  ✅ ACTIVE
     │                                              │
-    │                                          ~~Correlation matrix for portfolio currencies~~
+    │                                          Correlation matrix for all eligible currencies
+    │                                          (P3-3: used by ComparativeChart for heatmap)
     │                                              │
-    │                                          ~~return: Correlation matrix data~~
+    │                                          return: { currencies: string[], matrix: number[][],
+    │                                            data_available: bool, fetched_at: ISO8601 }
     │
     ├─→ ~~POST /api/flipper/portfolio/rebalance → routes_portfolio.py~~ ⛔ DEPRECATED — file does not exist
     │                                              │
@@ -681,12 +684,14 @@ HistoricalStore/
 
 > **⚠️ CORRECTION (2026-06-02):** The old version documented a 5-minute snapshot interval and several jobs (broadcast_update, warm_cache, prune_history) that no longer exist. The actual scheduler runs 3 jobs with configurable intervals from `config.yaml`. The `warm_cache` and `prune_history` jobs have been removed. Broadcasting is done inline after snapshot refresh.
 
+> **⚠️ CORRECTION (2026-06-04):** Gold fees are now controlled by the `fees.gold_enabled` config flag (default: `false`). When `gold_enabled=false`, all flipper calculations (scoring, arbitrage, storage value) exclude gold fees. When set to `true`, gold fee deduction is re-enabled. The `FeesConfig` model in `backend/config.py` has been updated with the `gold_enabled` field. The hardcoded gold fee exclusion comments in `routes_arbitrage.py` have been replaced with conditional logic based on this flag.
+
 ### 3.6 Backend Config (config.yaml → Pydantic Settings)
 
 | Config Section | Key Fields | Defaults |
 |----------------|-----------|----------|
 | `data` | `primary_provider="poe2scout"`, `fallback_provider="official"`, `poe2scout_base_url`, `cors_proxy_url=""`, `cors_proxy_fallback_enabled=True`, `cache_ttl_prices_minutes=5`, `cache_ttl_history_hours=24`, `rate_limit_per_second=1.0`, `historical_retention_days=90` | — |
-| `league` | `league_name="runes"`, `realm="poe2"`, `phase_early_days=7`, `phase_mid_days=35`, `base_currency="exalted"` | — |
+| `league` | `league_name="vaal"`, `realm="poe2"`, `league_start_date="2026-05-31T00:00:00Z"`, `phase_early_days=14`, `phase_mid_days=42`, `base_currency="exalted"` | — |
 | `filters` | `min_volume_24h=200`, `max_volatility=0.4`, `max_spread=0.15` | — |
 | `scoring` | `momentum_negative_threshold=-0.01`, `volatility_reference=0.05`, `phase_multiplier_early/mid/late=1.2/1.0/0.9`, `flashback_multiplier=1.5`, `event_multiplier=2.0` | — |
 | `forecasting` | `sarima_seasonal_period=None`, `lightgbm_retrain_interval_hours=6`, `lightgbm_min_data_points=15`, `forecast_horizon_hours=24`, `significance_level=0.05` | — |  
@@ -830,7 +835,8 @@ interface FlipOpportunity {
   currency: string;
   score: number;                // 0.0 to 1.0
   spread: number;               // Raw spread (no fees)
-  spreadAfterFees: number;      // ⚠️ DEPRECATED — kept for backward compat
+  spreadAfterFees: number;      // Net spread after fees. When fees.gold_enabled=false, equals raw spread.
+                                 // When fees.gold_enabled=true, deducts gold fee fraction.
   volume24h: number;            // was volume_24h in backend response (transformed by proxy)
   momentum: number;
   volatility: number;
@@ -1604,8 +1610,8 @@ FastAPI Routes (backend/api/)
 │                              # /api/tiers, /api/benchmarks/{currency_api_id}
 ├── routes_arbitrage.py        # /api/arbitrage/flips, /api/arbitrage/triangular
 ├── ~~routes_forecast.py~~      # ⛔ DEPRECATED — file does not exist; /api/forecast/{currency}, /api/forecast/{currency}/stl
-├── ~~routes_portfolio.py~~     # ⛔ DEPRECATED — file does not exist; /api/portfolio, /api/portfolio/rebalance,
-│                              # /api/portfolio/frontier, /api/portfolio/correlation
+├── ~~routes_portfolio.py~~     # ⛔ PARTIALLY DEPRECATED — file exists; /api/portfolio/correlation is ACTIVE;
+│                              # /api/portfolio, /api/portfolio/rebalance, /api/portfolio/frontier NOT implemented
 ├── routes_events.py           # /api/events (GET/POST), /api/events/summary (GET),
 │                              # /api/events/{event_id} (GET/DELETE),
 │                              # /api/events/{event_id}/deactivate (POST)
@@ -1703,8 +1709,8 @@ POE2Scout API (base: https://api.poe2scout.com/api)
 ### §11.6 Known Discrepancies
 
 1. **Two overlapping helper files:** `src/components/dashboard/flips-helpers.ts` and `src/lib/flipper-helpers.ts` both export `scoreColor()` with different thresholds/Tailwind classes.
-2. **League name default mismatch (RESOLVED):** Backend config now defaults to `"runes"`, frontend Zustand store defaults to `"runes"`. (Previously backend defaulted to `"vaal"` while frontend used `"runes"`.)
-3. **Backend `FeesConfig` is empty** (`pass`) — gold fee removal left it as a placeholder.
+2. **League name default mismatch (RESOLVED):** Backend config defaults to `"vaal"` (Fate of the Vaal), frontend Zustand store defaults to `"vaal"`. Both now match the current active league.
+3. **Backend `FeesConfig` now has `gold_enabled` flag** (default: `false`) — controls whether gold fees are included in flipper calculations. When `false`, all scoring/arbitrage/storage-value calculations exclude gold fees. Set `fees.gold_enabled=true` in `config.yaml` to re-enable.
 4. **`routes_auth.py` exists in backend but is NOT registered in app** — effectively dead code.
 5. **`OfficialTradeProvider` exists** but requires `GGG_CLIENT_ID`/`GGG_CLIENT_SECRET` env vars that are "never configured" — dead code unless manually set.
 

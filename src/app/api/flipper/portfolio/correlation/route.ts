@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
  *  P3-3: Returns the correlation matrix for all eligible currencies.
  *  Used by the ComparativeChart component to render a correlation heatmap.
  *
- *  The backend portfolio/correlation endpoint is deprecated and may not exist.
- *  When the backend returns 404 (route not found) or any error, we return
- *  empty data with dataAvailable: false instead of propagating the error.
+ *  The backend portfolio/correlation endpoint is active (routes_portfolio.py).
+ *  When the backend is offline or returns any error, we return empty data
+ *  with dataAvailable: false instead of propagating the error.
  *  The ComparativeChart component has client-side correlation computation as fallback.
  */
 const FALLBACK = {
