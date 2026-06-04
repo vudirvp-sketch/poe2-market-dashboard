@@ -147,16 +147,22 @@ async function main(): Promise<void> {
 
   for (const [url, entry] of Object.entries(entries)) {
     // Fix: POE2Scout /Realms returns stale default_league_value (e.g. "Fate of the Vaal"
-    // instead of "Runes of Aldur" for poe2). Override in the snapshot so the
+    // or "vaal" instead of "runes" for poe2). Override in the snapshot so the
     // dashboard has the correct value even when /Realms data is stale.
+    //
+    // IMPORTANT: Use the ShortName format ("runes") not the displayName ("Runes of Aldur").
+    // The getLeagues() function matches defaultLeagueValue against BOTH l.Value
+    // and l.ShortName, but getRealms() passes defaultLeague directly to the store.
+    // Using ShortName format ensures consistency with FALLBACK_REALMS and
+    // DEFAULT_LEAGUE_OVERRIDES in poe2api.ts, which all use ShortName format.
     if (url.includes("/Realms") && Array.isArray(entry.data)) {
       const realms = entry.data as Array<Record<string, unknown>>;
       for (const realm of realms) {
         if (realm.realm_api_id === "poe2" &&
             typeof realm.default_league_value === "string" &&
             (realm.default_league_value === "Fate of the Vaal" || realm.default_league_value === "vaal")) {
-          console.log(`  Fixed stale default_league_value "${realm.default_league_value}" → "Runes of Aldur" for poe2 realm`);
-          realm.default_league_value = "Runes of Aldur";
+          console.log(`  Fixed stale default_league_value "${realm.default_league_value}" → "runes" for poe2 realm`);
+          realm.default_league_value = "runes";
         }
       }
     }

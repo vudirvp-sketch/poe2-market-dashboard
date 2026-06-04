@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 const FALLBACK = {
   currencies: [],
   matrix: [],
+  significant: [],
   dataAvailable: false,
 };
 
@@ -24,6 +25,10 @@ export async function GET() {
 
     // Backend returned a response — check if it's usable
     if (res.ok) {
+      // The backend may return data_available: false with 200 status
+      // when there's insufficient data (e.g., early league, no snapshot).
+      // The proxy already transforms snake_case → camelCase, so
+      // data_available → dataAvailable. Pass through as-is.
       return res;
     }
 

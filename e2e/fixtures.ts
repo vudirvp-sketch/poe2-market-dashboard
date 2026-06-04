@@ -15,7 +15,7 @@ import { expect, type Page } from "@playwright/test";
 // ---------------------------------------------------------------------------
 
 export const MOCK_REALMS = [
-  { name: "poe2", displayName: "PoE2", defaultLeague: "Runes of Aldur" },
+  { name: "poe2", displayName: "PoE2", defaultLeague: "runes" },
   { name: "pc", displayName: "PoE1 PC", defaultLeague: "Standard" },
 ];
 
@@ -155,12 +155,17 @@ export async function installApiMocks(page: Page): Promise<void> {
     });
   });
 
-  // Flipper portfolio/correlation — return empty so ComparativeChart doesn't hang
+  // Flipper portfolio/correlation — return empty fallback so ComparativeChart doesn't hang
   await page.route("**/api/flipper/portfolio/correlation**", async (route) => {
     await route.fulfill({
-      status: 503,
+      status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ error: "backend_offline" }),
+      body: JSON.stringify({
+        currencies: [],
+        matrix: [],
+        significant: [],
+        dataAvailable: false,
+      }),
     });
   });
 

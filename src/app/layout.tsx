@@ -38,20 +38,21 @@ const geistMono = localFont({
 // React component". These are harmless and expected behavior — not a bug.
 // See: https://github.com/vercel/next.js/issues/72213
 //
-// Fix 5.2 → 5.5: Suppress in all environments (dev + production). This is a
-// confirmed Next.js 16 + React 19 bug (github.com/vercel/next.js/issues/72213),
-// not something we can fix in application code. Previously dev-only, but the
-// warning also pollutes browser console in production and during E2E tests.
+// Fix 5.2 → 5.6: Suppress in BOTH server and client environments.
+// Previously only suppressed client-side (typeof window guard), but the
+// warning also pollutes the Next.js server console during SSR and Playwright
+// E2E tests. The server-side suppression must run unconditionally at module
+// load time (before any React rendering occurs).
 // ---------------------------------------------------------------------------
-if (typeof window !== "undefined") {
+{
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
     const message = typeof args[0] === "string" ? args[0] : "";
     if (message.includes("Encountered a script tag while rendering React component")) {
-      return; // Suppress known benign warning
+      return; // Suppress known benign warning (Next.js 16 + React 19 bug)
     }
     if (message.includes("act(")) {
-      return; // Suppress React act() warnings in dev
+      return; // Suppress React act() warnings in dev/test
     }
     originalConsoleError.apply(console, args);
   };
