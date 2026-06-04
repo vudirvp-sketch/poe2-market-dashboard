@@ -14,9 +14,21 @@ import { installApiMocks, selectRealmAndLeague } from "./fixtures";
 /**
  * Open the "More" (⋮) menu in the header and return the language switcher button.
  * The Globe icon button is a menu item inside the dropdown.
+ *
+ * The Globe button's onClick only calls cycleLocale() — it does NOT close
+ * the dropdown. So after clicking the Globe button, the menu stays open,
+ * and subsequent calls to this function will find the Globe button directly
+ * without needing to re-open the menu.
  */
 async function openMoreAndGetGlobeButton(page: import("@playwright/test").Page) {
-  // Click the "More" button (⋮ icon) to open the dropdown menu.
+  // First, check if the Globe button is already visible (menu already open
+  // from a previous click that didn't close the dropdown).
+  const globeButton = page.locator('button:has(svg.lucide-globe), [role="menuitem"]:has(svg.lucide-globe)').first();
+  if (await globeButton.isVisible().catch(() => false)) {
+    return globeButton;
+  }
+
+  // Otherwise, click the "More" button (⋮ icon) to open the dropdown menu.
   // The aria-label is i18n'd: "Ещё" (ru), "More options" (en), "更多选项" (zh), "더 보기" (ko).
   // Must use a multi-locale selector because the default locale is "ru".
   const moreButton = page.locator(
@@ -27,7 +39,6 @@ async function openMoreAndGetGlobeButton(page: import("@playwright/test").Page) 
   await page.waitForTimeout(500);
 
   // Now the dropdown is open — find the Globe button inside it
-  const globeButton = page.locator('button:has(svg.lucide-globe), [role="menuitem"]:has(svg.lucide-globe)').first();
   await expect(globeButton).toBeVisible({ timeout: 5000 });
   return globeButton;
 }
@@ -71,12 +82,14 @@ test.describe("Internationalization (i18n)", () => {
     const localeLabels = ["RU", "EN", "中", "한"];
 
     // Cycle through all 4 locales by opening menu and clicking Globe each time.
-    // NOTE: The Globe button's onClick calls setMoreOpen(false) — so the More
-    // menu closes after each click. We must re-open it each iteration.
+    // The Globe button's onClick only calls cycleLocale() — the More menu
+    // stays open after clicking, so we can find the Globe button directly
+    // in subsequent iterations without re-opening the menu.
     for (let i = 0; i < 5; i++) {
       // Open the More menu and click the Globe button
       const globeButton = await openMoreAndGetGlobeButton(page);
-      // Read the locale label BEFORE clicking (the menu will close after click)
+      // Read the locale label BEFORE clicking (the menu stays open, but we
+      // capture the label before the click changes the displayed locale)
       const labelBeforeClick = (await globeButton.textContent())?.trim() ?? "";
       await globeButton.click();
       await page.waitForTimeout(800);

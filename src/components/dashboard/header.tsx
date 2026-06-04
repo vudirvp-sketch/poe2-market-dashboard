@@ -522,10 +522,10 @@ export function Header({
 
               <div className="border-t border-border my-1" />
 
-              {/* Language */}
+              {/* Language — keep menu open so users can cycle through locales */}
               <button
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                onClick={() => { cycleLocale(); setMoreOpen(false); }}
+                onClick={() => { cycleLocale(); }}
                 role="menuitem"
               >
                 <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

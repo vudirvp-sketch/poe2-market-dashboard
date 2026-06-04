@@ -126,9 +126,10 @@ function getLanguageButton(currentLocale: Locale = DEFAULT_LOCALE): HTMLElement 
 
 // ---------------------------------------------------------------------------
 // Helper: click the language toggle to cycle to the next locale.
-// The "More" dropdown stays open after clicking the language button
-// (the click handler only calls cycleLocale(), it doesn't close the dropdown).
-// So we only need to open it ONCE, then click the language button repeatedly.
+// The Globe button's onClick only calls cycleLocale() — it does NOT close
+// the dropdown. This allows users to cycle through all locales without
+// re-opening the menu each time.
+// So we only need to open the menu ONCE, then click the language button repeatedly.
 // ---------------------------------------------------------------------------
 function cycleLocaleOnce(currentLocale: Locale): Locale {
   const langButton = getLanguageButton(currentLocale);
@@ -143,6 +144,11 @@ function cycleLocaleOnce(currentLocale: Locale): Locale {
 describe("Header i18n integration", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Clear localStorage to prevent locale state leaking between tests.
+    // Without this, a test that changes the locale (e.g. clicking the Globe
+    // button) would persist that locale to the next test via localStorage,
+    // causing the I18nProvider to hydrate with the wrong locale.
+    localStorage.clear();
   });
 
   describe("default rendering", () => {

@@ -445,12 +445,23 @@ class OfficialTradeProvider(BaseDataProvider):
             # GGG currency exchange API
             # League name in GGG Trade API uses the FULL display name
             # (e.g. "Runes of Aldur"), not the POE2Scout ShortName ("runes").
-            # Map known ShortNames to GGG league IDs.
+            # Map POE2Scout ShortName → GGG Trade API league display name.
+            # GGG's trade API uses the FULL display name (e.g. "Runes of Aldur"),
+            # not the POE2Scout ShortName ("runes").
+            # When a new league launches, add the mapping here AND update
+            # config.yaml → league.league_name to the new ShortName.
             _poe2scout_to_ggg_league = {
+                # Current challenge league (Runes of Aldur — 0.5.0 "Return of the Ancients")
                 "runes": "Runes of Aldur",
                 "runeshc": "HC Runes of Aldur",
+                # Previous challenge leagues (for Standard/Hardcore migration)
                 "vaal": "Fate of the Vaal",
                 "vaalhc": "HC Fate of the Vaal",
+                "abyssal": "Rise of the Abyssal",
+                "abyssalhc": "HC Rise of the Abyssal",
+                "hunt": "Dawn of the Hunt",
+                "hunthc": "HC Dawn of the Hunt",
+                # Permanent leagues
                 "standard": "Standard",
                 "hardcore": "Hardcore",
             }

@@ -21,7 +21,7 @@ data:
 league:
   league_name: "runes"               # Runes of Aldur — current league (ShortName from API)
   realm: "poe2"                      # POE2Scout API realm path segment — NOT "poe2/pc" (that's the RealmOption.value, not the path param)
-  league_start_date: "2026-06-02T00:00:00Z"  # Runes of Aldur launch date — update when a new league starts
+  league_start_date: "2026-05-29T20:00:00Z"  # Runes of Aldur launch date (May 29, 2026 1PM PDT = 20:00 UTC) — update when a new league starts
   # Override: 14 days for early phase
   phase_early_days: 14
   phase_mid_days: 42
