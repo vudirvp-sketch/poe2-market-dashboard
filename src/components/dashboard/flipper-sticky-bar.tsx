@@ -112,7 +112,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   // Client-side phase validation (same logic as header.tsx)
   const effectivePhase = (() => {
     if (!phaseData?.phase) return { phase: "", isEstimated: false };
-    const days = phaseData.daysSinceRef;
+    const days = phaseData.daysSinceReference;
     const reported = phaseData.phase.toLowerCase();
     if (reported === "late" && days < 14) return { phase: "early", isEstimated: true };
     if (reported === "late" && days < 42) return { phase: "mid", isEstimated: true };

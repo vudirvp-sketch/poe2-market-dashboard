@@ -91,6 +91,8 @@ class HistoricalStore:
 
         Must be called once on startup.  If the database still has the old
         ``price_chaos`` column, it is automatically migrated to ``price``.
+        Also cleans up data from previous leagues to avoid stale cross-league
+        data contaminating queries.
         """
         self._db = await aiosqlite.connect(str(self._db_path))
         self._db.row_factory = aiosqlite.Row
@@ -103,6 +105,9 @@ class HistoricalStore:
 
         # --- Cleanup: drop obsolete gold_chaos_rates table if it exists ---
         await self._drop_obsolete_tables()
+
+        # --- Cleanup: remove data from old leagues ---
+        await self._prune_old_league_data()
 
         await self._prune_old_records()
 
@@ -137,6 +142,50 @@ class HistoricalStore:
             logger.info("Dropping obsolete table: gold_chaos_rates")
             await db.execute("DROP TABLE IF EXISTS gold_chaos_rates")
             await db.commit()
+
+    async def _prune_old_league_data(self) -> None:
+        """Remove price data from leagues that are no longer the current league.
+
+        When the user switches leagues (e.g. from 'runes' to 'vaal'), the
+        HistoricalStore SQLite may still contain data from the old league.
+        While queries filter by league, old data wastes space and can cause
+        confusion when inspecting the database manually.
+
+        This method:
+        1. Finds all distinct leagues in the price_snapshots table
+        2. Deletes any that don't match the currently configured league
+        3. Also deletes events that don't belong to the current league
+        """
+        db = self._db
+        current_league = self._config.league.league_name
+
+        # Find distinct leagues in price_snapshots
+        cursor = await db.execute(
+            "SELECT DISTINCT league FROM price_snapshots"
+        )
+        rows = await cursor.fetchall()
+        old_leagues = [row[0] for row in rows if row[0] != current_league]
+
+        if old_leagues:
+            for old_league in old_leagues:
+                cursor = await db.execute(
+                    "DELETE FROM price_snapshots WHERE league = ?",
+                    (old_league,),
+                )
+                deleted = cursor.rowcount
+                if deleted > 0:
+                    logger.info(
+                        "Pruned %d price snapshots from old league '%s' "
+                        "(current league: '%s')",
+                        deleted, old_league, current_league,
+                    )
+
+            await db.commit()
+        else:
+            logger.info(
+                "No old league data found in HistoricalStore (current: '%s')",
+                current_league,
+            )
 
     async def close(self) -> None:
         if self._db:

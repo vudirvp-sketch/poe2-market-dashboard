@@ -11,13 +11,13 @@ export async function GET() {
   return proxyWithFallback("/api/phase", {
     offlineFallback: {
       phase: "unknown",
-      daysSinceRef: 0,
+      daysSinceReference: 0,
       league: "",
       dataAvailable: false,
     },
     insufficientDataFallback: {
       phase: "unknown",
-      daysSinceRef: 0,
+      daysSinceReference: 0,
       league: "",
       dataAvailable: false,
     },

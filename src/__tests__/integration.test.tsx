@@ -69,7 +69,7 @@ function renderWithProviders(ui: React.ReactElement) {
 
 const fastapiPhaseResponse = {
   phase: "mid",
-  daysSinceRef: 14,
+  days_since_reference: 14,
   recommended_strategy: "balanced",
 };
 

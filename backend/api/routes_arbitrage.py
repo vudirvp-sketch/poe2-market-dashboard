@@ -24,8 +24,10 @@ from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
-from backend.economy.gold_costs import compute_gold_fee_fraction, compute_fee_breakdown, compute_effective_rate
-from backend.economy.gold_cost_table import get_gold_cost_per_unit
+# Gold fee imports disabled — user excluded gold from calculations
+# Gold is a consumable in PoE2 with no real trade value for small-scale flippers.
+# from backend.economy.gold_costs import compute_gold_fee_fraction, compute_fee_breakdown, compute_effective_rate
+# from backend.economy.gold_cost_table import get_gold_cost_per_unit
 from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
@@ -114,21 +116,10 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     if not rates:
         return []
 
-    # Step 3.2: Extract gold_to_chaos_rate from snapshot or config
-    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate  # fallback
-    # Try to find Gold Coin's chaosEquivalent from the snapshot
-    if hasattr(snapshot, 'currency_metadata') and snapshot.currency_metadata:
-        for curr in snapshot.currency_metadata:
-            api_id = curr.get('api_id', '').lower()
-            text = curr.get('text', '').lower()
-            if 'gold' in api_id or 'gold' in text or api_id == 'gold_coin':
-                chaos_equiv = curr.get('chaos_equivalent') or curr.get('current_price')
-                if chaos_equiv and chaos_equiv > 0:
-                    gold_to_chaos_rate = chaos_equiv
-                    logger.info("Step 3.2: Found dynamic gold_to_chaos_rate=%.6f from POE2Scout data", gold_to_chaos_rate)
-                    break
-    if gold_to_chaos_rate == config.fees.fixed_gold_to_chaos_rate:
-        logger.info("Step 3.2: Using fallback gold_to_chaos_rate=%.6f (no Gold Coin data in snapshot)", gold_to_chaos_rate)
+    # Gold fee calculation DISABLED — user excluded gold from all flipper calculations.
+    # Gold is a consumable in PoE2 and has no real trade value for small-scale flippers.
+    # Previously, gold fees made most flips show net_profit_pct <= 0, resulting in 0 results.
+    logger.info("Gold fees EXCLUDED from flipper calculations per user preference")
 
     event_manager = get_event_manager(config)
 
@@ -180,15 +171,12 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 if k != "chaos":
                     prices[k] = prices[k] * base_to_chaos
 
-    # Step 1.4: Explicitly set chaos price to 1.0 and gold price
+    # Step 1.4: Explicitly set chaos price to 1.0
     # Chaos Orb = 1.0 Chaos by definition. POE2Scout's model may return
     # slightly off values (0.98 or 1.02) due to modeling noise.
     prices["chaos"] = 1.0
     prices["Chaos Orb"] = 1.0
-    if "gold" not in prices:
-        prices["gold"] = gold_to_chaos_rate
-    if "gold_coin" not in prices:
-        prices["gold_coin"] = gold_to_chaos_rate
+    # Gold price injection removed — gold excluded from calculations
 
     # 6. Run currency clustering
     # FIX: Cache clustering result with pipeline_cache instead of recreating
@@ -446,53 +434,10 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 score = score * t_penalty
                 score = min(max(score, 0.0), 1.0)
 
-        # Step 3.3: Compute gold fee for the forward direction of this pair
-        currency_to = rate.currency_to
-        price_to_in_chaos = prices.get(currency_to, 0)
-        currency_from = rate.currency_from
-        price_from_in_chaos = prices.get(currency_from, 0)
-
-        fee_fraction_forward = 0.0
-        gold_fee_chaos_forward = 0.0
-        if price_to_in_chaos > 0 and gold_to_chaos_rate > 0:
-            try:
-                fee_fraction_forward = compute_gold_fee_fraction(
-                    currency_to, mid_price,
-                    gold_to_chaos_rate,
-                    mid_price * price_to_in_chaos,
-                    fallback_cost=config.fees.unknown_item_gold_cost,
-                )
-                gold_fee_chaos_forward = (
-                    get_gold_cost_per_unit(currency_to, fallback=config.fees.unknown_item_gold_cost)
-                    * mid_price * gold_to_chaos_rate
-                )
-            except (ValueError, ZeroDivisionError):
-                pass
-
-        fee_fraction_reverse = 0.0
-        gold_fee_chaos_reverse = 0.0
-        if price_from_in_chaos > 0 and gold_to_chaos_rate > 0 and mid_price > 0:
-            try:
-                reverse_qty = 1.0 / mid_price
-                fee_fraction_reverse = compute_gold_fee_fraction(
-                    currency_from, reverse_qty,
-                    gold_to_chaos_rate,
-                    reverse_qty * price_from_in_chaos,
-                    fallback_cost=config.fees.unknown_item_gold_cost,
-                )
-                gold_fee_chaos_reverse = (
-                    get_gold_cost_per_unit(currency_from, fallback=config.fees.unknown_item_gold_cost)
-                    * reverse_qty * gold_to_chaos_rate
-                )
-            except (ValueError, ZeroDivisionError):
-                pass
-
-        # Total round-trip gold fee
-        total_fee_fraction = fee_fraction_forward + fee_fraction_reverse
-        total_gold_fee_chaos = gold_fee_chaos_forward + gold_fee_chaos_reverse
-
-        # Step 3.3: Net profit after fees
-        net_spread = max(0.0, spread_value - total_fee_fraction)
+        # Gold fee calculation DISABLED — user excluded gold from all flipper calculations.
+        # Previously: net_spread = max(0.0, spread_value - total_fee_fraction)
+        # Now: net_spread = spread_value (no gold fee deduction)
+        net_spread = spread_value
         net_profit_pct = net_spread * 100 if mid_price > 0 else 0.0
 
         opp = FlipOpportunity(
@@ -518,7 +463,10 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                         config.data.cache_ttl_prices_minutes * 60)
             continue
 
-        # Step 1.6: Filter out flips where net profit is negative after fees
+        # Filter out flips where net profit is negative (spread is effectively zero)
+        # With gold fees excluded, this filter now only removes pairs with
+        # zero or negative spread (which shouldn't happen with our spread model
+        # that ensures min 0.5% spread, but keep as safety net).
         if net_profit_pct <= 0:
             continue
 
@@ -615,12 +563,11 @@ async def get_flip_opportunities(
             "affected_currencies": list(event_manager.get_affected_currencies()),
             "summary": event_manager.get_active_event_summary(),
         },
-        # Step 3.5: Updated fee warning — gold fees are NOW included in spread_after_fees
         "fee_warning": {
-            "gold_fees_excluded": False,  # Step 3: Fees are now included
-            "message": "Gold/commission fees ARE included in spread_after_fees calculations. "
-                       "The spread_after_fees field shows the net spread after deducting round-trip "
-                       "gold costs. Only opportunities with positive net profit after fees are shown.",
+            "gold_fees_excluded": True,
+            "message": "Gold fees are EXCLUDED from all profit calculations. "
+                       "Gold is a consumable in PoE2 with no real trade value for small-scale flippers. "
+                       "spread_after_fees equals the raw spread without gold fee deduction.",
         },
         # Step 4: Data freshness metadata
         "data_freshness": {
@@ -670,33 +617,16 @@ async def get_triangular_arbitrage(
                 if k != "chaos":
                     prices[k] = prices[k] * base_to_chaos
 
-    # Step 1.4: Fix chaos and gold prices
+    # Step 1.4: Fix chaos price
     prices["chaos"] = 1.0
     prices["Chaos Orb"] = 1.0
-    # Step 3.2: Get gold_to_chaos_rate for triangular arbitrage
-    gold_to_chaos_rate = config.fees.fixed_gold_to_chaos_rate
-    if hasattr(snapshot, 'currency_metadata') and snapshot.currency_metadata:
-        for curr in snapshot.currency_metadata:
-            api_id = curr.get('api_id', '').lower()
-            text = curr.get('text', '').lower()
-            if 'gold' in api_id or 'gold' in text or api_id == 'gold_coin':
-                chaos_equiv = curr.get('chaos_equivalent') or curr.get('current_price')
-                if chaos_equiv and chaos_equiv > 0:
-                    gold_to_chaos_rate = chaos_equiv
-                    break
-    if "gold" not in prices:
-        prices["gold"] = gold_to_chaos_rate
-    if "gold_coin" not in prices:
-        prices["gold_coin"] = gold_to_chaos_rate
+    # Gold price injection removed — gold excluded from calculations
 
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
 
-    # Step 3.4: Pass gold fee parameters to triangular arbitrage
-    from backend.economy.gold_cost_table import get_api_id_to_gold_cost
-    gold_cost_per_unit = get_api_id_to_gold_cost()
-
+    # Gold fees excluded — pass None/0 to disable gold fee in triangular arb
     result = find_triangular_arbitrage(
         rates=rates_for_bf,
         prices=prices,
@@ -704,8 +634,8 @@ async def get_triangular_arbitrage(
         pair_volumes=pair_volumes,
         snapshot_time=datetime.now(timezone.utc),
         cross_rate_threshold_pct=5.0,
-        gold_cost_per_unit=gold_cost_per_unit,
-        gold_to_chaos_rate=gold_to_chaos_rate,
+        gold_cost_per_unit=None,
+        gold_to_chaos_rate=0.0,
     )
     opportunities = result.opportunities
     suspicious_triples = result.suspicious_triples
@@ -743,11 +673,10 @@ async def get_triangular_arbitrage(
             }
             for o in opportunities
         ],
-        # Step 3.4: Updated fee warning for triangular arbitrage — fees now included
         "fee_warning": {
-            "gold_fees_excluded": False,
-            "message": "Gold/commission fees ARE included in profit calculations. "
-                       "Only cycles with positive net profit after gold fees are reported.",
+            "gold_fees_excluded": True,
+            "message": "Gold fees are EXCLUDED from all profit calculations. "
+                       "Gold is a consumable in PoE2 with no real trade value for small-scale flippers.",
         },
         "cross_rate_warning": cross_rate_warning,
         "data_available": True,

@@ -291,7 +291,10 @@ export interface FlipperHealthResponse {
 /** Response shape from GET /api/flipper/phase */
 export interface FlipperPhaseResponse {
   phase: string;
-  daysSinceRef: number;
+  /** days_since_reference from backend — transformed by proxyWithFallback (snake_case → camelCase) */
+  daysSinceReference: number;
+  /** @deprecated Use daysSinceReference instead — kept for backward compat in old code */
+  daysSinceRef?: number;
   league: string;
   dataAvailable?: boolean;
 }

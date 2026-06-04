@@ -43,7 +43,7 @@ import type { WebSocketStatus } from "@/hooks/use-websocket";
 // ---------------------------------------------------------------------------
 interface PhaseInfo {
   phase: string;
-  daysSinceRef: number;
+  daysSinceReference: number;
   league: string;
 }
 
@@ -118,7 +118,7 @@ function getEffectivePhase(phaseInfo: PhaseInfo | null | undefined): {
 } {
   if (!phaseInfo) return { phase: "", isEstimated: false };
 
-  const days = phaseInfo.daysSinceRef;
+  const days = phaseInfo.daysSinceReference;
   const reportedPhase = phaseInfo.phase?.toLowerCase();
 
   // Client-side validation: if backend says "late" but league is clearly young

@@ -271,6 +271,13 @@ try:
 except ImportError:
     logger.debug("Analyst router not available yet")
 
+# P3-3: Portfolio analytics routes (correlation matrix)
+try:
+    from backend.api.routes_portfolio import router as portfolio_router
+    app.include_router(portfolio_router)
+except ImportError:
+    logger.debug("Portfolio router not available yet")
+
 # WebSocket routes for live updates
 try:
     from backend.api.routes_ws import router as ws_router
