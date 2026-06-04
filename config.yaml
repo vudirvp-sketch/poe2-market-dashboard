@@ -42,6 +42,8 @@ league:
     - delirium
     - incursion
     - idol
+    - verisium
+    - vaal
 
 # Gold fee configuration — Step 3: Gold fee accounting.
 # The gold_to_chaos_rate is extracted dynamically from POE2Scout's data

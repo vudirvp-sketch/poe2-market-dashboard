@@ -525,7 +525,7 @@ export function Header({
               {/* Language */}
               <button
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
-                onClick={() => { cycleLocale(); }}
+                onClick={() => { cycleLocale(); setMoreOpen(false); }}
                 role="menuitem"
               >
                 <Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />

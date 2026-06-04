@@ -220,8 +220,14 @@ async def get_correlation_matrix():
             r_j = returns_j[:overlap_len]
 
             # P2-2: Spearman rank correlation
+            # Skip pairs where one series is constant — spearmanr issues
+            # ConstantInputWarning and returns NaN correlation anyway.
             try:
-                corr, p_value = scipy_stats.spearmanr(r_i, r_j)
+                if np.std(r_i) == 0 or np.std(r_j) == 0:
+                    continue
+
+                with np.errstate(invalid="ignore"):
+                    corr, p_value = scipy_stats.spearmanr(r_i, r_j)
 
                 if np.isnan(corr):
                     continue
