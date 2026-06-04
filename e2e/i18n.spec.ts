@@ -70,22 +70,22 @@ test.describe("Internationalization (i18n)", () => {
     const seenLabels = new Set<string>();
     const localeLabels = ["RU", "EN", "中", "한"];
 
-    // Cycle through all 4 locales by opening menu and clicking Globe each time
+    // Cycle through all 4 locales by opening menu and clicking Globe each time.
+    // NOTE: The Globe button's onClick calls setMoreOpen(false) — so the More
+    // menu closes after each click. We must re-open it each iteration.
     for (let i = 0; i < 5; i++) {
+      // Open the More menu and click the Globe button
       const globeButton = await openMoreAndGetGlobeButton(page);
+      // Read the locale label BEFORE clicking (the menu will close after click)
+      const labelBeforeClick = (await globeButton.textContent())?.trim() ?? "";
       await globeButton.click();
       await page.waitForTimeout(800);
 
-      // Re-open menu to check current label
-      const globeButtonAfter = await openMoreAndGetGlobeButton(page);
-      const label = (await globeButtonAfter.textContent())?.trim();
-      if (label) {
-        // Extract just the locale abbreviation (e.g. "EN" from "Switch language (EN)")
-        for (const ll of localeLabels) {
-          if (label.includes(ll)) {
-            seenLabels.add(ll);
-            break;
-          }
+      // Collect the locale label we just saw
+      for (const ll of localeLabels) {
+        if (labelBeforeClick.includes(ll)) {
+          seenLabels.add(ll);
+          break;
         }
       }
     }
