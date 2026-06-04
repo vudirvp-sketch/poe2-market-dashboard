@@ -203,8 +203,12 @@ async def get_correlation_matrix():
             returns_j = np.array(currency_log_returns[currencies[j]])
 
             # P2-2: Adaptive overlap threshold
+            # For early-league scenarios where most currencies have only 2-5
+            # log-returns, requiring 10 overlapping points makes every pair
+            # fail (0 valid pairs out of 195000 observed on day 2 of "Runes").
+            # Lower the floor from 10 to 2 so we get SOME correlations early.
             min_len = min(len(returns_i), len(returns_j))
-            min_overlap = max(10, int(0.3 * min_len))
+            min_overlap = max(2, int(0.3 * min_len))
 
             # Use the overlapping portion
             overlap_len = min(len(returns_i), len(returns_j))

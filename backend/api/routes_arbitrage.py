@@ -274,11 +274,19 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         _momentum_cache[currency] = result
         return result
 
-    # Step 4: Determine if snapshot data comes from BFS-computed transitive
-    # prices (no direct SnapshotPair) vs. direct pair data. We use
-    # presence/absence of the rate key in the original exchange_rates dict
-    # to distinguish. BFS-computed prices have wider inherent uncertainty.
-    direct_rate_keys = set(rates.keys())  # keys present = direct pairs from API
+    # Step 4: Identify direct vs BFS-computed pairs for spread widening.
+    # All keys in snapshot.exchange_rates come directly from the
+    # SnapshotPairs API — they are never BFS-generated.  However, a pair
+    # is "BFS-computed" when either of its currencies does NOT appear as
+    # CurrencyOne in any SnapshotPair with the base currency (meaning its
+    # price_in_base was derived transitively rather than from a direct
+    # observation).  We track those currencies to widen their spread.
+    _currencies_with_direct_base: set[str] = set()
+    for _rk, _rv in rates.items():
+        if _rv.currency_to == config.league.base_currency:
+            _currencies_with_direct_base.add(_rv.currency_from)
+        elif _rv.currency_from == config.league.base_currency:
+            _currencies_with_direct_base.add(_rv.currency_to)
 
     for key, rate in rates.items():
         momentum_result = _get_momentum(rate.currency_from)
@@ -331,12 +339,14 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         market_spread = liquidity_spread + vol_spread
 
         # --- Step 4: BFS fallback widening ---
-        # If this pair's mid_price was computed via BFS transitive pricing
-        # (not a direct SnapshotPair), the price has additional uncertainty
-        # from the transitive path. We widen the spread by 50% for BFS
-        # pairs to account for path length uncertainty.
-        # Direct pairs get the base spread; BFS pairs get 1.5x spread.
-        is_bfs_pair = key not in direct_rate_keys
+        # If neither currency in this pair has a direct SnapshotPair with the
+        # base currency, the mid_price was effectively computed via a
+        # transitive path (BFS).  Widen the spread by 50% to account for
+        # path-length uncertainty.
+        is_bfs_pair = (
+            rate.currency_from not in _currencies_with_direct_base
+            and rate.currency_to not in _currencies_with_direct_base
+        )
         bfs_widening = 1.5 if is_bfs_pair else 1.0
         market_spread *= bfs_widening
 
@@ -419,15 +429,20 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         spread_value = (ask - bid) / mid_price if mid_price > 0 else 0.0
 
         # P1-1: Compute quantized analysis for this pair
-        # BUG FIX (2026-06-04): Pass actual ask/bid/mid_price instead of
-        # normalizing to mid_price=1.0. Normalized rates (R_buy≈1.005,
-        # R_sell≈0.995) caused ceil(1.005)=2 and floor(0.995)=0, producing
-        # -100% gross_profit_pct at every lot size. compute_quantized_analysis()
-        # now has internal scaling to handle any rate magnitude correctly.
+        # BUG FIX (2026-06-04 v2): R_buy and R_sell were swapped!
+        #
+        # A "flip" opportunity means you BUY at the BID (the lower, maker-buy
+        # price) and SELL at the ASK (the higher, maker-sell price), earning
+        # the spread.  Passing R_buy=ask, R_sell=bid modeled the TAKER's
+        # round-trip (buy at ask, sell at bid), which is ALWAYS a loss when
+        # ask > bid.  That caused gross_profit_pct ≈ -3.5% for every pair.
+        #
+        # Correct: R_buy = bid (your cost to buy), R_sell = ask (your revenue
+        # from selling).  The market-maker earns the spread; the taker pays it.
         quantized = compute_quantized_analysis(
-            R_buy=ask if mid_price > 0 else 0,  # buy rate (you pay ask price)
-            R_sell=bid if mid_price > 0 else 0,  # sell rate (you receive bid price)
-            mid_price=mid_price if mid_price > 0 else 1.0,  # actual mid_price
+            R_buy=bid if mid_price > 0 else 0,   # you BUY at bid (lower cost)
+            R_sell=ask if mid_price > 0 else 0,  # you SELL at ask (higher revenue)
+            mid_price=mid_price if mid_price > 0 else 1.0,
             lot_sizes=config.quantization.default_lot_sizes,
             max_lot_search=config.quantization.max_lot_search,
         )

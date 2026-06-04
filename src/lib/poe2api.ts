@@ -1191,10 +1191,11 @@ export async function getHealth(): Promise<{ status: string; apiBaseUrl: string 
 // ============================================================================
 
 const FALLBACK_REALMS: Realm[] = [
-  { name: "poe2", displayName: "PoE2", defaultLeague: "Runes of Aldur" },
-  { name: "pc", displayName: "PoE1 PC", defaultLeague: "Mirage" },
-  { name: "xbox", displayName: "PoE1 XBOX", defaultLeague: "Mirage" },
-  { name: "sony", displayName: "PoE1 PS", defaultLeague: "Mirage" },
+  // defaultLeague uses the ShortName format (matches l.ShortName in getLeagues)
+  { name: "poe2", displayName: "PoE2", defaultLeague: "runes" },
+  { name: "pc", displayName: "PoE1 PC", defaultLeague: "mirage" },
+  { name: "xbox", displayName: "PoE1 XBOX", defaultLeague: "mirage" },
+  { name: "sony", displayName: "PoE1 PS", defaultLeague: "mirage" },
 ];
 
 const FALLBACK_LEAGUES: Record<string, League[]> = {
@@ -1251,8 +1252,11 @@ const dynamicLeaguesFallback: Map<string, League[]> = new Map();
  * TODO: Remove entries once POE2Scout maintainers fix the /Realms endpoint.
  */
 const DEFAULT_LEAGUE_OVERRIDES: Record<string, string> = {
-  "poe2:Fate of the Vaal": "Runes of Aldur",
-  "poe2:vaal": "Runes of Aldur",
+  // /Realms returns "Fate of the Vaal" (displayName) — override to ShortName "runes"
+  // so that getLeagues can match against l.ShortName or l.Value.
+  "poe2:Fate of the Vaal": "runes",
+  // /Realms returns "vaal" (ShortName) — override to "runes" (current ShortName)
+  "poe2:vaal": "runes",
 };
 
 export async function getRealms(): Promise<Realm[]> {
@@ -1346,9 +1350,13 @@ export async function getLeagues(realm: string, defaultLeagueValue?: string): Pr
       // - When any league has IsCurrent=true: use ONLY IsCurrent (default_league_value
       //   from /Realms may be outdated — known POE2Scout bug)
       // - When no league has IsCurrent=true: fall back to defaultLeagueValue matching
+      //   Match against BOTH l.Value (displayName) and l.ShortName (name),
+      //   because the /Realms API may return default_league_value in either format.
       active: hasAnyIsCurrent
         ? l.IsCurrent
-        : (defaultLeagueValue ? l.Value === defaultLeagueValue : false),
+        : (defaultLeagueValue
+            ? l.Value === defaultLeagueValue || l.ShortName === defaultLeagueValue
+            : false),
       // Pass base currency info from league for reference currency
       baseCurrencyApiId: l.BaseCurrencyApiId,
       baseCurrencyText: l.BaseCurrencyText,

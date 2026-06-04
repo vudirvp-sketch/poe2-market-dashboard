@@ -1,5 +1,57 @@
 # PoE2 Market Dashboard — Fix Progress Notes
 
+## Session 3 — 2026-06-04
+
+### ✅ 1. CRITICAL: Fix R_buy/R_sell swapped in quantized analysis
+**File:** `backend/api/routes_arbitrage.py`
+**Root Cause:** `compute_quantized_analysis()` was called with `R_buy=ask, R_sell=bid`. This models the TAKER's round-trip (buy at ask, sell at bid), which is ALWAYS a loss when ask > bid. All pairs showed `gross_profit_pct ≈ -3.5%`. The correct model for a flip (market-maker) is `R_buy=bid, R_sell=ask` — you BUY at the lower bid price and SELL at the higher ask price, earning the spread.
+**Fix:** Swapped R_buy/R_sell: `R_buy=bid` (your cost to buy), `R_sell=ask` (your revenue from selling).
+**Verification:** After fix, `gross_profit_pct` should be positive (matching the spread). Test with:
+```bash
+curl -s http://localhost:8000/api/arbitrage/flips | python -c "
+import sys, json
+data = json.load(sys.stdin)
+for opp in data.get('opportunities', [])[:3]:
+    qa = opp.get('quantized_analysis', {})
+    q1 = qa.get('q_spreads', {}).get('1', {})
+    print(f'{opp[\"currency\"]}: gross_profit_pct={q1.get(\"gross_profit_pct\")}, theoretical_spread={qa.get(\"theoretical_spread\")}')"
+```
+
+### ✅ 2. Fix is_bfs_pair dead code in routes_arbitrage.py
+**File:** `backend/api/routes_arbitrage.py`
+**Root Cause:** `direct_rate_keys = set(rates.keys())` and then `is_bfs_pair = key not in direct_rate_keys` — since we iterate `rates.items()`, every key IS in `direct_rate_keys`, so `is_bfs_pair` was always `False`. The BFS widening (1.5x) never applied to any pair.
+**Fix:** Replaced with currency-based BFS detection: track which currencies have a direct SnapshotPair with the base currency. A pair is "BFS" when NEITHER currency has a direct base pair — meaning the mid_price for both currencies was computed via transitive pricing.
+
+### ✅ 3. Fix DEFAULT_LEAGUE_OVERRIDES mapping format
+**File:** `src/lib/poe2api.ts`
+**Root Cause:** Override values used displayName format ("Runes of Aldur") but `getLeagues()` matched against `l.Value` only. If the API returns ShortName format, matching would fail. Also, FALLBACK_REALMS used displayName format which could mismatch.
+**Fix:**
+- Override values now use ShortName format ("runes") instead of displayName ("Runes of Aldur")
+- `getLeagues()` now matches `defaultLeagueValue` against BOTH `l.Value` (displayName) AND `l.ShortName` (name)
+- `FALLBACK_REALMS.defaultLeague` values updated to ShortName format ("runes", "mirage")
+
+### ✅ 4. Fix correlation matrix 0 valid pairs for early league
+**File:** `backend/api/routes_portfolio.py`
+**Root Cause:** `min_overlap = max(10, 0.3 * min_len)`. With a 2-day-old league, most currencies have 2-3 log-returns. The minimum overlap of 10 was impossible to meet, resulting in 0/195000 valid pairs.
+**Fix:** Lowered floor from 10 to 2: `min_overlap = max(2, 0.3 * min_len)`. This produces meaningful correlations even with very short price histories.
+**Verification:** After fix:
+```bash
+curl -s http://localhost:8000/api/portfolio/correlation | python -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'Currencies: {len(data.get(\"currencies\", []))}')
+matrix = data.get('matrix', [])
+valid = sum(1 for i, row in enumerate(matrix) for j, v in enumerate(row) if j > i and v is not None)
+print(f'Valid pairs: {valid}/{len(matrix)*(len(matrix)-1)//2}')
+"
+```
+
+### ✅ 5. Update Data Flow Reference — quantized analysis documentation
+**File:** `poe2-market-dashboard_PoE2_Data_Flow_Reference.md`
+**What:** Updated §5.2.6 to document the R_buy=bid, R_sell=ask convention, the _scale_factor() dynamic scaling, and the bug fix history.
+
+---
+
 ## Session 2 — 2026-06-04
 
 ### ✅ 1. CRITICAL: Fix getLeagues() active league detection (POE2Scout default_league_value bug)
@@ -62,8 +114,11 @@
 
 ## What Was NOT Done (Next Session)
 
+### 🔲 Verify _scale_factor() with live data after R_buy/R_sell fix
+After starting the backend with league "runes", check that `quantizedAnalysis.qSpreads[1].grossProfitPct` is now POSITIVE for all pairs. Run the verification curl command from Session 3 fix #1. If still negative, debug `_scale_factor()` and the spread model.
+
 ### 🔲 Report POE2Scout default_league_value Bug to Maintainers
-The `/Realms` endpoint still returns `default_league_value: "Fate of the Vaal"` for the poe2 realm, even though `IsCurrent` is now `true` for "Runes of Aldur". The dashboard now works around this bug (see Session 2 fix #1), but the upstream data should be corrected. Report at: https://github.com/poe2scout/poe2scout
+The `/Realms` endpoint still returns `default_league_value: "Fate of the Vaal"` for the poe2 realm, even though `IsCurrent` is now `true` for "Runes of Aldur". The dashboard now works around this bug (see Session 2 fix #1 + Session 3 fix #3), but the upstream data should be corrected. Report at: https://github.com/poe2scout/poe2scout
 
 ### 🔲 E2E Playwright Tests — Run Locally
 The test fixtures were updated but not run locally (needs dev server). You should verify:
@@ -89,6 +144,16 @@ npx jest --testPathPattern="src/__tests__"
 Run the cache snapshot generator to get fresh data:
 ```bash
 npx tsx scripts/generate-cache-snapshot.ts
+```
+
+### 🔲 Verify league_start_date accuracy
+`config.yaml` has `league_start_date: "2026-06-02T00:00:00Z"` as an approximate date. Check if the exact Runes of Aldur launch date differs and update if needed. The phase detection uses this date for EARLY/MID/LATE classification — an incorrect date could misclassify the league phase.
+
+### 🔲 Delete old SQLite database (optional)
+`historical.db` contains old "vaal" league data. The `_prune_old_league_data()` function already pruned 12 snapshots on startup, but the SQLite file may still contain other old data (events, etc.). To start completely fresh:
+```bash
+rm historical.db
+# Backend will recreate tables on next startup
 ```
 
 ### 🔲 CI/CD: Add cache-snapshot.json Auto-Refresh
@@ -126,6 +191,11 @@ Currently `activeTab: "overview"` in `store.ts` (updated in a previous session).
 
 | File | Change | Session |
 |------|--------|---------|
+| `backend/api/routes_arbitrage.py` | Fix R_buy/R_sell swap in quantized analysis; fix is_bfs_pair dead code | 3 |
+| `src/lib/poe2api.ts` | DEFAULT_LEAGUE_OVERRIDES use ShortName; getLeagues matches both Value+ShortName; FALLBACK_REALMS use ShortName | 3 |
+| `backend/api/routes_portfolio.py` | Lower correlation min_overlap from 10→2 for early-league | 3 |
+| `poe2-market-dashboard_PoE2_Data_Flow_Reference.md` | Update §5.2.6 quantized analysis docs | 3 |
+| `PROGRESS-NOTES.md` | Document Session 3 changes | 3 |
 | `src/lib/poe2api.ts` | Fix getLeagues() active detection: IsCurrent priority over outdated default_league_value | 2 |
 | `e2e/fixtures.ts` | Update MOCK_REALMS/MOCK_LEAGUES to current PoE2 state | 2 |
 | `PROGRESS-NOTES.md` | Document Session 2 changes and updated next-steps | 2 |

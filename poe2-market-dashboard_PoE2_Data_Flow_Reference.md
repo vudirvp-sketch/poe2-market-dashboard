@@ -1118,16 +1118,26 @@ return clamp(score, 0.0, 1.0)
 ```python
 # backend/arbitrage/scorer.py — compute_quantized_analysis()
 # For each lot_size in config.default_lot_sizes [1, 5, 10, 50, 100]:
-#   actual_cost = bid * lot_size
-#   actual_revenue = ask * lot_size
+#   actual_cost = ceil(N * R_buy)    where R_buy = bid (you BUY at bid)
+#   actual_revenue = floor(N * R_sell)  where R_sell = ask (you SELL at ask)
 #   net_profit = actual_revenue - actual_cost  # no gold fees
-#   gross_profit_pct = (ask - bid) / mid_price * 100
-#   q_spread = (ask - bid) / mid_price
+#   gross_profit_pct = (actual_revenue - actual_cost) / actual_cost * 100
+#   q_spread = (actual_revenue/N - actual_cost/N) / mid_price
+#
+# ⚠️ IMPORTANT (2026-06-04 fix): R_buy = bid, R_sell = ask.
+# A "flip" means you BUY at the bid (lower, maker-buy) and SELL at
+# the ask (higher, maker-sell), earning the spread. The previous
+# implementation had R_buy/R_sell swapped (R_buy=ask, R_sell=bid),
+# which modeled the taker's round-trip and always produced negative
+# gross_profit_pct when ask > bid.
+#
+# The function also applies dynamic per-pair scaling via _scale_factor()
+# to ensure mid_price * scale ∈ [1000, 1000000] for integer math stability.
 #
 # minProfitableLot = smallest lot where net_profit > 0
 # optimalLotProfitPct = max profit_pct across all lots
 # brickResistance = weighted measure of lot size vs spread (weight from config)
-# theoreticalSpread = raw (ask - bid) / mid_price
+# theoreticalSpread = raw (R_sell - R_buy) / mid_price
 ```
 
 #### 5.2.7 Tier Classification
