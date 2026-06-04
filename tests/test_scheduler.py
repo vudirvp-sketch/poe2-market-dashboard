@@ -140,7 +140,7 @@ class TestCollectPriceSnapshot:
         mock_rates = await MockProvider().get_exchange_rates("runes")
         mock_snapshot = _make_mock_snapshot(mock_rates)
 
-        with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
+        with patch("backend.scheduler._get_snapshot", new=AsyncMock(return_value=mock_snapshot)):
             count = await scheduler.collect_price_snapshot()
         assert count > 0, "Should write at least one snapshot"
 
@@ -156,7 +156,7 @@ class TestCollectPriceSnapshot:
         mock_rates = await MockProvider().get_exchange_rates("runes")
         mock_snapshot = _make_mock_snapshot(mock_rates)
 
-        with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
+        with patch("backend.scheduler._get_snapshot", new=AsyncMock(return_value=mock_snapshot)):
             count = await scheduler.collect_price_snapshot()
         # We have 2 rate pairs, each generates at least 1 snapshot
         assert count >= 2, f"Expected at least 2 snapshots, got {count}"
@@ -166,14 +166,14 @@ class TestCollectPriceSnapshot:
         """When snapshot returns no rates, should return 0 gracefully."""
         empty_snapshot = _make_mock_snapshot(rates={})
 
-        with patch("backend.scheduler._get_snapshot", return_value=empty_snapshot):
+        with patch("backend.scheduler._get_snapshot", new=AsyncMock(return_value=empty_snapshot)):
             count = await scheduler.collect_price_snapshot()
         assert count == 0, "Should return 0 when no rates available"
 
     @pytest.mark.asyncio
     async def test_collect_handles_provider_error(self, scheduler, historical_store):
         """When get_snapshot raises an exception, should return 0 and not crash."""
-        with patch("backend.scheduler._get_snapshot", side_effect=Exception("API down")):
+        with patch("backend.scheduler._get_snapshot", new=AsyncMock(side_effect=Exception("API down"))):
             count = await scheduler.collect_price_snapshot()
         assert count == 0, "Should return 0 on provider error"
 
@@ -185,7 +185,7 @@ class TestCollectPriceSnapshot:
         mock_rates = await MockProvider().get_exchange_rates("runes")
         mock_snapshot = _make_mock_snapshot(mock_rates)
 
-        with patch("backend.scheduler._get_snapshot", return_value=mock_snapshot):
+        with patch("backend.scheduler._get_snapshot", new=AsyncMock(return_value=mock_snapshot)):
             count1 = await scheduler.collect_price_snapshot()
             count2 = await scheduler.collect_price_snapshot()
 

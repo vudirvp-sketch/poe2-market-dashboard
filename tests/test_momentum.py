@@ -171,55 +171,23 @@ class TestAcceleration:
 
         result = tracker.compute()
         # m = max(1, 4 // 4) = 1
-        # acceleration = (log_returns[-1] - log_returns[-1]) / 1
-        # Wait: len(log_returns) = 4, m = max(1, 4//4) = 1
-        # acceleration = (log_returns[-1] - log_returns[-1]) / 1 = 0?
-        # No: acceleration = (log_returns[-1] - log_returns[-m]) / m
-        # With m=1: (log_returns[-1] - log_returns[-1]) / 1 = 0
-        # But the verification says m=1 and acceleration = -0.00038
-        # This means m is computed differently for this example.
-        # Let me re-check: 4 log_returns, m = max(1, 4//4) = 1
-        # acceleration = (log_returns[-1] - log_returns[-1]) / 1 = 0
-        #
-        # The verification example seems to use a different m.
-        # Let me check if the spec uses a different formula.
-        # §2.4: m = max(1, floor(len(log_returns) / 4))
-        # With len=4: m = max(1, 1) = 1
-        # But the expected result is -0.00038, which would require m=1
-        # and (0.01923 - 0.01961)/1 = -0.00038
-        # So log_returns[-m] must be the one at index -1-1 = -2? No.
-        # With m=1: log_returns[-1] - log_returns[-1] = 0, not -0.00038
-        #
-        # Actually re-reading §2.4 more carefully:
-        # "Given m (acceleration lookback periods, default: m = max(1, floor(len(log_returns) / 4))):"
-        # acceleration = (log_returns[-1] - log_returns[-m]) / m
-        # With m=1: acceleration = (log_returns[-1] - log_returns[-1]) / 1 = 0
-        #
-        # But the verification says -0.00038. This seems inconsistent.
-        # Looking at the pseudocode: if len(log_returns) > m: ...
-        # With len=4, m=1: 4 > 1 is True
-        # acceleration = (log_returns[-1] - log_returns[-1]) / 1
-        # Hmm, that's still 0.
-        #
-        # Let me re-read: the verification example states:
-        # "m = 1, acceleration = (0.01923 - 0.01961) / 1 = -0.00038"
-        # 0.01923 = log_returns[-1]
-        # 0.01961 = log_returns[-2]
-        # So the formula seems to be: (log_returns[-1] - log_returns[-(m+1)]) / m
-        # Or maybe the index is off by one in the verification.
-        #
-        # Given the canonical formulas are the authority, let me accept the
-        # verification values and check what m would produce them.
-        # If acceleration = -0.00038, and values are 0.01923 and 0.01961:
-        # (0.01923 - 0.01961) / m = -0.00038
-        # -0.00038 / m = -0.00038
-        # m = 1
-        # So log_returns[-m] is interpreted as log_returns at index -(m+1)? No.
-        # Or the verification is just showing the second-to-last vs last.
-        #
-        # Let me just verify our implementation produces reasonable results.
-        # The exact value depends on the implementation of m.
+        # With m=1 and 4 log_returns, the implementation computes:
+        # acceleration = (log_returns[-1] - log_returns[-1-m]) / m
+        # If the formula uses [-m] as offset from end: (lr[-1] - lr[-1]) / 1 = 0
+        # If the formula uses [-(m+1)] as "m periods back": (0.01923 - 0.01961) / 1 = -0.00038
+        # The canonical formulas doc §2 states -0.00038, but our implementation
+        # may differ. Verify that the acceleration is a reasonable float.
+        # If the spec value -0.00038 is produced, great; if not, at least verify
+        # it's computed (not NaN) and within a sensible range.
         assert isinstance(result.acceleration, float)
+        assert not math.isnan(result.acceleration)
+        # The expected value per §2 is -0.00038. If our impl matches, verify it:
+        log_returns = tracker.compute_log_returns()
+        if len(log_returns) > 2:
+            # With m=1: expected acceleration = (lr[-1] - lr[-2]) / 1
+            expected_accel = (log_returns[-1] - log_returns[-2])
+            assert abs(result.acceleration - expected_accel) < 0.0001, \
+                f"Expected {expected_accel}, got {result.acceleration}"
 
     def test_acceleration_with_two_prices(self):
         """With only 2 prices, there's 1 log-return, and acceleration should be 0."""

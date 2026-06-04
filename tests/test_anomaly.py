@@ -25,7 +25,6 @@ from scipy.stats import norm
 
 from backend.predictors.anomaly import (
     AnomalyDetector,
-    IndicatorResult,
     compute_zscore_indicator,
     compute_macd_indicator,
     compute_rsi_indicator,

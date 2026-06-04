@@ -16,6 +16,7 @@ import time
 
 import pytest
 
+from backend.data.daily_stats_cache import DailyStatsCache
 from backend.data.pipeline_cache import PipelineCache, get_pipeline_cache
 from backend.config import AppConfig, DataConfig
 
@@ -203,9 +204,7 @@ class TestDailyStatsCacheDegraded:
     async def test_stale_fallback_on_fetch_failure(self):
         """When the provider fails after a successful first call,
         the stale value from the first call should be returned."""
-        from backend.data.daily_stats_cache import DailyStatsCache
-
-        cache = DailyStatsCache()
+        cache = DailyStatsCache(config=AppConfig())
         call_count = 0
 
         async def fetch_fn(league, item_id, days):
@@ -232,9 +231,7 @@ class TestDailyStatsCacheDegraded:
     async def test_no_stale_on_first_failure(self):
         """If the very first fetch fails, there should be no stale data
         to fall back to — result should be (value=None, stale=False)."""
-        from backend.data.daily_stats_cache import DailyStatsCache
-
-        cache = DailyStatsCache()
+        cache = DailyStatsCache(config=AppConfig())
 
         async def fetch_fn(league, item_id, days):
             raise ConnectionError("Upstream API unreachable")
@@ -246,9 +243,7 @@ class TestDailyStatsCacheDegraded:
     @pytest.mark.asyncio
     async def test_stale_preserved_across_multiple_failures(self):
         """Stale data should persist even through multiple consecutive failures."""
-        from backend.data.daily_stats_cache import DailyStatsCache
-
-        cache = DailyStatsCache()
+        cache = DailyStatsCache(config=AppConfig())
         call_count = 0
 
         async def fetch_fn(league, item_id, days):
