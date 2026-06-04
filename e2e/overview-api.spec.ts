@@ -102,7 +102,7 @@ test.describe("Overview API", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify([
-          { name: "poe2", displayName: "PoE2", defaultLeague: "Standard" },
+          { name: "poe2", displayName: "PoE2", defaultLeague: "runes" },
         ]),
       });
     });
@@ -113,11 +113,26 @@ test.describe("Overview API", () => {
         contentType: "application/json",
         body: JSON.stringify([
           {
-            name: "Standard",
-            displayName: "Standard",
+            name: "runes",
+            displayName: "Runes of Aldur",
             startAt: null,
             endAt: null,
             active: true,
+            baseCurrencyApiId: "exalted",
+            baseCurrencyText: "Exalted Orb",
+            defaultCurrency: {
+              apiId: "exalted",
+              text: "Exalted Orb",
+              iconUrl: null,
+              relativePrice: 1,
+            },
+          },
+          {
+            name: "runeshc",
+            displayName: "HC Runes of Aldur",
+            startAt: null,
+            endAt: null,
+            active: false,
             baseCurrencyApiId: "exalted",
             baseCurrencyText: "Exalted Orb",
             defaultCurrency: {

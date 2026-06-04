@@ -33,13 +33,15 @@ function StoreStateReader() {
 
 describe("Store rehydration integration", () => {
   beforeEach(() => {
-    // Reset store to initial state before each test
-    const store = useDashboardStore.getState();
-    store.favorites = [];
-    store.comparisonIds = [];
-    store.pairComparisonIds = [];
-    store.alerts = [];
-    store._hydrated = false;
+    // Reset store to initial state before each test using setState()
+    // (Direct mutation bypasses Zustand's internal subscription system)
+    useDashboardStore.setState({
+      favorites: [],
+      comparisonIds: [],
+      pairComparisonIds: [],
+      alerts: [],
+      _hydrated: false,
+    });
   });
 
   describe("empty localStorage", () => {
