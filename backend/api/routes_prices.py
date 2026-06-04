@@ -42,7 +42,7 @@ def _compute_momentum_from_logs(
     from backend.economy.momentum import PriceMomentumTracker
 
     if len(price_logs) < 2:
-        return {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+        return {"momentum": 0.0, "volatility": 0.001, "acceleration": 0.0}
 
     try:
         sorted_logs = sorted(
@@ -51,7 +51,7 @@ def _compute_momentum_from_logs(
         )
         prices = [l["price"] for l in sorted_logs]
         if len(prices) < 2:
-            return {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+            return {"momentum": 0.0, "volatility": 0.001, "acceleration": 0.0}
         tracker = PriceMomentumTracker(window_size=24)
         for p in prices:
             tracker.update(p)
@@ -63,7 +63,7 @@ def _compute_momentum_from_logs(
         }
     except Exception as e:
         logger.debug("Momentum computation failed: %s", e)
-        return {"momentum": 0.0, "volatility": 0.0, "acceleration": 0.0}
+        return {"momentum": 0.0, "volatility": 0.001, "acceleration": 0.0}
 
 
 # ---------------------------------------------------------------------------
@@ -474,10 +474,25 @@ async def get_benchmarks(
         daily_stats_raw = await provider.get_daily_stats(league, item_id, day_count=days)
     except Exception as e:
         logger.error("Failed to fetch daily stats for %s: %s", currency_api_id, e)
-        raise HTTPException(status_code=503, detail=f"Failed to fetch historical data: {e}")
+        # Return data_available=false instead of raising 503 — the frontend
+        # handles this gracefully with a fallback UI rather than an error state.
+        return {
+            "currency_api_id": currency_api_id,
+            "current_price": current_price,
+            "benchmark": None,
+            "data_available": False,
+            "message": f"Historical data temporarily unavailable: {str(e)[:100]}",
+        }
 
     if not daily_stats_raw:
-        raise HTTPException(status_code=404, detail=f"No historical data for currency: {currency_api_id}")
+        # No historical data available — return data_available=false instead of 404
+        return {
+            "currency_api_id": currency_api_id,
+            "current_price": current_price,
+            "benchmark": None,
+            "data_available": False,
+            "message": f"No historical data available for currency: {currency_api_id}",
+        }
 
     # Normalize PascalCase API response to snake_case for compute_benchmarks()
     # POE2Scout DailyStatsHistory returns: Time, Open, High, Low, Close, Average, Volume

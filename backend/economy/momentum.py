@@ -65,9 +65,12 @@ class PriceMomentumTracker:
         From §2.5 pseudocode — copied verbatim from Canonical Formulas.
         """
         if len(self.prices) < 2:
+            # Return min_volatility floor instead of 0.0 — zero volatility
+            # bypasses the vol_penalty in scorer.py, making currencies with
+            # no price history appear artificially stable and profitable.
             return MomentumResult(
                 momentum=0.0,
-                volatility=0.0,
+                volatility=self.min_volatility,
                 acceleration=0.0,
             )
 
