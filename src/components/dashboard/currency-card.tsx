@@ -19,6 +19,8 @@ import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatPrice, computeLiquidityScore } from "@/lib/utils";
+import { useDisplayPrice } from "@/hooks/use-display-price";
+import type { ExchangePair } from "@/lib/types";
 
 interface CurrencyCardProps {
   item: PoeItem;
@@ -28,6 +30,8 @@ interface CurrencyCardProps {
   referenceCurrency?: string;
   /** §3.5: Whether this card is highlighted from search result navigation */
   highlighted?: boolean;
+  /** P0-2 Step 2B: Exchange pairs for client-side price conversion fallback */
+  exchangePairs?: ExchangePair[];
 }
 
 export const CurrencyCard = memo(function CurrencyCard({
@@ -37,6 +41,7 @@ export const CurrencyCard = memo(function CurrencyCard({
   league,
   referenceCurrency,
   highlighted,
+  exchangePairs,
 }: CurrencyCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(item.changePercent);
@@ -44,6 +49,18 @@ export const CurrencyCard = memo(function CurrencyCard({
     item.history?.map((h) => h.relativePrice ?? h.chaosEquivalentRate ?? 0) || [];
   const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison, uiState } =
     useDashboardStore();
+
+  // P0-2 Step 2B: Client-side price conversion fallback.
+  // When exchangePairs is provided and the user's reference currency differs
+  // from the base, useDisplayPrice converts the price client-side.
+  // If exchangePairs is not provided (default), falls back to formatPrice()
+  // which uses the API-recalculated price (Step 2A).
+  const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
+    priceInBase: item.relativePrice ?? item.chaosEquivalentRate,
+    baseCurrencyApiId: uiState.baseCurrencyApiId,
+    targetCurrencyApiId: referenceCurrency || uiState.baseCurrencyApiId,
+    exchangePairs,
+  });
   const fav = isFavorite(item.id);
   const inComparison = isInComparison(item.id);
   const queryClient = useQueryClient();
@@ -172,7 +189,10 @@ export const CurrencyCard = memo(function CurrencyCard({
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xl font-bold">  {/* §1.6: text-xl for prices */}
-              {formatPrice(item.relativePrice ?? item.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+              {wasConverted
+                ? `${fmt(displayPrice ?? 0, 2)} ${currencyLabel}`
+                : formatPrice(item.relativePrice ?? item.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)
+              }
             </p>
             <p className={`text-xs font-medium ${chg.color}`}>{chg.text}</p>
           </div>

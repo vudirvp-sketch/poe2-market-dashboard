@@ -22,6 +22,7 @@ import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { formatPrice, getCurrencyShortName } from "@/lib/utils";
+import { useDisplayPrice } from "@/hooks/use-display-price";
 import { useI18n } from "@/lib/i18n";
 import { Sparkline } from "./sparkline";
 import { PairHoverPreview } from "./pair-hover-preview";
@@ -41,6 +42,34 @@ interface ExchangeTableProps {
   highlightedRowIndex?: number | null;
   /** §3.5: Pair ID to highlight and scroll to from search result */
   highlightedItemId?: string | null;
+  /** P0-2 Step 2B: Exchange pairs for client-side price conversion fallback */
+  exchangePairsForConversion?: ExchangePair[];
+}
+
+// ============================================================================
+// RateCell — P0-2 Step 2B: Uses useDisplayPrice for client-side conversion
+// ============================================================================
+
+interface RateCellProps {
+  priceInBase: number;
+  baseCurrencyApiId: string;
+  targetCurrencyApiId: string;
+  baseCurrencyText: string;
+  exchangePairsForConversion?: ExchangePair[];
+}
+
+function RateCell({ priceInBase, baseCurrencyApiId, targetCurrencyApiId, baseCurrencyText, exchangePairsForConversion }: RateCellProps) {
+  const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
+    priceInBase,
+    baseCurrencyApiId,
+    targetCurrencyApiId,
+    exchangePairs: exchangePairsForConversion,
+  });
+
+  if (wasConverted && displayPrice != null) {
+    return <>{`${fmt(displayPrice, 2)} ${currencyLabel}`}</>;
+  }
+  return <>{formatPrice(priceInBase, baseCurrencyText, baseCurrencyApiId)}</>;
 }
 
 // ============================================================================
@@ -58,7 +87,7 @@ function fmtVolume(n: number | null | undefined): string {
 // Exchange Table
 // ============================================================================
 
-export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId }: ExchangeTableProps) {
+export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId, exchangePairsForConversion }: ExchangeTableProps) {
   const { t } = useI18n();
   const {
     uiState,
@@ -344,13 +373,17 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                   {/* Rate — cross-rate: how many currency2 per 1 unit of currency1 */}
                   <td className="px-3 py-2 text-right">
                     <span className="text-xl font-bold font-mono">
-                      {formatPrice(
-                        pair.relativePrice && pair.currency2RelativePrice && pair.currency2RelativePrice > 0
-                          ? pair.relativePrice / pair.currency2RelativePrice
-                          : pair.relativePrice ?? 0,
-                        uiState.baseCurrencyText,
-                        uiState.baseCurrencyApiId,
-                      )}
+                      <RateCell
+                        priceInBase={
+                          pair.relativePrice && pair.currency2RelativePrice && pair.currency2RelativePrice > 0
+                            ? pair.relativePrice / pair.currency2RelativePrice
+                            : pair.relativePrice ?? 0
+                        }
+                        baseCurrencyApiId={uiState.baseCurrencyApiId ?? "exalted"}
+                        targetCurrencyApiId={uiState.baseCurrencyApiId ?? "exalted"}
+                        baseCurrencyText={uiState.baseCurrencyText}
+                        exchangePairsForConversion={exchangePairsForConversion}
+                      />
                     </span>
                   </td>
                   {/* Change */}

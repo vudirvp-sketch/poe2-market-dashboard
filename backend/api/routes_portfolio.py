@@ -117,17 +117,19 @@ async def get_correlation_matrix():
     """
     config = get_settings()
 
-    # P0-1: Check if snapshot data is available before processing
+    # P0-1: Check if snapshot data is available before processing.
+    # Return 200 with data_available=false instead of 503 so the frontend
+    # can show a graceful fallback UI instead of an error.
     from backend.api.data_snapshot import get_snapshot_manager
     snapshot_mgr = get_snapshot_manager()
     if snapshot_mgr.last_snapshot is None:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "no_data",
-                "message": "Snapshot is being collected. Try again in a few seconds.",
-            },
-        )
+        return {
+            "currencies": [],
+            "matrix": [],
+            "significant": [],
+            "data_available": False,
+            "message": "Snapshot is being collected. Try again in a few seconds.",
+        }
 
     snapshot = await get_snapshot()
 

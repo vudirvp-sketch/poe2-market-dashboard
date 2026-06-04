@@ -173,17 +173,28 @@ async def get_league_summary():
     """Comprehensive league analysis: trends, anomalies, and auto-generated facts."""
     config = get_settings()
 
-    # P0-1: Check if snapshot data is available before processing
+    # P0-1: Check if snapshot data is available before processing.
+    # Return 200 with data_available=false instead of 503 so the frontend
+    # can show a graceful fallback UI instead of an error.
     from backend.api.data_snapshot import get_snapshot_manager
     snapshot_mgr = get_snapshot_manager()
     if snapshot_mgr.last_snapshot is None:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "no_data",
-                "message": "Snapshot is being collected. Try again in a few seconds.",
+        return {
+            "summary": {
+                "totalCurrencies": 0,
+                "totalPairs": 0,
+                "trendingUp": 0,
+                "trendingDown": 0,
+                "stable": 0,
+                "anomalyCount": 0,
             },
-        )
+            "trends": [],
+            "anomalies": [],
+            "facts": [],
+            "dataAvailable": False,
+            "message": "Snapshot is being collected. Try again in a few seconds.",
+            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+        }
 
     snapshot = await get_snapshot()
     

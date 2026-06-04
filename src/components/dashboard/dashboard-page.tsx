@@ -1062,6 +1062,7 @@ export function Dashboard() {
                       realm={realm}
                       league={effectiveLeague}
                       referenceCurrency={referenceCurrency}
+                      exchangePairs={exchangeData ?? undefined}
                     />
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2" role="list" aria-label={t("ariaCurrencyItems")}>
@@ -1074,6 +1075,7 @@ export function Dashboard() {
                           league={effectiveLeague}
                           referenceCurrency={referenceCurrency}
                           highlighted={highlightedItemId === item.id}
+                          exchangePairs={exchangeData ?? undefined}
                         />
                       ))}
                     </div>
@@ -1376,6 +1378,7 @@ export function Dashboard() {
                       league={effectiveLeague}
                       highlightedRowIndex={tab === "exchange" ? highlightedRowIndex : null}
                       highlightedItemId={highlightedItemId}
+                      exchangePairsForConversion={exchangeData ?? undefined}
                     />
                   ) : (
                     /* Cards view (original) */
@@ -1389,6 +1392,7 @@ export function Dashboard() {
                           league={effectiveLeague}
                           showHoverPreview={true}
                           maxVolume={Math.max(...(exchangeData ?? []).map((p) => p.volume), 1)}
+                          exchangePairsForConversion={exchangeData ?? undefined}
                         />
                       ))}
                     </div>

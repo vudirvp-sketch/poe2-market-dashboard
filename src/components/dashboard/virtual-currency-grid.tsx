@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
-import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
+import type { PoeItem, PoeItemHistoryPoint, ExchangePair } from "@/lib/types";
+import { useDisplayPrice } from "@/hooks/use-display-price";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,6 +29,8 @@ interface VirtualCurrencyGridProps {
   realm?: string;
   league?: string;
   referenceCurrency?: string;
+  /** P0-2 Step 2B: Exchange pairs for client-side price conversion fallback */
+  exchangePairs?: ExchangePair[];
 }
 
 // Card height estimate (for virtualizer)
@@ -47,12 +50,14 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
   realm,
   league,
   referenceCurrency,
+  exchangePairsForConversion,
 }: {
   item: PoeItem;
   onClick: (item: PoeItem) => void;
   realm?: string;
   league?: string;
   referenceCurrency?: string;
+  exchangePairsForConversion?: ExchangePair[];
 }) {
   const { t } = useI18n();
   const chg = fmtChange(item.changePercent);
@@ -60,6 +65,14 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
     item.history?.map((h) => h.relativePrice ?? h.chaosEquivalentRate ?? 0) || [];
   const { isFavorite, toggleFavorite, isInComparison, addToComparison, removeFromComparison, uiState } =
     useDashboardStore();
+
+  // P0-2 Step 2B: Client-side price conversion fallback
+  const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
+    priceInBase: item.relativePrice ?? item.chaosEquivalentRate,
+    baseCurrencyApiId: uiState.baseCurrencyApiId,
+    targetCurrencyApiId: referenceCurrency || uiState.baseCurrencyApiId,
+    exchangePairs: exchangePairsForConversion,
+  });
   const fav = isFavorite(item.id);
   const inComparison = isInComparison(item.id);
   const queryClient = useQueryClient();
@@ -169,7 +182,10 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
         <div className="flex items-end justify-between">
           <div>
             <p className="text-lg font-bold">
-              {formatPrice(item.relativePrice ?? item.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+              {wasConverted
+                ? `${fmt(displayPrice ?? 0, 2)} ${currencyLabel}`
+                : formatPrice(item.relativePrice ?? item.chaosEquivalentRate, uiState.baseCurrencyText, uiState.baseCurrencyApiId)
+              }
             </p>
             <p className={`text-xs font-medium ${chg.color}`}>{chg.text}</p>
           </div>
@@ -210,6 +226,7 @@ export function VirtualCurrencyGrid({
   realm,
   league,
   referenceCurrency,
+  exchangePairs,
 }: VirtualCurrencyGridProps) {
   const { t } = useI18n();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -316,6 +333,7 @@ export function VirtualCurrencyGrid({
                   realm={realm}
                   league={league}
                   referenceCurrency={referenceCurrency}
+                  exchangePairsForConversion={exchangePairs}
                 />
               ))}
               {/* Fill empty cells in the last row to maintain consistent grid */}

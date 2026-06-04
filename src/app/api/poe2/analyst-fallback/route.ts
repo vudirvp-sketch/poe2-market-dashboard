@@ -126,19 +126,68 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Fetch currencies with PriceLogs for change data
+    // OPTIMIZATION: Parallel fetch all 6 categories + their extra pages
+    // using Promise.allSettled() instead of sequential for-loop.
+    // This reduces load time from ~6 sequential API calls to ~2-3 parallel
+    // round-trips (first pages in parallel, then extra pages in parallel).
     const trends: FallbackTrend[] = [];
     const allPriceChanges: { apiId: string; prices: number[] }[] = [];
 
-    // Try common categories
     const categories = ["runes", "currency", "essences", "catalysts", "breach", "delirium"];
     const seenApiIds = new Set<string>();
 
-    for (const cat of categories) {
-      try {
-        const page1 = await getCurrenciesByCategory(realm, league, cat, 1, 250);
-        const items = page1.items || [];
+    // Phase 1: Fetch first page of all categories in parallel
+    const firstPageResults = await Promise.allSettled(
+      categories.map((cat) =>
+        getCurrenciesByCategory(realm, league, cat, 1, 250)
+          .then((page) => ({ cat, page }))
+          .catch(() => null)
+      )
+    );
 
-        for (const item of items) {
+    // Process first pages and identify which categories need more pages
+    const categoriesNeedingMore: { cat: string; totalPages: number }[] = [];
+
+    for (const result of firstPageResults) {
+      if (result.status !== "fulfilled" || result.value === null) continue;
+      const { cat, page } = result.value;
+      const items = page.items || [];
+
+      for (const item of items) {
+        if (seenApiIds.has(item.apiId)) continue;
+        seenApiIds.add(item.apiId);
+
+        const trend = extractTrendFromItem(item);
+        if (trend) trends.push(trend);
+
+        const priceSeries = extractPriceSeries(item);
+        if (priceSeries) {
+          allPriceChanges.push({ apiId: item.apiId, prices: priceSeries });
+        }
+      }
+
+      if (page.totalPages > 1) {
+        categoriesNeedingMore.push({ cat, totalPages: page.totalPages });
+      }
+    }
+
+    // Phase 2: Fetch extra pages in parallel (all categories at once)
+    if (categoriesNeedingMore.length > 0) {
+      const extraPagePromises = categoriesNeedingMore.flatMap(({ cat, totalPages }) =>
+        Array.from(
+          { length: Math.min(totalPages, 3) - 1 },
+          (_, i) => getCurrenciesByCategory(realm, league, cat, i + 2, 250)
+            .then((page) => ({ page }))
+            .catch(() => null)
+        )
+      );
+
+      const extraPageResults = await Promise.allSettled(extraPagePromises);
+
+      for (const result of extraPageResults) {
+        if (result.status !== "fulfilled" || result.value === null) continue;
+        const { page } = result.value;
+        for (const item of page.items || []) {
           if (seenApiIds.has(item.apiId)) continue;
           seenApiIds.add(item.apiId);
 
@@ -150,31 +199,6 @@ export async function GET(req: NextRequest) {
             allPriceChanges.push({ apiId: item.apiId, prices: priceSeries });
           }
         }
-
-        // Fetch remaining pages if there are more
-        if (page1.totalPages > 1) {
-          for (let p = 2; p <= Math.min(page1.totalPages, 3); p++) {
-            try {
-              const pageN = await getCurrenciesByCategory(realm, league, cat, p, 250);
-              for (const item of pageN.items || []) {
-                if (seenApiIds.has(item.apiId)) continue;
-                seenApiIds.add(item.apiId);
-
-                const trend = extractTrendFromItem(item);
-                if (trend) trends.push(trend);
-
-                const priceSeries = extractPriceSeries(item);
-                if (priceSeries) {
-                  allPriceChanges.push({ apiId: item.apiId, prices: priceSeries });
-                }
-              }
-            } catch {
-              // Skip failed pages
-            }
-          }
-        }
-      } catch {
-        // Category may not exist in this league — skip
       }
     }
 

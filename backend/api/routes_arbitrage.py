@@ -507,17 +507,25 @@ async def get_flip_opportunities(
     """Return scored flip opportunities for the configured league."""
     config = get_settings()
 
-    # P0-1: Check if snapshot data is available before processing
+    # P0-1: Check if snapshot data is available before processing.
+    # Return 200 with data_available=false instead of 503 so the frontend
+    # can show a graceful fallback UI instead of an error.
     from backend.api.data_snapshot import get_snapshot_manager
     snapshot_mgr = get_snapshot_manager()
     if snapshot_mgr.last_snapshot is None:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "no_data",
-                "message": "Snapshot is being collected. Try again in a few seconds.",
+        return {
+            "league": config.league.league_name,
+            "total": 0,
+            "opportunities": [],
+            "data_available": False,
+            "message": "Snapshot is being collected. Try again in a few seconds.",
+            "event_status": {
+                "any_active": False,
+                "affected_currencies": [],
+                "summary": "",
             },
-        )
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     event_manager = get_event_manager(config)
     pipeline_cache = get_pipeline_cache()
@@ -627,17 +635,20 @@ async def get_triangular_arbitrage(
     """
     config = get_settings()
 
-    # P0-1: Check if snapshot data is available before processing
+    # P0-1: Check if snapshot data is available before processing.
+    # Return 200 with data_available=false instead of 503 so the frontend
+    # can show a graceful fallback UI instead of an error.
     from backend.api.data_snapshot import get_snapshot_manager
     snapshot_mgr = get_snapshot_manager()
     if snapshot_mgr.last_snapshot is None:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "no_data",
-                "message": "Snapshot is being collected. Try again in a few seconds.",
-            },
-        )
+        return {
+            "league": config.league.league_name,
+            "total": 0,
+            "opportunities": [],
+            "data_available": False,
+            "message": "Snapshot is being collected. Try again in a few seconds.",
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     snapshot = await get_snapshot()
 

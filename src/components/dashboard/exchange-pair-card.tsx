@@ -11,6 +11,7 @@ import { fmt, fmtChange } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { formatPrice } from "@/lib/utils";
+import { useDisplayPrice } from "@/hooks/use-display-price";
 import { useI18n } from "@/lib/i18n";
 import { PairHoverPreview } from "./pair-hover-preview";
 
@@ -25,6 +26,8 @@ interface ExchangePairCardProps {
   showHoverPreview?: boolean;
   /** §2.4: Max volume across all pairs (for volume color indication) */
   maxVolume?: number;
+  /** P0-2 Step 2B: Exchange pairs for client-side price conversion fallback */
+  exchangePairsForConversion?: ExchangePair[];
 }
 
 export const ExchangePairCard = memo(function ExchangePairCard({
@@ -34,12 +37,21 @@ export const ExchangePairCard = memo(function ExchangePairCard({
   league,
   showHoverPreview = false,
   maxVolume = 1,
+  exchangePairsForConversion,
 }: ExchangePairCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
   const chg7d = fmtChange(pair.sevenDayChangePercent);
   const { pairComparisonIds, addPairToComparison, removePairFromComparison, uiState, toggleExchangeFavorite } =
     useDashboardStore();
+
+  // P0-2 Step 2B: Client-side price conversion fallback
+  const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
+    priceInBase: pair.relativePrice,
+    baseCurrencyApiId: uiState.baseCurrencyApiId,
+    targetCurrencyApiId: uiState.baseCurrencyApiId,
+    exchangePairs: exchangePairsForConversion,
+  });
   const isFav = uiState.exchange.favorites.includes(pair.id);
   const pairKey = `${pair.currency1Id}_${pair.currency2Id}`;
   const inComparison = pairComparisonIds.some(
@@ -152,7 +164,10 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         <div className="flex items-center justify-between mt-2">
           <div>
             <span className="text-xl font-bold font-mono">  {/* §1.6: text-xl for prices */}
-              {formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)}
+              {wasConverted
+                ? `${fmt(displayPrice ?? 0, 2)} ${currencyLabel}`
+                : formatPrice(pair.relativePrice, uiState.baseCurrencyText, uiState.baseCurrencyApiId)
+              }
             </span>
             <span className={`ml-2 text-xs font-medium ${chg.color}`}>
               {chg.text}
