@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
@@ -177,13 +178,42 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Scheduler failed to start: %s", e)
 
-    # Fix 8: initial health check
+    # P0-1: Start snapshot refresh as a background task (non-blocking)
+    # The backend is ready to accept requests immediately.
+    # The snapshot will be populated once the first refresh completes.
+    snapshot_refresh_task = None
+    try:
+        from backend.api.data_snapshot import get_snapshot_manager
+        snapshot_mgr = get_snapshot_manager(config)
+        snapshot_refresh_task = asyncio.create_task(
+            snapshot_mgr.start_periodic_refresh()
+        )
+        logger.info("Snapshot periodic refresh started as background task")
+    except Exception as e:
+        logger.error("Failed to start snapshot periodic refresh: %s — continuing without", e)
+
+    # Fix 8: initial health check (non-blocking — don't wait for result)
     try:
         await check_provider_health()
     except HTTPException:
         logger.warning("Initial health check: upstream API unreachable (degraded mode)")
+    except Exception as e:
+        logger.warning("Initial health check failed: %s — continuing in degraded mode", e)
 
     yield
+
+    # --- P0-1: Shutdown background tasks ---
+    # Cancel snapshot refresh task
+    if snapshot_refresh_task is not None:
+        try:
+            snapshot_refresh_task.cancel()
+            try:
+                await snapshot_refresh_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("Snapshot periodic refresh task cancelled")
+        except Exception as e:
+            logger.warning("Snapshot refresh task cancellation error: %s", e)
 
     # --- Phase 2: Shutdown Scheduler ---
     if scheduler is not None:
@@ -340,8 +370,28 @@ async def health_check():
     except Exception:
         pass
 
+    # P0-1: Determine overall status based on both provider health AND snapshot availability
+    snapshot_manager = None
+    try:
+        from backend.api.data_snapshot import get_snapshot_manager as _get_sm
+        snapshot_manager = _get_sm()
+    except Exception:
+        pass
+
+    snapshot_ready = snapshot_manager is not None and snapshot_manager.last_snapshot is not None
+
+    if _provider_healthy and snapshot_ready:
+        overall_status = "ok"
+    elif snapshot_ready:
+        # Snapshot exists but provider may be unreachable — can serve cached data
+        overall_status = "degraded"
+    else:
+        # No snapshot at all — truly degraded, can't serve analytics
+        overall_status = "degraded"
+
     return {
-        "status": "ok" if _provider_healthy else "degraded",
+        "status": overall_status,
+        "snapshot_ready": snapshot_ready,
         "provider": "reachable" if _provider_healthy else "unreachable",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "league": config.league.league_name,

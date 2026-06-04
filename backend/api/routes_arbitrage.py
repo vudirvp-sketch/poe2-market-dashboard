@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 
 from backend.config import get_settings, AppConfig
 from backend.data.pipeline_cache import get_pipeline_cache
@@ -505,6 +506,19 @@ async def get_flip_opportunities(
 ):
     """Return scored flip opportunities for the configured league."""
     config = get_settings()
+
+    # P0-1: Check if snapshot data is available before processing
+    from backend.api.data_snapshot import get_snapshot_manager
+    snapshot_mgr = get_snapshot_manager()
+    if snapshot_mgr.last_snapshot is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "no_data",
+                "message": "Snapshot is being collected. Try again in a few seconds.",
+            },
+        )
+
     event_manager = get_event_manager(config)
     pipeline_cache = get_pipeline_cache()
 
@@ -612,6 +626,19 @@ async def get_triangular_arbitrage(
     Uses DataSnapshot for exchange rates instead of independent API call.
     """
     config = get_settings()
+
+    # P0-1: Check if snapshot data is available before processing
+    from backend.api.data_snapshot import get_snapshot_manager
+    snapshot_mgr = get_snapshot_manager()
+    if snapshot_mgr.last_snapshot is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "no_data",
+                "message": "Snapshot is being collected. Try again in a few seconds.",
+            },
+        )
+
     snapshot = await get_snapshot()
 
     rates_dict = snapshot.exchange_rates

@@ -53,6 +53,33 @@ DEFAULT_LOT_SIZES = [1, 5, 10, 50, 100]
 MAX_LOT_SEARCH = 10000
 
 
+def _scale_factor(mid_price: float) -> int:
+    """P2-4: Compute a dynamic per-pair scale factor for integer math stability.
+
+    Target: mid_price * factor ∈ [1000, 1000000] so that ceil/floor
+    rounding errors are negligible relative to the spread.
+
+    Overflow protection: factor * mid_price < 2^30 to avoid int32 overflow
+    in downstream calculations.
+
+    Examples:
+      mid_price=0.001  → factor=10000000, scaled mid=10000 ✓
+      mid_price=0.01   → factor=1000000,  scaled mid=10000 ✓
+      mid_price=1.0    → factor=10000,    scaled mid=10000 ✓
+      mid_price=200    → factor=50,       scaled mid=10000 ✓
+      mid_price=0.00001 → factor=1000000000, scaled mid=10000 ✓ (no overflow)
+      mid_price=1000000 → factor=1,        scaled mid=1000000 ✓
+    """
+    if mid_price <= 0:
+        return 1
+    target = 10000  # Target: mid_price * factor ≈ 10000
+    factor = max(1, int(target / mid_price))
+    # Overflow protection: factor * mid_price < 2^30
+    if factor * mid_price > 2**30:
+        factor = int(2**30 / mid_price)
+    return factor
+
+
 def compute_quantized_analysis(
     R_buy: float,
     R_sell: float,
@@ -70,30 +97,26 @@ def compute_quantized_analysis(
       - You list "Have X of B, Want Y of A" → you pay ceil(N * R_buy) of B
       - You list "Have Y of A, Want X of B" → you receive floor(N * R_sell) of B
 
-    BUG FIX (2026-06-04): Automatic rate scaling for integer math stability.
-    When rates are close to 1.0 (e.g. R_buy=1.005, R_sell=0.995 after
-    normalization), ceil(1.005)=2 and floor(0.995)=0, producing -100%
-    gross_profit_pct at small lot sizes regardless of the actual spread.
-    We scale the rates so that the smallest integer unit (1) is negligible
-    relative to the spread. gross_profit_pct converges to the continuous
-    value as the scale factor increases.
+    P2-4: Dynamic per-pair scaling for integer math stability.
+    Instead of a fixed MIN_LOT_COST, we compute a scale factor that adapts
+    to the price magnitude:
+      - For cheap currencies (mid_price=0.001): factor = 10000000, scaled mid ≈ 10000
+      - For expensive currencies (mid_price=200): factor = 50, scaled mid ≈ 10000
+      - For mid-range (mid_price=1.0): factor = 10000, scaled mid ≈ 10000
+
+    The target is to make mid_price * factor ∈ [1000, 1000000] so that
+    integer rounding errors are negligible relative to the spread.
+    Overflow protection ensures factor * mid_price < 2^30.
     """
     if lot_sizes is None:
         lot_sizes = DEFAULT_LOT_SIZES
 
-    # BUG FIX: Scale rates to prevent -100% gross_profit_pct from integer rounding.
-    # When rates are close to 1.0 (e.g. after normalization to mid_price=1.0),
-    # ceil(1.005) = 2 and floor(0.995) = 0, making N=1 always show -100%.
-    # Scale so that the cost of 1 lot is at least MIN_LOT_COST units,
-    # which makes the rounding error negligible relative to the spread.
-    MIN_LOT_COST = 1000.0
+    # P2-4: Dynamic per-pair scaling factor
     if mid_price > 0 and R_buy > 0:
-        cost_at_1 = math.ceil(R_buy)
-        if cost_at_1 < MIN_LOT_COST:
-            scale = MIN_LOT_COST / R_buy
-            R_buy *= scale
-            R_sell *= scale
-            mid_price *= scale
+        scale = _scale_factor(mid_price)
+        R_buy *= scale
+        R_sell *= scale
+        mid_price *= scale
 
     theoretical_spread = (R_sell - R_buy) / mid_price if mid_price > 0 else 0.0
 

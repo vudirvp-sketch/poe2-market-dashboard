@@ -35,6 +35,56 @@ import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 import { DataFreshnessBadge } from "./data-freshness-badge";
 
 // ---------------------------------------------------------------------------
+// P2-1: Human-readable currency name mapping
+// ---------------------------------------------------------------------------
+
+/** Map api_id to human-readable display name for the heatmap. */
+const CURRENCY_DISPLAY_NAMES: Record<string, string> = {
+  exalted: "Exalted Orb",
+  divine: "Divine Orb",
+  chaos: "Chaos Orb",
+  mirror: "Mirror of Kalandra",
+  regret: "Orb of Regret",
+  chance: "Orb of Chance",
+  alchemy: "Orb of Alchemy",
+  scouring: "Orb of Scouring",
+  transmutation: "Orb of Transmutation",
+  alteration: "Orb of Alteration",
+  augmentation: "Orb of Augmentation",
+  jeweller: "Jeweller's Orb",
+  fusing: "Orb of Fusing",
+  chromatic: "Chromatic Orb",
+  vaal: "Vaal Orb",
+  regal: "Regal Orb",
+  blessed: "Blessed Orb",
+  glassblower: "Glassblower's Bauble",
+  gemcutter: "Gemcutter's Prism",
+  chisel: "Cartographer's Chisel",
+  annulment: "Orb of Annulment",
+  binding: "Orb of Binding",
+  horizon: "Orb of Horizons",
+  harbinger: "Harbinger's Orb",
+  fracturing: "Fracturing Orb",
+  doom: "Orb of Doom",
+  chance_scouring: "Chance/Scouring",
+  prime_regrading: "Prime Regrading Lens",
+  secondary_regrading: "Secondary Regrading Lens",
+  unmaking: "Orb of Unmaking",
+  socket: "Socket Currency",
+};
+
+/** Convert an api_id to a human-readable display name.
+ *  Uses the lookup table, falls back to title-case capitalization. */
+function getCurrencyDisplayName(apiId: string): string {
+  if (CURRENCY_DISPLAY_NAMES[apiId]) return CURRENCY_DISPLAY_NAMES[apiId];
+  // Fallback: capitalize first letter of each word, split by underscore/hyphen
+  return apiId
+    .split(/[-_]/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+// ---------------------------------------------------------------------------
 // Component Props
 // ---------------------------------------------------------------------------
 
@@ -427,17 +477,17 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
                   aria-label={t("optimizerRateMatrixAria") || "Currency exchange rate matrix"}
                 >
                   {/* Header row */}
-                  <div className="bg-background px-2 py-1 text-xs font-medium text-muted-foreground sticky top-0 z-10" role="columnheader">
+                  <div className="bg-background px-2 py-1 text-xs font-medium text-muted-foreground sticky top-0 z-30" role="columnheader">
                     {" "}
                   </div>
                   {matrixData.currencies.map((currency) => (
                     <div
                       key={`h-${currency}`}
-                      className="bg-background px-1 py-1 text-xs font-medium text-muted-foreground text-center truncate sticky top-0 z-10"
+                      className="bg-background px-1 py-1 text-xs font-medium text-muted-foreground text-center truncate sticky top-0 z-20"
                       role="columnheader"
-                      title={currency}
+                      title={getCurrencyDisplayName(currency)}
                     >
-                      {currency.slice(0, 6)}
+                      {getCurrencyDisplayName(currency)}
                     </div>
                   ))}
 
@@ -447,11 +497,11 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
                       {/* Row header */}
                       <div
                         key={`r-${rowCurrency}`}
-                        className="bg-background px-2 py-1 text-xs font-medium text-muted-foreground truncate sticky left-0 z-10"
+                        className="bg-background px-2 py-1 text-xs font-medium text-muted-foreground truncate sticky left-0 z-10 min-w-[80px]"
                         role="rowheader"
-                        title={rowCurrency}
+                        title={getCurrencyDisplayName(rowCurrency)}
                       >
-                        {rowCurrency.slice(0, 8)}
+                        {getCurrencyDisplayName(rowCurrency)}
                       </div>
 
                       {/* Cells */}

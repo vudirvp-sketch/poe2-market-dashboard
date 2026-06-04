@@ -31,12 +31,35 @@ const FLIPPER_CORS_PROXY_URL = process.env.FLIPPER_CORS_PROXY_URL || "";
 // Circuit breaker for flipper-backend requests
 let flipperCircuitBreakerOpen = false;
 let flipperCircuitBreakerOpenSince = 0;
-const FLIPPER_CB_COOLDOWN = 60_000; // 60s
+let flipperCircuitBreakerCooldownMs = 60_000; // P1-2: starts at 60s, grows exponentially
+const FLIPPER_CB_INITIAL_COOLDOWN = 60_000; // 60s
+const FLIPPER_CB_MAX_COOLDOWN = 300_000; // P1-2: max 5 minutes
 let flipperConsecutiveFailures = 0;
 const FLIPPER_CB_THRESHOLD = 5; // Open after 5 consecutive failures
 
+// P1-2: Circuit breaker state for debugging
+let flipperCircuitBreakerState: "closed" | "open" | "half-open" = "closed";
+
 // --- Request deduplication ---
 const pendingRequests = new Map<string, Promise<Response>>();
+
+// P1-2: Health probe with short timeout
+async function probeHealth(): Promise<boolean> {
+  try {
+    const healthUrl = new URL("/api/health", FLIPPER_API_URL);
+    const res = await fetch(healthUrl.toString(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(3_000), // P1-2: 3s timeout for health
+    });
+    if (res.ok) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Proxy a request to the FastAPI flipper backend with retry and deduplication.
@@ -90,8 +113,8 @@ async function _doProxyWithRetry(
   // Circuit breaker: skip request if backend is known-down
   if (flipperCircuitBreakerOpen) {
     const elapsed = Date.now() - flipperCircuitBreakerOpenSince;
-    if (elapsed < FLIPPER_CB_COOLDOWN) {
-      const retryIn = Math.round((FLIPPER_CB_COOLDOWN - elapsed) / 1000);
+    if (elapsed < flipperCircuitBreakerCooldownMs) {
+      const retryIn = Math.round((flipperCircuitBreakerCooldownMs - elapsed) / 1000);
       return NextResponse.json(
         {
           error: "Flipper backend unavailable",
@@ -101,12 +124,45 @@ async function _doProxyWithRetry(
           cors_proxy_hint: FLIPPER_CORS_PROXY_URL
             ? "Backend upstream (poe2scout.com) may be blocked. Configure POE2_CORS_PROXY_URL for the frontend."
             : undefined,
+          circuit_breaker_state: flipperCircuitBreakerState, // P1-2: debug info
         },
         { status: 503 },
       );
     }
-    // Cooldown expired — try one request to test
-    flipperCircuitBreakerOpen = false;
+    // P1-2: Cooldown expired — enter half-open state, send health probe
+    flipperCircuitBreakerState = "half-open";
+    const isHealthy = await probeHealth();
+    if (isHealthy) {
+      // Backend is back! Close the breaker
+      flipperCircuitBreakerOpen = false;
+      flipperCircuitBreakerState = "closed";
+      flipperConsecutiveFailures = 0;
+      flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // P1-2: reset cooldown
+      console.info(
+        `[flipper-proxy] Circuit breaker CLOSED via health probe — backend is back. `
+      );
+    } else {
+      // Still down — keep breaker open, increase cooldown (exponential backoff)
+      flipperCircuitBreakerState = "open";
+      flipperCircuitBreakerOpenSince = Date.now(); // restart cooldown from now
+      flipperCircuitBreakerCooldownMs = Math.min(
+        flipperCircuitBreakerCooldownMs * 2,
+        FLIPPER_CB_MAX_COOLDOWN
+      );
+      console.warn(
+        `[flipper-proxy] Circuit breaker stays OPEN — health probe failed. `
+        + `Cooldown increased to ${flipperCircuitBreakerCooldownMs / 1000}s`
+      );
+      return NextResponse.json(
+        {
+          error: "Flipper backend unavailable",
+          error_type: "backend_offline",
+          detail: `Circuit breaker open — health probe failed (retry in ${Math.round(flipperCircuitBreakerCooldownMs / 1000)}s)`,
+          circuit_breaker_state: flipperCircuitBreakerState,
+        },
+        { status: 503 },
+      );
+    }
   }
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -136,6 +192,11 @@ async function _doProxyWithRetry(
       flipperConsecutiveFailures = 0;
       if (flipperCircuitBreakerOpen) {
         flipperCircuitBreakerOpen = false;
+        flipperCircuitBreakerState = "closed";
+        flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // P1-2: reset cooldown
+        console.info(
+          `[flipper-proxy] Circuit breaker CLOSED — backend responded (status ${res.status}).`
+        );
       }
 
       // ── Backend responded, but with 503 (insufficient data, etc.) ──
@@ -228,9 +289,11 @@ async function _doProxyWithRetry(
       if (flipperConsecutiveFailures >= FLIPPER_CB_THRESHOLD) {
         flipperCircuitBreakerOpen = true;
         flipperCircuitBreakerOpenSince = Date.now();
+        flipperCircuitBreakerState = "open";
+        flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // start at 60s
         console.warn(
           `[flipper-proxy] Circuit breaker OPENED — backend appears unreachable. ` +
-          `Will retry in ${FLIPPER_CB_COOLDOWN / 1000}s. Consecutive failures: ${flipperConsecutiveFailures}`
+          `Will probe health after ${FLIPPER_CB_INITIAL_COOLDOWN / 1000}s. Consecutive failures: ${flipperConsecutiveFailures}`
         );
       }
 

@@ -192,6 +192,57 @@ class SnapshotManager:
         self._snapshot_ts: float = 0.0
         self._ttl: float = self._config.data.cache_ttl_prices_minutes * 60.0
         self._lock = asyncio.Lock()
+        self._periodic_task: asyncio.Task | None = None
+        # P2-3: Separate TTL cache for individual price histories
+        # Key: api_id (lowercase), Value: (fetch_time, price_logs)
+        self._history_cache: dict[str, tuple[float, list]] = {}
+        # TTL for active currencies (present in current SnapshotPairs)
+        self._history_cache_active_ttl = 5 * 60.0  # 5 minutes
+        # TTL for inactive currencies (not in current SnapshotPairs)
+        self._history_cache_inactive_ttl = 30 * 60.0  # 30 minutes
+        # Track which currencies are active (present in SnapshotPairs)
+        self._active_currencies: set[str] = set()
+
+    @property
+    def last_snapshot(self) -> DataSnapshot | None:
+        """Return the last snapshot, even if stale. None if never refreshed."""
+        return self._snapshot
+
+    async def start_periodic_refresh(self) -> None:
+        """Start periodic snapshot refresh as a long-running background task.
+
+        P0-1: This runs as an asyncio.Task started from the FastAPI lifespan.
+        The first refresh happens immediately; subsequent refreshes happen
+        every TTL seconds. If the API is unreachable, the refresh is
+        skipped and retried on the next cycle.
+
+        This method is designed to be cancelled via task.cancel() on shutdown.
+        """
+        logger.info("SnapshotManager: starting periodic refresh (TTL=%.0fs)", self._ttl)
+        while True:
+            try:
+                # Attempt a refresh
+                try:
+                    snapshot = await self._refresh()
+                    if snapshot is not None and snapshot.valid:
+                        self._snapshot = snapshot
+                        self._snapshot_ts = time.monotonic()
+                        logger.info(
+                            "SnapshotManager: snapshot refreshed — %d exchange rates, %d currencies",
+                            len(snapshot.exchange_rates),
+                            len(snapshot.currencies),
+                        )
+                    else:
+                        logger.warning("SnapshotManager: refresh returned invalid snapshot, keeping previous")
+                except Exception as e:
+                    logger.error("SnapshotManager: refresh failed: %s — keeping previous snapshot if available", e)
+                    # Do NOT crash — keep serving the old snapshot
+
+                # Wait for TTL before next refresh
+                await asyncio.sleep(self._ttl)
+            except asyncio.CancelledError:
+                logger.info("SnapshotManager: periodic refresh cancelled — shutting down")
+                raise
 
     async def get_snapshot(self) -> DataSnapshot:
         """Return the current snapshot, refreshing if stale.
@@ -249,6 +300,10 @@ class SnapshotManager:
 
     async def _refresh(self) -> DataSnapshot:
         """Fetch all data from the Poe2Scout API in a coordinated pass.
+
+        P0-1: Network errors are caught and logged. The caller (get_snapshot
+        or start_periodic_refresh) is responsible for deciding whether to
+        keep the previous snapshot or create an empty one.
 
         Makes exactly:
           - 1 request to SnapshotPairs
@@ -368,6 +423,10 @@ class SnapshotManager:
                 snapshot_pair_currencies.add(rate.currency_to.lower())
 
         missing_currencies = snapshot_pair_currencies - set(price_histories.keys())
+
+        # P2-3: Update active currencies set for TTL determination
+        self._active_currencies = snapshot_pair_currencies
+
         if missing_currencies:
             logger.info(
                 "SnapshotPairs coverage: %d currencies missing from ByCategory, "
@@ -375,7 +434,31 @@ class SnapshotManager:
                 len(missing_currencies),
                 sorted(missing_currencies)[:10],  # log first 10 to avoid spam
             )
+            cache_hits = 0
+            cache_misses = 0
             for api_id_lower in missing_currencies:
+                # P2-3: Check history cache first
+                cached = self._history_cache.get(api_id_lower)
+                if cached is not None:
+                    fetch_time, cached_points = cached
+                    is_active = api_id_lower in self._active_currencies
+                    ttl = self._history_cache_active_ttl if is_active else self._history_cache_inactive_ttl
+                    if time.monotonic() - fetch_time < ttl:
+                        price_histories[api_id_lower] = cached_points
+                        cache_hits += 1
+                        logger.debug(
+                            "History cache HIT for %s (%d points, age=%.0fs, ttl=%.0fs)",
+                            api_id_lower, len(cached_points),
+                            time.monotonic() - fetch_time, ttl,
+                        )
+                        continue  # Use cached data, don't re-fetch
+                    else:
+                        logger.debug(
+                            "History cache EXPIRED for %s (age=%.0fs > ttl=%.0fs)",
+                            api_id_lower, time.monotonic() - fetch_time, ttl,
+                        )
+
+                cache_misses += 1
                 try:
                     # Try the original-case api_id (from exchange_rates)
                     orig_id = api_id_lower
@@ -390,15 +473,24 @@ class SnapshotManager:
                     points_ind = await provider.get_historical_prices(orig_id, days=7)
                     if points_ind:
                         price_histories[api_id_lower] = points_ind
+                        # P2-3: Store in history cache
+                        self._history_cache[api_id_lower] = (time.monotonic(), points_ind)
                         logger.debug(
-                            "Filled price history for %s: %d points",
+                            "Filled price history for %s: %d points (cached)",
                             api_id_lower, len(points_ind),
                         )
                 except Exception as e:
+                    # P0-1: Don't crash if one individual fetch fails
                     logger.debug(
                         "Could not fetch individual price history for %s: %s",
                         api_id_lower, e,
                     )
+
+            if cache_hits > 0 or cache_misses > 0:
+                logger.info(
+                    "Individual history fetch: %d cache hits, %d cache misses (fetches)",
+                    cache_hits, cache_misses,
+                )
 
         # Log coverage summary
         covered = snapshot_pair_currencies & set(price_histories.keys())

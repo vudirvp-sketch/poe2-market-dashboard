@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
@@ -171,6 +172,19 @@ def _generate_facts(trends: list[dict], anomalies: list[dict],
 async def get_league_summary():
     """Comprehensive league analysis: trends, anomalies, and auto-generated facts."""
     config = get_settings()
+
+    # P0-1: Check if snapshot data is available before processing
+    from backend.api.data_snapshot import get_snapshot_manager
+    snapshot_mgr = get_snapshot_manager()
+    if snapshot_mgr.last_snapshot is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "no_data",
+                "message": "Snapshot is being collected. Try again in a few seconds.",
+            },
+        )
+
     snapshot = await get_snapshot()
     
     # Build summary metadata

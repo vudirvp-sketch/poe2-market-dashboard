@@ -222,7 +222,8 @@ export function Dashboard() {
     queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
     staleTime: 30_000,
     refetchInterval: 30_000,
-    retry: false,
+    retry: 2, // P1-2: retry health checks (was retry: false)
+    retryDelay: 3000, // P1-2: 3s between retries
   });
 
   // Backend is "online" when it responds with "ok" OR "degraded".
@@ -345,18 +346,37 @@ export function Dashboard() {
     }
   }, [league, leagues]);
 
-  // Phase 0.2: Update base currency in store when league changes
+  // Phase 0.2 + P0-2: Update base currency in store when league changes.
+  // Only update if the store doesn't already have a user-selected base currency,
+  // OR if the currently selected currency doesn't exist in the new league.
   useEffect(() => {
     if (leagues && effectiveLeague) {
       const currentLeague = leagues.find((l) => l.name === effectiveLeague);
       if (currentLeague?.baseCurrencyApiId || currentLeague?.baseCurrencyText) {
+        // P0-2: Check if the user's selected reference currency still exists
+        // in the new league's reference currencies. If it does, keep it.
+        // If not, reset to the league default.
+        const userBaseApiId = uiState.baseCurrencyApiId;
+        if (userBaseApiId && referenceCurrencies) {
+          const existsInNewLeague = referenceCurrencies.some(
+            (c) => c.apiId === userBaseApiId
+          );
+          if (existsInNewLeague) {
+            // User's selected currency exists in new league — keep it
+            return;
+          }
+        }
+        // Either no user selection or currency doesn't exist in new league
+        // → Reset to league default
         setBaseCurrency(
           currentLeague.baseCurrencyApiId ?? null,
           currentLeague.baseCurrencyText ?? null,
         );
+        // Also reset the local referenceCurrency state
+        setReferenceCurrency("");
       }
     }
-  }, [leagues, effectiveLeague, setBaseCurrency]);
+  }, [leagues, effectiveLeague, setBaseCurrency, referenceCurrencies]);
 
   // Reference currencies
   const { data: referenceCurrencies } = useQuery({
@@ -784,7 +804,26 @@ export function Dashboard() {
         lastUpdated={lastUpdated}
         referenceCurrencies={referenceCurrencies}
         referenceCurrency={referenceCurrency}
-        onReferenceCurrencyChange={setReferenceCurrency}
+        onReferenceCurrencyChange={(apiId) => {
+          setReferenceCurrency(apiId);
+          // P0-2: Sync base currency in store with the selected reference currency
+          // so that formatPrice() shows the correct suffix (e.g. "Div" instead of "Exa")
+          if (apiId && referenceCurrencies) {
+            const selected = referenceCurrencies.find((c) => c.apiId === apiId);
+            if (selected) {
+              setBaseCurrency(selected.apiId, selected.text);
+            }
+          } else if (!apiId) {
+            // Reset to league default when user selects "_default"
+            const currentLeague = leagues?.find((l) => l.name === effectiveLeague);
+            if (currentLeague?.baseCurrencyApiId || currentLeague?.baseCurrencyText) {
+              setBaseCurrency(
+                currentLeague.baseCurrencyApiId ?? null,
+                currentLeague.baseCurrencyText ?? null,
+              );
+            }
+          }
+        }}
         onExport={showExport ? handleExport : undefined}
         flipperBackendOnline={flipperBackendOnline}
         phaseInfo={flipperPhaseData ?? null}
