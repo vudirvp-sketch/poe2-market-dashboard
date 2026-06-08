@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.14 | **Date:** 2026-06-08
+> **Version:** 1.15 | **Date:** 2026-06-08
 
 ---
 
@@ -97,30 +97,22 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### TODO (next iterations)
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
-2. **Regenerate cache-snapshot.json with VPN** — After adding ByCategory for idol/vaultkeys/delirium, the snapshot needs regeneration: `npx tsx scripts/generate-cache-snapshot.ts`. Previous run produced 344 KB (14 endpoints). With 3 new ByCategory endpoints, expect ~400-450 KB. Verify < 500 KB.
-3. **Run backend + frontend with VPN for live flip verification** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data. The verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness offline, but live E2E check is still needed.
-4. **Add bycategory fixture files for idol, vaultkeys, delirium** — After running `dump-live-data.ts` with VPN, verify that `bycategory-idol.json`, `bycategory-vaultkeys.json`, `bycategory-delirium.json` are generated in `tests/fixtures/`.
+2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
+
+### COMPLETED (v1.15)
+1. ~~**Regenerate cache-snapshot.json with VPN**~~ — Reran `npx tsx scripts/generate-cache-snapshot.ts` with VPN. Snapshot now includes all 17 endpoints (5 ByCategory). Size: 469.4 KB (under 500 KB limit). Confirmed: 14→17 endpoints, `default_league_value` auto-fixed from "Fate of the Vaal" → "runes".
+2. ~~**Generate bycategory fixture files for idol, vaultkeys, delirium**~~ — Reran `npx tsx scripts/dump-live-data.ts` with VPN. All 5 fixture files now present: `bycategory-ritual.json`, `bycategory-ultimatum.json`, `bycategory-idol.json`, `bycategory-vaultkeys.json`, `bycategory-delirium.json`. Flip verification script passes all 4 checks.
 
 ### COMPLETED (v1.14)
-1. ~~**Add ByCategory endpoints for idol, vaultkeys, delirium**~~ — Both `generate-cache-snapshot.ts` and `dump-live-data.ts` now fetch all 5 item categories (ritual, ultimatum, idol, vaultkeys, delirium) instead of only 2. This ensures the cache snapshot has metadata for all item-aware optimal payment grouping.
-2. ~~**Verify flip logic against fixture data**~~ — Created `scripts/verify-flips-vs-fixtures.py` which validates: (a) all 5 item categories present in fixture pairs, (b) BestPaymentBadge correctly finds savings for Omens/Soul Cores (up to 86% savings paying in Exalted vs Chaos), (c) fixture consistency (categories.json labels match). All 4 checks pass.
+1. ~~**Add ByCategory endpoints for idol, vaultkeys, delirium**~~ — Both scripts now fetch all 5 item categories.
+2. ~~**Verify flip logic against fixture data**~~ — `scripts/verify-flips-vs-fixtures.py` validates all 4 checks.
 
-### COMPLETED (v1.13)
-1. ~~**Confirm item_categories with live data**~~ — All three previously "pending" categories verified in SnapshotPairs: `idol` (29 pairs), `vaultkeys` (12 pairs), `delirium` (51 pairs). Removed "pending live verification" from `config.yaml`, `backend/config.py`, and `src/lib/currency-optimal.ts`. Updated labels: `vaultkeys` → "Reliquary Keys" (matches API Label field).
-2. ~~**Fix cache-snapshot.json truncation**~~ — Rewrote `generate-cache-snapshot.ts` truncation logic: sorts pairs by VolumeTraded descending, keeps top 8 per item category + top 15 currency pairs. This replaces the previous "keep ALL item-category pairs" strategy that produced 670 KB snapshots.
-3. ~~**IsCurrent now works for poe2**~~ — Confirmed: `/poe2/Leagues` now returns `IsCurrent: true` for "Runes of Aldur" and "HC Runes of Aldur". This makes the `default_league_value` bug in `/Realms` less critical — the dashboard can determine the active league from `IsCurrent` alone.
-
-### COMPLETED (v1.12)
-1. ~~**Expand `item_categories`**~~ — Added `idol`, `vaultkeys`, `delirium` to config.yaml, config.py, currency-optimal.ts.
-2. ~~**Improve `generate-cache-snapshot.ts` for item-aware data**~~ — Added ByCategory endpoints for ritual/ultimatum. SnapshotPairs truncation prioritizes item-category pairs.
-3. ~~**Add tests for item-aware grouping**~~ — Backend: 5 new tests. Frontend: new `currency-optimal.test.ts` with 20+ tests.
-4. ~~**Live data dump utility**~~ — `scripts/dump-live-data.ts` for generating JSON test fixtures from live API.
-
-### COMPLETED (earlier versions)
-- v1.11: Optimal payment for craft items (Omens, Soul Cores), `currency_nameseta` typo fix
-- v1.10: Frontend↔backend wiring for optimal-currency, pytest tests for §11, `_math` NameError fix
-- v1.9: Cross-currency premium tooltip, backend optimal-currency endpoint, shadcn Tooltip
-- v1.8: BestPaymentBadge, premium column, TS error fixes
+### COMPLETED (v1.12–v1.13)
+- Confirmed item_categories with live data (idol, vaultkeys, delirium verified)
+- Fixed cache-snapshot truncation (top 8 per item-cat + top 15 currency)
+- IsCurrent now works for poe2
+- Expanded item_categories, tests, dump-live-data utility
+- Optimal payment for craft items, BestPaymentBadge, cross-currency premium
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
