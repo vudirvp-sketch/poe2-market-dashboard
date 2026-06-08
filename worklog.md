@@ -9,13 +9,12 @@
 **Build:** `npm run build` passes, `npm run test` passes (Jest), `pytest tests/` passes
 **Backend:** FastAPI 0.2.0, league "runes" (Runes of Aldur), gold_enabled: false
 **CI/CD:** GitHub Actions (frontend, backend, cache-snapshot, e2e jobs)
-**Documentation:** AGENT_NAVIGATION.md v1.0 created, docs/ structure created
+**Documentation:** Complete suite — AGENT_NAVIGATION.md v1.1, docs/ structure (5 files), worklog.md
 
 **Key Changes This Iteration:**
-
-1. **Created documentation suite** — AGENT_NAVIGATION.md, docs/ARCHITECTURE.md, docs/DATA_CONTRACTS.md, docs/BACKEND_GUIDE.md, docs/CORS_PROXY_GUIDE.md, worklog.md
-2. **Replaced PROGRESS-NOTES.md** — Historical session notes migrated to worklog.md (current state only)
-3. **Updated README.md** — Removed duplication with docs/, added agent reference link
+1. **Created `docs/DATA_FLOW.md`** — Migrated from old 2316-line Data Flow Reference, removed deprecated sections (forecast, portfolio/main, recipes), removed content duplicated in other docs (CORS proxy → CORS_PROXY_GUIDE.md, types → DATA_CONTRACTS.md, architecture → ARCHITECTURE.md)
+2. **Deleted `poe2-market-dashboard_PoE2_Data_Flow_Reference.md`** — Replaced by `docs/DATA_FLOW.md`
+3. **Updated `AGENT_NAVIGATION.md` v1.1** — Added DATA_FLOW.md to Documentation Map
 
 **NOT YET DONE (next iteration):**
 - ⬜ Run E2E Playwright tests — verify Globe button i18n fix
@@ -27,6 +26,7 @@
 - ⬜ Run full backend pytest suite locally and confirm all pass
 - ⬜ Run full frontend Jest suite locally and confirm all pass
 - ⬜ Regenerate `cache-snapshot.json` with fresh data
+- ⬜ Verify cross-references between docs are not broken (no 404 links)
 
 ---
 

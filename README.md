@@ -106,6 +106,7 @@ cd cloudflare-worker && wrangler deploy
 | [`worklog.md`](./worklog.md) | Current state + frequent bugs + commands |
 | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Layers, data flow, invariants, principles |
 | [`docs/DATA_CONTRACTS.md`](./docs/DATA_CONTRACTS.md) | TypeScript types, API contracts, response shapes |
+| [`docs/DATA_FLOW.md`](./docs/DATA_FLOW.md) | Data flow traces, field transforms, API path reference |
 | [`docs/BACKEND_GUIDE.md`](./docs/BACKEND_GUIDE.md) | FastAPI backend: providers, stores, scheduler, analytics |
 | [`docs/CORS_PROXY_GUIDE.md`](./docs/CORS_PROXY_GUIDE.md) | CORS proxy setup + fallback mechanisms |
 | [`PoE2_Flipper_Canonical_Formulas.md`](./PoE2_Flipper_Canonical_Formulas.md) | All mathematical formulas and algorithms |

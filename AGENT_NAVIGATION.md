@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.0 | **Date:** 2026-06-08
+> **Version:** 1.1 | **Date:** 2026-06-08
 
 ---
 
@@ -232,6 +232,7 @@ When a new league launches, update these 7 files:
 | `worklog.md` | Current state + frequent bugs + commands | End of iteration |
 | `docs/ARCHITECTURE.md` | Layers, data flow, invariants, principles | On structural changes |
 | `docs/DATA_CONTRACTS.md` | TypeScript types, API contracts, response shapes | On new API fields |
+| `docs/DATA_FLOW.md` | Data flow traces, field transforms, API path reference | On data flow changes |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals | On backend changes |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup + fallback mechanisms | On proxy changes |
 | `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas | On algorithm changes |
