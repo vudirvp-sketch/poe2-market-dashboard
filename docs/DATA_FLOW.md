@@ -56,7 +56,7 @@ Browser → Next.js (port 3000)
 **Critical API bugs:**
 1. **PriceLogs are REVERSE chronological** — newest first. Always sort ascending before any computation.
 2. **Category=all returns EMPTY** — must fetch all categories and merge client-side.
-3. **League IsCurrent is always false** — use `default_league_value` from `/Realms` instead.
+3. **League IsCurrent works for poe2 realm** — prefer it when true, else fallback to `default_league_value` from `/Realms`.
 4. **Decimal values as strings** — Volume, RelativePrice etc. may come as strings. Use `safeParseFloat()`.
 5. **LogCount must be multiple of 4** — ItemHistory API returns 400 otherwise.
 6. **Numeric ItemIds required** — `/Currencies/Pairs/{C1}/{C2}/History` expects integers, not ApiId strings.
@@ -189,19 +189,24 @@ Browser
   → return: { currencies[], matrix[][], dataAvailable, fetchedAt }
 
   → GET /api/flipper/optimizer/path
-  → flipper-proxy.ts → routes_prices.py
-  → Optimal currency conversion path
+  → flipper-proxy.ts → routes_optimizer.py
+  → Optimal currency conversion path (Dijkstra)
   → return: OptimizerPathResponse
 
   → GET /api/flipper/optimizer/matrix
-  → flipper-proxy.ts → routes_prices.py
+  → flipper-proxy.ts → routes_optimizer.py
   → Effective rate matrix
   → return: OptimizerMatrixResponse
 
   → GET /api/flipper/analyst/summary
-  → flipper-proxy.ts → routes_prices.py
+  → flipper-proxy.ts → routes_analyst.py
   → League analyst summary
   → return: AnalystSummaryResponse
+
+  → GET /api/flipper/optimal-currency
+  → flipper-proxy.ts → routes_arbitrage.py
+  → Cross-currency optimal payment analysis
+  → return: OptimalPaymentResult
 
   → GET/POST /api/flipper/events
   → flipper-proxy.ts → routes_events.py
@@ -500,6 +505,7 @@ flipper/                            # FastAPI backend proxy
   optimizer/path/route.ts         → GET /api/optimizer/path
   optimizer/matrix/route.ts       → GET /api/optimizer/matrix
   analyst/summary/route.ts        → GET /api/analyst/summary
+  optimal-currency/route.ts       → GET /api/arbitrage/optimal-currency
   portfolio/correlation/route.ts  → GET /api/portfolio/correlation
   events/route.ts                 → GET/POST /api/events
   events/[eventId]/route.ts       → GET/DELETE /api/events/{id}
@@ -513,10 +519,11 @@ flipper/                            # FastAPI backend proxy
 main.py                  # /api/health
 routes_prices.py         # /api/phase, /api/currencies, /api/prices,
                          # /api/prices/heatmap, /api/tiers,
-                         # /api/benchmarks/{currency_api_id},
-                         # /api/optimizer/path, /api/optimizer/matrix,
-                         # /api/analyst/summary
-routes_arbitrage.py      # /api/arbitrage/flips, /api/arbitrage/triangular
+                         # /api/benchmarks/{currency_api_id}
+routes_optimizer.py      # /api/optimizer/path, /api/optimizer/matrix
+routes_analyst.py        # /api/analyst/summary
+routes_arbitrage.py      # /api/arbitrage/flips, /api/arbitrage/triangular,
+                         # /api/arbitrage/optimal-currency
 routes_events.py         # /api/events (GET/POST), /api/events/summary,
                          # /api/events/{id} (GET/DELETE),
                          # /api/events/{id}/deactivate (POST)
@@ -573,7 +580,7 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 
 1. **PriceLogs newest-first** — always sort before computing changes
 2. **Category=all returns empty** — must merge all categories
-3. **IsCurrent is always false** — use realm's `default_league_value`
+3. **IsCurrent works for poe2 realm** — prefer it when true, else use realm's `default_league_value`
 4. **Some numeric fields are strings** — use `safeParseFloat()` or `Number()`
 5. **Pagination metadata differs** — API uses `CurrentPage/Pages/Total`, frontend uses `page/totalPages/totalItems`
 6. **RelativePrice "0E-8"** — scientific-notation zero; `safeParseFloat` returns `null`
@@ -590,7 +597,7 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 
 ### 8.4 Caching Assumptions
 
-1. **Server-side cache in poe2api.ts** — 60s fresh, 10min stale-while-revalidate
+1. **Server-side cache in poe2api.ts** — 60s fresh, 30min stale-while-revalidate
 2. **Backend SnapshotManager refreshes every 5 min** — analytics lag behind real-time
 3. **HistoricalStore is SQLite** — persists across restarts, used for forecasting
 4. **Metadata cache in Poe2ScoutProvider** — 1-hour TTL to avoid N+1 requests
@@ -617,8 +624,8 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 | **Exchange** | `ExchangeTable`, `PairDetailDialog` | `/api/poe2/exchange`, `/api/poe2/currencies/Pairs/{c1}/{c2}/History`, reference currencies |
 | **Arbitrage** | `ArbitrageTab` | `/api/flipper/health`, `/api/flipper/flips`, `/api/flipper/triangular` |
 | **Flips** | `FlipsTab`, `FlipsDetailDialog` | `/api/flipper/flips`, `/api/flipper/tiers`, `/api/flipper/events`, `/api/flipper/storage-value/{c}` |
-| **Forecast** | Anomaly + storage-value tabs | `/api/flipper/anomalies`, `/api/flipper/currencies` |
-| **Portfolio** | `OptimizerTab`, `ComparativeChart` | `/api/flipper/portfolio/correlation` |
+| **Optimizer** | `OptimizerTab` | `/api/flipper/optimizer/path`, `/api/flipper/optimizer/matrix` |
+| **Analyst** | `AnalystTab` | `/api/flipper/analyst/summary`, `/api/poe2/analyst-fallback` (no backend) |
 | **Graph** | `CurrencyGraphTab`, `ComparativeChart` | `/api/flipper/currencies`, `/api/flipper/storage-value/{c}` |
 | **Watchlist** | `WatchlistTab` | Exchange pair data via fetchApi, Zustand store (persisted) |
 

@@ -15,7 +15,7 @@ Browser → Next.js (port 3000)
 | Process | Technology | Port | Purpose |
 |---------|-----------|------|---------|
 | **Next.js Frontend** | React 19 + Next.js 16 + TypeScript | 3000 | Unified dashboard — all market browsing and flipper analytics |
-| **FastAPI Backend** | Python 3.12+ + FastAPI + uvicorn | 8000 | Flipper analytics engine (scoring, triangular arb, forecasting, portfolio, events, recipes) |
+| **FastAPI Backend** | Python 3.12+ + FastAPI + uvicorn | 8000 | Flipper analytics engine (scoring, triangular arb, optimizer, analyst, events, recipes) |
 
 **Data flow:** The Next.js app acts as a proxy layer. Market data requests (`/api/poe2/*`) are forwarded directly to the POE2Scout API, while flipper analytics requests (`/api/flipper/*`) are proxied to the FastAPI backend which enriches data with ML models, scoring, and historical analysis stored in SQLite.
 
@@ -31,9 +31,8 @@ Browser → Next.js (port 3000)
 ### Flipper Analytics (requires FastAPI backend)
 - **Arbitrage** — Client-side simple arbitrage + backend-powered flipper mode
 - **Flips** — Detailed scored flip opportunities with cluster filtering, sorting, and storage value integration
-- **Recipes** — Vendor recipe arbitrage: check profitability of vendor orb recipes against live market prices
-- **Forecasts** — SARIMA + LightGBM price forecasts, anomaly detection (RSI, MACD, Bonferroni), storage value decisions
-- **Portfolio** — Risk parity / min-variance portfolio allocation with Ledoit-Wolf shrinkage, correlation matrix, efficient frontier, and correlation shock detection
+- **Optimizer** — Optimal currency conversion path (Dijkstra-based) and effective rate matrix
+- **Analyst** — League analysis summary: trends, anomalies, phase, tier distribution (fallback mode works without backend)
 - **Currency Graph** — Force-directed network visualization of currency trade pairs with cycle highlighting and real-time cluster classification
 - **Events** — Flag market events (patches, league starts, economy shifts) that affect scoring, with auto-expiry and persistence in SQLite
 

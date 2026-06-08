@@ -284,6 +284,7 @@ Key models with PascalCase serialization:
 | `/api/poe2/overview` | `/SnapshotHistory` | `SnapshotHistoryPoint[]` | PascalCase→camelCase |
 | `/api/poe2/uniques` | `/UniqueItems/{cat}?page=N` | `PaginatedResponse<PoeItem>` | PascalCase→camelCase |
 | `/api/poe2/health` | Connectivity check | `{ reachable: boolean }` | — |
+| `/api/poe2/analyst-fallback` | Lightweight league analysis (no backend) | `AnalystSummaryResponse` | — (computed server-side) |
 
 ### 4.2 Frontend Proxy → FastAPI (`/api/flipper/*`)
 
@@ -306,6 +307,7 @@ Key models with PascalCase serialization:
 | `/api/flipper/optimizer/path` | `GET /api/optimizer/path` | `OptimizerPathResponse` | snake→camel |
 | `/api/flipper/optimizer/matrix` | `GET /api/optimizer/matrix` | `OptimizerMatrixResponse` | snake→camel |
 | `/api/flipper/analyst/summary` | `GET /api/analyst/summary` | `AnalystSummaryResponse` | snake→camel |
+| `/api/flipper/optimal-currency` | `GET /api/arbitrage/optimal-currency` | `OptimalPaymentResult` | snake→camel |
 | `/api/flipper/portfolio/correlation` | `GET /api/portfolio/correlation` | `CorrelationResponse` | snake→camel |
 
 **Backend-only (no frontend proxy):**

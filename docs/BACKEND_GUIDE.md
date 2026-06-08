@@ -257,6 +257,49 @@ Advanced flip opportunity scanner with custom filters and sorting:
 
 Reuses `_build_flip_opportunities()` from `routes_arbitrage.py` with PipelineCache to avoid redundant computation.
 
+### 6.12 Optimizer
+
+**Location:** `backend/api/routes_optimizer.py`
+
+Dijkstra-based optimal currency conversion path finder. Given a source currency, target currency, and amount, finds the path that maximizes output by exploring the graph of all available exchange rates.
+
+**Endpoints:**
+- `GET /api/optimizer/path` — Find optimal conversion path for a given currency pair and amount
+- `GET /api/optimizer/matrix` — Get the effective rate matrix for all currency pairs
+
+**Algorithm:** Dijkstra shortest-path on `-log(rate)` weights. Note: when rates > 1, `-log(rate)` produces negative weights which violate Dijkstra's precondition — this can produce suboptimal paths in certain edge cases (known issue, tracked for future fix with Bellman-Ford).
+
+### 6.13 Analyst
+
+**Location:** `backend/api/routes_analyst.py`
+
+League analyst summary endpoint that provides an overview of the current market state:
+- Trend counts (up/down/stable)
+- Anomaly highlights
+- League facts (phase, tier distribution, top movers)
+
+**Endpoint:** `GET /api/analyst/summary`
+
+**Frontend fallback:** When the backend is offline, `/api/poe2/analyst-fallback` provides a lightweight version computed entirely in Next.js using cached POE2Scout data.
+
+### 6.14 Tier Classification
+
+**Location:** `backend/economy/tiers.py`
+
+Classifies currencies into tiers (T0–T5) based on configurable relative price boundaries. Tier anchors (Mirror, Divine, Exalted, Chaos) define the reference points. Used by the Flips tab for tier-distance scoring and the Tiers endpoint.
+
+### 6.15 Benchmarks
+
+**Location:** `backend/economy/benchmarks.py`
+
+Computes historical benchmark statistics for individual currencies: mean, median, percentiles, and deviation from current price. Uses data from HistoricalStore. Referenced by the Benchmarks endpoint.
+
+### 6.16 Momentum
+
+**Location:** `backend/economy/momentum.py`
+
+`PriceMomentumTracker` computes rolling momentum, volatility, and acceleration from price histories using the formulas in `PoE2_Flipper_Canonical_Formulas.md` §2. Used by Scorer and AnomalyDetector.
+
 ## 7. Backend Testing Guide
 
 **Location:** `tests/`

@@ -1,29 +1,23 @@
 # Worklog
 
 ---
-Task ID: 11
+Task ID: 12
 Agent: main
-Task: v1.15 — Regenerate cache-snapshot + fixtures with VPN data, update documentation, verify integrity
+Task: v1.16 — Audit documentation & codebase, fix documentation inconsistencies
 
 Work Log:
-- Verified build: `npm run build` passes (Next.js production build)
-- Verified Jest: 14 suites, 291 tests — all pass
-- Verified pytest: 326 tests — all pass
-- Ran `scripts/verify-flips-vs-fixtures.py` — all 4 checks pass:
-  - Category coverage: all 5 item categories present (ritual=124, ultimatum=39, idol=32, vaultkeys=10, delirium=41)
-  - BestPaymentBadge logic: 30 items checked, 30 with savings >= 1% (up to 83.5% paying in Exalted vs Chaos)
-  - Cross-rate flips: checked against fixture data
-  - Fixture consistency: vaultkeys label = "Reliquary Keys" confirmed
-- Confirmed cache-snapshot.json: 480 KB (repo version, needs user's VPN-generated 469.4 KB version)
-- Confirmed fixture files: all 5 bycategory-*.json present
-- Updated AGENT_NAVIGATION.md to v1.15:
-  - Marked TODO #2 (regenerate cache-snapshot) as COMPLETED
-  - Marked TODO #4 (bycategory fixtures for idol/vaultkeys/delirium) as COMPLETED
-  - Consolidated completed items history (v1.12–v1.14 compressed to bullet points)
-  - Updated remaining TODO: only #1 (report upstream bug) and #3→#2 (live E2E verification)
+- Conducted full audit of documentation (6 doc files), frontend code, backend code, and configs/tests
+- Found 105 issues across categories: 6 CRITICAL, 20 HIGH, 40 MEDIUM, 39 LOW
+- Fixed documentation issues (Iteration 1 scope — docs only, no code changes):
+  - PoE2_Flipper_Canonical_Formulas.md: corrected "modules deleted" → "modules exist but not wired", added warning about gold_enabled=true TODO stub
+  - README.md: removed Forecast/Portfolio/Recipes from features, added Optimizer/Analyst, updated backend description
+  - ARCHITECTURE.md: updated layer diagram tabs, updated §9 tab table (removed Forecast/Portfolio/Recipes, added Optimizer/Analyst), fixed IsCurrent invariant I7, added missing backend modules (TierClassifier, BenchmarkEngine, PriceMomentumTracker, OptimizerRouter, AnalystRouter), noted PipelineCache no size limit
+  - DATA_FLOW.md: fixed optimizer/analyst routes from routes_prices.py to routes_optimizer.py/routes_analyst.py, added optimal-currency endpoint, fixed IsCurrent statements (3 locations), fixed stale cache TTL from 10min to 30min, updated §9 data→component mapping
+  - DATA_CONTRACTS.md: added /api/flipper/optimal-currency and /api/poe2/analyst-fallback to endpoint tables
+  - BACKEND_GUIDE.md: added §6.12-6.16 documenting Optimizer, Analyst, Tier Classification, Benchmarks, Momentum modules
+  - AGENT_NAVIGATION.md: updated to v1.16, harmonized IsCurrent wording, added warning about gold_enabled=true stub
 
 Stage Summary:
-- All tests pass: Jest 291, pytest 326, flip verification 4/4
-- Documentation updated and cleaned (no redundant history)
-- Remaining work: live E2E flip verification with VPN (browser check of BestPaymentBadge rendering)
-- Note: cache-snapshot.json in repo is from v1.14 (480 KB, 14 endpoints). User needs to replace with their VPN-generated version (469.4 KB, 17 endpoints) by running the script locally or copying from their local repo.
+- Documentation audit complete, all critical/high doc inconsistencies fixed
+- Code bugs identified but NOT fixed (Iteration 2 scope)
+- Top code bugs for next iteration: flipper-proxy.ts response body race condition, health check race condition, Dijkstra negative weights, gold_enabled stub, stale closure in dashboard-page.tsx

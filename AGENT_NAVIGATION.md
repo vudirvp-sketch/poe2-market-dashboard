@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.15 | **Date:** 2026-06-08
+> **Version:** 1.16 | **Date:** 2026-06-08
 
 ---
 
@@ -158,16 +158,16 @@ When a new league launches, update these 7 files:
 
 ## 10. Frequent Bugs
 
-1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName (e.g. "Fate of the Vaal", "vaal", "Runes of Aldur") instead of current ShortName ("runes"). Fix: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `generate-cache-snapshot.ts` auto-fixes the value in the snapshot. Mitigation: `IsCurrent=true` now works for poe2, so `getLeagues()` can determine the active league without relying on `/Realms`.
+1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName (e.g. "Fate of the Vaal", "vaal", "Runes of Aldur") instead of current ShortName ("runes"). Fix: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `generate-cache-snapshot.ts` auto-fixes the value in the snapshot. Mitigation: `IsCurrent=true` now works for poe2 realm, so `getLeagues()` can determine the active league without relying on `/Realms`.
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask` (market-maker model). If reversed, all `gross_profit_pct` ≈ −3.5%.
 3. **`is_bfs_pair` always false:** Iterating `rates.items()` means every key is "direct". Fix: currency-based BFS detection.
 4. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
 5. **`cache-snapshot.json` too large:** `/SnapshotPairs` returns thousands of pairs (~2.6 MB raw). Fix: `generate-cache-snapshot.ts` truncates to max 8 pairs per item category + max 15 currency pairs (total cap ~55), sorted by VolumeTraded descending. This keeps snapshot under ~500 KB.
 6. **PriceLogs are REVERSE chronological:** Always sort before charting.
-7. **`IsCurrent` now works for poe2:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
+7. **`IsCurrent` works for poe2 realm:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
 8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
 9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
-10. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled.
+10. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled. **Warning:** The `gold_enabled=true` code path in `routes_arbitrage.py` is a TODO stub — setting it to `true` will NOT actually compute gold fees but will misleadingly tell users that fees are included.
 11. **npm is the package manager** — not pnpm/yarn.
 12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
