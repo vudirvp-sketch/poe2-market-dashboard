@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.12 | **Date:** 2026-06-08
+> **Version:** 1.13 | **Date:** 2026-06-08
 
 ---
 
@@ -48,7 +48,7 @@ uvicorn backend.main:app --reload --port 8000   # Start backend
 # Backend tests
 pytest tests/ -v
 
-# Cache snapshot regeneration
+# Cache snapshot regeneration (requires VPN)
 npx tsx scripts/generate-cache-snapshot.ts
 
 # Live data dump (requires VPN/API access)
@@ -93,45 +93,36 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
-2. **Regenerate `cache-snapshot.json`** — User ran `npx tsx scripts/generate-cache-snapshot.ts` locally but hasn't pushed. Needs VPN for API access.
-3. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation × Great Enhancement, Orb of Cancellation) exist in current market. Requires VPN/API access. Use `npx tsx scripts/dump-live-data.ts` to generate test fixtures.
-4. **Item-aware optimal payment: verify with live data** — The item-category grouping logic is implemented. New categories (idol, vaultkeys, delirium) added in v1.12 as pending verification. Use `dump-live-data.ts` to check which categories POE2Scout actually returns in SnapshotPairs.
-5. **Verify `item_categories` completeness** — After running `dump-live-data.ts`, check `categories.json` output. If POE2Scout adds new item categories to exchange pairs, add them to `config.yaml` → `item_categories`, `backend/config.py` → `LeagueConfig.item_categories`, and `src/lib/currency-optimal.ts` → `ITEM_CATEGORIES`.
+1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
+2. **Verify flip opportunities against live API data** — Use fixture data from `tests/fixtures/` to validate that `/api/flipper/flips` produces meaningful results. Specifically check cross-rate flips and optimal-payment results against known item-category pairs (ritual Omens, ultimatum Soul Cores, idol/vaultkeys/delirium).
+3. **Add ByCategory endpoints for new item categories** — `dump-live-data.ts` and `generate-cache-snapshot.ts` currently only fetch ByCategory for `ritual` and `ultimatum`. Add `idol`, `vaultkeys`, `delirium` to both scripts to get richer item-category data in the cache snapshot.
+4. **Reduce cache-snapshot.json size further** — Current truncation strategy (8 pairs/item-cat + 15 currency = ~55 pairs) should produce ~450 KB. Verify actual size after regeneration. If still over 500 KB, reduce `MAX_PER_ITEM_CAT` from 8 to 6.
+
+### COMPLETED (v1.13)
+1. ~~**Confirm item_categories with live data**~~ — All three previously "pending" categories verified in SnapshotPairs: `idol` (29 pairs), `vaultkeys` (12 pairs), `delirium` (51 pairs). Removed "pending live verification" from `config.yaml`, `backend/config.py`, and `src/lib/currency-optimal.ts`. Updated labels: `vaultkeys` → "Reliquary Keys" (matches API Label field).
+2. ~~**Fix cache-snapshot.json truncation**~~ — Rewrote `generate-cache-snapshot.ts` truncation logic: sorts pairs by VolumeTraded descending, keeps top 8 per item category + top 15 currency pairs. This replaces the previous "keep ALL item-category pairs" strategy that produced 670 KB snapshots.
+3. ~~**IsCurrent now works for poe2**~~ — Confirmed: `/poe2/Leagues` now returns `IsCurrent: true` for "Runes of Aldur" and "HC Runes of Aldur". This makes the `default_league_value` bug in `/Realms` less critical — the dashboard can determine the active league from `IsCurrent` alone.
 
 ### COMPLETED (v1.12)
-1. ~~**Expand `item_categories`**~~ — Added `idol`, `vaultkeys`, `delirium` to `config.yaml`, `backend/config.py` → `LeagueConfig.item_categories`, and `src/lib/currency-optimal.ts` → `ITEM_CATEGORIES`. Marked as pending live verification.
-2. ~~**Improve `generate-cache-snapshot.ts` for item-aware data**~~ — Added ByCategory endpoints for ritual/ultimatum categories. SnapshotPairs truncation now prioritizes item-category pairs (ritual, ultimatum, idol, vaultkeys, delirium) over regular currency pairs.
-3. ~~**Add tests for item-aware grouping**~~ — Backend: 5 new tests in `TestItemAwareGrouping` (test_optimal_currency.py). Frontend: new `currency-optimal.test.ts` with 20+ tests covering `ITEM_CATEGORIES`, `isItemCategory`, `selectAnchor`, `effectiveAnchorPrice`, `findOptimalPayment`, `buildRelativePriceMap`, `crossRate`.
-4. ~~**Live data dump utility**~~ — New `scripts/dump-live-data.ts` for generating JSON test fixtures from live API data (requires VPN). Outputs: categories.json, snapshot-pairs-full.json, item-category-pairs.json, bycategory-ritual/ultimatum.json, reference-currencies.json.
+1. ~~**Expand `item_categories`**~~ — Added `idol`, `vaultkeys`, `delirium` to config.yaml, config.py, currency-optimal.ts.
+2. ~~**Improve `generate-cache-snapshot.ts` for item-aware data**~~ — Added ByCategory endpoints for ritual/ultimatum. SnapshotPairs truncation prioritizes item-category pairs.
+3. ~~**Add tests for item-aware grouping**~~ — Backend: 5 new tests. Frontend: new `currency-optimal.test.ts` with 20+ tests.
+4. ~~**Live data dump utility**~~ — `scripts/dump-live-data.ts` for generating JSON test fixtures from live API.
 
-### COMPLETED (v1.11)
-1. ~~**Optimal payment for craft items (Omens, Soul Cores)**~~ — Done: Added `currency1CategoryApiId` / `currency2CategoryApiId` fields to `ExchangePair` type. Added `ITEM_CATEGORIES` set + `isItemCategory()` helper in `currency-optimal.ts`. Frontend `clientOptimalResult` now has a second pass that groups pairs by item category and finds cheapest payment currency per item. Backend `/optimal-currency` endpoint mirrors the same logic using `config.league.item_categories`. Added `item_categories` to `config.yaml` and `LeagueConfig`. Fixed critical bug: `currency_nameseta` typo in `routes_arbitrage.py`.
-2. ~~**Fix `currency_names` typo in `routes_arbitrage.py`**~~ — Fixed in v1.11.
-
-### COMPLETED (v1.10)
-1. ~~**Wire frontend → backend `/api/flipper/optimal-currency`**~~ — Done: `dashboard-page.tsx` now uses `useQuery` to fetch from backend when online, falls back to client-side `useMemo` computation when offline. Backend response keys (`currencyFrom_currencyTo`) remapped to frontend `pair.id` for component lookups. New type `OptimalCurrencyResponse` added to `types.ts`.
-2. ~~**Backend pytest tests for §11 functions**~~ — Done: `tests/test_optimal_currency.py` with 35 tests covering `_select_anchor` (9), `_effective_anchor_price` (8), `_find_optimal_payment` (7), `_detect_cross_rate_flips` (11).
-3. ~~**Fix `_math` NameError in `routes_arbitrage.py`**~~ — Bug found and fixed: `_math` was imported locally inside `_build_flip_opportunities()` but used in `_find_optimal_payment()` which couldn't access it. Moved `import math as _math` to module level.
-
-### COMPLETED (v1.9)
-1. ~~**Cross-currency premium tooltip**~~ — Done: Hovering over Premium column shows full `OptimalPaymentResult` breakdown (all payment options, exact savings in anchor units). For cross-rate flips, shows fair rate vs market rate + profit potential.
-2. ~~**Backend endpoint `/api/flipper/optimal-currency`**~~ — Done: `GET /api/arbitrage/optimal-currency` in `routes_arbitrage.py` implements §11 logic server-side (select anchor, find optimal payment, detect cross-rate flips). Next.js proxy at `src/app/api/flipper/optimal-currency/route.ts`.
-3. ~~**Add `@radix-ui/react-tooltip` + shadcn Tooltip component**~~ — Done: `src/components/ui/tooltip.tsx` created.
-
-### COMPLETED (v1.8)
-1. ~~**Integrate `BestPaymentBadge` into Exchange cards**~~ — Done.
-2. ~~**Add cross-currency premium column to Exchange tab**~~ — Done.
-3. ~~**Fix TS errors in `src/__tests__/poe2api-realms.test.ts`**~~ — Fixed in v1.7.
+### COMPLETED (earlier versions)
+- v1.11: Optimal payment for craft items (Omens, Soul Cores), `currency_nameseta` typo fix
+- v1.10: Frontend↔backend wiring for optimal-currency, pytest tests for §11, `_math` NameError fix
+- v1.9: Cross-currency premium tooltip, backend optimal-currency endpoint, shadcn Tooltip
+- v1.8: BestPaymentBadge, premium column, TS error fixes
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
 2. **Gold fees disabled (`gold_enabled: false`)** — Intentional: gold is a consumable in PoE2, not a tradeable
 3. **R_buy=bid, R_sell=ask** — Correct market-maker model (buy at bid, sell at ask)
 4. **Correlation min_overlap=2** — Intentionally low for early-league compatibility
-5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu. E2E tests depend on this behavior.
-6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Suppressed via `console.error` monkey-patch in `layout.tsx`. Harmless.
-7. **Divine pricing ~10% premium** — Observed systematic pattern: items priced in Divine Orbs tend to cost ~10% more than the same item in Exalted Orbs. This is a market inefficiency, not a bug — the dashboard highlights these opportunities via BestPaymentBadge.
+5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu
+6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Suppressed in `layout.tsx`. Harmless.
+7. **Divine pricing ~10% premium** — Market inefficiency, not a bug — dashboard highlights via BestPaymentBadge
 
 ## 7. Architecture & API References
 
@@ -151,7 +142,7 @@ Architecture layers, data flows, API endpoint tables, and configuration details 
 - 4 locales: **en**, **ru**, **zh**, **ko** (~460 keys each)
 - Canonical source: `src/lib/i18n/locales/en.ts`
 - Globe button in header cycles locales
-- E2E tests use i18n-aware selectors (e.g., `Обзор|Overview|概览|개요`)
+- E2E tests use i18n-aware selectors (e.g., `Обзор|Overview|概覧|개요`)
 - Russian pluralization: 3-form (1, 2-4, 5+); Chinese/Korean: no inflection
 
 ## 9. New League Checklist
@@ -168,27 +159,27 @@ When a new league launches, update these 7 files:
 
 ## 10. Frequent Bugs
 
-1. **`default_league_value` format mismatch:** POE2Scout returns displayName ("Runes of Aldur") but code expects ShortName ("runes"). Fix: `DEFAULT_LEAGUE_OVERRIDES` + dual matching in `getLeagues()`.
+1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName (e.g. "Fate of the Vaal", "vaal", "Runes of Aldur") instead of current ShortName ("runes"). Fix: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `generate-cache-snapshot.ts` auto-fixes the value in the snapshot. Mitigation: `IsCurrent=true` now works for poe2, so `getLeagues()` can determine the active league without relying on `/Realms`.
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask` (market-maker model). If reversed, all `gross_profit_pct` ≈ −3.5%.
 3. **`is_bfs_pair` always false:** Iterating `rates.items()` means every key is "direct". Fix: currency-based BFS detection.
 4. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
-5. **`cache-snapshot.json` too large:** `/SnapshotPairs` returns ~2.6 MB. Fix: truncate to 30 entries.
+5. **`cache-snapshot.json` too large:** `/SnapshotPairs` returns thousands of pairs (~2.6 MB raw). Fix: `generate-cache-snapshot.ts` truncates to max 8 pairs per item category + max 15 currency pairs (total cap ~55), sorted by VolumeTraded descending. This keeps snapshot under ~500 KB.
 6. **PriceLogs are REVERSE chronological:** Always sort before charting.
-7. **`IsCurrent` is unreliable:** POE2Scout may not update it promptly. Prefer `IsCurrent` when any league has it `true`, else fall back to `default_league_value`.
+7. **`IsCurrent` now works for poe2:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
 8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
 9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
 10. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled.
 11. **npm is the package manager** — not pnpm/yarn.
-12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere (OHLCVCandle moved from poe2api.ts).
+12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
 14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
-16. **`baseCurrencyText` is nullable** — `PersistedUIState.baseCurrencyText` is `string | null`. Always use `?? ""` or `?? defaultText` when passing to components expecting `string`.
-17. **`_math` must be module-level import** — `_find_optimal_payment()` in `routes_arbitrage.py` uses `_math.isfinite()`. Previously `_math` was a local import inside `_build_flip_opportunities()`, causing NameError at runtime. Fixed in v1.10.
-18. **`item_categories` must stay in sync between `config.yaml`, `config.py`, and `currency-optimal.ts`** — Backend reads from `config.yaml` → `LeagueConfig.item_categories`. Frontend reads from `ITEM_CATEGORIES` in `currency-optimal.ts`. All three must contain the same categories. When adding new item categories, update ALL THREE files. Current categories: ritual, ultimatum, idol, vaultkeys, delirium.
-19. **`currency_names[meta...]` not `currency_nameseta`** — Critical typo in `routes_arbitrage.py` where `currency_names[meta.api_id.lower()]` was written as `currency_nameseta.api_id.lower()]`. This caused `NameError` at runtime. Fixed in v1.11.
-20. **SnapshotPairs truncation prioritizes item-category pairs** — `generate-cache-snapshot.ts` truncates SnapshotPairs to 30 entries, but keeps ALL pairs where CurrencyOne.CategoryApiId is in item_categories (ritual, ultimatum, idol, vaultkeys, delirium). Only currency↔currency pairs are truncated. This ensures item-aware grouping data is preserved in the snapshot.
-21. **`dump-live-data.ts` for test fixture generation** — Run `npx tsx scripts/dump-live-data.ts` with VPN to generate JSON fixtures in `tests/fixtures/`. Output includes categories, full SnapshotPairs, item-category pairs, and ByCategory data. Do NOT commit live data to public repo without review.
+16. **`baseCurrencyText` is nullable** — Always use `?? ""` or `?? defaultText` when passing to components.
+17. **`_math` must be module-level import** — `_find_optimal_payment()` uses `_math.isfinite()`. Fixed in v1.10.
+18. **`item_categories` must stay in sync** — `config.yaml`, `config.py`, `currency-optimal.ts` all must contain the same categories. Current: ritual, ultimatum, idol, vaultkeys, delirium. All verified live (2026-06-08).
+19. **`currency_names[meta...]` not `currency_nameseta`** — Critical typo fixed in v1.11.
+20. **SnapshotPairs truncation strategy** — `generate-cache-snapshot.ts` sorts by VolumeTraded descending, keeps top 8 per item category + top 15 currency pairs. This produces representative data for both item-aware grouping and regular exchange view.
+21. **`dump-live-data.ts` for test fixture generation** — Run with VPN to generate JSON fixtures in `tests/fixtures/`. Do NOT commit live data to public repo without review.
 
 ## 11. Documentation Map
 

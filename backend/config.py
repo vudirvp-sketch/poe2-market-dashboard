@@ -51,6 +51,7 @@ class LeagueConfig(BaseModel):
     base_currency: str = "exalted"
     # Known POE2 currency categories for ByCategory pagination
     # Updated for Runes of Aldur league (runes) — verified against API /Items/Categories
+    # Live verification: all item_categories confirmed in SnapshotPairs (2026-06-08)
     currency_categories: list[str] = Field(default_factory=lambda: [
         "currency", "fragments", "runes", "essences", "ultimatum",
         "expedition", "ritual", "vaultkeys", "breach", "abyss",
@@ -63,9 +64,9 @@ class LeagueConfig(BaseModel):
     item_categories: list[str] = Field(default_factory=lambda: [
         "ritual",      # Ritual Omens
         "ultimatum",   # Soul Cores
-        "idol",        # Idols (pending live verification)
-        "vaultkeys",   # Vault Keys (pending live verification)
-        "delirium",    # Delirium items (pending live verification)
+        "idol",        # Idols
+        "vaultkeys",   # Reliquary Keys
+        "delirium",    # Delirium items
     ])
 
     @property

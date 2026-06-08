@@ -192,41 +192,65 @@ async function main(): Promise<void> {
       }
     }
 
-    // The /SnapshotPairs endpoint can return hundreds of pairs (each with
-    // nested fields). Truncate to 30 pairs — enough for the initial
-    // exchange view; the rest will be fetched on-demand.
+    // The /SnapshotPairs endpoint can return thousands of pairs (each with
+    // nested fields). Truncate to keep the snapshot under ~500 KB.
     //
-    // PRIORITY: Keep pairs where CurrencyOne.CategoryApiId is in item_categories
-    // (ritual, ultimatum, idol, vaultkeys, delirium) — these are needed for
-    // item-aware optimal payment grouping. Fill remaining slots with
-    // currency↔currency pairs.
+    // STRATEGY: Keep a representative sample from each item category + top
+    // currency pairs. Within each group, sort by VolumeTraded (descending)
+    // to keep the most liquid / highest-volume pairs.
+    //
+    // Limits (tuned for ~450 KB total snapshot size):
+    //   - Max 8 pairs per item category (ritual, ultimatum, idol, vaultkeys, delirium)
+    //   - Max 15 currency↔currency pairs
+    //   - Total cap: 60 pairs
+    //
+    // This ensures item-aware optimal payment grouping has enough data while
+    // keeping the snapshot small enough for fast cold-start loading.
     if (url.includes("/SnapshotPairs") && Array.isArray(entry.data)) {
       const pairs = entry.data as Array<Record<string, unknown>>;
       const original = pairs.length;
-      if (original > 30) {
-        // Item categories that should be prioritized in the snapshot
+      if (original > 60) {
         const ITEM_CATS = new Set(["ritual", "ultimatum", "idol", "vaultkeys", "delirium"]);
+        const MAX_PER_ITEM_CAT = 8;
+        const MAX_CURRENCY_PAIRS = 15;
         
         // Separate item-category pairs from regular currency pairs
-        const itemPairs: typeof pairs = [];
+        const itemPairsByCat: Map<string, typeof pairs> = new Map();
         const currencyPairs: typeof pairs = [];
         for (const pair of pairs) {
           const c1 = pair.CurrencyOne as Record<string, unknown> | undefined;
           const catId = c1?.CategoryApiId as string | undefined;
           if (catId && ITEM_CATS.has(catId)) {
-            itemPairs.push(pair);
+            if (!itemPairsByCat.has(catId)) itemPairsByCat.set(catId, []);
+            itemPairsByCat.get(catId)!.push(pair);
           } else {
             currencyPairs.push(pair);
           }
         }
         
-        // Keep ALL item-category pairs (they're rare and valuable),
-        // then fill remaining slots with currency pairs
-        const maxCurrencySlots = Math.max(0, 30 - itemPairs.length);
-        const kept = [...itemPairs, ...currencyPairs.slice(0, maxCurrencySlots)];
+        // Sort each item-category group by VolumeTraded descending, keep top N
+        const keptItemPairs: typeof pairs = [];
+        for (const [cat, catPairs] of itemPairsByCat) {
+          catPairs.sort((a, b) => {
+            const volA = parseFloat(String(a.Volume || "0"));
+            const volB = parseFloat(String(b.Volume || "0"));
+            return volB - volA;
+          });
+          keptItemPairs.push(...catPairs.slice(0, MAX_PER_ITEM_CAT));
+        }
+        
+        // Sort currency pairs by VolumeTraded descending, keep top N
+        currencyPairs.sort((a, b) => {
+          const volA = parseFloat(String(a.Volume || "0"));
+          const volB = parseFloat(String(b.Volume || "0"));
+          return volB - volA;
+        });
+        const keptCurrencyPairs = currencyPairs.slice(0, MAX_CURRENCY_PAIRS);
+        
+        const kept = [...keptItemPairs, ...keptCurrencyPairs];
         
         (entry as { data: unknown[] }).data = kept;
-        console.log(`  Truncated /SnapshotPairs from ${original} to ${kept.length} entries (kept ${itemPairs.length} item-category pairs)`);
+        console.log(`  Truncated /SnapshotPairs from ${original} to ${kept.length} entries (${keptItemPairs.length} item-category + ${keptCurrencyPairs.length} currency)`);
       }
     }
   }

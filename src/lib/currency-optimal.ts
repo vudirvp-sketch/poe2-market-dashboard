@@ -94,9 +94,9 @@ export type AnchorCurrency = (typeof ANCHOR_CURRENCIES)[number];
 export const ITEM_CATEGORIES = new Set([
   "ritual",       // Ritual Omens
   "ultimatum",    // Soul Cores
-  "idol",         // Idols (pending live verification — POE2Scout may add to exchange pairs)
-  "vaultkeys",    // Vault Keys (pending live verification)
-  "delirium",     // Delirium items (pending live verification)
+  "idol",         // Idols
+  "vaultkeys",    // Reliquary Keys
+  "delirium",     // Delirium items
 ]);
 
 /**
