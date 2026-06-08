@@ -207,36 +207,59 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :8000 ^| findstr LISTE
 echo [OK] Port 8000 is free.
 echo.
 
-REM ---- Start FastAPI backend (if uvicorn available) ----
-set FLIPPER_PID=0
+REM ---- Start FastAPI backend ----
+REM By default, the backend is managed by Next.js via the flipper-backend-bridge
+REM (instrumentation.ts). The bridge auto-starts Python, monitors health, and
+REM restarts on crash. This eliminates the "backend dies after startup" problem.
+REM
+REM Use --no-bridge flag to start backend separately (old behavior).
+REM Use --bridge flag to force bridge mode (default when uvicorn is available).
+REM
+set USE_BRIDGE=1
+if "%~1"=="--no-bridge" (
+    set USE_BRIDGE=0
+    echo [INFO] --no-bridge flag: backend will be started separately.
+)
 
 if !UVICORN_AVAILABLE! equ 1 (
-    echo [INFO] Starting FastAPI Flipper backend on port 8000...
-    set PYTHONPATH=%~dp0
-    start /b !PY_CMD! -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+    if !USE_BRIDGE! equ 1 (
+        echo [INFO] Flipper backend will be managed by Next.js bridge ^(auto-start + auto-restart^).
+        echo        The bridge starts the Python process when Next.js starts.
+        echo        If the backend crashes, it will be restarted automatically.
+        echo.
+        REM Set FLIPPER_BRIDGE_DISABLED=false explicitly to ensure bridge is enabled
+        set FLIPPER_BRIDGE_DISABLED=false
+    ) else (
+        echo [INFO] Starting FastAPI Flipper backend separately ^(--no-bridge mode^)...
+        set PYTHONPATH=%~dp0
+        start /b !PY_CMD! -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
 
-    REM Wait for backend to start with retry loop (up to 15 seconds)
-    REM Using PowerShell HTTP check instead of netstat for reliability.
-    REM netstat can miss a port that was JUST bound (race condition).
-    set _BACKEND_OK=0
-    for /L %%i in (1,1,15) do (
-        if !_BACKEND_OK! equ 0 (
-            timeout /t 1 /nobreak >nul
-            powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8000/api/health' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
-            if !ERRORLEVEL! equ 0 (
-                set _BACKEND_OK=1
-                echo [OK] Flipper backend started on http://localhost:8000 ^(after %%i attempts^)
+        REM Wait for backend to start with retry loop (up to 20 seconds)
+        set _BACKEND_OK=0
+        for /L %%i in (1,1,20) do (
+            if !_BACKEND_OK! equ 0 (
+                timeout /t 1 /nobreak >nul
+                powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8000/api/health' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
+                if !ERRORLEVEL! equ 0 (
+                    set _BACKEND_OK=1
+                    echo [OK] Flipper backend started on http://localhost:8000 ^(after %%i seconds^)
+                )
             )
         )
+        if !_BACKEND_OK! equ 0 (
+            echo [WARN] Flipper backend may not have started after 20 seconds.
+            echo        Check flipper-backend.log for errors.
+            echo        The bridge mode ^(default^) is more reliable — try without --no-bridge.
+        )
+        echo.
+        REM Disable bridge since we started backend separately
+        set FLIPPER_BRIDGE_DISABLED=true
     )
-    if !_BACKEND_OK! equ 0 (
-        echo [WARN] Flipper backend may not have started after 15 seconds. Check flipper-backend.log
-        echo        The backend might still be starting. Try refreshing the page in 10-20 seconds.
-    )
-    echo.
 )
 if !UVICORN_AVAILABLE! equ 0 (
     echo [SKIP] Flipper backend not started ^(uvicorn not available^).
+    echo        Advanced features ^(scoring, triangular arb, forecasts^) will be unavailable.
+    set FLIPPER_BRIDGE_DISABLED=true
     echo.
 )
 

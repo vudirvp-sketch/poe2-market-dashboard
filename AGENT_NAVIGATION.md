@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.22 | **Date:** 2026-06-09
+> **Version:** 1.23 | **Date:** 2026-06-09
 
 ---
 
@@ -27,7 +27,8 @@
 | `e2e/` | Playwright E2E tests | Mirror user flows |
 | `tests/` | Python pytest backend tests | Backend-only |
 | `cloudflare-worker/` | CORS proxy | Deployed independently |
-| `scripts/` | `generate-cache-snapshot.ts`, `dump-live-data.ts`, `verify-flips-vs-fixtures.py`, `bump-sw-cache.js` | TS scripts: `npx tsx scripts/<name>.ts`; Python: `python scripts/<name>.py`; JS: `node scripts/<name>.js` |
+| `scripts/` | `generate-cache-snapshot.ts`, `dump-live-data.ts`, `verify-flips-vs-fixtures.py`, `bump-sw-cache.js`, `flipper-backend-bridge.ts` | TS scripts: `npx tsx scripts/<name>.ts`; Python: `python scripts/<name>.py`; JS: `node scripts/<name>.js` |
+| `instrumentation.ts` | Next.js instrumentation hook — starts flipper-backend-bridge on server startup | Auto-runs, no manual action needed |
 
 ## 2. Build & Run Commands
 
@@ -99,6 +100,12 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### TODO (next iterations)
 1. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
+2. **Bridge stability on Windows** — The flipper-backend-bridge (instrumentation.ts) needs real-world Windows testing. Potential issue: `child_process.spawn()` on Windows may not properly forward SIGTERM to the Python child process, requiring taskkill fallback.
+
+### COMPLETED (v1.23 — Iteration 8)
+1. ~~**Backend crashes after startup**~~ — Root cause: (a) `main.py` in project root was a stale duplicate of `backend/main.py` with blocking `await check_provider_health()` (15s timeout on startup), (b) `start /b` on Windows doesn't manage the Python process lifecycle — when the backend crashes, nothing restarts it. Fix: (1) Replaced `main.py` with a thin re-export `from backend.main import app`, (2) Created `scripts/flipper-backend-bridge.ts` + `instrumentation.ts` — Next.js now manages the Python backend as a child_process with auto-restart (up to 5 crashes in 60s), health monitoring, and graceful shutdown. (3) Updated `start.bat` with `--bridge` (default) and `--no-bridge` flags.
+2. ~~**Duplicate main.py files**~~ — `main.py` (root) and `backend/main.py` were identical but drifted — root version had blocking health check while `backend/main.py` had the fixed `asyncio.create_task()`. Root `main.py` now just re-exports from `backend.main:app`.
+3. ~~**start.bat backend startup unreliable**~~ — Increased wait loop from 15s to 20s. Added bridge mode (default) where Next.js manages Python process lifecycle. Bridge auto-detects `.venv`, auto-restarts on crash, monitors health. Use `start.bat --no-bridge` for old separate-process mode.
 
 ### COMPLETED (v1.22 — Iteration 7)
 1. ~~**PipelineCache unbounded growth**~~ — Added LRU eviction with `OrderedDict` + max-entries cap (DEFAULT_MAX_ENTRIES=64). Expired/stale entries evicted first during `put()`, then LRU active entries. `stats()` now includes `total_entries` and `max_entries`.
@@ -228,6 +235,8 @@ When a new league launches, update these 7 files:
 27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`.
 28. **Health check is non-blocking** — `asyncio.create_task()` in lifespan, not awaited.
 29. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668). Always use venv python for backend.
+30. **Flipper backend bridge** — By default, Next.js manages the Python backend via `instrumentation.ts` → `scripts/flipper-backend-bridge.ts`. The bridge auto-starts, monitors health, and restarts on crash. To disable: set `FLIPPER_BRIDGE_DISABLED=true` in `.env.local` or use `start.bat --no-bridge`. To start backend manually: `PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000`.
+31. **Root main.py is a re-export** — `./main.py` just does `from backend.main import app`. The real code is in `backend/main.py`. Never edit `./main.py` directly.
 
 ## 11. Documentation Map
 

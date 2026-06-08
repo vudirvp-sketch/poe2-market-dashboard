@@ -17,6 +17,10 @@
 |  /api/poe2/*     → POE2Scout API (server-side fetch + cache)    |
 |  /api/flipper/*  → FastAPI Backend (proxy, no business logic)   |
 +------------------------------------------------------------------+
+|                  Backend Bridge (instrumentation.ts)              |
+|  flipper-backend-bridge.ts: manages Python process lifecycle     |
+|  Auto-start → Health monitor → Auto-restart → Graceful shutdown |
++------------------------------------------------------------------+
 |                     State & Data Layer                            |
 |  Zustand store, TanStack React Query 5, poe2api.ts,             |
 |  flipper-proxy.ts, cache-prepopulator.ts                         |
@@ -237,3 +241,41 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | Watchlist | No | watchlist-tab | Local Zustand store |
 
 **Detailed data→component mapping:** See [`DATA_FLOW.md`](./DATA_FLOW.md) §9
+
+## 10. Backend Bridge (v1.23)
+
+The Flipper backend is managed by Next.js via the `instrumentation.ts` hook and `scripts/flipper-backend-bridge.ts`.
+
+### How It Works
+
+```
+Next.js server starts
+  → instrumentation.ts: register() called
+  → imports flipper-backend-bridge.ts
+  → bridge spawns: python -m uvicorn backend.main:app --port 8000
+  → bridge monitors /api/health every 30s
+  → if process exits: auto-restart (up to 5 times in 60s)
+  → on Next.js shutdown: SIGTERM → SIGKILL (5s grace period)
+```
+
+### Configuration
+
+| Env Var | Default | Description |
+|---------|---------|-------------|
+| `FLIPPER_BRIDGE_DISABLED` | `false` | Set to `true` to disable bridge |
+| `FLIPPER_API_URL` | `http://localhost:8000` | Backend URL for health checks |
+
+### start.bat Modes
+
+| Flag | Behavior |
+|------|----------|
+| (default) | Bridge mode — Next.js manages Python process |
+| `--no-bridge` | Legacy mode — start.bat starts Python separately |
+| `--dev` | Dev mode — bridge disabled, manual uvicorn --reload |
+
+### Key Benefits
+
+- **Auto-restart**: If the backend crashes (OOM, unhandled exception), the bridge restarts it
+- **No orphaned processes**: When Next.js exits, the Python process is properly terminated
+- **Single command**: `start.bat` now handles everything — no separate terminal windows
+- **Health monitoring**: Bridge checks `/api/health` every 30 seconds
