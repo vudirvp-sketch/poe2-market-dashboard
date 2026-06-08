@@ -1,25 +1,29 @@
 # Worklog
 
 ---
-Task ID: 15
+Task ID: 16
 Agent: main
-Task: Iteration 4 — Final gold code cleanup (triangular params, dead i18n keys, stale comments)
+Task: Iteration 5 — Audit, critical bug fixes, garbage cleanup, documentation updates
 
 Work Log:
-- Removed `gold_cost_per_unit` and `gold_to_chaos_rate` parameters from `find_triangular_arbitrage()` in `backend/arbitrage/triangular.py`
-- Removed dead `if gold_cost_per_unit and gold_to_chaos_rate > 0` branch (lines 306-318) that computed `gold_fee_frac`
-- Updated docstring: effective_rate formula simplified to `raw_rate * (1 - market_spread/2)`, gold fee references removed
-- Updated module docstring: "(simplified: gold fees excluded)" → "(gold fees permanently excluded)"
-- Removed `gold_cost_per_unit=None` and `gold_to_chaos_rate=0.0` from `find_triangular_arbitrage()` call in `backend/api/routes_arbitrage.py`
-- Cleaned stale gold comments from `routes_arbitrage.py`: removed "Gold fee imports removed" comment, "Gold fees permanently excluded" comments, "gold-to-chaos fee arithmetic" comment, updated pipeline step numbering (3→3, 4→4, 5→5, 6→6)
-- Deleted `flipsGoldFeesExcluded` and `flipsGoldFeesExcludedDesc` i18n keys from all 4 locale files: en.ts, ru.ts, zh.ts, ko.ts
-- Cleaned `tests/test_triangular.py` docstring: removed historical gold fee comments (gold costs, gold_to_chaos_rate, direction-dependent fee calculations)
-- Removed orphan `FeesConfig` comment from `backend/config.py` (lines 77-79)
-- Updated `AGENT_NAVIGATION.md` to v1.19: added COMPLETED section for Iteration 4, updated Frequent Bugs #10
-- Ran pytest: 326 tests passed, 0 failures
+- Added `clear_all_events()` method to `HistoricalStore` (BUG-1: EventManager.clear_all() called non-existent method → AttributeError)
+- Added `acceleration=metrics.acceleration` to `_compute_storage_value()` in `routes_ws.py` (BUG-3: WS results diverged from REST)
+- Deleted all `__pycache__/` directories from backend (contained .pyc for deleted modules: routes_forecast, routes_recipes, cache.py, gold_costs.py, gold_cost_table.py)
+- Deleted `cloudflare-worker/.wrangler/` (local dev cache, should not be committed)
+- Added `.wrangler/` to `.gitignore`
+- Deleted `PROGRESS-NOTES.md` (7-line redirect, redundant)
+- Changed AnomalyDetector from per-request instantiation to lazy singleton in `routes_anomalies.py`
+- Changed `BaseDataProvider.close()` from sync to async to match Poe2ScoutProvider.close()
+- Removed dead `except HTTPException` block from `main.py` (check_provider_health() no longer raises it)
+- Removed unused `HTTPException` import from `main.py`
+- Fixed Canonical Formulas: renamed duplicate §11 to §14 (sub-sections 14.1–14.9)
+- Fixed Pitfall #3 in Appendix A: updated to reflect gold fees permanently excluded
+- Fixed Pitfall #4: updated Bellman-Ford formula to remove fee terms
+- Marked Pitfall #5 as DEPRECATED
+- Updated AGENT_NAVIGATION.md to v1.20: added COMPLETED section, added Frequent Bugs #23–#24
 
 Stage Summary:
-- Gold code removal is now fully complete — no remaining gold-fee dead code or stale references
-- `find_triangular_arbitrage()` has a clean signature with 5 params (rates, prices, min_profit_pct, pair_volumes, snapshot_time, cross_rate_threshold_pct)
-- All 8 i18n dead keys removed (2 keys × 4 locales)
-- pytest 326/326 passing
+- Critical BUG-1 fixed (clear_all_events AttributeError)
+- Critical BUG-3 fixed (WS vs REST storage value divergence)
+- Repository garbage cleaned (__pycache__, .wrangler, PROGRESS-NOTES.md)
+- Documentation accuracy improved (Canonical Formulas, AGENT_NAVIGATION)

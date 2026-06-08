@@ -67,6 +67,9 @@ __pycache__/
 dist-python/
 *.egg
 
+# Cloudflare Worker local dev cache
+.wrangler/
+
 # Database files (development)
 *.db
 *.db-journal

@@ -25,6 +25,17 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/anomalies", tags=["anomalies"])
 
+# Singleton AnomalyDetector — reuse across requests to avoid re-initialization overhead
+_detector: AnomalyDetector | None = None
+
+
+def _get_detector() -> AnomalyDetector:
+    """Return the shared AnomalyDetector instance (lazy singleton)."""
+    global _detector
+    if _detector is None:
+        _detector = AnomalyDetector(config=get_settings())
+    return _detector
+
 
 @router.get("")
 async def get_anomalies(
@@ -58,7 +69,7 @@ async def get_anomalies(
             currencies = list(currency_set)
 
         # Run anomaly detection for each currency
-        detector = AnomalyDetector(config=config)
+        detector = _get_detector()
         alerts = []
 
         for curr in currencies:

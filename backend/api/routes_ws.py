@@ -95,6 +95,7 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
             current_price=current_price,
             log_momentum=metrics.momentum,
             volatility=metrics.volatility,
+            acceleration=metrics.acceleration,
             liquidity_score=liquidity_score,
             horizon_hours=horizon_hours,
             significance_level=config.forecasting.significance_level,

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.19 | **Date:** 2026-06-09
+> **Version:** 1.20 | **Date:** 2026-06-09
 
 ---
 
@@ -99,6 +99,18 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
 2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
 
+### COMPLETED (v1.20 — Iteration 5)
+1. ~~**HistoricalStore.clear_all_events() missing**~~ — Added `clear_all_events()` method to `HistoricalStore`. Previously `EventManager.clear_all()` called a non-existent method → `AttributeError`.
+2. ~~**WebSocket storage_value missing acceleration**~~ — Added `acceleration=metrics.acceleration` to `_compute_storage_value()` in `routes_ws.py`, matching the REST endpoint.
+3. ~~**__pycache__ with stale .pyc committed**~~ — Deleted all `__pycache__/` directories (contained .pyc for deleted modules: `routes_forecast`, `routes_recipes`, `cache.py`, `gold_costs.py`, `gold_cost_table.py`). Added `.wrangler/` to `.gitignore`.
+4. ~~**PROGRESS-NOTES.md redundant**~~ — Deleted (was a 7-line redirect to worklog.md).
+5. ~~**AnomalyDetector per-request instantiation**~~ — Changed to lazy singleton in `routes_anomalies.py`.
+6. ~~**BaseDataProvider.close() sync vs async mismatch**~~ — Changed `close()` to `async def` in `base.py` to match `Poe2ScoutProvider.close()`.
+7. ~~**Dead HTTPException catch in main.py**~~ — Removed `except HTTPException` block (dead code — `check_provider_health()` no longer raises it).
+8. ~~**Canonical Formulas duplicate §11 numbering**~~ — Renamed second §11 to §14, updated all sub-sections (14.1–14.9).
+9. ~~**Canonical Formulas Pitfall #3 outdated**~~ — Updated to reflect gold fees permanently excluded.
+10. ~~**Canonical Formulas Pitfall #4 outdated**~~ — Updated Bellman-Ford formula to remove fee terms. Pitfall #5 marked DEPRECATED.
+
 ### COMPLETED (v1.19 — Iteration 4)
 1. ~~**triangular.py gold params removed**~~ — Deleted `gold_cost_per_unit` and `gold_to_chaos_rate` parameters from `find_triangular_arbitrage()`, removed dead `if gold_cost_per_unit and gold_to_chaos_rate > 0` branch
 2. ~~**routes_arbitrage.py gold args removed**~~ — Removed `gold_cost_per_unit=None` and `gold_to_chaos_rate=0.0` from the `find_triangular_arbitrage()` call, cleaned stale gold comments
@@ -193,6 +205,8 @@ When a new league launches, update these 7 files:
 20. **SnapshotPairs truncation strategy** — `generate-cache-snapshot.ts` sorts by VolumeTraded descending, keeps top 8 per item category + top 15 currency pairs. This produces representative data for both item-aware grouping and regular exchange view.
 21. **`dump-live-data.ts` for test fixture generation** — Run with VPN to generate JSON fixtures in `tests/fixtures/`. Do NOT commit live data to public repo without review.
 22. **ByCategory endpoints in scripts must include all 5 item categories** — `generate-cache-snapshot.ts` and `dump-live-data.ts` both fetch ByCategory for ritual, ultimatum, idol, vaultkeys, delirium. If a new item category is added to `config.yaml`, it must also be added to both scripts.
+23. **HistoricalStore.clear_all_events() must exist** — `EventManager.clear_all()` calls `self._store.clear_all_events()`. If this method is missing from `HistoricalStore`, it raises `AttributeError`. Always keep the method in sync when modifying the events schema.
+24. **WebSocket vs REST parity** — `_compute_storage_value()` in `routes_ws.py` must pass the same params as the REST endpoint in `routes_storage_value.py`. Missing `acceleration` causes divergent results between WS and REST.
 
 ## 11. Documentation Map
 

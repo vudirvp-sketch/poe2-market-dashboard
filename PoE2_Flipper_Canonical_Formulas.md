@@ -1367,11 +1367,11 @@ The `gold_to_chaos_rate` directly affects all fee fraction calculations. A 2x ch
 
 2. **Forgetting `ddof=1` in std.** When computing sample standard deviation, always use `ddof=1`. `np.std(x, ddof=1)`. Default `np.std(x)` uses `ddof=0` which is the population formula.
 
-3. **Computing spread before fees and calling it profit.** Every profit figure MUST subtract gold fees. No exceptions.
+3. **Computing spread and calling it profit without considering all costs.** Profit must account for all friction in the trade. Note: gold fees are permanently excluded from this codebase (v1.18+) as gold is a consumable in PoE2 with no real trade value for flippers. Spread-based profit is the current metric.
 
-4. **Bellman-Ford edge direction.** The edge weight is `weight(u→v) = -ln(rate_u_to_v * (1-fee_fraction))`. The negative sign is critical. Without it, you're finding longest paths, not arbitrage.
+4. **Bellman-Ford edge direction.** The edge weight is `weight(u→v) = -ln(rate_u_to_v)`. The negative sign is critical. Without it, you're finding longest paths, not arbitrage. (Fee terms removed in v1.18+.)
 
-5. **Assuming gold fee is a percentage.** IT IS NOT. PoE2 gold fee = `gold_cost_per_unit[currency] × quantity`. The fee fraction depends on the DIRECTION of trade and the QUANTITY received. `fee_fraction(A→B) ≠ fee_fraction(B→A)`.
+5. ~~**Assuming gold fee is a percentage.**~~ DEPRECATED — gold fee code removed in v1.18+. Gold fees are no longer part of profit calculations.
 
 6. **Covariance matrix without shrinkage.** When the number of observations is close to or less than the number of assets, the sample covariance matrix is ill-conditioned. Always use Ledoit-Wolf shrinkage.
 
@@ -1408,7 +1408,7 @@ The `GOLD_COST_PER_UNIT` table in §3.2 must be updated when:
 
 ---
 
-## §11. Cross-Currency Arbitrage & Optimal Payment Currency
+## §14. Cross-Currency Arbitrage & Optimal Payment Currency
 
 > **WHY THIS SECTION EXISTS:** PoE2 items can be priced in multiple currencies
 > (Exalted, Divine, Chaos, etc.) simultaneously on the Currency Exchange.
@@ -1416,7 +1416,7 @@ The `GOLD_COST_PER_UNIT` table in §3.2 must be updated when:
 > — the same item has different "true cost" depending on which currency you pay with.
 > This section formalizes the detection and exploitation of these discrepancies.
 
-### 11.1 Anchor Currency Hierarchy
+### 14.1 Anchor Currency Hierarchy
 
 PoE2 has an implicit value hierarchy used for cross-currency comparison:
 
@@ -1432,7 +1432,7 @@ same anchor. The best anchors are Mirror of Kalandra or Divine Orb, because
 they hold value most stably across the league lifecycle. Exalted Orb is the
 POE2Scout base currency but fluctuates more relative to Mirror/Divine.
 
-### 11.2 Effective Anchor Price
+### 14.2 Effective Anchor Price
 
 Given an item priced at `P_A` units of currency A, and the exchange rate
 `rate(A→anchor)` = how many anchor units per 1 unit of A:
@@ -1453,7 +1453,7 @@ rate(A → anchor) = relativePrice_A / relativePrice_anchor
 This is the same cross-rate formula used throughout the codebase (see
 `arbitrage-helpers.ts`).
 
-### 11.3 Cross-Currency Premium
+### 14.3 Cross-Currency Premium
 
 When an item is available in multiple payment currencies, the **cross-currency
 premium** measures how much more expensive one option is relative to the other:
@@ -1466,7 +1466,7 @@ premium_pct = (effective_anchor_price(expensive) - effective_anchor_price(cheape
 A positive premium means paying in the "expensive" currency costs more in
 anchor terms. A premium > 2% is actionable: buy in the cheaper currency.
 
-### 11.4 Optimal Payment Detection
+### 14.4 Optimal Payment Detection
 
 For each item/currency-pair that is priced in multiple currencies:
 
@@ -1479,7 +1479,7 @@ savings_pct = savings_anchor / effective_anchor_price(worst) * 100
 **Display:** Show a badge/tag on the exchange pair card indicating which
 currency is cheapest and the savings percentage.
 
-### 11.5 Cross-Rate Flip Detection
+### 14.5 Cross-Rate Flip Detection
 
 A **cross-rate flip** occurs when the market rate between two currencies
 differs significantly from the "fair" rate implied by a common anchor:
@@ -1516,7 +1516,7 @@ player_rate = 25/100 = 0.25 PerfTransm per GreatEnh
 deviation = (0.25 - 0.01169) / 0.01169 = 2,037%
 ```
 
-### 11.6 Multi-Currency Flip with Mixed Payment
+### 14.6 Multi-Currency Flip with Mixed Payment
 
 A **mixed-currency flip** uses two or more currencies to purchase an item
 that is cheaper when paid for in a specific combination:
@@ -1541,7 +1541,7 @@ If market price in B is lower:
 - Cost in Exalted: 10 × (1/5.5) = 1.82 Exalted per Cancellation Orb
 - Savings per orb: 30 − 1.82 = 28.18 Exalted (~94% discount!)
 
-### 11.7 Verification
+### 14.7 Verification
 
 ```
 Item: Omen of Refining (Предзнаменование оттачивания)
@@ -1559,7 +1559,7 @@ Item: Omen of Refining (Предзнаменование оттачивания)
   Savings = 318.75 - 306 = 12.75 Exalted ✓
 ```
 
-### 11.8 Observed Market Pattern: Divine Pricing Premium
+### 14.8 Observed Market Pattern: Divine Pricing Premium
 
 Empirical observation from player data: items priced in Divine Orbs tend to cost
 approximately 10% more than the same item priced in Exalted Orbs when converted
@@ -1581,7 +1581,7 @@ This pattern repeats across many items, averaging ~10% premium.
 **Dashboard implication:** The `BestPaymentBadge` and `CrossCurrencyPremiumCell`
 components make this inefficiency visible, enabling informed currency choice.
 
-### 11.9 Why This Is Hard for LLMs
+### 14.9 Why This Is Hard for LLMs
 
 1. **Rate direction confusion:** "1 to 9.50" can mean 1 item costs 9.50 or
    9.50 items cost 1. Always normalize to `rate(X→Y) = relativePrice_X / relativePrice_Y`.
