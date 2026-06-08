@@ -47,7 +47,27 @@ let consecutiveUnhealthy = 0;
 // File logging — writes to flipper-bridge.log in the project root
 // ---------------------------------------------------------------------------
 
-const projectRoot = join(__dirname, "..");
+// Project root detection:
+// After Next.js bundles this file, __dirname points inside .next/server/ — NOT
+// the project root. process.cwd() is always the project root when running
+// `next start` or `npm run start` (start.bat / start.sh both cd to project root).
+// We also check for package.json as a sanity check, falling back to __dirname
+// if CWD looks wrong (e.g. during development with tsx).
+function getProjectRoot(): string {
+  const cwd = process.cwd();
+  if (existsSync(join(cwd, "package.json"))) {
+    return cwd;
+  }
+  // Fallback: __dirname relative (works when running via npx tsx scripts/...)
+  const fromDirname = join(__dirname, "..");
+  if (existsSync(join(fromDirname, "package.json"))) {
+    return fromDirname;
+  }
+  // Last resort: use CWD anyway
+  return cwd;
+}
+
+const projectRoot = getProjectRoot();
 const LOG_FILE = join(projectRoot, "flipper-bridge.log");
 
 function logToFile(message: string): void {
@@ -152,22 +172,28 @@ function killBackendProcess(child: ChildProcess): void {
  * Prefers .venv Python if available.
  */
 function detectPythonCommand(): string {
-  // Windows: check .venv\Scripts\python.exe
+  // 1. Check PYTHON_CMD env var — set by start.bat / start.sh
+  if (process.env.PYTHON_CMD) {
+    log(`[flipper-bridge] Using PYTHON_CMD from env: ${process.env.PYTHON_CMD}`);
+    return process.env.PYTHON_CMD;
+  }
+
+  // 2. Windows: check .venv\Scripts\python.exe
   const winVenvPython = join(projectRoot, ".venv", "Scripts", "python.exe");
   if (existsSync(winVenvPython)) {
     log(`[flipper-bridge] Using venv Python: ${winVenvPython}`);
     return winVenvPython;
   }
 
-  // Unix: check .venv/bin/python
+  // 3. Unix: check .venv/bin/python
   const unixVenvPython = join(projectRoot, ".venv", "bin", "python");
   if (existsSync(unixVenvPython)) {
     log(`[flipper-bridge] Using venv Python: ${unixVenvPython}`);
     return unixVenvPython;
   }
 
-  // Fallback: system python
-  log("[flipper-bridge] No .venv found, using system python");
+  // 4. Fallback: system python (may fail with ENOENT if not in PATH)
+  log("[flipper-bridge] No .venv found and PYTHON_CMD not set, falling back to system python");
   return "python";
 }
 
@@ -384,6 +410,7 @@ export function startBackendBridge(): void {
 
   log("[flipper-bridge] Starting Flipper backend bridge...");
   log(`[flipper-bridge] Platform: ${process.platform} (${isWindows ? "Windows" : "Unix"})`);
+  log(`[flipper-bridge] Project root: ${projectRoot}`);
   log(`[flipper-bridge] Log file: ${LOG_FILE}`);
 
   backendProcess = startBackendProcess();

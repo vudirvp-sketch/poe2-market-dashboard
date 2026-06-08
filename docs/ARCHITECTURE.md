@@ -242,7 +242,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 **Detailed data→component mapping:** See [`DATA_FLOW.md`](./DATA_FLOW.md) §9
 
-## 10. Backend Bridge (v1.24)
+## 10. Backend Bridge (v1.25)
 
 The Flipper backend is managed by Next.js via the `instrumentation.ts` hook and `scripts/flipper-backend-bridge.ts`.
 
@@ -253,7 +253,9 @@ Next.js server starts
   → instrumentation.ts: register() called
   → imports flipper-backend-bridge.ts
   → bridge detects platform (Windows vs Unix)
-  → bridge spawns: python -m uvicorn backend.main:app --port 8000
+  → bridge detects project root (process.cwd() → __dirname fallback)
+  → bridge detects Python (PYTHON_CMD env → .venv → system)
+  → bridge spawns: <python> -m uvicorn backend.main:app --port 8000
   → bridge monitors /api/health every 30s
   → if process exits: auto-restart (up to 5 times in 60s)
   → if health check fails 3 consecutive times: kill + auto-restart
@@ -269,6 +271,7 @@ Next.js server starts
 |---------|---------|-------------|
 | `FLIPPER_BRIDGE_DISABLED` | `false` | Set to `true` to disable bridge |
 | `FLIPPER_API_URL` | `http://localhost:8000` | Backend URL for health checks |
+| `PYTHON_CMD` | (auto-detect) | Python command — set by start.bat/start.sh to venv path. Bridge checks this before scanning .venv or falling back to system `python` |
 
 ### Platform-Specific Behavior
 

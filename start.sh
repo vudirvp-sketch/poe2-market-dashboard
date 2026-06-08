@@ -130,6 +130,12 @@ if [ "$UVICORN_AVAILABLE" -eq 0 ]; then
     echo ""
 fi
 
+# Export PYTHON_CMD so the flipper-backend-bridge can find the right Python.
+# Without this, the bridge falls back to "python" which may not be in PATH.
+if [ -n "$PY_CMD" ]; then
+    export PYTHON_CMD="$PY_CMD"
+fi
+
 # ---- Install Python dependencies into venv ----
 if [ "$PYTHON_AVAILABLE" -eq 1 ]; then
     info "Checking Python dependencies..."

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.24 | **Date:** 2026-06-09
+> **Version:** 1.25 | **Date:** 2026-06-09
 
 ---
 
@@ -99,9 +99,12 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Live E2E flip verification** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build. No VPN needed — poe2scout.com is accessible.
-2. **Bridge real-world Windows testing** — The flipper-backend-bridge now uses `taskkill /PID /T /F` on Windows instead of SIGTERM/SIGKILL. Needs real-world testing on Windows: (a) start.bat without --no-bridge → Python starts and restarts on crash, (b) Ctrl+C kills both Node + Python, (c) flipper-bridge.log shows correct entries.
-3. **start.bat `where` command error on some Windows setups** — Some Windows users see `'ho.' is not recognized` when running start.bat. Root cause: `where` command may be parsed incorrectly by CMD. Fix applied: replaced `where` with `where.exe`. Needs confirmation on affected Windows machine.
+1. **Live E2E flip verification** — Code review confirms: BestPaymentBadge renders for Omens/Soul Cores via `isItemCategory()`, Premium column shows savings via `CrossCurrencyPremiumCell`, production build compiles without errors. Remaining: manual browser verification at http://localhost:3000 → Flips tab to confirm visual rendering. No VPN needed — poe2scout.com is accessible.
+2. **Bridge real-world Windows testing** — v1.25 fixes the `spawn python ENOENT` root cause (project root detection + PYTHON_CMD env var). Needs real-world testing on Windows: (a) start.bat without --no-bridge → Python starts and restarts on crash, (b) Ctrl+C kills both Node + Python, (c) flipper-bridge.log shows correct entries, (d) Project root is detected correctly.
+
+### COMPLETED (v1.25 — Iteration 10)
+1. ~~**Bridge `spawn python ENOENT` on Windows**~~ — Root cause: after Next.js Turbopack bundles `flipper-backend-bridge.ts`, `__dirname` points inside `.next/server/` — NOT the project root. So `.venv` is never found, and the fallback `"python"` fails with `ENOENT` because Python isn't in PATH. Fix: replaced `join(__dirname, "..")` with `getProjectRoot()` that checks `process.cwd()` first (always correct for `next start`), then falls back to `__dirname` relative. Also added `PYTHON_CMD` env var support — start.bat / start.sh now export `PYTHON_CMD` with the venv python path they already detected, so the bridge doesn't need to rediscover it.
+2. ~~**start.bat `where` command error**~~ — Confirmed: `where.exe` fix from v1.24 works. Removed from TODO.
 
 ### COMPLETED (v1.24 — Iteration 9)
 1. ~~**Bridge SIGTERM/SIGKILL doesn't work on Windows**~~ — Root cause: `child_process.kill("SIGTERM")` on Windows sends a signal that Python doesn't handle (no POSIX signals). Fix: `flipper-backend-bridge.ts` now uses `taskkill /PID <pid> /T /F` via `execSync()` on Windows for reliable process tree termination. Unix keeps SIGTERM → SIGKILL (5s grace). Added `isWindows` platform detection.
@@ -244,7 +247,7 @@ When a new league launches, update these 7 files:
 27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`.
 28. **Health check is non-blocking** — `asyncio.create_task()` in lifespan, not awaited.
 29. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668). Always use venv python for backend.
-30. **Flipper backend bridge** — By default, Next.js manages the Python backend via `instrumentation.ts` → `scripts/flipper-backend-bridge.ts`. The bridge auto-starts, monitors health, and restarts on crash. On Windows, uses `taskkill /PID /T /F` for reliable process tree termination (SIGTERM doesn't work for Python on Windows). On Unix, uses SIGTERM → SIGKILL (5s grace). Bridge logs to `flipper-bridge.log`. To disable: set `FLIPPER_BRIDGE_DISABLED=true` in `.env.local` or use `start.bat --no-bridge` / `./start.sh --no-bridge`. To start backend manually: `PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000`.
+30. **Flipper backend bridge** — By default, Next.js manages the Python backend via `instrumentation.ts` → `scripts/flipper-backend-bridge.ts`. The bridge auto-starts, monitors health, and restarts on crash. **Project root detection**: uses `process.cwd()` (reliable for `next start`), not `__dirname` (which points inside `.next/` after bundling). **Python detection**: checks `PYTHON_CMD` env var first (set by start.bat/start.sh), then `.venv` heuristics, then system `python`. On Windows, uses `taskkill /PID /T /F` for reliable process tree termination (SIGTERM doesn't work for Python on Windows). On Unix, uses SIGTERM → SIGKILL (5s grace). Bridge logs to `flipper-bridge.log`. To disable: set `FLIPPER_BRIDGE_DISABLED=true` in `.env.local` or use `start.bat --no-bridge` / `./start.sh --no-bridge`. To start backend manually: `PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000`.
 31. **Root main.py is a re-export** — `./main.py` just does `from backend.main import app`. The real code is in `backend/main.py`. Never edit `./main.py` directly.
 32. **Bridge health monitoring kills stuck processes** — If health check fails 3 consecutive times, bridge kills the process (triggering auto-restart). This handles "stuck" processes that are alive but unresponsive.
 33. **start.bat uses `where.exe` not `where`** — Some Windows CMD versions misparse `where` without explicit `.exe` extension, producing `'ho.' is not recognized` errors.

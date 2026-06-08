@@ -95,6 +95,12 @@ if !PYTHON_AVAILABLE! equ 1 (
     )
 )
 
+REM Export PYTHON_CMD so the flipper-backend-bridge can find the right Python.
+REM Without this, the bridge falls back to "python" which may not be in PATH.
+if "!PY_CMD!" neq "" (
+    set PYTHON_CMD=!PY_CMD!
+)
+
 REM Check uvicorn availability (venv first, then system)
 if exist ".venv\Scripts\uvicorn.exe" (
     set UVICORN_AVAILABLE=1
