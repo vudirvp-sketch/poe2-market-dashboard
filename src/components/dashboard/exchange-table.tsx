@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
-import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
+import type { ExchangePair, ExchangePairHistoryPoint, PaymentOption } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { formatPrice, getCurrencyShortName } from "@/lib/utils";
 import { useDisplayPrice } from "@/hooks/use-display-price";
@@ -28,6 +28,7 @@ import { Sparkline } from "./sparkline";
 import { PairHoverPreview } from "./pair-hover-preview";
 import { BestPaymentBadge } from "./best-payment-badge";
 import type { OptimalPaymentResult, CrossRateFlip } from "@/lib/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // ============================================================================
 // Types
@@ -50,6 +51,8 @@ interface ExchangeTableProps {
   optimalPaymentByPair?: Map<string, OptimalPaymentResult>;
   /** §11.5: Detected cross-rate flips */
   crossRateFlips?: CrossRateFlip[];
+  /** §11: Anchor currency ID (e.g., "divine", "exalted") for tooltip display */
+  anchorId?: string;
 }
 
 // ============================================================================
@@ -97,13 +100,40 @@ interface CrossCurrencyPremiumCellProps {
   pair: ExchangePair;
   optimalPaymentResult?: OptimalPaymentResult;
   crossRateFlip?: CrossRateFlip;
+  /** Anchor currency ID for display in tooltip (e.g. "divine") */
+  anchorId?: string;
 }
 
-function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip }: CrossCurrencyPremiumCellProps) {
+/** Anchor display name lookup — maps apiId to short display name */
+const ANCHOR_DISPLAY: Record<string, string> = {
+  mirror: "Mirror",
+  divine: "Divine",
+  exalted: "Exa",
+  chaos: "Chaos",
+};
+
+/** Format a PaymentOption row for the tooltip */
+function PaymentOptionRow({ option, isBest, anchorName }: { option: PaymentOption; isBest: boolean; anchorName: string }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 text-[11px] ${isBest ? "font-semibold text-emerald-400" : "text-muted-foreground"}`}>
+      <span className="truncate max-w-[100px]">{option.currencyName}</span>
+      <span className="font-mono whitespace-nowrap">
+        {fmt(option.effectiveAnchorPrice)} {anchorName}
+        {option.premiumPct > 0 && (
+          <span className="text-amber-400 ml-1">+{option.premiumPct.toFixed(1)}%</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, anchorId }: CrossCurrencyPremiumCellProps) {
+  const anchorName = ANCHOR_DISPLAY[anchorId ?? ""] ?? anchorId ?? "Exa";
+
   // Priority 1: Optimal payment savings (direct price comparison across currencies)
   if (optimalPaymentResult && optimalPaymentResult.savingsPct >= 1) {
     const isBest = pair.currency2Id === optimalPaymentResult.bestCurrencyId;
-    return (
+    const cell = (
       <div className="flex items-center justify-end gap-1">
         {isBest ? (
           <BestPaymentBadge result={optimalPaymentResult} compact />
@@ -114,6 +144,37 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip }:
         )}
       </div>
     );
+
+    // Show tooltip with full payment options breakdown
+    if (optimalPaymentResult.options.length >= 2) {
+      return (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="cursor-help">{cell}</div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-[260px] p-2.5" sideOffset={6}>
+              <div className="space-y-1.5">
+                <div className="text-xs font-medium text-foreground mb-1.5">
+                  Pay in <span className="text-emerald-400">{optimalPaymentResult.options[0]?.currencyName}</span> → save {fmt(optimalPaymentResult.savingsAnchor)} {anchorName}
+                </div>
+                <div className="border-t border-border/50 pt-1.5 space-y-0.5">
+                  {optimalPaymentResult.options.map((opt, idx) => (
+                    <PaymentOptionRow
+                      key={opt.currencyId}
+                      option={opt}
+                      isBest={idx === 0}
+                      anchorName={anchorName}
+                    />
+                  ))}
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    return cell;
   }
 
   // Priority 2: Cross-rate flip deviation
@@ -124,12 +185,39 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip }:
         ? "text-emerald-500"
         : "text-red-400"
       : "text-muted-foreground";
-    return (
+    const cell = (
       <span className={`text-[10px] font-medium ${color}`}>
         {crossRateFlip.deviationPct > 0 ? "+" : ""}
         {crossRateFlip.deviationPct.toFixed(1)}%
       </span>
     );
+
+    // Show tooltip with flip details
+    if (isDeviation) {
+      return (
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="cursor-help">{cell}</span>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-[240px] p-2.5" sideOffset={6}>
+              <div className="space-y-1 text-[11px]">
+                <div className="text-xs font-medium text-foreground">
+                  {crossRateFlip.direction === "buy_sell_with_buy" ? "Buy cheap → sell" : "Sell expensive → buy"}
+                </div>
+                <div className="text-muted-foreground">
+                  Fair rate: {fmt(crossRateFlip.fairRate)} | Market: {fmt(crossRateFlip.marketRate)}
+                </div>
+                <div className={crossRateFlip.deviationPct < 0 ? "text-emerald-400" : "text-red-400"}>
+                  Profit potential: ~{crossRateFlip.estimatedProfitPct.toFixed(1)}% | Vol: {fmtVolume(crossRateFlip.volume)}
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    return cell;
   }
 
   // No data
@@ -140,7 +228,7 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip }:
 // Exchange Table
 // ============================================================================
 
-export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId, exchangePairsForConversion, optimalPaymentByPair, crossRateFlips }: ExchangeTableProps) {
+export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId, exchangePairsForConversion, optimalPaymentByPair, crossRateFlips, anchorId }: ExchangeTableProps) {
   const { t } = useI18n();
   const {
     uiState,
@@ -504,6 +592,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       pair={pair}
                       optimalPaymentResult={optimalPaymentByPair?.get(pair.id)}
                       crossRateFlip={crossRateFlipMap.get(`${pair.currency1Id}_${pair.currency2Id}`)}
+                      anchorId={anchorId}
                     />
                   </td>
                   {/* Trend sparkline */}

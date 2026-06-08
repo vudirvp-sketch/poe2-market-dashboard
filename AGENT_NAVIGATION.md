@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.8 | **Date:** 2026-06-08
+> **Version:** 1.9 | **Date:** 2026-06-08
 
 ---
 
@@ -92,14 +92,19 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
 2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (VPN/proxy). Use `npx tsx scripts/generate-cache-snapshot.ts`.
-3. **Backend endpoint for optimal-currency analysis** — Currently client-side only; could add `/api/flipper/optimal-currency`. The `optimalPaymentByPair` and `crossRateFlips` are computed in `dashboard-page.tsx` via `findOptimalPayment()` / `detectCrossRateFlips()` from `currency-optimal.ts`.
-4. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation, Orb of Cancellation) exist in current market.
-5. **Cross-currency premium tooltip/detail** — The current Premium column shows a compact badge/deviation; consider a tooltip with full `OptimalPaymentResult` breakdown (all payment options, exact savings in anchor units).
-6. **Optimal payment for craft items (Omens, etc.)** — The current integration groups by `currency1Id` in exchange pairs. For non-currency items priced on the exchange (Omens, Soul Cores), a similar grouping by item ID would show which currency is cheapest for buying those items.
+3. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation × Great Enhancement, Orb of Cancellation) exist in current market. Requires VPN/API access.
+4. **Optimal payment for craft items (Omens, Soul Cores)** — The current integration groups by `currency1Id` in exchange pairs. For non-currency items priced on the exchange (Omens, Soul Cores), a different grouping by item ID would show which currency is cheapest for buying those items.
+5. **Wire frontend to use backend `/api/flipper/optimal-currency`** — The backend endpoint now exists (`GET /api/arbitrage/optimal-currency`), but the frontend still computes client-side in `dashboard-page.tsx`. For large datasets, the frontend should fetch from the backend and fall back to client-side computation when offline.
+6. **Add backend test for `/api/arbitrage/optimal-currency`** — Unit test for `_select_anchor`, `_find_optimal_payment`, `_detect_cross_rate_flips` functions.
+
+### COMPLETED (v1.9)
+1. ~~**Cross-currency premium tooltip**~~ — Done: Hovering over Premium column shows full `OptimalPaymentResult` breakdown (all payment options, exact savings in anchor units). For cross-rate flips, shows fair rate vs market rate + profit potential.
+2. ~~**Backend endpoint `/api/flipper/optimal-currency`**~~ — Done: `GET /api/arbitrage/optimal-currency` in `routes_arbitrage.py` implements §11 logic server-side (select anchor, find optimal payment, detect cross-rate flips). Next.js proxy at `src/app/api/flipper/optimal-currency/route.ts`.
+3. ~~**Add `@radix-ui/react-tooltip` + shadcn Tooltip component**~~ — Done: `src/components/ui/tooltip.tsx` created.
 
 ### COMPLETED (v1.8)
-1. ~~**Integrate `BestPaymentBadge` into Exchange cards**~~ — Done: `best-payment-badge.tsx` now wired into `exchange-pair-card.tsx` (compact badge) and `exchange-table.tsx` (CrossCurrencyPremiumCell). Optimal payment computed in `dashboard-page.tsx` via `findOptimalPayment()` from `currency-optimal.ts`.
-2. ~~**Add cross-currency premium column to Exchange tab**~~ — Done: "Premium" column in `exchange-table.tsx` shows `detectCrossRateFlips()` deviations and `BestPaymentBadge` for optimal payment pairs. Sortable by premium.
+1. ~~**Integrate `BestPaymentBadge` into Exchange cards**~~ — Done.
+2. ~~**Add cross-currency premium column to Exchange tab**~~ — Done.
 3. ~~**Fix TS errors in `src/__tests__/poe2api-realms.test.ts`**~~ — Fixed in v1.7.
 
 ### CONFIRMED INTENTIONAL

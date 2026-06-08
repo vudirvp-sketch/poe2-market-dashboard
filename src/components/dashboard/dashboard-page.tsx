@@ -565,10 +565,10 @@ export function Dashboard() {
 
   // §11: Cross-currency optimal payment — group pairs by currency1Id, find cheapest
   // payment option for each currency across all its exchange pairs.
-  const { optimalPaymentByPair, crossRateFlips } = useMemo(() => {
+  const { optimalPaymentByPair, crossRateFlips, anchorId: selectedAnchorId } = useMemo(() => {
     const allPairs = exchangeData ?? [];
     if (allPairs.length === 0) {
-      return { optimalPaymentByPair: new Map<string, OptimalPaymentResult>(), crossRateFlips: [] as CrossRateFlip[] };
+      return { optimalPaymentByPair: new Map<string, OptimalPaymentResult>(), crossRateFlips: [] as CrossRateFlip[], anchorId: "exalted" as string };
     }
 
     // Build relative price map and select anchor
@@ -618,7 +618,7 @@ export function Dashboard() {
     // Detect cross-rate flips across all pairs
     const crossRateFlips = detectCrossRateFlips(allPairs, 5);
 
-    return { optimalPaymentByPair, crossRateFlips };
+    return { optimalPaymentByPair, crossRateFlips, anchorId: anchor };
   }, [exchangeData]);
 
   // Categories
@@ -1447,6 +1447,7 @@ export function Dashboard() {
                       exchangePairsForConversion={exchangeData ?? undefined}
                       optimalPaymentByPair={optimalPaymentByPair}
                       crossRateFlips={crossRateFlips}
+                      anchorId={selectedAnchorId}
                     />
                   ) : (
                     /* Cards view (original) */

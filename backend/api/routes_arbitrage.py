@@ -762,3 +762,287 @@ async def get_triangular_arbitrage(
         "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+# ---------------------------------------------------------------------------
+# §11: Cross-Currency Optimal Payment & Cross-Rate Flip Detection
+# ---------------------------------------------------------------------------
+
+# Anchor currency hierarchy (§11.1): highest value first
+ANCHOR_CURRENCIES = ["mirror", "divine", "exalted", "chaos"]
+
+
+def _select_anchor(prices_in_base: dict[str, float]) -> str:
+    """Select the best available anchor currency from prices_in_base.
+
+    §11.1: Prefers Mirror > Divine > Exalted > Chaos.
+    Returns the apiId of the anchor, or "exalted" as ultimate fallback.
+    """
+    for anchor in ANCHOR_CURRENCIES:
+        price = prices_in_base.get(anchor)
+        if price is not None and price > 0:
+            return anchor
+    return "exalted"
+
+
+def _effective_anchor_price(
+    price_in_currency: float,
+    currency_rel_price: float,
+    anchor_rel_price: float,
+) -> float:
+    """§11.2: effective_anchor_price(C) = P_C * (relativePrice_C / relativePrice_anchor)"""
+    if anchor_rel_price <= 0 or currency_rel_price <= 0:
+        return float("inf")
+    rate_to_anchor = currency_rel_price / anchor_rel_price
+    return price_in_currency * rate_to_anchor
+
+
+def _find_optimal_payment(
+    pricing_options: list[dict],
+    anchor_rel_price: float,
+) -> dict | None:
+    """§11.4: Find the cheapest payment currency for an item priced in multiple currencies.
+
+    Args:
+        pricing_options: List of dicts with keys:
+            currency_id, currency_name, price_in_currency, relative_price
+        anchor_rel_price: relativePrice of the anchor currency in base currency
+
+    Returns:
+        Dict with optimal payment result, or None if <2 valid options.
+    """
+    if len(pricing_options) < 2:
+        return None
+
+    # Compute effective anchor price for each option
+    options = []
+    for opt in pricing_options:
+        eff_price = _effective_anchor_price(
+            opt["price_in_currency"],
+            opt["relative_price"],
+            anchor_rel_price,
+        )
+        if eff_price != float("inf") and eff_price > 0 and _math.isfinite(eff_price):
+            options.append({
+                "currency_id": opt["currency_id"],
+                "currency_name": opt["currency_name"],
+                "price_in_currency": opt["price_in_currency"],
+                "effective_anchor_price": eff_price,
+                "premium_pct": 0.0,
+            })
+
+    if len(options) < 2:
+        return None
+
+    # Sort by effective anchor price ascending (cheapest first)
+    options.sort(key=lambda o: o["effective_anchor_price"])
+
+    best = options[0]
+    worst = options[-1]
+
+    # Compute premium for each option relative to the cheapest
+    for opt in options:
+        opt["premium_pct"] = (
+            ((opt["effective_anchor_price"] - best["effective_anchor_price"])
+             / best["effective_anchor_price"] * 100)
+            if best["effective_anchor_price"] > 0
+            else 0.0
+        )
+
+    savings_anchor = worst["effective_anchor_price"] - best["effective_anchor_price"]
+    savings_pct = (
+        (savings_anchor / worst["effective_anchor_price"] * 100)
+        if worst["effective_anchor_price"] > 0
+        else 0.0
+    )
+
+    return {
+        "best_currency_id": best["currency_id"],
+        "worst_currency_id": worst["currency_id"],
+        "best_anchor_price": round(best["effective_anchor_price"], 8),
+        "worst_anchor_price": round(worst["effective_anchor_price"], 8),
+        "savings_anchor": round(savings_anchor, 8),
+        "savings_pct": round(savings_pct, 2),
+        "options": [
+            {
+                "currencyId": o["currency_id"],
+                "currencyName": o["currency_name"],
+                "priceInCurrency": round(o["price_in_currency"], 6),
+                "effectiveAnchorPrice": round(o["effective_anchor_price"], 8),
+                "premiumPct": round(o["premium_pct"], 2),
+            }
+            for o in options
+        ],
+    }
+
+
+def _detect_cross_rate_flips(
+    rates: dict[str, ExchangeRate],
+    prices_in_base: dict[str, float],
+    threshold_pct: float = 5.0,
+    min_volume: int = 10,
+) -> list[dict]:
+    """§11.5: Detect cross-rate flip opportunities from exchange rates.
+
+    Compares the market rate between two currencies with the "fair" rate
+    implied by their prices in the base currency.
+
+    Returns list of cross-rate flip dicts, sorted by estimated profit descending.
+    """
+    results: list[dict] = []
+
+    for key, rate in rates.items():
+        c1_price = prices_in_base.get(rate.currency_from)
+        c2_price = prices_in_base.get(rate.currency_to)
+
+        if c1_price is None or c2_price is None or c1_price <= 0 or c2_price <= 0:
+            continue
+        if rate.volume_traded < min_volume:
+            continue
+        if rate.raw_rate <= 0:
+            continue
+
+        # Fair cross-rate: how many c2 per 1 c1
+        fair_rate = c1_price / c2_price
+
+        # Market rate (from the pair's raw_rate — already cross-rate)
+        market_rate = rate.raw_rate
+
+        # Deviation
+        if fair_rate <= 0:
+            continue
+        deviation_pct = ((market_rate - fair_rate) / fair_rate) * 100
+
+        if abs(deviation_pct) >= threshold_pct:
+            direction = "buy_sell_with_buy" if deviation_pct < 0 else "buy_buy_with_sell"
+            estimated_profit_pct = abs(deviation_pct)
+
+            results.append({
+                "buyCurrencyId": rate.currency_from if deviation_pct < 0 else rate.currency_to,
+                "sellCurrencyId": rate.currency_to if deviation_pct < 0 else rate.currency_from,
+                "fairRate": round(fair_rate, 8),
+                "marketRate": round(market_rate, 8),
+                "deviationPct": round(deviation_pct, 2),
+                "direction": direction,
+                "estimatedProfitPct": round(estimated_profit_pct, 2),
+                "volume": rate.volume_traded,
+            })
+
+    # Sort by estimated profit descending
+    results.sort(key=lambda r: r["estimatedProfitPct"], reverse=True)
+    return results[:50]
+
+
+@router.get("/optimal-currency")
+async def get_optimal_currency(
+    threshold_pct: float = Query(5.0, ge=0.1, le=50.0, description="Cross-rate flip threshold %"),
+    min_volume: int = Query(10, ge=0, description="Min volume for cross-rate flip detection"),
+):
+    """§11: Cross-currency optimal payment analysis and cross-rate flip detection.
+
+    Computes:
+    - optimalPaymentByPair: For each currency with 2+ payment options,
+      which currency is cheapest and how much you save.
+    - crossRateFlips: Pairs where market rate deviates from fair rate
+      (implied by prices_in_base) by more than threshold_pct.
+    - anchorId: The selected anchor currency for price normalization.
+
+    This mirrors the client-side logic in currency-optimal.ts but runs
+    server-side for better performance with large datasets.
+    """
+    config = get_settings()
+
+    from backend.api.data_snapshot import get_snapshot_manager
+    snapshot_mgr = get_snapshot_manager()
+    if snapshot_mgr.last_snapshot is None:
+        return {
+            "league": config.league.league_name,
+            "anchorId": "exalted",
+            "optimalPaymentByPair": {},
+            "crossRateFlips": [],
+            "dataAvailable": False,
+            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+        }
+
+    snapshot = await get_snapshot()
+    rates = snapshot.exchange_rates
+    if not rates:
+        return {
+            "league": config.league.league_name,
+            "anchorId": "exalted",
+            "optimalPaymentByPair": {},
+            "crossRateFlips": [],
+            "dataAvailable": False,
+            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+        }
+
+    prices = dict(snapshot.prices_in_base)
+
+    # Select anchor currency
+    anchor = _select_anchor(prices)
+    anchor_rel_price = prices.get(anchor, 1.0)
+
+    # Build metadata lookup for currency display names
+    # Key: api_id (lowercase) -> display text
+    currency_names: dict[str, str] = {}
+    for meta in snapshot.currency_metadata:
+        currency_names[meta.api_id.lower()] = meta.text
+
+    # Group exchange rates by currency_from — each group is one "item"
+    # priced in multiple currencies (currency_to is the payment currency).
+    groups: dict[str, list[ExchangeRate]] = {}
+    for key, rate in rates.items():
+        existing = groups.get(rate.currency_from)
+        if existing is not None:
+            existing.append(rate)
+        else:
+            groups[rate.currency_from] = [rate]
+
+    # For each group with 2+ pricing options, compute optimal payment
+    optimal_by_pair: dict[str, dict] = {}
+    for from_id, group_rates in groups.items():
+        if len(group_rates) < 2:
+            continue
+
+        # Build pricing options from each rate in the group
+        pricing_options = []
+        for rate in group_rates:
+            c2_price = prices.get(rate.currency_to)
+            if c2_price is None or c2_price <= 0:
+                continue
+            # Cross-rate: how many currency_to per 1 currency_from
+            c1_price = prices.get(rate.currency_from)
+            if c1_price is None or c1_price <= 0:
+                continue
+            price_in_currency = c1_price / c2_price if c2_price > 0 else 0
+
+            if price_in_currency <= 0:
+                continue
+
+            currency_name = currency_names.get(rate.currency_to.lower(), rate.currency_to)
+
+            pricing_options.append({
+                "currency_id": rate.currency_to,
+                "currency_name": currency_name,
+                "price_in_currency": price_in_currency,
+                "relative_price": c2_price,
+            })
+
+        result = _find_optimal_payment(pricing_options, anchor_rel_price)
+        if result is not None:
+            # Map result back to each rate's pair key for frontend lookup
+            for rate in group_rates:
+                pair_key = f"{rate.currency_from}_{rate.currency_to}"
+                optimal_by_pair[pair_key] = result
+
+    # Detect cross-rate flips
+    cross_rate_flips = _detect_cross_rate_flips(rates, prices, threshold_pct, min_volume)
+
+    return {
+        "league": config.league.league_name,
+        "anchorId": anchor,
+        "optimalPaymentByPair": optimal_by_pair,
+        "crossRateFlips": cross_rate_flips,
+        "dataAvailable": True,
+        "fetchedAt": datetime.now(timezone.utc).isoformat(),
+    }
