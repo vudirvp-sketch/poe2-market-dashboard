@@ -74,8 +74,10 @@ volatility = std(log_returns, ddof=1)
 Given `m` (acceleration lookback periods, default: `m = max(1, floor(len(log_returns) / 4))`):
 
 ```
-acceleration = (log_returns[-1] - log_returns[-m]) / m
+acceleration = (log_returns[-1] - log_returns[-1-m]) / m
 ```
+
+**IMPORTANT:** `log_returns[-1-m]` means "the element m positions before the last one". In Python indexing, with m=1, this is `log_returns[-2]` (second-to-last). The previous version used `log_returns[-m]` which with m=1 equals `log_returns[-1]`, making acceleration always zero — that was a bug.
 
 ### 2.5 Full Tracker Class Pseudocode
 
@@ -103,7 +105,7 @@ class PriceMomentumTracker:
 
         m = max(1, len(log_returns) // 4)
         if len(log_returns) > m:
-            acceleration = float((log_returns[-1] - log_returns[-m]) / m)
+            acceleration = float((log_returns[-1] - log_returns[-1 - m]) / m)
         else:
             acceleration = 0.0
 

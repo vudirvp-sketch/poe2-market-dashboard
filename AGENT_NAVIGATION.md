@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.1 | **Date:** 2026-06-08
+> **Version:** 1.2 | **Date:** 2026-06-08
 
 ---
 
@@ -93,9 +93,13 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 1. **Run E2E Playwright tests** — Verify Globe button i18n fix resolves 3 failing tests
 2. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns stale value
 3. **Verify `league_start_date` accuracy** — Phase detection depends on it
-4. **CI/CD: auto-refresh `cache-snapshot.json`** — Add to GitHub Actions workflow
-5. **Delete old SQLite database** (optional) — Contains stale "vaal" league data
-6. **Backend provider `official.py` league mapping** — Update when new league launches
+4. **Delete old SQLite database** (optional) — Contains stale "vaal" league data
+
+### DONE (this iteration)
+1. ~~Fix acceleration formula bug~~ — `log_returns[-m]` → `log_returns[-1-m]` in momentum.py + §2.4 canonical formulas
+2. ~~Fix test_reset expectation~~ — After reset, `volatility = min_volatility` (0.001), not 0.0
+3. ~~CI/CD: auto-refresh `cache-snapshot.json`~~ — Added `.github/workflows/ci.yml` with scheduled refresh + PR creation
+4. ~~Backend provider `official.py` league mapping~~ — Already up-to-date for Runes of Aldur
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago

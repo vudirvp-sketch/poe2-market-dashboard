@@ -94,9 +94,13 @@ class PriceMomentumTracker:
         volatility = max(volatility, min_volatility)
 
         # §2.4: acceleration with m = max(1, floor(len(log_returns) / 4))
+        # acceleration = (lr[-1] - lr[-1-m]) / m
+        # NOTE: The spec writes log_returns[-m] but the verification example
+        # shows it means "m positions before the last element", which in Python
+        # indexing is log_returns[-1-m]. With m=1: (lr[-1] - lr[-2]) / 1.
         m = max(1, len(log_returns) // 4)
         if len(log_returns) > m:
-            acceleration = float((log_returns[-1] - log_returns[-m]) / m)
+            acceleration = float((log_returns[-1] - log_returns[-1 - m]) / m)
         else:
             acceleration = 0.0
 

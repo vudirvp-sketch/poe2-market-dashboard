@@ -6,27 +6,24 @@
 
 ## Current State (2026-06-08)
 
-**Build:** `npm run build` passes, `npm run test` passes (Jest), `pytest tests/` passes
+**Build:** `npm run build` passes, `npm run test` passes (Jest 260/260), `pytest tests/` passes (286/286)
 **Backend:** FastAPI 0.2.0, league "runes" (Runes of Aldur), gold_enabled: false
-**CI/CD:** GitHub Actions (frontend, backend, cache-snapshot, e2e jobs)
-**Documentation:** Complete suite — AGENT_NAVIGATION.md v1.1, docs/ structure (5 files), worklog.md
+**CI/CD:** `.github/workflows/ci.yml` — frontend + backend tests, E2E, scheduled cache-snapshot refresh
+**Documentation:** AGENT_NAVIGATION.md v1.2, docs/ structure (5 files), worklog.md
 
 **Key Changes This Iteration:**
-1. **Created `docs/DATA_FLOW.md`** — Migrated from old 2316-line Data Flow Reference, removed deprecated sections (forecast, portfolio/main, recipes), removed content duplicated in other docs (CORS proxy → CORS_PROXY_GUIDE.md, types → DATA_CONTRACTS.md, architecture → ARCHITECTURE.md)
-2. **Deleted `poe2-market-dashboard_PoE2_Data_Flow_Reference.md`** — Replaced by `docs/DATA_FLOW.md`
-3. **Updated `AGENT_NAVIGATION.md` v1.1** — Added DATA_FLOW.md to Documentation Map
+1. **Fixed acceleration formula bug** — `log_returns[-m]` → `log_returns[-1-m]` in `backend/economy/momentum.py`. The old indexing made acceleration always 0 when m=1 (which is the case for the §2 verification example). Now produces correct value (-0.00038).
+2. **Fixed `test_reset` expectation** — After `reset()`, `compute()` returns `volatility=min_volatility` (0.001), not 0.0. Updated test to match correct behavior.
+3. **Updated Canonical Formulas §2.4** — Clarified `log_returns[-1-m]` indexing and documented the previous bug.
+4. **Added `.github/workflows/ci.yml`** — CI pipeline with frontend Jest, backend pytest, Playwright E2E, and scheduled cache-snapshot.json auto-refresh (every 6h) with auto PR creation.
+5. **Verified cross-references** — All documentation links are valid.
 
 **NOT YET DONE (next iteration):**
-- ⬜ Run E2E Playwright tests — verify Globe button i18n fix
-- ⬜ Report POE2Scout `default_league_value` bug upstream
+- ⬜ Run E2E Playwright tests — verify Globe button i18n fix (3 tests were failing)
+- ⬜ Report POE2Scout `default_league_value` bug upstream — `/Realms` returns stale value
 - ⬜ Verify `league_start_date` accuracy for Runes of Aldur
-- ⬜ CI/CD: add `cache-snapshot.json` auto-refresh to workflow
 - ⬜ Delete old SQLite database (optional cleanup)
-- ⬜ Update `backend/data/providers/official.py` league mapping for next league
-- ⬜ Run full backend pytest suite locally and confirm all pass
-- ⬜ Run full frontend Jest suite locally and confirm all pass
-- ⬜ Regenerate `cache-snapshot.json` with fresh data
-- ⬜ Verify cross-references between docs are not broken (no 404 links)
+- ⬜ Regenerate `cache-snapshot.json` with fresh data (requires POE2Scout API access)
 
 ---
 
@@ -47,6 +44,7 @@
 13. **PascalCase aliases in backend schemas** — Python snake_case → serialized PascalCase.
 14. **poe2api.ts PascalCase→camelCase** — Except /Realms (snake_case).
 15. **/api/flipper/* routes are pure proxies** — No business logic in Next.js route handlers.
+16. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`. The latter equals `log_returns[-1]` when m=1, producing zero acceleration.
 
 ## Build & Run Commands
 

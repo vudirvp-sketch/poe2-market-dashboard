@@ -218,7 +218,7 @@ class TestRollingWindow:
         assert tracker.prices == [101, 102, 103, 104]
 
     def test_reset(self):
-        """Reset should clear all prices."""
+        """Reset should clear all prices and return min_volatility floor."""
         tracker = PriceMomentumTracker(window_size=24)
         tracker.update(100)
         tracker.update(101)
@@ -227,5 +227,9 @@ class TestRollingWindow:
 
         result = tracker.compute()
         assert result.momentum == 0.0
-        assert result.volatility == 0.0
+        # After reset, compute() has <2 prices → returns min_volatility floor
+        # (0.001 by default). This prevents zero volatility from bypassing
+        # the vol_penalty in scorer.py, which would make empty trackers
+        # appear artificially stable and profitable.
+        assert result.volatility == tracker.min_volatility == 0.001
         assert result.acceleration == 0.0
