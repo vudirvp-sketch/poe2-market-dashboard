@@ -26,8 +26,6 @@ from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
-# Gold fee imports removed — gold is excluded from all calculations.
-# Gold is a consumable in PoE2 with no real trade value for small-scale flippers.
 from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
@@ -101,10 +99,9 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     Pipeline:
     1. Get exchange rates + currencies from DataSnapshot (0 additional API calls)
     2. Compute momentum/volatility for each currency (from snapshot price_logs)
-    3. Compute gold fee fractions (direction-dependent)
-    4. Score each opportunity
-    5. Apply event penalties
-    6. Apply quick filter
+    3. Score each opportunity
+    4. Apply event penalties
+    5. Apply quick filter
     """
     detector = _get_phase_detector()
     pipeline_cache = get_pipeline_cache()
@@ -116,8 +113,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     if not rates:
         return []
 
-    # Gold fees are permanently excluded from all flipper calculations.
-    # Gold is a consumable in PoE2 with no real trade value for small-scale flippers.
     event_manager = get_event_manager(config)
 
     # 2. Build price history lookup from snapshot
@@ -152,9 +147,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     # 5. Build price mapping from snapshot.
     # Variable naming: `prices` holds prices in a consistent reference currency.
-    # For fee calculations the triangular algorithm needs a common unit;
-    # when the base is Exalted we convert to Chaos so gold-to-chaos fee
-    # arithmetic stays correct.
+    # The triangular algorithm needs a common unit;
+    # when the base is Exalted we convert to Chaos for consistency.
     prices = dict(snapshot.prices_in_base)  # shallow copy — prevents mutation of shared state
 
     if "chaos" in prices and config.league.base_currency != "chaos":
@@ -448,7 +442,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 score = score * t_penalty
                 score = min(max(score, 0.0), 1.0)
 
-        # Gold fees are permanently excluded — net_spread equals raw spread.
         net_spread = spread_value
         net_profit_pct = net_spread * 100 if mid_price > 0 else 0.0
 
@@ -456,7 +449,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score,
             spread=spread_value,
-            spread_after_fees=net_spread,  # Step 3: Now includes gold fee deduction
+            spread_after_fees=net_spread,  # backward compat
             volume_24h=float(rate.volume_traded),
             momentum=momentum_result.momentum,
             volatility=momentum_result.volatility,
@@ -475,10 +468,9 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                         config.data.cache_ttl_prices_minutes * 60)
             continue
 
-        # Filter out flips where net profit is negative (spread is effectively zero)
-        # With gold fees excluded, this filter now only removes pairs with
-        # zero or negative spread (which shouldn't happen with our spread model
-        # that ensures min 0.5% spread, but keep as safety net).
+        # Filter out flips where net profit is negative (spread is effectively zero).
+        # This shouldn't happen with our spread model that ensures min 0.5% spread,
+        # but kept as a safety net.
         if net_profit_pct <= 0:
             continue
 
@@ -668,7 +660,6 @@ async def get_triangular_arbitrage(
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
 
-    # Gold fees excluded — pass None/0 to disable gold fee in triangular arb
     result = find_triangular_arbitrage(
         rates=rates_for_bf,
         prices=prices,
@@ -676,8 +667,6 @@ async def get_triangular_arbitrage(
         pair_volumes=pair_volumes,
         snapshot_time=datetime.now(timezone.utc),
         cross_rate_threshold_pct=5.0,
-        gold_cost_per_unit=None,
-        gold_to_chaos_rate=0.0,
     )
     opportunities = result.opportunities
     suspicious_triples = result.suspicious_triples

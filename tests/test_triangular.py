@@ -1,10 +1,6 @@
 """
 Tests for triangular arbitrage detection.
 
-NOTE: Gold fee calculations were removed from the triangular arbitrage
-module. References to gold fees below are HISTORICAL and test the
-fee-free logic only.
-
 From PoE2_Flipper_Canonical_Formulas.md §8 Verification:
 
 3 currencies: Chaos (C), Divine (D), Exalted (E)
@@ -13,20 +9,10 @@ Rates:
   D→E = 12     (1 Divine gets you 12 Exalted)
   E→C = 10.5   (1 Exalted gets you 10.5 Chaos)
 
-Gold costs: C=160, D=800, E=120  (HISTORICAL — gold fees removed)
 Prices in Chaos: C=1, D=125, E=10.5
-gold_to_chaos_rate = 0.001       (HISTORICAL — gold fees removed)
 
-With gold_fee_fraction = 0 (for comparison):
   cumulative = 0.008 * 12 * 10.5 = 1.008
   profit = 0.8% → valid arbitrage
-
-With direction-dependent fees (HISTORICAL):
-  C→D: effective = 0.007949
-  D→E: effective = 11.863
-  E→C: effective = 8.82
-  cumulative = 0.007949 × 11.863 × 8.82 = 0.8315
-  profit = -16.85% → NOT profitable (fees eat the profit)
 
 IMPORTANT: find_triangular_arbitrage() applies MIN_EDGE_VOLUME=200 filtering.
 All tests MUST provide pair_volumes >= 200 for edges that should be considered,

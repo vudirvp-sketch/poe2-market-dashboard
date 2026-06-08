@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.18 | **Date:** 2026-06-09
+> **Version:** 1.19 | **Date:** 2026-06-09
 
 ---
 
@@ -99,6 +99,14 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
 2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
 
+### COMPLETED (v1.19 — Iteration 4)
+1. ~~**triangular.py gold params removed**~~ — Deleted `gold_cost_per_unit` and `gold_to_chaos_rate` parameters from `find_triangular_arbitrage()`, removed dead `if gold_cost_per_unit and gold_to_chaos_rate > 0` branch
+2. ~~**routes_arbitrage.py gold args removed**~~ — Removed `gold_cost_per_unit=None` and `gold_to_chaos_rate=0.0` from the `find_triangular_arbitrage()` call, cleaned stale gold comments
+3. ~~**Dead i18n keys removed**~~ — Deleted `flipsGoldFeesExcluded` and `flipsGoldFeesExcludedDesc` from all 4 locale files (en, ru, zh, ko)
+4. ~~**test_triangular.py cleaned**~~ — Removed historical gold fee comments from docstring
+5. ~~**config.py FeesConfig comment removed**~~ — Deleted orphan comment about removed FeesConfig
+6. ~~**Gold code removal fully complete**~~ — No remaining gold-fee references in backend code or frontend i18n
+
 ### COMPLETED (v1.18 — Iteration 3)
 1. ~~**Gold code fully removed**~~ — Deleted `FeesConfig` (config.py), `fees:` section (config.yaml), `gold_costs.py`, `gold_cost_table.py`, `FeeWarning`/`feeWarning` (types.ts), gold fee warning UI (arbitrage-tab.tsx, flips-tab.tsx), `Coins` icon imports
 2. ~~**Circuit breaker initial cooldown reduced**~~ — From 60s to 15s for faster recovery during backend cold start
@@ -172,7 +180,7 @@ When a new league launches, update these 7 files:
 7. **`IsCurrent` works for poe2 realm:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
 8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
 9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
-10. **Gold fees permanently excluded** — `gold_enabled`, `FeesConfig`, `gold_costs.py`, `gold_cost_table.py` all removed in v1.18. Do NOT re-add gold fee deductions; gold is a consumable in PoE2 with no real trade value for flippers.
+10. **Gold fees permanently excluded** — All gold-related code removed (v1.18–v1.19): `FeesConfig`, `gold_costs.py`, `gold_cost_table.py`, `gold_cost_per_unit`/`gold_to_chaos_rate` params in triangular.py, `flipsGoldFeesExcluded` i18n keys. Do NOT re-add gold fee deductions; gold is a consumable in PoE2 with no real trade value for flippers.
 11. **npm is the package manager** — not pnpm/yarn.
 12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.

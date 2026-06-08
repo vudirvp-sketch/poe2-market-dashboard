@@ -74,11 +74,6 @@ class LeagueConfig(BaseModel):
         return datetime.fromisoformat(self.league_start_date.replace("Z", "+00:00"))
 
 
-# FeesConfig has been removed. Gold fees are permanently excluded from all
-# scoring, arbitrage, and storage-value calculations. Gold is a consumable
-# in PoE2 with no real trade value for small-scale flippers.
-
-
 class FiltersConfig(BaseModel):
     min_volume_24h: int = 20  # Lowered from 200 for early-league compatibility (4-day-old league has low volumes)
     max_volatility: float = 0.4

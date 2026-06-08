@@ -369,8 +369,7 @@ const ko: Record<TranslationKeys, string> = {
   flipsDetailTitle: "플립 상세: {0}",
   flipsDataQualityWarning: "데이터 품질 문제: 가격이 부정확할 수 있습니다",
   flipsStaleDataWarning: "데이터가 오래되었을 수 있습니다 — 10분 이상 전에 업데이트됨",
-  flipsGoldFeesExcluded: "골드 수수료가 계산에 포함되지 않음",
-  flipsGoldFeesExcludedDesc: "스프레드 및 수익 추정치에 PoE2 골드 거래 수수료가 반영되지 않았습니다. 이 수수료는 최대 24%까지 가능하며 방향에 따라 다릅니다. 실제 수익은 표시된 것보다 낮을 수 있습니다.",
+
   crossRateWarningTitle: "크로스 레이트 불일치 감지",
   crossRateWarningDesc: "일부 통화 트리플에서 암시된 크로스 레이트와 직접 레이트 사이에 >5%의 발산이 나타납니다. 감지된 차익거래 사이클은 페어 간 일관되지 않은 relative_price 데이터로 인한 오탐지일 수 있습니다.",
   lastUpdatedAt: "마지막 업데이트: {0}",
