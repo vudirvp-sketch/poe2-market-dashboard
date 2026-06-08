@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.4 | **Date:** 2026-06-08
+> **Version:** 1.5 | **Date:** 2026-06-08
 
 ---
 
@@ -71,7 +71,7 @@ start.bat
 - [ ] `npm run build` passes
 - [ ] `npm run test` passes (Jest)
 - [ ] `pytest tests/` passes
-- [ ] No `any` types in TypeScript
+- [ ] No `any` types in TypeScript (`noImplicitAny: false` in tsconfig — intentional; `strict: true` covers most cases, but explicit `any` is allowed when needed for third-party interop)
 - [ ] No hardcoded league names or currency categories
 - [ ] New API fields documented in `docs/DATA_CONTRACTS.md`
 - [ ] Backend config changes reflected in `config.yaml`
@@ -109,6 +109,7 @@ Architecture layers, data flows, API endpoint tables, and configuration details 
 |-------|----------|---------|
 | Architecture layers & data flow | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | §1-2 |
 | API endpoint reference (frontend + backend) | [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) | §7 |
+| Scanner endpoint (advanced flip filters) | [`docs/BACKEND_GUIDE.md`](docs/BACKEND_GUIDE.md) | §6.11 |
 | Config.yaml structure & defaults | [`config.yaml`](config.yaml) + [`backend/config.py`](backend/config.py) | — |
 | CORS proxy & fallback chain | [`docs/CORS_PROXY_GUIDE.md`](docs/CORS_PROXY_GUIDE.md) | Full doc |
 | Graceful degradation rules | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | §8 |
@@ -146,7 +147,7 @@ When a new league launches, update these 7 files:
 9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
 10. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled.
 11. **npm is the package manager** — not pnpm/yarn.
-12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
+12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere (OHLCVCandle moved from poe2api.ts).
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
 14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.

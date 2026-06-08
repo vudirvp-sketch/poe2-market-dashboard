@@ -36,6 +36,7 @@ import type {
   ExchangeSnapshot,
   SnapshotHistoryPoint,
   ReferenceCurrency,
+  OHLCVCandle,
 } from "./types";
 
 // ---------- Configurable API Base URL ----------
@@ -1999,15 +2000,6 @@ export async function getItemDailyStats(realm: string, league: string, itemId: s
 // from the DailyStatsHistory endpoint — it's more accurate than aggregating
 // hourly data.
 // ============================================================================
-
-export interface OHLCVCandle {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
 
 /** Aggregate hourly price history points into OHLCV candles for a given timeframe */
 export async function getMultiTimeframeOHLCV(

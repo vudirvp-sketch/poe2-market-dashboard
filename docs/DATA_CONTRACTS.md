@@ -183,7 +183,7 @@ interface StorageValueResponse {
   projectedPrice: number;
   riskDiscount: number;
   adjustedPrice: number;
-  netValueAfterFees: number;  // ⚠️ Misleading name — gold fees are disabled, this equals adjustedPrice. Should be renamed to netValue.
+  netValue: number;              // Adjusted price after risk discount and liquidity (gold fees disabled, equals adjustedPrice)
   ratio: number;
   decision: string;            // "HOLD" | "SELL"
   dataAvailable: boolean;
@@ -305,6 +305,14 @@ Key models with PascalCase serialization:
 | `/api/flipper/optimizer/matrix` | `GET /api/optimizer/matrix` | `OptimizerMatrixResponse` | snake→camel |
 | `/api/flipper/analyst/summary` | `GET /api/analyst/summary` | `AnalystSummaryResponse` | snake→camel |
 | `/api/flipper/portfolio/correlation` | `GET /api/portfolio/correlation` | `CorrelationResponse` | snake→camel |
+
+**Backend-only (no frontend proxy):**
+
+| Backend Endpoint | Route File | Response Type |
+|-----------------|------------|---------------|
+| `GET /api/scanner/scan` | `routes_scanner.py` | `FlipsResponse` (filtered) |
+
+Advanced flip scanner with custom filters (score/volume/spread range, cluster, currency substring, sort, limit). See [`BACKEND_GUIDE.md`](./BACKEND_GUIDE.md) §6.11.
 
 ## 5. DataSnapshot Dataclass (Backend)
 

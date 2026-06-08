@@ -86,7 +86,7 @@ class TestCanonicalVerification:
         expected = result.projected_price * result.risk_discount * (0.9 + liq_factor * 0.1)
         np.testing.assert_almost_equal(result.adjusted_price, expected, decimal=2)
 
-    def test_net_value_after_fees(self):
+    def test_net_value(self):
         """Net value = adjusted_price (gold fees excluded from all calculations)."""
         result = project_value(
             current_price=100.0,
@@ -97,7 +97,7 @@ class TestCanonicalVerification:
             significance_level=0.05,
         )
         # With gold fees excluded: net_value = adjusted_price (no fee deduction)
-        np.testing.assert_almost_equal(result.net_value_after_fees, result.adjusted_price, decimal=2)
+        np.testing.assert_almost_equal(result.net_value, result.adjusted_price, decimal=2)
 
     def test_ratio(self):
         """Ratio should be net_value / current_price."""
@@ -109,7 +109,7 @@ class TestCanonicalVerification:
             horizon_hours=24,
             significance_level=0.05,
         )
-        np.testing.assert_almost_equal(result.ratio, result.net_value_after_fees / 100.0, decimal=4)
+        np.testing.assert_almost_equal(result.ratio, result.net_value / 100.0, decimal=4)
 
     def test_decision_sell_convert(self):
         """With high volatility, decision should be SELL/CONVERT."""
@@ -246,4 +246,4 @@ class TestEdgeCases:
         )
         # adjusted = 100 * 1.0 * 1.0 = 100.0
         # net_value = 100.0 (gold fees excluded)
-        np.testing.assert_almost_equal(result.net_value_after_fees, 100.0, decimal=2)
+        np.testing.assert_almost_equal(result.net_value, 100.0, decimal=2)

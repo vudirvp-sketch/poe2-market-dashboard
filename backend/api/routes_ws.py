@@ -110,7 +110,7 @@ async def _compute_storage_value(currency: str, horizon_hours: int = 24, quantit
             "projected_price": round(result.projected_price, 6),
             "risk_discount": round(result.risk_discount, 6),
             "adjusted_price": round(result.adjusted_price, 6),
-            "net_value_after_fees": round(result.net_value_after_fees, 6),
+            "net_value": round(result.net_value, 6),
             "ratio": round(result.ratio, 6),
             "decision": result.decision.value,
             "inputs": {

@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
-import type { ExchangePair, ExchangePairHistoryPoint } from "@/lib/types";
+import type { ExchangePair, ExchangePairHistoryPoint, OHLCVCandle } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
 import { useMemo, useState, useCallback, useRef } from "react";
@@ -51,16 +51,6 @@ const TIME_RANGE_LIMITS: Record<"7d" | "30d" | "90d", string> = {
   "30d": "720",
   "90d": "2160",
 };
-
-/** OHLCVCandle — matches the shape returned by /api/poe2/currencies?action=ohlcv */
-interface OHLCVCandle {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
 
 interface PairDetailDialogProps {
   pair: ExchangePair | null;

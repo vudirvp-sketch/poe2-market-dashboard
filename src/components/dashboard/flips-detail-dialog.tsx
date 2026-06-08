@@ -248,7 +248,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
               {t("forecastRatio")}: <span className="font-mono font-medium">{formatPrice(storageData.ratio, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
             </span>
             <span className="text-muted-foreground">
-              {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{formatPrice(storageData.netValueAfterFees, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
+              {t("forecastNetAfterFees")}: <span className="font-mono font-medium">{formatPrice(storageData.netValue, uiState.baseCurrencyText, uiState.baseCurrencyApiId, { digits: 4 })}</span>
             </span>
           </div>
           {!storageData.dataAvailable && (

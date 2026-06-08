@@ -442,7 +442,7 @@ current_price    → currentPrice
 projected_price  → projectedPrice
 risk_discount    → riskDiscount
 adjusted_price   → adjustedPrice
-net_value_after_fees → netValueAfterFees
+net_value        → netValue
 ```
 
 ---
@@ -586,8 +586,7 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 2. **Backend uses snake_case** — Pydantic models use snake_case, serialized as PascalCase
 3. **ExchangePair uses numeric ItemId** — not string ApiId for history calls
 4. **FlipOpportunity.spreadAfterFees is DEPRECATED** — kept for backward compatibility only
-5. **OHLCVCandle exported from poe2api.ts** — not types.ts (breaks convention)
-6. **Backend CurrencyTier uses tier_label** — frontend expects tierLabel (proxy must transform)
+5. **Backend CurrencyTier uses tier_label** — frontend expects tierLabel (proxy must transform)
 
 ### 8.4 Caching Assumptions
 

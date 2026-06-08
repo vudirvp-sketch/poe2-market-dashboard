@@ -288,6 +288,6 @@ class StorageValueResult:
     projected_price: float
     risk_discount: float
     adjusted_price: float
-    net_value_after_fees: float
+    net_value: float         # Renamed from net_value_after_fees (gold fees disabled)
     ratio: float
     decision: Decision

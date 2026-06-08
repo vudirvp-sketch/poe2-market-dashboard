@@ -58,7 +58,7 @@ def project_value(
 
     Returns:
         StorageValueResult with projected_price, risk_discount, adjusted_price,
-        net_value_after_fees, ratio, and decision.
+        net_value, ratio, and decision.
     """
     # Step 1: Price projection (Canonical Formulas Section 6.1)
     #
@@ -119,7 +119,7 @@ def project_value(
         projected_price=float(projected),
         risk_discount=float(risk_discount),
         adjusted_price=float(adjusted),
-        net_value_after_fees=float(net_value),
+        net_value=float(net_value),
         ratio=float(ratio),
         decision=decision,
     )

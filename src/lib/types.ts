@@ -322,7 +322,8 @@ export interface StorageValueResponse {
   projectedPrice: number;
   riskDiscount: number;
   adjustedPrice: number;
-  netValueAfterFees: number;
+  /** Adjusted price after risk discount and liquidity (gold fees disabled, equals adjustedPrice) */
+  netValue: number;
   ratio: number;
   decision: string;
   dataAvailable: boolean;
@@ -337,6 +338,17 @@ export interface ExchangeSnapshot {
   timestamp: string;
   volume: number;
   marketCap: number;
+}
+
+/** OHLCV candle for multi-timeframe charts (1H/4H/1W aggregation).
+ *  Previously in poe2api.ts — moved here to satisfy I4 (all types in types.ts). */
+export interface OHLCVCandle {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 }
 
 // ============================================================================

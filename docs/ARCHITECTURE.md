@@ -173,15 +173,17 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 ## 6. Scheduler Jobs
 
+> **Full details:** [`BACKEND_GUIDE.md`](./BACKEND_GUIDE.md) §4 — intervals, configuration, startup resilience.
+
 | Job | Interval | Function |
 |-----|----------|----------|
 | price_snapshot | 30 min | Fetch current prices + persist to SQLite |
 | event_pruning | 15 min | Prune expired events from memory + SQLite |
 | model_persistence | 30 min | Save LightGBM models to disk |
 
-**Details:** See [`BACKEND_GUIDE.md`](./BACKEND_GUIDE.md) §4
-
 ## 7. Cache Architecture
+
+> **Full details:** [`BACKEND_GUIDE.md`](./BACKEND_GUIDE.md) §5 — PipelineCache, DailyStatsCache, ModelStore internals.
 
 | Cache | Location | TTL | Key | Storage |
 |-------|----------|-----|-----|---------|

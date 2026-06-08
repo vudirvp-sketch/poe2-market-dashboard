@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
-import type { PoeItem, PoeItemHistoryPoint, DailyStat, BenchmarksResponse } from "@/lib/types";
+import type { PoeItem, PoeItemHistoryPoint, DailyStat, BenchmarksResponse, OHLCVCandle } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
@@ -51,16 +51,6 @@ interface DetailDialogProps {
   realm: string;
   league: string;
   referenceCurrency?: string;
-}
-
-/** OHLCVCandle — matches the shape returned by /api/poe2/items?action=ohlcv */
-interface OHLCVCandle {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
 }
 
 export function DetailDialog({
