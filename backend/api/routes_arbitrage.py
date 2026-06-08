@@ -26,10 +26,8 @@ from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
-# Gold fee imports disabled — user excluded gold from calculations
+# Gold fee imports removed — gold is excluded from all calculations.
 # Gold is a consumable in PoE2 with no real trade value for small-scale flippers.
-# from backend.economy.gold_costs import compute_gold_fee_fraction, compute_fee_breakdown, compute_effective_rate
-# from backend.economy.gold_cost_table import get_gold_cost_per_unit
 from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
@@ -118,16 +116,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     if not rates:
         return []
 
-    # Gold fee calculation: controlled by config.fees.gold_enabled flag.
-    # When gold_enabled is False (default), gold fees are EXCLUDED from all
-    # flipper calculations because gold is a consumable in PoE2 with no real
-    # trade value for small-scale flippers.
-    gold_fees_enabled = config.fees.gold_enabled
-    if not gold_fees_enabled:
-        logger.info("Gold fees EXCLUDED from flipper calculations (fees.gold_enabled = false)")
-    else:
-        logger.info("Gold fees INCLUDED in flipper calculations (fees.gold_enabled = true)")
-
+    # Gold fees are permanently excluded from all flipper calculations.
+    # Gold is a consumable in PoE2 with no real trade value for small-scale flippers.
     event_manager = get_event_manager(config)
 
     # 2. Build price history lookup from snapshot
@@ -183,7 +173,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     # slightly off values (0.98 or 1.02) due to modeling noise.
     prices["chaos"] = 1.0
     prices["Chaos Orb"] = 1.0
-    # Gold price injection removed — gold excluded from calculations
 
     # 6. Run currency clustering
     # FIX: Cache clustering result with pipeline_cache instead of recreating
@@ -459,16 +448,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 score = score * t_penalty
                 score = min(max(score, 0.0), 1.0)
 
-        # Gold fee deduction controlled by config.fees.gold_enabled.
-        # When gold_enabled is False: net_spread = spread_value (no gold fee deduction)
-        # When gold_enabled is True: net_spread = max(0.0, spread_value - total_fee_fraction)
-        if gold_fees_enabled:
-            # TODO: Re-implement gold fee fraction computation when gold_enabled=True
-            # from backend.economy.gold_costs import compute_gold_fee_fraction
-            # For now, gold_enabled=True still uses raw spread (to be implemented)
-            net_spread = spread_value
-        else:
-            net_spread = spread_value
+        # Gold fees are permanently excluded — net_spread equals raw spread.
+        net_spread = spread_value
         net_profit_pct = net_spread * 100 if mid_price > 0 else 0.0
 
         opp = FlipOpportunity(
@@ -615,18 +596,6 @@ async def get_flip_opportunities(
             "affected_currencies": list(event_manager.get_affected_currencies()),
             "summary": event_manager.get_active_event_summary(),
         },
-        "fee_warning": {
-            "gold_fees_excluded": not config.fees.gold_enabled,
-            "message": (
-                "Gold fees are EXCLUDED from all profit calculations. "
-                "Gold is a consumable in PoE2 with no real trade value for small-scale flippers. "
-                "spread_after_fees equals the raw spread without gold fee deduction. "
-                "Set fees.gold_enabled=true in config.yaml to re-enable gold fee deduction."
-            ) if not config.fees.gold_enabled else (
-                "Gold fees are INCLUDED in profit calculations (fees.gold_enabled=true). "
-                "spread_after_fees accounts for gold fee deduction."
-            ),
-        },
         # Step 4: Data freshness metadata
         "data_freshness": {
             "source": "snapshot_pairs",
@@ -694,7 +663,6 @@ async def get_triangular_arbitrage(
     # Step 1.4: Fix chaos price
     prices["chaos"] = 1.0
     prices["Chaos Orb"] = 1.0
-    # Gold price injection removed — gold excluded from calculations
 
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
@@ -747,16 +715,6 @@ async def get_triangular_arbitrage(
             }
             for o in opportunities
         ],
-        "fee_warning": {
-            "gold_fees_excluded": not config.fees.gold_enabled,
-            "message": (
-                "Gold fees are EXCLUDED from all profit calculations. "
-                "Gold is a consumable in PoE2 with no real trade value for small-scale flippers. "
-                "Set fees.gold_enabled=true in config.yaml to re-enable."
-            ) if not config.fees.gold_enabled else (
-                "Gold fees are INCLUDED in profit calculations (fees.gold_enabled=true)."
-            ),
-        },
         "cross_rate_warning": cross_rate_warning,
         "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),

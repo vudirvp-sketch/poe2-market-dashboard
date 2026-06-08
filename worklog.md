@@ -1,23 +1,25 @@
 # Worklog
 
 ---
-Task ID: 12
+Task ID: 13
 Agent: main
-Task: v1.16 — Audit documentation & codebase, fix documentation inconsistencies
+Task: Iteration 2 — Fix CRITICAL + HIGH code bugs
 
 Work Log:
-- Conducted full audit of documentation (6 doc files), frontend code, backend code, and configs/tests
-- Found 105 issues across categories: 6 CRITICAL, 20 HIGH, 40 MEDIUM, 39 LOW
-- Fixed documentation issues (Iteration 1 scope — docs only, no code changes):
-  - PoE2_Flipper_Canonical_Formulas.md: corrected "modules deleted" → "modules exist but not wired", added warning about gold_enabled=true TODO stub
-  - README.md: removed Forecast/Portfolio/Recipes from features, added Optimizer/Analyst, updated backend description
-  - ARCHITECTURE.md: updated layer diagram tabs, updated §9 tab table (removed Forecast/Portfolio/Recipes, added Optimizer/Analyst), fixed IsCurrent invariant I7, added missing backend modules (TierClassifier, BenchmarkEngine, PriceMomentumTracker, OptimizerRouter, AnalystRouter), noted PipelineCache no size limit
-  - DATA_FLOW.md: fixed optimizer/analyst routes from routes_prices.py to routes_optimizer.py/routes_analyst.py, added optimal-currency endpoint, fixed IsCurrent statements (3 locations), fixed stale cache TTL from 10min to 30min, updated §9 data→component mapping
-  - DATA_CONTRACTS.md: added /api/flipper/optimal-currency and /api/poe2/analyst-fallback to endpoint tables
-  - BACKEND_GUIDE.md: added §6.12-6.16 documenting Optimizer, Analyst, Tier Classification, Benchmarks, Momentum modules
-  - AGENT_NAVIGATION.md: updated to v1.16, harmonized IsCurrent wording, added warning about gold_enabled=true stub
+- Fixed poe2api.ts: NaN guard for parseInt(Retry-After) — now uses Number.isFinite() check
+- Fixed dashboard-page.tsx: Added `tab` to useEffect dependency array to prevent stale closure
+- Fixed flipper-proxy.ts: Response body race condition — dedup map now stores BufferedProxyResult (data+status) instead of raw Response, each consumer gets a fresh NextResponse
+- Fixed flipper-proxy.ts: Circuit breaker now only resets on res.ok (2xx), not on 503/5xx
+- Fixed backend/main.py: Added asyncio.Lock (_health_check_lock) to prevent race condition on _provider_healthy/_last_health_check globals
+- Fixed routes_optimizer.py: Replaced Dijkstra with Bellman-Ford algorithm — correctly handles negative -log(rate) weights when rate > 1
+- Fixed routes_arbitrage.py: Removed gold_enabled stub completely — deleted fee_warning from flips/triangular responses, removed gold_fees_enabled variable and dead code
+- Fixed analyst-fallback/route.ts: Z-score now computed on log-returns instead of absolute price changes, making it scale-invariant across currencies
+- Fixed arbitrage-tab first-load bug: Added backendChecking state (from health query isPending), new "backend_checking" error kind shows "Checking…" instead of "Offline" while health check is in progress
+- Added i18n keys for backend_checking in all 4 locales (en, ru, zh, ko)
+- Build verified: npm run build passes successfully
 
 Stage Summary:
-- Documentation audit complete, all critical/high doc inconsistencies fixed
-- Code bugs identified but NOT fixed (Iteration 2 scope)
-- Top code bugs for next iteration: flipper-proxy.ts response body race condition, health check race condition, Dijkstra negative weights, gold_enabled stub, stale closure in dashboard-page.tsx
+- All 8 CRITICAL/HIGH bugs fixed
+- Arbitrage tab first-load UX bug fixed (backend_checking state)
+- Gold fee stub completely removed from routes_arbitrage.py (fee_warning, gold_fees_enabled, dead code)
+- Documentation updated (worklog, AGENT_NAVIGATION.md)

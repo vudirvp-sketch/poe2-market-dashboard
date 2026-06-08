@@ -269,6 +269,8 @@ const en = {
   flipperBackendDegraded: "Backend online (upstream degraded)",
   flipperBackendOfflineTitle: "Flipper backend is not running",
   flipperBackendOfflineDesc: "Start the FastAPI backend to enable advanced flip scoring, triangular arbitrage, and more.",
+  flipperBackendCheckingTitle: "Checking backend status…",
+  flipperBackendCheckingDesc: "Waiting for the Flipper backend to respond. This usually takes a few seconds on startup.",
   flipperBackendDegradedTitle: "Upstream API unreachable",
   flipperBackendDegradedDesc: "The Flipper backend is running but cannot reach the POE2Scout API (poe2scout.com). This may be caused by network restrictions in your region. Try using a VPN, or set POE2_API_BASE_URL in .env.local to an alternative endpoint. Cached data is still available.",
   flipperBackendDegradedHint: "1) Edit .env.local: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) Use a VPN   3) Restart the server after changes",

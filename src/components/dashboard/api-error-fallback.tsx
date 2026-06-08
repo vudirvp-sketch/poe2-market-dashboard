@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 /** Error type discriminant matching FlipperApiError.errorType */
 export type ApiErrorKind =
   | "backend_offline"
+  | "backend_checking"
   | "backend_timeout"
   | "backend_connection_reset"
   | "backend_insufficient_data"
@@ -92,6 +93,7 @@ export function ApiErrorFallback({
   // Icon and color per error kind
   const iconMap: Record<ApiErrorKind, { Icon: typeof WifiOff; color: string }> = {
     backend_offline: { Icon: Server, color: "text-red-500" },
+    backend_checking: { Icon: Server, color: "text-blue-500" },
     backend_timeout: { Icon: Server, color: "text-amber-500" },
     backend_connection_reset: { Icon: Server, color: "text-amber-500" },
     backend_insufficient_data: { Icon: Database, color: "text-amber-500" },
@@ -109,6 +111,7 @@ export function ApiErrorFallback({
   // Title and description per error kind
   const titleMap: Record<ApiErrorKind, string> = {
     backend_offline: t("flipperBackendOfflineTitle"),
+    backend_checking: t("flipperBackendCheckingTitle"),
     backend_timeout: t("flipperBackendOfflineTitle"),
     backend_connection_reset: t("flipperBackendOfflineTitle"),
     backend_insufficient_data: t("flipperBackendInsufficientDataTitle"),
@@ -123,6 +126,7 @@ export function ApiErrorFallback({
 
   const descMap: Record<ApiErrorKind, string> = {
     backend_offline: t("flipperBackendOfflineDesc"),
+    backend_checking: t("flipperBackendCheckingDesc"),
     backend_timeout: t("flipperBackendOfflineDesc"),
     backend_connection_reset: t("flipperBackendOfflineDesc"),
     backend_insufficient_data: t("flipperBackendInsufficientDataDesc"),

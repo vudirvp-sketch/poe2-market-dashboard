@@ -57,7 +57,17 @@ export const BACKEND_OFFLINE_HINT = "Start the FastAPI backend: uvicorn backend.
 let flipperCircuitBreakerState: "closed" | "open" | "half-open" = "closed";
 
 // --- Request deduplication ---
-const pendingRequests = new Map<string, Promise<Response>>();
+// FIX: Store buffered JSON results instead of raw Response objects.
+// Previously, when two consumers deduplicated onto the same Promise<Response>,
+// the first consumer calling .json() would consume the body stream, and the
+// second consumer would get "body already consumed" error. Now we buffer the
+// parsed JSON + status in the dedup map and reconstruct a fresh NextResponse
+// for each consumer.
+interface BufferedProxyResult {
+  data: unknown;
+  status: number;
+}
+const pendingRequests = new Map<string, Promise<BufferedProxyResult>>();
 
 // P1-2: Health probe with short timeout
 async function probeHealth(): Promise<boolean> {
@@ -103,19 +113,30 @@ export async function proxyToFlipper(
   }
 
   // Deduplicate concurrent identical GET requests
+  // FIX: Buffer the result so each consumer gets a fresh NextResponse
+  // instead of sharing a single Response whose body can only be read once.
   if (method === "GET") {
     const cacheKey = url.toString();
     const pending = pendingRequests.get(cacheKey);
-    if (pending) return pending;
+    if (pending) {
+      // Another request is in-flight — await its buffered result and
+      // construct a fresh Response for this consumer.
+      const buffered = await pending;
+      return NextResponse.json(buffered.data, { status: buffered.status });
+    }
 
     const promise = _doProxyWithRetry(url.toString(), method, body, maxRetries).finally(() => {
       pendingRequests.delete(cacheKey);
     });
     pendingRequests.set(cacheKey, promise);
-    return promise;
+
+    // First consumer also gets a fresh Response from the buffered result
+    const buffered = await promise;
+    return NextResponse.json(buffered.data, { status: buffered.status });
   }
 
-  return _doProxyWithRetry(url.toString(), method, body, maxRetries);
+  return _doProxyWithRetry(url.toString(), method, body, maxRetries)
+    .then((buffered) => NextResponse.json(buffered.data, { status: buffered.status }));
 }
 
 async function _doProxyWithRetry(
@@ -123,7 +144,7 @@ async function _doProxyWithRetry(
   method: string,
   body: unknown,
   maxRetries: number,
-): Promise<Response> {
+): Promise<BufferedProxyResult> {
   let lastError: Error | null = null;
 
   // Circuit breaker: skip request if backend is known-down
@@ -131,8 +152,8 @@ async function _doProxyWithRetry(
     const elapsed = Date.now() - flipperCircuitBreakerOpenSince;
     if (elapsed < flipperCircuitBreakerCooldownMs) {
       const retryIn = Math.round((flipperCircuitBreakerCooldownMs - elapsed) / 1000);
-      return NextResponse.json(
-        {
+      return {
+        data: {
           error: "Flipper backend unavailable",
           error_type: ERROR_TYPE_OFFLINE,
           detail: `Circuit breaker open — backend unreachable (retry in ${retryIn}s)`,
@@ -142,8 +163,8 @@ async function _doProxyWithRetry(
             : undefined,
           circuit_breaker_state: flipperCircuitBreakerState, // P1-2: debug info
         },
-        { status: 503 },
-      );
+        status: 503,
+      };
     }
     // P1-2: Cooldown expired — enter half-open state, send health probe
     flipperCircuitBreakerState = "half-open";
@@ -169,15 +190,15 @@ async function _doProxyWithRetry(
         `[flipper-proxy] Circuit breaker stays OPEN — health probe failed. `
         + `Cooldown increased to ${flipperCircuitBreakerCooldownMs / 1000}s`
       );
-      return NextResponse.json(
-        {
+      return {
+        data: {
           error: "Flipper backend unavailable",
           error_type: ERROR_TYPE_OFFLINE,
           detail: `Circuit breaker open — health probe failed (retry in ${Math.round(flipperCircuitBreakerCooldownMs / 1000)}s)`,
           circuit_breaker_state: flipperCircuitBreakerState,
         },
-        { status: 503 },
-      );
+        status: 503,
+      };
     }
   }
 
@@ -203,16 +224,20 @@ async function _doProxyWithRetry(
 
       const res = await fetch(url, fetchOptions);
 
-      // Reset circuit breaker on any HTTP response (even errors)
-      // — the backend is reachable, just returning errors
-      flipperConsecutiveFailures = 0;
-      if (flipperCircuitBreakerOpen) {
-        flipperCircuitBreakerOpen = false;
-        flipperCircuitBreakerState = "closed";
-        flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // P1-2: reset cooldown
-        console.info(
-          `[flipper-proxy] Circuit breaker CLOSED — backend responded (status ${res.status}).`
-        );
+      // FIX: Only reset circuit breaker on successful responses (2xx).
+      // Previously, any HTTP response (including 503) would reset the breaker,
+      // which was wrong — a 503 means the backend is having issues and shouldn't
+      // cause the breaker to close. Only 2xx means the backend is truly healthy.
+      if (res.ok) {
+        flipperConsecutiveFailures = 0;
+        if (flipperCircuitBreakerOpen) {
+          flipperCircuitBreakerOpen = false;
+          flipperCircuitBreakerState = "closed";
+          flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // P1-2: reset cooldown
+          console.info(
+            `[flipper-proxy] Circuit breaker CLOSED — backend responded OK (status ${res.status}).`
+          );
+        }
       }
 
       // ── Backend responded, but with 503 (insufficient data, etc.) ──
@@ -233,13 +258,13 @@ async function _doProxyWithRetry(
             "Configure the backend to use a CORS proxy or set POE2_CORS_PROXY_URL for the frontend.";
         }
 
-        return NextResponse.json(
-          {
+        return {
+          data: {
             ...data,
             error_type: ERROR_TYPE_INSUFFICIENT,
           },
-          { status: 503 },
-        );
+          status: 503,
+        };
       }
 
       // ── Backend responded with 422 (insufficient data for forecast, etc.) ──
@@ -250,13 +275,13 @@ async function _doProxyWithRetry(
         } catch {
           data = { detail: "Unprocessable Entity" };
         }
-        return NextResponse.json(
-          {
+        return {
+          data: {
             ...data,
             error_type: ERROR_TYPE_UNPROCESSABLE,
           },
-          { status: 422 },
-        );
+          status: 422,
+        };
       }
 
       // ── Backend responded with 5xx (but not 503) ──
@@ -274,19 +299,19 @@ async function _doProxyWithRetry(
         } catch {
           data = { detail: `Server error: ${res.status}` };
         }
-        return NextResponse.json(
-          {
+        return {
+          data: {
             ...data,
             error_type: ERROR_TYPE_SERVER,
           },
-          { status: res.status },
-        );
+          status: res.status,
+        };
       }
 
       const data = await res.json();
       // Transform snake_case keys from backend to camelCase for frontend types
       const transformed = transformKeys(data);
-      return NextResponse.json(transformed, { status: res.status });
+      return { data: transformed, status: res.status };
     } catch (e: unknown) {
       lastError = e instanceof Error ? e : new Error(String(e));
 
@@ -359,7 +384,7 @@ async function _doProxyWithRetry(
       "in your .env.local to your Cloudflare Worker URL.";
   }
 
-  return NextResponse.json(response, { status: 503 });
+  return { data: response, status: 503 };
 }
 
 // ============================================================================

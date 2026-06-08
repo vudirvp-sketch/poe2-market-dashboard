@@ -234,7 +234,7 @@ export function Dashboard() {
   // ============================================================================
   // Flipper backend health check (dashboard-level, shared across components)
   // ============================================================================
-  const { data: flipperHealthData, isError: flipperHealthError } = useQuery<FlipperHealthResponse>({
+  const { data: flipperHealthData, isError: flipperHealthError, isPending: flipperHealthPending } = useQuery<FlipperHealthResponse>({
     queryKey: ["flipper-health"],
     queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
     staleTime: 30_000,
@@ -330,12 +330,15 @@ export function Dashboard() {
     return active?.name || leagues?.[0]?.name || "";
   }, [league, leagues]);
 
-  // Sync tab with persisted state on mount
+  // Sync tab with persisted state on mount (or when store hydrates)
+  // FIX: Added `tab` to deps — without it the closure captured the initial
+  // "overview" value, causing a stale-check that could overwrite a user's
+  // manual tab switch if uiState.activeTab changed later.
   useEffect(() => {
     if (uiState.activeTab && tab === "overview") {
       setTabLocal(uiState.activeTab);
     }
-  }, [uiState.activeTab]);
+  }, [uiState.activeTab, tab]);
 
   // Wrapper for tab changes that also persists
   const setTab = (newTab: string) => {
@@ -1566,6 +1569,7 @@ export function Dashboard() {
                   realm={realm}
                   league={effectiveLeague}
                   backendOnline={flipperBackendOnline}
+                  backendChecking={flipperHealthPending}
                   upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable}
                 />
               </ErrorBoundary>

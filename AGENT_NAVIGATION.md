@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.16 | **Date:** 2026-06-08
+> **Version:** 1.17 | **Date:** 2026-06-08
 
 ---
 
@@ -99,24 +99,24 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
 2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
 
+### COMPLETED (v1.17 — Iteration 2)
+1. ~~**flipper-proxy.ts: Response body race condition**~~ — Dedup map now stores BufferedProxyResult (data+status) instead of raw Response; each consumer gets a fresh NextResponse
+2. ~~**backend/main.py: Race condition in health check**~~ — Added asyncio.Lock (_health_check_lock) with double-check pattern
+3. ~~**routes_optimizer.py: Dijkstra with negative weights**~~ — Replaced with Bellman-Ford algorithm (handles -log(rate) < 0 when rate > 1)
+4. ~~**routes_arbitrage.py: gold_enabled stub removed**~~ — Dead code deleted: gold_fees_enabled, fee_warning in flips/triangular responses, gold import comments
+5. ~~**dashboard-page.tsx: Stale closure in tab useEffect**~~ — Added `tab` to dependency array
+6. ~~**poe2api.ts: parseInt Retry-After NaN guard**~~ — Uses Number.isFinite() before multiplying by 1000
+7. ~~**flipper-proxy.ts: Circuit breaker resets on 503**~~ — Now only resets on res.ok (2xx)
+8. ~~**analyst-fallback: Z-score on absolute prices**~~ — Changed to log-returns for scale-invariant anomaly detection
+9. ~~**Arbitrage tab first-load bug**~~ — Added backendChecking state; shows "Checking…" instead of "Offline" while health check is in progress
+
 ### COMPLETED (v1.15)
 1. ~~**Regenerate cache-snapshot.json with VPN**~~ — Reran `npx tsx scripts/generate-cache-snapshot.ts` with VPN. Snapshot now includes all 17 endpoints (5 ByCategory). Size: 469.4 KB (under 500 KB limit). Confirmed: 14→17 endpoints, `default_league_value` auto-fixed from "Fate of the Vaal" → "runes".
 2. ~~**Generate bycategory fixture files for idol, vaultkeys, delirium**~~ — Reran `npx tsx scripts/dump-live-data.ts` with VPN. All 5 fixture files now present: `bycategory-ritual.json`, `bycategory-ultimatum.json`, `bycategory-idol.json`, `bycategory-vaultkeys.json`, `bycategory-delirium.json`. Flip verification script passes all 4 checks.
 
-### COMPLETED (v1.14)
-1. ~~**Add ByCategory endpoints for idol, vaultkeys, delirium**~~ — Both scripts now fetch all 5 item categories.
-2. ~~**Verify flip logic against fixture data**~~ — `scripts/verify-flips-vs-fixtures.py` validates all 4 checks.
-
-### COMPLETED (v1.12–v1.13)
-- Confirmed item_categories with live data (idol, vaultkeys, delirium verified)
-- Fixed cache-snapshot truncation (top 8 per item-cat + top 15 currency)
-- IsCurrent now works for poe2
-- Expanded item_categories, tests, dump-live-data utility
-- Optimal payment for craft items, BestPaymentBadge, cross-currency premium
-
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
-2. **Gold fees disabled (`gold_enabled: false`)** — Intentional: gold is a consumable in PoE2, not a tradeable
+2. **Gold fees permanently excluded** — Gold is a consumable in PoE2, not a tradeable; gold_enabled code removed in v1.17
 3. **R_buy=bid, R_sell=ask** — Correct market-maker model (buy at bid, sell at ask)
 4. **Correlation min_overlap=2** — Intentionally low for early-league compatibility
 5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu
@@ -167,7 +167,7 @@ When a new league launches, update these 7 files:
 7. **`IsCurrent` works for poe2 realm:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
 8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
 9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
-10. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled. **Warning:** The `gold_enabled=true` code path in `routes_arbitrage.py` is a TODO stub — setting it to `true` will NOT actually compute gold fees but will misleadingly tell users that fees are included.
+10. **Gold fees permanently excluded** — `gold_enabled` code removed in v1.17. Do NOT re-add gold fee deductions; gold is a consumable in PoE2 with no real trade value for flippers.
 11. **npm is the package manager** — not pnpm/yarn.
 12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.

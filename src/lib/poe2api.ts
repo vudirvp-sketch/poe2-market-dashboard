@@ -382,7 +382,8 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
         if (res.status === 429) {
           // MEDIUM-3: Retry 429 with backoff instead of throwing immediately
           const retryAfter = res.headers.get('Retry-After');
-          const delayMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 5000;
+          const parsedRetry = retryAfter ? parseInt(retryAfter, 10) : NaN;
+          const delayMs = Number.isFinite(parsedRetry) && parsedRetry > 0 ? parsedRetry * 1000 : 5000;
           if (attempt < maxRetries) {
             await new Promise((resolve) => setTimeout(resolve, delayMs));
             continue; // retry

@@ -269,6 +269,8 @@ const ko: Record<TranslationKeys, string> = {
   flipperBackendDegraded: "백엔드 온라인 (업스트림 저하)",
   flipperBackendOfflineTitle: "Flipper 백엔드가 실행 중이 아닙니다",
   flipperBackendOfflineDesc: "고급 플립 점수 책정, 삼각 차익거래 등을 활성화하려면 FastAPI 백엔드를 시작하세요.",
+  flipperBackendCheckingTitle: "백엔드 상태 확인 중…",
+  flipperBackendCheckingDesc: "Flipper 백엔드 응답을 기다리고 있습니다. 시작 시 몇 초 정도 걸릴 수 있습니다.",
   flipperBackendDegradedTitle: "업스트림 API에 연결할 수 없습니다",
   flipperBackendDegradedDesc: "Flipper 백엔드가 실행 중이지만 POE2Scout API(poe2scout.com)에 연결할 수 없습니다. 지역 네트워크 제한 때문일 수 있습니다. VPN을 사용하거나 .env.local에서 POE2_API_BASE_URL을 대체 엔드포인트로 설정하세요. 캐시된 데이터는 계속 사용할 수 있습니다.",
   flipperBackendDegradedHint: "1) .env.local 편집: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) VPN 사용   3) 변경 후 서버 재시작",

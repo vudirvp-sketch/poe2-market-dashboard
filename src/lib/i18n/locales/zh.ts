@@ -269,6 +269,8 @@ const zh: Record<TranslationKeys, string> = {
   flipperBackendDegraded: "后端在线（上游不可用）",
   flipperBackendOfflineTitle: "Flipper 后端未运行",
   flipperBackendOfflineDesc: "启动 FastAPI 后端以启用高级翻转评分、三角套利等功能。",
+  flipperBackendCheckingTitle: "正在检查后端状态…",
+  flipperBackendCheckingDesc: "正在等待 Flipper 后端响应。启动时通常需要几秒钟。",
   flipperBackendDegradedTitle: "上游 API 不可达",
   flipperBackendDegradedDesc: "Flipper 后端正在运行，但无法访问 POE2Scout API (poe2scout.com)。这可能是您所在地区的网络限制所致。请尝试使用 VPN，或在 .env.local 中设置 POE2_API_BASE_URL 为备用端点。缓存数据仍可使用。",
   flipperBackendDegradedHint: "1) 编辑 .env.local: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) 使用 VPN   3) 修改后重启服务器",

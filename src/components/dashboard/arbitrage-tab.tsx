@@ -42,11 +42,13 @@ interface ArbitrageTabProps {
   league?: string;
   /** Whether the flipper backend is online (checked at dashboard level) */
   backendOnline: boolean;
+  /** Whether the health check is still in progress (first load) */
+  backendChecking?: boolean;
   /** Backend is online but upstream API is unreachable (degraded mode) */
   upstreamDegraded?: boolean;
 }
 
-export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendOnline, upstreamDegraded }: ArbitrageTabProps) {
+export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendOnline, backendChecking, upstreamDegraded }: ArbitrageTabProps) {
   const { t } = useI18n();
 
   // Flipper filter state
@@ -167,13 +169,18 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
         )}
       </div>
 
-      {/* ---- Backend unavailable warning ---- */}
-      {!backendOnline && (
+      {/* ---- Backend checking / unavailable warning ---- */}
+      {backendChecking && !backendOnline ? (
+        <ApiErrorFallback
+          errorKind="backend_checking"
+          onRetry={() => { refetchFlips(); refetchTri(); }}
+        />
+      ) : !backendOnline ? (
         <ApiErrorFallback
           errorKind="backend_offline"
           onRetry={() => { refetchFlips(); refetchTri(); }}
         />
-      )}
+      ) : null}
 
       {/* ---- Upstream degraded warning ---- */}
       {backendOnline && upstreamDegraded && (

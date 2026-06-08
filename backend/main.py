@@ -53,6 +53,13 @@ _provider_healthy = True
 _last_health_check = 0.0
 HEALTH_CHECK_INTERVAL = 60.0  # seconds
 
+# FIX: asyncio.Lock to prevent race condition on global health state.
+# Without a lock, multiple concurrent requests could simultaneously check
+# _last_health_check, see it's stale, and all initiate a health check —
+# resulting in multiple overlapping upstream requests and potential race
+# on _provider_healthy / _last_health_check globals.
+_health_check_lock = asyncio.Lock()
+
 
 async def check_provider_health():
     """Periodic check if poe2scout API is reachable.
@@ -60,33 +67,48 @@ async def check_provider_health():
     Caches the result for HEALTH_CHECK_INTERVAL seconds to avoid
     hitting the upstream API on every incoming request.
     
+    Thread-safe via asyncio.Lock — only one health check runs at a time.
+    Concurrent callers wait for the in-flight check to complete and use
+    its result instead of starting their own.
+    
     NOTE: This function no longer raises HTTPException on failure.
     The health status is tracked via _provider_healthy and exposed
     through /api/health. Callers should check _provider_healthy
     instead of relying on exceptions.
     """
     global _provider_healthy, _last_health_check
+
+    # Fast path: if a recent check was done, return immediately
+    # (check outside lock for performance — only the assignment is racy,
+    #  and reading a float is atomic in CPython)
     now = time.monotonic()
     if now - _last_health_check < HEALTH_CHECK_INTERVAL:
         return
 
-    _last_health_check = now
-    try:
-        from backend.api.shared import get_provider
-        provider = get_provider()
-        # Quick connectivity check — fetch exchange rates with a short timeout
-        import asyncio
-        rates = await asyncio.wait_for(
-            provider.get_exchange_rates(get_settings().league.league_name),
-            timeout=15.0
-        )
-        _provider_healthy = rates is not None and len(rates) > 0
-    except asyncio.TimeoutError:
-        logger.warning("Health check timed out (15s) — marking provider as unreachable")
-        _provider_healthy = False
-    except Exception as e:
-        logger.warning("Health check failed: %s — marking provider as unreachable", e)
-        _provider_healthy = False
+    # Acquire lock — only one coroutine performs the health check
+    async with _health_check_lock:
+        # Re-check after acquiring lock (another coroutine may have
+        # completed the check while we were waiting)
+        now = time.monotonic()
+        if now - _last_health_check < HEALTH_CHECK_INTERVAL:
+            return
+
+        _last_health_check = now
+        try:
+            from backend.api.shared import get_provider
+            provider = get_provider()
+            # Quick connectivity check — fetch exchange rates with a short timeout
+            rates = await asyncio.wait_for(
+                provider.get_exchange_rates(get_settings().league.league_name),
+                timeout=15.0
+            )
+            _provider_healthy = rates is not None and len(rates) > 0
+        except asyncio.TimeoutError:
+            logger.warning("Health check timed out (15s) — marking provider as unreachable")
+            _provider_healthy = False
+        except Exception as e:
+            logger.warning("Health check failed: %s — marking provider as unreachable", e)
+            _provider_healthy = False
 
 
 # ---------------------------------------------------------------------------

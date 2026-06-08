@@ -205,35 +205,42 @@ export async function GET(req: NextRequest) {
     // Sort trends by absolute change (most volatile first)
     trends.sort((a, b) => Math.abs(b.change24hPct ?? 0) - Math.abs(a.change24hPct ?? 0));
 
-    // 3. Detect simple anomalies using z-score on price changes
+    // 3. Detect simple anomalies using z-score on log-returns
+    // FIX: Previously computed Z-score on absolute price changes
+    // (prices[i] - prices[i-1]), which makes Z-scores incomparable across
+    // currencies with different price levels. Using log-returns
+    // (log(price[i] / price[i-1])) makes the Z-score scale-invariant
+    // and comparable across all currencies.
     const anomalies: FallbackAnomaly[] = [];
     for (const { apiId, prices } of allPriceChanges) {
       if (prices.length < 5) continue;
 
-      const changes: number[] = [];
+      const logReturns: number[] = [];
       for (let i = 1; i < prices.length; i++) {
-        if (prices[i - 1] > 0) {
-          changes.push(prices[i] - prices[i - 1]);
+        if (prices[i - 1] > 0 && prices[i] > 0) {
+          logReturns.push(Math.log(prices[i] / prices[i - 1]));
         }
       }
-      if (changes.length < 3) continue;
+      if (logReturns.length < 3) continue;
 
-      const mean = changes.reduce((a, b) => a + b, 0) / changes.length;
-      const std = Math.sqrt(changes.reduce((a, b) => a + (b - mean) ** 2, 0) / changes.length);
+      const mean = logReturns.reduce((a, b) => a + b, 0) / logReturns.length;
+      const std = Math.sqrt(logReturns.reduce((a, b) => a + (b - mean) ** 2, 0) / logReturns.length);
 
       if (std < 1e-10) continue;
 
-      const latestChange = changes[changes.length - 1];
-      const zScore = (latestChange - mean) / std;
+      const latestReturn = logReturns[logReturns.length - 1];
+      const zScore = (latestReturn - mean) / std;
 
       if (Math.abs(zScore) > ANOMALY_ZSCORE_THRESHOLD) {
         const prevPrice = prices.length >= 2 ? prices[prices.length - 2] : 0;
+        const latestPrice = prices[prices.length - 1];
+        const changePct = prevPrice > 0 ? ((latestPrice - prevPrice) / prevPrice) * 100 : null;
         anomalies.push({
           apiId,
           zScore: Math.round(zScore * 100) / 100,
           direction: zScore > 0 ? "spike_up" : "spike_down",
-          currentPrice: prices[prices.length - 1],
-          changePct: prevPrice > 0 ? Math.round((latestChange / prevPrice) * 10000) / 100 : null,
+          currentPrice: latestPrice,
+          changePct: changePct !== null ? Math.round(changePct * 100) / 100 : null,
         });
       }
     }

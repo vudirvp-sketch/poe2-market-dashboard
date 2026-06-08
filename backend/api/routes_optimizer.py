@@ -5,14 +5,19 @@ Endpoints:
     GET /api/optimizer/path    — find the optimal conversion path between two currencies
     GET /api/optimizer/matrix  — return the full rate matrix for all currency pairs
 
-Uses Dijkstra's algorithm on the exchange rate graph to find the best
+Uses Bellman-Ford algorithm on the exchange rate graph to find the best
 multi-hop conversion path. Edge weights are -log(raw_rate) so that the
 shortest path corresponds to the best effective rate.
+
+NOTE: Previously used Dijkstra, but -log(rate) produces negative weights
+when rate > 1 (e.g. 1 Chaos = 0.1 Exalted → -log(0.1) > 0, but the
+reverse edge 1 Exalted = 10 Chaos → -log(10) < 0). Dijkstra requires
+non-negative weights, so it produced incorrect results for paths containing
+reverse edges where rate > 1. Bellman-Ford handles negative weights correctly.
 """
 
 from __future__ import annotations
 
-import heapq
 import logging
 import math
 from datetime import datetime, timezone
@@ -29,16 +34,20 @@ router = APIRouter(prefix="/api/optimizer", tags=["optimizer"])
 
 
 # ---------------------------------------------------------------------------
-# Helper: Dijkstra shortest path on -log(rate) weighted graph
+# Helper: Bellman-Ford shortest path on -log(rate) weighted graph
 # ---------------------------------------------------------------------------
 
-def _dijkstra(
+def _bellman_ford(
     graph: dict[str, list[tuple[str, float, float]]],
     source: str,
     target: str,
     max_hops: int = 5,
 ) -> tuple[list[str], list[float]] | None:
     """Find the shortest path (best rate) from source to target.
+
+    Uses Bellman-Ford which correctly handles negative edge weights
+    (unlike Dijkstra). Negative weights arise when rate > 1 and the
+    edge weight is -log(rate).
 
     Args:
         graph: adjacency list — graph[u] = [(v, -log(rate), rate), ...]
@@ -51,46 +60,62 @@ def _dijkstra(
         path is a list of currency api_ids.
         step_rates is a list of raw_rate values for each edge.
     """
-    # Priority queue entries: (cumulative_weight, hops, current_node, path, step_rates)
-    # We include hops to enforce max_hops constraint.
-    pq: list[tuple[float, int, str, list[str], list[float]]] = [
-        (0.0, 0, source, [source], [])
-    ]
-    # Best known weight to each (node, hops) pair — we allow revisiting
-    # a node via a shorter cumulative weight regardless of hop count.
-    best: dict[str, float] = {source: 0.0}
+    # Initialize distances and predecessors
+    dist: dict[str, float] = {source: 0.0}
+    predecessor: dict[str, tuple[str, float]] = {}  # node -> (prev_node, raw_rate)
 
-    while pq:
-        cum_weight, hops, node, path, step_rates = heapq.heappop(pq)
+    # Collect all nodes
+    nodes = set(graph.keys())
+    for neighbors in graph.values():
+        for neighbor, _, _ in neighbors:
+            nodes.add(neighbor)
 
-        # Found the target
-        if node == target:
-            return path, step_rates
+    # Relax edges up to max_hops times
+    for iteration in range(max_hops):
+        updated = False
+        for u in graph:
+            if u not in dist:
+                continue
+            for v, weight, raw_rate in graph[u]:
+                new_dist = dist[u] + weight
+                if v not in dist or new_dist < dist[v]:
+                    dist[v] = new_dist
+                    predecessor[v] = (u, raw_rate)
+                    updated = True
+        if not updated:
+            break
 
-        # Prune if we've already found a better way to this node
-        if cum_weight > best.get(node, float("inf")):
-            continue
+    # Check if target is reachable
+    if target not in dist:
+        return None
 
-        # Can't go further
-        if hops >= max_hops:
-            continue
+    # Reconstruct path from predecessor map
+    path: list[str] = []
+    step_rates: list[float] = []
+    current = target
+    visited = set()
 
-        for neighbor, neg_log_rate, raw_rate in graph.get(node, []):
-            new_weight = cum_weight + neg_log_rate
-            if new_weight < best.get(neighbor, float("inf")):
-                best[neighbor] = new_weight
-                heapq.heappush(
-                    pq,
-                    (
-                        new_weight,
-                        hops + 1,
-                        neighbor,
-                        path + [neighbor],
-                        step_rates + [raw_rate],
-                    ),
-                )
+    while current != source:
+        if current in visited:
+            # Cycle detected — should not happen with positive rates
+            # but guard against it
+            return None
+        visited.add(current)
 
-    return None
+        pred = predecessor.get(current)
+        if pred is None:
+            return None
+
+        prev_node, rate = pred
+        path.append(current)
+        step_rates.append(rate)
+        current = prev_node
+
+    path.append(source)
+    path.reverse()
+    step_rates.reverse()
+
+    return path, step_rates
 
 
 # ---------------------------------------------------------------------------
@@ -160,9 +185,10 @@ async def get_optimal_path(
 ):
     """Find the optimal conversion path between two currencies.
 
-    Uses Dijkstra's algorithm on the exchange rate graph where edge weights
+    Uses Bellman-Ford algorithm on the exchange rate graph where edge weights
     are -log(raw_rate), so the shortest path corresponds to the best
-    effective conversion rate.
+    effective conversion rate. Bellman-Ford correctly handles negative
+    weights that arise when rate > 1.
 
     Compares the multi-hop path rate with the direct rate (if available)
     and reports the advantage percentage.
@@ -225,8 +251,8 @@ async def get_optimal_path(
         if to_currency in available:
             to_lower = to_currency
 
-    # Run Dijkstra
-    result = _dijkstra(graph, from_lower, to_lower, max_hops)
+    # Run Bellman-Ford (replaces Dijkstra — handles negative -log(rate) weights)
+    result = _bellman_ford(graph, from_lower, to_lower, max_hops)
 
     if result is None:
         return {
