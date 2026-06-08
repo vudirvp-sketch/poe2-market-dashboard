@@ -66,6 +66,7 @@ __pycache__/
 *.egg-info/
 dist-python/
 *.egg
+.venv/
 
 # Cloudflare Worker local dev cache
 .wrangler/

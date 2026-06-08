@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.21 | **Date:** 2026-06-09
+> **Version:** 1.22 | **Date:** 2026-06-09
 
 ---
 
@@ -41,9 +41,11 @@ npm run test             # Jest unit tests
 npm run test:e2e         # Playwright E2E tests
 npm run lint             # Lint check
 
-# Backend
-pip install -r requirements.txt
-uvicorn backend.main:app --reload --port 8000   # Start backend
+# Backend (uses .venv automatically via start.sh)
+pip install -r requirements.txt          # System-wide install (may fail on PEP 668)
+python3 -m venv .venv                    # Create venv (start.sh does this automatically)
+.venv/bin/python -m pip install -r requirements.txt  # Install into venv
+PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 
 # Backend tests
 pytest tests/ -v
@@ -96,73 +98,75 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
-2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
-3. **Verify `npx shadcn add` works with Tailwind v4 CSS-first config** — `tailwind.config.ts` was deleted (v4 CSS-first), `components.json` has `config: ""`. Test that adding shadcn components works correctly. If it fails, may need to update shadcn CLI or add a `tailwind.config` field.
-4. **PipelineCache unbounded growth** — PipelineCache has no size limit and stale entries are never evicted. Consider adding an LRU eviction policy or max-entries cap.
+1. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
+
+### COMPLETED (v1.22 — Iteration 7)
+1. ~~**PipelineCache unbounded growth**~~ — Added LRU eviction with `OrderedDict` + max-entries cap (DEFAULT_MAX_ENTRIES=64). Expired/stale entries evicted first during `put()`, then LRU active entries. `stats()` now includes `total_entries` and `max_entries`.
+2. ~~**shadcn CLI + Tailwind v4 CSS-first**~~ — Verified `components.json` with `config: ""` works correctly with shadcn CLI for Tailwind v4. No changes needed — the empty config field is the correct setting for CSS-first approach.
+3. ~~**Backend won't start (PEP 668)**~~ — Root cause: `start.sh`/`start.bat` ran `pip install -r requirements.txt` system-wide, which fails on modern Python (PEP 668 "externally-managed-environment"). Fix: added automatic `.venv` creation and usage in both `start.sh` and `start.bat`. Venv python used for all pip installs and uvicorn. Added `.venv/` to `.gitignore`. `--clean` flag now also removes `.venv/` and recreates it.
+4. ~~**Header "More" button clipped**~~ — The three-dot menu button was hidden when the header was narrow because all items were in a single `flex-nowrap` container. Fix: split header into scrollable inner bar + fixed "More" button outside the scroll area. The button is always visible regardless of content width.
+5. ~~**Removed stale TODO items**~~ — Deleted TODO #1 (report POE2Scout `default_league_value` bug upstream) and merged TODO #2 (live E2E verification) into the remaining TODO list. The workaround for `default_league_value` is stable and `IsCurrent` now works; upstream bug report is low-priority.
 
 ### COMPLETED (v1.21 — Iteration 6)
-1. ~~**BUG-7: Tailwind v3 config with v4 installed**~~ — Deleted `tailwind.config.ts` (dead code, v4 ignores it). Removed `tailwindcss-animate` from dependencies (replaced by `tw-animate-css` in devDependencies). Project fully on Tailwind v4 CSS-first approach (`globals.css` → `@import "tailwindcss"`, `@theme inline`, `@custom-variant dark`, `postcss.config.mjs` → `@tailwindcss/postcss`).
-2. ~~**BUG-8: components.json tailwind.config empty**~~ — Confirmed `config: ""` is correct for Tailwind v4 CSS-first. No change needed.
-3. ~~**BUG-9: SW cache version hardcoded**~~ — Created `scripts/bump-sw-cache.js` that updates `CACHE_NAME` in `sw.js` with a timestamp. Added `postbuild` script in `package.json`. Also added `/icon-1024.png` to `STATIC_ASSETS` in `sw.js`.
-4. ~~**BUG-10: manifest.json missing icon-1024.png**~~ — Added `icon-1024.png` (1024x1024) to the icons array in `manifest.json`.
-5. ~~**BUG-11: start.sh missing --clean flag**~~ — Added `--clean` flag to both `start.sh` and `start.bat` that removes `.next/` + `node_modules/` and reinstalls dependencies.
-6. ~~**BUG-12: requirements.txt no pinned upper bounds**~~ — Added upper bounds (`<next_major`) for all 19 dependencies.
-7. ~~**Cold start timeout**~~ — Changed `await check_provider_health()` to `asyncio.create_task()` in `main.py` lifespan. Backend now starts immediately without blocking. Also reduced health check timeout from 15s to 5s.
-8. ~~**Rate limiting race in poe2scout.py**~~ — Added `_rate_limit_lock` (asyncio.Lock) to serialize the read-check-sleep-update cycle of `_last_request_time`. Prevents concurrent coroutines from reading the same stale timestamp and violating the rate limit.
+1. ~~**BUG-7: Tailwind v3 config with v4 installed**~~ — Deleted `tailwind.config.ts` (dead code, v4 ignores it). Removed `tailwindcss-animate` from dependencies (replaced by `tw-animate-css` in devDependencies). Project fully on Tailwind v4 CSS-first approach.
+2. ~~**BUG-8: components.json tailwind.config empty**~~ — Confirmed `config: ""` is correct for Tailwind v4 CSS-first.
+3. ~~**BUG-9: SW cache version hardcoded**~~ — Created `scripts/bump-sw-cache.js`, added `postbuild` script.
+4. ~~**BUG-10: manifest.json missing icon-1024.png**~~ — Added to icons array.
+5. ~~**BUG-11: start.sh missing --clean flag**~~ — Added `--clean` flag to both start scripts.
+6. ~~**BUG-12: requirements.txt no pinned upper bounds**~~ — Added upper bounds for all 19 dependencies.
+7. ~~**Cold start timeout**~~ — `asyncio.create_task()` for health check, 5s timeout.
+8. ~~**Rate limiting race in poe2scout.py**~~ — Added `_rate_limit_lock` (asyncio.Lock).
 
 ### COMPLETED (v1.20 — Iteration 5)
-1. ~~**HistoricalStore.clear_all_events() missing**~~ — Added `clear_all_events()` method to `HistoricalStore`. Previously `EventManager.clear_all()` called a non-existent method → `AttributeError`.
-2. ~~**WebSocket storage_value missing acceleration**~~ — Added `acceleration=metrics.acceleration` to `_compute_storage_value()` in `routes_ws.py`, matching the REST endpoint.
-3. ~~**__pycache__ with stale .pyc committed**~~ — Deleted all `__pycache__/` directories (contained .pyc for deleted modules: `routes_forecast`, `routes_recipes`, `cache.py`, `gold_costs.py`, `gold_cost_table.py`). Added `.wrangler/` to `.gitignore`.
-4. ~~**PROGRESS-NOTES.md redundant**~~ — Deleted (was a 7-line redirect to worklog.md).
-5. ~~**AnomalyDetector per-request instantiation**~~ — Changed to lazy singleton in `routes_anomalies.py`.
-6. ~~**BaseDataProvider.close() sync vs async mismatch**~~ — Changed `close()` to `async def` in `base.py` to match `Poe2ScoutProvider.close()`.
-7. ~~**Dead HTTPException catch in main.py**~~ — Removed `except HTTPException` block (dead code — `check_provider_health()` no longer raises it).
-8. ~~**Canonical Formulas duplicate §11 numbering**~~ — Renamed second §11 to §14, updated all sub-sections (14.1–14.9).
-9. ~~**Canonical Formulas Pitfall #3 outdated**~~ — Updated to reflect gold fees permanently excluded.
-10. ~~**Canonical Formulas Pitfall #4 outdated**~~ — Updated Bellman-Ford formula to remove fee terms. Pitfall #5 marked DEPRECATED.
+1. ~~**HistoricalStore.clear_all_events() missing**~~ — Added method.
+2. ~~**WebSocket storage_value missing acceleration**~~ — Added to `_compute_storage_value()`.
+3. ~~**__pycache__ with stale .pyc committed**~~ — Deleted all `__pycache__/`, added `.wrangler/` to `.gitignore`.
+4. ~~**PROGRESS-NOTES.md redundant**~~ — Deleted.
+5. ~~**AnomalyDetector per-request instantiation**~~ — Changed to lazy singleton.
+6. ~~**BaseDataProvider.close() sync vs async mismatch**~~ — Changed to `async def`.
+7. ~~**Dead HTTPException catch in main.py**~~ — Removed.
+8. ~~**Canonical Formulas duplicate §11 numbering**~~ — Renamed second §11 to §14.
+9. ~~**Canonical Formulas Pitfall #3 outdated**~~ — Updated for gold fees permanently excluded.
+10. ~~**Canonical Formulas Pitfall #4 outdated**~~ — Updated Bellman-Ford formula.
 
 ### COMPLETED (v1.19 — Iteration 4)
-1. ~~**triangular.py gold params removed**~~ — Deleted `gold_cost_per_unit` and `gold_to_chaos_rate` parameters from `find_triangular_arbitrage()`, removed dead `if gold_cost_per_unit and gold_to_chaos_rate > 0` branch
-2. ~~**routes_arbitrage.py gold args removed**~~ — Removed `gold_cost_per_unit=None` and `gold_to_chaos_rate=0.0` from the `find_triangular_arbitrage()` call, cleaned stale gold comments
-3. ~~**Dead i18n keys removed**~~ — Deleted `flipsGoldFeesExcluded` and `flipsGoldFeesExcludedDesc` from all 4 locale files (en, ru, zh, ko)
-4. ~~**test_triangular.py cleaned**~~ — Removed historical gold fee comments from docstring
-5. ~~**config.py FeesConfig comment removed**~~ — Deleted orphan comment about removed FeesConfig
-6. ~~**Gold code removal fully complete**~~ — No remaining gold-fee references in backend code or frontend i18n
+1. ~~**triangular.py gold params removed**~~
+2. ~~**routes_arbitrage.py gold args removed**~~
+3. ~~**Dead i18n keys removed**~~ — Deleted `flipsGoldFeesExcluded` from all 4 locales
+4. ~~**test_triangular.py cleaned**~~
+5. ~~**config.py FeesConfig comment removed**~~
+6. ~~**Gold code removal fully complete**~~
 
 ### COMPLETED (v1.18 — Iteration 3)
-1. ~~**Gold code fully removed**~~ — Deleted `FeesConfig` (config.py), `fees:` section (config.yaml), `gold_costs.py`, `gold_cost_table.py`, `FeeWarning`/`feeWarning` (types.ts), gold fee warning UI (arbitrage-tab.tsx, flips-tab.tsx), `Coins` icon imports
-2. ~~**Circuit breaker initial cooldown reduced**~~ — From 60s to 15s for faster recovery during backend cold start
-3. ~~**Documentation updated**~~ — ARCHITECTURE.md I9, BACKEND_GUIDE.md §6.9, DATA_FLOW.md §8.5, Canonical Formulas §3, AGENT_NAVIGATION.md
+1. ~~**Gold code fully removed**~~ — Deleted `FeesConfig`, `gold_costs.py`, `gold_cost_table.py`, fee warning UI
+2. ~~**Circuit breaker initial cooldown reduced**~~ — From 60s to 15s
+3. ~~**Documentation updated**~~
 
 ### COMPLETED (v1.17 — Iteration 2)
-1. ~~**flipper-proxy.ts: Response body race condition**~~ — Dedup map now stores BufferedProxyResult (data+status) instead of raw Response; each consumer gets a fresh NextResponse
-2. ~~**backend/main.py: Race condition in health check**~~ — Added asyncio.Lock (_health_check_lock) with double-check pattern
-3. ~~**routes_optimizer.py: Dijkstra with negative weights**~~ — Replaced with Bellman-Ford algorithm (handles -log(rate) < 0 when rate > 1)
-4. ~~**routes_arbitrage.py: gold_enabled stub removed**~~ — Dead code deleted: gold_fees_enabled, fee_warning in flips/triangular responses, gold import comments
-5. ~~**dashboard-page.tsx: Stale closure in tab useEffect**~~ — Added `tab` to dependency array
-6. ~~**poe2api.ts: parseInt Retry-After NaN guard**~~ — Uses Number.isFinite() before multiplying by 1000
-7. ~~**flipper-proxy.ts: Circuit breaker resets on 503**~~ — Now only resets on res.ok (2xx)
-8. ~~**analyst-fallback: Z-score on absolute prices**~~ — Changed to log-returns for scale-invariant anomaly detection
-9. ~~**Arbitrage tab first-load bug**~~ — Added backendChecking state; shows "Checking…" instead of "Offline" while health check is in progress
+1. ~~**flipper-proxy.ts: Response body race condition**~~ — BufferedProxyResult
+2. ~~**backend/main.py: Race condition in health check**~~ — asyncio.Lock
+3. ~~**routes_optimizer.py: Dijkstra with negative weights**~~ — Bellman-Ford
+4. ~~**routes_arbitrage.py: gold_enabled stub removed**~~
+5. ~~**dashboard-page.tsx: Stale closure in tab useEffect**~~
+6. ~~**poe2api.ts: parseInt Retry-After NaN guard**~~
+7. ~~**flipper-proxy.ts: Circuit breaker resets on 503**~~
+8. ~~**analyst-fallback: Z-score on absolute prices**~~ — log-returns
+9. ~~**Arbitrage tab first-load bug**~~
 
 ### COMPLETED (v1.15)
-1. ~~**Regenerate cache-snapshot.json with VPN**~~ — Reran `npx tsx scripts/generate-cache-snapshot.ts` with VPN. Snapshot now includes all 17 endpoints (5 ByCategory). Size: 469.4 KB (under 500 KB limit). Confirmed: 14→17 endpoints, `default_league_value` auto-fixed from "Fate of the Vaal" → "runes".
-2. ~~**Generate bycategory fixture files for idol, vaultkeys, delirium**~~ — Reran `npx tsx scripts/dump-live-data.ts` with VPN. All 5 fixture files now present: `bycategory-ritual.json`, `bycategory-ultimatum.json`, `bycategory-idol.json`, `bycategory-vaultkeys.json`, `bycategory-delirium.json`. Flip verification script passes all 4 checks.
+1. ~~**Regenerate cache-snapshot.json with VPN**~~
+2. ~~**Generate bycategory fixture files**~~
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
-2. **Gold fees permanently excluded** — `gold_enabled`, `FeesConfig`, `gold_costs.py`, `gold_cost_table.py` all removed in v1.18. `FeeWarning`/`feeWarning` removed from frontend types and components.
-3. **R_buy=bid, R_sell=ask** — Correct market-maker model (buy at bid, sell at ask)
+2. **Gold fees permanently excluded** — All gold-related code removed in v1.18–v1.19
+3. **R_buy=bid, R_sell=ask** — Correct market-maker model
 4. **Correlation min_overlap=2** — Intentionally low for early-league compatibility
 5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu
-6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Suppressed in `layout.tsx`. Harmless.
-7. **Divine pricing ~10% premium** — Market inefficiency, not a bug — dashboard highlights via BestPaymentBadge
+6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Harmless.
+7. **Divine pricing ~10% premium** — Market inefficiency, not a bug
 
 ## 7. Architecture & API References
-
-Architecture layers, data flows, API endpoint tables, and configuration details are documented in dedicated files:
 
 | Topic | Document | Section |
 |-------|----------|---------|
@@ -195,34 +199,35 @@ When a new league launches, update these 7 files:
 
 ## 10. Frequent Bugs
 
-1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName (e.g. "Fate of the Vaal", "vaal", "Runes of Aldur") instead of current ShortName ("runes"). Fix: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `generate-cache-snapshot.ts` auto-fixes the value in the snapshot. Mitigation: `IsCurrent=true` now works for poe2 realm, so `getLeagues()` can determine the active league without relying on `/Realms`.
-2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask` (market-maker model). If reversed, all `gross_profit_pct` ≈ −3.5%.
+1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName. Fix: `DEFAULT_LEAGUE_OVERRIDES` + dual matching in `getLeagues()`. `IsCurrent=true` now works for poe2 realm.
+2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask`. If reversed, all `gross_profit_pct` ≈ −3.5%.
 3. **`is_bfs_pair` always false:** Iterating `rates.items()` means every key is "direct". Fix: currency-based BFS detection.
 4. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
-5. **`cache-snapshot.json` too large:** `/SnapshotPairs` returns thousands of pairs (~2.6 MB raw). Fix: `generate-cache-snapshot.ts` truncates to max 8 pairs per item category + max 15 currency pairs (total cap ~55), sorted by VolumeTraded descending. This keeps snapshot under ~500 KB.
+5. **`cache-snapshot.json` too large:** Fix: truncation to max 8 pairs per item category + max 15 currency pairs.
 6. **PriceLogs are REVERSE chronological:** Always sort before charting.
-7. **`IsCurrent` works for poe2 realm:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
+7. **`IsCurrent` works for poe2 realm:** Still use fallback to `default_league_value` for other realms.
 8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
-9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
-10. **Gold fees permanently excluded** — All gold-related code removed (v1.18–v1.19): `FeesConfig`, `gold_costs.py`, `gold_cost_table.py`, `gold_cost_per_unit`/`gold_to_chaos_rate` params in triangular.py, `flipsGoldFeesExcluded` i18n keys. Do NOT re-add gold fee deductions; gold is a consumable in PoE2 with no real trade value for flippers.
+9. **Missing currency categories in config:** Keep config complete for robustness.
+10. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
 11. **npm is the package manager** — not pnpm/yarn.
 12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
 14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
-16. **`baseCurrencyText` is nullable** — Always use `?? ""` or `?? defaultText` when passing to components.
-17. **`_math` must be module-level import** — `_find_optimal_payment()` uses `_math.isfinite()`. Fixed in v1.10.
-18. **`item_categories` must stay in sync** — `config.yaml`, `config.py`, `currency-optimal.ts` all must contain the same categories. Current: ritual, ultimatum, idol, vaultkeys, delirium. All verified live (2026-06-08).
+16. **`baseCurrencyText` is nullable** — Always use `?? ""` or `?? defaultText`.
+17. **`_math` must be module-level import** — `_find_optimal_payment()` uses `_math.isfinite()`.
+18. **`item_categories` must stay in sync** — `config.yaml`, `config.py`, `currency-optimal.ts` all must contain the same categories.
 19. **`currency_names[meta...]` not `currency_nameseta`** — Critical typo fixed in v1.11.
-20. **SnapshotPairs truncation strategy** — `generate-cache-snapshot.ts` sorts by VolumeTraded descending, keeps top 8 per item category + top 15 currency pairs. This produces representative data for both item-aware grouping and regular exchange view.
-21. **`dump-live-data.ts` for test fixture generation** — Run with VPN to generate JSON fixtures in `tests/fixtures/`. Do NOT commit live data to public repo without review.
-22. **ByCategory endpoints in scripts must include all 5 item categories** — `generate-cache-snapshot.ts` and `dump-live-data.ts` both fetch ByCategory for ritual, ultimatum, idol, vaultkeys, delirium. If a new item category is added to `config.yaml`, it must also be added to both scripts.
-23. **HistoricalStore.clear_all_events() must exist** — `EventManager.clear_all()` calls `self._store.clear_all_events()`. If this method is missing from `HistoricalStore`, it raises `AttributeError`. Always keep the method in sync when modifying the events schema.
-24. **WebSocket vs REST parity** — `_compute_storage_value()` in `routes_ws.py` must pass the same params as the REST endpoint in `routes_storage_value.py`. Missing `acceleration` causes divergent results between WS and REST.
-25. **Tailwind v4 CSS-first — no tailwind.config.ts** — Project uses Tailwind v4 with CSS-first config. Theme is defined in `globals.css` via `@theme inline`. `darkMode: "class"` is replaced by `@custom-variant dark (&:is(.dark *))`. Do NOT re-create `tailwind.config.ts`. Animations use `tw-animate-css` (not `tailwindcss-animate`).
-26. **Service Worker cache auto-bust** — `sw.js` cache version is bumped automatically on every `npm run build` via `postbuild` → `scripts/bump-sw-cache.js`. If you change the cache name format, update both `sw.js` and `bump-sw-cache.js`.
-27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`. Without it, concurrent coroutines read the same stale timestamp and fire requests simultaneously, violating the rate limit.
-28. **Health check is non-blocking** — `check_provider_health()` runs as `asyncio.create_task()` in lifespan, not awaited. Backend starts immediately. `_provider_healthy` defaults to True (optimistic) and updates after the check completes.
+20. **SnapshotPairs truncation strategy** — Top 8 per item category + top 15 currency pairs.
+21. **`dump-live-data.ts` for test fixture generation** — Run with VPN. Do NOT commit live data without review.
+22. **ByCategory endpoints in scripts must include all 5 item categories** — ritual, ultimatum, idol, vaultkeys, delirium.
+23. **HistoricalStore.clear_all_events() must exist** — `EventManager.clear_all()` calls it.
+24. **WebSocket vs REST parity** — `_compute_storage_value()` must pass same params.
+25. **Tailwind v4 CSS-first — no tailwind.config.ts** — Theme in `globals.css` via `@theme inline`. `darkMode: "class"` → `@custom-variant dark`. Animations use `tw-animate-css`.
+26. **Service Worker cache auto-bust** — `sw.js` cache version bumped on every `npm run build`.
+27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`.
+28. **Health check is non-blocking** — `asyncio.create_task()` in lifespan, not awaited.
+29. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668). Always use venv python for backend.
 
 ## 11. Documentation Map
 
@@ -235,5 +240,5 @@ When a new league launches, update these 7 files:
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms, API path reference | On data flow changes |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals | On backend changes |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup + fallback mechanisms | On proxy changes |
-| `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§11) | On algorithm changes |
+| `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§14) | On algorithm changes |
 | `src/lib/currency-optimal.ts` | §11: Cross-currency arbitrage helpers | On flip logic changes |

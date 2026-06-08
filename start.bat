@@ -54,6 +54,7 @@ echo.
 REM ---- Check for Python / uvicorn (optional) ----
 set PYTHON_AVAILABLE=0
 set UVICORN_AVAILABLE=0
+set PY_CMD=python
 
 where python >nul 2>&1
 if !ERRORLEVEL! equ 0 (
@@ -61,33 +62,48 @@ if !ERRORLEVEL! equ 0 (
     echo [OK] Python found.
 )
 
-where uvicorn >nul 2>&1
-if !ERRORLEVEL! equ 0 (
-    set UVICORN_AVAILABLE=1
-    echo [OK] uvicorn found.
-)
+REM ---- Set up Python venv ----
+REM Creates .venv if it doesn't exist, then uses venv's python/pip.
+REM This avoids PEP 668 "externally-managed-environment" errors on
+REM modern Linux and keeps deps isolated from the system Python.
+set VENV_DIR=%~dp0.venv
 
-REM Check uvicorn via python -m uvicorn --version (more reliable than pip show)
-REM This catches cases where uvicorn is installed via pip but not in PATH
-REM (typical for "pip install --user" on Windows: uvicorn lands in
-REM %APPDATA%\Python\Python3x\Scripts\ which is NOT in PATH by default)
-if !UVICORN_AVAILABLE! equ 0 (
-    if !PYTHON_AVAILABLE! equ 1 (
-        python -m uvicorn --version >nul 2>&1
-        if !ERRORLEVEL! equ 0 (
-            set UVICORN_AVAILABLE=1
-            echo [OK] uvicorn found via python -m uvicorn.
+if !PYTHON_AVAILABLE! equ 1 (
+    if not exist "!VENV_DIR!\Scripts\python.exe" (
+        echo [INFO] Creating Python virtual environment ^(.venv^)...
+        python -m venv .venv >nul 2>&1
+        if exist ".venv\Scripts\python.exe" (
+            echo [OK] Virtual environment created.
+        ) else (
+            echo [WARN] Failed to create venv. Falling back to system Python.
         )
+    )
+
+    REM Use venv python if available, otherwise system python
+    if exist ".venv\Scripts\python.exe" (
+        set PY_CMD=.venv\Scripts\python.exe
+        echo [OK] Using venv Python: !PY_CMD!
     )
 )
 
-REM Fallback: check pip show if python -m uvicorn didn't work either
+REM Check uvicorn availability (venv first, then system)
+if exist ".venv\Scripts\uvicorn.exe" (
+    set UVICORN_AVAILABLE=1
+    echo [OK] uvicorn found in venv.
+) else (
+    where uvicorn >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        set UVICORN_AVAILABLE=1
+        echo [OK] uvicorn found.
+    )
+)
+
 if !UVICORN_AVAILABLE! equ 0 (
     if !PYTHON_AVAILABLE! equ 1 (
-        python -m pip show uvicorn >nul 2>&1
+        !PY_CMD! -m uvicorn --version >nul 2>&1
         if !ERRORLEVEL! equ 0 (
             set UVICORN_AVAILABLE=1
-            echo [OK] uvicorn found via pip show.
+            echo [OK] uvicorn found via !PY_CMD! -m uvicorn.
         )
     )
 )
@@ -95,23 +111,25 @@ if !UVICORN_AVAILABLE! equ 0 (
 if !UVICORN_AVAILABLE! equ 0 (
     echo [WARN] uvicorn not found. The Flipper backend will not start.
     echo        Advanced features ^(scoring, triangular arb, forecasts^) will be unavailable.
-    echo        Install with: pip install -r requirements.txt
+    if !PYTHON_AVAILABLE! equ 1 (
+        echo        Install with: !PY_CMD! -m pip install -r requirements.txt
+    ) else (
+        echo        Install Python 3 and then: pip install -r requirements.txt
+    )
     echo.
 )
 
-REM ---- Install Python dependencies (if pip and uvicorn available) ----
+REM ---- Install Python dependencies ----
 if !PYTHON_AVAILABLE! equ 1 (
-    if !UVICORN_AVAILABLE! equ 1 (
-        echo [INFO] Checking Python dependencies...
-        pip install -q -r requirements.txt 2>nul
-        if !ERRORLEVEL! equ 0 (
-            echo [OK] Python dependencies ready.
-        ) else (
-            echo [WARN] Some Python dependencies may be missing.
-            echo        Run manually: pip install -r requirements.txt
-        )
-        echo.
+    echo [INFO] Checking Python dependencies...
+    !PY_CMD! -m pip install -q -r requirements.txt 2>nul
+    if !ERRORLEVEL! equ 0 (
+        echo [OK] Python dependencies ready.
+    ) else (
+        echo [WARN] Some Python dependencies may be missing.
+        echo        Run manually: !PY_CMD! -m pip install -r requirements.txt
     )
+    echo.
 )
 
 REM ---- Check .env.local ----
@@ -195,7 +213,7 @@ set FLIPPER_PID=0
 if !UVICORN_AVAILABLE! equ 1 (
     echo [INFO] Starting FastAPI Flipper backend on port 8000...
     set PYTHONPATH=%~dp0
-    start /b python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+    start /b !PY_CMD! -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
 
     REM Wait for backend to start with retry loop (up to 15 seconds)
     REM Using PowerShell HTTP check instead of netstat for reliability.
@@ -263,7 +281,7 @@ if not exist "node_modules\" (
 REM ---- Handle flags ----
 REM Use --dev flag for dev mode: start.bat --dev
 REM Use --skip-build flag to skip: start.bat --skip-build
-REM Use --clean flag to deep-clean .next + node_modules: start.bat --clean
+REM Use --clean flag to deep-clean .next + node_modules + .venv: start.bat --clean
 
 REM ---- --clean flag: deep clean ----
 if "%~1"=="--clean" (
@@ -276,6 +294,10 @@ if "%~1"=="--clean" (
         rmdir /s /q "node_modules" 2>nul
         echo [OK] Removed node_modules\
     )
+    if exist ".venv\" (
+        rmdir /s /q ".venv" 2>nul
+        echo [OK] Removed .venv\
+    )
     echo [INFO] Reinstalling dependencies...
     call npm install
     if !ERRORLEVEL! neq 0 (
@@ -285,7 +307,15 @@ if "%~1"=="--clean" (
         pause
         exit /b 1
     )
-    echo [OK] Dependencies reinstalled successfully.
+    echo [OK] npm dependencies reinstalled successfully.
+    REM Recreate venv and install Python deps
+    if !PYTHON_AVAILABLE! equ 1 (
+        echo [INFO] Recreating Python venv and installing deps...
+        python -m venv .venv >nul 2>&1
+        .venv\Scripts\python.exe -m pip install -q -r requirements.txt
+        set PY_CMD=.venv\Scripts\python.exe
+        echo [OK] Python venv recreated and deps installed.
+    )
     echo.
 )
 
@@ -301,7 +331,7 @@ if "%~1"=="--dev" (
         )
         timeout /t 1 /nobreak >nul
         set PYTHONPATH=%~dp0
-        start /b python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
+        start /b !PY_CMD! -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1
         timeout /t 2 /nobreak >nul
         echo [OK] Flipper backend restarted with --reload
         echo.

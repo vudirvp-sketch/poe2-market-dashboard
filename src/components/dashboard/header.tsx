@@ -260,7 +260,9 @@ export function Header({
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-      <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center gap-2.5 flex-nowrap overflow-x-auto">
+      <div className="max-w-[1600px] mx-auto px-4 py-2.5 flex items-center gap-2.5">
+        {/* Scrollable bar — all items except "More" menu */}
+        <div className="flex items-center gap-2.5 overflow-x-auto min-w-0 flex-1">
         {/* Logo — §1.4: prominent */}
         <div className="flex items-center gap-2 shrink-0">
           <Activity className="h-6 w-6 text-primary" aria-hidden="true" />
@@ -446,8 +448,9 @@ export function Header({
             {timeAgo}
           </span>
         )}
+        </div>{/* end scrollable bar */}
 
-        {/* §1.4: "More" menu — contains secondary controls */}
+        {/* §1.4: "More" menu — OUTSIDE scrollable bar so it's always visible */}
         <div className="relative shrink-0" ref={moreRef}>
           <Button
             variant="ghost"

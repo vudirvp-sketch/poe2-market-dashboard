@@ -7,7 +7,7 @@
 #    ./start.sh            # production mode (build + start)
 #    ./start.sh --dev      # development mode (no build, hot reload)
 #    ./start.sh --skip-build  # skip build, use existing .next
-#    ./start.sh --clean    # remove .next + node_modules, reinstall, build
+#    ./start.sh --clean    # remove .next + node_modules + .venv, reinstall, build
 # ============================================================
 set -euo pipefail
 
@@ -47,56 +47,77 @@ else
     exit 1
 fi
 
-# ---- Check Python / uvicorn ----
+# ---- Check Python & set up venv ----
 PYTHON_AVAILABLE=0
 UVICORN_AVAILABLE=0
+VENV_DIR="$SCRIPT_DIR/.venv"
+PY_CMD=""  # Will be set to the venv python or system python
 
 if command -v python3 &>/dev/null; then
     PYTHON_AVAILABLE=1
-    info "Python3 found."
 elif command -v python &>/dev/null; then
     PYTHON_AVAILABLE=1
-    info "Python found."
 fi
 
-if command -v uvicorn &>/dev/null; then
-    UVICORN_AVAILABLE=1
-    info "uvicorn found."
-elif [ "$PYTHON_AVAILABLE" -eq 1 ]; then
-    # Check via python3 -m uvicorn --version (more reliable than pip show)
-    # This catches cases where uvicorn is installed but not in PATH
-    PY_CMD="python3"
+if [ "$PYTHON_AVAILABLE" -eq 1 ]; then
+    # Determine the system python command
+    SYS_PY="python3"
     if ! command -v python3 &>/dev/null; then
-        PY_CMD="python"
+        SYS_PY="python"
     fi
-    if $PY_CMD -m uvicorn --version &>/dev/null 2>&1; then
+
+    # Create venv if it doesn't exist
+    if [ ! -d "$VENV_DIR" ] || [ ! -f "$VENV_DIR/bin/python" ]; then
+        info "Creating Python virtual environment (.venv)..."
+        if $SYS_PY -m venv "$VENV_DIR" 2>/dev/null; then
+            info "Virtual environment created."
+        else
+            warn "Failed to create venv. Falling back to system Python."
+            VENV_DIR=""
+        fi
+    fi
+
+    # Set PY_CMD to venv python (preferred) or system python
+    if [ -f "$VENV_DIR/bin/python" ]; then
+        PY_CMD="$VENV_DIR/bin/python"
+        info "Using venv Python: $PY_CMD"
+    else
+        PY_CMD="$SYS_PY"
+        info "Using system Python: $PY_CMD"
+    fi
+
+    # Check if uvicorn is available in venv or system
+    if [ -f "$VENV_DIR/bin/uvicorn" ]; then
+        UVICORN_AVAILABLE=1
+        info "uvicorn found in venv."
+    elif $PY_CMD -m uvicorn --version &>/dev/null 2>&1; then
         UVICORN_AVAILABLE=1
         info "uvicorn found via $PY_CMD -m uvicorn."
-    elif $PY_CMD -m pip show uvicorn &>/dev/null 2>&1; then
+    elif command -v uvicorn &>/dev/null; then
         UVICORN_AVAILABLE=1
-        info "uvicorn found via pip show."
+        info "uvicorn found in PATH."
     fi
 fi
 
 if [ "$UVICORN_AVAILABLE" -eq 0 ]; then
     warn "uvicorn not found. Flipper backend will not start."
     warn "Advanced features (scoring, forecasts, portfolio) will be unavailable."
-    warn "Install with: pip install -r requirements.txt"
+    if [ "$PYTHON_AVAILABLE" -eq 1 ]; then
+        warn "Install with: $PY_CMD -m pip install -r requirements.txt"
+    else
+        warn "Install Python 3 and then: pip install -r requirements.txt"
+    fi
     echo ""
 fi
 
-# ---- Install Python dependencies ----
-if [ "$PYTHON_AVAILABLE" -eq 1 ] && [ "$UVICORN_AVAILABLE" -eq 1 ]; then
+# ---- Install Python dependencies into venv ----
+if [ "$PYTHON_AVAILABLE" -eq 1 ]; then
     info "Checking Python dependencies..."
-    PIP_CMD="pip"
-    if command -v pip3 &>/dev/null; then
-        PIP_CMD="pip3"
-    fi
-    if $PIP_CMD install -q -r requirements.txt 2>/dev/null; then
+    if $PY_CMD -m pip install -q -r requirements.txt 2>&1; then
         info "Python dependencies ready."
     else
         warn "Some Python dependencies may be missing."
-        warn "Run manually: $PIP_CMD install -r requirements.txt"
+        warn "Run manually: $PY_CMD -m pip install -r requirements.txt"
     fi
     echo ""
 fi
@@ -181,12 +202,7 @@ FLIPPER_PID=""
 
 if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
     info "Starting FastAPI Flipper backend on port 8000..."
-    # Use python3 -m uvicorn to avoid PATH issues (uvicorn may not be in PATH
-    # even though it's installed via pip --user)
-    PY_CMD="python3"
-    if ! command -v python3 &>/dev/null; then
-        PY_CMD="python"
-    fi
+    # Use the determined PY_CMD (venv python preferred)
     # PYTHONPATH must include the project root so Python can find the 'backend' package
     # Without this, uvicorn fails with "ModuleNotFoundError: No module named 'backend'"
     PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
@@ -206,6 +222,12 @@ if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
         # Check if the process is still running
         if ! kill -0 "$FLIPPER_PID" 2>/dev/null; then
             warn "Flipper backend process died! Check flipper-backend.log for errors."
+            # Print last few lines of the log for quick diagnosis
+            if [ -f "flipper-backend.log" ]; then
+                echo "--- Last 10 lines of flipper-backend.log ---"
+                tail -10 flipper-backend.log
+                echo "---"
+            fi
             break
         fi
     done
@@ -278,13 +300,23 @@ if [ "$CLEAN_MODE" -eq 1 ]; then
     info "Removed .next/"
     rm -rf node_modules 2>/dev/null || true
     info "Removed node_modules/"
+    rm -rf .venv 2>/dev/null || true
+    info "Removed .venv/"
     info "Reinstalling dependencies..."
     npm install
     if [ $? -ne 0 ]; then
         error "npm install failed after --clean!"
         exit 1
     fi
-    info "Dependencies reinstalled successfully."
+    info "npm dependencies reinstalled successfully."
+    # Recreate venv and install Python deps
+    if [ "$PYTHON_AVAILABLE" -eq 1 ]; then
+        info "Recreating Python venv and installing deps..."
+        $SYS_PY -m venv "$VENV_DIR"
+        "$VENV_DIR/bin/python" -m pip install -q -r requirements.txt
+        PY_CMD="$VENV_DIR/bin/python"
+        info "Python venv recreated and deps installed."
+    fi
     echo ""
 fi
 
