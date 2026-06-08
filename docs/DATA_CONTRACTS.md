@@ -183,7 +183,7 @@ interface StorageValueResponse {
   projectedPrice: number;
   riskDiscount: number;
   adjustedPrice: number;
-  netValueAfterFees: number;
+  netValueAfterFees: number;  // ⚠️ Misleading name — gold fees are disabled, this equals adjustedPrice. Should be renamed to netValue.
   ratio: number;
   decision: string;            // "HOLD" | "SELL"
   dataAvailable: boolean;

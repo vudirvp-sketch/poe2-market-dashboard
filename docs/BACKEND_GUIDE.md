@@ -206,10 +206,12 @@ score = raw_spread × fill_probability × momentum_penalty × vol_penalty × pha
 
 **Location:** `backend/economy/lifecycle.py`
 
-- EARLY: days 0-14 (configurable)
-- MID: days 15-42
+- EARLY: days 0-14 inclusive (default `phase_early_days`)
+- MID: days 15-42 inclusive (default `phase_mid_days`)
 - LATE: days 43+
 - Reset support for major patch events
+
+**Note:** Boundaries use ≤ (inclusive). `phase_early_days` and `phase_mid_days` are configurable via `config.yaml`.
 
 ### 6.8 Event Management
 
@@ -237,6 +239,23 @@ Pre-filters currency pairs by:
 - Minimum 24h volume (`min_volume_24h` from config)
 - Maximum volatility (`max_volatility` from config)
 - Maximum spread (`max_spread` from config)
+
+### 6.11 Scanner
+
+**Location:** `backend/api/routes_scanner.py`
+
+Advanced flip opportunity scanner with custom filters and sorting:
+- Score range filter (`min_score`, `max_score`)
+- Volume filter (`min_volume`)
+- Spread range filter (`min_spread`, `max_spread`)
+- Cluster filter (`stable`, `moderate`, `volatile_illiquid`)
+- Currency substring filter (case-insensitive partial match)
+- Sort by: `score`, `spread`, `volume_24h`, `momentum`, `volatility`
+- Result limit (1-200)
+
+**Endpoint:** `GET /api/scanner/scan`
+
+Reuses `_build_flip_opportunities()` from `routes_arbitrage.py` with PipelineCache to avoid redundant computation.
 
 ## 7. Backend Testing Guide
 

@@ -112,6 +112,8 @@ FLIPPER_API_URL=http://localhost:8000
 # In dev: connects directly to backend on port 8000
 # In production behind reverse proxy: set to wss://your-domain.com
 NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000
+# Enable Flipper WebSocket integration (set to "true" to enable real-time updates)
+NEXT_PUBLIC_FLIPPER_WS_ENABLED=true
 EOF
     info ".env.local created with api.poe2scout.com"
     echo ""

@@ -179,6 +179,8 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | event_pruning | 15 min | Prune expired events from memory + SQLite |
 | model_persistence | 30 min | Save LightGBM models to disk |
 
+**Details:** See [`BACKEND_GUIDE.md`](./BACKEND_GUIDE.md) §4
+
 ## 7. Cache Architecture
 
 | Cache | Location | TTL | Key | Storage |
@@ -226,3 +228,5 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | Portfolio | Yes | optimizer-tab | /api/flipper/portfolio/correlation |
 | Graph | Yes | currency-graph-tab, comparative-chart | /api/flipper/* |
 | Watchlist | No | watchlist-tab | Local Zustand store |
+
+**Detailed data→component mapping:** See [`DATA_FLOW.md`](./DATA_FLOW.md) §9

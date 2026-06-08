@@ -10,7 +10,7 @@ From PoE2_Flipper_Canonical_Formulas.md §1:
     elif days_since_reference ≤ phase_mid_days: → MID
     else:                                        → LATE
 
-Defaults: phase_early_days=7, phase_mid_days=35
+Defaults: phase_early_days=14, phase_mid_days=42
 
 Phase boundaries are not purely day-based. A major patch event can reset
 the phase clock. The system accepts an external event flag (set manually

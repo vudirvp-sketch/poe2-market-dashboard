@@ -45,7 +45,7 @@ class DataConfig(BaseModel):
 class LeagueConfig(BaseModel):
     league_name: str = "runes"  # Override in config.yaml when league changes
     realm: str = "poe2"  # POE2Scout API realm path segment: "poe2" (NOT "poe2/pc")
-    league_start_date: str = "2026-06-02T00:00:00Z"  # Runes of Aldur launch date — update when a new league starts
+    league_start_date: str = "2026-05-29T20:00:00Z"  # Runes of Aldur launch date — update when a new league starts
     phase_early_days: int = 14  # Early phase: 14 days from league start
     phase_mid_days: int = 42  # Mid phase: up to 42 days
     base_currency: str = "exalted"

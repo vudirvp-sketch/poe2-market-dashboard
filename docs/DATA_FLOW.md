@@ -523,11 +523,12 @@ routes_events.py         # /api/events (GET/POST), /api/events/summary,
 routes_anomalies.py      # /api/anomalies
 routes_storage_value.py  # /api/storage-value/{currency}
 routes_portfolio.py      # /api/portfolio/correlation (ACTIVE)
+routes_scanner.py        # /api/scanner/scan — Advanced flip scanner with custom filters
 routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
                          # /ws/anomalies, /ws/flips, /ws/events
 ```
 
-**Note:** `routes_auth.py` exists but is NOT registered in the app — effectively dead code.
+**Note:** `routes_auth.py` has been **deleted** — it was previously dead code and has been removed from the codebase.
 
 ### 7.3 POE2Scout API Paths
 
@@ -566,7 +567,7 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
    - `/api/flipper/*` → FastAPI backend (with analytics)
 2. **Never hardcode API paths** — use exported functions from `poe2api.ts` or `flipper-proxy.ts`
 3. **Never use string ApiId where numeric ItemId is required** — CurrencyPairHistory expects integers
-4. **`/api/flipper/auth/*` routes exist but auth is not configured** — dead code
+4. ~~`/api/flipper/auth/*`~~ — **removed** (auth was never configured)
 
 ### 8.2 Response Shape Pitfalls
 
@@ -600,9 +601,9 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 
 ### 8.5 Known Discrepancies
 
-1. **Two overlapping helper files:** `src/components/dashboard/flips-helpers.ts` and `src/lib/flipper-helpers.ts` both export `scoreColor()` with different thresholds/Tailwind classes
+1. **`scoreColor` re-export:** `src/components/dashboard/flips-helpers.ts` now re-exports `scoreColor` from `src/lib/flipper-helpers.ts` — no longer duplicated with different thresholds
 2. **Backend `FeesConfig` has `gold_enabled` flag** (default: `false`) — controls gold fee inclusion
-3. **`routes_auth.py` exists but NOT registered** — dead code
+3. ~~`routes_auth.py`~~ — **deleted** from codebase (was dead code, now removed)
 4. **`OfficialTradeProvider` exists** but requires env vars that are never configured — dead code unless manually set
 
 ---

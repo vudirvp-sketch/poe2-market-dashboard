@@ -5,6 +5,8 @@
 > **VERIFICATION STATUS:** Each formula is either (a) a standard result from statistics/finance with a cited source, or (b) a direct consequence of domain logic (PoE2 trading mechanics). Where possible, a verification method is noted.
 >
 > **PoE2 vs PoE1 WARNING:** The gold fee model in §3 is specific to Path of Exile 2. Do NOT apply PoE1 fee assumptions. In PoE1, the exchange fee model is different. This entire document assumes PoE2 mechanics throughout.
+>
+> **⚠️ DEPRECATED SECTIONS NOTICE:** Sections marked `DEPRECATED` or `SIMPLIFIED` document formulas that are **no longer active in the codebase**. Gold fee calculations (§3) have been removed; triangular arbitrage (§8) and recipe arbitrage (§9) now use simplified no-fee formulas. These sections are kept for reference only — do NOT implement the fee-aware versions unless gold fees are explicitly re-enabled.
 
 ---
 
@@ -22,11 +24,11 @@ elif days_since_reference ≤ phase_mid_days:       → MID
 else:                                              → LATE
 ```
 
-### Defaults (configurable)
+### Defaults (configurable via `config.yaml` → `league.phase_early_days`, `league.phase_mid_days`)
 
 ```
-phase_early_days = 7
-phase_mid_days = 35
+phase_early_days = 14
+phase_mid_days = 42
 ```
 
 ### Verification

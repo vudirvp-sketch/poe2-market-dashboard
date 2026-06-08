@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.3 | **Date:** 2026-06-08
+> **Version:** 1.4 | **Date:** 2026-06-08
 
 ---
 
@@ -90,18 +90,8 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns `displayName` instead of `ShortName`. Bug report draft ready (see worklog.md).
+1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md).
 2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (blocked from RF). Use `npx tsx scripts/generate-cache-snapshot.ts` with VPN/proxy or via CI workflow.
-
-### DONE
-1. ~~Fix acceleration formula bug~~ — `log_returns[-m]` → `log_returns[-1-m]` in momentum.py
-2. ~~Fix test_reset expectation~~ — After reset, `volatility = min_volatility` (0.001), not 0.0
-3. ~~CI/CD: auto-refresh `cache-snapshot.json`~~ — `.github/workflows/ci.yml` with scheduled refresh + PR creation
-4. ~~Backend provider `official.py` league mapping~~ — Up-to-date for Runes of Aldur
-5. ~~E2E Playwright tests verified~~ — 39/39 pass (Globe button i18n fix confirmed)
-6. ~~`league_start_date` verified~~ — May 29, 2026 1PM PDT = 20:00 UTC (confirmed via poe2.com + game8.co)
-7. ~~Removed accidental `.lnk` file~~ — Added `*.lnk` to `.gitignore`
-8. ~~`historical.db` cleanup~~ — File doesn't exist in repo (not tracked); `*.db` already in `.gitignore`
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -111,78 +101,19 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu. E2E tests depend on this behavior.
 6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Suppressed via `console.error` monkey-patch in `layout.tsx`. Harmless.
 
-## 7. Architecture Layers (Quick Reference)
+## 7. Architecture & API References
 
-```
-Browser
-  → Next.js (port 3000)
-      ├── /api/poe2/*     → POE2Scout API (api.poe2scout.com)
-      │                       ↓ on connection error
-      │                       CORS Proxy (Cloudflare Worker)
-      │                       ↓ on connection error
-      │                       Pre-populated cache (cache-snapshot.json)
-      └── /api/flipper/*  → FastAPI Backend (port 8000)
-                               → POE2Scout API + SQLite + ML Models
-```
+Architecture layers, data flows, API endpoint tables, and configuration details are documented in dedicated files:
 
-**Full architecture:** See `docs/ARCHITECTURE.md`
+| Topic | Document | Section |
+|-------|----------|---------|
+| Architecture layers & data flow | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | §1-2 |
+| API endpoint reference (frontend + backend) | [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) | §7 |
+| Config.yaml structure & defaults | [`config.yaml`](config.yaml) + [`backend/config.py`](backend/config.py) | — |
+| CORS proxy & fallback chain | [`docs/CORS_PROXY_GUIDE.md`](docs/CORS_PROXY_GUIDE.md) | Full doc |
+| Graceful degradation rules | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | §8 |
 
-## 8. API Endpoint Quick Reference
-
-### Frontend Proxy Routes (`/api/flipper/*`)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/flipper/health` | GET | Backend health + cache stats |
-| `/api/flipper/phase` | GET | League phase (EARLY/MID/LATE) |
-| `/api/flipper/currencies` | GET | Currency metadata + icons |
-| `/api/flipper/prices` | GET | Exchange rates + fee info + cluster labels |
-| `/api/flipper/heatmap` | GET | 24h price change heatmap |
-| `/api/flipper/flips` | GET | Scored flip opportunities |
-| `/api/flipper/triangular` | GET | Triangular arbitrage cycles |
-| `/api/flipper/events` | GET/POST | List / create events |
-| `/api/flipper/events/[id]` | GET/DELETE | Get / delete event |
-| `/api/flipper/events/[id]/deactivate` | POST | Deactivate event |
-| `/api/flipper/anomalies` | GET | Anomaly detection results |
-| `/api/flipper/storage-value/[currency]` | GET | Hold/sell decision |
-| `/api/flipper/tiers` | GET | Currency tier classification (T0-T5) |
-| `/api/flipper/benchmarks/[currency]` | GET | Historical price benchmarks |
-| `/api/flipper/optimizer/path` | GET | Optimal currency conversion path |
-| `/api/flipper/optimizer/matrix` | GET | Effective rate matrix |
-| `/api/flipper/analyst/summary` | GET | League analyst summary |
-| `/api/flipper/portfolio/correlation` | GET | Correlation matrix |
-
-### Frontend Direct Routes (`/api/poe2/*`)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/poe2/realms` | GET | Realm + league selectors |
-| `/api/poe2/leagues` | GET | League list with active flag |
-| `/api/poe2/currencies` | GET | Currency items (paginated) |
-| `/api/poe2/items` | GET | Unique items (paginated) |
-| `/api/poe2/exchange` | GET | Exchange snapshot pairs |
-| `/api/poe2/overview` | GET | Market overview data |
-| `/api/poe2/uniques` | GET | Unique items with price history |
-| `/api/poe2/health` | GET | POE2Scout API connectivity check |
-
-## 9. Configuration Reference (`config.yaml`)
-
-| Section | Key Fields | Notes |
-|---------|-----------|-------|
-| `data` | `primary_provider`, `cors_proxy_url`, `cache_ttl_*` | Provider + cache settings |
-| `league` | `league_name`, `realm`, `league_start_date`, `currency_categories` | **Update on new league** |
-| `fees` | `gold_enabled` (false), `gold_to_chaos_rate_source` | Gold fees currently disabled |
-| `filters` | `min_volume_24h` (20), `max_volatility` (0.4), `max_spread` (0.15) | Early-league tuned |
-| `scoring` | `momentum_negative_threshold`, `phase_multiplier_*` | Spread scoring weights |
-| `forecasting` | `sarima_seasonal_period` (auto), `lightgbm_*`, `forecast_horizon_hours` (24) | ML model params |
-| `anomaly` | `bonferroni_alpha` (0.01), `rsi_*`, `macd_*` | Anomaly detection params |
-| `portfolio` | `method` (risk_parity), `correlation_shock_*` | Portfolio construction |
-| `tiers` | `boundaries` (t0_min: 50 → t4_min: 0.01) | RelativePrice-based |
-| `scheduler` | `price_snapshot_interval_minutes` (30), `model_persistence_*` | Background job intervals |
-
-**When a new league starts:** Update `league_name`, `league_start_date`, `currency_categories` (if changed), `src/lib/poe2api.ts` fallbacks, `e2e/fixtures.ts` mocks, regenerate `cache-snapshot.json`. See Section 12.
-
-## 10. i18n Conventions
+## 8. i18n Conventions
 
 - 4 locales: **en**, **ru**, **zh**, **ko** (~460 keys each)
 - Canonical source: `src/lib/i18n/locales/en.ts`
@@ -190,19 +121,7 @@ Browser
 - E2E tests use i18n-aware selectors (e.g., `Обзор|Overview|概览|개요`)
 - Russian pluralization: 3-form (1, 2-4, 5+); Chinese/Korean: no inflection
 
-## 11. Graceful Degradation Rules
-
-| Scenario | Behavior |
-|----------|----------|
-| Backend offline | Flipper tabs show offline message with `uvicorn` command |
-| POE2Scout blocked (Russia) | Circuit breaker → stale-while-revalidate cache → pre-populated snapshot |
-| No historical data (early league) | 7d change = 0, correlation min_overlap=2, low volume filters |
-| Insufficient data for analytics | `dataAvailable: false` in response, UI shows "insufficient data" |
-| Cache stale | SnapshotManager serves stale data + logs warning |
-
-**Fallback chain:** Direct API → CORS proxy → cached response → hardcoded fallback (`cache-snapshot.json`)
-
-## 12. New League Checklist
+## 9. New League Checklist
 
 When a new league launches, update these 7 files:
 
@@ -214,7 +133,7 @@ When a new league launches, update these 7 files:
 6. `e2e/fixtures.ts` — `MOCK_LEAGUES`, `MOCK_REALMS`
 7. `AGENT_NAVIGATION.md` — Update version + date
 
-## 13. Frequent Bugs
+## 10. Frequent Bugs
 
 1. **`default_league_value` format mismatch:** POE2Scout returns displayName ("Runes of Aldur") but code expects ShortName ("runes"). Fix: `DEFAULT_LEAGUE_OVERRIDES` + dual matching in `getLeagues()`.
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask` (market-maker model). If reversed, all `gross_profit_pct` ≈ −3.5%.
@@ -232,12 +151,12 @@ When a new league launches, update these 7 files:
 14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
 
-## 14. Documentation Map
+## 11. Documentation Map
 
 | File | Content | When to Update |
 |------|---------|----------------|
 | `AGENT_NAVIGATION.md` | This file — agent entry point | Every iteration |
-| `worklog.md` | Current state + frequent bugs + commands | End of iteration |
+| `worklog.md` | Current state delta (last iteration only) | End of iteration |
 | `docs/ARCHITECTURE.md` | Layers, data flow, invariants, principles | On structural changes |
 | `docs/DATA_CONTRACTS.md` | TypeScript types, API contracts, response shapes | On new API fields |
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms, API path reference | On data flow changes |
