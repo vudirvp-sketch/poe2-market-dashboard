@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.2 | **Date:** 2026-06-08
+> **Version:** 1.3 | **Date:** 2026-06-08
 
 ---
 
@@ -90,22 +90,26 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Run E2E Playwright tests** — Verify Globe button i18n fix resolves 3 failing tests
-2. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns stale value
-3. **Verify `league_start_date` accuracy** — Phase detection depends on it
-4. **Delete old SQLite database** (optional) — Contains stale "vaal" league data
+1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns `displayName` instead of `ShortName`. Bug report draft ready (see worklog.md).
+2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (blocked from RF). Use `npx tsx scripts/generate-cache-snapshot.ts` with VPN/proxy or via CI workflow.
 
-### DONE (this iteration)
-1. ~~Fix acceleration formula bug~~ — `log_returns[-m]` → `log_returns[-1-m]` in momentum.py + §2.4 canonical formulas
+### DONE
+1. ~~Fix acceleration formula bug~~ — `log_returns[-m]` → `log_returns[-1-m]` in momentum.py
 2. ~~Fix test_reset expectation~~ — After reset, `volatility = min_volatility` (0.001), not 0.0
-3. ~~CI/CD: auto-refresh `cache-snapshot.json`~~ — Added `.github/workflows/ci.yml` with scheduled refresh + PR creation
-4. ~~Backend provider `official.py` league mapping~~ — Already up-to-date for Runes of Aldur
+3. ~~CI/CD: auto-refresh `cache-snapshot.json`~~ — `.github/workflows/ci.yml` with scheduled refresh + PR creation
+4. ~~Backend provider `official.py` league mapping~~ — Up-to-date for Runes of Aldur
+5. ~~E2E Playwright tests verified~~ — 39/39 pass (Globe button i18n fix confirmed)
+6. ~~`league_start_date` verified~~ — May 29, 2026 1PM PDT = 20:00 UTC (confirmed via poe2.com + game8.co)
+7. ~~Removed accidental `.lnk` file~~ — Added `*.lnk` to `.gitignore`
+8. ~~`historical.db` cleanup~~ — File doesn't exist in repo (not tracked); `*.db` already in `.gitignore`
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
 2. **Gold fees disabled (`gold_enabled: false`)** — Intentional: gold is a consumable in PoE2, not a tradeable
 3. **R_buy=bid, R_sell=ask** — Correct market-maker model (buy at bid, sell at ask)
 4. **Correlation min_overlap=2** — Intentionally low for early-league compatibility
+5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu. E2E tests depend on this behavior.
+6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Suppressed via `console.error` monkey-patch in `layout.tsx`. Harmless.
 
 ## 7. Architecture Layers (Quick Reference)
 
@@ -216,17 +220,17 @@ When a new league launches, update these 7 files:
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask` (market-maker model). If reversed, all `gross_profit_pct` ≈ −3.5%.
 3. **`is_bfs_pair` always false:** Iterating `rates.items()` means every key is "direct". Fix: currency-based BFS detection.
 4. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
-5. **Globe button doesn't close More menu:** Add `setMoreOpen(false)` to Globe onClick.
-6. **`cache-snapshot.json` too large:** `/SnapshotPairs` returns ~2.6 MB. Fix: truncate to 30 entries.
-7. **PriceLogs are REVERSE chronological:** Always sort before charting.
-8. **`IsCurrent` is unreliable:** POE2Scout may not update it promptly. Prefer `IsCurrent` when any league has it `true`, else fall back to `default_league_value`.
-9. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
-10. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
-11. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled.
-12. **npm is the package manager** — not pnpm/yarn.
-13. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
-14. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
-15. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
+5. **`cache-snapshot.json` too large:** `/SnapshotPairs` returns ~2.6 MB. Fix: truncate to 30 entries.
+6. **PriceLogs are REVERSE chronological:** Always sort before charting.
+7. **`IsCurrent` is unreliable:** POE2Scout may not update it promptly. Prefer `IsCurrent` when any league has it `true`, else fall back to `default_league_value`.
+8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
+9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
+10. **`gold_enabled: false` means NO gold fee calculations:** Do NOT add fee deductions unless re-enabled.
+11. **npm is the package manager** — not pnpm/yarn.
+12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
+13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
+14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
+15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
 
 ## 14. Documentation Map
 

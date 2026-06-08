@@ -71,5 +71,8 @@ dist-python/
 *.db
 *.db-journal
 
+# Windows shortcuts
+*.lnk
+
 # Patch artifacts
 *.patch
