@@ -1,0 +1,289 @@
+# PoE2 Market Dashboard — Backend Guide
+
+> **Version:** 1.0 | **Date:** 2026-06-08
+
+---
+
+## 1. Provider Architecture
+
+### Poe2ScoutProvider (Primary)
+
+**Location:** `backend/data/providers/poe2scout.py`
+
+- Uses `httpx.AsyncClient` with connection pooling
+- Semaphore limits concurrent requests to 5
+- 2 retries on HTTP 429 (rate limit) with exponential backoff
+- CORS proxy fallback: if primary URL fails, retries through `cors_proxy_url` (from `config.yaml` or `POE2SCOUT_CORS_PROXY_URL` env var)
+- All API calls use league name as path parameter (ShortName format, e.g., "runes")
+
+**Key methods:**
+- `get_exchange_rates(league)` → `dict[str, SnapshotPair]` — all trading pairs
+- `get_currencies(league, category)` → `list[CurrencyItemExtended]` — paginated
+- `get_price_logs(league, currency_id)` → `list[PriceLogEntry]` — historical prices
+- `get_unique_items(league, category)` → `list[UniqueItemExtended]` — unique items
+
+### OfficialTradeProvider (Fallback)
+
+**Location:** `backend/data/providers/official.py`
+
+- OAuth2-based provider for GGG's official trade API
+- Rarely used — requires `GGG_CLIENT_ID` and `GGG_CLIENT_SECRET` env vars
+- League mapping: `_poe2scout_to_ggg_league` dict (e.g., `"runes": "Runes of Aldur"`)
+
+### Base Provider Interface
+
+**Location:** `backend/data/providers/base.py`
+
+Abstract `DataProvider` class that all providers implement. Ensures consistent interface regardless of data source.
+
+## 2. SnapshotManager Lifecycle
+
+**Location:** `backend/api/data_snapshot.py`
+
+The `SnapshotManager` is the central data orchestrator. It maintains a TTL-cached `DataSnapshot` that is refreshed periodically.
+
+```
+Startup:
+  1. SnapshotManager created with config
+  2. start_periodic_refresh() called as background task
+  3. First refresh fetches from Poe2ScoutProvider
+  4. DataSnapshot built with rates, currencies, price_histories
+  5. BFS transitive pricing computed for currencies without direct pairs
+
+Periodic Refresh:
+  - Every cache_ttl_prices_minutes (default: 5 min)
+  - Non-blocking: old snapshot served while new one fetches
+  - On failure: existing snapshot remains (stale but usable)
+
+Health Info:
+  - snapshot_valid, snapshot_stale, snapshot_age_seconds
+  - exchange_rates_count, currencies_count, price_histories_count
+  - Exposed via /api/health endpoint
+```
+
+**BFS Transitive Pricing:**
+
+When a currency has no direct trading pair with the base currency (exalted), the SnapshotManager computes its mid_price via breadth-first search through the graph of existing pairs. This ensures every currency has a price relative to the base, enabling scoring and analytics for all currencies.
+
+## 3. HistoricalStore (SQLite)
+
+**Location:** `backend/data/historical.py`
+
+SQLite database (`historical.db`) for persistent time-series storage.
+
+**Tables:**
+- `prices_history` — timestamped price records for scheduler snapshots
+- `events` — persisted event flags (dual-write with EventManager)
+- `price_snapshots` — periodic full snapshot archive
+
+**Key methods:**
+- `init()` — Create tables if not exist (with 10s timeout for startup resilience)
+- `append_price_snapshot(league, rates)` — Write current prices
+- `get_price_history(currency, hours)` — Read historical prices
+- `prune_expired_events()` — Remove expired events from SQLite
+- `_prune_old_league_data(league)` — Remove data from previous leagues on startup
+
+**Startup behavior:** If `init()` fails or times out, the backend continues without history (degraded mode). See Fix 9 in `main.py`.
+
+## 4. DataScheduler
+
+**Location:** `backend/scheduler.py`
+
+APScheduler-based background scheduler running 3 jobs:
+
+| Job | Interval | Purpose |
+|-----|----------|---------|
+| `price_snapshot` | 30 min | Fetch current prices via provider + persist to SQLite |
+| `event_pruning` | 15 min | Prune expired events from memory + SQLite |
+| `model_persistence` | 30 min | Save LightGBM models to disk |
+
+**Configuration:** All intervals are defined in `config.yaml` under `scheduler:` section.
+
+**Startup resilience:** If scheduler fails to start, the backend continues without scheduled jobs (manual API calls still work).
+
+## 5. Cache Layers
+
+### PipelineCache
+
+**Location:** `backend/data/pipeline_cache.py`
+
+TTL-based in-memory cache for expensive analytics computations. Prevents redundant recomputation when multiple API calls request the same data within the TTL window.
+
+**Key:** Composite of endpoint name + parameters  
+**TTL:** Configurable per-entry  
+**Stats:** Exposed via `/api/health` (cache_entries count)
+
+### DailyStatsCache
+
+**Location:** `backend/data/daily_stats_cache.py`
+
+LRU + TTL cache for OHLCV (Open-High-Low-Close-Volume) daily statistics. These are expensive to compute from raw price logs, so they're cached with a generous TTL.
+
+**Key:** Currency + league  
+**Max size:** Configurable  
+**TTL:** Configurable  
+**Stats:** Exposed via `/api/health` (size, max, stale_entries, ttl_seconds)
+
+### ModelStore
+
+**Location:** `backend/predictors/model_store.py`
+
+Persists trained LightGBM models to disk. On startup, the backend attempts to load previously saved models to avoid retraining from scratch.
+
+**Storage path:** `models/` directory (relative to backend working directory)
+
+## 6. Analytics Pipeline
+
+### 6.1 Scorer
+
+**Location:** `backend/arbitrage/scorer.py`
+
+Scoring formula (see `PoE2_Flipper_Canonical_Formulas.md` §7 for full details):
+
+```
+score = raw_spread × fill_probability × momentum_penalty × vol_penalty × phase_multiplier × tier_penalty
+```
+
+- `raw_spread`: (ask - bid) / mid_price, no fees deducted
+- `fill_probability`: Volume-based estimation of trade execution likelihood
+- `momentum_penalty`: Reduces score for negative momentum
+- `vol_penalty`: Reduces score for high volatility
+- `phase_multiplier`: EARLY=1.2, MID=1.0, LATE=0.9 (from config)
+- `tier_penalty`: Adjusts for tier distance between currencies
+
+**Quantized Analysis (P1-1):** Integer-aware spread analysis at multiple lot sizes. Computes actual cost, revenue, and profit at each lot size, finding the minimum profitable lot and optimal lot.
+
+### 6.2 Triangular Arbitrage
+
+**Location:** `backend/arbitrage/triangular.py`
+
+- Bellman-Ford algorithm for negative cycle detection
+- Volume-based spread estimation for edge weights
+- Cross-rate divergence filtering to remove false positives
+- Integer simulation validation (P1-2): verifies profit at integer amounts
+
+### 6.3 Portfolio
+
+**Location:** `backend/arbitrage/portfolio.py`
+
+- Risk parity (SLSQP optimization)
+- Min-variance (Ledoit-Wolf shrinkage)
+- Correlation matrix with Spearman rank correlation
+- Correlation shock detection (threshold from config)
+- Efficient frontier computation
+
+**Correlation matrix:** Uses Spearman rank correlation. Pre-checks `np.std() == 0` to avoid scipy `ConstantInputWarning`. `min_overlap = max(2, 0.3 * min_len)` for early-league compatibility.
+
+### 6.4 Anomaly Detection
+
+**Location:** `backend/predictors/anomaly.py`
+
+5-indicator ensemble:
+1. Z-score with Bonferroni correction (alpha from config)
+2. MACD (fast/slow/signal from config)
+3. RSI (period/overbought/oversold from config)
+4. STL residual threshold (MAD-based)
+5. Sustained momentum detection (periods from config)
+
+### 6.5 Time-Series Forecasting
+
+**Location:** `backend/predictors/time_series.py`
+
+- SARIMA (auto-detect seasonal period, or from config)
+- LightGBM gradient boosting
+- 24h forecast horizon with 95% confidence interval
+- Retrain interval: 6 hours (configurable)
+
+### 6.6 Storage Value
+
+**Location:** `backend/predictors/storage_value.py`
+
+- Projected value with risk discount and liquidity adjustment
+- Hold/sell decision based on ratio vs thresholds (buy_threshold, sell_threshold from config)
+- Formula: `ratio = adjusted_price / current_price`
+
+### 6.7 Phase Detection
+
+**Location:** `backend/economy/lifecycle.py`
+
+- EARLY: days 0-14 (configurable)
+- MID: days 15-42
+- LATE: days 43+
+- Reset support for major patch events
+
+### 6.8 Event Management
+
+**Location:** `backend/economy/events.py`
+
+- In-memory + SQLite dual-write
+- Auto-expiry based on `default_expiry_hours` (config)
+- Scoring penalty propagation to affected currencies
+- Major patch event detection with PhaseDetector reset
+- Load from SQLite on startup, prune expired
+
+### 6.9 Recipe Arbitrage
+
+**Location:** `backend/arbitrage/recipe.py`
+
+- Vendor recipe definitions from `config.yaml`
+- Profit calculation: recipe output value minus input costs
+- Gold fees excluded (gold_enabled: false)
+
+### 6.10 Quick Filter
+
+**Location:** `backend/arbitrage/quick_filter.py`
+
+Pre-filters currency pairs by:
+- Minimum 24h volume (`min_volume_24h` from config)
+- Maximum volatility (`max_volatility` from config)
+- Maximum spread (`max_spread` from config)
+
+## 7. Backend Testing Guide
+
+**Location:** `tests/`
+
+### Unit Tests (14 files)
+
+```
+tests/
+├── test_anomaly.py           — Anomaly detection indicators
+├── test_benchmarks.py         — Historical benchmark calculations
+├── test_clustering.py         — KMeans currency clustering
+├── test_daily_stats_history.py — Daily stats cache + history
+├── test_events.py             — Event management + expiry
+├── test_lifecycle.py          — Phase detection (EARLY/MID/LATE)
+├── test_model_store.py        — LightGBM model persistence
+├── test_momentum.py           — Price momentum calculations
+├── test_new_params.py         — New config parameters
+├── test_pipeline_cache_degraded.py — Pipeline cache in degraded mode
+├── test_recipe.py             — Vendor recipe arbitrage
+├── test_scheduler.py          — APScheduler job execution
+├── test_scorer.py             — Opportunity scoring
+├── test_storage_value.py      — Hold/sell decisions
+└── test_triangular.py         — Bellman-Ford cycle detection
+```
+
+### E2E Tests
+
+```
+tests/e2e/
+├── conftest.py           — Shared fixtures (mock provider, test client)
+├── mock_provider.py      — Mock Poe2ScoutProvider for deterministic tests
+├── test_api_e2e.py       — Full API endpoint integration tests
+└── test_degraded_mode.py — Backend behavior when provider is unreachable
+```
+
+### Key Fixtures
+
+- `mock_provider` — Returns deterministic data without hitting real API
+- `test_client` — FastAPI TestClient with mock provider injected
+- League name in all tests: "runes" (current league ShortName)
+
+### Running Tests
+
+```bash
+pip install -r requirements.txt
+pytest tests/ -v                      # All tests
+pytest tests/test_scorer.py -v        # Single module
+pytest tests/e2e/ -v                  # E2E tests (requires mock provider)
+```

@@ -2,6 +2,8 @@
 
 A unified Path of Exile 2 market intelligence dashboard combining real-time market data browsing with advanced flipper analytics — all in a single Next.js application.
 
+> **For developers & AI agents:** See [`AGENT_NAVIGATION.md`](./AGENT_NAVIGATION.md) — the single entry point for codebase navigation, build commands, invariants, and known issues.
+
 ## Architecture
 
 ```
@@ -27,7 +29,7 @@ Browser → Next.js (port 3000)
 - **Watchlist** — Track favorite items with price alerts and browser notifications
 
 ### Flipper Analytics (requires FastAPI backend)
-- **Arbitrage** — Client-side simple arbitrage + backend-powered flipper mode with gold fee modeling
+- **Arbitrage** — Client-side simple arbitrage + backend-powered flipper mode
 - **Flips** — Detailed scored flip opportunities with cluster filtering, sorting, and storage value integration
 - **Recipes** — Vendor recipe arbitrage: check profitability of vendor orb recipes against live market prices
 - **Forecasts** — SARIMA + LightGBM price forecasts, anomaly detection (RSI, MACD, Bonferroni), storage value decisions
@@ -35,21 +37,12 @@ Browser → Next.js (port 3000)
 - **Currency Graph** — Force-directed network visualization of currency trade pairs with cycle highlighting and real-time cluster classification
 - **Events** — Flag market events (patches, league starts, economy shifts) that affect scoring, with auto-expiry and persistence in SQLite
 
-### Sticky Bar (when backend is online)
-- Best flip opportunity with score
-- 24h momentum trend indicator
-- Best triangular arbitrage cycle with profit %
-- Flip opportunity count badge
-- Market sentiment indicator (aggregated momentum)
-- Correlation shock alert
-- League phase badge (EARLY / MID / LATE)
-
 ### Cross-cutting
 - **i18n**: English, Русский, 中文, 한국어
 - **Dark/light theme** with system preference detection
 - **PWA** with offline support and service worker
 - **Export** to CSV/JSON
-- **Accessibility**: WCAG 2.1 AA — skip-to-content link, ARIA roles, keyboard navigation
+- **Accessibility**: WCAG 2.1 AA
 - **Graceful degradation**: all flipper tabs show clear offline messages when backend is down
 
 ## Quick Start
@@ -77,88 +70,7 @@ Open http://localhost:3000
 npm install
 npm run dev
 ```
-Market data tabs (Overview, Currencies, Uniques, Exchange, Watchlist) work without the backend. Flipper tabs show a graceful "backend offline" message with the command to start the backend (`uvicorn backend.main:app --reload --port 8000`).
-
-## Tab Order
-
-```
-Overview | Currencies | Uniques | Exchange | Arbitrage | Flips | Recipes | Forecast | Portfolio | Graph | Watchlist
-```
-
-## Project Structure
-
-```
-├── backend/                  # FastAPI flipper analytics engine
-│   ├── main.py              # App entry point + router registration + CORS
-│   ├── config.py            # Configuration (reads config.yaml via Pydantic Settings)
-│   ├── api/                 # Route handlers (prices, arbitrage, forecast, portfolio, events, anomalies, storage_value, recipes)
-│   ├── arbitrage/           # Scorer, triangular arb, portfolio optimizer, recipe arb
-│   ├── economy/             # Events, lifecycle/phase detection, gold costs, momentum
-│   ├── predictors/          # Time-series forecasting (SARIMA, LightGBM), anomaly detection, clustering
-│   ├── data/                # Providers (POE2Scout, Official), cache, schemas, historical store (SQLite)
-│   └── models/              # Data models
-├── src/                     # Next.js application
-│   ├── app/                 # Next.js App Router pages + API routes
-│   │   ├── api/flipper/     # Proxy routes → FastAPI backend
-│   │   └── api/poe2/        # Direct POE2Scout API routes
-│   ├── components/          # React components
-│   │   ├── dashboard/       # Tab components, dialogs, sidebar, sticky bar, error boundaries
-│   │   └── ui/              # shadcn/ui primitives (Badge, Button, Card, Dialog, Input, Select, Sheet, Skeleton, Tabs, Sonner)
-│   ├── lib/                 # Shared utilities
-│   │   ├── flipper-proxy.ts # Proxy helper for /api/flipper/* (timeout, error type detection)
-│   │   ├── poe2api.ts       # Server-side fetcher for POE2Scout API (caching, retries, PascalCase→camelCase)
-│   │   ├── types.ts         # Shared types + fetchApi + formatters + export utilities
-│   │   ├── i18n/            # Internationalization (en, ru, zh, ko — ~460 keys each)
-│   │   └── store.ts         # Zustand store (comparison, favorites, alerts)
-│   └── hooks/               # Custom React hooks (use-api-with-retry, use-debounce, use-online-status, use-price-alerts, use-reduced-motion)
-├── cloudflare-worker/       # CORS proxy for bypassing regional API blocking
-│   ├── worker.js            # Cloudflare Worker — proxies api.poe2scout.com requests
-│   ├── wrangler.toml        # Wrangler deployment config
-│   └── package.json         # NPM package with deploy scripts
-├── e2e/                     # Playwright E2E tests (smoke, navigation, accessibility, i18n)
-├── src/__tests__/           # Jest unit tests
-├── tests/                   # Python pytest backend tests
-├── config.yaml              # Flipper backend configuration
-├── start.bat                # Windows launcher (both servers)
-└── requirements.txt         # Python dependencies (backend only)
-```
-
-## Configuration
-
-Edit `config.yaml` to customize flipper behavior:
-- League and realm selection
-- Portfolio method (risk_parity / min_variance)
-- Scoring weights and thresholds (momentum, phase multipliers)
-- Scheduler intervals (price snapshots, reclustering, model retraining)
-- Correlation shock detection sensitivity (threshold, position reduction factor)
-- Vendor recipes (Chaos/Regal/Exalted shard → orb conversions)
-- Forecasting parameters (SARIMA auto-detect, LightGBM retrain interval, 24h horizon, 95% CI)
-- Anomaly detection (Bonferroni alpha, RSI periods, MACD parameters)
-- Event defaults (expiry, scoring penalty)
-
-## API Endpoints (FastAPI Backend)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check with event count |
-| `/api/phase` | GET | League phase info (EARLY/MID/LATE) |
-| `/api/currencies` | GET | Currency metadata + icons |
-| `/api/prices` | GET | All exchange rates with fee info + cluster labels |
-| `/api/prices/heatmap` | GET | 24h price change heatmap |
-| `/api/arbitrage/flips` | GET | Scored flip opportunities |
-| `/api/arbitrage/triangular` | GET | Triangular arbitrage cycles |
-| `/api/forecast/{currency}` | GET | Price forecast for a currency |
-| `/api/anomalies` | GET | Anomaly detection results |
-| `/api/storage-value/{currency}` | GET | Hold/sell decision |
-| `/api/portfolio` | GET | Portfolio allocation + risk metrics + correlation matrix |
-| `/api/portfolio/frontier` | GET | Efficient frontier data |
-| `/api/portfolio/rebalance` | POST | Rebalance portfolio (supports method override) |
-| `/api/recipes` | GET | Vendor recipe arbitrage (profitable + all recipes) |
-| `/api/recipes/definitions` | GET | All defined vendor recipes from config |
-| `/api/events` | GET | List active events |
-| `/api/events` | POST | Create a manual event flag |
-| `/api/events/{id}` | GET | Get event by ID |
-| `/api/events/{id}/deactivate` | POST | Deactivate an event |
+Market data tabs (Overview, Currencies, Uniques, Exchange, Watchlist) work without the backend. Flipper tabs show a graceful "backend offline" message.
 
 ## Tech Stack
 
@@ -170,76 +82,30 @@ Edit `config.yaml` to customize flipper behavior:
 ```bash
 npm run dev       # Start Next.js dev server (port 3000)
 npm run build     # Production build
-npm run start     # Start production server (port 3000)
 npm run test      # Run Jest unit tests
 npm run test:e2e  # Run Playwright E2E tests
-npm run lint      # Lint check
+pytest tests/ -v  # Run backend tests
 ```
 
-## Testing
+## Bypassing Regional IP Blocking
 
-- **Unit tests** (Jest): `src/__tests__/` — API helpers, i18n, store, utils
-- **E2E tests** (Playwright): `e2e/` — smoke, navigation, accessibility, i18n
-- **Backend tests** (pytest): `tests/` — scorer, triangular, forecast, portfolio, events, anomaly, recipe, scheduler
+The POE2Scout API is blocked from Russian IPs. See [`docs/CORS_PROXY_GUIDE.md`](./docs/CORS_PROXY_GUIDE.md) for setup instructions for the Cloudflare Worker CORS proxy (5-minute deployment, free tier).
 
-## Bypassing Regional IP Blocking (Russia)
-
-The POE2Scout API (`api.poe2scout.com`) is blocked from Russian IPs. The dashboard includes several resilience mechanisms:
-
-1. **Circuit breaker** — stops hammering the API after 3 consecutive failures
-2. **Stale-while-revalidate cache** — serves cached data up to 30 minutes old while revalidating in background
-3. **Hardcoded fallback** — realms/leagues data is pre-populated so the UI always has selectors
-4. **Dynamic fallback** — last successful API response is cached in memory and served when upstream is unreachable
-
-### Cloudflare Worker CORS Proxy (Recommended)
-
-A ready-to-deploy Cloudflare Worker is included in `cloudflare-worker/`. It proxies requests to the POE2Scout API through Cloudflare's edge network, bypassing regional blocking.
-
-**Deployment (5 minutes, free):**
-
+Quick setup:
 ```bash
-# 1. Register at https://dash.cloudflare.com/sign-up (free, email only)
-# 2. Install Wrangler CLI
-npm install -g wrangler
-
-# 3. Login to Cloudflare
-cd cloudflare-worker
-wrangler login
-
-# 4. Deploy
-wrangler deploy
-# Output: https://poe2scout-proxy.your-account.workers.dev
-
-# 5. Configure your dashboard
-# Add to .env.local:
-POE2_CORS_PROXY_URL=https://poe2scout-proxy.your-account.workers.dev/api
+cd cloudflare-worker && wrangler deploy
+# Then add to .env.local:
+# POE2_CORS_PROXY_URL=https://poe2scout-proxy.your-account.workers.dev/api
 ```
 
-**Free tier limits:**
-- 100,000 requests/day (enough for personal use)
-- 10ms CPU time per request
-- 1MB script size
-- Up to 10 Workers
+## Documentation
 
-**How it works:** When a direct API call fails with ECONNRESET/ETIMEDOUT, the dashboard automatically retries through the CORS proxy. No code changes needed — just set the environment variable.
-
-### Alternative: Set POE2_API_BASE_URL directly
-
-If you deploy the worker, you can also set `POE2_API_BASE_URL` directly to the worker URL (instead of using the fallback mechanism). All API traffic will go through Cloudflare.
-
-```bash
-# .env.local — ALL requests go through the proxy
-POE2_API_BASE_URL=https://poe2scout-proxy.your-account.workers.dev/api
-```
-
-### Alternative: VPN
-
-The simplest option. Connect a VPN on the server and restart the dashboard. No code changes needed.
-
-## Graceful Degradation
-
-All flipper-dependent tabs (Arbitrage flipper mode, Flips, Recipes, Forecast, Portfolio, Currency Graph) check the backend health endpoint on mount via `useQuery` with 30s refetch. When the FastAPI backend is offline:
-- A clear "Flipper Backend Offline" message is displayed with the command: `uvicorn backend.main:app --reload --port 8000`
-- Non-flipper tabs (Overview, Currencies, Uniques, Exchange, Watchlist) continue to work normally
-- Each tab is wrapped in an `ErrorBoundary` to prevent cascading failures
-- The shared `FlipperBackendStatusCard` component handles the offline/insufficient-data UI consistently across all flipper tabs
+| File | Content |
+|------|---------|
+| [`AGENT_NAVIGATION.md`](./AGENT_NAVIGATION.md) | Agent/developer entry point — structure, commands, invariants, known issues |
+| [`worklog.md`](./worklog.md) | Current state + frequent bugs + commands |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Layers, data flow, invariants, principles |
+| [`docs/DATA_CONTRACTS.md`](./docs/DATA_CONTRACTS.md) | TypeScript types, API contracts, response shapes |
+| [`docs/BACKEND_GUIDE.md`](./docs/BACKEND_GUIDE.md) | FastAPI backend: providers, stores, scheduler, analytics |
+| [`docs/CORS_PROXY_GUIDE.md`](./docs/CORS_PROXY_GUIDE.md) | CORS proxy setup + fallback mechanisms |
+| [`PoE2_Flipper_Canonical_Formulas.md`](./PoE2_Flipper_Canonical_Formulas.md) | All mathematical formulas and algorithms |
