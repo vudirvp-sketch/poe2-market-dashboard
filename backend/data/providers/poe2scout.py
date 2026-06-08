@@ -127,6 +127,14 @@ class Poe2ScoutProvider(BaseDataProvider):
         # more concurrency while respecting rate limit
         self._semaphore = asyncio.Semaphore(max(1, min(int(self._rate_limit * 3), 5)))
         self._last_request_time: float = 0.0
+        # Rate limit lock: prevents race condition on _last_request_time.
+        # Without this lock, multiple coroutines entering the semaphore
+        # simultaneously can read the same stale _last_request_time value,
+        # all sleep for the same duration, and then fire requests at once —
+        # violating the per-second rate limit. The lock serializes the
+        # read-check-sleep-update cycle so each coroutine sees the
+        # correct last-request timestamp.
+        self._rate_limit_lock = asyncio.Lock()
         self._client: httpx.AsyncClient | None = None
 
         # Fix 6 (POE2-FIX-SPEC): dedicated metadata cache with 1-hour TTL
@@ -242,14 +250,21 @@ class Poe2ScoutProvider(BaseDataProvider):
         backoff = 1.0
 
         for attempt in range(max_retries + 1):
-            # Rate limiting: ensure minimum interval between requests
-            async with self._semaphore:
+            # Rate limiting: ensure minimum interval between requests.
+            # The _rate_limit_lock serializes the read-check-sleep-update
+            # cycle so concurrent coroutines don't read the same stale
+            # _last_request_time and violate the rate limit.
+            async with self._rate_limit_lock:
                 now = asyncio.get_event_loop().time()
                 min_interval = 1.0 / max(self._rate_limit, 0.1)
                 elapsed = now - self._last_request_time
                 if elapsed < min_interval and self._last_request_time > 0:
                     await asyncio.sleep(min_interval - elapsed)
+                # Update timestamp immediately (before the request) so the
+                # next coroutine entering the lock sees the correct value.
+                self._last_request_time = asyncio.get_event_loop().time()
 
+            async with self._semaphore:
                 try:
                     resp = await client.get(url, params=params)
 
@@ -267,8 +282,6 @@ class Poe2ScoutProvider(BaseDataProvider):
                             return None
 
                     resp.raise_for_status()
-                    if resp.status_code < 400:
-                        self._last_request_time = asyncio.get_event_loop().time()
                     return resp.json()
 
                 except httpx.HTTPStatusError as e:

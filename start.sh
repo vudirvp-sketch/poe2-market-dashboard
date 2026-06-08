@@ -7,6 +7,7 @@
 #    ./start.sh            # production mode (build + start)
 #    ./start.sh --dev      # development mode (no build, hot reload)
 #    ./start.sh --skip-build  # skip build, use existing .next
+#    ./start.sh --clean    # remove .next + node_modules, reinstall, build
 # ============================================================
 set -euo pipefail
 
@@ -260,13 +261,32 @@ trap cleanup SIGINT SIGTERM
 # ---- Handle flags ----
 DEV_MODE=0
 SKIP_BUILD=0
+CLEAN_MODE=0
 
 for arg in "$@"; do
     case "$arg" in
         --dev) DEV_MODE=1 ;;
         --skip-build) SKIP_BUILD=1 ;;
+        --clean) CLEAN_MODE=1 ;;
     esac
 done
+
+# ---- Handle --clean flag ----
+if [ "$CLEAN_MODE" -eq 1 ]; then
+    info "--clean flag: deep cleaning..."
+    rm -rf .next 2>/dev/null || true
+    info "Removed .next/"
+    rm -rf node_modules 2>/dev/null || true
+    info "Removed node_modules/"
+    info "Reinstalling dependencies..."
+    npm install
+    if [ $? -ne 0 ]; then
+        error "npm install failed after --clean!"
+        exit 1
+    fi
+    info "Dependencies reinstalled successfully."
+    echo ""
+fi
 
 if [ "$DEV_MODE" -eq 1 ]; then
     info "Starting in DEVELOPMENT mode (--dev flag)"

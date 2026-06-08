@@ -12,6 +12,7 @@
 
 - Uses `httpx.AsyncClient` with connection pooling
 - Semaphore limits concurrent requests to 5
+- `rate_limit_lock` (asyncio.Lock) serializes rate-limit calculations to prevent race conditions on `_last_request_time`
 - 2 retries on HTTP 429 (rate limit) with exponential backoff
 - CORS proxy fallback: if primary URL fails, retries through `cors_proxy_url` (from `config.yaml` or `POE2SCOUT_CORS_PROXY_URL` env var)
 - All API calls use league name as path parameter (ShortName format, e.g., "runes")

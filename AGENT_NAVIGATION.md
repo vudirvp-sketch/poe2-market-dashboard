@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.20 | **Date:** 2026-06-09
+> **Version:** 1.21 | **Date:** 2026-06-09
 
 ---
 
@@ -27,7 +27,7 @@
 | `e2e/` | Playwright E2E tests | Mirror user flows |
 | `tests/` | Python pytest backend tests | Backend-only |
 | `cloudflare-worker/` | CORS proxy | Deployed independently |
-| `scripts/` | `generate-cache-snapshot.ts`, `dump-live-data.ts`, `verify-flips-vs-fixtures.py` | TS scripts: `npx tsx scripts/<name>.ts`; Python: `python scripts/<name>.py` |
+| `scripts/` | `generate-cache-snapshot.ts`, `dump-live-data.ts`, `verify-flips-vs-fixtures.py`, `bump-sw-cache.js` | TS scripts: `npx tsx scripts/<name>.ts`; Python: `python scripts/<name>.py`; JS: `node scripts/<name>.js` |
 
 ## 2. Build & Run Commands
 
@@ -35,7 +35,7 @@
 # Frontend
 npm install
 npm run dev              # Start dev server (port 3000)
-npm run build            # Production build
+npm run build            # Production build (auto-bumps SW cache via postbuild)
 npm run start            # Start production server
 npm run test             # Jest unit tests
 npm run test:e2e         # Playwright E2E tests
@@ -98,6 +98,18 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
 2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
+3. **Verify `npx shadcn add` works with Tailwind v4 CSS-first config** — `tailwind.config.ts` was deleted (v4 CSS-first), `components.json` has `config: ""`. Test that adding shadcn components works correctly. If it fails, may need to update shadcn CLI or add a `tailwind.config` field.
+4. **PipelineCache unbounded growth** — PipelineCache has no size limit and stale entries are never evicted. Consider adding an LRU eviction policy or max-entries cap.
+
+### COMPLETED (v1.21 — Iteration 6)
+1. ~~**BUG-7: Tailwind v3 config with v4 installed**~~ — Deleted `tailwind.config.ts` (dead code, v4 ignores it). Removed `tailwindcss-animate` from dependencies (replaced by `tw-animate-css` in devDependencies). Project fully on Tailwind v4 CSS-first approach (`globals.css` → `@import "tailwindcss"`, `@theme inline`, `@custom-variant dark`, `postcss.config.mjs` → `@tailwindcss/postcss`).
+2. ~~**BUG-8: components.json tailwind.config empty**~~ — Confirmed `config: ""` is correct for Tailwind v4 CSS-first. No change needed.
+3. ~~**BUG-9: SW cache version hardcoded**~~ — Created `scripts/bump-sw-cache.js` that updates `CACHE_NAME` in `sw.js` with a timestamp. Added `postbuild` script in `package.json`. Also added `/icon-1024.png` to `STATIC_ASSETS` in `sw.js`.
+4. ~~**BUG-10: manifest.json missing icon-1024.png**~~ — Added `icon-1024.png` (1024x1024) to the icons array in `manifest.json`.
+5. ~~**BUG-11: start.sh missing --clean flag**~~ — Added `--clean` flag to both `start.sh` and `start.bat` that removes `.next/` + `node_modules/` and reinstalls dependencies.
+6. ~~**BUG-12: requirements.txt no pinned upper bounds**~~ — Added upper bounds (`<next_major`) for all 19 dependencies.
+7. ~~**Cold start timeout**~~ — Changed `await check_provider_health()` to `asyncio.create_task()` in `main.py` lifespan. Backend now starts immediately without blocking. Also reduced health check timeout from 15s to 5s.
+8. ~~**Rate limiting race in poe2scout.py**~~ — Added `_rate_limit_lock` (asyncio.Lock) to serialize the read-check-sleep-update cycle of `_last_request_time`. Prevents concurrent coroutines from reading the same stale timestamp and violating the rate limit.
 
 ### COMPLETED (v1.20 — Iteration 5)
 1. ~~**HistoricalStore.clear_all_events() missing**~~ — Added `clear_all_events()` method to `HistoricalStore`. Previously `EventManager.clear_all()` called a non-existent method → `AttributeError`.
@@ -207,6 +219,10 @@ When a new league launches, update these 7 files:
 22. **ByCategory endpoints in scripts must include all 5 item categories** — `generate-cache-snapshot.ts` and `dump-live-data.ts` both fetch ByCategory for ritual, ultimatum, idol, vaultkeys, delirium. If a new item category is added to `config.yaml`, it must also be added to both scripts.
 23. **HistoricalStore.clear_all_events() must exist** — `EventManager.clear_all()` calls `self._store.clear_all_events()`. If this method is missing from `HistoricalStore`, it raises `AttributeError`. Always keep the method in sync when modifying the events schema.
 24. **WebSocket vs REST parity** — `_compute_storage_value()` in `routes_ws.py` must pass the same params as the REST endpoint in `routes_storage_value.py`. Missing `acceleration` causes divergent results between WS and REST.
+25. **Tailwind v4 CSS-first — no tailwind.config.ts** — Project uses Tailwind v4 with CSS-first config. Theme is defined in `globals.css` via `@theme inline`. `darkMode: "class"` is replaced by `@custom-variant dark (&:is(.dark *))`. Do NOT re-create `tailwind.config.ts`. Animations use `tw-animate-css` (not `tailwindcss-animate`).
+26. **Service Worker cache auto-bust** — `sw.js` cache version is bumped automatically on every `npm run build` via `postbuild` → `scripts/bump-sw-cache.js`. If you change the cache name format, update both `sw.js` and `bump-sw-cache.js`.
+27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`. Without it, concurrent coroutines read the same stale timestamp and fire requests simultaneously, violating the rate limit.
+28. **Health check is non-blocking** — `check_provider_health()` runs as `asyncio.create_task()` in lifespan, not awaited. Backend starts immediately. `_provider_healthy` defaults to True (optimistic) and updates after the check completes.
 
 ## 11. Documentation Map
 

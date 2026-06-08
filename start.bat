@@ -263,7 +263,31 @@ if not exist "node_modules\" (
 REM ---- Handle flags ----
 REM Use --dev flag for dev mode: start.bat --dev
 REM Use --skip-build flag to skip: start.bat --skip-build
-REM Use --clean flag to clean .next before build: start.bat --clean
+REM Use --clean flag to deep-clean .next + node_modules: start.bat --clean
+
+REM ---- --clean flag: deep clean ----
+if "%~1"=="--clean" (
+    echo [INFO] --clean flag: deep cleaning...
+    if exist ".next\" (
+        rmdir /s /q ".next" 2>nul
+        echo [OK] Removed .next\
+    )
+    if exist "node_modules\" (
+        rmdir /s /q "node_modules" 2>nul
+        echo [OK] Removed node_modules\
+    )
+    echo [INFO] Reinstalling dependencies...
+    call npm install
+    if !ERRORLEVEL! neq 0 (
+        echo.
+        echo [ERROR] npm install failed after --clean!
+        echo.
+        pause
+        exit /b 1
+    )
+    echo [OK] Dependencies reinstalled successfully.
+    echo.
+)
 
 if "%~1"=="--dev" (
     echo [INFO] Starting in DEVELOPMENT mode ^(--dev flag^)

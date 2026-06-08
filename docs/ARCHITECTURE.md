@@ -154,7 +154,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 | Module | Location | Role |
 |--------|----------|------|
-| `Poe2ScoutProvider` | `backend/data/providers/poe2scout.py` | Primary data provider (httpx AsyncClient, semaphore=5, 2 retries on 429) |
+| `Poe2ScoutProvider` | `backend/data/providers/poe2scout.py` | Primary data provider (httpx AsyncClient, semaphore=5, rate_limit_lock, 2 retries on 429) |
 | `OfficialTradeProvider` | `backend/data/providers/official.py` | OAuth2 fallback provider (rarely used) |
 | `SnapshotManager` | `backend/api/data_snapshot.py` | TTL-cached DataSnapshot with periodic refresh |
 | `HistoricalStore` | `backend/data/historical.py` | SQLite store (prices_history, events, price_snapshots) |
@@ -216,6 +216,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 ### Backend
 - **Startup resilience:** If HistoricalStore/scheduler init fails, app still starts (degraded mode)
+- **Non-blocking health check:** `check_provider_health()` runs as background task on startup (asyncio.create_task), does not block the lifespan. 5s timeout per check.
 - **Periodic health checks:** Provider reachability cached for 60s
 - **Degraded status:** Health endpoint returns `"degraded"` when snapshot exists but provider unreachable
 - **CORS proxy fallback:** Backend can also use CORS proxy for POE2Scout API calls

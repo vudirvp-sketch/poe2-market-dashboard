@@ -97,14 +97,17 @@ async def check_provider_health():
         try:
             from backend.api.shared import get_provider
             provider = get_provider()
-            # Quick connectivity check — fetch exchange rates with a short timeout
+            # Quick connectivity check — fetch exchange rates with a short timeout.
+            # Reduced from 15s to 5s: this runs periodically and should not
+            # block request handling. A 5s timeout is sufficient to detect
+            # whether the upstream API is reachable.
             rates = await asyncio.wait_for(
                 provider.get_exchange_rates(get_settings().league.league_name),
-                timeout=15.0
+                timeout=5.0
             )
             _provider_healthy = rates is not None and len(rates) > 0
         except asyncio.TimeoutError:
-            logger.warning("Health check timed out (15s) — marking provider as unreachable")
+            logger.warning("Health check timed out (5s) — marking provider as unreachable")
             _provider_healthy = False
         except Exception as e:
             logger.warning("Health check failed: %s — marking provider as unreachable", e)
@@ -214,13 +217,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("Failed to start snapshot periodic refresh: %s — continuing without", e)
 
-    # Fix 8: initial health check (non-blocking — don't wait for result)
-    try:
-        await check_provider_health()
-    except HTTPException:
-        logger.warning("Initial health check: upstream API unreachable (degraded mode)")
-    except Exception as e:
-        logger.warning("Initial health check failed: %s — continuing in degraded mode", e)
+    # Fix 8: initial health check — fully non-blocking (asyncio.create_task).
+    # Previously awaited check_provider_health() which could block startup
+    # for up to 15s if the upstream API was unreachable. Now the health
+    # check runs in the background and the backend becomes ready immediately.
+    # The _provider_healthy flag defaults to True, so the backend starts in
+    # "optimistic" mode and updates to "unreachable" if the check fails.
+    asyncio.create_task(check_provider_health())
 
     yield
 

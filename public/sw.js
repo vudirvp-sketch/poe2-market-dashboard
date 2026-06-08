@@ -5,6 +5,10 @@
 // Previous cache-first strategy caused 404 errors after rebuilds because
 // the SW served stale HTML that referenced old chunk hashes.
 //
+// AUTO-BUST: The CACHE_NAME is updated automatically on each build via
+// `npm run postbuild` → `scripts/bump-sw-cache.js`. This ensures stale
+// caches are cleaned up after every deployment without manual version bumps.
+//
 // Strategy:
 // - HTML pages:        network-first (always get fresh HTML)
 // - _next/static/*:    network-first (fresh build assets take priority)
@@ -18,6 +22,7 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
+  '/icon-1024.png',
   '/logo.svg',
 ];
 
