@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.6 | **Date:** 2026-06-08
+> **Version:** 1.7 | **Date:** 2026-06-08
 
 ---
 
@@ -19,7 +19,7 @@
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
 | `src/components/ui/` | shadcn/ui primitives | **NO dashboard imports** |
-| `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
+| `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal | **Types in `types.ts` ONLY** |
 | `src/hooks/` | React hooks | Import from `@lib` |
 | `src/lib/i18n/` | Locales (en, ru, zh, ko) | No code imports from other `src/` |
 | `src/data/` | `cache-snapshot.json` | **READ-ONLY artifact — NEVER edit manually** |
@@ -92,7 +92,11 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
 2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (VPN/proxy). Use `npx tsx scripts/generate-cache-snapshot.ts`.
-3. **Fix TS errors in `src/__tests__/poe2api-realms.test.ts`** — `Property 'active' missing on TestLeague` (11 errors). Non-blocking, tests pass at runtime.
+3. ~~**Fix TS errors in `src/__tests__/poe2api-realms.test.ts`**~~ — Fixed in v1.7: added `ActiveLeague` interface extending `TestLeague` with `active: boolean`.
+4. **Integrate `BestPaymentBadge` into Exchange cards** — Component exists (`best-payment-badge.tsx`), needs wiring into `exchange-pair-card.tsx` and `exchange-table.tsx`.
+5. **Add cross-currency premium column to Exchange tab** — Use `detectCrossRateFlips()` from `currency-optimal.ts`.
+6. **Backend endpoint for optimal-currency analysis** — Currently client-side only; could add `/api/flipper/optimal-currency`.
+7. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation, Orb of Cancellation) exist in current market.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -165,4 +169,5 @@ When a new league launches, update these 7 files:
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms, API path reference | On data flow changes |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals | On backend changes |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup + fallback mechanisms | On proxy changes |
-| `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas | On algorithm changes |
+| `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§11) | On algorithm changes |
+| `src/lib/currency-optimal.ts` | §11: Cross-currency arbitrage helpers | On flip logic changes |

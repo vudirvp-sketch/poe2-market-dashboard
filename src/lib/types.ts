@@ -627,6 +627,43 @@ export interface AnalystSummaryResponse {
 }
 
 // ============================================================================
+// §11: Cross-Currency Arbitrage & Optimal Payment types
+// ============================================================================
+
+/** Result of comparing an item's price across multiple payment currencies.
+ *  See currency-optimal.ts for the computation logic. */
+export interface OptimalPaymentResult {
+  bestCurrencyId: string;
+  worstCurrencyId: string;
+  bestAnchorPrice: number;
+  worstAnchorPrice: number;
+  savingsAnchor: number;
+  savingsPct: number;
+  options: PaymentOption[];
+}
+
+/** A single payment option for an item in a specific currency */
+export interface PaymentOption {
+  currencyId: string;
+  currencyName: string;
+  priceInCurrency: number;
+  effectiveAnchorPrice: number;
+  premiumPct: number;
+}
+
+/** A detected cross-rate flip opportunity */
+export interface CrossRateFlip {
+  buyCurrencyId: string;
+  sellCurrencyId: string;
+  fairRate: number;
+  marketRate: number;
+  deviationPct: number;
+  direction: "buy_sell_with_buy" | "buy_buy_with_sell";
+  estimatedProfitPct: number;
+  volume: number;
+}
+
+// ============================================================================
 // Export helpers (CSV/JSON)
 // ============================================================================
 export function exportToCsv(data: Record<string, unknown>[], filename: string) {

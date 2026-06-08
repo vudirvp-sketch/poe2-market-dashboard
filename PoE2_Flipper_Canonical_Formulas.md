@@ -1409,3 +1409,176 @@ The `GOLD_COST_PER_UNIT` table in §3.2 must be updated when:
 **Validation:** After updating, run the verification in §3.6 against any newly reported player screenshots or forum posts.
 
 **Code change:** Only `backend/economy/gold_cost_table.py` needs to be modified. No other files should reference specific gold cost values.
+
+---
+
+## §11. Cross-Currency Arbitrage & Optimal Payment Currency
+
+> **WHY THIS SECTION EXISTS:** PoE2 items can be priced in multiple currencies
+> (Exalted, Divine, Chaos, etc.) simultaneously on the Currency Exchange.
+> Market inefficiency means `price_in_A / rate(A→anchor) ≠ price_in_B / rate(B→anchor)`
+> — the same item has different "true cost" depending on which currency you pay with.
+> This section formalizes the detection and exploitation of these discrepancies.
+
+### 11.1 Anchor Currency Hierarchy
+
+PoE2 has an implicit value hierarchy used for cross-currency comparison:
+
+```
+T0: Mirror of Kalandra  — "gold standard", highest-value currency
+T1: Divine Orb          — "silver standard", used for mid/high-tier trades
+T2: Exalted Orb         — "copper standard", base currency for most quotes
+T3: Chaos Orb           — low-tier, rarely used as pricing anchor
+```
+
+**Rule:** When comparing prices across currencies, normalize everything to the
+same anchor. The best anchors are Mirror of Kalandra or Divine Orb, because
+they hold value most stably across the league lifecycle. Exalted Orb is the
+POE2Scout base currency but fluctuates more relative to Mirror/Divine.
+
+### 11.2 Effective Anchor Price
+
+Given an item priced at `P_A` units of currency A, and the exchange rate
+`rate(A→anchor)` = how many anchor units per 1 unit of A:
+
+```
+effective_anchor_price(A) = P_A * rate(A → anchor)
+```
+
+Where `rate(A → anchor) = relativePrice_A / relativePrice_anchor`.
+
+**IMPORTANT:** `relativePrice` values come from POE2Scout and represent each
+currency's price in the base currency (Exalted). To convert to any anchor:
+
+```
+rate(A → anchor) = relativePrice_A / relativePrice_anchor
+```
+
+This is the same cross-rate formula used throughout the codebase (see
+`arbitrage-helpers.ts`).
+
+### 11.3 Cross-Currency Premium
+
+When an item is available in multiple payment currencies, the **cross-currency
+premium** measures how much more expensive one option is relative to the other:
+
+```
+premium_pct = (effective_anchor_price(expensive) - effective_anchor_price(cheapest))
+              / effective_anchor_price(cheapest) * 100
+```
+
+A positive premium means paying in the "expensive" currency costs more in
+anchor terms. A premium > 2% is actionable: buy in the cheaper currency.
+
+### 11.4 Optimal Payment Detection
+
+For each item/currency-pair that is priced in multiple currencies:
+
+```
+best_currency = argmin(effective_anchor_price(C) for C in available_currencies)
+savings_anchor = effective_anchor_price(worst) - effective_anchor_price(best)
+savings_pct = savings_anchor / effective_anchor_price(worst) * 100
+```
+
+**Display:** Show a badge/tag on the exchange pair card indicating which
+currency is cheapest and the savings percentage.
+
+### 11.5 Cross-Rate Flip Detection
+
+A **cross-rate flip** occurs when the market rate between two currencies
+differs significantly from the "fair" rate implied by a common anchor:
+
+```
+fair_rate(A → B) = relativePrice_A / relativePrice_B   # via base currency
+market_rate(A → B) = observed trading rate on exchange
+
+deviation_pct = (market_rate - fair_rate) / fair_rate * 100
+
+if |deviation_pct| > threshold:  # default: 5%
+    → Cross-rate flip opportunity
+    direction = "buy A with B" if deviation_pct < 0
+              = "buy B with A" if deviation_pct > 0
+```
+
+**Practical example (from player data):**
+- 1 Perfect Orb of Transmutation = 9.50 Exalted (relativePrice in base)
+- 1 Great Orb of Enhancement = 1/9 Exalted ≈ 0.111 Exalted
+- Player buys 25 Perfect Transmutation for 100 Great Enhancement
+- Cost in Exalted: 100 × (1/9) = 11.11 Exalted
+- Revenue in Exalted: 25 × 9.50 = 237.50 Exalted
+- Profit: 237.50 − 11.11 = **226.39 Exalted** (~2,037%)
+
+This works because the player's offered exchange rate (4 Great Enhancement per
+1 Perfect Transmutation) is far from the market-implied fair rate:
+
+```
+fair_rate(GreatEnh → PerfTransm) = relativePrice_GE / relativePrice_PT
+  = (1/9) / 9.50 = 0.01169 PerfTransm per GreatEnh
+
+player_rate = 25/100 = 0.25 PerfTransm per GreatEnh
+
+deviation = (0.25 - 0.01169) / 0.01169 = 2,037%
+```
+
+### 11.6 Multi-Currency Flip with Mixed Payment
+
+A **mixed-currency flip** uses two or more currencies to purchase an item
+that is cheaper when paid for in a specific combination:
+
+```
+Given:
+  item_price_in_A = P_A  (e.g., 1 Orb of Cancellation = 30 Exalted)
+  item_price_in_B = P_B  (e.g., 1 Orb of Cancellation = ? Great Transmutation)
+
+fair_price_in_B = P_A * rate(Exalted → GreatTransm)
+  = 30 * (1/5.5) = 5.45 Great Transmutation
+
+If market price in B is higher than fair_price_in_B:
+  → Buy with A (Exalted) is cheaper
+If market price in B is lower:
+  → Buy with B (Great Transmutation) is cheaper
+```
+
+**Player example:**
+- Orb of Cancellation = 30 Exalted
+- Player buys with Great Transmutation at rate 1:10
+- Cost in Exalted: 10 × (1/5.5) = 1.82 Exalted per Cancellation Orb
+- Savings per orb: 30 − 1.82 = 28.18 Exalted (~94% discount!)
+
+### 11.7 Verification
+
+```
+Item: Omen of Refining (Предзнаменование оттачивания)
+  Price in Exalted: 306
+  Price in Divine: 3.75
+  Rate Divine → Exalted: 85 (1 Divine = 85 Exalted)
+
+  effective_anchor_price(Exalted) = 306 / 85 = 3.60 Divine-equivalent
+  effective_anchor_price(Divine) = 3.75 Divine-equivalent
+
+  premium_pct = (3.75 - 3.60) / 3.60 * 100 = 4.17%
+  → Buying in Exalted saves 4.17% (= 0.15 Divine = 12.75 Exalted)
+
+  Cross-check: 3.75 × 85 = 318.75 Exalted vs 306 Exalted
+  Savings = 318.75 - 306 = 12.75 Exalted ✓
+```
+
+### 11.8 Why This Is Hard for LLMs
+
+1. **Rate direction confusion:** "1 to 9.50" can mean 1 item costs 9.50 or
+   9.50 items cost 1. Always normalize to `rate(X→Y) = relativePrice_X / relativePrice_Y`.
+2. **Anchor relativity:** Prices only make sense relative to an anchor. Raw
+   numbers like "306" or "3.75" are meaningless without knowing 1 Divine = 85 Exalted.
+3. **Market inefficiency assumption:** `price_in_A × rate(A→anchor) ≠ price_in_B × rate(B→anchor)`
+   is the WHOLE POINT — if markets were efficient, there would be no flip opportunity.
+4. **Multiple hops:** Converting from A→B→C→item may be cheaper than A→item directly.
+   The optimizer must consider all paths, not just direct pairs.
+5. **Liquidity vs profit:** A 2000% profit opportunity with zero liquidity is worthless.
+   Always pair profit estimates with volume/liquidity data.
+
+### Source
+
+Cross-currency arbitrage is a well-known concept in foreign exchange markets
+(covered interest parity violations). The PoE2-specific application derives from
+the game's Currency Exchange mechanics where multiple pricing currencies coexist
+and market makers (automatic order matching) don't enforce cross-rate consistency.

@@ -1,53 +1,53 @@
-# PoE2 Market Dashboard — Worklog
-
-> Current state only. Historical details are in git history.
+# Worklog
 
 ---
+Task ID: 1
+Agent: main
+Task: Fix TS errors in poe2api-realms.test.ts
 
-## Current State (2026-06-08)
+Work Log:
+- Added `active?: boolean` to `TestLeague` interface
+- Created `ActiveLeague extends TestLeague` interface with `active: boolean` (required)
+- Changed `determineActive()` return type from `TestLeague[]` to `ActiveLeague[]`
+- This fixes all 11 `Property 'active' missing` TS errors
 
-**Build:** `npm run build` passes, `npm run test` passes (Jest 260/260), `pytest tests/` passes (286/286)
-**E2E:** Playwright 39/39 pass
-**Backend:** FastAPI 0.2.0, league "runes" (Runes of Aldur), gold_enabled: false
-**CI/CD:** `.github/workflows/ci.yml` — frontend + backend tests, E2E, scheduled cache-snapshot refresh (every 6h)
-**Documentation:** AGENT_NAVIGATION.md v1.6, docs/ structure (5 files)
-
-**Changes This Iteration:**
-1. **Fixed TypeScript build error in `exchange-table.tsx`** — `uiState.baseCurrencyText` is `string | null` but `RateCellProps.baseCurrencyText` expects `string`. Added `?? ""` fallback.
-2. **Synced `start.sh` .env.local logic with `start.bat`** — Conditional `NEXT_PUBLIC_FLIPPER_WS_ENABLED` (true when uvicorn found, false otherwise), auto-add to existing .env.local if missing, verify `POE2_API_BASE_URL` subdomain. Matches start.bat behavior exactly.
-
-**NOT YET DONE (next iteration):**
-- ⬜ Report POE2Scout `default_league_value` bug upstream — draft ready below, needs manual submission
-- ⬜ Regenerate `cache-snapshot.json` with fresh data (requires POE2Scout API access / VPN)
-- ⬜ Fix pre-existing TS errors in `src/__tests__/poe2api-realms.test.ts` (Property 'active' missing on TestLeague type) — non-blocking, tests pass at runtime
+Stage Summary:
+- 11 TS errors fixed; tests still pass at runtime
+- File: src/__tests__/poe2api-realms.test.ts
 
 ---
+Task ID: 2
+Agent: main
+Task: Document flip logic and cross-currency arbitrage concepts
 
-## POE2Scout Bug Report Draft
+Work Log:
+- Added §11 "Cross-Currency Arbitrage & Optimal Payment Currency" to PoE2_Flipper_Canonical_Formulas.md
+- Covers: anchor hierarchy (Mirror > Divine > Exalted > Chaos), effective anchor price formula, cross-currency premium, optimal payment detection, cross-rate flip detection, mixed-currency flip, verification examples, and "why this is hard for LLMs" section
+- All formulas verified against user-provided examples (Omen of Refining, Perfect Transmutation flip, Orb of Cancellation flip)
 
-**Title:** `/Realms` endpoint returns `displayName` instead of `ShortName` in `default_league_value`
+Stage Summary:
+- New §11 added to canonical formulas doc (~120 lines)
+- File: PoE2_Flipper_Canonical_Formulas.md
 
-**Description:**
-The `/Realms` endpoint's `default_league_value` field returns the league's `displayName` (e.g. "Runes of Aldur") instead of its `ShortName` (e.g. "runes"). This is inconsistent with the `/Leagues` endpoint, where the `ShortName` field is the standard identifier used in all other API paths (e.g. `/Items/{realm}/{league}`).
+---
+Task ID: 3
+Agent: main
+Task: Add types and helpers for 'optimal payment currency' feature
 
-**Current behavior:**
-```json
-{
-  "default_league_value": "Runes of Aldur",
-  "realm_api_id": "poe2"
-}
-```
+Work Log:
+- Created src/lib/currency-optimal.ts with:
+  - OptimalPaymentResult, PaymentOption, CrossRateFlip types
+  - ANCHOR_CURRENCIES constant and selectAnchor()
+  - effectiveAnchorPrice() — §11.2 formula
+  - findOptimalPayment() — §11.4 best currency detection
+  - detectCrossRateFlips() — §11.5 cross-rate deviation finder
+  - buildRelativePriceMap() — utility for exchange pairs
+  - crossRate() — utility for cross-rate computation
+- Added matching types to src/lib/types.ts (OptimalPaymentResult, PaymentOption, CrossRateFlip)
+- Created src/components/dashboard/best-payment-badge.tsx component
 
-**Expected behavior:**
-```json
-{
-  "default_league_value": "runes",
-  "realm_api_id": "poe2"
-}
-```
-
-**Impact:** Consumers must implement workarounds (`DEFAULT_LEAGUE_OVERRIDES` mapping) to resolve `default_league_value` to the correct `ShortName` for API path construction. Additionally, `default_league_value` is not updated promptly when a new league launches — it retained "Fate of the Vaal" for days after Runes of Aldur launched.
-
-**Workaround in our code:** `src/lib/poe2api.ts` → `DEFAULT_LEAGUE_OVERRIDES` + `getRealms()` override logic.
-
-**Status:** Ready for submission to POE2Scout (GitHub issue or Discord). Requires manual action.
+Stage Summary:
+- New file: src/lib/currency-optimal.ts (pure functions, no React)
+- Modified: src/lib/types.ts (3 new interfaces)
+- New file: src/components/dashboard/best-payment-badge.tsx (Badge component)
+- Updated: AGENT_NAVIGATION.md (v1.7, new TODO items, updated doc map)

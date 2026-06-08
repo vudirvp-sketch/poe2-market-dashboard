@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "timestamp": "2026-06-08T05:51:01.411Z",
+  "timestamp": "2026-06-08T10:30:02.750Z",
   "entries": {
     "https://api.poe2scout.com/api/Realms": {
       "data": [
@@ -37,7 +37,7 @@
           "default_league_value": "runes"
         }
       ],
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues": {
       "data": [
@@ -133,8 +133,8 @@
           "Value": "Standard",
           "ShortName": "standard",
           "IsCurrent": false,
-          "DivinePrice": 271.6442953020134,
-          "ChaosDivinePrice": 3.1045062320230103,
+          "DivinePrice": 316.9759036144578,
+          "ChaosDivinePrice": 3.169759036144578,
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "BaseCurrencyIconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
@@ -221,8 +221,8 @@
           "Value": "Runes of Aldur",
           "ShortName": "runes",
           "IsCurrent": true,
-          "DivinePrice": 87.25605508223057,
-          "ChaosDivinePrice": 15.213195068684254,
+          "DivinePrice": 84.56674369779782,
+          "ChaosDivinePrice": 11.757734186551541,
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "BaseCurrencyIconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
@@ -243,8 +243,8 @@
           "Value": "HC Runes of Aldur",
           "ShortName": "runeshc",
           "IsCurrent": true,
-          "DivinePrice": 65.37105072496996,
-          "ChaosDivinePrice": 22.802831161976055,
+          "DivinePrice": 66.5991372172954,
+          "ChaosDivinePrice": 21.434397710347458,
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "BaseCurrencyIconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
@@ -262,24 +262,24 @@
           }
         }
       ],
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/ExchangeSnapshot": {
       "data": {
-        "Epoch": 1780887600,
-        "Volume": "39610128.73235755",
-        "MarketCap": "66144663.71633985",
+        "Epoch": 1780905600,
+        "Volume": "45950287.87248139",
+        "MarketCap": "67674056.46897702",
         "BaseCurrencyApiId": "exalted",
         "BaseCurrencyText": "Exalted Orb"
       },
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs": {
       "data": [
         {
-          "CurrencyExchangeSnapshotPairId": 81917894,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "91.97398365",
+          "CurrencyExchangeSnapshotPairId": 81937499,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "178.89092264",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -303,24 +303,65 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "91.97398365",
-            "RelativePrice": "0.89395624",
-            "StockValue": "429.21192369",
-            "VolumeTraded": 39,
-            "HighestStock": 182
+            "ValueTraded": "178.89092264",
+            "RelativePrice": "1.48734484",
+            "StockValue": "563.37290562",
+            "VolumeTraded": 67,
+            "HighestStock": 211
           },
           "CurrencyTwoData": {
-            "ValueTraded": "34.86429319",
-            "RelativePrice": "2.87418699",
-            "StockValue": "270.19827225",
-            "VolumeTraded": 32,
-            "HighestStock": 248
+            "ValueTraded": "99.65210423",
+            "RelativePrice": "2.51959046",
+            "StockValue": "450.53979519",
+            "VolumeTraded": 71,
+            "HighestStock": 321
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917900,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "2.35830727",
+          "CurrencyExchangeSnapshotPairId": 81937504,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "5.34002754",
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "CurrencyOne": {
+            "CurrencyItemId": 11,
+            "ItemId": 288,
+            "CurrencyCategoryId": 21,
+            "ApiId": "vaal",
+            "Text": "Vaal Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+            "ItemMetadata": null
+          },
+          "CurrencyTwo": {
+            "CurrencyItemId": 261,
+            "ItemId": 4267,
+            "CurrencyCategoryId": 21,
+            "ApiId": "greater-orb-of-transmutation",
+            "Text": "Greater Orb of Transmutation",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png",
+            "ItemMetadata": null
+          },
+          "CurrencyOneData": {
+            "ValueTraded": "5.34002754",
+            "RelativePrice": "2.54803801",
+            "StockValue": "5.34002754",
+            "VolumeTraded": 2,
+            "HighestStock": 2
+          },
+          "CurrencyTwoData": {
+            "ValueTraded": "5.09607602",
+            "RelativePrice": "0.23217511",
+            "StockValue": "24.37253751",
+            "VolumeTraded": 23,
+            "HighestStock": 110
+          }
+        },
+        {
+          "CurrencyExchangeSnapshotPairId": 81937508,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "16.02008262",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -344,24 +385,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "2.35830727",
-            "RelativePrice": "5.80965504",
-            "StockValue": "18.86645818",
-            "VolumeTraded": 1,
-            "HighestStock": 8
+            "ValueTraded": "16.02008262",
+            "RelativePrice": "0.21840534",
+            "StockValue": "16.02008262",
+            "VolumeTraded": 6,
+            "HighestStock": 6
           },
           "CurrencyTwoData": {
-            "ValueTraded": "5.80965504",
-            "RelativePrice": "0.09433229",
-            "StockValue": "1.62670341",
-            "VolumeTraded": 25,
-            "HighestStock": 7
+            "ValueTraded": "1.31043205",
+            "RelativePrice": "2.28858323",
+            "StockValue": "5.24172819",
+            "VolumeTraded": 7,
+            "HighestStock": 28
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917901,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "2.35830727",
+          "CurrencyExchangeSnapshotPairId": 81937509,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "10.68005508",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -385,24 +426,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "2.35830727",
-            "RelativePrice": "6.25002012",
-            "StockValue": "235.83072730",
-            "VolumeTraded": 1,
-            "HighestStock": 100
+            "ValueTraded": "10.68005508",
+            "RelativePrice": "7.51890718",
+            "StockValue": "226.95117051",
+            "VolumeTraded": 4,
+            "HighestStock": 85
           },
           "CurrencyTwoData": {
-            "ValueTraded": "6.25002012",
-            "RelativePrice": "2.35830727",
+            "ValueTraded": "30.07562872",
+            "RelativePrice": "2.67001377",
             "StockValue": "0E-8",
-            "VolumeTraded": 1,
+            "VolumeTraded": 4,
             "HighestStock": 0
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917902,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "103.76552001",
+          "CurrencyExchangeSnapshotPairId": 81937510,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "224.28115674",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -426,24 +467,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "103.76552001",
-            "RelativePrice": "3.95807073",
-            "StockValue": "806.54108738",
-            "VolumeTraded": 44,
-            "HighestStock": 342
+            "ValueTraded": "224.28115674",
+            "RelativePrice": "4.78321914",
+            "StockValue": "1917.06988738",
+            "VolumeTraded": 84,
+            "HighestStock": 718
           },
           "CurrencyTwoData": {
-            "ValueTraded": "174.15511196",
-            "RelativePrice": "9.43322909",
-            "StockValue": "300.81337521",
-            "VolumeTraded": 11,
-            "HighestStock": 19
+            "ValueTraded": "401.79040785",
+            "RelativePrice": "10.68005508",
+            "StockValue": "344.39177816",
+            "VolumeTraded": 21,
+            "HighestStock": 18
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917903,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "98.31378936",
+          "CurrencyExchangeSnapshotPairId": 81937511,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "45.73596085",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -467,24 +508,65 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "120.27367092",
-            "RelativePrice": "1.92772136",
-            "StockValue": "30.65799455",
-            "VolumeTraded": 51,
-            "HighestStock": 13
+            "ValueTraded": "98.79050952",
+            "RelativePrice": "1.23610705",
+            "StockValue": "125.49064722",
+            "VolumeTraded": 37,
+            "HighestStock": 47
           },
           "CurrencyTwoData": {
-            "ValueTraded": "98.31378936",
-            "RelativePrice": "0.17609615",
-            "StockValue": "293.35798348",
-            "VolumeTraded": 683,
-            "HighestStock": 2038
+            "ValueTraded": "45.73596085",
+            "RelativePrice": "0.37562931",
+            "StockValue": "63.47386202",
+            "VolumeTraded": 263,
+            "HighestStock": 365
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917905,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "115.55705638",
+          "CurrencyExchangeSnapshotPairId": 81937513,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "0E-8",
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "CurrencyOne": {
+            "CurrencyItemId": 11,
+            "ItemId": 288,
+            "CurrencyCategoryId": 21,
+            "ApiId": "vaal",
+            "Text": "Vaal Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+            "ItemMetadata": null
+          },
+          "CurrencyTwo": {
+            "CurrencyItemId": 5,
+            "ItemId": 282,
+            "CurrencyCategoryId": 21,
+            "ApiId": "wisdom",
+            "Text": "Scroll of Wisdom",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lJZGVudGlmaWNhdGlvbiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/884f7bc58b/CurrencyIdentification.png",
+            "ItemMetadata": null
+          },
+          "CurrencyOneData": {
+            "ValueTraded": "0E-8",
+            "RelativePrice": "0E-8",
+            "StockValue": "0E-8",
+            "VolumeTraded": 0,
+            "HighestStock": 0
+          },
+          "CurrencyTwoData": {
+            "ValueTraded": "0E-8",
+            "RelativePrice": "0E-8",
+            "StockValue": "1.45268114",
+            "VolumeTraded": 0,
+            "HighestStock": 323
+          }
+        },
+        {
+          "CurrencyExchangeSnapshotPairId": 81937514,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "74.76038558",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -508,24 +590,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "115.55705638",
-            "RelativePrice": "0.76671142",
-            "StockValue": "7.07492182",
-            "VolumeTraded": 49,
-            "HighestStock": 3
+            "ValueTraded": "74.76038558",
+            "RelativePrice": "0.37802368",
+            "StockValue": "2.67001377",
+            "VolumeTraded": 28,
+            "HighestStock": 1
           },
           "CurrencyTwoData": {
-            "ValueTraded": "37.56885938",
-            "RelativePrice": "2.35830727",
-            "StockValue": "200.11167954",
-            "VolumeTraded": 49,
-            "HighestStock": 261
+            "ValueTraded": "10.58466299",
+            "RelativePrice": "2.67001377",
+            "StockValue": "35.91224942",
+            "VolumeTraded": 28,
+            "HighestStock": 95
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917908,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "47.16614546",
+          "CurrencyExchangeSnapshotPairId": 81937516,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "0E-8",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -549,52 +631,11 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "47.16614546",
-            "RelativePrice": "3.44933254",
-            "StockValue": "391.47900732",
-            "VolumeTraded": 20,
-            "HighestStock": 166
-          },
-          "CurrencyTwoData": {
-            "ValueTraded": "68.98665090",
-            "RelativePrice": "4.71661455",
-            "StockValue": "0E-8",
-            "VolumeTraded": 10,
-            "HighestStock": 0
-          }
-        },
-        {
-          "CurrencyExchangeSnapshotPairId": 81917911,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "0E-8",
-          "BaseCurrencyApiId": "exalted",
-          "BaseCurrencyText": "Exalted Orb",
-          "CurrencyOne": {
-            "CurrencyItemId": 11,
-            "ItemId": 288,
-            "CurrencyCategoryId": 21,
-            "ApiId": "vaal",
-            "Text": "Vaal Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
-            "ItemMetadata": null
-          },
-          "CurrencyTwo": {
-            "CurrencyItemId": 262,
-            "ItemId": 4269,
-            "CurrencyCategoryId": 21,
-            "ApiId": "perfect-orb-of-transmutation",
-            "Text": "Perfect Orb of Transmutation",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png",
-            "ItemMetadata": null
-          },
-          "CurrencyOneData": {
             "ValueTraded": "0E-8",
             "RelativePrice": "0E-8",
-            "StockValue": "219.32257639",
+            "StockValue": "304.38156986",
             "VolumeTraded": 0,
-            "HighestStock": 93
+            "HighestStock": 114
           },
           "CurrencyTwoData": {
             "ValueTraded": "0E-8",
@@ -605,9 +646,9 @@
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917915,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "9.43322909",
+          "CurrencyExchangeSnapshotPairId": 81937519,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "2.67001377",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -631,24 +672,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "9.43322909",
-            "RelativePrice": "0.06783449",
+            "ValueTraded": "2.67001377",
+            "RelativePrice": "0.10833956",
             "StockValue": "0E-8",
-            "VolumeTraded": 4,
+            "VolumeTraded": 1,
             "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "0.27133796",
-            "RelativePrice": "2.35830727",
-            "StockValue": "0.61051040",
-            "VolumeTraded": 4,
-            "HighestStock": 9
+            "ValueTraded": "0.10833956",
+            "RelativePrice": "2.67001377",
+            "StockValue": "0.54169780",
+            "VolumeTraded": 1,
+            "HighestStock": 5
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917916,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "5440.85794785",
+          "CurrencyExchangeSnapshotPairId": 81937520,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "7760.30483591",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -672,24 +713,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "5254.30860432",
-            "RelativePrice": "2.44203678",
-            "StockValue": "11935.39310882",
-            "VolumeTraded": 2228,
-            "HighestStock": 5061
+            "ValueTraded": "7182.33704325",
+            "RelativePrice": "2.88487169",
+            "StockValue": "14671.72567013",
+            "VolumeTraded": 2690,
+            "HighestStock": 5495
           },
           "CurrencyTwoData": {
-            "ValueTraded": "5440.85794785",
-            "RelativePrice": "5.31812612",
-            "StockValue": "11146.04907535",
-            "VolumeTraded": 988,
-            "HighestStock": 2024
+            "ValueTraded": "7760.30483591",
+            "RelativePrice": "6.10224048",
+            "StockValue": "9415.22116030",
+            "VolumeTraded": 1177,
+            "HighestStock": 1428
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917919,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "49100.78484453",
+          "CurrencyExchangeSnapshotPairId": 81937521,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "51400.84840574",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -713,24 +754,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "48050.51068805",
-            "RelativePrice": "2.40985447",
-            "StockValue": "51753.05310671",
-            "VolumeTraded": 20375,
-            "HighestStock": 21945
+            "ValueTraded": "54454.93085394",
+            "RelativePrice": "2.52026714",
+            "StockValue": "45235.37330363",
+            "VolumeTraded": 20395,
+            "HighestStock": 16942
           },
           "CurrencyTwoData": {
-            "ValueTraded": "49100.78484453",
-            "RelativePrice": "85.34726588",
-            "StockValue": "14651.74396782",
-            "VolumeTraded": 563,
-            "HighestStock": 168
+            "ValueTraded": "51400.84840574",
+            "RelativePrice": "89.71158296",
+            "StockValue": "16512.62840053",
+            "VolumeTraded": 607,
+            "HighestStock": 195
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917923,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "9.43322909",
+          "CurrencyExchangeSnapshotPairId": 81937526,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "10.68005508",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -754,24 +795,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "9.43322909",
-            "RelativePrice": "0.52068133",
-            "StockValue": "2.35830727",
+            "ValueTraded": "10.68005508",
+            "RelativePrice": "0.36065050",
+            "StockValue": "0E-8",
             "VolumeTraded": 4,
-            "HighestStock": 1
+            "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "2.08272533",
-            "RelativePrice": "1.17915364",
-            "StockValue": "179.89540063",
+            "ValueTraded": "1.44260200",
+            "RelativePrice": "1.33500689",
+            "StockValue": "124.42442284",
             "VolumeTraded": 8,
-            "HighestStock": 691
+            "HighestStock": 690
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917925,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "30.01717561",
+          "CurrencyExchangeSnapshotPairId": 81937529,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "41.65075031",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -795,24 +836,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "35.37460910",
-            "RelativePrice": "2.00114504",
-            "StockValue": "40.09122364",
+            "ValueTraded": "40.05020656",
+            "RelativePrice": "2.77671669",
+            "StockValue": "24.03012394",
             "VolumeTraded": 15,
-            "HighestStock": 17
+            "HighestStock": 9
           },
           "CurrencyTwoData": {
-            "ValueTraded": "30.01717561",
-            "RelativePrice": "0.33690104",
-            "StockValue": "399.37137460",
-            "VolumeTraded": 105,
-            "HighestStock": 1397
+            "ValueTraded": "41.65075031",
+            "RelativePrice": "0.35759113",
+            "StockValue": "400.88847170",
+            "VolumeTraded": 112,
+            "HighestStock": 1078
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917926,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "23.58307273",
+          "CurrencyExchangeSnapshotPairId": 81937531,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "18.69009640",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -836,24 +877,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "23.58307273",
-            "RelativePrice": "1.20673855",
-            "StockValue": "0E-8",
-            "VolumeTraded": 10,
-            "HighestStock": 0
+            "ValueTraded": "18.69009640",
+            "RelativePrice": "0.69822230",
+            "StockValue": "2.67001377",
+            "VolumeTraded": 7,
+            "HighestStock": 1
           },
           "CurrencyTwoData": {
-            "ValueTraded": "12.06738549",
-            "RelativePrice": "1.17915364",
-            "StockValue": "535.79191556",
-            "VolumeTraded": 20,
-            "HighestStock": 888
+            "ValueTraded": "4.88755613",
+            "RelativePrice": "0.98368928",
+            "StockValue": "203.73391878",
+            "VolumeTraded": 19,
+            "HighestStock": 792
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917930,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "483.45299097",
+          "CurrencyExchangeSnapshotPairId": 81937533,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "512.64264398",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -877,24 +918,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "483.45299097",
-            "RelativePrice": "2.49277977",
-            "StockValue": "1978.61980207",
-            "VolumeTraded": 205,
-            "HighestStock": 839
+            "ValueTraded": "512.64264398",
+            "RelativePrice": "3.13312932",
+            "StockValue": "2416.36246251",
+            "VolumeTraded": 192,
+            "HighestStock": 905
           },
           "CurrencyTwoData": {
-            "ValueTraded": "511.01985326",
-            "RelativePrice": "25.44489426",
-            "StockValue": "645.49876201",
+            "ValueTraded": "601.56082971",
+            "RelativePrice": "26.98119179",
+            "StockValue": "664.88302232",
             "VolumeTraded": 19,
-            "HighestStock": 24
+            "HighestStock": 21
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917932,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "139165.00000000",
+          "CurrencyExchangeSnapshotPairId": 81937535,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "154747.00000000",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -918,24 +959,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "140401.82350002",
-            "RelativePrice": "2.33753254",
-            "StockValue": "139800.45514540",
-            "VolumeTraded": 59535,
-            "HighestStock": 59280
+            "ValueTraded": "152270.88534446",
+            "RelativePrice": "2.71343153",
+            "StockValue": "109163.51301610",
+            "VolumeTraded": 57030,
+            "HighestStock": 40885
           },
           "CurrencyTwoData": {
-            "ValueTraded": "139165.00000000",
-            "RelativePrice": "1.00888746",
-            "StockValue": "49747.00000000",
-            "VolumeTraded": 139165,
-            "HighestStock": 49747
+            "ValueTraded": "154747.00000000",
+            "RelativePrice": "0.98399895",
+            "StockValue": "80483.00000000",
+            "VolumeTraded": 154747,
+            "HighestStock": 80483
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917933,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "280.63856549",
+          "CurrencyExchangeSnapshotPairId": 81937538,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "283.02145970",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -959,24 +1000,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "280.63856549",
-            "RelativePrice": "1.95115636",
-            "StockValue": "200.45611821",
-            "VolumeTraded": 119,
-            "HighestStock": 85
+            "ValueTraded": "283.02145970",
+            "RelativePrice": "2.30101132",
+            "StockValue": "619.44319481",
+            "VolumeTraded": 106,
+            "HighestStock": 232
           },
           "CurrencyTwoData": {
-            "ValueTraded": "232.18760683",
-            "RelativePrice": "16.50815091",
-            "StockValue": "682.90472597",
-            "VolumeTraded": 17,
-            "HighestStock": 50
+            "ValueTraded": "243.90719977",
+            "RelativePrice": "15.72341443",
+            "StockValue": "799.47359923",
+            "VolumeTraded": 18,
+            "HighestStock": 59
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917936,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "103.76552001",
+          "CurrencyExchangeSnapshotPairId": 81937539,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "24.03012394",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1000,65 +1041,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "103.76552001",
-            "RelativePrice": "1.16915464",
-            "StockValue": "42.44953091",
-            "VolumeTraded": 44,
-            "HighestStock": 18
+            "ValueTraded": "24.03012394",
+            "RelativePrice": "1.28716747",
+            "StockValue": "32.04016525",
+            "VolumeTraded": 9,
+            "HighestStock": 12
           },
           "CurrencyTwoData": {
-            "ValueTraded": "51.44280412",
-            "RelativePrice": "0.30609298",
-            "StockValue": "144.16125048",
-            "VolumeTraded": 339,
-            "HighestStock": 950
+            "ValueTraded": "11.58450727",
+            "RelativePrice": "0.28270734",
+            "StockValue": "216.42585339",
+            "VolumeTraded": 85,
+            "HighestStock": 1588
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917937,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "0E-8",
-          "BaseCurrencyApiId": "exalted",
-          "BaseCurrencyText": "Exalted Orb",
-          "CurrencyOne": {
-            "CurrencyItemId": 11,
-            "ItemId": 288,
-            "CurrencyCategoryId": 21,
-            "ApiId": "vaal",
-            "Text": "Vaal Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
-            "ItemMetadata": null
-          },
-          "CurrencyTwo": {
-            "CurrencyItemId": 267,
-            "ItemId": 4279,
-            "CurrencyCategoryId": 21,
-            "ApiId": "greater-regal-orb",
-            "Text": "Greater Regal Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
-            "ItemMetadata": null
-          },
-          "CurrencyOneData": {
-            "ValueTraded": "0E-8",
-            "RelativePrice": "0E-8",
-            "StockValue": "2.35830727",
-            "VolumeTraded": 0,
-            "HighestStock": 1
-          },
-          "CurrencyTwoData": {
-            "ValueTraded": "0E-8",
-            "RelativePrice": "0E-8",
-            "StockValue": "6.69487906",
-            "VolumeTraded": 0,
-            "HighestStock": 10
-          }
-        },
-        {
-          "CurrencyExchangeSnapshotPairId": 81917938,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "162.72320184",
+          "CurrencyExchangeSnapshotPairId": 81937540,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "32.04016525",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1082,65 +1082,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "162.72320184",
-            "RelativePrice": "0.53049477",
+            "ValueTraded": "32.04016525",
+            "RelativePrice": "0.56610528",
             "StockValue": "0E-8",
-            "VolumeTraded": 69,
+            "VolumeTraded": 12,
             "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "36.60413906",
-            "RelativePrice": "4.64923434",
-            "StockValue": "104.58325444",
-            "VolumeTraded": 35,
-            "HighestStock": 100
+            "ValueTraded": "6.79326340",
+            "RelativePrice": "5.34002754",
+            "StockValue": "41.89179098",
+            "VolumeTraded": 6,
+            "HighestStock": 37
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917942,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "4.71661455",
-          "BaseCurrencyApiId": "exalted",
-          "BaseCurrencyText": "Exalted Orb",
-          "CurrencyOne": {
-            "CurrencyItemId": 11,
-            "ItemId": 288,
-            "CurrencyCategoryId": 21,
-            "ApiId": "vaal",
-            "Text": "Vaal Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
-            "ItemMetadata": null
-          },
-          "CurrencyTwo": {
-            "CurrencyItemId": 205,
-            "ItemId": 4011,
-            "CurrencyCategoryId": 21,
-            "ApiId": "lesser-jewellers-orb",
-            "Text": "Lesser Jeweller's Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b0b9a43ed8/CurrencyRerollSocketNumbers01.png",
-            "ItemMetadata": null
-          },
-          "CurrencyOneData": {
-            "ValueTraded": "4.71661455",
-            "RelativePrice": "0.22852784",
-            "StockValue": "0E-8",
-            "VolumeTraded": 2,
-            "HighestStock": 0
-          },
-          "CurrencyTwoData": {
-            "ValueTraded": "0.45705568",
-            "RelativePrice": "0.33690104",
-            "StockValue": "8.32494279",
-            "VolumeTraded": 14,
-            "HighestStock": 255
-          }
-        },
-        {
-          "CurrencyExchangeSnapshotPairId": 81917943,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "11.79153637",
+          "CurrencyExchangeSnapshotPairId": 81937544,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "8.01004131",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1164,24 +1123,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "11.79153637",
-            "RelativePrice": "0.65760624",
-            "StockValue": "4.71661455",
-            "VolumeTraded": 5,
-            "HighestStock": 2
+            "ValueTraded": "8.01004131",
+            "RelativePrice": "1.03027484",
+            "StockValue": "0E-8",
+            "VolumeTraded": 3,
+            "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "3.28803122",
-            "RelativePrice": "0.19330387",
-            "StockValue": "54.38727057",
-            "VolumeTraded": 61,
-            "HighestStock": 1009
+            "ValueTraded": "3.09082451",
+            "RelativePrice": "0.14052704",
+            "StockValue": "89.90503582",
+            "VolumeTraded": 57,
+            "HighestStock": 1658
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917945,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "144.29078995",
+          "CurrencyExchangeSnapshotPairId": 81937546,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "62.75502095",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1205,24 +1164,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "174.51473820",
-            "RelativePrice": "1.94987554",
-            "StockValue": "77.82414001",
-            "VolumeTraded": 74,
-            "HighestStock": 33
+            "ValueTraded": "128.16066099",
+            "RelativePrice": "1.30739627",
+            "StockValue": "69.42035804",
+            "VolumeTraded": 48,
+            "HighestStock": 26
           },
           "CurrencyTwoData": {
-            "ValueTraded": "144.29078995",
-            "RelativePrice": "0.63459905",
-            "StockValue": "415.55747506",
-            "VolumeTraded": 275,
-            "HighestStock": 792
+            "ValueTraded": "62.75502095",
+            "RelativePrice": "1.06800551",
+            "StockValue": "553.81305990",
+            "VolumeTraded": 120,
+            "HighestStock": 1059
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917946,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "245.26395640",
+          "CurrencyExchangeSnapshotPairId": 81937547,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "125.49064722",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1246,23 +1205,23 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "245.26395640",
-            "RelativePrice": "2.72863254",
-            "StockValue": "3072.87437676",
-            "VolumeTraded": 104,
-            "HighestStock": 1303
+            "ValueTraded": "125.49064722",
+            "RelativePrice": "1.40103051",
+            "StockValue": "3150.61624946",
+            "VolumeTraded": 47,
+            "HighestStock": 1180
           },
           "CurrencyTwoData": {
-            "ValueTraded": "283.77778389",
-            "RelativePrice": "61.31598910",
-            "StockValue": "709.44445973",
-            "VolumeTraded": 4,
-            "HighestStock": 10
+            "ValueTraded": "65.84843391",
+            "RelativePrice": "125.49064722",
+            "StockValue": "65.84843391",
+            "VolumeTraded": 1,
+            "HighestStock": 1
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917947,
-          "CurrencyExchangeSnapshotId": 284688,
+          "CurrencyExchangeSnapshotPairId": 81937549,
+          "CurrencyExchangeSnapshotId": 284740,
           "Volume": "0E-8",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
@@ -1289,9 +1248,9 @@
           "CurrencyOneData": {
             "ValueTraded": "0E-8",
             "RelativePrice": "0E-8",
-            "StockValue": "613.15989099",
+            "StockValue": "520.65268529",
             "VolumeTraded": 0,
-            "HighestStock": 260
+            "HighestStock": 195
           },
           "CurrencyTwoData": {
             "ValueTraded": "0E-8",
@@ -1302,9 +1261,9 @@
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917951,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "2.17901832",
+          "CurrencyExchangeSnapshotPairId": 81937554,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "0E-8",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1328,24 +1287,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "2.17901832",
-            "RelativePrice": "0.58096550",
+            "ValueTraded": "0E-8",
+            "RelativePrice": "0E-8",
             "StockValue": "0E-8",
-            "VolumeTraded": 2,
+            "VolumeTraded": 0,
             "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "1.16193101",
-            "RelativePrice": "0.43580366",
-            "StockValue": "45.54769554",
-            "VolumeTraded": 5,
-            "HighestStock": 196
+            "ValueTraded": "0E-8",
+            "RelativePrice": "0E-8",
+            "StockValue": "35.19446070",
+            "VolumeTraded": 0,
+            "HighestStock": 188
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917952,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "5.44754581",
+          "CurrencyExchangeSnapshotPairId": 81937555,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "2.80710153",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1369,24 +1328,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "5.44754581",
-            "RelativePrice": "6.33291316",
-            "StockValue": "9.80558246",
-            "VolumeTraded": 5,
-            "HighestStock": 9
+            "ValueTraded": "2.80710153",
+            "RelativePrice": "9.56643828",
+            "StockValue": "44.91362444",
+            "VolumeTraded": 2,
+            "HighestStock": 32
           },
           "CurrencyTwoData": {
-            "ValueTraded": "31.66456581",
-            "RelativePrice": "2.72377291",
+            "ValueTraded": "19.13287656",
+            "RelativePrice": "2.80710153",
             "StockValue": "0E-8",
-            "VolumeTraded": 2,
+            "VolumeTraded": 1,
             "HighestStock": 0
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917953,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "0E-8",
+          "CurrencyExchangeSnapshotPairId": 81937556,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "3.47801984",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1410,24 +1369,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "0E-8",
-            "RelativePrice": "0E-8",
+            "ValueTraded": "2.80710153",
+            "RelativePrice": "1.73900992",
             "StockValue": "0E-8",
-            "VolumeTraded": 0,
+            "VolumeTraded": 2,
             "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "0E-8",
-            "RelativePrice": "0E-8",
-            "StockValue": "47.50153805",
-            "VolumeTraded": 0,
-            "HighestStock": 330
+            "ValueTraded": "3.47801984",
+            "RelativePrice": "0.14035508",
+            "StockValue": "52.17029755",
+            "VolumeTraded": 20,
+            "HighestStock": 300
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917954,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "8.71607330",
+          "CurrencyExchangeSnapshotPairId": 81937558,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "2.80710153",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1451,24 +1410,24 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "8.71607330",
-            "RelativePrice": "0.38335571",
+            "ValueTraded": "2.80710153",
+            "RelativePrice": "0.18901184",
             "StockValue": "0E-8",
-            "VolumeTraded": 8,
+            "VolumeTraded": 2,
             "HighestStock": 0
           },
           "CurrencyTwoData": {
-            "ValueTraded": "3.06684566",
-            "RelativePrice": "2.17901832",
-            "StockValue": "39.86899363",
-            "VolumeTraded": 4,
-            "HighestStock": 52
+            "ValueTraded": "0.37802368",
+            "RelativePrice": "2.80710153",
+            "StockValue": "17.76711287",
+            "VolumeTraded": 1,
+            "HighestStock": 47
           }
         },
         {
-          "CurrencyExchangeSnapshotPairId": 81917956,
-          "CurrencyExchangeSnapshotId": 284688,
-          "Volume": "27.23772906",
+          "CurrencyExchangeSnapshotPairId": 81937559,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "1.40355076",
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "CurrencyOne": {
@@ -1492,26 +1451,92 @@
             "ItemMetadata": null
           },
           "CurrencyOneData": {
-            "ValueTraded": "27.23772906",
-            "RelativePrice": "2.75946604",
-            "StockValue": "118.75649869",
-            "VolumeTraded": 25,
+            "ValueTraded": "1.40355076",
+            "RelativePrice": "6.78024496",
+            "StockValue": "152.98703326",
+            "VolumeTraded": 1,
             "HighestStock": 109
           },
           "CurrencyTwoData": {
-            "ValueTraded": "68.98665090",
-            "RelativePrice": "2.72377291",
+            "ValueTraded": "6.78024496",
+            "RelativePrice": "1.40355076",
             "StockValue": "0E-8",
-            "VolumeTraded": 10,
+            "VolumeTraded": 1,
             "HighestStock": 0
+          }
+        },
+        {
+          "CurrencyExchangeSnapshotPairId": 81937561,
+          "CurrencyExchangeSnapshotId": 284740,
+          "Volume": "0E-8",
+          "BaseCurrencyApiId": "exalted",
+          "BaseCurrencyText": "Exalted Orb",
+          "CurrencyOne": {
+            "CurrencyItemId": 23,
+            "ItemId": 300,
+            "CurrencyCategoryId": 21,
+            "ApiId": "gcp",
+            "Text": "Gemcutter's Prism",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lHZW1RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f4bace18d7/CurrencyGemQuality.png",
+            "ItemMetadata": null
+          },
+          "CurrencyTwo": {
+            "CurrencyItemId": 263,
+            "ItemId": 4271,
+            "CurrencyCategoryId": 21,
+            "ApiId": "greater-orb-of-augmentation",
+            "Text": "Greater Orb of Augmentation",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png",
+            "ItemMetadata": null
+          },
+          "CurrencyOneData": {
+            "ValueTraded": "0E-8",
+            "RelativePrice": "0E-8",
+            "StockValue": "0E-8",
+            "VolumeTraded": 0,
+            "HighestStock": 0
+          },
+          "CurrencyTwoData": {
+            "ValueTraded": "0E-8",
+            "RelativePrice": "0E-8",
+            "StockValue": "2.70848900",
+            "VolumeTraded": 0,
+            "HighestStock": 25
           }
         }
       ],
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotHistory?Limit=24": {
       "data": {
         "Data": [
+          {
+            "Epoch": 1780905600,
+            "MarketCap": "67674056.46897701919078826904296875",
+            "Volume": "45950287.87248139083385467529296875"
+          },
+          {
+            "Epoch": 1780902000,
+            "MarketCap": "66888223.160380102694034576416015625",
+            "Volume": "43334717.14832802116870880126953125"
+          },
+          {
+            "Epoch": 1780898400,
+            "MarketCap": "66854916.515882432460784912109375",
+            "Volume": "41737053.8214328587055206298828125"
+          },
+          {
+            "Epoch": 1780894800,
+            "MarketCap": "66453090.58504565060138702392578125",
+            "Volume": "40942546.518913470208644866943359375"
+          },
+          {
+            "Epoch": 1780891200,
+            "MarketCap": "66937986.755658350884914398193359375",
+            "Volume": "40274024.281013987958431243896484375"
+          },
           {
             "Epoch": 1780887600,
             "MarketCap": "66144663.716339848935604095458984375",
@@ -1606,31 +1631,6 @@
             "Epoch": 1780822800,
             "MarketCap": "55974389.10973031818866729736328125",
             "Volume": "49696592.40112431347370147705078125"
-          },
-          {
-            "Epoch": 1780819200,
-            "MarketCap": "55864605.9731376469135284423828125",
-            "Volume": "46833218.74415607750415802001953125"
-          },
-          {
-            "Epoch": 1780815600,
-            "MarketCap": "55818315.24887239933013916015625",
-            "Volume": "44806018.649389617145061492919921875"
-          },
-          {
-            "Epoch": 1780812000,
-            "MarketCap": "54778442.714438848197460174560546875",
-            "Volume": "40148695.074939496815204620361328125"
-          },
-          {
-            "Epoch": 1780808400,
-            "MarketCap": "53285553.853252761065959930419921875",
-            "Volume": "39399075.033121712505817413330078125"
-          },
-          {
-            "Epoch": 1780804800,
-            "MarketCap": "53253220.098846532404422760009765625",
-            "Volume": "38244291.29399903118610382080078125"
           }
         ],
         "Meta": {
@@ -1639,7 +1639,7 @@
         "BaseCurrencyApiId": "exalted",
         "BaseCurrencyText": "Exalted Orb"
       },
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/ReferenceCurrencies": {
       "data": [
@@ -1653,16 +1653,16 @@
           "ApiId": "chaos",
           "Text": "Chaos Orb",
           "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
-          "RelativePrice": 5.735550927223936
+          "RelativePrice": 7.192435409411193
         },
         {
           "ApiId": "divine",
           "Text": "Divine Orb",
           "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png",
-          "RelativePrice": 87.25605508223057
+          "RelativePrice": 84.56674369779782
         }
       ],
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories": {
       "data": {
@@ -1815,7 +1815,7 @@
           }
         ]
       },
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=50": {
       "data": {
@@ -1844,9 +1844,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 144973.14531455465,
+                "Price": 145177.0055298116,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 35
+                "Quantity": 68
               },
               {
                 "Price": 128528.25192993922,
@@ -1879,8 +1879,8 @@
                 "Quantity": 43
               }
             ],
-            "CurrentPrice": 146677.4285932296,
-            "CurrentQuantity": 4
+            "CurrentPrice": 150748.6773156944,
+            "CurrentQuantity": 6
           },
           {
             "CurrencyItemId": 271,
@@ -1903,9 +1903,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 18253.03911133704,
+                "Price": 17129.23411331732,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 485
+                "Quantity": 939
               },
               {
                 "Price": 12385.204080479809,
@@ -1938,8 +1938,8 @@
                 "Quantity": 616
               }
             ],
-            "CurrentPrice": 17217.088333997755,
-            "CurrentQuantity": 101
+            "CurrentPrice": 15603.871945393665,
+            "CurrentQuantity": 107
           },
           {
             "CurrencyItemId": 270,
@@ -1962,9 +1962,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 209.69773587097066,
+                "Price": 213.19817958129647,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 16769
+                "Quantity": 33506
               },
               {
                 "Price": 190.17547811069963,
@@ -1997,8 +1997,8 @@
                 "Quantity": 41781
               }
             ],
-            "CurrentPrice": 216.10287794117156,
-            "CurrentQuantity": 3305
+            "CurrentPrice": 222.17603801533744,
+            "CurrentQuantity": 3671
           },
           {
             "CurrencyItemId": 266,
@@ -2021,9 +2021,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 207.68584632730418,
+                "Price": 209.50486602679638,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 10030
+                "Quantity": 19177
               },
               {
                 "Price": 196.91831097317092,
@@ -2056,8 +2056,8 @@
                 "Quantity": 18724
               }
             ],
-            "CurrentPrice": 209.05852678014648,
-            "CurrentQuantity": 1864
+            "CurrentPrice": 213.31224270074992,
+            "CurrentQuantity": 2036
           },
           {
             "CurrencyItemId": 14,
@@ -2080,9 +2080,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 87.99556037648692,
+                "Price": 86.52077111790521,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 1700985
+                "Quantity": 3596071
               },
               {
                 "Price": 85.3591517172585,
@@ -2115,8 +2115,8 @@
                 "Quantity": 3284125
               }
             ],
-            "CurrentPrice": 87.25605508223057,
-            "CurrentQuantity": 338891
+            "CurrentPrice": 84.56674369779782,
+            "CurrentQuantity": 419467
           },
           {
             "CurrencyItemId": 207,
@@ -2139,9 +2139,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 73.77496540342686,
+                "Price": 70.33461088450206,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 41678
+                "Quantity": 81492
               },
               {
                 "Price": 79.03314145664244,
@@ -2174,8 +2174,8 @@
                 "Quantity": 155639
               }
             ],
-            "CurrentPrice": 71.9778994486862,
-            "CurrentQuantity": 8053
+            "CurrentPrice": 69.36500378699174,
+            "CurrentQuantity": 8566
           },
           {
             "CurrencyItemId": 17,
@@ -2198,9 +2198,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 62.84554847999327,
+                "Price": 64.48806014611321,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 18589
+                "Quantity": 38521
               },
               {
                 "Price": 56.436547511600246,
@@ -2233,8 +2233,8 @@
                 "Quantity": 31047
               }
             ],
-            "CurrentPrice": 63.96187941626999,
-            "CurrentQuantity": 3651
+            "CurrentPrice": 63.26906069153475,
+            "CurrentQuantity": 4264
           },
           {
             "CurrencyItemId": 15,
@@ -2257,9 +2257,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 27.569899059768552,
+                "Price": 28.985992902699753,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 120780
+                "Quantity": 236671
               },
               {
                 "Price": 28.011655857414016,
@@ -2292,67 +2292,8 @@
                 "Quantity": 709103
               }
             ],
-            "CurrentPrice": 27.750234337470562,
-            "CurrentQuantity": 22427
-          },
-          {
-            "CurrencyItemId": 1931,
-            "ItemId": 13451,
-            "CurrencyCategoryId": 21,
-            "ApiId": "cryptic-key",
-            "Text": "Cryptic Key",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU3Ryb25nYm94U2tlbGV0b25LZXkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ae08d02326/StrongboxSkeletonKey.png",
-            "ItemMetadata": {
-              "name": "Cryptic Key",
-              "base_type": "Cryptic Key",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU3Ryb25nYm94U2tlbGV0b25LZXkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8a1e40dee/StrongboxSkeletonKey.png",
-              "stack_size": 1,
-              "max_stack_size": null,
-              "description": "Right click this item then left click a Strongbox to open it. May only be used once per Strongbox.",
-              "effect": [
-                "Opens an unopened Strongbox allowing it to be opened an additional time"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 17.47426672056455,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 1154
-              },
-              {
-                "Price": 20.15427620975225,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 7953
-              },
-              {
-                "Price": 20.959904630255224,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 6397
-              },
-              {
-                "Price": 20.289848397319073,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 5105
-              },
-              {
-                "Price": 16.010291204828892,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 4605
-              },
-              {
-                "Price": 16.75952653443805,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 3546
-              },
-              {
-                "Price": 14.001457815662889,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 2301
-              }
-            ],
-            "CurrentPrice": 18.55167062597909,
-            "CurrentQuantity": 210
+            "CurrentPrice": 32.58732708288413,
+            "CurrentQuantity": 23576
           },
           {
             "CurrencyItemId": 265,
@@ -2375,9 +2316,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 16.150893832947485,
+                "Price": 17.779683723102554,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 93392
+                "Quantity": 203232
               },
               {
                 "Price": 16.078193125428573,
@@ -2410,67 +2351,67 @@
                 "Quantity": 187742
               }
             ],
-            "CurrentPrice": 15.791142442588317,
-            "CurrentQuantity": 16719
+            "CurrentPrice": 20.618982896576625,
+            "CurrentQuantity": 25409
           },
           {
-            "CurrencyItemId": 268,
-            "ItemId": 4281,
+            "CurrencyItemId": 1931,
+            "ItemId": 13451,
             "CurrencyCategoryId": 21,
-            "ApiId": "perfect-regal-orb",
-            "Text": "Perfect Regal Orb",
+            "ApiId": "cryptic-key",
+            "Text": "Cryptic Key",
             "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU3Ryb25nYm94U2tlbGV0b25LZXkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ae08d02326/StrongboxSkeletonKey.png",
             "ItemMetadata": {
-              "name": "Perfect Regal Orb",
-              "base_type": "Perfect Regal Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c27779a8b7/CurrencyUpgradeMagicToRare.png",
+              "name": "Cryptic Key",
+              "base_type": "Cryptic Key",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU3Ryb25nYm94U2tlbGV0b25LZXkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8a1e40dee/StrongboxSkeletonKey.png",
               "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a magic item to apply it. Current modifiers are retained and a new one is added.",
+              "max_stack_size": null,
+              "description": "Right click this item then left click a Strongbox to open it. May only be used once per Strongbox.",
               "effect": [
-                "Upgrades a Magic item to a Rare item, adding 1 modifier"
+                "Opens an unopened Strongbox allowing it to be opened an additional time"
               ]
             },
             "PriceLogs": [
               {
-                "Price": 13.529440875835505,
+                "Price": 18.5253114611052,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 13984
+                "Quantity": 2397
               },
               {
-                "Price": 14.112927362234329,
+                "Price": 20.15427620975225,
                 "Time": "2026-06-07T00:00:00",
-                "Quantity": 85781
+                "Quantity": 7953
               },
               {
-                "Price": 16.343937675207616,
+                "Price": 20.959904630255224,
                 "Time": "2026-06-06T00:00:00",
-                "Quantity": 70720
+                "Quantity": 6397
               },
               {
-                "Price": 18.697803635577223,
+                "Price": 20.289848397319073,
                 "Time": "2026-06-05T00:00:00",
-                "Quantity": 56497
+                "Quantity": 5105
               },
               {
-                "Price": 16.75967156849173,
+                "Price": 16.010291204828892,
                 "Time": "2026-06-04T00:00:00",
-                "Quantity": 59416
+                "Quantity": 4605
               },
               {
-                "Price": 16.71402746734503,
+                "Price": 16.75952653443805,
                 "Time": "2026-06-03T00:00:00",
-                "Quantity": 52620
+                "Quantity": 3546
               },
               {
-                "Price": 17.28020423203406,
+                "Price": 14.001457815662889,
                 "Time": "2026-06-02T00:00:00",
-                "Quantity": 39679
+                "Quantity": 2301
               }
             ],
-            "CurrentPrice": 13.56965893486199,
-            "CurrentQuantity": 2408
+            "CurrentPrice": 20.18909896099746,
+            "CurrentQuantity": 281
           },
           {
             "CurrencyItemId": 8,
@@ -2493,9 +2434,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 14.772955394682388,
+                "Price": 14.209313190500666,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 116080
+                "Quantity": 231310
               },
               {
                 "Price": 15.290363396090418,
@@ -2528,8 +2469,67 @@
                 "Quantity": 400747
               }
             ],
-            "CurrentPrice": 13.553484214177237,
-            "CurrentQuantity": 20767
+            "CurrentPrice": 14.72802241045119,
+            "CurrentQuantity": 26008
+          },
+          {
+            "CurrencyItemId": 268,
+            "ItemId": 4281,
+            "CurrencyCategoryId": 21,
+            "ApiId": "perfect-regal-orb",
+            "Text": "Perfect Regal Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
+            "ItemMetadata": {
+              "name": "Perfect Regal Orb",
+              "base_type": "Perfect Regal Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c27779a8b7/CurrencyUpgradeMagicToRare.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a magic item to apply it. Current modifiers are retained and a new one is added.",
+              "effect": [
+                "Upgrades a Magic item to a Rare item, adding 1 modifier"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 13.34242512249532,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 28054
+              },
+              {
+                "Price": 14.112927362234329,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 85781
+              },
+              {
+                "Price": 16.343937675207616,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 70720
+              },
+              {
+                "Price": 18.697803635577223,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 56497
+              },
+              {
+                "Price": 16.75967156849173,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 59416
+              },
+              {
+                "Price": 16.71402746734503,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 52620
+              },
+              {
+                "Price": 17.28020423203406,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 39679
+              }
+            ],
+            "CurrentPrice": 13.445737562372312,
+            "CurrentQuantity": 2818
           },
           {
             "CurrencyItemId": 262,
@@ -2552,9 +2552,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 9.310863649326397,
+                "Price": 9.4016089703402,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 43527
+                "Quantity": 88916
               },
               {
                 "Price": 10.173475593619125,
@@ -2587,67 +2587,8 @@
                 "Quantity": 137704
               }
             ],
-            "CurrentPrice": 9.150399457314322,
-            "CurrentQuantity": 8813
-          },
-          {
-            "CurrencyItemId": 269,
-            "ItemId": 4283,
-            "CurrencyCategoryId": 21,
-            "ApiId": "greater-exalted-orb",
-            "Text": "Greater Exalted Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
-            "ItemMetadata": {
-              "name": "Greater Exalted Orb",
-              "base_type": "Greater Exalted Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/4ef5836606/CurrencyAddModToRare.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a rare item to apply it. Rare items can have up to six random modifiers.",
-              "effect": [
-                "Augments a Rare item with a new random modifier"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 6.2987905496967995,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 125419
-              },
-              {
-                "Price": 7.876187069950102,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 789908
-              },
-              {
-                "Price": 10.04562211149097,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 673121
-              },
-              {
-                "Price": 11.627119054017172,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 541311
-              },
-              {
-                "Price": 10.959907137503805,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 581225
-              },
-              {
-                "Price": 10.88685708825133,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 537509
-              },
-              {
-                "Price": 11.4563182125123,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 449536
-              }
-            ],
-            "CurrentPrice": 6.787090700974115,
-            "CurrentQuantity": 22181
+            "CurrentPrice": 10.068844240940786,
+            "CurrentQuantity": 9420
           },
           {
             "CurrencyItemId": 264,
@@ -2670,9 +2611,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 6.386858905987405,
+                "Price": 6.685520268171755,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 89429
+                "Quantity": 180501
               },
               {
                 "Price": 7.791440369014708,
@@ -2705,8 +2646,8 @@
                 "Quantity": 257309
               }
             ],
-            "CurrentPrice": 6.145450391190732,
-            "CurrentQuantity": 16565
+            "CurrentPrice": 7.957403498935606,
+            "CurrentQuantity": 19684
           },
           {
             "CurrencyItemId": 10,
@@ -2729,9 +2670,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 5.526437495109138,
+                "Price": 5.929973396599712,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 2496651
+                "Quantity": 5016320
               },
               {
                 "Price": 5.485347541918812,
@@ -2764,8 +2705,67 @@
                 "Quantity": 5564654
               }
             ],
-            "CurrentPrice": 5.735550927223936,
-            "CurrentQuantity": 512097
+            "CurrentPrice": 7.192435409411193,
+            "CurrentQuantity": 517240
+          },
+          {
+            "CurrencyItemId": 269,
+            "ItemId": 4283,
+            "CurrencyCategoryId": 21,
+            "ApiId": "greater-exalted-orb",
+            "Text": "Greater Exalted Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
+            "ItemMetadata": {
+              "name": "Greater Exalted Orb",
+              "base_type": "Greater Exalted Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/4ef5836606/CurrencyAddModToRare.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a rare item to apply it. Rare items can have up to six random modifiers.",
+              "effect": [
+                "Augments a Rare item with a new random modifier"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 6.4849057215424235,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 258595
+              },
+              {
+                "Price": 7.876187069950102,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 789908
+              },
+              {
+                "Price": 10.04562211149097,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 673121
+              },
+              {
+                "Price": 11.627119054017172,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 541311
+              },
+              {
+                "Price": 10.959907137503805,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 581225
+              },
+              {
+                "Price": 10.88685708825133,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 537509
+              },
+              {
+                "Price": 11.4563182125123,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 449536
+              }
+            ],
+            "CurrentPrice": 6.7722224537365845,
+            "CurrentQuantity": 28051
           },
           {
             "CurrencyItemId": 11,
@@ -2788,9 +2788,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 2.4504144564736707,
+                "Price": 2.5356401761617566,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 414083
+                "Quantity": 813971
               },
               {
                 "Price": 3.1446626406169167,
@@ -2823,8 +2823,8 @@
                 "Quantity": 798707
               }
             ],
-            "CurrentPrice": 2.527435754963297,
-            "CurrentQuantity": 77743
+            "CurrentPrice": 2.8610082323261783,
+            "CurrentQuantity": 75861
           },
           {
             "CurrencyItemId": 23,
@@ -2847,9 +2847,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 1.2492302161953743,
+                "Price": 1.2393916133124285,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 216847
+                "Quantity": 407962
               },
               {
                 "Price": 1.7363762538233687,
@@ -2882,8 +2882,8 @@
                 "Quantity": 764819
               }
             ],
-            "CurrentPrice": 1.3134869184688818,
-            "CurrentQuantity": 36593
+            "CurrentPrice": 1.4053091565049491,
+            "CurrentQuantity": 38607
           },
           {
             "CurrencyItemId": 2,
@@ -2904,9 +2904,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 1.3234871244843431,
+                "Price": 1.2670077828772544,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 6335
+                "Quantity": 12083
               },
               {
                 "Price": 1.3739605362729097,
@@ -2939,8 +2939,8 @@
                 "Quantity": 59083
               }
             ],
-            "CurrentPrice": 1.2743521000893656,
-            "CurrentQuantity": 1125
+            "CurrentPrice": 1.2595419847328244,
+            "CurrentQuantity": 1056
           },
           {
             "CurrencyItemId": 22,
@@ -2963,9 +2963,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 1.1562710198427002,
+                "Price": 1.2016237089237094,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 70444
+                "Quantity": 145059
               },
               {
                 "Price": 1.5572788185748434,
@@ -2998,8 +2998,65 @@
                 "Quantity": 271536
               }
             ],
-            "CurrentPrice": 1.0431220787424826,
-            "CurrentQuantity": 13176
+            "CurrentPrice": 1.2221354482385278,
+            "CurrentQuantity": 14088
+          },
+          {
+            "CurrencyItemId": 1,
+            "ItemId": 278,
+            "CurrencyCategoryId": 21,
+            "ApiId": "transmutation-shard",
+            "Text": "Transmutation Shard",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpY1NoYXJkIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/e67bca229b/CurrencyUpgradeToMagicShard.png",
+            "ItemMetadata": {
+              "name": "Transmutation Shard",
+              "base_type": "Transmutation Shard",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpY1NoYXJkIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ba4cb5a0fa/CurrencyUpgradeToMagicShard.png",
+              "stack_size": 1,
+              "max_stack_size": 10,
+              "description": "A stack of 10 shards becomes an Orb of Transmutation",
+              "effect": []
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.4652777777777778,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 19
+              },
+              {
+                "Price": 0.3234779141529714,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 127
+              },
+              {
+                "Price": 0.30625,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 54
+              },
+              {
+                "Price": 0.1111111111111111,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 45
+              },
+              {
+                "Price": 0.3125,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 43
+              },
+              {
+                "Price": 0.7142857142857143,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 15
+              },
+              {
+                "Price": 0.8333333333333333,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 7
+              }
+            ],
+            "CurrentPrice": 1,
+            "CurrentQuantity": 2
           },
           {
             "CurrencyItemId": 13,
@@ -3024,7 +3081,7 @@
               {
                 "Price": 1,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 90968224
+                "Quantity": 190576647
               },
               {
                 "Price": 1,
@@ -3058,66 +3115,7 @@
               }
             ],
             "CurrentPrice": 1,
-            "CurrentQuantity": 18024544
-          },
-          {
-            "CurrencyItemId": 206,
-            "ItemId": 4013,
-            "CurrencyCategoryId": 21,
-            "ApiId": "greater-jewellers-orb",
-            "Text": "Greater Jeweller's Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7dd6ee75be/CurrencyRerollSocketNumbers02.png",
-            "ItemMetadata": {
-              "name": "Greater Jeweller's Orb",
-              "base_type": "Greater Jeweller's Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c290c9d673/CurrencyRerollSocketNumbers02.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a Skill Gem to apply it. Can only apply to Skill Gems with fewer than 4 Support Gem Sockets.",
-              "effect": [
-                "Sets a Skill Gem to have 4 Support Gem Sockets"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.6900907083096255,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 46853
-              },
-              {
-                "Price": 0.9714639766257146,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 319464
-              },
-              {
-                "Price": 1.2195777246210164,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 318743
-              },
-              {
-                "Price": 1.5153399244174752,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 285630
-              },
-              {
-                "Price": 1.54152614306566,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 322606
-              },
-              {
-                "Price": 1.869237535029227,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 324232
-              },
-              {
-                "Price": 2.518924579522596,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 334773
-              }
-            ],
-            "CurrentPrice": 0.758432939780873,
-            "CurrentQuantity": 7526
+            "CurrentQuantity": 22045567
           },
           {
             "CurrencyItemId": 267,
@@ -3140,9 +3138,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.7597799357285673,
+                "Price": 0.7051186799252317,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 53956
+                "Quantity": 115649
               },
               {
                 "Price": 0.9776128224456943,
@@ -3175,67 +3173,67 @@
                 "Quantity": 127982
               }
             ],
-            "CurrentPrice": 0.7531321982562523,
-            "CurrentQuantity": 9124
+            "CurrentPrice": 0.7321781293210017,
+            "CurrentQuantity": 10196
           },
           {
-            "CurrencyItemId": 21,
-            "ItemId": 298,
+            "CurrencyItemId": 206,
+            "ItemId": 4013,
             "CurrencyCategoryId": 21,
-            "ApiId": "etcher",
-            "Text": "Arcanist's Etcher",
+            "ApiId": "greater-jewellers-orb",
+            "Text": "Greater Jeweller's Orb",
             "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25NYWdpY1F1YWxpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/516e8f1131/CurrencyWeaponMagicQuality.png",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7dd6ee75be/CurrencyRerollSocketNumbers02.png",
             "ItemMetadata": {
-              "name": "Arcanist's Etcher",
-              "base_type": "Arcanist's Etcher",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25NYWdpY1F1YWxpdHkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ef9f8f0aa2/CurrencyWeaponMagicQuality.png",
+              "name": "Greater Jeweller's Orb",
+              "base_type": "Greater Jeweller's Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c290c9d673/CurrencyRerollSocketNumbers02.png",
               "stack_size": 1,
               "max_stack_size": 20,
-              "description": "Right click this item then left click a wand, staff or sceptre to apply it.",
+              "description": "Right click this item then left click a Skill Gem to apply it. Can only apply to Skill Gems with fewer than 4 Support Gem Sockets.",
               "effect": [
-                "Improves the quality of a wand, staff or sceptre"
+                "Sets a Skill Gem to have 4 Support Gem Sockets"
               ]
             },
             "PriceLogs": [
               {
-                "Price": 0.5993475902667794,
+                "Price": 0.5927409041334006,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 73599
+                "Quantity": 88389
               },
               {
-                "Price": 0.5388856761005231,
+                "Price": 0.9714639766257146,
                 "Time": "2026-06-07T00:00:00",
-                "Quantity": 462019
+                "Quantity": 319464
               },
               {
-                "Price": 0.457838458046477,
+                "Price": 1.2195777246210164,
                 "Time": "2026-06-06T00:00:00",
-                "Quantity": 400468
+                "Quantity": 318743
               },
               {
-                "Price": 0.4157817285670999,
+                "Price": 1.5153399244174752,
                 "Time": "2026-06-05T00:00:00",
-                "Quantity": 323346
+                "Quantity": 285630
               },
               {
-                "Price": 0.29887793320461536,
+                "Price": 1.54152614306566,
                 "Time": "2026-06-04T00:00:00",
-                "Quantity": 317565
+                "Quantity": 322606
               },
               {
-                "Price": 0.2718827611284272,
+                "Price": 1.869237535029227,
                 "Time": "2026-06-03T00:00:00",
-                "Quantity": 300089
+                "Quantity": 324232
               },
               {
-                "Price": 0.20811801630126361,
+                "Price": 2.518924579522596,
                 "Time": "2026-06-02T00:00:00",
-                "Quantity": 236290
+                "Quantity": 334773
               }
             ],
-            "CurrentPrice": 0.5917029763355336,
-            "CurrentQuantity": 12946
+            "CurrentPrice": 0.6744245342315665,
+            "CurrentQuantity": 7280
           },
           {
             "CurrencyItemId": 19,
@@ -3258,9 +3256,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.5308235510662003,
+                "Price": 0.5445020653257409,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 676545
+                "Quantity": 1343575
               },
               {
                 "Price": 0.6673532394365808,
@@ -3293,126 +3291,67 @@
                 "Quantity": 3005408
               }
             ],
-            "CurrentPrice": 0.5162322510358277,
-            "CurrentQuantity": 117988
+            "CurrentPrice": 0.6586629340043488,
+            "CurrentQuantity": 129719
           },
           {
-            "CurrencyItemId": 9,
-            "ItemId": 286,
+            "CurrencyItemId": 21,
+            "ItemId": 298,
             "CurrencyCategoryId": 21,
-            "ApiId": "alch",
-            "Text": "Orb of Alchemy",
+            "ApiId": "etcher",
+            "Text": "Arcanist's Etcher",
             "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9SYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/9b80b44821/CurrencyUpgradeToRare.png",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25NYWdpY1F1YWxpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/516e8f1131/CurrencyWeaponMagicQuality.png",
             "ItemMetadata": {
-              "name": "Orb of Alchemy",
-              "base_type": "Orb of Alchemy",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9SYXJlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/141f000e97/CurrencyUpgradeToRare.png",
+              "name": "Arcanist's Etcher",
+              "base_type": "Arcanist's Etcher",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25NYWdpY1F1YWxpdHkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ef9f8f0aa2/CurrencyWeaponMagicQuality.png",
               "stack_size": 1,
               "max_stack_size": 20,
-              "description": "Right click this item then left click a normal or magic item to apply it. Current modifiers are not retained.",
+              "description": "Right click this item then left click a wand, staff or sceptre to apply it.",
               "effect": [
-                "Upgrades a Normal or Magic item to a Rare item with 4 random modifiers"
+                "Improves the quality of a wand, staff or sceptre"
               ]
             },
             "PriceLogs": [
               {
-                "Price": 0.32396379082635807,
+                "Price": 0.5008341978717922,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 542073
+                "Quantity": 167717
               },
               {
-                "Price": 0.49127225460935503,
+                "Price": 0.5388856761005231,
                 "Time": "2026-06-07T00:00:00",
-                "Quantity": 2908190
+                "Quantity": 462019
               },
               {
-                "Price": 0.5659710193938956,
+                "Price": 0.457838458046477,
                 "Time": "2026-06-06T00:00:00",
-                "Quantity": 2396943
+                "Quantity": 400468
               },
               {
-                "Price": 0.6424875147968226,
+                "Price": 0.4157817285670999,
                 "Time": "2026-06-05T00:00:00",
-                "Quantity": 1856192
+                "Quantity": 323346
               },
               {
-                "Price": 0.5349810441456924,
+                "Price": 0.29887793320461536,
                 "Time": "2026-06-04T00:00:00",
-                "Quantity": 1947396
+                "Quantity": 317565
               },
               {
-                "Price": 0.762594385145625,
+                "Price": 0.2718827611284272,
                 "Time": "2026-06-03T00:00:00",
-                "Quantity": 1592380
+                "Quantity": 300089
               },
               {
-                "Price": 1.1545232939675303,
+                "Price": 0.20811801630126361,
                 "Time": "2026-06-02T00:00:00",
-                "Quantity": 1174825
+                "Quantity": 236290
               }
             ],
-            "CurrentPrice": 0.32339050834041705,
-            "CurrentQuantity": 89929
-          },
-          {
-            "CurrencyItemId": 20,
-            "ItemId": 297,
-            "CurrencyCategoryId": 21,
-            "ApiId": "whetstone",
-            "Text": "Blacksmith's Whetstone",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/18715ea7be/CurrencyWeaponQuality.png",
-            "ItemMetadata": {
-              "name": "Blacksmith's Whetstone",
-              "base_type": "Blacksmith's Whetstone",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25RdWFsaXR5IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ad76ec392e/CurrencyWeaponQuality.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a martial weapon to apply it.",
-              "effect": [
-                "Improves the quality of a martial weapon"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.250775992570035,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 201860
-              },
-              {
-                "Price": 0.22691346267616674,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 1347775
-              },
-              {
-                "Price": 0.23362511798364596,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 1208151
-              },
-              {
-                "Price": 0.2358324389941039,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 1078935
-              },
-              {
-                "Price": 0.2365067642142856,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 1160192
-              },
-              {
-                "Price": 0.25383967264370483,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 1201707
-              },
-              {
-                "Price": 0.27506552274975243,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 1114628
-              }
-            ],
-            "CurrentPrice": 0.24639529280623013,
-            "CurrentQuantity": 34107
+            "CurrentPrice": 0.4786562481186202,
+            "CurrentQuantity": 15043
           },
           {
             "CurrencyItemId": 4,
@@ -3433,9 +3372,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.2695299084803422,
+                "Price": 0.30924855015874175,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 464
+                "Quantity": 828
               },
               {
                 "Price": 0.28593869345906175,
@@ -3468,8 +3407,67 @@
                 "Quantity": 1597
               }
             ],
-            "CurrentPrice": 0.2,
-            "CurrentQuantity": 25
+            "CurrentPrice": 0.4489795918367347,
+            "CurrentQuantity": 49
+          },
+          {
+            "CurrencyItemId": 9,
+            "ItemId": 286,
+            "CurrencyCategoryId": 21,
+            "ApiId": "alch",
+            "Text": "Orb of Alchemy",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9SYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/9b80b44821/CurrencyUpgradeToRare.png",
+            "ItemMetadata": {
+              "name": "Orb of Alchemy",
+              "base_type": "Orb of Alchemy",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9SYXJlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/141f000e97/CurrencyUpgradeToRare.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a normal or magic item to apply it. Current modifiers are not retained.",
+              "effect": [
+                "Upgrades a Normal or Magic item to a Rare item with 4 random modifiers"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.34019611474029193,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 1051351
+              },
+              {
+                "Price": 0.49127225460935503,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 2908190
+              },
+              {
+                "Price": 0.5659710193938956,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 2396943
+              },
+              {
+                "Price": 0.6424875147968226,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 1856192
+              },
+              {
+                "Price": 0.5349810441456924,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 1947396
+              },
+              {
+                "Price": 0.762594385145625,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 1592380
+              },
+              {
+                "Price": 1.1545232939675303,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 1174825
+              }
+            ],
+            "CurrentPrice": 0.3964944303846074,
+            "CurrentQuantity": 102713
           },
           {
             "CurrencyItemId": 261,
@@ -3492,9 +3490,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.1850573959334359,
+                "Price": 0.20112875868278582,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 140498
+                "Quantity": 301085
               },
               {
                 "Price": 0.29065489704368863,
@@ -3527,8 +3525,124 @@
                 "Quantity": 703499
               }
             ],
-            "CurrentPrice": 0.17594291691782732,
-            "CurrentQuantity": 26503
+            "CurrentPrice": 0.22670019764511057,
+            "CurrentQuantity": 33655
+          },
+          {
+            "CurrencyItemId": 20,
+            "ItemId": 297,
+            "CurrencyCategoryId": 21,
+            "ApiId": "whetstone",
+            "Text": "Blacksmith's Whetstone",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/18715ea7be/CurrencyWeaponQuality.png",
+            "ItemMetadata": {
+              "name": "Blacksmith's Whetstone",
+              "base_type": "Blacksmith's Whetstone",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25RdWFsaXR5IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ad76ec392e/CurrencyWeaponQuality.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a martial weapon to apply it.",
+              "effect": [
+                "Improves the quality of a martial weapon"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.22954895110475534,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 425919
+              },
+              {
+                "Price": 0.22691346267616674,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 1347775
+              },
+              {
+                "Price": 0.23362511798364596,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 1208151
+              },
+              {
+                "Price": 0.2358324389941039,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 1078935
+              },
+              {
+                "Price": 0.2365067642142856,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 1160192
+              },
+              {
+                "Price": 0.25383967264370483,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 1201707
+              },
+              {
+                "Price": 0.27506552274975243,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 1114628
+              }
+            ],
+            "CurrentPrice": 0.21986357627919176,
+            "CurrentQuantity": 39999
+          },
+          {
+            "CurrencyItemId": 3,
+            "ItemId": 280,
+            "CurrencyCategoryId": 21,
+            "ApiId": "regal-shard",
+            "Text": "Regal Shard",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmVTaGFyZCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/e4128abe92/CurrencyUpgradeMagicToRareShard.png",
+            "ItemMetadata": {
+              "name": "Regal Shard",
+              "base_type": "Regal Shard",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmVTaGFyZCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/795e43e374/CurrencyUpgradeMagicToRareShard.png",
+              "stack_size": 1,
+              "max_stack_size": 10,
+              "description": "A stack of 10 shards becomes a Regal Orb.",
+              "effect": []
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.2,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 5
+              },
+              {
+                "Price": 0.1329365079365079,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 79
+              },
+              {
+                "Price": 0.10209790209790211,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 73
+              },
+              {
+                "Price": 0.16101229688186208,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 115
+              },
+              {
+                "Price": 0.10101010101010101,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 31
+              },
+              {
+                "Price": 0.10416666666666666,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 44
+              },
+              {
+                "Price": 0.17202380952380952,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 191
+              }
+            ],
+            "CurrentPrice": 0.2,
+            "CurrentQuantity": 5
           },
           {
             "CurrencyItemId": 16,
@@ -3551,9 +3665,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.21692970009659446,
+                "Price": 0.20435004893005235,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 59272
+                "Quantity": 115177
               },
               {
                 "Price": 0.2078757937232226,
@@ -3586,67 +3700,8 @@
                 "Quantity": 303321
               }
             ],
-            "CurrentPrice": 0.16350040455576625,
-            "CurrentQuantity": 9790
-          },
-          {
-            "CurrencyItemId": 12,
-            "ItemId": 289,
-            "CurrencyCategoryId": 21,
-            "ApiId": "regal",
-            "Text": "Regal Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
-            "ItemMetadata": {
-              "name": "Regal Orb",
-              "base_type": "Regal Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c27779a8b7/CurrencyUpgradeMagicToRare.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a magic item to apply it. Current modifiers are retained and a new one is added.",
-              "effect": [
-                "Upgrades a Magic item to a Rare item, adding 1 modifier"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.1569395791123132,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 296065
-              },
-              {
-                "Price": 0.22560422240438818,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 1818695
-              },
-              {
-                "Price": 0.29246959754978963,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 1574363
-              },
-              {
-                "Price": 0.2875371745614626,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 1397204
-              },
-              {
-                "Price": 0.289688510660492,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 1547475
-              },
-              {
-                "Price": 0.38346084845797623,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 1329698
-              },
-              {
-                "Price": 0.5075377353075027,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 1093481
-              }
-            ],
-            "CurrentPrice": 0.15295495641036014,
-            "CurrentQuantity": 45466
+            "CurrentPrice": 0.19662672957457347,
+            "CurrentQuantity": 10591
           },
           {
             "CurrencyItemId": 6,
@@ -3669,9 +3724,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.14355227601260795,
+                "Price": 0.15610521235121166,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 665522
+                "Quantity": 1570126
               },
               {
                 "Price": 0.08929020900425833,
@@ -3704,118 +3759,67 @@
                 "Quantity": 986976
               }
             ],
-            "CurrentPrice": 0.1486889877330367,
-            "CurrentQuantity": 124373
+            "CurrentPrice": 0.17094594106781713,
+            "CurrentQuantity": 236465
           },
           {
-            "CurrencyItemId": 3,
-            "ItemId": 280,
+            "CurrencyItemId": 12,
+            "ItemId": 289,
             "CurrencyCategoryId": 21,
-            "ApiId": "regal-shard",
-            "Text": "Regal Shard",
+            "ApiId": "regal",
+            "Text": "Regal Orb",
             "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmVTaGFyZCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/e4128abe92/CurrencyUpgradeMagicToRareShard.png",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
             "ItemMetadata": {
-              "name": "Regal Shard",
-              "base_type": "Regal Shard",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmVTaGFyZCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/795e43e374/CurrencyUpgradeMagicToRareShard.png",
+              "name": "Regal Orb",
+              "base_type": "Regal Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c27779a8b7/CurrencyUpgradeMagicToRare.png",
               "stack_size": 1,
-              "max_stack_size": 10,
-              "description": "A stack of 10 shards becomes a Regal Orb.",
-              "effect": []
-            },
-            "PriceLogs": [
-              null,
-              {
-                "Price": 0.1329365079365079,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 79
-              },
-              {
-                "Price": 0.10209790209790211,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 73
-              },
-              {
-                "Price": 0.16101229688186208,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 115
-              },
-              {
-                "Price": 0.10101010101010101,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 31
-              },
-              {
-                "Price": 0.10416666666666666,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 44
-              },
-              {
-                "Price": 0.17202380952380952,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 191
-              }
-            ],
-            "CurrentPrice": 0.125,
-            "CurrentQuantity": 8
-          },
-          {
-            "CurrencyItemId": 1,
-            "ItemId": 278,
-            "CurrencyCategoryId": 21,
-            "ApiId": "transmutation-shard",
-            "Text": "Transmutation Shard",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpY1NoYXJkIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/e67bca229b/CurrencyUpgradeToMagicShard.png",
-            "ItemMetadata": {
-              "name": "Transmutation Shard",
-              "base_type": "Transmutation Shard",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpY1NoYXJkIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ba4cb5a0fa/CurrencyUpgradeToMagicShard.png",
-              "stack_size": 1,
-              "max_stack_size": 10,
-              "description": "A stack of 10 shards becomes an Orb of Transmutation",
-              "effect": []
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a magic item to apply it. Current modifiers are retained and a new one is added.",
+              "effect": [
+                "Upgrades a Magic item to a Rare item, adding 1 modifier"
+              ]
             },
             "PriceLogs": [
               {
-                "Price": 0.1111111111111111,
+                "Price": 0.14939923303090571,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 11
+                "Quantity": 566524
               },
               {
-                "Price": 0.3234779141529714,
+                "Price": 0.22560422240438818,
                 "Time": "2026-06-07T00:00:00",
-                "Quantity": 127
+                "Quantity": 1818695
               },
               {
-                "Price": 0.30625,
+                "Price": 0.29246959754978963,
                 "Time": "2026-06-06T00:00:00",
-                "Quantity": 54
+                "Quantity": 1574363
               },
               {
-                "Price": 0.1111111111111111,
+                "Price": 0.2875371745614626,
                 "Time": "2026-06-05T00:00:00",
-                "Quantity": 45
+                "Quantity": 1397204
               },
               {
-                "Price": 0.3125,
+                "Price": 0.289688510660492,
                 "Time": "2026-06-04T00:00:00",
-                "Quantity": 43
+                "Quantity": 1547475
               },
               {
-                "Price": 0.7142857142857143,
+                "Price": 0.38346084845797623,
                 "Time": "2026-06-03T00:00:00",
-                "Quantity": 15
+                "Quantity": 1329698
               },
               {
-                "Price": 0.8333333333333333,
+                "Price": 0.5075377353075027,
                 "Time": "2026-06-02T00:00:00",
-                "Quantity": 7
+                "Quantity": 1093481
               }
             ],
-            "CurrentPrice": 0.1111111111111111,
-            "CurrentQuantity": 11
+            "CurrentPrice": 0.14602746883806558,
+            "CurrentQuantity": 51505
           },
           {
             "CurrencyItemId": 263,
@@ -3838,9 +3842,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.08023865572360969,
+                "Price": 0.090590803703124,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 184190
+                "Quantity": 379661
               },
               {
                 "Price": 0.1296067630037989,
@@ -3873,67 +3877,8 @@
                 "Quantity": 786865
               }
             ],
-            "CurrentPrice": 0.07889256910988193,
-            "CurrentQuantity": 30564
-          },
-          {
-            "CurrencyItemId": 7,
-            "ItemId": 284,
-            "CurrencyCategoryId": 21,
-            "ApiId": "aug",
-            "Text": "Orb of Augmentation",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png",
-            "ItemMetadata": {
-              "name": "Orb of Augmentation",
-              "base_type": "Orb of Augmentation",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6f089a6497/CurrencyAddModToMagic.png",
-              "stack_size": 1,
-              "max_stack_size": 30,
-              "description": "Right click this item then left click a magic item to apply it. Magic items can have up to two random modifiers.",
-              "effect": [
-                "Augments a Magic item with a new random modifier"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.053203848467751357,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 368408
-              },
-              {
-                "Price": 0.05226385723811159,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 2039123
-              },
-              {
-                "Price": 0.09875832169892712,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 3930799
-              },
-              {
-                "Price": 0.124277166408927,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 3667028
-              },
-              {
-                "Price": 0.08728430535807367,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 3253718
-              },
-              {
-                "Price": 0.07934560579162223,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 1832595
-              },
-              {
-                "Price": 0.09740515275853534,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 1438740
-              }
-            ],
-            "CurrentPrice": 0.0517179935009528,
-            "CurrentQuantity": 52785
+            "CurrentPrice": 0.10681784241396612,
+            "CurrentQuantity": 46860
           },
           {
             "CurrencyItemId": 205,
@@ -3956,9 +3901,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.03610916529247514,
+                "Price": 0.041387014738359686,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 12528
+                "Quantity": 33133
               },
               {
                 "Price": 0.046163951718961115,
@@ -3991,8 +3936,67 @@
                 "Quantity": 126057
               }
             ],
-            "CurrentPrice": 0.03364087337342373,
-            "CurrentQuantity": 2060
+            "CurrentPrice": 0.0680849547851363,
+            "CurrentQuantity": 6401
+          },
+          {
+            "CurrencyItemId": 7,
+            "ItemId": 284,
+            "CurrencyCategoryId": 21,
+            "ApiId": "aug",
+            "Text": "Orb of Augmentation",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png",
+            "ItemMetadata": {
+              "name": "Orb of Augmentation",
+              "base_type": "Orb of Augmentation",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6f089a6497/CurrencyAddModToMagic.png",
+              "stack_size": 1,
+              "max_stack_size": 30,
+              "description": "Right click this item then left click a magic item to apply it. Magic items can have up to two random modifiers.",
+              "effect": [
+                "Augments a Magic item with a new random modifier"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.05313735035231937,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 678447
+              },
+              {
+                "Price": 0.05226385723811159,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 2039123
+              },
+              {
+                "Price": 0.09875832169892712,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 3930799
+              },
+              {
+                "Price": 0.124277166408927,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 3667028
+              },
+              {
+                "Price": 0.08728430535807367,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 3253718
+              },
+              {
+                "Price": 0.07934560579162223,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 1832595
+              },
+              {
+                "Price": 0.09740515275853534,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 1438740
+              }
+            ],
+            "CurrentPrice": 0.05834732380784674,
+            "CurrentQuantity": 65059
           },
           {
             "CurrencyItemId": 5,
@@ -4015,9 +4019,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.005004117516785293,
+                "Price": 0.004954858101372844,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 759791
+                "Quantity": 1484302
               },
               {
                 "Price": 0.004301608931835145,
@@ -4050,12 +4054,12 @@
                 "Quantity": 2406380
               }
             ],
-            "CurrentPrice": 0.005663257276276845,
-            "CurrentQuantity": 94057
+            "CurrentPrice": 0.004415635282065969,
+            "CurrentQuantity": 202282
           }
         ]
       },
-      "ts": 1780897859074
+      "ts": 1780914599521
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/Items?Page=1&PerPage=25": {
       "data": [
@@ -4310,7 +4314,7 @@
           "IconUrl": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQW11bGV0cy9VbmlxdWVzL0JlYWNvbk9mQXppcyIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2d0ad03930/BeaconOfAzis.png"
         }
       ],
-      "ts": 1780897859074
+      "ts": 1780914599521
     }
   }
 }

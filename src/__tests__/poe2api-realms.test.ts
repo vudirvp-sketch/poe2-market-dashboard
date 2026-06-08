@@ -139,12 +139,17 @@ describe("getLeagues active league logic", () => {
     Value: string;       // displayName (e.g. "Runes of Aldur")
     ShortName: string;   // slug (e.g. "runes")
     IsCurrent: boolean;
+    active?: boolean;    // set by determineActive()
+  }
+
+  interface ActiveLeague extends TestLeague {
+    active: boolean;
   }
 
   function determineActive(
     leagues: TestLeague[],
     defaultLeagueValue?: string
-  ): TestLeague[] {
+  ): ActiveLeague[] {
     const hasAnyIsCurrent = leagues.some((l) => l.IsCurrent);
 
     return leagues.map((l) => ({
