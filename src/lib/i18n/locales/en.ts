@@ -52,6 +52,7 @@ const en = {
   sevenDay: "7d",
   volume: "Volume",
   trend: "Trend",
+  crossCurrencyPremium: "Premium",
   noUniques: "No unique items found",
 
   // Exchange

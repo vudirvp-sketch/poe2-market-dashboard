@@ -26,12 +26,14 @@ import { useDisplayPrice } from "@/hooks/use-display-price";
 import { useI18n } from "@/lib/i18n";
 import { Sparkline } from "./sparkline";
 import { PairHoverPreview } from "./pair-hover-preview";
+import { BestPaymentBadge } from "./best-payment-badge";
+import type { OptimalPaymentResult, CrossRateFlip } from "@/lib/types";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type SortField = "pair" | "rate" | "change" | "change7d" | "volume" | "trend";
+type SortField = "pair" | "rate" | "change" | "change7d" | "volume" | "trend" | "premium";
 
 interface ExchangeTableProps {
   pairs: ExchangePair[];
@@ -44,6 +46,10 @@ interface ExchangeTableProps {
   highlightedItemId?: string | null;
   /** P0-2 Step 2B: Exchange pairs for client-side price conversion fallback */
   exchangePairsForConversion?: ExchangePair[];
+  /** §11.4: Optimal payment results by pair ID */
+  optimalPaymentByPair?: Map<string, OptimalPaymentResult>;
+  /** §11.5: Detected cross-rate flips */
+  crossRateFlips?: CrossRateFlip[];
 }
 
 // ============================================================================
@@ -84,10 +90,57 @@ function fmtVolume(n: number | null | undefined): string {
 }
 
 // ============================================================================
+// Cross-Currency Premium Cell — §11: Shows premium/deviation for a pair
+// ============================================================================
+
+interface CrossCurrencyPremiumCellProps {
+  pair: ExchangePair;
+  optimalPaymentResult?: OptimalPaymentResult;
+  crossRateFlip?: CrossRateFlip;
+}
+
+function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip }: CrossCurrencyPremiumCellProps) {
+  // Priority 1: Optimal payment savings (direct price comparison across currencies)
+  if (optimalPaymentResult && optimalPaymentResult.savingsPct >= 1) {
+    const isBest = pair.currency2Id === optimalPaymentResult.bestCurrencyId;
+    return (
+      <div className="flex items-center justify-end gap-1">
+        {isBest ? (
+          <BestPaymentBadge result={optimalPaymentResult} compact />
+        ) : (
+          <span className="text-[10px] font-medium text-amber-500">
+            +{optimalPaymentResult.savingsPct.toFixed(1)}%
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Priority 2: Cross-rate flip deviation
+  if (crossRateFlip) {
+    const isDeviation = Math.abs(crossRateFlip.deviationPct) >= 5;
+    const color = isDeviation
+      ? crossRateFlip.deviationPct < 0
+        ? "text-emerald-500"
+        : "text-red-400"
+      : "text-muted-foreground";
+    return (
+      <span className={`text-[10px] font-medium ${color}`}>
+        {crossRateFlip.deviationPct > 0 ? "+" : ""}
+        {crossRateFlip.deviationPct.toFixed(1)}%
+      </span>
+    );
+  }
+
+  // No data
+  return <span className="text-[10px] text-muted-foreground">—</span>;
+}
+
+// ============================================================================
 // Exchange Table
 // ============================================================================
 
-export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId, exchangePairsForConversion }: ExchangeTableProps) {
+export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId, exchangePairsForConversion, optimalPaymentByPair, crossRateFlips }: ExchangeTableProps) {
   const { t } = useI18n();
   const {
     uiState,
@@ -107,6 +160,29 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
     () => Math.max(...pairs.map((p) => p.volume), 1),
     [pairs]
   );
+
+  // §11.5: Build lookup map for cross-rate flips by pair composite key
+  const crossRateFlipMap = useMemo(() => {
+    const map = new Map<string, CrossRateFlip>();
+    if (!crossRateFlips) return map;
+    for (const flip of crossRateFlips) {
+      // Key by both direction combinations
+      const key1 = `${flip.buyCurrencyId}_${flip.sellCurrencyId}`;
+      const key2 = `${flip.sellCurrencyId}_${flip.buyCurrencyId}`;
+      map.set(key1, flip);
+      map.set(key2, flip);
+    }
+    return map;
+  }, [crossRateFlips]);
+
+  // Helper: get premium percentage for a pair
+  const getPremiumPct = useCallback((pair: ExchangePair): number | null => {
+    const optimal = optimalPaymentByPair?.get(pair.id);
+    if (optimal && optimal.savingsPct >= 1) return optimal.savingsPct;
+    const flip = crossRateFlipMap.get(`${pair.currency1Id}_${pair.currency2Id}`);
+    if (flip) return flip.deviationPct;
+    return null;
+  }, [optimalPaymentByPair, crossRateFlipMap]);
 
   // --- Sorting ---
   const sortedPairs = useMemo(() => {
@@ -137,12 +213,18 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
           const bChg2 = b.changePercent ?? -Infinity;
           return dir * (aChg2 - bChg2);
         }
+        case "premium": {
+          // Sort by absolute premium percentage
+          const aPrem = Math.abs(getPremiumPct(a) ?? -Infinity);
+          const bPrem = Math.abs(getPremiumPct(b) ?? -Infinity);
+          return dir * (aPrem - bPrem);
+        }
         default:
           return dir * (a.volume - b.volume);
       }
     });
     return sorted;
-  }, [pairs, sortField, sortDirection]);
+  }, [pairs, sortField, sortDirection, getPremiumPct]);
 
   // §3.2: Scroll highlighted row into view
   useEffect(() => {
@@ -256,6 +338,18 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 <span className="inline-flex items-center justify-end">
                   {t("volume")}
                   <SortIndicator field="volume" />
+                </span>
+              </th>
+              {/* §11: Cross-Currency Premium */}
+              <th
+                className="px-3 py-2.5 text-right font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                scope="col"
+                aria-sort={sortField === "premium" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                onClick={() => handleSort("premium")}
+              >
+                <span className="inline-flex items-center justify-end">
+                  {t("crossCurrencyPremium")}
+                  <SortIndicator field="premium" />
                 </span>
               </th>
               {/* Trend */}
@@ -403,6 +497,14 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                     <span className="text-sm text-muted-foreground font-mono">
                       {fmtVolume(pair.volume)}
                     </span>
+                  </td>
+                  {/* §11: Cross-Currency Premium */}
+                  <td className="px-3 py-2 text-right">
+                    <CrossCurrencyPremiumCell
+                      pair={pair}
+                      optimalPaymentResult={optimalPaymentByPair?.get(pair.id)}
+                      crossRateFlip={crossRateFlipMap.get(`${pair.currency1Id}_${pair.currency2Id}`)}
+                    />
                   </td>
                   {/* Trend sparkline */}
                   <td className="px-3 py-2 text-center">

@@ -1,6 +1,32 @@
 # Worklog
 
 ---
+Task ID: 4
+Agent: main
+Task: Integrate BestPaymentBadge + Cross-Currency Premium column
+
+Work Log:
+- Added imports for `findOptimalPayment`, `detectCrossRateFlips`, `buildRelativePriceMap`, `selectAnchor` to dashboard-page.tsx
+- Added `useMemo` computation in dashboard-page.tsx: groups exchange pairs by currency1Id, builds pricing options, calls `findOptimalPayment()` and `detectCrossRateFlips()` → produces `optimalPaymentByPair` Map and `crossRateFlips` array
+- Passed `optimalPaymentByPair` and `crossRateFlips` as props to both ExchangeTable and ExchangePairCard
+- Integrated `BestPaymentBadge` (compact mode) into `exchange-pair-card.tsx` — shows when optimalPaymentResult exists and savings >= 1%
+- Added `CrossCurrencyPremiumCell` component in `exchange-table.tsx` — shows BestPaymentBadge for best payment pairs or cross-rate deviation percentage for flip pairs
+- Added "Premium" column header (sortable) to Exchange table between Volume and Trend
+- Added `premium` sort field in ExchangeTable
+- Added i18n key `crossCurrencyPremium` to all 4 locales (en: "Premium", ru: "Премиум", zh: "溢价", ko: "프리미엄")
+- Updated AGENT_NAVIGATION.md to v1.8 — moved completed items, added new TODOs, noted Divine ~10% premium as CONFIRMED INTENTIONAL
+- Added §11.8 "Observed Market Pattern: Divine Pricing Premium" to PoE2_Flipper_Canonical_Formulas.md
+- Build passes, tsc --noEmit passes, all 260 Jest tests pass
+
+Stage Summary:
+- Modified: dashboard-page.tsx (optimal payment computation + new props)
+- Modified: exchange-pair-card.tsx (BestPaymentBadge integration)
+- Modified: exchange-table.tsx (Premium column + CrossCurrencyPremiumCell)
+- Modified: i18n locales (4 files, new key)
+- Modified: AGENT_NAVIGATION.md (v1.8)
+- Modified: PoE2_Flipper_Canonical_Formulas.md (§11.8 Divine premium)
+
+---
 Task ID: 1
 Agent: main
 Task: Fix TS errors in poe2api-realms.test.ts

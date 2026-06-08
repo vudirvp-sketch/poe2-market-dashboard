@@ -48,6 +48,7 @@ const ko: Record<TranslationKeys, string> = {
   sevenDay: "7일",
   volume: "거래량",
   trend: "동향",
+  crossCurrencyPremium: "프리미엄",
   noUniques: "유니크 아이템을 찾을 수 없음",
 
   // Exchange

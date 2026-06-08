@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "timestamp": "2026-06-08T10:30:02.750Z",
+  "timestamp": "2026-06-08T11:06:08.477Z",
   "entries": {
     "https://api.poe2scout.com/api/Realms": {
       "data": [
@@ -37,7 +37,7 @@
           "default_league_value": "runes"
         }
       ],
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues": {
       "data": [
@@ -133,8 +133,8 @@
           "Value": "Standard",
           "ShortName": "standard",
           "IsCurrent": false,
-          "DivinePrice": 316.9759036144578,
-          "ChaosDivinePrice": 3.169759036144578,
+          "DivinePrice": 312.0152027027027,
+          "ChaosDivinePrice": 3.5355830334583875,
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "BaseCurrencyIconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
@@ -221,8 +221,8 @@
           "Value": "Runes of Aldur",
           "ShortName": "runes",
           "IsCurrent": true,
-          "DivinePrice": 84.56674369779782,
-          "ChaosDivinePrice": 11.757734186551541,
+          "DivinePrice": 85.14928536118872,
+          "ChaosDivinePrice": 11.60457577276986,
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "BaseCurrencyIconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
@@ -243,8 +243,8 @@
           "Value": "HC Runes of Aldur",
           "ShortName": "runeshc",
           "IsCurrent": true,
-          "DivinePrice": 66.5991372172954,
-          "ChaosDivinePrice": 21.434397710347458,
+          "DivinePrice": 65.13451611790674,
+          "ChaosDivinePrice": 19.027416938974955,
           "BaseCurrencyApiId": "exalted",
           "BaseCurrencyText": "Exalted Orb",
           "BaseCurrencyIconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
@@ -262,7 +262,7 @@
           }
         }
       ],
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/ExchangeSnapshot": {
       "data": {
@@ -272,7 +272,7 @@
         "BaseCurrencyApiId": "exalted",
         "BaseCurrencyText": "Exalted Orb"
       },
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs": {
       "data": [
@@ -1507,7 +1507,7 @@
           }
         }
       ],
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotHistory?Limit=24": {
       "data": {
@@ -1639,7 +1639,7 @@
         "BaseCurrencyApiId": "exalted",
         "BaseCurrencyText": "Exalted Orb"
       },
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/ReferenceCurrencies": {
       "data": [
@@ -1653,16 +1653,16 @@
           "ApiId": "chaos",
           "Text": "Chaos Orb",
           "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
-          "RelativePrice": 7.192435409411193
+          "RelativePrice": 7.337561236921004
         },
         {
           "ApiId": "divine",
           "Text": "Divine Orb",
           "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png",
-          "RelativePrice": 84.56674369779782
+          "RelativePrice": 85.14928536118872
         }
       ],
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories": {
       "data": {
@@ -1815,7 +1815,7 @@
           }
         ]
       },
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=50": {
       "data": {
@@ -1844,9 +1844,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 145177.0055298116,
+                "Price": 145432.68302326018,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 68
+                "Quantity": 80
               },
               {
                 "Price": 128528.25192993922,
@@ -1879,8 +1879,8 @@
                 "Quantity": 43
               }
             ],
-            "CurrentPrice": 150748.6773156944,
-            "CurrentQuantity": 6
+            "CurrentPrice": 147989.457957746,
+            "CurrentQuantity": 12
           },
           {
             "CurrencyItemId": 271,
@@ -1903,9 +1903,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 17129.23411331732,
+                "Price": 17106.551506426833,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 939
+                "Quantity": 1089
               },
               {
                 "Price": 12385.204080479809,
@@ -1938,67 +1938,8 @@
                 "Quantity": 616
               }
             ],
-            "CurrentPrice": 15603.871945393665,
-            "CurrentQuantity": 107
-          },
-          {
-            "CurrencyItemId": 270,
-            "ItemId": 4285,
-            "CurrencyCategoryId": 21,
-            "ApiId": "perfect-exalted-orb",
-            "Text": "Perfect Exalted Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
-            "ItemMetadata": {
-              "name": "Perfect Exalted Orb",
-              "base_type": "Perfect Exalted Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/4ef5836606/CurrencyAddModToRare.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a rare item to apply it. Rare items can have up to six random modifiers.",
-              "effect": [
-                "Augments a Rare item with a new random modifier"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 213.19817958129647,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 33506
-              },
-              {
-                "Price": 190.17547811069963,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 105290
-              },
-              {
-                "Price": 197.8048973314076,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 89504
-              },
-              {
-                "Price": 222.9934991568183,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 69837
-              },
-              {
-                "Price": 237.61758131565458,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 63735
-              },
-              {
-                "Price": 200.86584564010414,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 57250
-              },
-              {
-                "Price": 183.06099830762128,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 41781
-              }
-            ],
-            "CurrentPrice": 222.17603801533744,
-            "CurrentQuantity": 3671
+            "CurrentPrice": 16879.725437521964,
+            "CurrentQuantity": 150
           },
           {
             "CurrencyItemId": 266,
@@ -2021,9 +1962,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 209.50486602679638,
+                "Price": 211.96019073227077,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 19177
+                "Quantity": 22112
               },
               {
                 "Price": 196.91831097317092,
@@ -2056,8 +1997,67 @@
                 "Quantity": 18724
               }
             ],
-            "CurrentPrice": 213.31224270074992,
-            "CurrentQuantity": 2036
+            "CurrentPrice": 236.51343778701468,
+            "CurrentQuantity": 2935
+          },
+          {
+            "CurrencyItemId": 270,
+            "ItemId": 4285,
+            "CurrencyCategoryId": 21,
+            "ApiId": "perfect-exalted-orb",
+            "Text": "Perfect Exalted Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
+            "ItemMetadata": {
+              "name": "Perfect Exalted Orb",
+              "base_type": "Perfect Exalted Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/4ef5836606/CurrencyAddModToRare.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a rare item to apply it. Rare items can have up to six random modifiers.",
+              "effect": [
+                "Augments a Rare item with a new random modifier"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 214.38725935668978,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 37376
+              },
+              {
+                "Price": 190.17547811069963,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 105290
+              },
+              {
+                "Price": 197.8048973314076,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 89504
+              },
+              {
+                "Price": 222.9934991568183,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 69837
+              },
+              {
+                "Price": 237.61758131565458,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 63735
+              },
+              {
+                "Price": 200.86584564010414,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 57250
+              },
+              {
+                "Price": 183.06099830762128,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 41781
+              }
+            ],
+            "CurrentPrice": 226.27805711062277,
+            "CurrentQuantity": 3870
           },
           {
             "CurrencyItemId": 14,
@@ -2080,9 +2080,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 86.52077111790521,
+                "Price": 86.39609059456735,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 3596071
+                "Quantity": 4046353
               },
               {
                 "Price": 85.3591517172585,
@@ -2115,8 +2115,8 @@
                 "Quantity": 3284125
               }
             ],
-            "CurrentPrice": 84.56674369779782,
-            "CurrentQuantity": 419467
+            "CurrentPrice": 85.14928536118872,
+            "CurrentQuantity": 450282
           },
           {
             "CurrencyItemId": 207,
@@ -2139,9 +2139,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 70.33461088450206,
+                "Price": 69.9588549423186,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 81492
+                "Quantity": 90988
               },
               {
                 "Price": 79.03314145664244,
@@ -2174,8 +2174,8 @@
                 "Quantity": 155639
               }
             ],
-            "CurrentPrice": 69.36500378699174,
-            "CurrentQuantity": 8566
+            "CurrentPrice": 66.20129552048395,
+            "CurrentQuantity": 9496
           },
           {
             "CurrencyItemId": 17,
@@ -2198,9 +2198,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 64.48806014611321,
+                "Price": 64.43798202485101,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 38521
+                "Quantity": 43278
               },
               {
                 "Price": 56.436547511600246,
@@ -2233,8 +2233,8 @@
                 "Quantity": 31047
               }
             ],
-            "CurrentPrice": 63.26906069153475,
-            "CurrentQuantity": 4264
+            "CurrentPrice": 63.93720081222915,
+            "CurrentQuantity": 4757
           },
           {
             "CurrencyItemId": 15,
@@ -2257,9 +2257,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 28.985992902699753,
+                "Price": 29.57075537753211,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 236671
+                "Quantity": 263011
               },
               {
                 "Price": 28.011655857414016,
@@ -2292,67 +2292,8 @@
                 "Quantity": 709103
               }
             ],
-            "CurrentPrice": 32.58732708288413,
-            "CurrentQuantity": 23576
-          },
-          {
-            "CurrencyItemId": 265,
-            "ItemId": 4275,
-            "CurrencyCategoryId": 21,
-            "ApiId": "greater-chaos-orb",
-            "Text": "Greater Chaos Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
-            "ItemMetadata": {
-              "name": "Greater Chaos Orb",
-              "base_type": "Greater Chaos Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/20cd0159b7/CurrencyRerollRare.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a rare item to apply it.",
-              "effect": [
-                "Removes a random modifier and augments a Rare item with a new random modifier"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 17.779683723102554,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 203232
-              },
-              {
-                "Price": 16.078193125428573,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 614361
-              },
-              {
-                "Price": 15.485427248751789,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 513759
-              },
-              {
-                "Price": 13.644011848184135,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 386318
-              },
-              {
-                "Price": 10.452579779211016,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 348275
-              },
-              {
-                "Price": 8.60504047081494,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 277426
-              },
-              {
-                "Price": 6.8581233616405095,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 187742
-              }
-            ],
-            "CurrentPrice": 20.618982896576625,
-            "CurrentQuantity": 25409
+            "CurrentPrice": 35.418380125855656,
+            "CurrentQuantity": 26340
           },
           {
             "CurrencyItemId": 1931,
@@ -2375,9 +2316,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 18.5253114611052,
+                "Price": 18.86958026361054,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 2397
+                "Quantity": 3012
               },
               {
                 "Price": 20.15427620975225,
@@ -2410,8 +2351,67 @@
                 "Quantity": 2301
               }
             ],
-            "CurrentPrice": 20.18909896099746,
-            "CurrentQuantity": 281
+            "CurrentPrice": 22.312268288663937,
+            "CurrentQuantity": 615
+          },
+          {
+            "CurrencyItemId": 265,
+            "ItemId": 4275,
+            "CurrencyCategoryId": 21,
+            "ApiId": "greater-chaos-orb",
+            "Text": "Greater Chaos Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
+            "ItemMetadata": {
+              "name": "Greater Chaos Orb",
+              "base_type": "Greater Chaos Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/20cd0159b7/CurrencyRerollRare.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a rare item to apply it.",
+              "effect": [
+                "Removes a random modifier and augments a Rare item with a new random modifier"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 18.108543474285735,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 222865
+              },
+              {
+                "Price": 16.078193125428573,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 614361
+              },
+              {
+                "Price": 15.485427248751789,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 513759
+              },
+              {
+                "Price": 13.644011848184135,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 386318
+              },
+              {
+                "Price": 10.452579779211016,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 348275
+              },
+              {
+                "Price": 8.60504047081494,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 277426
+              },
+              {
+                "Price": 6.8581233616405095,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 187742
+              }
+            ],
+            "CurrentPrice": 21.397140986117535,
+            "CurrentQuantity": 19633
           },
           {
             "CurrencyItemId": 8,
@@ -2434,9 +2434,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 14.209313190500666,
+                "Price": 14.313377125556695,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 231310
+                "Quantity": 258506
               },
               {
                 "Price": 15.290363396090418,
@@ -2469,8 +2469,8 @@
                 "Quantity": 400747
               }
             ],
-            "CurrentPrice": 14.72802241045119,
-            "CurrentQuantity": 26008
+            "CurrentPrice": 15.354016476116994,
+            "CurrentQuantity": 27196
           },
           {
             "CurrencyItemId": 268,
@@ -2493,9 +2493,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 13.34242512249532,
+                "Price": 13.312210209403908,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 28054
+                "Quantity": 31161
               },
               {
                 "Price": 14.112927362234329,
@@ -2528,8 +2528,8 @@
                 "Quantity": 39679
               }
             ],
-            "CurrentPrice": 13.445737562372312,
-            "CurrentQuantity": 2818
+            "CurrentPrice": 13.010061078489796,
+            "CurrentQuantity": 3107
           },
           {
             "CurrencyItemId": 262,
@@ -2552,9 +2552,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 9.4016089703402,
+                "Price": 9.491052151545858,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 88916
+                "Quantity": 99015
               },
               {
                 "Price": 10.173475593619125,
@@ -2587,8 +2587,8 @@
                 "Quantity": 137704
               }
             ],
-            "CurrentPrice": 10.068844240940786,
-            "CurrentQuantity": 9420
+            "CurrentPrice": 10.385483963602445,
+            "CurrentQuantity": 10099
           },
           {
             "CurrencyItemId": 264,
@@ -2611,9 +2611,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 6.685520268171755,
+                "Price": 6.818653567023163,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 180501
+                "Quantity": 202529
               },
               {
                 "Price": 7.791440369014708,
@@ -2646,8 +2646,8 @@
                 "Quantity": 257309
               }
             ],
-            "CurrentPrice": 7.957403498935606,
-            "CurrentQuantity": 19684
+            "CurrentPrice": 8.149986555537238,
+            "CurrentQuantity": 22028
           },
           {
             "CurrencyItemId": 10,
@@ -2670,9 +2670,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 5.929973396599712,
+                "Price": 6.057935927538011,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 5016320
+                "Quantity": 5558028
               },
               {
                 "Price": 5.485347541918812,
@@ -2705,8 +2705,8 @@
                 "Quantity": 5564654
               }
             ],
-            "CurrentPrice": 7.192435409411193,
-            "CurrentQuantity": 517240
+            "CurrentPrice": 7.337561236921004,
+            "CurrentQuantity": 541708
           },
           {
             "CurrencyItemId": 269,
@@ -2729,9 +2729,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 6.4849057215424235,
+                "Price": 6.504321494321192,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 258595
+                "Quantity": 288490
               },
               {
                 "Price": 7.876187069950102,
@@ -2764,8 +2764,8 @@
                 "Quantity": 449536
               }
             ],
-            "CurrentPrice": 6.7722224537365845,
-            "CurrentQuantity": 28051
+            "CurrentPrice": 6.698479222108867,
+            "CurrentQuantity": 29895
           },
           {
             "CurrencyItemId": 11,
@@ -2788,9 +2788,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 2.5356401761617566,
+                "Price": 2.5588393553495323,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 813971
+                "Quantity": 897500
               },
               {
                 "Price": 3.1446626406169167,
@@ -2823,8 +2823,8 @@
                 "Quantity": 798707
               }
             ],
-            "CurrentPrice": 2.8610082323261783,
-            "CurrentQuantity": 75861
+            "CurrentPrice": 2.790831147227292,
+            "CurrentQuantity": 83529
           },
           {
             "CurrencyItemId": 23,
@@ -2847,9 +2847,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 1.2393916133124285,
+                "Price": 1.2527215344953129,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 407962
+                "Quantity": 453103
               },
               {
                 "Price": 1.7363762538233687,
@@ -2882,8 +2882,8 @@
                 "Quantity": 764819
               }
             ],
-            "CurrentPrice": 1.4053091565049491,
-            "CurrentQuantity": 38607
+            "CurrentPrice": 1.3860207463241556,
+            "CurrentQuantity": 45141
           },
           {
             "CurrencyItemId": 2,
@@ -2904,9 +2904,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 1.2670077828772544,
+                "Price": 1.2748336706033072,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 12083
+                "Quantity": 13239
               },
               {
                 "Price": 1.3739605362729097,
@@ -2939,8 +2939,8 @@
                 "Quantity": 59083
               }
             ],
-            "CurrentPrice": 1.2595419847328244,
-            "CurrentQuantity": 1056
+            "CurrentPrice": 1.3530925478638363,
+            "CurrentQuantity": 1156
           },
           {
             "CurrencyItemId": 22,
@@ -2963,9 +2963,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 1.2016237089237094,
+                "Price": 1.2114807836328996,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 145059
+                "Quantity": 162932
               },
               {
                 "Price": 1.5572788185748434,
@@ -2998,8 +2998,8 @@
                 "Quantity": 271536
               }
             ],
-            "CurrentPrice": 1.2221354482385278,
-            "CurrentQuantity": 14088
+            "CurrentPrice": 1.310051530724801,
+            "CurrentQuantity": 17873
           },
           {
             "CurrencyItemId": 1,
@@ -3081,7 +3081,7 @@
               {
                 "Price": 1,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 190576647
+                "Quantity": 213933028
               },
               {
                 "Price": 1,
@@ -3115,66 +3115,7 @@
               }
             ],
             "CurrentPrice": 1,
-            "CurrentQuantity": 22045567
-          },
-          {
-            "CurrencyItemId": 267,
-            "ItemId": 4279,
-            "CurrencyCategoryId": 21,
-            "ApiId": "greater-regal-orb",
-            "Text": "Greater Regal Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
-            "ItemMetadata": {
-              "name": "Greater Regal Orb",
-              "base_type": "Greater Regal Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c27779a8b7/CurrencyUpgradeMagicToRare.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a magic item to apply it. Current modifiers are retained and a new one is added.",
-              "effect": [
-                "Upgrades a Magic item to a Rare item, adding 1 modifier"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.7051186799252317,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 115649
-              },
-              {
-                "Price": 0.9776128224456943,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 320517
-              },
-              {
-                "Price": 1.2259093290184675,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 274020
-              },
-              {
-                "Price": 1.4639405778645254,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 213210
-              },
-              {
-                "Price": 1.2346617188250018,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 243696
-              },
-              {
-                "Price": 1.6016261786446624,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 186325
-              },
-              {
-                "Price": 2.0070633748556506,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 127982
-              }
-            ],
-            "CurrentPrice": 0.7321781293210017,
-            "CurrentQuantity": 10196
+            "CurrentQuantity": 23356381
           },
           {
             "CurrencyItemId": 206,
@@ -3197,9 +3138,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.5927409041334006,
+                "Price": 0.6093890432871598,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 88389
+                "Quantity": 96411
               },
               {
                 "Price": 0.9714639766257146,
@@ -3232,8 +3173,67 @@
                 "Quantity": 334773
               }
             ],
-            "CurrentPrice": 0.6744245342315665,
-            "CurrentQuantity": 7280
+            "CurrentPrice": 0.7758704348247514,
+            "CurrentQuantity": 8022
+          },
+          {
+            "CurrencyItemId": 267,
+            "ItemId": 4279,
+            "CurrencyCategoryId": 21,
+            "ApiId": "greater-regal-orb",
+            "Text": "Greater Regal Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
+            "ItemMetadata": {
+              "name": "Greater Regal Orb",
+              "base_type": "Greater Regal Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c27779a8b7/CurrencyUpgradeMagicToRare.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a magic item to apply it. Current modifiers are retained and a new one is added.",
+              "effect": [
+                "Upgrades a Magic item to a Rare item, adding 1 modifier"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.7051450375499548,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 125747
+              },
+              {
+                "Price": 0.9776128224456943,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 320517
+              },
+              {
+                "Price": 1.2259093290184675,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 274020
+              },
+              {
+                "Price": 1.4639405778645254,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 213210
+              },
+              {
+                "Price": 1.2346617188250018,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 243696
+              },
+              {
+                "Price": 1.6016261786446624,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 186325
+              },
+              {
+                "Price": 2.0070633748556506,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 127982
+              }
+            ],
+            "CurrentPrice": 0.7054086137971857,
+            "CurrentQuantity": 10098
           },
           {
             "CurrencyItemId": 19,
@@ -3256,9 +3256,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.5445020653257409,
+                "Price": 0.5501032578363063,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 1343575
+                "Quantity": 1494597
               },
               {
                 "Price": 0.6673532394365808,
@@ -3291,8 +3291,8 @@
                 "Quantity": 3005408
               }
             ],
-            "CurrentPrice": 0.6586629340043488,
-            "CurrentQuantity": 129719
+            "CurrentPrice": 0.6061151829419608,
+            "CurrentQuantity": 151022
           },
           {
             "CurrencyItemId": 21,
@@ -3315,9 +3315,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.5008341978717922,
+                "Price": 0.5057765368016055,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 167717
+                "Quantity": 182129
               },
               {
                 "Price": 0.5388856761005231,
@@ -3350,65 +3350,8 @@
                 "Quantity": 236290
               }
             ],
-            "CurrentPrice": 0.4786562481186202,
-            "CurrentQuantity": 15043
-          },
-          {
-            "CurrencyItemId": 4,
-            "ItemId": 281,
-            "CurrencyCategoryId": 21,
-            "ApiId": "artificers-shard",
-            "Text": "Artificer's Shard",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXRTaGFyZCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/cdcdd8bf3f/CurrencyAddEquipmentSocketShard.png",
-            "ItemMetadata": {
-              "name": "Artificer's Shard",
-              "base_type": "Artificer's Shard",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXRTaGFyZCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/addca9d654/CurrencyAddEquipmentSocketShard.png",
-              "stack_size": 1,
-              "max_stack_size": 10,
-              "description": "A stack of 10 shards becomes an Artificer's Orb.",
-              "effect": []
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.30924855015874175,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 828
-              },
-              {
-                "Price": 0.28593869345906175,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 1461
-              },
-              {
-                "Price": 0.623236159350157,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 1876
-              },
-              {
-                "Price": 0.3636382406030945,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 996
-              },
-              {
-                "Price": 0.26541430310137315,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 1617
-              },
-              {
-                "Price": 0.26015153487944814,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 1388
-              },
-              {
-                "Price": 0.2723639206899445,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 1597
-              }
-            ],
-            "CurrentPrice": 0.4489795918367347,
-            "CurrentQuantity": 49
+            "CurrentPrice": 0.555199926099739,
+            "CurrentQuantity": 14412
           },
           {
             "CurrencyItemId": 9,
@@ -3431,9 +3374,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.34019611474029193,
+                "Price": 0.3439695908882777,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 1051351
+                "Quantity": 1161355
               },
               {
                 "Price": 0.49127225460935503,
@@ -3466,8 +3409,8 @@
                 "Quantity": 1174825
               }
             ],
-            "CurrentPrice": 0.3964944303846074,
-            "CurrentQuantity": 102713
+            "CurrentPrice": 0.38170435236813555,
+            "CurrentQuantity": 110004
           },
           {
             "CurrencyItemId": 261,
@@ -3490,9 +3433,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.20112875868278582,
+                "Price": 0.2033900807801391,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 301085
+                "Quantity": 340867
               },
               {
                 "Price": 0.29065489704368863,
@@ -3525,8 +3468,8 @@
                 "Quantity": 703499
               }
             ],
-            "CurrentPrice": 0.22670019764511057,
-            "CurrentQuantity": 33655
+            "CurrentPrice": 0.22600330175367198,
+            "CurrentQuantity": 39782
           },
           {
             "CurrencyItemId": 20,
@@ -3549,9 +3492,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.22954895110475534,
+                "Price": 0.2285225818907901,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 425919
+                "Quantity": 465581
               },
               {
                 "Price": 0.22691346267616674,
@@ -3584,8 +3527,8 @@
                 "Quantity": 1114628
               }
             ],
-            "CurrentPrice": 0.21986357627919176,
-            "CurrentQuantity": 39999
+            "CurrentPrice": 0.21825888975113764,
+            "CurrentQuantity": 39662
           },
           {
             "CurrencyItemId": 3,
@@ -3645,65 +3588,6 @@
             "CurrentQuantity": 5
           },
           {
-            "CurrencyItemId": 16,
-            "ItemId": 293,
-            "CurrencyCategoryId": 21,
-            "ApiId": "artificers",
-            "Text": "Artificer's Orb",
-            "CategoryApiId": "currency",
-            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5131fd4774/CurrencyAddEquipmentSocket.png",
-            "ItemMetadata": {
-              "name": "Artificer's Orb",
-              "base_type": "Artificer's Orb",
-              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c6654e69aa/CurrencyAddEquipmentSocket.png",
-              "stack_size": 1,
-              "max_stack_size": 20,
-              "description": "Right click this item then left click a Martial Weapon, wand, staff or Armour to apply it.",
-              "effect": [
-                "Adds an Augment Socket to a Martial Weapon, wand, staff or Armour"
-              ]
-            },
-            "PriceLogs": [
-              {
-                "Price": 0.20435004893005235,
-                "Time": "2026-06-08T00:00:00",
-                "Quantity": 115177
-              },
-              {
-                "Price": 0.2078757937232226,
-                "Time": "2026-06-07T00:00:00",
-                "Quantity": 365189
-              },
-              {
-                "Price": 0.22985599488216882,
-                "Time": "2026-06-06T00:00:00",
-                "Quantity": 339704
-              },
-              {
-                "Price": 0.28862167606016226,
-                "Time": "2026-06-05T00:00:00",
-                "Quantity": 294669
-              },
-              {
-                "Price": 0.28883198321343534,
-                "Time": "2026-06-04T00:00:00",
-                "Quantity": 328174
-              },
-              {
-                "Price": 0.3508660225966406,
-                "Time": "2026-06-03T00:00:00",
-                "Quantity": 320026
-              },
-              {
-                "Price": 0.4195784680227465,
-                "Time": "2026-06-02T00:00:00",
-                "Quantity": 303321
-              }
-            ],
-            "CurrentPrice": 0.19662672957457347,
-            "CurrentQuantity": 10591
-          },
-          {
             "CurrencyItemId": 6,
             "ItemId": 283,
             "CurrencyCategoryId": 21,
@@ -3724,9 +3608,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.15610521235121166,
+                "Price": 0.15930003428264747,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 1570126
+                "Quantity": 1793213
               },
               {
                 "Price": 0.08929020900425833,
@@ -3759,8 +3643,67 @@
                 "Quantity": 986976
               }
             ],
-            "CurrentPrice": 0.17094594106781713,
-            "CurrentQuantity": 236465
+            "CurrentPrice": 0.1912482535970055,
+            "CurrentQuantity": 223087
+          },
+          {
+            "CurrencyItemId": 16,
+            "ItemId": 293,
+            "CurrencyCategoryId": 21,
+            "ApiId": "artificers",
+            "Text": "Artificer's Orb",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5131fd4774/CurrencyAddEquipmentSocket.png",
+            "ItemMetadata": {
+              "name": "Artificer's Orb",
+              "base_type": "Artificer's Orb",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c6654e69aa/CurrencyAddEquipmentSocket.png",
+              "stack_size": 1,
+              "max_stack_size": 20,
+              "description": "Right click this item then left click a Martial Weapon, wand, staff or Armour to apply it.",
+              "effect": [
+                "Adds an Augment Socket to a Martial Weapon, wand, staff or Armour"
+              ]
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.2007786108148915,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 127898
+              },
+              {
+                "Price": 0.2078757937232226,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 365189
+              },
+              {
+                "Price": 0.22985599488216882,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 339704
+              },
+              {
+                "Price": 0.28862167606016226,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 294669
+              },
+              {
+                "Price": 0.28883198321343534,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 328174
+              },
+              {
+                "Price": 0.3508660225966406,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 320026
+              },
+              {
+                "Price": 0.4195784680227465,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 303321
+              }
+            ],
+            "CurrentPrice": 0.16506422966328294,
+            "CurrentQuantity": 12721
           },
           {
             "CurrencyItemId": 12,
@@ -3783,9 +3726,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.14939923303090571,
+                "Price": 0.14875222710401742,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 566524
+                "Quantity": 628794
               },
               {
                 "Price": 0.22560422240438818,
@@ -3818,8 +3761,65 @@
                 "Quantity": 1093481
               }
             ],
-            "CurrentPrice": 0.14602746883806558,
-            "CurrentQuantity": 51505
+            "CurrentPrice": 0.14228216783513453,
+            "CurrentQuantity": 62270
+          },
+          {
+            "CurrencyItemId": 4,
+            "ItemId": 281,
+            "CurrencyCategoryId": 21,
+            "ApiId": "artificers-shard",
+            "Text": "Artificer's Shard",
+            "CategoryApiId": "currency",
+            "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXRTaGFyZCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/cdcdd8bf3f/CurrencyAddEquipmentSocketShard.png",
+            "ItemMetadata": {
+              "name": "Artificer's Shard",
+              "base_type": "Artificer's Shard",
+              "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXRTaGFyZCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/addca9d654/CurrencyAddEquipmentSocketShard.png",
+              "stack_size": 1,
+              "max_stack_size": 10,
+              "description": "A stack of 10 shards becomes an Artificer's Orb.",
+              "effect": []
+            },
+            "PriceLogs": [
+              {
+                "Price": 0.29123605569986627,
+                "Time": "2026-06-08T00:00:00",
+                "Quantity": 855
+              },
+              {
+                "Price": 0.28593869345906175,
+                "Time": "2026-06-07T00:00:00",
+                "Quantity": 1461
+              },
+              {
+                "Price": 0.623236159350157,
+                "Time": "2026-06-06T00:00:00",
+                "Quantity": 1876
+              },
+              {
+                "Price": 0.3636382406030945,
+                "Time": "2026-06-05T00:00:00",
+                "Quantity": 996
+              },
+              {
+                "Price": 0.26541430310137315,
+                "Time": "2026-06-04T00:00:00",
+                "Quantity": 1617
+              },
+              {
+                "Price": 0.26015153487944814,
+                "Time": "2026-06-03T00:00:00",
+                "Quantity": 1388
+              },
+              {
+                "Price": 0.2723639206899445,
+                "Time": "2026-06-02T00:00:00",
+                "Quantity": 1597
+              }
+            ],
+            "CurrentPrice": 0.1111111111111111,
+            "CurrentQuantity": 27
           },
           {
             "CurrencyItemId": 263,
@@ -3842,9 +3842,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.090590803703124,
+                "Price": 0.09202587719036302,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 379661
+                "Quantity": 429758
               },
               {
                 "Price": 0.1296067630037989,
@@ -3877,8 +3877,8 @@
                 "Quantity": 786865
               }
             ],
-            "CurrentPrice": 0.10681784241396612,
-            "CurrentQuantity": 46860
+            "CurrentPrice": 0.10637661206275313,
+            "CurrentQuantity": 50097
           },
           {
             "CurrencyItemId": 205,
@@ -3901,9 +3901,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.041387014738359686,
+                "Price": 0.0442151913131757,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 33133
+                "Quantity": 35188
               },
               {
                 "Price": 0.046163951718961115,
@@ -3936,8 +3936,8 @@
                 "Quantity": 126057
               }
             ],
-            "CurrentPrice": 0.0680849547851363,
-            "CurrentQuantity": 6401
+            "CurrentPrice": 0.07249695706133585,
+            "CurrentQuantity": 2055
           },
           {
             "CurrencyItemId": 7,
@@ -3960,9 +3960,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.05313735035231937,
+                "Price": 0.05313073864923086,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 678447
+                "Quantity": 762642
               },
               {
                 "Price": 0.05226385723811159,
@@ -3995,8 +3995,8 @@
                 "Quantity": 1438740
               }
             ],
-            "CurrentPrice": 0.05834732380784674,
-            "CurrentQuantity": 65059
+            "CurrentPrice": 0.05306462161834577,
+            "CurrentQuantity": 84195
           },
           {
             "CurrencyItemId": 5,
@@ -4019,9 +4019,9 @@
             },
             "PriceLogs": [
               {
-                "Price": 0.004954858101372844,
+                "Price": 0.004906483583560589,
                 "Time": "2026-06-08T00:00:00",
-                "Quantity": 1484302
+                "Quantity": 1641424
               },
               {
                 "Price": 0.004301608931835145,
@@ -4054,12 +4054,12 @@
                 "Quantity": 2406380
               }
             ],
-            "CurrentPrice": 0.004415635282065969,
-            "CurrentQuantity": 202282
+            "CurrentPrice": 0.00442273840543805,
+            "CurrentQuantity": 157122
           }
         ]
       },
-      "ts": 1780914599521
+      "ts": 1780916766623
     },
     "https://api.poe2scout.com/api/poe2/Leagues/runes/Items?Page=1&PerPage=25": {
       "data": [
@@ -4314,7 +4314,7 @@
           "IconUrl": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQW11bGV0cy9VbmlxdWVzL0JlYWNvbk9mQXppcyIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2d0ad03930/BeaconOfAzis.png"
         }
       ],
-      "ts": 1780914599521
+      "ts": 1780916766623
     }
   }
 }

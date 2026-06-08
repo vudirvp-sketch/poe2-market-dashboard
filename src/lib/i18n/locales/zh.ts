@@ -48,6 +48,7 @@ const zh: Record<TranslationKeys, string> = {
   sevenDay: "7天",
   volume: "交易量",
   trend: "趋势",
+  crossCurrencyPremium: "溢价",
   noUniques: "未找到传奇物品",
 
   // Exchange

@@ -106,7 +106,15 @@ import type {
   FlipperHealthResponse,
   FlipperPhaseResponse,
   FlipperEventsSummary,
+  OptimalPaymentResult,
+  CrossRateFlip,
 } from "@/lib/types";
+import {
+  findOptimalPayment,
+  detectCrossRateFlips,
+  buildRelativePriceMap,
+  selectAnchor,
+} from "@/lib/currency-optimal";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -554,6 +562,64 @@ export function Dashboard() {
 
     return pairs;
   }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites, uiState.exchange.extendedFilters]);
+
+  // §11: Cross-currency optimal payment — group pairs by currency1Id, find cheapest
+  // payment option for each currency across all its exchange pairs.
+  const { optimalPaymentByPair, crossRateFlips } = useMemo(() => {
+    const allPairs = exchangeData ?? [];
+    if (allPairs.length === 0) {
+      return { optimalPaymentByPair: new Map<string, OptimalPaymentResult>(), crossRateFlips: [] as CrossRateFlip[] };
+    }
+
+    // Build relative price map and select anchor
+    const relPriceMap = buildRelativePriceMap(allPairs);
+    const anchor = selectAnchor(relPriceMap);
+    const anchorRelPrice = relPriceMap.get(anchor) ?? 1;
+
+    // Group pairs by currency1Id — each group represents one "item" priced in multiple currencies
+    const groups = new Map<string, ExchangePair[]>();
+    for (const pair of allPairs) {
+      const existing = groups.get(pair.currency1Id);
+      if (existing) {
+        existing.push(pair);
+      } else {
+        groups.set(pair.currency1Id, [pair]);
+      }
+    }
+
+    // For each group with 2+ pricing options, compute optimal payment
+    const optimalPaymentByPair = new Map<string, OptimalPaymentResult>();
+    for (const [, groupPairs] of groups) {
+      if (groupPairs.length < 2) continue;
+
+      // Build pricing options from each pair in the group
+      const pricingOptions = groupPairs
+        .filter((p) => p.currency2RelativePrice != null && p.currency2RelativePrice > 0)
+        .map((p) => ({
+          currencyId: p.currency2Id,
+          currencyName: p.currency2Name,
+          // Cross-rate: how many currency2 per 1 currency1
+          priceInCurrency: p.relativePrice != null && p.currency2RelativePrice != null && p.currency2RelativePrice > 0
+            ? p.relativePrice / p.currency2RelativePrice
+            : 0,
+          relativePrice: p.currency2RelativePrice ?? 0,
+        }))
+        .filter((opt) => opt.priceInCurrency > 0 && opt.relativePrice > 0);
+
+      const result = findOptimalPayment(pricingOptions, anchorRelPrice);
+      if (result) {
+        // Map result back to each pair in the group
+        for (const p of groupPairs) {
+          optimalPaymentByPair.set(p.id, result);
+        }
+      }
+    }
+
+    // Detect cross-rate flips across all pairs
+    const crossRateFlips = detectCrossRateFlips(allPairs, 5);
+
+    return { optimalPaymentByPair, crossRateFlips };
+  }, [exchangeData]);
 
   // Categories
   const currencyCategories = useMemo(() => {
@@ -1379,6 +1445,8 @@ export function Dashboard() {
                       highlightedRowIndex={tab === "exchange" ? highlightedRowIndex : null}
                       highlightedItemId={highlightedItemId}
                       exchangePairsForConversion={exchangeData ?? undefined}
+                      optimalPaymentByPair={optimalPaymentByPair}
+                      crossRateFlips={crossRateFlips}
                     />
                   ) : (
                     /* Cards view (original) */
@@ -1393,6 +1461,7 @@ export function Dashboard() {
                           showHoverPreview={true}
                           maxVolume={Math.max(...(exchangeData ?? []).map((p) => p.volume), 1)}
                           exchangePairsForConversion={exchangeData ?? undefined}
+                          optimalPaymentResult={optimalPaymentByPair.get(pair.id) ?? undefined}
                         />
                       ))}
                     </div>

@@ -14,6 +14,8 @@ import { formatPrice } from "@/lib/utils";
 import { useDisplayPrice } from "@/hooks/use-display-price";
 import { useI18n } from "@/lib/i18n";
 import { PairHoverPreview } from "./pair-hover-preview";
+import { BestPaymentBadge } from "./best-payment-badge";
+import type { OptimalPaymentResult } from "@/lib/types";
 
 interface ExchangePairCardProps {
   pair: ExchangePair;
@@ -28,6 +30,8 @@ interface ExchangePairCardProps {
   maxVolume?: number;
   /** P0-2 Step 2B: Exchange pairs for client-side price conversion fallback */
   exchangePairsForConversion?: ExchangePair[];
+  /** §11.4: Optimal payment result — shows which currency is cheapest */
+  optimalPaymentResult?: OptimalPaymentResult;
 }
 
 export const ExchangePairCard = memo(function ExchangePairCard({
@@ -38,6 +42,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
   showHoverPreview = false,
   maxVolume = 1,
   exchangePairsForConversion,
+  optimalPaymentResult,
 }: ExchangePairCardProps) {
   const { t } = useI18n();
   const chg = fmtChange(pair.changePercent);
@@ -183,6 +188,11 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             {t("vol")}: {pair.volume?.toLocaleString() ?? "\u2014"}
           </span>
         </div>
+
+        {/* §11.4: Best Payment Badge — shows cheapest currency to pay with */}
+        {optimalPaymentResult && (
+          <BestPaymentBadge result={optimalPaymentResult} compact />
+        )}
 
         {/* Fix 4.15: Lazy sparkline on hover */}
         {showHoverPreview && realm && league && (

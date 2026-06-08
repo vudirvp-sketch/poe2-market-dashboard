@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.7 | **Date:** 2026-06-08
+> **Version:** 1.8 | **Date:** 2026-06-08
 
 ---
 
@@ -92,11 +92,15 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
 2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (VPN/proxy). Use `npx tsx scripts/generate-cache-snapshot.ts`.
-3. ~~**Fix TS errors in `src/__tests__/poe2api-realms.test.ts`**~~ — Fixed in v1.7: added `ActiveLeague` interface extending `TestLeague` with `active: boolean`.
-4. **Integrate `BestPaymentBadge` into Exchange cards** — Component exists (`best-payment-badge.tsx`), needs wiring into `exchange-pair-card.tsx` and `exchange-table.tsx`.
-5. **Add cross-currency premium column to Exchange tab** — Use `detectCrossRateFlips()` from `currency-optimal.ts`.
-6. **Backend endpoint for optimal-currency analysis** — Currently client-side only; could add `/api/flipper/optimal-currency`.
-7. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation, Orb of Cancellation) exist in current market.
+3. **Backend endpoint for optimal-currency analysis** — Currently client-side only; could add `/api/flipper/optimal-currency`. The `optimalPaymentByPair` and `crossRateFlips` are computed in `dashboard-page.tsx` via `findOptimalPayment()` / `detectCrossRateFlips()` from `currency-optimal.ts`.
+4. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation, Orb of Cancellation) exist in current market.
+5. **Cross-currency premium tooltip/detail** — The current Premium column shows a compact badge/deviation; consider a tooltip with full `OptimalPaymentResult` breakdown (all payment options, exact savings in anchor units).
+6. **Optimal payment for craft items (Omens, etc.)** — The current integration groups by `currency1Id` in exchange pairs. For non-currency items priced on the exchange (Omens, Soul Cores), a similar grouping by item ID would show which currency is cheapest for buying those items.
+
+### COMPLETED (v1.8)
+1. ~~**Integrate `BestPaymentBadge` into Exchange cards**~~ — Done: `best-payment-badge.tsx` now wired into `exchange-pair-card.tsx` (compact badge) and `exchange-table.tsx` (CrossCurrencyPremiumCell). Optimal payment computed in `dashboard-page.tsx` via `findOptimalPayment()` from `currency-optimal.ts`.
+2. ~~**Add cross-currency premium column to Exchange tab**~~ — Done: "Premium" column in `exchange-table.tsx` shows `detectCrossRateFlips()` deviations and `BestPaymentBadge` for optimal payment pairs. Sortable by premium.
+3. ~~**Fix TS errors in `src/__tests__/poe2api-realms.test.ts`**~~ — Fixed in v1.7.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -105,6 +109,7 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 4. **Correlation min_overlap=2** — Intentionally low for early-league compatibility
 5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu. E2E tests depend on this behavior.
 6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Suppressed via `console.error` monkey-patch in `layout.tsx`. Harmless.
+7. **Divine pricing ~10% premium** — Observed systematic pattern: items priced in Divine Orbs tend to cost ~10% more than the same item in Exalted Orbs. This is a market inefficiency, not a bug — the dashboard highlights these opportunities via BestPaymentBadge.
 
 ## 7. Architecture & API References
 
