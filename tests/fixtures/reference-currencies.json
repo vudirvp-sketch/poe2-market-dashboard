@@ -9,12 +9,12 @@
     "ApiId": "chaos",
     "Text": "Chaos Orb",
     "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
-    "RelativePrice": 7.180687101476308
+    "RelativePrice": 7.10994527068015
   },
   {
     "ApiId": "divine",
     "Text": "Divine Orb",
     "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png",
-    "RelativePrice": 85.42864835082216
+    "RelativePrice": 87.06993231428085
   }
 ]

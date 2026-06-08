@@ -1,0 +1,1022 @@
+{
+  "CurrentPage": 1,
+  "Pages": 1,
+  "Total": 17,
+  "Items": [
+    {
+      "CurrencyItemId": 486,
+      "ItemId": 5226,
+      "CurrencyCategoryId": 38,
+      "ApiId": "fox-idol",
+      "Text": "Fox Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUZveCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/9d48a79d56/AzmeriSocketableFox.png",
+      "ItemMetadata": {
+        "name": "Fox Idol",
+        "base_type": "Fox Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUZveCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/ade2c93a17/AzmeriSocketableFox.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Body Armour or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Body Armours: +2% to Quality of all Skills",
+          "Sceptres: 30% increased Presence Area of Effect"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 81.47369863667316,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 4139
+        },
+        {
+          "Price": 73.72071331777697,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 9063
+        },
+        {
+          "Price": 78.52884699105157,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 7910
+        },
+        {
+          "Price": 111.73063241018075,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 6166
+        },
+        {
+          "Price": 122.49445823012042,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4790
+        },
+        {
+          "Price": 86.8143797986656,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3771
+        },
+        {
+          "Price": 100.30123193536458,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2177
+        }
+      ],
+      "CurrentPrice": 92.61163488658632,
+      "CurrentQuantity": 417
+    },
+    {
+      "CurrencyItemId": 494,
+      "ItemId": 5242,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-ralakesh",
+      "Text": "Idol of Ralakesh",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU1vbmtleVNwZWNpYWwiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8ffc9986a0/AzmeriSocketableMonkeySpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Ralakesh",
+        "base_type": "Idol of Ralakesh",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU1vbmtleVNwZWNpYWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/155eb2e4a1/AzmeriSocketableMonkeySpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: 8% increased Reservation Efficiency of Minion Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 58.14881337813324,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 7006
+        },
+        {
+          "Price": 52.67375262441655,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 15684
+        },
+        {
+          "Price": 51.28175772303101,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 13891
+        },
+        {
+          "Price": 56.016257154712775,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 11741
+        },
+        {
+          "Price": 72.59522150769543,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 10352
+        },
+        {
+          "Price": 83.63426532143525,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 9202
+        },
+        {
+          "Price": 119.16181044177985,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 6291
+        }
+      ],
+      "CurrentPrice": 50.57389996785661,
+      "CurrentQuantity": 690
+    },
+    {
+      "CurrencyItemId": 488,
+      "ItemId": 5230,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-sirrius",
+      "Text": "Idol of Sirrius",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVdvbGZTcGVjaWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/53db9f9ba3/AzmeriSocketableWolfSpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Sirrius",
+        "base_type": "Idol of Sirrius",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVdvbGZTcGVjaWFsIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1d5e1dd650/AzmeriSocketableWolfSpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: 8% increased Attack Speed"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 46.88301223984677,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 8031
+        },
+        {
+          "Price": 48.264712808053844,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 18201
+        },
+        {
+          "Price": 53.093945780045225,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 15566
+        },
+        {
+          "Price": 61.96925438228144,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 13514
+        },
+        {
+          "Price": 72.37134198478587,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 12024
+        },
+        {
+          "Price": 75.51751896935083,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 10500
+        },
+        {
+          "Price": 104.32578033420532,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 7278
+        }
+      ],
+      "CurrentPrice": 44.32871221572421,
+      "CurrentQuantity": 777
+    },
+    {
+      "CurrencyItemId": 487,
+      "ItemId": 5228,
+      "CurrencyCategoryId": 38,
+      "ApiId": "rabbit-idol",
+      "Text": "Rabbit Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVJhYmJpdCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/d578d6d700/AzmeriSocketableRabbit.png",
+      "ItemMetadata": {
+        "name": "Rabbit Idol",
+        "base_type": "Rabbit Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVJhYmJpdCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/7bce11e67d/AzmeriSocketableRabbit.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Body Armour or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Body Armours: 5% increased Rarity of Items found",
+          "Sceptres: 10% increased Spirit"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 31.217402339612796,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 11544
+        },
+        {
+          "Price": 36.30238191274747,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 24690
+        },
+        {
+          "Price": 37.52365650051468,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 22096
+        },
+        {
+          "Price": 39.099651997082454,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 18716
+        },
+        {
+          "Price": 43.179497170324005,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 17834
+        },
+        {
+          "Price": 43.4005668180929,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 16658
+        },
+        {
+          "Price": 45.459242876296905,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 13449
+        }
+      ],
+      "CurrentPrice": 27.76020765977381,
+      "CurrentQuantity": 1136
+    },
+    {
+      "CurrencyItemId": 491,
+      "ItemId": 5236,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-eeshta",
+      "Text": "Idol of Eeshta",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU93bFNwZWNpYWwiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8965465ce6/AzmeriSocketableOwlSpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Eeshta",
+        "base_type": "Idol of Eeshta",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU93bFNwZWNpYWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/167ce5e0ef/AzmeriSocketableOwlSpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: 12% increased Cost Efficiency"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 19.00772377433409,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 5063
+        },
+        {
+          "Price": 20.926786219499963,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 10433
+        },
+        {
+          "Price": 21.342960597777516,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 9090
+        },
+        {
+          "Price": 20.507842530772333,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 7546
+        },
+        {
+          "Price": 24.440749389987896,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 7402
+        },
+        {
+          "Price": 23.417544844796726,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 6290
+        },
+        {
+          "Price": 28.4555712839976,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4844
+        }
+      ],
+      "CurrentPrice": 19.18178580374086,
+      "CurrentQuantity": 480
+    },
+    {
+      "CurrencyItemId": 490,
+      "ItemId": 5234,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-grold",
+      "Text": "Idol of Grold",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUJlYXJTcGVjaWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/363a2de335/AzmeriSocketableBearSpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Grold",
+        "base_type": "Idol of Grold",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUJlYXJTcGVjaWFsIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ef16309dd3/AzmeriSocketableBearSpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: 20% increased total Power counted by Warcries"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 9.259451733931924,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 2719
+        },
+        {
+          "Price": 9.298788863131788,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 6275
+        },
+        {
+          "Price": 9.68416950311048,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 5401
+        },
+        {
+          "Price": 10.99859125934352,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 4892
+        },
+        {
+          "Price": 9.558029440386191,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4811
+        },
+        {
+          "Price": 11.440732784838417,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 4413
+        },
+        {
+          "Price": 12.78366255561489,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 3891
+        }
+      ],
+      "CurrentPrice": 8.127563691080955,
+      "CurrentQuantity": 255
+    },
+    {
+      "CurrencyItemId": 489,
+      "ItemId": 5232,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-thruldana",
+      "Text": "Idol of Thruldana",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVNuYWtlU3BlY2lhbCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/f44ebc01aa/AzmeriSocketableSnakeSpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Thruldana",
+        "base_type": "Idol of Thruldana",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVNuYWtlU3BlY2lhbCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/85b445a8b3/AzmeriSocketableSnakeSpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Martial Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon:",
+          "25% reduced Poison Duration",
+          "Targets can be affected by +1 of your Poisons at the same time"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 6.674233342873305,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 2275
+        },
+        {
+          "Price": 7.155918721552632,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 5771
+        },
+        {
+          "Price": 7.721885687208498,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 5155
+        },
+        {
+          "Price": 10.350246060301362,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 4441
+        },
+        {
+          "Price": 8.587913318296575,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4348
+        },
+        {
+          "Price": 7.553140922275577,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3775
+        },
+        {
+          "Price": 7.460866010342564,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2950
+        }
+      ],
+      "CurrentPrice": 6.73119384911169,
+      "CurrentQuantity": 226
+    },
+    {
+      "CurrencyItemId": 492,
+      "ItemId": 5238,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-egrin",
+      "Text": "Idol of Egrin",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUNhdFNwZWNpYWwiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/16657ca6fc/AzmeriSocketableCatSpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Egrin",
+        "base_type": "Idol of Egrin",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUNhdFNwZWNpYWwiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5cc0d94c95/AzmeriSocketableCatSpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: Enemies you Curse take 6% increased Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 4.074579201439435,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 2176
+        },
+        {
+          "Price": 4.621098215528277,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 5320
+        },
+        {
+          "Price": 6.091698358786136,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 5070
+        },
+        {
+          "Price": 8.492305704247,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 4581
+        },
+        {
+          "Price": 8.455851683543221,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4746
+        },
+        {
+          "Price": 8.964472594038895,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 4896
+        },
+        {
+          "Price": 14.251906082365828,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4504
+        }
+      ],
+      "CurrentPrice": 3.412963875274515,
+      "CurrentQuantity": 226
+    },
+    {
+      "CurrencyItemId": 493,
+      "ItemId": 5240,
+      "CurrencyCategoryId": 38,
+      "ApiId": "idol-of-maxarius",
+      "Text": "Idol of Maxarius",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVN0YWdTcGVjaWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f012409342/AzmeriSocketableStagSpecial.png",
+      "ItemMetadata": {
+        "name": "Idol of Maxarius",
+        "base_type": "Idol of Maxarius",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVN0YWdTcGVjaWFsIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/48ab83c762/AzmeriSocketableStagSpecial.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Body Armour to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Body Armours: +1 Charm Slot"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.30163355356186,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 994
+        },
+        {
+          "Price": 2.407163870083935,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2138
+        },
+        {
+          "Price": 3.122463115801038,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2083
+        },
+        {
+          "Price": 2.4243064148716744,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2533
+        },
+        {
+          "Price": 2.955387137206093,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2869
+        },
+        {
+          "Price": 3.6811118172217028,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2464
+        },
+        {
+          "Price": 3.1976314836271715,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2240
+        }
+      ],
+      "CurrentPrice": 2.4672595242558923,
+      "CurrentQuantity": 73
+    },
+    {
+      "CurrencyItemId": 478,
+      "ItemId": 5210,
+      "CurrencyCategoryId": 38,
+      "ApiId": "primate-idol",
+      "Text": "Primate Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU1vbmtleSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/77a4554895/AzmeriSocketableMonkey.png",
+      "ItemMetadata": {
+        "name": "Primate Idol",
+        "base_type": "Primate Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU1vbmtleSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/08d8cb452b/AzmeriSocketableMonkey.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: Minions have 12% increased maximum Life",
+          "Sceptres: Allies in your Presence deal 30% increased Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.2499395198553516,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 9475
+        },
+        {
+          "Price": 2.5633055649979037,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 23583
+        },
+        {
+          "Price": 3.363920556564557,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 22588
+        },
+        {
+          "Price": 4.069907123178347,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 21490
+        },
+        {
+          "Price": 4.268608825916464,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 20629
+        },
+        {
+          "Price": 6.374506960167731,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 21361
+        },
+        {
+          "Price": 7.912952983994441,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 19064
+        }
+      ],
+      "CurrentPrice": 2.2110353014469797,
+      "CurrentQuantity": 820
+    },
+    {
+      "CurrencyItemId": 482,
+      "ItemId": 5218,
+      "CurrencyCategoryId": 38,
+      "ApiId": "wolf-idol",
+      "Text": "Wolf Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVdvbGYiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c0deeb6d94/AzmeriSocketableWolf.png",
+      "ItemMetadata": {
+        "name": "Wolf Idol",
+        "base_type": "Wolf Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVdvbGYiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c570c3217c/AzmeriSocketableWolf.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in Gloves or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: 10% increased Magnitude of Bleeding you inflict",
+          "Sceptres: Allies in your Presence have 14% increased Critical Damage Bonus"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.854803859916186,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1051
+        },
+        {
+          "Price": 0.938399199734072,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2416
+        },
+        {
+          "Price": 1.4649827924429157,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2068
+        },
+        {
+          "Price": 1.401526299717016,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1586
+        },
+        {
+          "Price": 1.5674870456376697,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1469
+        },
+        {
+          "Price": 1.4190718262594244,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1688
+        },
+        {
+          "Price": 1.8169364201113656,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1457
+        }
+      ],
+      "CurrentPrice": 1.3584798730921348,
+      "CurrentQuantity": 66
+    },
+    {
+      "CurrencyItemId": 485,
+      "ItemId": 5224,
+      "CurrencyCategoryId": 38,
+      "ApiId": "ox-idol",
+      "Text": "Ox Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU94Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/5ebdb092f5/AzmeriSocketableOx.png",
+      "ItemMetadata": {
+        "name": "Ox Idol",
+        "base_type": "Ox Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU94IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ba71e4fc0a/AzmeriSocketableOx.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Shield or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Shields: 10% increased Block chance",
+          "Sceptres: Allies in your Presence have +8% to all Elemental Resistances"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.7474180828117477,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1083
+        },
+        {
+          "Price": 0.8551938513684852,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2049
+        },
+        {
+          "Price": 1.381967983248593,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1340
+        },
+        {
+          "Price": 1.399807978971121,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1320
+        },
+        {
+          "Price": 1.0656543652955643,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1403
+        },
+        {
+          "Price": 1.1768499185025467,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1247
+        },
+        {
+          "Price": 1.1554449841534746,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1124
+        }
+      ],
+      "CurrentPrice": 0.941249554699216,
+      "CurrentQuantity": 152
+    },
+    {
+      "CurrencyItemId": 477,
+      "ItemId": 5208,
+      "CurrencyCategoryId": 38,
+      "ApiId": "bear-idol",
+      "Text": "Bear Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUJlYXIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2d494d1054/AzmeriSocketableBear.png",
+      "ItemMetadata": {
+        "name": "Bear Idol",
+        "base_type": "Bear Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUJlYXIiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f4756b9433/AzmeriSocketableBear.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: 8% increased Area of Effect",
+          "Sceptres: Allies in your Presence deal 12 to 18 added Attack Physical Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 1.038401475869127,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 3307
+        },
+        {
+          "Price": 1.3111513417902452,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 5029
+        },
+        {
+          "Price": 1.3623398416569128,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 5259
+        },
+        {
+          "Price": 1.6765029519800978,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 4826
+        },
+        {
+          "Price": 1.73155478168548,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4661
+        },
+        {
+          "Price": 2.196324928874533,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 5201
+        },
+        {
+          "Price": 2.281065493814578,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4942
+        }
+      ],
+      "CurrentPrice": 0.9312429427366855,
+      "CurrentQuantity": 362
+    },
+    {
+      "CurrencyItemId": 480,
+      "ItemId": 5214,
+      "CurrencyCategoryId": 38,
+      "ApiId": "boar-idol",
+      "Text": "Boar Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUJvYXIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5e04714fc6/AzmeriSocketableBoar.png",
+      "ItemMetadata": {
+        "name": "Boar Idol",
+        "base_type": "Boar Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUJvYXIiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/398f71af4c/AzmeriSocketableBoar.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in Gloves or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: Gain 1 Rage on Melee Hit",
+          "Sceptres: Allies in your Presence Regenerate 8 Life per second"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.9611305318188552,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 2484
+        },
+        {
+          "Price": 1.6825193941358858,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 4101
+        },
+        {
+          "Price": 2.5568499328267476,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 3168
+        },
+        {
+          "Price": 1.4988151803819612,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 3867
+        },
+        {
+          "Price": 1.8347273585283064,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4365
+        },
+        {
+          "Price": 2.082775636003518,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3378
+        },
+        {
+          "Price": 1.8135884431596105,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2946
+        }
+      ],
+      "CurrentPrice": 0.7696736900835216,
+      "CurrentQuantity": 307
+    },
+    {
+      "CurrencyItemId": 484,
+      "ItemId": 5222,
+      "CurrencyCategoryId": 38,
+      "ApiId": "owl-idol",
+      "Text": "Owl Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU93bCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/dfe1212549/AzmeriSocketableOwl.png",
+      "ItemMetadata": {
+        "name": "Owl Idol",
+        "base_type": "Owl Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZU93bCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/41308450db/AzmeriSocketableOwl.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Focus or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Foci: 10% increased Cooldown Recovery Rate",
+          "Sceptres: Allies in your Presence have 8% increased Cast Speed"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.7771343442533317,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 341
+        },
+        {
+          "Price": 0.7562071889164984,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 660
+        },
+        {
+          "Price": 0.9070176197404294,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 573
+        },
+        {
+          "Price": 1.0378694189363191,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 452
+        },
+        {
+          "Price": 1.26184061076962,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 586
+        },
+        {
+          "Price": 1.2687244816389942,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 581
+        },
+        {
+          "Price": 1.6904100492874727,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 480
+        }
+      ],
+      "CurrentPrice": 0.6337016766918574,
+      "CurrentQuantity": 54
+    },
+    {
+      "CurrencyItemId": 483,
+      "ItemId": 5220,
+      "CurrencyCategoryId": 38,
+      "ApiId": "cat-idol",
+      "Text": "Cat Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUNhdCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/3d5bc70405/AzmeriSocketableCat.png",
+      "ItemMetadata": {
+        "name": "Cat Idol",
+        "base_type": "Cat Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZUNhdCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/aa84816bfc/AzmeriSocketableCat.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in Gloves or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: 15% increased Accuracy Rating",
+          "Sceptres: Allies in your Presence have 14% increased Critical Hit Chance"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.7268933721324429,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1014
+        },
+        {
+          "Price": 0.8751917294798702,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1858
+        },
+        {
+          "Price": 0.9878270676878703,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1525
+        },
+        {
+          "Price": 0.9829473902112693,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1739
+        },
+        {
+          "Price": 1.2035240079468736,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1705
+        },
+        {
+          "Price": 1.25913677811756,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1409
+        },
+        {
+          "Price": 1.6028337856866457,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1284
+        }
+      ],
+      "CurrentPrice": 0.5456245113453585,
+      "CurrentQuantity": 112
+    },
+    {
+      "CurrencyItemId": 479,
+      "ItemId": 5212,
+      "CurrencyCategoryId": 38,
+      "ApiId": "stag-idol",
+      "Text": "Stag Idol",
+      "CategoryApiId": "idol",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVN0YWciLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2a0668f95a/AzmeriSocketableStag.png",
+      "ItemMetadata": {
+        "name": "Stag Idol",
+        "base_type": "Stag Idol",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvQXptZXJpU29ja2V0YWJsZVN0YWciLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/37969330ca/AzmeriSocketableStag.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: 50% increased Thorns Critical Hit Chance",
+          "Sceptres: Allies in your Presence deal 1 to 40 added Attack Lightning Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.529313661564437,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 574
+        },
+        {
+          "Price": 0.8456931315353732,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1196
+        },
+        {
+          "Price": 0.9135017780463892,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1094
+        },
+        {
+          "Price": 1.0297762205268655,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 892
+        },
+        {
+          "Price": 0.9006390123344343,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 937
+        },
+        {
+          "Price": 0.9460468088455278,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 982
+        },
+        {
+          "Price": 1.1400336197485024,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1379
+        }
+      ],
+      "CurrentPrice": 0.5166666666666667,
+      "CurrentQuantity": 60
+    }
+  ]
+}

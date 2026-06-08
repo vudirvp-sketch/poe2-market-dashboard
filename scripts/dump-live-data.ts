@@ -134,9 +134,11 @@ async function main(): Promise<void> {
     console.error(`  ✗ SnapshotPairs: ${err instanceof Error ? err.message : err}`);
   }
 
-  // 3. Dump item-category ByCategory data (ritual, ultimatum)
+  // 3. Dump item-category ByCategory data (all 5 item categories)
+  // Must stay in sync with config.yaml → league.item_categories and
+  // currency-optimal.ts → ITEM_CATEGORIES.
   console.log("\n--- Item Category Data ---");
-  for (const category of ["ritual", "ultimatum"]) {
+  for (const category of ["ritual", "ultimatum", "idol", "vaultkeys", "delirium"]) {
     try {
       const data = await fetchJSON<unknown>(
         `${BASE_URL}/${leaguePath}/Currencies/ByCategory?Category=${category}&Page=1&PerPage=50`

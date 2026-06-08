@@ -99,12 +99,19 @@ function getEndpoints(realm: string, league: string): EndpointConfig[] {
     { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=currency&Page=1&PerPage=50`, label: "Currencies ByCategory (currency)" },
 
     // ── Item categories (for item-aware optimal payment grouping) ──
-    // These categories contain craft items (Omens, Soul Cores) that appear
-    // in exchange pairs as CurrencyOne. Fetching their ByCategory data
-    // ensures the snapshot has enough metadata for item-aware grouping
+    // These categories contain craft items (Omens, Soul Cores, Idols, etc.)
+    // that appear in exchange pairs as CurrencyOne. Fetching their ByCategory
+    // data ensures the snapshot has enough metadata for item-aware grouping
     // even when the live API is unreachable.
+    //
+    // All 5 item categories from config.yaml → league.item_categories:
+    //   ritual (Omens), ultimatum (Soul Cores), idol (Idols),
+    //   vaultkeys (Reliquary Keys), delirium (Delirium items)
     { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=ritual&Page=1&PerPage=25`, label: "Currencies ByCategory (ritual)" },
     { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=25`, label: "Currencies ByCategory (ultimatum)" },
+    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=idol&Page=1&PerPage=25`, label: "Currencies ByCategory (idol)" },
+    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=25`, label: "Currencies ByCategory (vaultkeys)" },
+    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=delirium&Page=1&PerPage=25`, label: "Currencies ByCategory (delirium)" },
 
     // ── Items ──
     // NOTE: The /Items endpoint returns ALL items in a flat array (ignores

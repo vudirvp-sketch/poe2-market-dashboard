@@ -1,20 +1,21 @@
 # Worklog
 
 ---
-Task ID: 9
+Task ID: 10
 Agent: main
-Task: v1.13 — Confirm item_categories with live data, fix cache snapshot truncation, update docs
+Task: v1.14 — Add ByCategory for idol/vaultkeys/delirium, verify flip logic vs fixtures, update docs
 
 Work Log:
-- Confirmed item_categories with live data from dump-live-data.ts output: idol (29 pairs), vaultkeys (12 pairs), delirium (51 pairs) all present in SnapshotPairs
-- Removed "pending live verification" comments from config.yaml, backend/config.py, src/lib/currency-optimal.ts
-- Updated vaultkeys label from "Vault Keys" to "Reliquary Keys" (matches API CurrencyCategories Label)
-- Rewrote generate-cache-snapshot.ts SnapshotPairs truncation: sorts by VolumeTraded descending, keeps top 8 per item category + top 15 currency pairs (total cap ~55) to stay under 500KB
-- Confirmed IsCurrent=true now works for poe2 realm ("Runes of Aldur", "HC Runes of Aldur")
-- Updated AGENT_NAVIGATION.md to v1.13
+- Added ByCategory endpoints for idol, vaultkeys, delirium to `scripts/generate-cache-snapshot.ts` (3 new fetch entries, total 14→17 endpoints)
+- Added ByCategory fetching for idol, vaultkeys, delirium to `scripts/dump-live-data.ts` (loop expanded from 2 to 5 categories)
+- Created `scripts/verify-flips-vs-fixtures.py` — offline verification script that checks:
+  (a) all 5 item categories present in fixture pairs ✓
+  (b) BestPaymentBadge correctly finds savings for Omens/Soul Cores (up to 86% paying in Exalted vs Chaos) ✓
+  (c) fixture consistency (categories.json labels match) ✓
+  (d) vaultkeys label = "Reliquary Keys" ✓
+- Updated AGENT_NAVIGATION.md to v1.14: marked TODO #3 done, updated TODO list, added Frequent Bug #22, added verify script to commands
 
 Stage Summary:
-- Modified: config.yaml, backend/config.py, src/lib/currency-optimal.ts, scripts/generate-cache-snapshot.ts, AGENT_NAVIGATION.md, worklog.md
-- All item_categories confirmed live: ritual, ultimatum, idol, vaultkeys, delirium
-- Cache snapshot truncation strategy updated from "keep ALL item-category pairs" (670KB) to "top 8/item-cat + top 15 currency" (~450KB)
-- IsCurrent=true confirmed working — default_league_value bug less critical
+- Modified: scripts/generate-cache-snapshot.ts, scripts/dump-live-data.ts, AGENT_NAVIGATION.md
+- Created: scripts/verify-flips-vs-fixtures.py
+- Next iteration needs: regenerate cache-snapshot.json with VPN, run backend+frontend for live flip verification, generate bycategory fixtures for idol/vaultkeys/delirium

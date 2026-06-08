@@ -25,9 +25,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 280.2294693101534,
+          "Price": 286.95287269793045,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 561
+          "Quantity": 621
         },
         {
           "Price": 215.34690151387557,
@@ -60,8 +60,8 @@
           "Quantity": 499
         }
       ],
-      "CurrentPrice": 378.64219056008113,
-      "CurrentQuantity": 64
+      "CurrentPrice": 374.35711673903205,
+      "CurrentQuantity": 60
     },
     {
       "CurrencyItemId": 118,
@@ -85,9 +85,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 308.97592108844105,
+          "Price": 311.34133301775506,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 2297
+          "Quantity": 2530
         },
         {
           "Price": 283.14400853905084,
@@ -120,8 +120,8 @@
           "Quantity": 2989
         }
       ],
-      "CurrentPrice": 317.48217721755964,
-      "CurrentQuantity": 237
+      "CurrentPrice": 342.09168809883727,
+      "CurrentQuantity": 233
     },
     {
       "CurrencyItemId": 254,
@@ -145,9 +145,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 136.38076466118594,
+          "Price": 137.10359752858406,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 516
+          "Quantity": 582
         },
         {
           "Price": 133.5028016486513,
@@ -180,8 +180,8 @@
           "Quantity": 691
         }
       ],
-      "CurrentPrice": 150.06166386512504,
-      "CurrentQuantity": 51
+      "CurrentPrice": 146.50042480475977,
+      "CurrentQuantity": 66
     },
     {
       "CurrencyItemId": 116,
@@ -205,9 +205,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 131.37319429574646,
+          "Price": 131.95287695524885,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 1257
+          "Quantity": 1415
         },
         {
           "Price": 99.89022274420337,
@@ -240,69 +240,8 @@
           "Quantity": 1834
         }
       ],
-      "CurrentPrice": 147.63248052369892,
-      "CurrentQuantity": 122
-    },
-    {
-      "CurrencyItemId": 249,
-      "ItemId": 4099,
-      "CurrencyCategoryId": 27,
-      "ApiId": "quipolatls-soul-core-of-flow",
-      "Text": "Quipolatl's Soul Core of Flow",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlVGltZUNvb2xkb3duIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/dab6d943f3/NewSoulCoreTimeCooldown.png",
-      "ItemMetadata": {
-        "name": "Quipolatl's Soul Core of Flow",
-        "base_type": "Quipolatl's Soul Core of Flow",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlVGltZUNvb2xkb3duIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ba8f3b0e4c/NewSoulCoreTimeCooldown.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Helmets:",
-          "8% increased Skill Effect Duration",
-          "8% increased Cooldown Recovery Rate"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 52.59432360703127,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 1128
-        },
-        {
-          "Price": 40.86804581761601,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2961
-        },
-        {
-          "Price": 40.926104572452076,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 2571
-        },
-        {
-          "Price": 52.4211938557474,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 2087
-        },
-        {
-          "Price": 56.29724599426827,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 2135
-        },
-        {
-          "Price": 55.49660780017942,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1906
-        },
-        {
-          "Price": 46.3773591843524,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1503
-        }
-      ],
-      "CurrentPrice": 55.11307858242522,
-      "CurrentQuantity": 100
+      "CurrentPrice": 139.4887515287799,
+      "CurrentQuantity": 158
     },
     {
       "CurrencyItemId": 121,
@@ -326,9 +265,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 30.713914146271502,
+          "Price": 33.63613026243492,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 901
+          "Quantity": 1002
         },
         {
           "Price": 24.66850981014396,
@@ -361,8 +300,69 @@
           "Quantity": 986
         }
       ],
-      "CurrentPrice": 47.22439221344702,
-      "CurrentQuantity": 87
+      "CurrentPrice": 71.62493977255934,
+      "CurrentQuantity": 101
+    },
+    {
+      "CurrencyItemId": 249,
+      "ItemId": 4099,
+      "CurrencyCategoryId": 27,
+      "ApiId": "quipolatls-soul-core-of-flow",
+      "Text": "Quipolatl's Soul Core of Flow",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlVGltZUNvb2xkb3duIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/dab6d943f3/NewSoulCoreTimeCooldown.png",
+      "ItemMetadata": {
+        "name": "Quipolatl's Soul Core of Flow",
+        "base_type": "Quipolatl's Soul Core of Flow",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlVGltZUNvb2xkb3duIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ba8f3b0e4c/NewSoulCoreTimeCooldown.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets:",
+          "8% increased Skill Effect Duration",
+          "8% increased Cooldown Recovery Rate"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 52.946374484940385,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1230
+        },
+        {
+          "Price": 40.86804581761601,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2961
+        },
+        {
+          "Price": 40.926104572452076,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2571
+        },
+        {
+          "Price": 52.4211938557474,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2087
+        },
+        {
+          "Price": 56.29724599426827,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2135
+        },
+        {
+          "Price": 55.49660780017942,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1906
+        },
+        {
+          "Price": 46.3773591843524,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1503
+        }
+      ],
+      "CurrentPrice": 57.52303589775886,
+      "CurrentQuantity": 102
     },
     {
       "CurrencyItemId": 250,
@@ -385,9 +385,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 34.08173045187541,
+          "Price": 34.56571571595691,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 1089
+          "Quantity": 1216
         },
         {
           "Price": 41.221486536274746,
@@ -420,8 +420,8 @@
           "Quantity": 1616
         }
       ],
-      "CurrentPrice": 35.45442569309749,
-      "CurrentQuantity": 85
+      "CurrentPrice": 40.85752414901647,
+      "CurrentQuantity": 127
     },
     {
       "CurrencyItemId": 108,
@@ -445,9 +445,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 31.678525508114486,
+          "Price": 32.01310929131938,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 13738
+          "Quantity": 15041
         },
         {
           "Price": 31.41668620530474,
@@ -480,128 +480,8 @@
           "Quantity": 27031
         }
       ],
-      "CurrentPrice": 34.908266529856654,
-      "CurrentQuantity": 1281
-    },
-    {
-      "CurrencyItemId": 111,
-      "ItemId": 388,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-zalatl",
-      "Text": "Soul Core of Zalatl",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZU1hbmEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/1437190de2/GreaterSoulCoreMana.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Zalatl",
-        "base_type": "Soul Core of Zalatl",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZU1hbmEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/68c5217087/GreaterSoulCoreMana.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: Recover 2% of maximum Mana on Kill",
-          "Helmets: 3% increased maximum Mana"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 24.930416339925475,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 1783
-        },
-        {
-          "Price": 20.828252628206574,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 4163
-        },
-        {
-          "Price": 10.45295641154714,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 3480
-        },
-        {
-          "Price": 10.704091198258716,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 2988
-        },
-        {
-          "Price": 10.935617428275483,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 2871
-        },
-        {
-          "Price": 10.123752480277249,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 2517
-        },
-        {
-          "Price": 9.541662671754718,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 2166
-        }
-      ],
-      "CurrentPrice": 26.86062813587958,
-      "CurrentQuantity": 169
-    },
-    {
-      "CurrencyItemId": 110,
-      "ItemId": 387,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-jiquani",
-      "Text": "Soul Core of Jiquani",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/bb83a9f337/GreaterSoulCoreLife.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Jiquani",
-        "base_type": "Soul Core of Jiquani",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f81dd5e4c8/GreaterSoulCoreLife.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or a Body Armour to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: Recover 2% of maximum Life on Kill",
-          "Body Armours: 3% increased maximum Life"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 24.346784911471335,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 2048
-        },
-        {
-          "Price": 22.680128018175115,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 5274
-        },
-        {
-          "Price": 24.826309661907956,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 4306
-        },
-        {
-          "Price": 19.588428992738777,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 3637
-        },
-        {
-          "Price": 18.957456668320813,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 3722
-        },
-        {
-          "Price": 17.908642456710627,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 3552
-        },
-        {
-          "Price": 20.98002631419893,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 2946
-        }
-      ],
-      "CurrentPrice": 25.996643771403985,
-      "CurrentQuantity": 160
+      "CurrentPrice": 36.362698472983055,
+      "CurrentQuantity": 1303
     },
     {
       "CurrencyItemId": 112,
@@ -625,9 +505,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 20.17812872423362,
+          "Price": 20.882753500331063,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 9120
+          "Quantity": 9985
         },
         {
           "Price": 17.00367354046027,
@@ -660,8 +540,128 @@
           "Quantity": 17909
         }
       ],
-      "CurrentPrice": 23.372483644566888,
-      "CurrentQuantity": 726
+      "CurrentPrice": 30.042875589597834,
+      "CurrentQuantity": 865
+    },
+    {
+      "CurrencyItemId": 111,
+      "ItemId": 388,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-zalatl",
+      "Text": "Soul Core of Zalatl",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZU1hbmEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/1437190de2/GreaterSoulCoreMana.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Zalatl",
+        "base_type": "Soul Core of Zalatl",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZU1hbmEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/68c5217087/GreaterSoulCoreMana.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: Recover 2% of maximum Mana on Kill",
+          "Helmets: 3% increased maximum Mana"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 25.011176204590893,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1971
+        },
+        {
+          "Price": 20.828252628206574,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 4163
+        },
+        {
+          "Price": 10.45295641154714,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 3480
+        },
+        {
+          "Price": 10.704091198258716,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2988
+        },
+        {
+          "Price": 10.935617428275483,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2871
+        },
+        {
+          "Price": 10.123752480277249,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2517
+        },
+        {
+          "Price": 9.541662671754718,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2166
+        }
+      ],
+      "CurrentPrice": 26.061054445241307,
+      "CurrentQuantity": 188
+    },
+    {
+      "CurrencyItemId": 110,
+      "ItemId": 387,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-jiquani",
+      "Text": "Soul Core of Jiquani",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/bb83a9f337/GreaterSoulCoreLife.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Jiquani",
+        "base_type": "Soul Core of Jiquani",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f81dd5e4c8/GreaterSoulCoreLife.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or a Body Armour to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: Recover 2% of maximum Life on Kill",
+          "Body Armours: 3% increased maximum Life"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 24.399717013500517,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 2247
+        },
+        {
+          "Price": 22.680128018175115,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 5274
+        },
+        {
+          "Price": 24.826309661907956,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 4306
+        },
+        {
+          "Price": 19.588428992738777,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 3637
+        },
+        {
+          "Price": 18.957456668320813,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3722
+        },
+        {
+          "Price": 17.908642456710627,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3552
+        },
+        {
+          "Price": 20.98002631419893,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2946
+        }
+      ],
+      "CurrentPrice": 25.087834339879837,
+      "CurrentQuantity": 199
     },
     {
       "CurrencyItemId": 122,
@@ -685,9 +685,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 15.187813512066201,
+          "Price": 15.378645764257113,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 515
+          "Quantity": 572
         },
         {
           "Price": 10.172885587066142,
@@ -720,369 +720,8 @@
           "Quantity": 860
         }
       ],
-      "CurrentPrice": 16.79600422789165,
-      "CurrentQuantity": 58
-    },
-    {
-      "CurrencyItemId": 120,
-      "ItemId": 397,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-atmohua",
-      "Text": "Soul Core of Atmohua",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVN0cmVuZ3RoIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1b37135049/GreaterSoulCoreStrength.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Atmohua",
-        "base_type": "Soul Core of Atmohua",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVN0cmVuZ3RoIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/2c649b09c3/GreaterSoulCoreStrength.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or Armour to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: Convert 20% of Requirements to Strength",
-          "Armour: Convert 20% of Requirements to Strength"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 9.377672094222266,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 414
-        },
-        {
-          "Price": 8.224069683767206,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 1109
-        },
-        {
-          "Price": 6.797211493536675,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 951
-        },
-        {
-          "Price": 7.013364789396626,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 831
-        },
-        {
-          "Price": 7.364522227153118,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 819
-        },
-        {
-          "Price": 7.422250194456058,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 731
-        },
-        {
-          "Price": 6.398363100527301,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 689
-        }
-      ],
-      "CurrentPrice": 10.636363636363637,
-      "CurrentQuantity": 66
-    },
-    {
-      "CurrencyItemId": 119,
-      "ItemId": 396,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-ticaba",
-      "Text": "Soul Core of Ticaba",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNyaXQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b453416064/GreaterSoulCoreCrit.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Ticaba",
-        "base_type": "Soul Core of Ticaba",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNyaXQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/6d3a52eb08/GreaterSoulCoreCrit.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon, a Body Armour or a Shield to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: +5% to Critical Damage Bonus",
-          "Body Armours: Hits against you have 20% reduced Critical Damage Bonus",
-          "Shields: Hits against you have 20% reduced Critical Damage Bonus"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 10.300179547750087,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 857
-        },
-        {
-          "Price": 8.310490223133836,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2340
-        },
-        {
-          "Price": 6.9177774996050445,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1952
-        },
-        {
-          "Price": 7.508327317484377,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1839
-        },
-        {
-          "Price": 6.787828344941494,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 1879
-        },
-        {
-          "Price": 7.457604859123574,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1680
-        },
-        {
-          "Price": 6.595414959458409,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1539
-        }
-      ],
-      "CurrentPrice": 10.271844660194175,
-      "CurrentQuantity": 103
-    },
-    {
-      "CurrencyItemId": 113,
-      "ItemId": 390,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-puhuarte",
-      "Text": "Soul Core of Puhuarte",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUZpcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/6390ebeaa6/GreaterSoulCoreFire.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Puhuarte",
-        "base_type": "Soul Core of Puhuarte",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUZpcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/d12bda01c3/GreaterSoulCoreFire.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: 30% increased Flammability Magnitude",
-          "Gloves: +1% to Maximum Fire Resistance"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 8.688803738433792,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 810
-        },
-        {
-          "Price": 8.119089926684032,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2084
-        },
-        {
-          "Price": 6.044991610590251,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1751
-        },
-        {
-          "Price": 6.368764618873686,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1407
-        },
-        {
-          "Price": 6.47969771278355,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 1585
-        },
-        {
-          "Price": 6.566538420036237,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1412
-        },
-        {
-          "Price": 6.04811180054379,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1288
-        }
-      ],
-      "CurrentPrice": 10.02011261296376,
-      "CurrentQuantity": 89
-    },
-    {
-      "CurrencyItemId": 114,
-      "ItemId": 391,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-tzamoto",
-      "Text": "Soul Core of Tzamoto",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNvbGQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/d437c04d5e/GreaterSoulCoreCold.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Tzamoto",
-        "base_type": "Soul Core of Tzamoto",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNvbGQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/725dfb48be/GreaterSoulCoreCold.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: 30% increased Freeze Buildup",
-          "Helmets: +1% to Maximum Cold Resistance"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 8.447867064893781,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 743
-        },
-        {
-          "Price": 7.939382295031329,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2094
-        },
-        {
-          "Price": 6.104449187983519,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1733
-        },
-        {
-          "Price": 6.09315225632411,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1499
-        },
-        {
-          "Price": 6.508850483468763,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 1573
-        },
-        {
-          "Price": 6.676409511457359,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1527
-        },
-        {
-          "Price": 5.861805067127084,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1229
-        }
-      ],
-      "CurrentPrice": 9.608108108108109,
-      "CurrentQuantity": 74
-    },
-    {
-      "CurrencyItemId": 117,
-      "ItemId": 394,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-topotante",
-      "Text": "Soul Core of Topotante",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVRyaUVsZW1lbnQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ae7a949b3a/GreaterSoulCoreTriElement.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Topotante",
-        "base_type": "Soul Core of Topotante",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVRyaUVsZW1lbnQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/49f7346687/GreaterSoulCoreTriElement.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: Attacks with this Weapon Penetrate 15% Elemental Resistances",
-          "Boots: 25% increased Elemental Ailment Threshold"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 8.297248672591467,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 7449
-        },
-        {
-          "Price": 7.7189259198220554,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 19637
-        },
-        {
-          "Price": 6.791897340171985,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 17804
-        },
-        {
-          "Price": 6.874752032938414,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 15623
-        },
-        {
-          "Price": 6.904015384501624,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 16272
-        },
-        {
-          "Price": 6.988903776453128,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 16837
-        },
-        {
-          "Price": 6.225569235753558,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 16225
-        }
-      ],
-      "CurrentPrice": 9.575665003583596,
-      "CurrentQuantity": 729
-    },
-    {
-      "CurrencyItemId": 115,
-      "ItemId": 392,
-      "CurrencyCategoryId": 27,
-      "ApiId": "soul-core-of-xopec",
-      "Text": "Soul Core of Xopec",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZ2h0bmluZyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/3dffadfa9a/GreaterSoulCoreLightning.png",
-      "ItemMetadata": {
-        "name": "Soul Core of Xopec",
-        "base_type": "Soul Core of Xopec",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZ2h0bmluZyIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/36dd338570/GreaterSoulCoreLightning.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon or a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: 30% increased chance to Shock",
-          "Boots: +1% to Maximum Lightning Resistance"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 8.564029266341311,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 775
-        },
-        {
-          "Price": 7.554206403868551,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2176
-        },
-        {
-          "Price": 6.042904599578812,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1877
-        },
-        {
-          "Price": 5.814610727379347,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1450
-        },
-        {
-          "Price": 6.3060567406705355,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 1464
-        },
-        {
-          "Price": 6.641428553125647,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1432
-        },
-        {
-          "Price": 5.699419350168697,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1234
-        }
-      ],
-      "CurrentPrice": 9.54945054945055,
-      "CurrentQuantity": 91
+      "CurrentPrice": 17.85946504273897,
+      "CurrentQuantity": 57
     },
     {
       "CurrencyItemId": 109,
@@ -1106,9 +745,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 8.203510336224213,
+          "Price": 8.40215608193959,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 7324
+          "Quantity": 8138
         },
         {
           "Price": 7.697211492015973,
@@ -1141,8 +780,369 @@
           "Quantity": 15878
         }
       ],
-      "CurrentPrice": 9.274156786326131,
-      "CurrentQuantity": 695
+      "CurrentPrice": 10.98455077623951,
+      "CurrentQuantity": 814
+    },
+    {
+      "CurrencyItemId": 119,
+      "ItemId": 396,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-ticaba",
+      "Text": "Soul Core of Ticaba",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNyaXQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b453416064/GreaterSoulCoreCrit.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Ticaba",
+        "base_type": "Soul Core of Ticaba",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNyaXQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/6d3a52eb08/GreaterSoulCoreCrit.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon, a Body Armour or a Shield to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: +5% to Critical Damage Bonus",
+          "Body Armours: Hits against you have 20% reduced Critical Damage Bonus",
+          "Shields: Hits against you have 20% reduced Critical Damage Bonus"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 10.319900379085128,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 916
+        },
+        {
+          "Price": 8.310490223133836,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2340
+        },
+        {
+          "Price": 6.9177774996050445,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1952
+        },
+        {
+          "Price": 7.508327317484377,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1839
+        },
+        {
+          "Price": 6.787828344941494,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1879
+        },
+        {
+          "Price": 7.457604859123574,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1680
+        },
+        {
+          "Price": 6.595414959458409,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1539
+        }
+      ],
+      "CurrentPrice": 10.576271186440678,
+      "CurrentQuantity": 59
+    },
+    {
+      "CurrencyItemId": 117,
+      "ItemId": 394,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-topotante",
+      "Text": "Soul Core of Topotante",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVRyaUVsZW1lbnQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ae7a949b3a/GreaterSoulCoreTriElement.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Topotante",
+        "base_type": "Soul Core of Topotante",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVRyaUVsZW1lbnQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/49f7346687/GreaterSoulCoreTriElement.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: Attacks with this Weapon Penetrate 15% Elemental Resistances",
+          "Boots: 25% increased Elemental Ailment Threshold"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 8.456688061713567,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 8169
+        },
+        {
+          "Price": 7.7189259198220554,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 19637
+        },
+        {
+          "Price": 6.791897340171985,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 17804
+        },
+        {
+          "Price": 6.874752032938414,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 15623
+        },
+        {
+          "Price": 6.904015384501624,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 16272
+        },
+        {
+          "Price": 6.988903776453128,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 16837
+        },
+        {
+          "Price": 6.225569235753558,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 16225
+        }
+      ],
+      "CurrentPrice": 10.529400120300867,
+      "CurrentQuantity": 720
+    },
+    {
+      "CurrencyItemId": 115,
+      "ItemId": 392,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-xopec",
+      "Text": "Soul Core of Xopec",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZ2h0bmluZyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/3dffadfa9a/GreaterSoulCoreLightning.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Xopec",
+        "base_type": "Soul Core of Xopec",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUxpZ2h0bmluZyIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/36dd338570/GreaterSoulCoreLightning.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: 30% increased chance to Shock",
+          "Boots: +1% to Maximum Lightning Resistance"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 8.704153832736667,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 872
+        },
+        {
+          "Price": 7.554206403868551,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2176
+        },
+        {
+          "Price": 6.042904599578812,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1877
+        },
+        {
+          "Price": 5.814610727379347,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1450
+        },
+        {
+          "Price": 6.3060567406705355,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1464
+        },
+        {
+          "Price": 6.641428553125647,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1432
+        },
+        {
+          "Price": 5.699419350168697,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1234
+        }
+      ],
+      "CurrentPrice": 10.525773195876289,
+      "CurrentQuantity": 97
+    },
+    {
+      "CurrencyItemId": 120,
+      "ItemId": 397,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-atmohua",
+      "Text": "Soul Core of Atmohua",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVN0cmVuZ3RoIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1b37135049/GreaterSoulCoreStrength.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Atmohua",
+        "base_type": "Soul Core of Atmohua",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZVN0cmVuZ3RoIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/2c649b09c3/GreaterSoulCoreStrength.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or Armour to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: Convert 20% of Requirements to Strength",
+          "Armour: Convert 20% of Requirements to Strength"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 9.45880362417164,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 451
+        },
+        {
+          "Price": 8.224069683767206,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1109
+        },
+        {
+          "Price": 6.797211493536675,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 951
+        },
+        {
+          "Price": 7.013364789396626,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 831
+        },
+        {
+          "Price": 7.364522227153118,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 819
+        },
+        {
+          "Price": 7.422250194456058,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 731
+        },
+        {
+          "Price": 6.398363100527301,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 689
+        }
+      ],
+      "CurrentPrice": 10.513513513513514,
+      "CurrentQuantity": 37
+    },
+    {
+      "CurrencyItemId": 114,
+      "ItemId": 391,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-tzamoto",
+      "Text": "Soul Core of Tzamoto",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNvbGQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/d437c04d5e/GreaterSoulCoreCold.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Tzamoto",
+        "base_type": "Soul Core of Tzamoto",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUNvbGQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/725dfb48be/GreaterSoulCoreCold.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: 30% increased Freeze Buildup",
+          "Helmets: +1% to Maximum Cold Resistance"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 8.55301941740137,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 818
+        },
+        {
+          "Price": 7.939382295031329,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2094
+        },
+        {
+          "Price": 6.104449187983519,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1733
+        },
+        {
+          "Price": 6.09315225632411,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1499
+        },
+        {
+          "Price": 6.508850483468763,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1573
+        },
+        {
+          "Price": 6.676409511457359,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1527
+        },
+        {
+          "Price": 5.861805067127084,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1229
+        }
+      ],
+      "CurrentPrice": 9.92,
+      "CurrentQuantity": 75
+    },
+    {
+      "CurrencyItemId": 113,
+      "ItemId": 390,
+      "CurrencyCategoryId": 27,
+      "ApiId": "soul-core-of-puhuarte",
+      "Text": "Soul Core of Puhuarte",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUZpcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/6390ebeaa6/GreaterSoulCoreFire.png",
+      "ItemMetadata": {
+        "name": "Soul Core of Puhuarte",
+        "base_type": "Soul Core of Puhuarte",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL0dyZWF0ZXJTb3VsQ29yZUZpcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/d12bda01c3/GreaterSoulCoreFire.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon or a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: 30% increased Flammability Magnitude",
+          "Gloves: +1% to Maximum Fire Resistance"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 8.750714582513918,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 882
+        },
+        {
+          "Price": 8.119089926684032,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2084
+        },
+        {
+          "Price": 6.044991610590251,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1751
+        },
+        {
+          "Price": 6.368764618873686,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1407
+        },
+        {
+          "Price": 6.47969771278355,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1585
+        },
+        {
+          "Price": 6.566538420036237,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1412
+        },
+        {
+          "Price": 6.04811180054379,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1288
+        }
+      ],
+      "CurrentPrice": 9.555555555555555,
+      "CurrentQuantity": 72
     },
     {
       "CurrencyItemId": 253,
@@ -1166,9 +1166,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 8.239293077512539,
+          "Price": 8.270902013534371,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 264
+          "Quantity": 286
         },
         {
           "Price": 9.182861251549893,
@@ -1201,7 +1201,7 @@
           "Quantity": 382
         }
       ],
-      "CurrentPrice": 7.863636363636363,
+      "CurrentPrice": 8.681818181818182,
       "CurrentQuantity": 22
     },
     {
@@ -1226,9 +1226,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 6.157066081825304,
+          "Price": 6.2940145913152294,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 721
+          "Quantity": 806
         },
         {
           "Price": 7.9853193771574675,
@@ -1261,304 +1261,8 @@
           "Quantity": 1163
         }
       ],
-      "CurrentPrice": 7.195223357489424,
-      "CurrentQuantity": 54
-    },
-    {
-      "CurrencyItemId": 248,
-      "ItemId": 4097,
-      "CurrencyCategoryId": 27,
-      "ApiId": "atmohuas-soul-core-of-retreat",
-      "Text": "Atmohua's Soul Core of Retreat",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRW5lcmd5U2hpZWxkIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/10e16bc3ea/NewSoulCoreEnergyShield.png",
-      "ItemMetadata": {
-        "name": "Atmohua's Soul Core of Retreat",
-        "base_type": "Atmohua's Soul Core of Retreat",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRW5lcmd5U2hpZWxkIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/0fada2a7ed/NewSoulCoreEnergyShield.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Body Armour or a Focus to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Body Armours: 30% faster start of Energy Shield Recharge",
-          "Foci: 30% faster start of Energy Shield Recharge"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 5.049483450510396,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 650
-        },
-        {
-          "Price": 3.8327932041615216,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2151
-        },
-        {
-          "Price": 3.863043080640086,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1918
-        },
-        {
-          "Price": 5.337562565301074,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1409
-        },
-        {
-          "Price": 4.225744712248761,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 1244
-        },
-        {
-          "Price": 4.157453517075141,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1471
-        },
-        {
-          "Price": 3.804380836107777,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1146
-        }
-      ],
-      "CurrentPrice": 6.5922257080451985,
-      "CurrentQuantity": 96
-    },
-    {
-      "CurrencyItemId": 256,
-      "ItemId": 4113,
-      "CurrencyCategoryId": 27,
-      "ApiId": "tacatis-soul-core-of-affliction",
-      "Text": "Tacati's Soul Core of Affliction",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MxIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/276b585906/NewSoulCoreChaos1.png",
-      "ItemMetadata": {
-        "name": "Tacati's Soul Core of Affliction",
-        "base_type": "Tacati's Soul Core of Affliction",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MxIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/a5a05d8403/NewSoulCoreChaos1.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Helmets: Enemies you Curse have -5% to Chaos Resistance"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 4.685199052928665,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 384
-        },
-        {
-          "Price": 3.5182854414963374,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 708
-        },
-        {
-          "Price": 4.2825844963777255,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 947
-        },
-        {
-          "Price": 4.096008592096315,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 599
-        },
-        {
-          "Price": 5.094215379787533,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 540
-        },
-        {
-          "Price": 3.7083806865968523,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 740
-        },
-        {
-          "Price": 2.964912374460532,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 607
-        }
-      ],
-      "CurrentPrice": 5.903838405799651,
-      "CurrentQuantity": 106
-    },
-    {
-      "CurrencyItemId": 258,
-      "ItemId": 4117,
-      "CurrencyCategoryId": 27,
-      "ApiId": "citaqualotls-soul-core-of-foulness",
-      "Text": "Citaqualotl's Soul Core of Foulness",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MyIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/002059f8f5/NewSoulCoreChaos2.png",
-      "ItemMetadata": {
-        "name": "Citaqualotl's Soul Core of Foulness",
-        "base_type": "Citaqualotl's Soul Core of Foulness",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MyIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/aad71783a7/NewSoulCoreChaos2.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Martial Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon: Adds 19 to 29 Chaos damage"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.3151555198993816,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 487
-        },
-        {
-          "Price": 2.962080782678916,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 983
-        },
-        {
-          "Price": 3.0048710586580767,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1211
-        },
-        {
-          "Price": 3.0688722844247427,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 844
-        },
-        {
-          "Price": 3.759559441953861,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 603
-        },
-        {
-          "Price": 2.191491923253449,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 764
-        },
-        {
-          "Price": 2.1324130853153136,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 621
-        }
-      ],
-      "CurrentPrice": 5.714289058731398,
-      "CurrentQuantity": 23
-    },
-    {
-      "CurrencyItemId": 245,
-      "ItemId": 4091,
-      "CurrencyCategoryId": 27,
-      "ApiId": "hayoxis-soul-core-of-heatproofing",
-      "Text": "Hayoxi's Soul Core of Heatproofing",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlSWNlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6d8455bff0/NewSoulCoreIce.png",
-      "ItemMetadata": {
-        "name": "Hayoxi's Soul Core of Heatproofing",
-        "base_type": "Hayoxi's Soul Core of Heatproofing",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlSWNlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/37cd3299a3/NewSoulCoreIce.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Helmets: +40% of Armour also applies to Cold Damage"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 5.6280605180724885,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 363
-        },
-        {
-          "Price": 3.035217728918782,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 1915
-        },
-        {
-          "Price": 3.8059565178263832,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1013
-        },
-        {
-          "Price": 3.505608431891472,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 761
-        },
-        {
-          "Price": 3.602134781420588,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 676
-        },
-        {
-          "Price": 2.685977304567045,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 884
-        },
-        {
-          "Price": 2.6999690946588673,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 672
-        }
-      ],
-      "CurrentPrice": 4.966388115944874,
-      "CurrentQuantity": 19
-    },
-    {
-      "CurrencyItemId": 246,
-      "ItemId": 4093,
-      "CurrencyCategoryId": 27,
-      "ApiId": "zalatls-soul-core-of-insulation",
-      "Text": "Zalatl's Soul Core of Insulation",
-      "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlTGlnaHRuaW5nIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/80c455f775/NewSoulCoreLightning.png",
-      "ItemMetadata": {
-        "name": "Zalatl's Soul Core of Insulation",
-        "base_type": "Zalatl's Soul Core of Insulation",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlTGlnaHRuaW5nIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/09051f1451/NewSoulCoreLightning.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Boots: +40% of Armour also applies to Lightning Damage"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.5747408909367597,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 478
-        },
-        {
-          "Price": 3.5409319712227316,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 990
-        },
-        {
-          "Price": 4.965428247162547,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 709
-        },
-        {
-          "Price": 3.8650327320941034,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 717
-        },
-        {
-          "Price": 5.135533518150887,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 529
-        },
-        {
-          "Price": 4.029616684445273,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 674
-        },
-        {
-          "Price": 3.385028674383132,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 595
-        }
-      ],
-      "CurrentPrice": 4.834607918316029,
-      "CurrentQuantity": 22
+      "CurrentPrice": 8.074345214684255,
+      "CurrentQuantity": 85
     },
     {
       "CurrencyItemId": 259,
@@ -1582,9 +1286,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 5.205902196298144,
+          "Price": 5.168223051005839,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 853
+          "Quantity": 928
         },
         {
           "Price": 3.7453452744251874,
@@ -1617,128 +1321,245 @@
           "Quantity": 1645
         }
       ],
-      "CurrentPrice": 4.768725526151144,
-      "CurrentQuantity": 92
+      "CurrentPrice": 4.6783941622058824,
+      "CurrentQuantity": 75
     },
     {
-      "CurrencyItemId": 251,
-      "ItemId": 4103,
+      "CurrencyItemId": 256,
+      "ItemId": 4113,
       "CurrencyCategoryId": 27,
-      "ApiId": "uromotis-soul-core-of-attenuation",
-      "Text": "Uromoti's Soul Core of Attenuation",
+      "ApiId": "tacatis-soul-core-of-affliction",
+      "Text": "Tacati's Soul Core of Affliction",
       "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ3Vyc2VzMiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/25919ac93d/NewSoulCoreCurses2.png",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MxIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/276b585906/NewSoulCoreChaos1.png",
       "ItemMetadata": {
-        "name": "Uromoti's Soul Core of Attenuation",
-        "base_type": "Uromoti's Soul Core of Attenuation",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ3Vyc2VzMiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4897b97181/NewSoulCoreCurses2.png",
+        "name": "Tacati's Soul Core of Affliction",
+        "base_type": "Tacati's Soul Core of Affliction",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MxIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/a5a05d8403/NewSoulCoreChaos1.png",
         "stack_size": 1,
         "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "description": "Place into an empty Augment Socket in a Helmet to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
         "effect": [
-          "Boots:",
-          "15% increased Curse Duration",
-          "15% increased Poison Duration"
+          "Helmets: Enemies you Curse have -5% to Chaos Resistance"
         ]
       },
       "PriceLogs": [
         {
-          "Price": 2.4356406736914575,
+          "Price": 4.671005298182796,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 448
+          "Quantity": 421
         },
         {
-          "Price": 2.213793902619972,
+          "Price": 3.5182854414963374,
           "Time": "2026-06-07T00:00:00",
-          "Quantity": 1004
+          "Quantity": 708
         },
         {
-          "Price": 2.3058489962470565,
+          "Price": 4.2825844963777255,
           "Time": "2026-06-06T00:00:00",
-          "Quantity": 720
+          "Quantity": 947
         },
         {
-          "Price": 2.197094674386735,
+          "Price": 4.096008592096315,
           "Time": "2026-06-05T00:00:00",
-          "Quantity": 472
+          "Quantity": 599
         },
         {
-          "Price": 2.4704741016165763,
+          "Price": 5.094215379787533,
           "Time": "2026-06-04T00:00:00",
-          "Quantity": 320
+          "Quantity": 540
         },
         {
-          "Price": 2.569958546919067,
+          "Price": 3.7083806865968523,
           "Time": "2026-06-03T00:00:00",
-          "Quantity": 343
+          "Quantity": 740
         },
         {
-          "Price": 1.9600227988385885,
+          "Price": 2.964912374460532,
           "Time": "2026-06-02T00:00:00",
-          "Quantity": 323
+          "Quantity": 607
         }
       ],
-      "CurrentPrice": 3.5365853658536586,
-      "CurrentQuantity": 41
+      "CurrentPrice": 4.486486486486487,
+      "CurrentQuantity": 37
     },
     {
-      "CurrencyItemId": 247,
-      "ItemId": 4095,
+      "CurrencyItemId": 245,
+      "ItemId": 4091,
       "CurrencyCategoryId": 27,
-      "ApiId": "topotantes-soul-core-of-dampening",
-      "Text": "Topotante's Soul Core of Dampening",
+      "ApiId": "hayoxis-soul-core-of-heatproofing",
+      "Text": "Hayoxi's Soul Core of Heatproofing",
       "CategoryApiId": "ultimatum",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRmlyZSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/3657368a8c/NewSoulCoreFire.png",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlSWNlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6d8455bff0/NewSoulCoreIce.png",
       "ItemMetadata": {
-        "name": "Topotante's Soul Core of Dampening",
-        "base_type": "Topotante's Soul Core of Dampening",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRmlyZSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/da2c795e22/NewSoulCoreFire.png",
+        "name": "Hayoxi's Soul Core of Heatproofing",
+        "base_type": "Hayoxi's Soul Core of Heatproofing",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlSWNlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/37cd3299a3/NewSoulCoreIce.png",
         "stack_size": 1,
         "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
         "effect": [
-          "Gloves: +40% of Armour also applies to Fire Damage"
+          "Helmets: +40% of Armour also applies to Cold Damage"
         ]
       },
       "PriceLogs": [
         {
-          "Price": 3.3146804425884846,
+          "Price": 5.531917001213832,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 533
+          "Quantity": 402
         },
         {
-          "Price": 2.4269197751503784,
+          "Price": 3.035217728918782,
           "Time": "2026-06-07T00:00:00",
-          "Quantity": 1663
+          "Quantity": 1915
         },
         {
-          "Price": 4.041191756676393,
+          "Price": 3.8059565178263832,
           "Time": "2026-06-06T00:00:00",
-          "Quantity": 1066
+          "Quantity": 1013
         },
         {
-          "Price": 4.803025441687345,
+          "Price": 3.505608431891472,
           "Time": "2026-06-05T00:00:00",
-          "Quantity": 690
+          "Quantity": 761
         },
         {
-          "Price": 4.101035444362987,
+          "Price": 3.602134781420588,
           "Time": "2026-06-04T00:00:00",
-          "Quantity": 655
+          "Quantity": 676
         },
         {
-          "Price": 3.046836970291187,
+          "Price": 2.685977304567045,
           "Time": "2026-06-03T00:00:00",
-          "Quantity": 664
+          "Quantity": 884
         },
         {
-          "Price": 2.531322984591091,
+          "Price": 2.6999690946588673,
           "Time": "2026-06-02T00:00:00",
-          "Quantity": 776
+          "Quantity": 672
         }
       ],
-      "CurrentPrice": 3.2241379310344827,
-      "CurrentQuantity": 58
+      "CurrentPrice": 4.282051282051282,
+      "CurrentQuantity": 39
+    },
+    {
+      "CurrencyItemId": 248,
+      "ItemId": 4097,
+      "CurrencyCategoryId": 27,
+      "ApiId": "atmohuas-soul-core-of-retreat",
+      "Text": "Atmohua's Soul Core of Retreat",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRW5lcmd5U2hpZWxkIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/10e16bc3ea/NewSoulCoreEnergyShield.png",
+      "ItemMetadata": {
+        "name": "Atmohua's Soul Core of Retreat",
+        "base_type": "Atmohua's Soul Core of Retreat",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRW5lcmd5U2hpZWxkIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/0fada2a7ed/NewSoulCoreEnergyShield.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Body Armour or a Focus to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Body Armours: 30% faster start of Energy Shield Recharge",
+          "Foci: 30% faster start of Energy Shield Recharge"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 4.988435003674311,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 727
+        },
+        {
+          "Price": 3.8327932041615216,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2151
+        },
+        {
+          "Price": 3.863043080640086,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1918
+        },
+        {
+          "Price": 5.337562565301074,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1409
+        },
+        {
+          "Price": 4.225744712248761,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1244
+        },
+        {
+          "Price": 4.157453517075141,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1471
+        },
+        {
+          "Price": 3.804380836107777,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1146
+        }
+      ],
+      "CurrentPrice": 4.194805194805195,
+      "CurrentQuantity": 77
+    },
+    {
+      "CurrencyItemId": 258,
+      "ItemId": 4117,
+      "CurrencyCategoryId": 27,
+      "ApiId": "citaqualotls-soul-core-of-foulness",
+      "Text": "Citaqualotl's Soul Core of Foulness",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MyIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/002059f8f5/NewSoulCoreChaos2.png",
+      "ItemMetadata": {
+        "name": "Citaqualotl's Soul Core of Foulness",
+        "base_type": "Citaqualotl's Soul Core of Foulness",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ2hhb3MyIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/aad71783a7/NewSoulCoreChaos2.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Martial Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon: Adds 19 to 29 Chaos damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.3253546917089714,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 594
+        },
+        {
+          "Price": 2.962080782678916,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 983
+        },
+        {
+          "Price": 3.0048710586580767,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1211
+        },
+        {
+          "Price": 3.0688722844247427,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 844
+        },
+        {
+          "Price": 3.759559441953861,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 603
+        },
+        {
+          "Price": 2.191491923253449,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 764
+        },
+        {
+          "Price": 2.1324130853153136,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 621
+        }
+      ],
+      "CurrentPrice": 3.457943925233645,
+      "CurrentQuantity": 107
     },
     {
       "CurrencyItemId": 257,
@@ -1761,9 +1582,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 2.429730043571011,
+          "Price": 2.4986021400258953,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 383
+          "Quantity": 482
         },
         {
           "Price": 2.0913808623914836,
@@ -1796,8 +1617,187 @@
           "Quantity": 557
         }
       ],
-      "CurrentPrice": 1.5714285714285714,
+      "CurrentPrice": 3.393939393939394,
+      "CurrentQuantity": 99
+    },
+    {
+      "CurrencyItemId": 246,
+      "ItemId": 4093,
+      "CurrencyCategoryId": 27,
+      "ApiId": "zalatls-soul-core-of-insulation",
+      "Text": "Zalatl's Soul Core of Insulation",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlTGlnaHRuaW5nIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/80c455f775/NewSoulCoreLightning.png",
+      "ItemMetadata": {
+        "name": "Zalatl's Soul Core of Insulation",
+        "base_type": "Zalatl's Soul Core of Insulation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlTGlnaHRuaW5nIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/09051f1451/NewSoulCoreLightning.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Boots: +40% of Armour also applies to Lightning Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.554096133420869,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 499
+        },
+        {
+          "Price": 3.5409319712227316,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 990
+        },
+        {
+          "Price": 4.965428247162547,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 709
+        },
+        {
+          "Price": 3.8650327320941034,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 717
+        },
+        {
+          "Price": 5.135533518150887,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 529
+        },
+        {
+          "Price": 4.029616684445273,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 674
+        },
+        {
+          "Price": 3.385028674383132,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 595
+        }
+      ],
+      "CurrentPrice": 3.2857142857142856,
       "CurrentQuantity": 21
+    },
+    {
+      "CurrencyItemId": 251,
+      "ItemId": 4103,
+      "CurrencyCategoryId": 27,
+      "ApiId": "uromotis-soul-core-of-attenuation",
+      "Text": "Uromoti's Soul Core of Attenuation",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ3Vyc2VzMiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/25919ac93d/NewSoulCoreCurses2.png",
+      "ItemMetadata": {
+        "name": "Uromoti's Soul Core of Attenuation",
+        "base_type": "Uromoti's Soul Core of Attenuation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlQ3Vyc2VzMiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4897b97181/NewSoulCoreCurses2.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a pair of Boots to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Boots:",
+          "15% increased Curse Duration",
+          "15% increased Poison Duration"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.4885570961588748,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 499
+        },
+        {
+          "Price": 2.213793902619972,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1004
+        },
+        {
+          "Price": 2.3058489962470565,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 720
+        },
+        {
+          "Price": 2.197094674386735,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 472
+        },
+        {
+          "Price": 2.4704741016165763,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 320
+        },
+        {
+          "Price": 2.569958546919067,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 343
+        },
+        {
+          "Price": 1.9600227988385885,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 323
+        }
+      ],
+      "CurrentPrice": 3.176470588235294,
+      "CurrentQuantity": 51
+    },
+    {
+      "CurrencyItemId": 247,
+      "ItemId": 4095,
+      "CurrencyCategoryId": 27,
+      "ApiId": "topotantes-soul-core-of-dampening",
+      "Text": "Topotante's Soul Core of Dampening",
+      "CategoryApiId": "ultimatum",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRmlyZSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/3657368a8c/NewSoulCoreFire.png",
+      "ItemMetadata": {
+        "name": "Topotante's Soul Core of Dampening",
+        "base_type": "Topotante's Soul Core of Dampening",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU291bENvcmVzL05ld1NvdWxDb3JlRmlyZSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/da2c795e22/NewSoulCoreFire.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a pair of Gloves to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: +40% of Armour also applies to Fire Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.3008555989815807,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 577
+        },
+        {
+          "Price": 2.4269197751503784,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1663
+        },
+        {
+          "Price": 4.041191756676393,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1066
+        },
+        {
+          "Price": 4.803025441687345,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 690
+        },
+        {
+          "Price": 4.101035444362987,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 655
+        },
+        {
+          "Price": 3.046836970291187,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 664
+        },
+        {
+          "Price": 2.531322984591091,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 776
+        }
+      ],
+      "CurrentPrice": 3.1211326320918285,
+      "CurrentQuantity": 44
     }
   ]
 }

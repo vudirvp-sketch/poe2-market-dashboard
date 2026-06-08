@@ -1,0 +1,1601 @@
+{
+  "CurrentPage": 1,
+  "Pages": 1,
+  "Total": 26,
+  "Items": [
+    {
+      "CurrencyItemId": 2147,
+      "ItemId": 13883,
+      "CurrencyCategoryId": 36,
+      "ApiId": "potent-liquid-contempt",
+      "Text": "Potent Liquid Contempt",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVW5pcXVlQmVhc3RFbW90aW9uIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/d126680055/UniqueBeastEmotion.png",
+      "ItemMetadata": {
+        "name": "Potent Liquid Contempt",
+        "base_type": "Potent Liquid Contempt",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVW5pcXVlQmVhc3RFbW90aW9uIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/a41f36dc58/UniqueBeastEmotion.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Can be used at The Withered Willow to Instil Amulets with a Notable Passive Skill.\r\nRight click this item then left click a Rare Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Basic Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Any Jewel: +1 Suffix Modifier allowed",
+          "OR: +1 Prefix Modifier allowed"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 702.25949564086,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 6989
+        },
+        {
+          "Price": 592.5908603606164,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 13527
+        },
+        {
+          "Price": 596.0313744926549,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 10489
+        },
+        {
+          "Price": 123.25133693620988,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 5472
+        },
+        {
+          "Price": 92.02886093915163,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4588
+        },
+        {
+          "Price": 60.06291854165968,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3197
+        },
+        {
+          "Price": 105.277446210859,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2353
+        }
+      ],
+      "CurrentPrice": 615.3415375009976,
+      "CurrentQuantity": 766
+    },
+    {
+      "CurrencyItemId": 281,
+      "ItemId": 4307,
+      "CurrencyCategoryId": 36,
+      "ApiId": "concentrated-liquid-isolation",
+      "Text": "Concentrated Liquid Isolation",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvQ29uY2VudHJhdGVkRGlzdGlsbGVkSXNvbGF0aW9uIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/44ca2d19b9/ConcentratedDistilledIsolation.png",
+      "ItemMetadata": {
+        "name": "Concentrated Liquid Isolation",
+        "base_type": "Concentrated Liquid Isolation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvQ29uY2VudHJhdGVkRGlzdGlsbGVkSXNvbGF0aW9uIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/9dd1b3bd7b/ConcentratedDistilledIsolation.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 593.3417010287395,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 6759
+        },
+        {
+          "Price": 626.917693961346,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 13917
+        },
+        {
+          "Price": 683.4036741155406,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 11810
+        },
+        {
+          "Price": 769.5884754359175,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 8171
+        },
+        {
+          "Price": 742.1111088469114,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 7939
+        },
+        {
+          "Price": 601.2175810823309,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 6754
+        },
+        {
+          "Price": 480.31525469287357,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 5352
+        }
+      ],
+      "CurrentPrice": 566.703534664861,
+      "CurrentQuantity": 704
+    },
+    {
+      "CurrencyItemId": 2150,
+      "ItemId": 13889,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-potent-liquid-contempt",
+      "Text": "Ancient Potent Liquid Contempt",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxlc3NVbmlxdWVCZWFzdEVtb3Rpb24iLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9a1f8acc0e/TimelessUniqueBeastEmotion.png",
+      "ItemMetadata": {
+        "name": "Ancient Potent Liquid Contempt",
+        "base_type": "Ancient Potent Liquid Contempt",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxlc3NVbmlxdWVCZWFzdEVtb3Rpb24iLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/af9e849c5b/TimelessUniqueBeastEmotion.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Any Jewel: +1 Suffix Modifier allowed",
+          "OR: +1 Prefix Modifier allowed"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 442.6261861384515,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1697
+        },
+        {
+          "Price": 341.2171393199573,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 3179
+        },
+        {
+          "Price": 380.48256963659793,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2302
+        },
+        {
+          "Price": 242.54447611478977,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1330
+        },
+        {
+          "Price": 183.36893719565535,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 970
+        },
+        {
+          "Price": 53.09189691182994,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 643
+        },
+        {
+          "Price": 34.51387941156961,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 454
+        }
+      ],
+      "CurrentPrice": 543.5683319438749,
+      "CurrentQuantity": 200
+    },
+    {
+      "CurrencyItemId": 2146,
+      "ItemId": 13881,
+      "CurrencyCategoryId": 36,
+      "ApiId": "potent-liquid-ferocity",
+      "Text": "Potent Liquid Ferocity",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVW5pcXVlQ29uc3RydWN0c0Vtb3Rpb24iLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c4ddf1e927/UniqueConstructsEmotion.png",
+      "ItemMetadata": {
+        "name": "Potent Liquid Ferocity",
+        "base_type": "Potent Liquid Ferocity",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVW5pcXVlQ29uc3RydWN0c0Vtb3Rpb24iLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/c48308c13b/UniqueConstructsEmotion.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Can be used at The Withered Willow to Instil Amulets with a Notable Passive Skill.\r\nRight click this item then left click a Rare Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Basic Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Any Jewel: (40-60)% increased Effect of Suffixes",
+          "OR: (40-60)% increased Effect of Prefixes"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 223.4509231942283,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 6241
+        },
+        {
+          "Price": 202.28596369811132,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 11548
+        },
+        {
+          "Price": 218.23832818813025,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 8761
+        },
+        {
+          "Price": 142.72869632612682,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 4621
+        },
+        {
+          "Price": 108.78758908191573,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3736
+        },
+        {
+          "Price": 64.23866449629867,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2813
+        },
+        {
+          "Price": 46.32840617699757,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1596
+        }
+      ],
+      "CurrentPrice": 204.65936368558218,
+      "CurrentQuantity": 712
+    },
+    {
+      "CurrencyItemId": 280,
+      "ItemId": 4305,
+      "CurrencyCategoryId": 36,
+      "ApiId": "concentrated-liquid-suffering",
+      "Text": "Concentrated Liquid Suffering",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvQ29uY2VudHJhdGVkRGlzdGlsbGVkU3VmZmVyaW5nIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/10b12c3875/ConcentratedDistilledSuffering.png",
+      "ItemMetadata": {
+        "name": "Concentrated Liquid Suffering",
+        "base_type": "Concentrated Liquid Suffering",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvQ29uY2VudHJhdGVkRGlzdGlsbGVkU3VmZmVyaW5nIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6ca5b50e4e/ConcentratedDistilledSuffering.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 185.80920648609933,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 9343
+        },
+        {
+          "Price": 191.73049899817354,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 19066
+        },
+        {
+          "Price": 211.14441058796424,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 16205
+        },
+        {
+          "Price": 238.10712383510756,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 12585
+        },
+        {
+          "Price": 231.56333916919164,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 12163
+        },
+        {
+          "Price": 190.4395805750997,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 11170
+        },
+        {
+          "Price": 152.02224544271039,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 9319
+        }
+      ],
+      "CurrentPrice": 177.70516537192006,
+      "CurrentQuantity": 981
+    },
+    {
+      "CurrencyItemId": 279,
+      "ItemId": 4303,
+      "CurrencyCategoryId": 36,
+      "ApiId": "concentrated-liquid-fear",
+      "Text": "Concentrated Liquid Fear",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvQ29uY2VudHJhdGVkRGlzdGlsbGVkRmVhciIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2c3300fcdf/ConcentratedDistilledFear.png",
+      "ItemMetadata": {
+        "name": "Concentrated Liquid Fear",
+        "base_type": "Concentrated Liquid Fear",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvQ29uY2VudHJhdGVkRGlzdGlsbGVkRmVhciIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/046b892ae7/ConcentratedDistilledFear.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 64.66753943712783,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 17480
+        },
+        {
+          "Price": 68.34686563737972,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 38343
+        },
+        {
+          "Price": 75.66493093099363,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 34104
+        },
+        {
+          "Price": 92.76541836347324,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 26969
+        },
+        {
+          "Price": 92.07494281206812,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 27711
+        },
+        {
+          "Price": 96.95014523352177,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 25524
+        },
+        {
+          "Price": 111.40629278605371,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 20822
+        }
+      ],
+      "CurrentPrice": 60.142472262716254,
+      "CurrentQuantity": 1762
+    },
+    {
+      "CurrencyItemId": 2148,
+      "ItemId": 13885,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-potent-liquid-melancholy",
+      "Text": "Ancient Potent Liquid Melancholy",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxlc3NVbmlxdWVIdW1hbnNFbW90aW9uIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/34b9461ae7/TimelessUniqueHumansEmotion.png",
+      "ItemMetadata": {
+        "name": "Ancient Potent Liquid Melancholy",
+        "base_type": "Ancient Potent Liquid Melancholy",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxlc3NVbmlxdWVIdW1hbnNFbW90aW9uIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1abc9effc2/TimelessUniqueHumansEmotion.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Any Jewel: Upgrades Radius to Very Large"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 31.650518023205482,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 4352
+        },
+        {
+          "Price": 34.51026627145443,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 8034
+        },
+        {
+          "Price": 45.30618725636393,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 6288
+        },
+        {
+          "Price": 57.67621717116879,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 4092
+        },
+        {
+          "Price": 99.88534473593103,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3760
+        },
+        {
+          "Price": 87.82947090797569,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2790
+        },
+        {
+          "Price": 110.1878254173604,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1475
+        }
+      ],
+      "CurrentPrice": 28.915824310568574,
+      "CurrentQuantity": 413
+    },
+    {
+      "CurrencyItemId": 278,
+      "ItemId": 4301,
+      "CurrencyCategoryId": 36,
+      "ApiId": "liquid-despair",
+      "Text": "Liquid Despair",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkRGVzcGFpciIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/c676bf7dae/DistilledDespair.png",
+      "ItemMetadata": {
+        "name": "Liquid Despair",
+        "base_type": "Liquid Despair",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkRGVzcGFpciIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/794fb40302/DistilledDespair.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 20.844482043221035,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 18270
+        },
+        {
+          "Price": 21.09262342308162,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 39058
+        },
+        {
+          "Price": 23.812020092085778,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 32882
+        },
+        {
+          "Price": 28.892508606529642,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 26722
+        },
+        {
+          "Price": 28.90297832839121,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 27947
+        },
+        {
+          "Price": 30.20322895995164,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 27022
+        },
+        {
+          "Price": 34.763574816102775,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 23237
+        }
+      ],
+      "CurrentPrice": 20.199610194684045,
+      "CurrentQuantity": 1687
+    },
+    {
+      "CurrencyItemId": 2149,
+      "ItemId": 13887,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-potent-liquid-ferocity",
+      "Text": "Ancient Potent Liquid Ferocity",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltbGVzc1VuaXF1ZUNvbnN0cnVjdHNFbW90aW9uIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/0274721bd5/TimlessUniqueConstructsEmotion.png",
+      "ItemMetadata": {
+        "name": "Ancient Potent Liquid Ferocity",
+        "base_type": "Ancient Potent Liquid Ferocity",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltbGVzc1VuaXF1ZUNvbnN0cnVjdHNFbW90aW9uIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/df80bea23e/TimlessUniqueConstructsEmotion.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Notable Passive Skills in Radius also grant +(5-7)% to Fire Resistance",
+          "Sapphire: Notable Passive Skills in Radius also grant +(5-7)% to Cold Resistance",
+          "Emerald: Notable Passive Skills in Radius also grant +(5-7)% to Lightning Resistance",
+          "Diamond: Notable Passive Skills in Radius also grant +(4-5)% to Chaos Resistance"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 12.63273206773629,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 387
+        },
+        {
+          "Price": 7.5087074117436154,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 784
+        },
+        {
+          "Price": 17.15667969676361,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 504
+        },
+        {
+          "Price": 7.9161372947864415,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 313
+        },
+        {
+          "Price": 4.994429627213946,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 269
+        },
+        {
+          "Price": 6.100820883403308,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 209
+        },
+        {
+          "Price": 10.032854799314979,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 144
+        }
+      ],
+      "CurrentPrice": 10.712052851260076,
+      "CurrentQuantity": 34
+    },
+    {
+      "CurrencyItemId": 2160,
+      "ItemId": 13909,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-concentrated-liquid-isolation",
+      "Text": "Ancient Concentrated Liquid Isolation",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3RDb25jZW50cmF0ZWREaXN0aWxsZWRJc29sYXRpb24iLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/fa4fd8531b/TimelostConcentratedDistilledIsolation.png",
+      "ItemMetadata": {
+        "name": "Ancient Concentrated Liquid Isolation",
+        "base_type": "Ancient Concentrated Liquid Isolation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3RDb25jZW50cmF0ZWREaXN0aWxsZWRJc29sYXRpb24iLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/35fb43ade6/TimelostConcentratedDistilledIsolation.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Increases and Reductions to\n Cold and Lightning Damage in Radius are transformed to apply to Fire Damage",
+          "Sapphire: Increases and Reductions to\n Fire and Lightning Damage in Radius are transformed to apply to Cold Damage",
+          "Emerald: Increases and Reductions to\n Cold and Fire Damage in Radius are transformed to apply to Lightning Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 10.16169509297811,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1177
+        },
+        {
+          "Price": 11.745808958315154,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2822
+        },
+        {
+          "Price": 14.160143120419534,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2416
+        },
+        {
+          "Price": 19.178146418739775,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2008
+        },
+        {
+          "Price": 18.22514260787324,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2091
+        },
+        {
+          "Price": 19.70890183762494,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1918
+        },
+        {
+          "Price": 22.76130084955554,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1436
+        }
+      ],
+      "CurrentPrice": 8.323327252297794,
+      "CurrentQuantity": 90
+    },
+    {
+      "CurrencyItemId": 2158,
+      "ItemId": 13905,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-concentrated-liquid-fear",
+      "Text": "Ancient Concentrated Liquid Fear",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3RDb25jZW50cmF0ZWREaXN0aWxsZWRGZWFyIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/5beedf767c/TimelostConcentratedDistilledFear.png",
+      "ItemMetadata": {
+        "name": "Ancient Concentrated Liquid Fear",
+        "base_type": "Ancient Concentrated Liquid Fear",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3RDb25jZW50cmF0ZWREaXN0aWxsZWRGZWFyIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ba54e0fec4/TimelostConcentratedDistilledFear.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Small Passive Skills in Radius also grant (2-3)% increased Warcry Speed",
+          "Sapphire: Notable Passive Skills in Radius also grant (5-10)% increased Critical Spell Damage Bonus",
+          "Emerald: Notable Passive Skills in Radius also grant (5-10)% increased Critical Damage Bonus for Attack Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 6.5981746155092935,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 3312
+        },
+        {
+          "Price": 8.900122058830815,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 7558
+        },
+        {
+          "Price": 10.14938246482029,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 6727
+        },
+        {
+          "Price": 12.921664666881265,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 5233
+        },
+        {
+          "Price": 18.39893817218115,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 5750
+        },
+        {
+          "Price": 29.400487499092804,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 5586
+        },
+        {
+          "Price": 43.337572099250345,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4145
+        }
+      ],
+      "CurrentPrice": 7.7753548293321915,
+      "CurrentQuantity": 338
+    },
+    {
+      "CurrencyItemId": 277,
+      "ItemId": 4299,
+      "CurrencyCategoryId": 36,
+      "ApiId": "liquid-disgust",
+      "Text": "Liquid Disgust",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkRGlzZ3VzdCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/f462426de0/DistilledDisgust.png",
+      "ItemMetadata": {
+        "name": "Liquid Disgust",
+        "base_type": "Liquid Disgust",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkRGlzZ3VzdCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/26db7e3abd/DistilledDisgust.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 6.6073981568649875,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 20269
+        },
+        {
+          "Price": 6.713336626650027,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 44887
+        },
+        {
+          "Price": 7.589048993800906,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 40101
+        },
+        {
+          "Price": 9.431288996518527,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 33091
+        },
+        {
+          "Price": 9.321223949569164,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 36803
+        },
+        {
+          "Price": 10.100765462803583,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 37495
+        },
+        {
+          "Price": 11.724731629072176,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 36055
+        }
+      ],
+      "CurrentPrice": 6.371357803326307,
+      "CurrentQuantity": 2024
+    },
+    {
+      "CurrencyItemId": 2159,
+      "ItemId": 13907,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-concentrated-liquid-suffering",
+      "Text": "Ancient Concentrated Liquid Suffering",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3RDb25jZW50cmF0ZWREaXN0aWxsZWRTdWZmZXJpbmciLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/14e097ad2a/TimelostConcentratedDistilledSuffering.png",
+      "ItemMetadata": {
+        "name": "Ancient Concentrated Liquid Suffering",
+        "base_type": "Ancient Concentrated Liquid Suffering",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3RDb25jZW50cmF0ZWREaXN0aWxsZWRTdWZmZXJpbmciLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e088e3f537/TimelostConcentratedDistilledSuffering.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Notable Passive Skills in Radius also grant +1 to Maximum Rage",
+          "Sapphire: Notable Passive Skills in Radius also grant (2-3)% increased Area of Effect",
+          "Emerald: Notable Passive Skills in Radius also grant 1% increased Movement Speed"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 5.5087060552940414,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1390
+        },
+        {
+          "Price": 6.677317643442433,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 3147
+        },
+        {
+          "Price": 8.09396291514908,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2872
+        },
+        {
+          "Price": 10.424651592597245,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2532
+        },
+        {
+          "Price": 10.898666423205784,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2579
+        },
+        {
+          "Price": 17.172654091202553,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2629
+        },
+        {
+          "Price": 18.012225165261075,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1853
+        }
+      ],
+      "CurrentPrice": 5.043250161654812,
+      "CurrentQuantity": 92
+    },
+    {
+      "CurrencyItemId": 2157,
+      "ItemId": 13903,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-liquid-despair",
+      "Text": "Ancient Liquid Despair",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWREZXNwYWlyIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/20d8801d9f/TimelostDistilledDespair.png",
+      "ItemMetadata": {
+        "name": "Ancient Liquid Despair",
+        "base_type": "Ancient Liquid Despair",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWREZXNwYWlyIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1ee32437d3/TimelostDistilledDespair.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Notable Passive Skills in Radius also grant Gain 1 Rage on Melee Hit",
+          "Sapphire: Notable Passive Skills in Radius also grant (3-7)% increased Critical Hit Chance for Spells",
+          "Emerald: Notable Passive Skills in Radius also grant (3-7)% increased Critical Hit Chance for Attacks"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.8411180084094796,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 2275
+        },
+        {
+          "Price": 2.937892696820512,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 5603
+        },
+        {
+          "Price": 3.3384084102883644,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 4331
+        },
+        {
+          "Price": 4.346338393789397,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 3292
+        },
+        {
+          "Price": 4.14197407435494,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3771
+        },
+        {
+          "Price": 6.616644280274297,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 4049
+        },
+        {
+          "Price": 10.413214934585538,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 3755
+        }
+      ],
+      "CurrentPrice": 3.6119988406316064,
+      "CurrentQuantity": 200
+    },
+    {
+      "CurrencyItemId": 2156,
+      "ItemId": 13901,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-liquid-disgust",
+      "Text": "Ancient Liquid Disgust",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWREaXNndXN0Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/692d116504/TimelostDistilledDisgust.png",
+      "ItemMetadata": {
+        "name": "Ancient Liquid Disgust",
+        "base_type": "Ancient Liquid Disgust",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWREaXNndXN0IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/d6cd1a0f88/TimelostDistilledDisgust.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Notable Passive Skills in Radius also grant (3-5)% increased Life Regeneration rate",
+          "Sapphire: Notable Passive Skills in Radius also grant Recover 1% of maximum Mana on Kill",
+          "Emerald: Notable Passive Skills in Radius also grant Recover 1% of maximum Life on Kill"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 1.2305809089158346,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 608
+        },
+        {
+          "Price": 1.154187908672064,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1059
+        },
+        {
+          "Price": 1.2288400505775205,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1086
+        },
+        {
+          "Price": 1.2089818741524714,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 831
+        },
+        {
+          "Price": 1.4673158563042674,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1023
+        },
+        {
+          "Price": 1.2284373980357117,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1213
+        },
+        {
+          "Price": 1.9944563688432526,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 882
+        }
+      ],
+      "CurrentPrice": 2.4214657591776603,
+      "CurrentQuantity": 34
+    },
+    {
+      "CurrencyItemId": 276,
+      "ItemId": 4297,
+      "CurrencyCategoryId": 36,
+      "ApiId": "liquid-envy",
+      "Text": "Liquid Envy",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkRW52eSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/abf219916e/DistilledEnvy.png",
+      "ItemMetadata": {
+        "name": "Liquid Envy",
+        "base_type": "Liquid Envy",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkRW52eSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/d60977783a/DistilledEnvy.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.1810513795241713,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 23821
+        },
+        {
+          "Price": 2.181704661803325,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 52543
+        },
+        {
+          "Price": 2.4272928842585975,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 45376
+        },
+        {
+          "Price": 2.9352062439188358,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 40105
+        },
+        {
+          "Price": 2.8868512501763743,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 45537
+        },
+        {
+          "Price": 3.116744247455467,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 49287
+        },
+        {
+          "Price": 3.5323809569464584,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 41284
+        }
+      ],
+      "CurrentPrice": 2.178761877256016,
+      "CurrentQuantity": 2585
+    },
+    {
+      "CurrencyItemId": 2145,
+      "ItemId": 13879,
+      "CurrencyCategoryId": 36,
+      "ApiId": "potent-liquid-melancholy",
+      "Text": "Potent Liquid Melancholy",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVW5pcXVlSHVtYW5zRW1vdGlvbiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/68f4574c82/UniqueHumansEmotion.png",
+      "ItemMetadata": {
+        "name": "Potent Liquid Melancholy",
+        "base_type": "Potent Liquid Melancholy",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVW5pcXVlSHVtYW5zRW1vdGlvbiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/e7d5b17e5e/UniqueHumansEmotion.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Can be used at The Withered Willow to Instil Amulets with a Notable Passive Skill.\r\nRight click this item then left click a Rare Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Basic Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Debilitate Enemies on Hit while you have an Emerald and a Sapphire socketed in your tree",
+          "Sapphire: Inflict Elemental Exposure on Hit while you have a Ruby and an Emerald socketed in your tree",
+          "Emerald: Blind Enemies on Hit while you have a Ruby and a Sapphire socketed in your tree"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.221528576391115,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 5639
+        },
+        {
+          "Price": 4.977147154602624,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 14308
+        },
+        {
+          "Price": 3.8609991441936358,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2964
+        },
+        {
+          "Price": 3.5404996964365565,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2501
+        },
+        {
+          "Price": 2.2050038155969225,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1767
+        },
+        {
+          "Price": 3.7710868046685166,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1313
+        },
+        {
+          "Price": 3.8888227272812723,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1182
+        }
+      ],
+      "CurrentPrice": 1.8540208096624102,
+      "CurrentQuantity": 557
+    },
+    {
+      "CurrencyItemId": 275,
+      "ItemId": 4295,
+      "CurrencyCategoryId": 36,
+      "ApiId": "liquid-paranoia",
+      "Text": "Liquid Paranoia",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkUGFyYW5vaWEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/279e807e8f/DistilledParanoia.png",
+      "ItemMetadata": {
+        "name": "Liquid Paranoia",
+        "base_type": "Liquid Paranoia",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlzdGlsbGVkUGFyYW5vaWEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/fc7a70f9e4/DistilledParanoia.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.021917668333493,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 10450
+        },
+        {
+          "Price": 2.3718141460219595,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 24375
+        },
+        {
+          "Price": 2.960179236437112,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 25967
+        },
+        {
+          "Price": 3.6336378223920978,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 22480
+        },
+        {
+          "Price": 2.8613165485845715,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 28624
+        },
+        {
+          "Price": 4.125437936308416,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 28826
+        },
+        {
+          "Price": 4.428699316591348,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 25092
+        }
+      ],
+      "CurrentPrice": 1.6233076424795922,
+      "CurrentQuantity": 1174
+    },
+    {
+      "CurrencyItemId": 2154,
+      "ItemId": 13897,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-liquid-paranoia",
+      "Text": "Ancient Liquid Paranoia",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWRQYXJhbm9pYSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/ad46b5868c/TimelostDistilledParanoia.png",
+      "ItemMetadata": {
+        "name": "Ancient Liquid Paranoia",
+        "base_type": "Ancient Liquid Paranoia",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWRQYXJhbm9pYSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4bf3b9f74a/TimelostDistilledParanoia.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Small Passive Skills in Radius also grant (1-2)% increased Attack Damage",
+          "Sapphire: Notable Passive Skills in Radius also grant (1-2)% increased Cast Speed",
+          "Emerald: Notable Passive Skills in Radius also grant (1-2)% increased Attack Speed"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 1.1893161826189325,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 457
+        },
+        {
+          "Price": 1.8767373419862203,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1323
+        },
+        {
+          "Price": 2.4741604207401253,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1038
+        },
+        {
+          "Price": 2.452333168454969,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 986
+        },
+        {
+          "Price": 2.27732099834761,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1200
+        },
+        {
+          "Price": 1.9974743834942068,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1139
+        },
+        {
+          "Price": 2.464467691948881,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1207
+        }
+      ],
+      "CurrentPrice": 0.8636363636363636,
+      "CurrentQuantity": 22
+    },
+    {
+      "CurrencyItemId": 274,
+      "ItemId": 4293,
+      "CurrencyCategoryId": 36,
+      "ApiId": "diluted-liquid-greed",
+      "Text": "Diluted Liquid Greed",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlsdXRlZERpc3RpbGxlZEdyZWVkIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ddec210bbb/DilutedDistilledGreed.png",
+      "ItemMetadata": {
+        "name": "Diluted Liquid Greed",
+        "base_type": "Diluted Liquid Greed",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlsdXRlZERpc3RpbGxlZEdyZWVkIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/91b1858552/DilutedDistilledGreed.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.7423611836006818,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 10232
+        },
+        {
+          "Price": 0.8906753480153392,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 26991
+        },
+        {
+          "Price": 1.214737660783284,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 24377
+        },
+        {
+          "Price": 1.534709678171635,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 25421
+        },
+        {
+          "Price": 1.3360131629039704,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 24150
+        },
+        {
+          "Price": 1.5958895300663005,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 30932
+        },
+        {
+          "Price": 2.191381759088319,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 26501
+        }
+      ],
+      "CurrentPrice": 0.7575079979223569,
+      "CurrentQuantity": 885
+    },
+    {
+      "CurrencyItemId": 2155,
+      "ItemId": 13899,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-liquid-envy",
+      "Text": "Ancient Liquid Envy",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWRFbnZ5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/8135fea7ea/TimelostDistilledEnvy.png",
+      "ItemMetadata": {
+        "name": "Ancient Liquid Envy",
+        "base_type": "Ancient Liquid Envy",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaXN0aWxsZWRFbnZ5IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/00a9d3cc4d/TimelostDistilledEnvy.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Sapphire: Small Passive Skills in Radius also grant (1-2)% increased Spell Damage",
+          "Ruby: Notable Passive Skills in Radius also grant (2-3)% of Skill Mana Costs Converted to Life Costs",
+          "Emerald: Notable Passive Skills in Radius also grant (1-3)% increased Cooldown Recovery Rate"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.7317791400146995,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 567
+        },
+        {
+          "Price": 0.696683016383462,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1070
+        },
+        {
+          "Price": 0.7015612182358409,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 807
+        },
+        {
+          "Price": 0.7288218493124642,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 625
+        },
+        {
+          "Price": 0.7449382368742166,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 692
+        },
+        {
+          "Price": 1.2696489043109123,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 620
+        },
+        {
+          "Price": 0.7126449812215648,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 657
+        }
+      ],
+      "CurrentPrice": 0.4666666666666667,
+      "CurrentQuantity": 45
+    },
+    {
+      "CurrencyItemId": 2153,
+      "ItemId": 13895,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-diluted-liquid-greed",
+      "Text": "Ancient Diluted Liquid Greed",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaWx1dGVkRGlzdGlsbGVkR3JlZWQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8ef165042d/TimelostDilutedDistilledGreed.png",
+      "ItemMetadata": {
+        "name": "Ancient Diluted Liquid Greed",
+        "base_type": "Ancient Diluted Liquid Greed",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaWx1dGVkRGlzdGlsbGVkR3JlZWQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/428f6fdaf5/TimelostDilutedDistilledGreed.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Small Passive Skills in Radius also grant (1-2)% increased Global Physical Damage",
+          "Sapphire: Small Passive Skills in Radius also grant (1-2)% increased Chaos Damage",
+          "Emerald: Small Passive Skills in Radius also grant (1-2)% increased Elemental Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.5021599482619272,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 529
+        },
+        {
+          "Price": 0.6450226004160884,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1043
+        },
+        {
+          "Price": 0.8934741292706451,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 821
+        },
+        {
+          "Price": 1.1520246972444241,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 596
+        },
+        {
+          "Price": 0.9899364423865112,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 718
+        },
+        {
+          "Price": 1.3678468229312453,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 774
+        },
+        {
+          "Price": 1.5056680941098166,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 903
+        }
+      ],
+      "CurrentPrice": 0.2653061224489796,
+      "CurrentQuantity": 49
+    },
+    {
+      "CurrencyItemId": 273,
+      "ItemId": 4291,
+      "CurrencyCategoryId": 36,
+      "ApiId": "diluted-liquid-guilt",
+      "Text": "Diluted Liquid Guilt",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlsdXRlZERpc3RpbGxlZEd1aWx0Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/ddbd513a9b/DilutedDistilledGuilt.png",
+      "ItemMetadata": {
+        "name": "Diluted Liquid Guilt",
+        "base_type": "Diluted Liquid Guilt",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlsdXRlZERpc3RpbGxlZEd1aWx0IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c074593360/DilutedDistilledGuilt.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.24584083746100832,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 15446
+        },
+        {
+          "Price": 0.3442965705903453,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 31453
+        },
+        {
+          "Price": 0.42472481798876344,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 27427
+        },
+        {
+          "Price": 0.47615973259345284,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 25296
+        },
+        {
+          "Price": 0.6361147026743467,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 25063
+        },
+        {
+          "Price": 0.551015632928802,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 26771
+        },
+        {
+          "Price": 0.6428427604337227,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 24309
+        }
+      ],
+      "CurrentPrice": 0.24785604248566778,
+      "CurrentQuantity": 1351
+    },
+    {
+      "CurrencyItemId": 272,
+      "ItemId": 4289,
+      "CurrencyCategoryId": 36,
+      "ApiId": "diluted-liquid-ire",
+      "Text": "Diluted Liquid Ire",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlsdXRlZERpc3RpbGxlZElyZSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/623d6e522b/DilutedDistilledIre.png",
+      "ItemMetadata": {
+        "name": "Diluted Liquid Ire",
+        "base_type": "Diluted Liquid Ire",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvRGlsdXRlZERpc3RpbGxlZElyZSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/3060525b5d/DilutedDistilledIre.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item to open the Instilling window.",
+        "effect": [
+          "Can be combined with other Liquid Emotions to Instil Amulets\nwith Notable Passive Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.2092629576483982,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 27741
+        },
+        {
+          "Price": 0.23926246619181998,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 74133
+        },
+        {
+          "Price": 0.2879466809545494,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 62181
+        },
+        {
+          "Price": 0.36434139454613784,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 49502
+        },
+        {
+          "Price": 0.4017615219006279,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 53470
+        },
+        {
+          "Price": 0.45014630440296494,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 54925
+        },
+        {
+          "Price": 0.6272246408246762,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 48464
+        }
+      ],
+      "CurrentPrice": 0.19532604119622088,
+      "CurrentQuantity": 2392
+    },
+    {
+      "CurrencyItemId": 2152,
+      "ItemId": 13893,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-diluted-liquid-guilt",
+      "Text": "Ancient Diluted Liquid Guilt",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaWx1dGVkRGlzdGlsbGVkR3VpbHQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/adc7474910/TimelostDilutedDistilledGuilt.png",
+      "ItemMetadata": {
+        "name": "Ancient Diluted Liquid Guilt",
+        "base_type": "Ancient Diluted Liquid Guilt",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaWx1dGVkRGlzdGlsbGVkR3VpbHQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/4cb89cc210/TimelostDilutedDistilledGuilt.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Small Passive Skills in Radius also grant (1-2)% increased Fire Damage",
+          "Sapphire: Small Passive Skills in Radius also grant (1-2)% increased Cold Damage",
+          "Emerald: Small Passive Skills in Radius also grant (1-2)% increased Lightning Damage"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.39652337372287744,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1070
+        },
+        {
+          "Price": 0.24578176230443408,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1677
+        },
+        {
+          "Price": 0.6525431005353984,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 972
+        },
+        {
+          "Price": 0.7334985321052425,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1071
+        },
+        {
+          "Price": 0.3507628081854757,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1175
+        },
+        {
+          "Price": 0.6771799118711107,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 663
+        },
+        {
+          "Price": 0.7031620534068564,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 605
+        }
+      ],
+      "CurrentPrice": 0.16666666666666666,
+      "CurrentQuantity": 108
+    },
+    {
+      "CurrencyItemId": 2151,
+      "ItemId": 13891,
+      "CurrencyCategoryId": 36,
+      "ApiId": "ancient-diluted-liquid-ire",
+      "Text": "Ancient Diluted Liquid Ire",
+      "CategoryApiId": "delirium",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaWx1dGVkRGlzdGlsbGVkSXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/37c3144cb7/TimelostDilutedDistilledIre.png",
+      "ItemMetadata": {
+        "name": "Ancient Diluted Liquid Ire",
+        "base_type": "Ancient Diluted Liquid Ire",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRGlzdGlsbGVkRW1vdGlvbnMvVGltZWxvc3REaWx1dGVkRGlzdGlsbGVkSXJlIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/cadbd510d3/TimelostDilutedDistilledIre.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item then left click a Rare Time-Lost Jewel to apply it.",
+        "effect": [
+          "Removes a random modifer and Augments a Rare Time-Lost Jewel with a\nnew guaranteed Crafted modifier",
+          "\n",
+          "Ruby: Small Passive Skills in Radius also grant (2-3)% increased Armour",
+          "Sapphire: Small Passive Skills in Radius also grant (2-3)% increased maximum Energy Shield",
+          "Emerald: Small Passive Skills in Radius also grant (2-3)% increased Evasion Rating"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.18844809678010657,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 3128
+        },
+        {
+          "Price": 0.22188501577357636,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 3963
+        },
+        {
+          "Price": 0.2699265955341888,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 4019
+        },
+        {
+          "Price": 0.39300056876755596,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 2944
+        },
+        {
+          "Price": 0.4633214087998101,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3657
+        },
+        {
+          "Price": 0.5633027612699403,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2639
+        },
+        {
+          "Price": 0.670379894331352,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2495
+        }
+      ],
+      "CurrentPrice": 0.158004158004158,
+      "CurrentQuantity": 481
+    }
+  ]
+}

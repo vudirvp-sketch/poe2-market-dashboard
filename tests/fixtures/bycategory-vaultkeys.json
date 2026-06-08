@@ -1,0 +1,463 @@
+{
+  "CurrentPage": 1,
+  "Pages": 1,
+  "Total": 8,
+  "Items": [
+    {
+      "CurrencyItemId": 195,
+      "ItemId": 472,
+      "CurrencyCategoryId": 31,
+      "ApiId": "the-trialmasters-reliquary-key",
+      "Text": "The Trialmaster's Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5VWx0aW1hdHVtIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/33b76f482f/TwilightOrderReliquaryKeyUltimatum.png",
+      "ItemMetadata": {
+        "name": "The Trialmaster's Reliquary Key",
+        "base_type": "The Trialmaster's Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5VWx0aW1hdHVtIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/2b3fb65e8e/TwilightOrderReliquaryKeyUltimatum.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 3532.2227649256224,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 10
+        },
+        {
+          "Price": 2106.0849240583193,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 45
+        },
+        {
+          "Price": 1977.6285756670386,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 42
+        },
+        {
+          "Price": 2054.582829380026,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 38
+        },
+        {
+          "Price": 2366.9488288399543,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 29
+        },
+        {
+          "Price": 1001.862234338061,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 25
+        },
+        {
+          "Price": 473.3519962150292,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 18
+        }
+      ],
+      "CurrentPrice": 4070.5193356926297,
+      "CurrentQuantity": 4
+    },
+    {
+      "CurrencyItemId": 200,
+      "ItemId": 477,
+      "CurrencyCategoryId": 31,
+      "ApiId": "against-the-darkness",
+      "Text": "Zarokh's Reliquary Key: Against the Darkness",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5U2FuY3R1bTIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/67f96bbfc0/TwilightOrderReliquaryKeySanctum2.png",
+      "ItemMetadata": {
+        "name": "Zarokh's Reliquary Key: Against the Darkness",
+        "base_type": "Zarokh's Reliquary Key: Against the Darkness",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5U2FuY3R1bTIiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/08dcb647d2/TwilightOrderReliquaryKeySanctum2.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 3860.842329955995,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 34
+        },
+        {
+          "Price": 2731.5495720477757,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 70
+        },
+        {
+          "Price": 2260.2276252568495,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 65
+        },
+        {
+          "Price": 1893.098927774043,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 44
+        },
+        {
+          "Price": 1745.713294565929,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 38
+        },
+        {
+          "Price": 840.4960838536704,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 45
+        },
+        {
+          "Price": 568.2328577492419,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 22
+        }
+      ],
+      "CurrentPrice": 3656.937157199796,
+      "CurrentQuantity": 3
+    },
+    {
+      "CurrencyItemId": 197,
+      "ItemId": 474,
+      "CurrencyCategoryId": 31,
+      "ApiId": "tangmazus-reliquary-key",
+      "Text": "Tangmazu's Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5RGVsaXJpdW0iLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5f25b754e5/TwilightOrderReliquaryKeyDelirium.png",
+      "ItemMetadata": {
+        "name": "Tangmazu's Reliquary Key",
+        "base_type": "Tangmazu's Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5RGVsaXJpdW0iLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/662c7bba9d/TwilightOrderReliquaryKeyDelirium.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 1184.542992707165,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 58
+        },
+        {
+          "Price": 1143.098696901642,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 112
+        },
+        {
+          "Price": 929.3597550082798,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 47
+        },
+        {
+          "Price": 1358.9257959122945,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 49
+        },
+        {
+          "Price": 937.9940738021843,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 31
+        },
+        {
+          "Price": 478.92790148507976,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 21
+        },
+        {
+          "Price": 309.17971001777056,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4
+        }
+      ],
+      "CurrentPrice": 1001.3042216142297,
+      "CurrentQuantity": 2
+    },
+    {
+      "CurrencyItemId": 194,
+      "ItemId": 471,
+      "CurrencyCategoryId": 31,
+      "ApiId": "xeshts-reliquary-key",
+      "Text": "Xesht's Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5QnJlYWNoIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/83298eda09/TwilightOrderReliquaryKeyBreach.png",
+      "ItemMetadata": {
+        "name": "Xesht's Reliquary Key",
+        "base_type": "Xesht's Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5QnJlYWNoIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/250e530137/TwilightOrderReliquaryKeyBreach.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 508.21526992306866,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 34
+        },
+        {
+          "Price": 411.2817507414218,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 92
+        },
+        {
+          "Price": 351.0259207971617,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 70
+        },
+        {
+          "Price": 521.0225395158672,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 49
+        },
+        {
+          "Price": 375.97362211872377,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 52
+        },
+        {
+          "Price": 266.099781814149,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 28
+        },
+        {
+          "Price": 641.6154291811565,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 12
+        }
+      ],
+      "CurrentPrice": 435.3496615714042,
+      "CurrentQuantity": 1
+    },
+    {
+      "CurrencyItemId": 199,
+      "ItemId": 476,
+      "CurrencyCategoryId": 31,
+      "ApiId": "the-arbiters-reliquary-key",
+      "Text": "The Arbiter's Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5UGlubmFjbGUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/fdcef1c9d4/TwilightOrderReliquaryKeyPinnacle.png",
+      "ItemMetadata": {
+        "name": "The Arbiter's Reliquary Key",
+        "base_type": "The Arbiter's Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5UGlubmFjbGUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/54ae38bf3e/TwilightOrderReliquaryKeyPinnacle.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 411.4684750115762,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 93
+        },
+        {
+          "Price": 378.3895751893958,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 253
+        },
+        {
+          "Price": 343.30899009138983,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 183
+        },
+        {
+          "Price": 373.09286765782883,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 144
+        },
+        {
+          "Price": 377.9394761443014,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 136
+        },
+        {
+          "Price": 253.4572377353601,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 118
+        },
+        {
+          "Price": 273.83798180698693,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 48
+        }
+      ],
+      "CurrentPrice": 365.9990101367149,
+      "CurrentQuantity": 14
+    },
+    {
+      "CurrencyItemId": 198,
+      "ItemId": 475,
+      "CurrencyCategoryId": 31,
+      "ApiId": "olroths-reliquary-key",
+      "Text": "Olroth's Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5RXhwZWRpdGlvbiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/58817f4ede/TwilightOrderReliquaryKeyExpedition.png",
+      "ItemMetadata": {
+        "name": "Olroth's Reliquary Key",
+        "base_type": "Olroth's Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5RXhwZWRpdGlvbiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/5355d897be/TwilightOrderReliquaryKeyExpedition.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 186.03542511867116,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 68
+        },
+        {
+          "Price": 182.90115439979868,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 160
+        },
+        {
+          "Price": 180.66662473149896,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 107
+        },
+        {
+          "Price": 242.34136341138205,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 94
+        },
+        {
+          "Price": 235.09270254806592,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 73
+        },
+        {
+          "Price": 141.26089578252436,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 47
+        },
+        {
+          "Price": 200.2873293145259,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 27
+        }
+      ],
+      "CurrentPrice": 98,
+      "CurrentQuantity": 5
+    },
+    {
+      "CurrencyItemId": 196,
+      "ItemId": 473,
+      "CurrencyCategoryId": 31,
+      "ApiId": "ritualistic-reliquary-key",
+      "Text": "Ritualistic Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5Uml0dWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/515e217711/TwilightOrderReliquaryKeyRitual.png",
+      "ItemMetadata": {
+        "name": "Ritualistic Reliquary Key",
+        "base_type": "Ritualistic Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5Uml0dWFsIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/271da7acae/TwilightOrderReliquaryKeyRitual.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 103.10909096701057,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 267
+        },
+        {
+          "Price": 108.82904399201095,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 534
+        },
+        {
+          "Price": 91.69820440107804,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 426
+        },
+        {
+          "Price": 75.75916838795087,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 334
+        },
+        {
+          "Price": 76.91491306703298,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 271
+        },
+        {
+          "Price": 71.41786774777025,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 238
+        },
+        {
+          "Price": 57.06056011154987,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 268
+        }
+      ],
+      "CurrentPrice": 79.76345471801072,
+      "CurrentQuantity": 23
+    },
+    {
+      "CurrencyItemId": 193,
+      "ItemId": 470,
+      "CurrencyCategoryId": 31,
+      "ApiId": "twilight-reliquary-key",
+      "Text": "Twilight Reliquary Key",
+      "CategoryApiId": "vaultkeys",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI4LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5V29ybGQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/11ce1d0bfd/TwilightOrderReliquaryKeyWorld.png",
+      "ItemMetadata": {
+        "name": "Twilight Reliquary Key",
+        "base_type": "Twilight Reliquary Key",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvTWFwcy9Ud2lsaWdodE9yZGVyUmVsaXF1YXJ5S2V5V29ybGQiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8fd3cf2e35/TwilightOrderReliquaryKeyWorld.png",
+        "stack_size": 1,
+        "max_stack_size": null,
+        "description": "Open a Reliquary portal by using this item at The Reliquary Vault. Can only be used once.",
+        "effect": []
+      },
+      "PriceLogs": [
+        {
+          "Price": 4.090161268046475,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 30443
+        },
+        {
+          "Price": 4.501721833262489,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 64040
+        },
+        {
+          "Price": 5.1213567968677305,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 56215
+        },
+        {
+          "Price": 5.052048859822059,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 41663
+        },
+        {
+          "Price": 4.754669847010555,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 47006
+        },
+        {
+          "Price": 4.909222244511511,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 40506
+        },
+        {
+          "Price": 5.20711313641251,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 31498
+        }
+      ],
+      "CurrentPrice": 4.446065819314213,
+      "CurrentQuantity": 3173
+    }
+  ]
+}

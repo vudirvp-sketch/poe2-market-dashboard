@@ -24,9 +24,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 6174.478537317224,
+          "Price": 6129.602676235845,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 391
+          "Quantity": 454
         },
         {
           "Price": 4192.5869845251245,
@@ -59,8 +59,8 @@
           "Quantity": 68
         }
       ],
-      "CurrentPrice": 6182.18651898783,
-      "CurrentQuantity": 30
+      "CurrentPrice": 5546.2164821779215,
+      "CurrentQuantity": 63
     },
     {
       "CurrencyItemId": 292,
@@ -83,9 +83,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 759.5140806266676,
+          "Price": 757.1851962204548,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 2303
+          "Quantity": 2615
         },
         {
           "Price": 690.1401006150794,
@@ -118,8 +118,8 @@
           "Quantity": 1782
         }
       ],
-      "CurrentPrice": 714.0172176677769,
-      "CurrentQuantity": 226
+      "CurrentPrice": 726.9096989396897,
+      "CurrentQuantity": 312
     },
     {
       "CurrencyItemId": 303,
@@ -142,9 +142,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 589.2373865857373,
+          "Price": 581.2298816111643,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 58805
+          "Quantity": 66176
         },
         {
           "Price": 467.6582188452746,
@@ -177,8 +177,8 @@
           "Quantity": 68074
         }
       ],
-      "CurrentPrice": 525.3974018042277,
-      "CurrentQuantity": 6455
+      "CurrentPrice": 477.1323169417145,
+      "CurrentQuantity": 7371
     },
     {
       "CurrencyItemId": 144,
@@ -201,9 +201,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 442.52673657672364,
+          "Price": 442.4893110915626,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 11098
+          "Quantity": 12498
         },
         {
           "Price": 445.01192436252654,
@@ -236,8 +236,8 @@
           "Quantity": 5000
         }
       ],
-      "CurrentPrice": 433.73103023158717,
-      "CurrentQuantity": 1364
+      "CurrentPrice": 442.0027797844699,
+      "CurrentQuantity": 1400
     },
     {
       "CurrencyItemId": 155,
@@ -260,9 +260,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 462.0336245191424,
+          "Price": 458.3771678334069,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 9427
+          "Quantity": 10734
         },
         {
           "Price": 407.33296337302323,
@@ -295,67 +295,8 @@
           "Quantity": 4419
         }
       ],
-      "CurrentPrice": 422.20120123014624,
-      "CurrentQuantity": 1049
-    },
-    {
-      "CurrencyItemId": 145,
-      "ItemId": 422,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-dextral-erasure",
-      "Text": "Omen of Dextral Erasure",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMzRGFyayIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/6e2bb52963/VoodooOmens3Dark.png",
-      "ItemMetadata": {
-        "name": "Omen of Dextral Erasure",
-        "base_type": "Omen of Dextral Erasure",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMzRGFyayIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/b2dc9f53fd/VoodooOmens3Dark.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nChaos Orb will remove only suffix modifiers"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 317.60733752927354,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 9944
-        },
-        {
-          "Price": 316.96861954981875,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 20456
-        },
-        {
-          "Price": 292.00183577771804,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 15612
-        },
-        {
-          "Price": 328.27749839573744,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 11978
-        },
-        {
-          "Price": 361.77134213342475,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 11076
-        },
-        {
-          "Price": 288.37834877726635,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 8583
-        },
-        {
-          "Price": 282.02428770465974,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 4961
-        }
-      ],
-      "CurrentPrice": 301.81189603218655,
-      "CurrentQuantity": 996
+      "CurrentPrice": 410.8432309188451,
+      "CurrentQuantity": 1307
     },
     {
       "CurrencyItemId": 156,
@@ -378,9 +319,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 316.6338895007281,
+          "Price": 315.1281576395546,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 9531
+          "Quantity": 10778
         },
         {
           "Price": 334.9556791688693,
@@ -413,8 +354,67 @@
           "Quantity": 4486
         }
       ],
-      "CurrentPrice": 294.88882068153475,
-      "CurrentQuantity": 994
+      "CurrentPrice": 295.5536434442991,
+      "CurrentQuantity": 1247
+    },
+    {
+      "CurrencyItemId": 145,
+      "ItemId": 422,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-dextral-erasure",
+      "Text": "Omen of Dextral Erasure",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMzRGFyayIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/6e2bb52963/VoodooOmens3Dark.png",
+      "ItemMetadata": {
+        "name": "Omen of Dextral Erasure",
+        "base_type": "Omen of Dextral Erasure",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMzRGFyayIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/b2dc9f53fd/VoodooOmens3Dark.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nChaos Orb will remove only suffix modifiers"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 315.76090793776183,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 11195
+        },
+        {
+          "Price": 316.96861954981875,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 20456
+        },
+        {
+          "Price": 292.00183577771804,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 15612
+        },
+        {
+          "Price": 328.27749839573744,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 11978
+        },
+        {
+          "Price": 361.77134213342475,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 11076
+        },
+        {
+          "Price": 288.37834877726635,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 8583
+        },
+        {
+          "Price": 282.02428770465974,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4961
+        }
+      ],
+      "CurrentPrice": 291.7573232481101,
+      "CurrentQuantity": 1251
     },
     {
       "CurrencyItemId": 143,
@@ -437,9 +437,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 277.7143711464675,
+          "Price": 278.1256894535494,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 85615
+          "Quantity": 94829
         },
         {
           "Price": 224.330721649175,
@@ -472,8 +472,8 @@
           "Quantity": 81901
         }
       ],
-      "CurrentPrice": 292.2909525289918,
-      "CurrentQuantity": 8057
+      "CurrentPrice": 283.47282744561426,
+      "CurrentQuantity": 9214
     },
     {
       "CurrencyItemId": 2179,
@@ -494,9 +494,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 127.87394601575555,
+          "Price": 130.65814086365202,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 22292
+          "Quantity": 24802
         },
         {
           "Price": 139.77912937480798,
@@ -529,8 +529,8 @@
           "Quantity": 34474
         }
       ],
-      "CurrentPrice": 153.44912777129167,
-      "CurrentQuantity": 2323
+      "CurrentPrice": 166.85267388630635,
+      "CurrentQuantity": 2510
     },
     {
       "CurrencyItemId": 2181,
@@ -553,9 +553,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 116.43231327786485,
+          "Price": 113.87485840534188,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 158883
+          "Quantity": 177855
         },
         {
           "Price": 131.67361373536673,
@@ -588,67 +588,8 @@
           "Quantity": 193281
         }
       ],
-      "CurrentPrice": 88.41226165987172,
-      "CurrentQuantity": 18056
-    },
-    {
-      "CurrencyItemId": 294,
-      "ItemId": 4333,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-sanctification",
-      "Text": "Omen of Sanctification",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uRGl2aW5lU2FuY3RpZnkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/895416b2b9/OmenOnDivineSanctify.png",
-      "ItemMetadata": {
-        "name": "Omen of Sanctification",
-        "base_type": "Omen of Sanctification",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uRGl2aW5lU2FuY3RpZnkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b0dec7e819/OmenOnDivineSanctify.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nDivine Orb used on a Rare item will Sanctify it"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 34.598580669046115,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 3078
-        },
-        {
-          "Price": 36.95272029605395,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 6156
-        },
-        {
-          "Price": 40.96399165281247,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 5224
-        },
-        {
-          "Price": 48.0569151956987,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 3686
-        },
-        {
-          "Price": 43.29685382958877,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 3840
-        },
-        {
-          "Price": 42.40185349778046,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 3115
-        },
-        {
-          "Price": 42.13365522729128,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 2010
-        }
-      ],
-      "CurrentPrice": 31.230133708855238,
-      "CurrentQuantity": 355
+      "CurrentPrice": 80.62794506254313,
+      "CurrentQuantity": 18972
     },
     {
       "CurrencyItemId": 160,
@@ -671,9 +612,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 26.150849309964574,
+          "Price": 26.544850884113764,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 1076
+          "Quantity": 1188
         },
         {
           "Price": 27.217157116547202,
@@ -706,8 +647,67 @@
           "Quantity": 1066
         }
       ],
-      "CurrentPrice": 29.752808988764045,
-      "CurrentQuantity": 89
+      "CurrentPrice": 31.666871348053235,
+      "CurrentQuantity": 112
+    },
+    {
+      "CurrencyItemId": 294,
+      "ItemId": 4333,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-sanctification",
+      "Text": "Omen of Sanctification",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uRGl2aW5lU2FuY3RpZnkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/895416b2b9/OmenOnDivineSanctify.png",
+      "ItemMetadata": {
+        "name": "Omen of Sanctification",
+        "base_type": "Omen of Sanctification",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uRGl2aW5lU2FuY3RpZnkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b0dec7e819/OmenOnDivineSanctify.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nDivine Orb used on a Rare item will Sanctify it"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 34.18971592955741,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 3397
+        },
+        {
+          "Price": 36.95272029605395,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 6156
+        },
+        {
+          "Price": 40.96399165281247,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 5224
+        },
+        {
+          "Price": 48.0569151956987,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 3686
+        },
+        {
+          "Price": 43.29685382958877,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3840
+        },
+        {
+          "Price": 42.40185349778046,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3115
+        },
+        {
+          "Price": 42.13365522729128,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2010
+        }
+      ],
+      "CurrentPrice": 28.874474316204207,
+      "CurrentQuantity": 319
     },
     {
       "CurrencyItemId": 296,
@@ -730,9 +730,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 24.598298945233886,
+          "Price": 24.789533370920715,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 24028
+          "Quantity": 26592
         },
         {
           "Price": 19.47123617723708,
@@ -765,126 +765,8 @@
           "Quantity": 25659
         }
       ],
-      "CurrentPrice": 27.131347990700355,
-      "CurrentQuantity": 2332
-    },
-    {
-      "CurrencyItemId": 290,
-      "ItemId": 4325,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-chaotic-quantity",
-      "Text": "Omen of Chaotic Quantity",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBQYWNrU2l6ZSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/9ea6c86009/OmenOnChaosMapPackSize.png",
-      "ItemMetadata": {
-        "name": "Omen of Chaotic Quantity",
-        "base_type": "Omen of Chaotic Quantity",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBQYWNrU2l6ZSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/46cd788ec7/OmenOnChaosMapPackSize.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nChaos Orb will replace all Modifiers on a Waystone\nwith Modifiers that grant Pack Size"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 22.28968827719762,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 66041
-        },
-        {
-          "Price": 17.662885034014455,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 133898
-        },
-        {
-          "Price": 11.320393418819881,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 103679
-        },
-        {
-          "Price": 14.38658567007905,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 80497
-        },
-        {
-          "Price": 13.087439478129495,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 74995
-        },
-        {
-          "Price": 10.150074649437569,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 60017
-        },
-        {
-          "Price": 8.945138310203548,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 42127
-        }
-      ],
-      "CurrentPrice": 23.729860814063386,
-      "CurrentQuantity": 6768
-    },
-    {
-      "CurrencyItemId": 295,
-      "ItemId": 4335,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-dextral-crystallisation",
-      "Text": "Omen of Dextral Crystallisation",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uUGVyZmVjdEVzc2VuY2VTdWZmaXgiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7ec019819e/OmenOnPerfectEssenceSuffix.png",
-      "ItemMetadata": {
-        "name": "Omen of Dextral Crystallisation",
-        "base_type": "Omen of Dextral Crystallisation",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uUGVyZmVjdEVzc2VuY2VTdWZmaXgiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2045857884/OmenOnPerfectEssenceSuffix.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nPerfect or Corrupted Essence will remove only Suffix modifiers"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 22.376973898626407,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 25746
-        },
-        {
-          "Price": 21.14490215800595,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 55099
-        },
-        {
-          "Price": 19.288923070853418,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 46634
-        },
-        {
-          "Price": 27.117205957318635,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 38940
-        },
-        {
-          "Price": 21.087100481380013,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 38529
-        },
-        {
-          "Price": 18.686884175608764,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 36438
-        },
-        {
-          "Price": 16.598550649291948,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 27811
-        }
-      ],
-      "CurrentPrice": 22.661246553663766,
-      "CurrentQuantity": 2428
+      "CurrentPrice": 27.275580904849484,
+      "CurrentQuantity": 2564
     },
     {
       "CurrencyItemId": 158,
@@ -907,9 +789,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 21.4097815630866,
+          "Price": 21.440500889747096,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 989
+          "Quantity": 1125
         },
         {
           "Price": 18.513987878362535,
@@ -942,8 +824,126 @@
           "Quantity": 1134
         }
       ],
-      "CurrentPrice": 18.108454951818786,
-      "CurrentQuantity": 85
+      "CurrentPrice": 21.83985213633353,
+      "CurrentQuantity": 136
+    },
+    {
+      "CurrencyItemId": 295,
+      "ItemId": 4335,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-dextral-crystallisation",
+      "Text": "Omen of Dextral Crystallisation",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uUGVyZmVjdEVzc2VuY2VTdWZmaXgiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7ec019819e/OmenOnPerfectEssenceSuffix.png",
+      "ItemMetadata": {
+        "name": "Omen of Dextral Crystallisation",
+        "base_type": "Omen of Dextral Crystallisation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uUGVyZmVjdEVzc2VuY2VTdWZmaXgiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2045857884/OmenOnPerfectEssenceSuffix.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nPerfect or Corrupted Essence will remove only Suffix modifiers"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 22.33348310113718,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 28331
+        },
+        {
+          "Price": 21.14490215800595,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 55099
+        },
+        {
+          "Price": 19.288923070853418,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 46634
+        },
+        {
+          "Price": 27.117205957318635,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 38940
+        },
+        {
+          "Price": 21.087100481380013,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 38529
+        },
+        {
+          "Price": 18.686884175608764,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 36438
+        },
+        {
+          "Price": 16.598550649291948,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 27811
+        }
+      ],
+      "CurrentPrice": 21.768102733777244,
+      "CurrentQuantity": 2585
+    },
+    {
+      "CurrencyItemId": 290,
+      "ItemId": 4325,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-chaotic-quantity",
+      "Text": "Omen of Chaotic Quantity",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBQYWNrU2l6ZSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/9ea6c86009/OmenOnChaosMapPackSize.png",
+      "ItemMetadata": {
+        "name": "Omen of Chaotic Quantity",
+        "base_type": "Omen of Chaotic Quantity",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBQYWNrU2l6ZSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/46cd788ec7/OmenOnChaosMapPackSize.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nChaos Orb will replace all Modifiers on a Waystone\nwith Modifiers that grant Pack Size"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 22.168175666450555,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 74349
+        },
+        {
+          "Price": 17.662885034014455,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 133898
+        },
+        {
+          "Price": 11.320393418819881,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 103679
+        },
+        {
+          "Price": 14.38658567007905,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 80497
+        },
+        {
+          "Price": 13.087439478129495,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 74995
+        },
+        {
+          "Price": 10.150074649437569,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 60017
+        },
+        {
+          "Price": 8.945138310203548,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 42127
+        }
+      ],
+      "CurrentPrice": 20.588511726738695,
+      "CurrentQuantity": 8308
     },
     {
       "CurrencyItemId": 142,
@@ -966,9 +966,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 17.2824055524731,
+          "Price": 17.19178228554826,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 98562
+          "Quantity": 110780
         },
         {
           "Price": 18.983016707699083,
@@ -1001,67 +1001,8 @@
           "Quantity": 92548
         }
       ],
-      "CurrentPrice": 16.295033279779794,
-      "CurrentQuantity": 10745
-    },
-    {
-      "CurrencyItemId": 291,
-      "ItemId": 4327,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-chaotic-monsters",
-      "Text": "Omen of Chaotic Monsters",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBJdGVtUXVhbnRpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/dcd21d0252/OmenOnChaosMapItemQuantity.png",
-      "ItemMetadata": {
-        "name": "Omen of Chaotic Monsters",
-        "base_type": "Omen of Chaotic Monsters",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBJdGVtUXVhbnRpdHkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f68b75552b/OmenOnChaosMapItemQuantity.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nChaos Orb will replace all Modifiers on a Waystone\nwith Modifiers that grant Rare and Magic Monsters"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 8.67213386218974,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 38129
-        },
-        {
-          "Price": 4.842212951718561,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 76454
-        },
-        {
-          "Price": 5.06892855282248,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 61304
-        },
-        {
-          "Price": 4.777151777544464,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 47124
-        },
-        {
-          "Price": 3.700598118318247,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 41527
-        },
-        {
-          "Price": 3.2976149342391476,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 33621
-        },
-        {
-          "Price": 2.7755605018768144,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 24712
-        }
-      ],
-      "CurrentPrice": 10.298251034355657,
-      "CurrentQuantity": 3954
+      "CurrentPrice": 16.013679815525325,
+      "CurrentQuantity": 12218
     },
     {
       "CurrencyItemId": 159,
@@ -1084,9 +1025,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 8.771852623986797,
+          "Price": 9.088714635993398,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 848
+          "Quantity": 949
         },
         {
           "Price": 11.249592919114221,
@@ -1119,8 +1060,67 @@
           "Quantity": 999
         }
       ],
-      "CurrentPrice": 9.538461538461538,
-      "CurrentQuantity": 65
+      "CurrentPrice": 13.207920792079207,
+      "CurrentQuantity": 101
+    },
+    {
+      "CurrencyItemId": 291,
+      "ItemId": 4327,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-chaotic-monsters",
+      "Text": "Omen of Chaotic Monsters",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBJdGVtUXVhbnRpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/dcd21d0252/OmenOnChaosMapItemQuantity.png",
+      "ItemMetadata": {
+        "name": "Omen of Chaotic Monsters",
+        "base_type": "Omen of Chaotic Monsters",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBJdGVtUXVhbnRpdHkiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f68b75552b/OmenOnChaosMapItemQuantity.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nChaos Orb will replace all Modifiers on a Waystone\nwith Modifiers that grant Rare and Magic Monsters"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 8.743718877055203,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 42793
+        },
+        {
+          "Price": 4.842212951718561,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 76454
+        },
+        {
+          "Price": 5.06892855282248,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 61304
+        },
+        {
+          "Price": 4.777151777544464,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 47124
+        },
+        {
+          "Price": 3.700598118318247,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 41527
+        },
+        {
+          "Price": 3.2976149342391476,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 33621
+        },
+        {
+          "Price": 2.7755605018768144,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 24712
+        }
+      ],
+      "CurrentPrice": 9.674324070306206,
+      "CurrentQuantity": 4664
     },
     {
       "CurrencyItemId": 288,
@@ -1143,9 +1143,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 11.894232544464964,
+          "Price": 11.681188217906252,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 8247
+          "Quantity": 9312
         },
         {
           "Price": 10.780686635956501,
@@ -1178,8 +1178,8 @@
           "Quantity": 5017
         }
       ],
-      "CurrentPrice": 9.451475989288628,
-      "CurrentQuantity": 898
+      "CurrentPrice": 8.911611972642982,
+      "CurrentQuantity": 1065
     },
     {
       "CurrencyItemId": 2178,
@@ -1200,9 +1200,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 8.34055917571723,
+          "Price": 8.327466047976786,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 61574
+          "Quantity": 68997
         },
         {
           "Price": 9.1913803631112,
@@ -1227,8 +1227,8 @@
         null,
         null
       ],
-      "CurrentPrice": 7.807889714049296,
-      "CurrentQuantity": 7036
+      "CurrentPrice": 8.157255387351015,
+      "CurrentQuantity": 7423
     },
     {
       "CurrencyItemId": 2189,
@@ -1252,9 +1252,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 6.344876885908269,
+          "Price": 6.426642527397312,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 1560
+          "Quantity": 1833
         },
         {
           "Price": 7.636923974466352,
@@ -1287,8 +1287,8 @@
           "Quantity": 1923
         }
       ],
-      "CurrentPrice": 7.753622426475508,
-      "CurrentQuantity": 188
+      "CurrentPrice": 7.4895958667548745,
+      "CurrentQuantity": 273
     },
     {
       "CurrencyItemId": 297,
@@ -1311,9 +1311,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 6.12385670644467,
+          "Price": 6.116220647374332,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 28337
+          "Quantity": 31748
         },
         {
           "Price": 6.687201409856449,
@@ -1346,8 +1346,8 @@
           "Quantity": 26416
         }
       ],
-      "CurrentPrice": 6.106708514593759,
-      "CurrentQuantity": 2941
+      "CurrentPrice": 6.016951879459934,
+      "CurrentQuantity": 3411
     },
     {
       "CurrencyItemId": 304,
@@ -1370,9 +1370,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 7.7354549235217895,
+          "Price": 7.586148573601588,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 98939
+          "Quantity": 110432
         },
         {
           "Price": 9.264331837616295,
@@ -1405,8 +1405,8 @@
           "Quantity": 151667
         }
       ],
-      "CurrentPrice": 5.987460371831307,
-      "CurrentQuantity": 10087
+      "CurrentPrice": 5.645166024638966,
+      "CurrentQuantity": 11493
     },
     {
       "CurrencyItemId": 301,
@@ -1429,9 +1429,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 4.636427278846058,
+          "Price": 4.630100129799112,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 5560
+          "Quantity": 6146
         },
         {
           "Price": 4.056483164507466,
@@ -1464,731 +1464,8 @@
           "Quantity": 12728
         }
       ],
-      "CurrentPrice": 4.377430815719262,
-      "CurrentQuantity": 577
-    },
-    {
-      "CurrencyItemId": 2180,
-      "ItemId": 13949,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-chaotic-effectiveness",
-      "Text": "Omen of Chaotic Effectiveness",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBNb25zdGVyRWZmZWN0aXZlbmVzcyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/1dc9f3dea9/OmenOnChaosMapMonsterEffectiveness.png",
-      "ItemMetadata": {
-        "name": "Omen of Chaotic Effectiveness",
-        "base_type": "Omen of Chaotic Effectiveness",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBNb25zdGVyRWZmZWN0aXZlbmVzcyIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/dcaa01621b/OmenOnChaosMapMonsterEffectiveness.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nChaos Orb will replace all Modifiers on a Waystone\nwith Modifiers that do not grant Monster Effectiveness"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.017061416668478,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 28297
-        },
-        {
-          "Price": 2.2498791438056966,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 53584
-        },
-        {
-          "Price": 2.6871967863190993,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 49375
-        },
-        {
-          "Price": 3.309604995685706,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 37284
-        },
-        {
-          "Price": 2.8577174826724203,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 39826
-        },
-        {
-          "Price": 3.079861510496771,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 33620
-        },
-        {
-          "Price": 2.627010823150377,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 21738
-        }
-      ],
-      "CurrentPrice": 4.133648604360171,
-      "CurrentQuantity": 2863
-    },
-    {
-      "CurrencyItemId": 2186,
-      "ItemId": 13961,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-the-pharisee",
-      "Text": "Idol of the Pharisee",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8555a2a109/RitualCorruptedIdol3.png",
-      "ItemMetadata": {
-        "name": "Idol of the Pharisee",
-        "base_type": "Idol of the Pharisee",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDMiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/a49b107b5d/RitualCorruptedIdol3.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon, Wand or Staff:",
-          "30% reduced maximum Mana",
-          "Gain 2% of Damage as Extra Physical Damage per ten percent missing Mana",
-          "Sceptres:",
-          "30% reduced Mana Cost Efficiency of Command Skills",
-          "Minions deal 60% increased Damage with Command Skills"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.4489677479432452,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 1533
-        },
-        {
-          "Price": 3.8237305046044034,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 4496
-        },
-        {
-          "Price": 3.738965126230443,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 4002
-        },
-        {
-          "Price": 3.574376896764674,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 3528
-        },
-        {
-          "Price": 3.2678537817238067,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 4271
-        },
-        {
-          "Price": 3.8368301028277814,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 4923
-        },
-        {
-          "Price": 4.8961078796686275,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 4782
-        }
-      ],
-      "CurrentPrice": 3.879249797262568,
-      "CurrentQuantity": 199
-    },
-    {
-      "CurrencyItemId": 293,
-      "ItemId": 4331,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-the-ancients",
-      "Text": "Omen of the Ancients",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhbmNlQW5jaWVudE9yYiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/6392c12c6d/OmenOnChanceAncientOrb.png",
-      "ItemMetadata": {
-        "name": "Omen of the Ancients",
-        "base_type": "Omen of the Ancients",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhbmNlQW5jaWVudE9yYiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/52da374059/OmenOnChanceAncientOrb.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nOrb of Chance will upgrade the Item to a random\nUnique of the same Item Class"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.5021584256905363,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 68540
-        },
-        {
-          "Price": 3.57888716519558,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 143844
-        },
-        {
-          "Price": 3.0040131711661773,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 123723
-        },
-        {
-          "Price": 3.78103512844763,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 100058
-        },
-        {
-          "Price": 3.08797410440959,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 108116
-        },
-        {
-          "Price": 2.574331079400769,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 89943
-        },
-        {
-          "Price": 2.1640282830305524,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 72375
-        }
-      ],
-      "CurrentPrice": 3.649330290273499,
-      "CurrentQuantity": 8220
-    },
-    {
-      "CurrencyItemId": 2191,
-      "ItemId": 13971,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-alira",
-      "Text": "Idol of Alira",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9BbGlyYSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/e42de4138f/IdoloAlira.png",
-      "ItemMetadata": {
-        "name": "Idol of Alira",
-        "base_type": "Idol of Alira",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9BbGlyYSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4a935a9141/IdoloAlira.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Helmets: 15% chance when you gain a Power Charge to gain an additional Power Charge",
-          "Sceptres: When you generate a Power Charge, Allies in your Presence generate that Charge instead"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.6073553358798685,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 1169
-        },
-        {
-          "Price": 4.225613946607265,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 3329
-        },
-        {
-          "Price": 5.549409704542739,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 3665
-        },
-        {
-          "Price": 5.852282699966253,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 3374
-        },
-        {
-          "Price": 4.915392861779079,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 3417
-        },
-        {
-          "Price": 7.279896648151772,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 3963
-        },
-        {
-          "Price": 13.412586732024442,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 3699
-        }
-      ],
-      "CurrentPrice": 3.416396643007787,
-      "CurrentQuantity": 98
-    },
-    {
-      "CurrencyItemId": 2188,
-      "ItemId": 13965,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-yeena",
-      "Text": "Idol of Yeena",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mWWVlbmEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f9671c2da7/IdolofYeena.png",
-      "ItemMetadata": {
-        "name": "Idol of Yeena",
-        "base_type": "Idol of Yeena",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mWWVlbmEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ab3a19bee1/IdolofYeena.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in Boots or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Boots: 30% increased Skill Effect Duration with Plant Skills",
-          "Sceptres: Plants have a 25% chance to immediately Overgrow when they enter your Presence for the first time"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.6673740808040654,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 851
-        },
-        {
-          "Price": 3.6779231916524093,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2841
-        },
-        {
-          "Price": 4.916091609630527,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 2216
-        },
-        {
-          "Price": 5.354634222290033,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1848
-        },
-        {
-          "Price": 3.049877850953347,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 2707
-        },
-        {
-          "Price": 3.1693021679763063,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 2919
-        },
-        {
-          "Price": 4.036088809248359,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1688
-        }
-      ],
-      "CurrentPrice": 3.393939393939394,
-      "CurrentQuantity": 66
-    },
-    {
-      "CurrencyItemId": 286,
-      "ItemId": 4317,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-bartering",
-      "Text": "Omen of Bartering",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lblNlbGxWZW5kb3JSYW5kb21pc2UiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/12ef99da8b/OmenSellVendorRandomise.png",
-      "ItemMetadata": {
-        "name": "Omen of Bartering",
-        "base_type": "Omen of Bartering",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lblNlbGxWZW5kb3JSYW5kb21pc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9506d6863d/OmenSellVendorRandomise.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nsold item's Gold value will be incorrectly assessed by the Vendor"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.4033587838741095,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 111200
-        },
-        {
-          "Price": 3.2487088175736627,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 229313
-        },
-        {
-          "Price": 3.4271652002903785,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 197858
-        },
-        {
-          "Price": 3.8406324523295425,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 160566
-        },
-        {
-          "Price": 3.4703926303943633,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 151554
-        },
-        {
-          "Price": 3.128339512669129,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 121140
-        },
-        {
-          "Price": 3.063105603056741,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 89378
-        }
-      ],
-      "CurrentPrice": 3.342444278551076,
-      "CurrentQuantity": 11990
-    },
-    {
-      "CurrencyItemId": 152,
-      "ItemId": 429,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-sinistral-exaltation",
-      "Text": "Omen of Sinistral Exaltation",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMyWWVsbG93Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6d316b47ee/VoodooOmens2Yellow.png",
-      "ItemMetadata": {
-        "name": "Omen of Sinistral Exaltation",
-        "base_type": "Omen of Sinistral Exaltation",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMyWWVsbG93IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6f754bc336/VoodooOmens2Yellow.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nExalted Orb will add only prefix modifiers"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.1801017180163877,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 49059
-        },
-        {
-          "Price": 3.0702091231027153,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 112883
-        },
-        {
-          "Price": 2.9986732969930165,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 97845
-        },
-        {
-          "Price": 3.258413557534633,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 75828
-        },
-        {
-          "Price": 2.2996880886691318,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 93644
-        },
-        {
-          "Price": 2.2771727135845006,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 95985
-        },
-        {
-          "Price": 2.504066869793856,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 79816
-        }
-      ],
-      "CurrentPrice": 3.131437790279308,
-      "CurrentQuantity": 5892
-    },
-    {
-      "CurrencyItemId": 2184,
-      "ItemId": 13957,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-the-sycophant",
-      "Text": "Idol of the Sycophant",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/cac5e993bc/RitualCorruptedIdol1.png",
-      "ItemMetadata": {
-        "name": "Idol of the Sycophant",
-        "base_type": "Idol of the Sycophant",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/539dd6514c/RitualCorruptedIdol1.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Martial Weapon, Wand or Staff:",
-          "-20% to all Elemental Resistances",
-          "Gain 20% of Damage as Extra Damage of a random Element",
-          "Sceptres:",
-          "Companions in your Presence have -20% to all Elemental Resistances",
-          "Companions in your Presence Gain 20% of Damage as Extra Damage of a random Element"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 2.562796808401747,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 809
-        },
-        {
-          "Price": 2.4824885873637483,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2389
-        },
-        {
-          "Price": 2.4785391567243003,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 2569
-        },
-        {
-          "Price": 2.595183530546104,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 1882
-        },
-        {
-          "Price": 2.9061921026905053,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 2117
-        },
-        {
-          "Price": 2.2423818406835627,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 2430
-        },
-        {
-          "Price": 3.307613131872126,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 2534
-        }
-      ],
-      "CurrentPrice": 3.0825405372313575,
-      "CurrentQuantity": 90
-    },
-    {
-      "CurrencyItemId": 2187,
-      "ItemId": 13963,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-greust",
-      "Text": "Idol of Greust",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mR3JldXN0Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/04513fa428/IdolofGreust.png",
-      "ItemMetadata": {
-        "name": "Idol of Greust",
-        "base_type": "Idol of Greust",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mR3JldXN0IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1d1eae5e2b/IdolofGreust.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Shield, a Buckler or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Shields: +25% of Armour also applies to Elemental Damage",
-          "Bucklers: Gain Deflection Rating equal to 20% of Evasion Rating",
-          "Sceptres: Companions deal 10% more Damage for each different type of dead Companion you have"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 3.1423272708527628,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 432
-        },
-        {
-          "Price": 2.64657059014917,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 1296
-        },
-        {
-          "Price": 2.9682036788833024,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1020
-        },
-        {
-          "Price": 2.8423587896087654,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 789
-        },
-        {
-          "Price": 2.1161854868670984,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 571
-        },
-        {
-          "Price": 2.8201354907399554,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 460
-        },
-        {
-          "Price": 2.7150083804118363,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 645
-        }
-      ],
-      "CurrentPrice": 3.0606060606060606,
-      "CurrentQuantity": 33
-    },
-    {
-      "CurrencyItemId": 2192,
-      "ItemId": 13973,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-kraityn",
-      "Text": "Idol of Kraityn",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9LcmFpdHluIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/06571f7a6a/IdoloKraityn.png",
-      "ItemMetadata": {
-        "name": "Idol of Kraityn",
-        "base_type": "Idol of Kraityn",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9LcmFpdHluIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/146aa404bc/IdoloKraityn.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in Gloves or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Gloves: 15% chance when you gain a Frenzy Charge to gain an additional Frenzy Charge",
-          "Sceptres: When you generate a Frenzy Charge, Allies in your Presence generate that Charge instead"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 6.197713307253095,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 776
-        },
-        {
-          "Price": 3.5036891306396813,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 2069
-        },
-        {
-          "Price": 2.718872546980674,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 1227
-        },
-        {
-          "Price": 2.5730473477914972,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 969
-        },
-        {
-          "Price": 3.3188782076844916,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 1172
-        },
-        {
-          "Price": 3.2730667773823066,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 1459
-        },
-        {
-          "Price": 3.974191414040591,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 1143
-        }
-      ],
-      "CurrentPrice": 2.944313324684814,
-      "CurrentQuantity": 130
-    },
-    {
-      "CurrencyItemId": 151,
-      "ItemId": 428,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-greater-exaltation",
-      "Text": "Omen of Greater Exaltation",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMxWWVsbG93Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/22d9b6478d/VoodooOmens1Yellow.png",
-      "ItemMetadata": {
-        "name": "Omen of Greater Exaltation",
-        "base_type": "Omen of Greater Exaltation",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMxWWVsbG93IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/241d2404af/VoodooOmens1Yellow.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nExalted Orb will add two random modifiers"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 2.8519526700925732,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 170528
-        },
-        {
-          "Price": 3.1756954884717423,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 406002
-        },
-        {
-          "Price": 3.1492300562958864,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 349132
-        },
-        {
-          "Price": 3.8519702022204036,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 314978
-        },
-        {
-          "Price": 3.165079580371049,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 385800
-        },
-        {
-          "Price": 3.491734157973763,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 383635
-        },
-        {
-          "Price": 3.7479646669380475,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 330407
-        }
-      ],
-      "CurrentPrice": 2.9278667354380903,
-      "CurrentQuantity": 17155
-    },
-    {
-      "CurrencyItemId": 302,
-      "ItemId": 4349,
-      "CurrencyCategoryId": 29,
-      "ApiId": "omen-of-putrefaction",
-      "Text": "Omen of Putrefaction",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQWJ5c3NWZWlsQWxsQW5kQ29ycnVwdCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/8c706ec466/OmenOnAbyssVeilAllAndCorrupt.png",
-      "ItemMetadata": {
-        "name": "Omen of Putrefaction",
-        "base_type": "Omen of Putrefaction",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQWJ5c3NWZWlsQWxsQW5kQ29ycnVwdCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4f92d9072c/OmenOnAbyssVeilAllAndCorrupt.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
-        "effect": [
-          "While this item is active in your inventory your next\nDesecration attempt will replace all modifiers on the item\ncreating an item with up to 6 Unrevealed modifiers and Corrupting the item"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 4.184158906339585,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 67025
-        },
-        {
-          "Price": 5.298168093350333,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 154543
-        },
-        {
-          "Price": 6.5492597826945405,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 139865
-        },
-        {
-          "Price": 9.054069175801427,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 118662
-        },
-        {
-          "Price": 6.589638461740127,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 146948
-        },
-        {
-          "Price": 7.851042269412642,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 153824
-        },
-        {
-          "Price": 12.52095070109655,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 134487
-        }
-      ],
-      "CurrentPrice": 2.869040579705417,
-      "CurrentQuantity": 5889
+      "CurrentPrice": 4.547847192188814,
+      "CurrentQuantity": 586
     },
     {
       "CurrencyItemId": 157,
@@ -2211,9 +1488,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 3.2455048184831634,
+          "Price": 3.3057465377978583,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 355
+          "Quantity": 400
         },
         {
           "Price": 4.48668669663272,
@@ -2246,8 +1523,309 @@
           "Quantity": 339
         }
       ],
-      "CurrentPrice": 2.75,
-      "CurrentQuantity": 32
+      "CurrentPrice": 4.088888888888889,
+      "CurrentQuantity": 45
+    },
+    {
+      "CurrencyItemId": 293,
+      "ItemId": 4331,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-the-ancients",
+      "Text": "Omen of the Ancients",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhbmNlQW5jaWVudE9yYiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/6392c12c6d/OmenOnChanceAncientOrb.png",
+      "ItemMetadata": {
+        "name": "Omen of the Ancients",
+        "base_type": "Omen of the Ancients",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhbmNlQW5jaWVudE9yYiIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/52da374059/OmenOnChanceAncientOrb.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nOrb of Chance will upgrade the Item to a random\nUnique of the same Item Class"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.5216096956156298,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 76486
+        },
+        {
+          "Price": 3.57888716519558,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 143844
+        },
+        {
+          "Price": 3.0040131711661773,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 123723
+        },
+        {
+          "Price": 3.78103512844763,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 100058
+        },
+        {
+          "Price": 3.08797410440959,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 108116
+        },
+        {
+          "Price": 2.574331079400769,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 89943
+        },
+        {
+          "Price": 2.1640282830305524,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 72375
+        }
+      ],
+      "CurrentPrice": 3.774476204641841,
+      "CurrentQuantity": 7946
+    },
+    {
+      "CurrencyItemId": 2186,
+      "ItemId": 13961,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-the-pharisee",
+      "Text": "Idol of the Pharisee",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/8555a2a109/RitualCorruptedIdol3.png",
+      "ItemMetadata": {
+        "name": "Idol of the Pharisee",
+        "base_type": "Idol of the Pharisee",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDMiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/a49b107b5d/RitualCorruptedIdol3.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon, Wand or Staff:",
+          "30% reduced maximum Mana",
+          "Gain 2% of Damage as Extra Physical Damage per ten percent missing Mana",
+          "Sceptres:",
+          "30% reduced Mana Cost Efficiency of Command Skills",
+          "Minions deal 60% increased Damage with Command Skills"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.4711712332348,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1701
+        },
+        {
+          "Price": 3.8237305046044034,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 4496
+        },
+        {
+          "Price": 3.738965126230443,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 4002
+        },
+        {
+          "Price": 3.574376896764674,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 3528
+        },
+        {
+          "Price": 3.2678537817238067,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 4271
+        },
+        {
+          "Price": 3.8368301028277814,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 4923
+        },
+        {
+          "Price": 4.8961078796686275,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 4782
+        }
+      ],
+      "CurrentPrice": 3.759816542025013,
+      "CurrentQuantity": 168
+    },
+    {
+      "CurrencyItemId": 2180,
+      "ItemId": 13949,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-chaotic-effectiveness",
+      "Text": "Omen of Chaotic Effectiveness",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBNb25zdGVyRWZmZWN0aXZlbmVzcyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/1dc9f3dea9/OmenOnChaosMapMonsterEffectiveness.png",
+      "ItemMetadata": {
+        "name": "Omen of Chaotic Effectiveness",
+        "base_type": "Omen of Chaotic Effectiveness",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQ2hhb3NNYXBNb25zdGVyRWZmZWN0aXZlbmVzcyIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/dcaa01621b/OmenOnChaosMapMonsterEffectiveness.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nChaos Orb will replace all Modifiers on a Waystone\nwith Modifiers that do not grant Monster Effectiveness"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.058729597241467,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 31684
+        },
+        {
+          "Price": 2.2498791438056966,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 53584
+        },
+        {
+          "Price": 2.6871967863190993,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 49375
+        },
+        {
+          "Price": 3.309604995685706,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 37284
+        },
+        {
+          "Price": 2.8577174826724203,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 39826
+        },
+        {
+          "Price": 3.079861510496771,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 33620
+        },
+        {
+          "Price": 2.627010823150377,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 21738
+        }
+      ],
+      "CurrentPrice": 3.6004159446903254,
+      "CurrentQuantity": 3387
+    },
+    {
+      "CurrencyItemId": 2188,
+      "ItemId": 13965,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-yeena",
+      "Text": "Idol of Yeena",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mWWVlbmEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/f9671c2da7/IdolofYeena.png",
+      "ItemMetadata": {
+        "name": "Idol of Yeena",
+        "base_type": "Idol of Yeena",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mWWVlbmEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ab3a19bee1/IdolofYeena.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in Boots or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Boots: 30% increased Skill Effect Duration with Plant Skills",
+          "Sceptres: Plants have a 25% chance to immediately Overgrow when they enter your Presence for the first time"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.6603392794521348,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 959
+        },
+        {
+          "Price": 3.6779231916524093,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2841
+        },
+        {
+          "Price": 4.916091609630527,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2216
+        },
+        {
+          "Price": 5.354634222290033,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1848
+        },
+        {
+          "Price": 3.049877850953347,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2707
+        },
+        {
+          "Price": 3.1693021679763063,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2919
+        },
+        {
+          "Price": 4.036088809248359,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1688
+        }
+      ],
+      "CurrentPrice": 3.568886861877043,
+      "CurrentQuantity": 108
+    },
+    {
+      "CurrencyItemId": 286,
+      "ItemId": 4317,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-bartering",
+      "Text": "Omen of Bartering",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lblNlbGxWZW5kb3JSYW5kb21pc2UiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/12ef99da8b/OmenSellVendorRandomise.png",
+      "ItemMetadata": {
+        "name": "Omen of Bartering",
+        "base_type": "Omen of Bartering",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lblNlbGxWZW5kb3JSYW5kb21pc2UiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/9506d6863d/OmenSellVendorRandomise.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nsold item's Gold value will be incorrectly assessed by the Vendor"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.404319983594882,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 122094
+        },
+        {
+          "Price": 3.2487088175736627,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 229313
+        },
+        {
+          "Price": 3.4271652002903785,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 197858
+        },
+        {
+          "Price": 3.8406324523295425,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 160566
+        },
+        {
+          "Price": 3.4703926303943633,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 151554
+        },
+        {
+          "Price": 3.128339512669129,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 121140
+        },
+        {
+          "Price": 3.063105603056741,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 89378
+        }
+      ],
+      "CurrentPrice": 3.4168155799649234,
+      "CurrentQuantity": 10894
     },
     {
       "CurrencyItemId": 2190,
@@ -2271,9 +1849,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 3.971019438232747,
+          "Price": 3.9172859069304082,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 1251
+          "Quantity": 1347
         },
         {
           "Price": 3.946979553112555,
@@ -2306,8 +1884,366 @@
           "Quantity": 2141
         }
       ],
-      "CurrentPrice": 2.6554621848739495,
-      "CurrentQuantity": 119
+      "CurrentPrice": 3.21875,
+      "CurrentQuantity": 96
+    },
+    {
+      "CurrencyItemId": 302,
+      "ItemId": 4349,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-putrefaction",
+      "Text": "Omen of Putrefaction",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQWJ5c3NWZWlsQWxsQW5kQ29ycnVwdCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/8c706ec466/OmenOnAbyssVeilAllAndCorrupt.png",
+      "ItemMetadata": {
+        "name": "Omen of Putrefaction",
+        "base_type": "Omen of Putrefaction",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvT21lbk9uQWJ5c3NWZWlsQWxsQW5kQ29ycnVwdCIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4f92d9072c/OmenOnAbyssVeilAllAndCorrupt.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nDesecration attempt will replace all modifiers on the item\ncreating an item with up to 6 Unrevealed modifiers and Corrupting the item"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 4.09952035303068,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 74409
+        },
+        {
+          "Price": 5.298168093350333,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 154543
+        },
+        {
+          "Price": 6.5492597826945405,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 139865
+        },
+        {
+          "Price": 9.054069175801427,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 118662
+        },
+        {
+          "Price": 6.589638461740127,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 146948
+        },
+        {
+          "Price": 7.851042269412642,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 153824
+        },
+        {
+          "Price": 12.52095070109655,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 134487
+        }
+      ],
+      "CurrentPrice": 2.999219160014926,
+      "CurrentQuantity": 7384
+    },
+    {
+      "CurrencyItemId": 152,
+      "ItemId": 429,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-sinistral-exaltation",
+      "Text": "Omen of Sinistral Exaltation",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMyWWVsbG93Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6d316b47ee/VoodooOmens2Yellow.png",
+      "ItemMetadata": {
+        "name": "Omen of Sinistral Exaltation",
+        "base_type": "Omen of Sinistral Exaltation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMyWWVsbG93IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/6f754bc336/VoodooOmens2Yellow.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nExalted Orb will add only prefix modifiers"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.1659826843126107,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 54921
+        },
+        {
+          "Price": 3.0702091231027153,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 112883
+        },
+        {
+          "Price": 2.9986732969930165,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 97845
+        },
+        {
+          "Price": 3.258413557534633,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 75828
+        },
+        {
+          "Price": 2.2996880886691318,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 93644
+        },
+        {
+          "Price": 2.2771727135845006,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 95985
+        },
+        {
+          "Price": 2.504066869793856,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 79816
+        }
+      ],
+      "CurrentPrice": 2.9824352461635133,
+      "CurrentQuantity": 5862
+    },
+    {
+      "CurrencyItemId": 151,
+      "ItemId": 428,
+      "CurrencyCategoryId": 29,
+      "ApiId": "omen-of-greater-exaltation",
+      "Text": "Omen of Greater Exaltation",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMxWWVsbG93Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/22d9b6478d/VoodooOmens1Yellow.png",
+      "ItemMetadata": {
+        "name": "Omen of Greater Exaltation",
+        "base_type": "Omen of Greater Exaltation",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvT21lbnMvVm9vZG9vT21lbnMxWWVsbG93IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/241d2404af/VoodooOmens1Yellow.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Right click this item in your inventory to set it to be active. This item is consumed when triggered.",
+        "effect": [
+          "While this item is active in your inventory your next\nExalted Orb will add two random modifiers"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.85785822618053,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 188400
+        },
+        {
+          "Price": 3.1756954884717423,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 406002
+        },
+        {
+          "Price": 3.1492300562958864,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 349132
+        },
+        {
+          "Price": 3.8519702022204036,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 314978
+        },
+        {
+          "Price": 3.165079580371049,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 385800
+        },
+        {
+          "Price": 3.491734157973763,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 383635
+        },
+        {
+          "Price": 3.7479646669380475,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 330407
+        }
+      ],
+      "CurrentPrice": 2.9346304553239726,
+      "CurrentQuantity": 17872
+    },
+    {
+      "CurrencyItemId": 2191,
+      "ItemId": 13971,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-alira",
+      "Text": "Idol of Alira",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9BbGlyYSIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/e42de4138f/IdoloAlira.png",
+      "ItemMetadata": {
+        "name": "Idol of Alira",
+        "base_type": "Idol of Alira",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9BbGlyYSIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/4a935a9141/IdoloAlira.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Helmet or Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Helmets: 15% chance when you gain a Power Charge to gain an additional Power Charge",
+          "Sceptres: When you generate a Power Charge, Allies in your Presence generate that Charge instead"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.550588048028524,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 1322
+        },
+        {
+          "Price": 4.225613946607265,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 3329
+        },
+        {
+          "Price": 5.549409704542739,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 3665
+        },
+        {
+          "Price": 5.852282699966253,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 3374
+        },
+        {
+          "Price": 4.915392861779079,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 3417
+        },
+        {
+          "Price": 7.279896648151772,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 3963
+        },
+        {
+          "Price": 13.412586732024442,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 3699
+        }
+      ],
+      "CurrentPrice": 2.8126133059610487,
+      "CurrentQuantity": 153
+    },
+    {
+      "CurrencyItemId": 2192,
+      "ItemId": 13973,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-kraityn",
+      "Text": "Idol of Kraityn",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9LcmFpdHluIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/06571f7a6a/IdoloKraityn.png",
+      "ItemMetadata": {
+        "name": "Idol of Kraityn",
+        "base_type": "Idol of Kraityn",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9LcmFpdHluIiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/146aa404bc/IdoloKraityn.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in Gloves or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Gloves: 15% chance when you gain a Frenzy Charge to gain an additional Frenzy Charge",
+          "Sceptres: When you generate a Frenzy Charge, Allies in your Presence generate that Charge instead"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 5.955103764874035,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 869
+        },
+        {
+          "Price": 3.5036891306396813,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2069
+        },
+        {
+          "Price": 2.718872546980674,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1227
+        },
+        {
+          "Price": 2.5730473477914972,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 969
+        },
+        {
+          "Price": 3.3188782076844916,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 1172
+        },
+        {
+          "Price": 3.2730667773823066,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 1459
+        },
+        {
+          "Price": 3.974191414040591,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 1143
+        }
+      ],
+      "CurrentPrice": 2.801179713946252,
+      "CurrentQuantity": 93
+    },
+    {
+      "CurrencyItemId": 2187,
+      "ItemId": 13963,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-greust",
+      "Text": "Idol of Greust",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mR3JldXN0Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/04513fa428/IdolofGreust.png",
+      "ItemMetadata": {
+        "name": "Idol of Greust",
+        "base_type": "Idol of Greust",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mR3JldXN0IiwidyI6MSwiaCI6MSwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/1d1eae5e2b/IdolofGreust.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Shield, a Buckler or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Shields: +25% of Armour also applies to Elemental Damage",
+          "Bucklers: Gain Deflection Rating equal to 20% of Evasion Rating",
+          "Sceptres: Companions deal 10% more Damage for each different type of dead Companion you have"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 3.113888611971253,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 475
+        },
+        {
+          "Price": 2.64657059014917,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 1296
+        },
+        {
+          "Price": 2.9682036788833024,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 1020
+        },
+        {
+          "Price": 2.8423587896087654,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 789
+        },
+        {
+          "Price": 2.1161854868670984,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 571
+        },
+        {
+          "Price": 2.8201354907399554,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 460
+        },
+        {
+          "Price": 2.7150083804118363,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 645
+        }
+      ],
+      "CurrentPrice": 2.744186046511628,
+      "CurrentQuantity": 43
     },
     {
       "CurrencyItemId": 289,
@@ -2330,9 +2266,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 2.714064958107064,
+          "Price": 2.707599119575843,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 36068
+          "Quantity": 40318
         },
         {
           "Price": 2.5691409345444396,
@@ -2365,8 +2301,72 @@
           "Quantity": 33323
         }
       ],
-      "CurrentPrice": 2.459246060348358,
-      "CurrentQuantity": 4323
+      "CurrentPrice": 2.6235432186699694,
+      "CurrentQuantity": 4250
+    },
+    {
+      "CurrencyItemId": 2184,
+      "ItemId": 13957,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-the-sycophant",
+      "Text": "Idol of the Sycophant",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/cac5e993bc/RitualCorruptedIdol1.png",
+      "ItemMetadata": {
+        "name": "Idol of the Sycophant",
+        "base_type": "Idol of the Sycophant",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvUml0dWFsQ29ycnVwdGVkSWRvbDEiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/539dd6514c/RitualCorruptedIdol1.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Weapon to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Martial Weapon, Wand or Staff:",
+          "-20% to all Elemental Resistances",
+          "Gain 20% of Damage as Extra Damage of a random Element",
+          "Sceptres:",
+          "Companions in your Presence have -20% to all Elemental Resistances",
+          "Companions in your Presence Gain 20% of Damage as Extra Damage of a random Element"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 2.5283690421450564,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 908
+        },
+        {
+          "Price": 2.4824885873637483,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 2389
+        },
+        {
+          "Price": 2.4785391567243003,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 2569
+        },
+        {
+          "Price": 2.595183530546104,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 1882
+        },
+        {
+          "Price": 2.9061921026905053,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 2117
+        },
+        {
+          "Price": 2.2423818406835627,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 2430
+        },
+        {
+          "Price": 3.307613131872126,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 2534
+        }
+      ],
+      "CurrentPrice": 2.080808080808081,
+      "CurrentQuantity": 99
     },
     {
       "CurrencyItemId": 2185,
@@ -2394,9 +2394,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 3.4669211801558553,
+          "Price": 3.366607676425126,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 772
+          "Quantity": 843
         },
         {
           "Price": 2.319064927732422,
@@ -2429,7 +2429,7 @@
           "Quantity": 686
         }
       ],
-      "CurrentPrice": 1.9487517493373607,
+      "CurrentPrice": 2.062532127925642,
       "CurrentQuantity": 71
     },
     {
@@ -2453,9 +2453,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 1.9499360245326645,
+          "Price": 1.9498075105587416,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 69367
+          "Quantity": 77115
         },
         {
           "Price": 2.470586919934511,
@@ -2488,8 +2488,8 @@
           "Quantity": 63782
         }
       ],
-      "CurrentPrice": 1.942727785257102,
-      "CurrentQuantity": 7132
+      "CurrentPrice": 1.9481368288977436,
+      "CurrentQuantity": 7748
     },
     {
       "CurrencyItemId": 305,
@@ -2512,9 +2512,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 2.096112990178219,
+          "Price": 2.074718458820615,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 70838
+          "Quantity": 80133
         },
         {
           "Price": 2.182200064395753,
@@ -2547,8 +2547,8 @@
           "Quantity": 121245
         }
       ],
-      "CurrentPrice": 1.908189130616063,
-      "CurrentQuantity": 8031
+      "CurrentPrice": 1.7965895511717616,
+      "CurrentQuantity": 9295
     },
     {
       "CurrencyItemId": 153,
@@ -2571,9 +2571,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 1.502183020564703,
+          "Price": 1.4982664918602115,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 46451
+          "Quantity": 51262
         },
         {
           "Price": 1.619791271647259,
@@ -2606,8 +2606,8 @@
           "Quantity": 80489
         }
       ],
-      "CurrentPrice": 1.4027004667893066,
-      "CurrentQuantity": 4996
+      "CurrentPrice": 1.4473516187018185,
+      "CurrentQuantity": 4811
     },
     {
       "CurrencyItemId": 2183,
@@ -2631,9 +2631,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 1.3023011502976967,
+          "Price": 1.2840159933716886,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 4004
+          "Quantity": 4275
         },
         {
           "Price": 1.6460482941758068,
@@ -2666,68 +2666,8 @@
           "Quantity": 7974
         }
       ],
-      "CurrentPrice": 1.2817207069404377,
-      "CurrentQuantity": 304
-    },
-    {
-      "CurrencyItemId": 2193,
-      "ItemId": 13975,
-      "CurrencyCategoryId": 29,
-      "ApiId": "idol-of-silk",
-      "Text": "Idol of Silk",
-      "CategoryApiId": "ritual",
-      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mU2lsayIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/79679b0f2b/IdolofSilk.png",
-      "ItemMetadata": {
-        "name": "Idol of Silk",
-        "base_type": "Idol of Silk",
-        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mU2lsayIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/79b3c0a827/IdolofSilk.png",
-        "stack_size": 1,
-        "max_stack_size": 10,
-        "description": "Place into an empty Augment Socket in a Shield, Buckler or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
-        "effect": [
-          "Shields: 15% increased Block chance while your Companion is in your Presence",
-          "Sceptres: Companions in your Presence gain 1 Rage on hit"
-        ]
-      },
-      "PriceLogs": [
-        {
-          "Price": 0.9229577738253164,
-          "Time": "2026-06-08T00:00:00",
-          "Quantity": 102
-        },
-        {
-          "Price": 1.1366813805730334,
-          "Time": "2026-06-07T00:00:00",
-          "Quantity": 360
-        },
-        {
-          "Price": 1.1071368256782137,
-          "Time": "2026-06-06T00:00:00",
-          "Quantity": 212
-        },
-        {
-          "Price": 1.5407247022362123,
-          "Time": "2026-06-05T00:00:00",
-          "Quantity": 261
-        },
-        {
-          "Price": 1.930482848285977,
-          "Time": "2026-06-04T00:00:00",
-          "Quantity": 230
-        },
-        {
-          "Price": 1.5342914784687254,
-          "Time": "2026-06-03T00:00:00",
-          "Quantity": 235
-        },
-        {
-          "Price": 2.749230352378602,
-          "Time": "2026-06-02T00:00:00",
-          "Quantity": 223
-        }
-      ],
-      "CurrentPrice": 0.8181818181818182,
-      "CurrentQuantity": 11
+      "CurrentPrice": 1.046308953333582,
+      "CurrentQuantity": 271
     },
     {
       "CurrencyItemId": 299,
@@ -2750,9 +2690,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 0.9969696814187177,
+          "Price": 0.9821779863179538,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 5939
+          "Quantity": 6643
         },
         {
           "Price": 1.1082313698624404,
@@ -2785,8 +2725,68 @@
           "Quantity": 19285
         }
       ],
-      "CurrentPrice": 0.7528519897397391,
-      "CurrentQuantity": 565
+      "CurrentPrice": 0.7898859500080245,
+      "CurrentQuantity": 704
+    },
+    {
+      "CurrencyItemId": 2193,
+      "ItemId": 13975,
+      "CurrencyCategoryId": 29,
+      "ApiId": "idol-of-silk",
+      "Text": "Idol of Silk",
+      "CategoryApiId": "ritual",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mU2lsayIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/79679b0f2b/IdolofSilk.png",
+      "ItemMetadata": {
+        "name": "Idol of Silk",
+        "base_type": "Idol of Silk",
+        "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvVG9ybWVudGVkU3Bpcml0U29ja2V0YWJsZXMvSWRvbG9mU2lsayIsInciOjEsImgiOjEsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/79b3c0a827/IdolofSilk.png",
+        "stack_size": 1,
+        "max_stack_size": 10,
+        "description": "Place into an empty Augment Socket in a Shield, Buckler or a Sceptre to apply its effect to that item. Once socketed it cannot be retrieved but can be replaced by other Augment items.",
+        "effect": [
+          "Shields: 15% increased Block chance while your Companion is in your Presence",
+          "Sceptres: Companions in your Presence gain 1 Rage on hit"
+        ]
+      },
+      "PriceLogs": [
+        {
+          "Price": 0.9119772734971345,
+          "Time": "2026-06-08T00:00:00",
+          "Quantity": 115
+        },
+        {
+          "Price": 1.1366813805730334,
+          "Time": "2026-06-07T00:00:00",
+          "Quantity": 360
+        },
+        {
+          "Price": 1.1071368256782137,
+          "Time": "2026-06-06T00:00:00",
+          "Quantity": 212
+        },
+        {
+          "Price": 1.5407247022362123,
+          "Time": "2026-06-05T00:00:00",
+          "Quantity": 261
+        },
+        {
+          "Price": 1.930482848285977,
+          "Time": "2026-06-04T00:00:00",
+          "Quantity": 230
+        },
+        {
+          "Price": 1.5342914784687254,
+          "Time": "2026-06-03T00:00:00",
+          "Quantity": 235
+        },
+        {
+          "Price": 2.749230352378602,
+          "Time": "2026-06-02T00:00:00",
+          "Quantity": 223
+        }
+      ],
+      "CurrentPrice": 0.7692307692307693,
+      "CurrentQuantity": 13
     },
     {
       "CurrencyItemId": 285,
@@ -2809,9 +2809,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 0.5651233335141777,
+          "Price": 0.5705242074412943,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 18419
+          "Quantity": 20445
         },
         {
           "Price": 0.5632507265064296,
@@ -2844,8 +2844,8 @@
           "Quantity": 15682
         }
       ],
-      "CurrentPrice": 0.4787209139070912,
-      "CurrentQuantity": 1770
+      "CurrentPrice": 0.6407355684938103,
+      "CurrentQuantity": 2026
     },
     {
       "CurrencyItemId": 300,
@@ -2868,9 +2868,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 0.26130850400717676,
+          "Price": 0.2621074705138758,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 15805
+          "Quantity": 17510
         },
         {
           "Price": 0.2731238462247962,
@@ -2903,8 +2903,8 @@
           "Quantity": 39873
         }
       ],
-      "CurrentPrice": 0.2987717074826498,
-      "CurrentQuantity": 1644
+      "CurrentPrice": 0.2724940351009627,
+      "CurrentQuantity": 1705
     },
     {
       "CurrencyItemId": 140,
@@ -2927,9 +2927,9 @@
       },
       "PriceLogs": [
         {
-          "Price": 0.25633987148306814,
+          "Price": 0.253793892063048,
           "Time": "2026-06-08T00:00:00",
-          "Quantity": 10723
+          "Quantity": 11603
         },
         {
           "Price": 0.2749202238613396,
@@ -2962,8 +2962,8 @@
           "Quantity": 9131
         }
       ],
-      "CurrentPrice": 0.20382660363411076,
-      "CurrentQuantity": 1214
+      "CurrentPrice": 0.2206961596027859,
+      "CurrentQuantity": 880
     }
   ]
 }
