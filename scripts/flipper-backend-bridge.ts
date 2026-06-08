@@ -54,7 +54,7 @@ let consecutiveUnhealthy = 0;
 // We also check for package.json as a sanity check, falling back to __dirname
 // if CWD looks wrong (e.g. during development with tsx).
 function getProjectRoot(): string {
-  const cwd = process.cwd();
+  const cwd = /* turbopackIgnore: true */ process.cwd();
   if (existsSync(join(cwd, "package.json"))) {
     return cwd;
   }
@@ -198,23 +198,20 @@ function detectPythonCommand(): string {
 }
 
 /**
- * Detect if uvicorn is available.
- * Returns empty array if uvicorn binary found (use directly),
- * or ["-m", "uvicorn"] to invoke via python -m uvicorn.
+ * Always use `python -m uvicorn` to start the backend.
+ *
+ * Previously, when uvicorn.exe / uvicorn binary was found in .venv, the bridge
+ * would omit `-m uvicorn` from the args and just pass `backend.main:app` as a
+ * positional arg to python. This caused Python to interpret `backend.main:app`
+ * as a script filename (ENOENT), NOT as a uvicorn app spec.
+ *
+ * Using `python -m uvicorn backend.main:app` is always correct because:
+ * 1. The venv python finds uvicorn in its own site-packages automatically.
+ * 2. It avoids path-encoding issues with non-ASCII chars in the uvicorn.exe path
+ *    on Windows (e.g., Cyrillic characters in user profile directories).
+ * 3. It matches what start.bat / start.sh do when running uvicorn manually.
  */
 function getUvicornArgs(): string[] {
-  // Check if .venv has uvicorn directly
-  const winUvicorn = join(projectRoot, ".venv", "Scripts", "uvicorn.exe");
-  if (existsSync(winUvicorn)) {
-    return [];
-  }
-
-  const unixUvicorn = join(projectRoot, ".venv", "bin", "uvicorn");
-  if (existsSync(unixUvicorn)) {
-    return [];
-  }
-
-  // Will use python -m uvicorn
   return ["-m", "uvicorn"];
 }
 

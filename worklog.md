@@ -1,21 +1,19 @@
 # Worklog
 
 ---
-Task ID: 20
+Task ID: 21
 Agent: main
-Task: Iteration 10 — Fix bridge `spawn python ENOENT`, PYTHON_CMD env var, project root detection
+Task: Iteration 11 — Fix bridge `python backend.main:app` wrong spawn command, Turbopack NFT warning
 
 Work Log:
-- Fixed `flipper-backend-bridge.ts`: replaced `join(__dirname, "..")` with `getProjectRoot()` that checks `process.cwd()` first (reliable for `next start`), falls back to `__dirname` relative
-- Added `PYTHON_CMD` env var support to `detectPythonCommand()` — checked before .venv heuristics
-- Updated `start.bat`: exports `PYTHON_CMD` with the venv python path (`.venv\Scripts\python.exe`)
-- Updated `start.sh`: exports `PYTHON_CMD` with the venv/system python path
-- Added `projectRoot` to bridge startup log output for easier debugging
-- Reviewed BestPaymentBadge + Premium column: code correct for Omens/Soul Cores (isItemCategory, CrossCurrencyPremiumCell)
-- Updated AGENT_NAVIGATION.md to v1.25
-- Updated ARCHITECTURE.md §10 to v1.25
+- Fixed `flipper-backend-bridge.ts`: `getUvicornArgs()` now always returns `["-m", "uvicorn"]` instead of conditionally returning `[]` when uvicorn.exe found. The old logic caused `spawn(pythonCmd, ["backend.main:app", ...])` — Python treated `backend.main:app` as a filename, not a uvicorn app spec.
+- Added `/* turbopackIgnore: true */` before `process.cwd()` in `getProjectRoot()` to suppress Turbopack "Encountered unexpected file in NFT list" build warning.
+- The Cyrillic path garbling in error messages was a symptom of the same bug — Python was outputting the full path to `backend.main:app` as a filename, and the console couldn't render Cyrillic in that context. Fixed by the `-m uvicorn` change.
+- Cleaned up AGENT_NAVIGATION.md: consolidated old iteration history (v1.15–v1.22) into compact summaries, added v1.26 iteration entry, added frequent bug #34.
+- Noted TODO: BestPaymentBadge + Premium column need to be added to Flips tab (currently only on Exchange tab). This requires passing `optimalPaymentByPair` through component hierarchy and adding UI column.
 
 Stage Summary:
-- Root cause of `spawn python ENOENT`: after Turbopack bundling, `__dirname` points inside `.next/server/`, not project root → `.venv` not found → fallback to "python" fails
-- Fix: process.cwd() for project root + PYTHON_CMD env var from start scripts
-- BestPaymentBadge/Premium column code is correct — manual browser verification still TODO
+- Root cause of bridge failure: `getUvicornArgs()` returned `[]` when uvicorn.exe existed, making Python interpret `backend.main:app` as a script path, not a uvicorn module spec
+- Fix: always use `python -m uvicorn backend.main:app` (matches what start.bat/start.sh do manually)
+- Turbopack warning fixed with `/* turbopackIgnore: true */`
+- BestPaymentBadge/Premium column on Flips tab is TODO for next iteration

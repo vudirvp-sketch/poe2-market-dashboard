@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.25 | **Date:** 2026-06-09
+> **Version:** 1.26 | **Date:** 2026-06-09
 
 ---
 
@@ -99,82 +99,25 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Live E2E flip verification** — Code review confirms: BestPaymentBadge renders for Omens/Soul Cores via `isItemCategory()`, Premium column shows savings via `CrossCurrencyPremiumCell`, production build compiles without errors. Remaining: manual browser verification at http://localhost:3000 → Flips tab to confirm visual rendering. No VPN needed — poe2scout.com is accessible.
-2. **Bridge real-world Windows testing** — v1.25 fixes the `spawn python ENOENT` root cause (project root detection + PYTHON_CMD env var). Needs real-world testing on Windows: (a) start.bat without --no-bridge → Python starts and restarts on crash, (b) Ctrl+C kills both Node + Python, (c) flipper-bridge.log shows correct entries, (d) Project root is detected correctly.
+1. **BestPaymentBadge + Premium column on Flips tab** — Currently these features only exist on the Exchange tab. The Flips tab (`flips-table.tsx`) does not show BestPaymentBadge for Omens/Soul Cores or a Premium savings column. To add them: (a) pass `optimalPaymentByPair` + `anchorId` from `dashboard-page.tsx` → `FlipsTab` → `FlipsTable`, (b) build a name-based lookup (`Map<"currency1Name/currency2Name", OptimalPaymentResult>`) since flip `currency` field uses display names while `optimalPaymentByPair` is keyed by pair ID, (c) add Premium column to `FlipsTable` grid, (d) add i18n keys for "Premium" header. The Exchange tab already works correctly — verify at http://localhost:3000 → Exchange tab.
+2. **Bridge real-world Windows testing** — v1.26 fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug and adds `/* turbopackIgnore: true */` for the NFT warning. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
 
-### COMPLETED (v1.25 — Iteration 10)
-1. ~~**Bridge `spawn python ENOENT` on Windows**~~ — Root cause: after Next.js Turbopack bundles `flipper-backend-bridge.ts`, `__dirname` points inside `.next/server/` — NOT the project root. So `.venv` is never found, and the fallback `"python"` fails with `ENOENT` because Python isn't in PATH. Fix: replaced `join(__dirname, "..")` with `getProjectRoot()` that checks `process.cwd()` first (always correct for `next start`), then falls back to `__dirname` relative. Also added `PYTHON_CMD` env var support — start.bat / start.sh now export `PYTHON_CMD` with the venv python path they already detected, so the bridge doesn't need to rediscover it.
-2. ~~**start.bat `where` command error**~~ — Confirmed: `where.exe` fix from v1.24 works. Removed from TODO.
+### COMPLETED (v1.26 — Iteration 11)
+1. ~~**Bridge `python backend.main:app` — wrong spawn command**~~ — `getUvicornArgs()` returned `[]` when uvicorn.exe found → Python treated `backend.main:app` as filename → ENOENT. Fix: always return `["-m", "uvicorn"]`. Also fixes Cyrillic path issues on Windows.
+2. ~~**Turbopack "unexpected file in NFT list" warning**~~ — Added `/* turbopackIgnore: true */` before `process.cwd()` in `getProjectRoot()`.
 
-### COMPLETED (v1.24 — Iteration 9)
-1. ~~**Bridge SIGTERM/SIGKILL doesn't work on Windows**~~ — Root cause: `child_process.kill("SIGTERM")` on Windows sends a signal that Python doesn't handle (no POSIX signals). Fix: `flipper-backend-bridge.ts` now uses `taskkill /PID <pid> /T /F` via `execSync()` on Windows for reliable process tree termination. Unix keeps SIGTERM → SIGKILL (5s grace). Added `isWindows` platform detection.
-2. ~~**Bridge has no file logging**~~ — Bridge now writes all logs to `flipper-bridge.log` in the project root. Logs include timestamps, platform info, startup/shutdown events, health check results, restart attempts. Log file rotates at 2 MB (truncation). Console output preserved (dual output).
-3. ~~**Bridge health monitoring doesn't kill stuck processes**~~ — Added `consecutiveUnhealthy` counter. If health check fails 3 times in a row (MAX_CONSECUTIVE_UNHEALTHY), the bridge kills the process tree, which triggers auto-restart via the exit handler. Previously, a "stuck" process would stay alive but unresponsive indefinitely.
-4. ~~**start.bat `where` command parse error**~~ — Replaced `where` with `where.exe` to prevent CMD parsing issues. Added `--no-bridge` flag documentation in header. Bridge mode is now disabled in `--dev` mode (`FLIPPER_BRIDGE_DISABLED=true`) because uvicorn --reload handles restarts. Added `flipper-bridge.log` reference in startup messages.
-5. ~~**start.sh missing bridge mode**~~ — Added `--no-bridge` flag to start.sh (matches start.bat behavior). Default is bridge mode: `FLIPPER_BRIDGE_DISABLED=false` is exported, Next.js manages Python backend. In `--dev` mode, bridge is disabled (uvicorn --reload handles restarts). In `--no-bridge` mode, start.sh starts Python backend separately and exports `FLIPPER_BRIDGE_DISABLED=true`.
-6. ~~**WebSocket reconnect on backend restart**~~ — Verified that `use-websocket.ts` already correctly handles `backendOnline` transitions (false→true resets state and reconnects). The health polling in `dashboard-page.tsx` (every 30s via React Query) drives `flipperBackendOnline`, which triggers WebSocket reconnect when the bridge restarts the backend.
+### COMPLETED (v1.23–v1.25 — Iterations 8–10)
+- Bridge lifecycle management (spawn, health monitoring, taskkill on Windows, SIGTERM/SIGKILL on Unix)
+- Bridge file logging (`flipper-bridge.log`), health-based kill of stuck processes
+- PYTHON_CMD env var, project root detection via `process.cwd()`
+- start.bat/start.sh bridge mode (--no-bridge, --dev flags)
+- Duplicate main.py fixed (root → re-export from backend.main)
 
-### COMPLETED (v1.23 — Iteration 8)
-1. ~~**Backend crashes after startup**~~ — Root cause: (a) `main.py` in project root was a stale duplicate of `backend/main.py` with blocking `await check_provider_health()` (15s timeout on startup), (b) `start /b` on Windows doesn't manage the Python process lifecycle — when the backend crashes, nothing restarts it. Fix: (1) Replaced `main.py` with a thin re-export `from backend.main import app`, (2) Created `scripts/flipper-backend-bridge.ts` + `instrumentation.ts` — Next.js now manages the Python backend as a child_process with auto-restart (up to 5 crashes in 60s), health monitoring, and graceful shutdown. (3) Updated `start.bat` with `--bridge` (default) and `--no-bridge` flags.
-2. ~~**Duplicate main.py files**~~ — `main.py` (root) and `backend/main.py` were identical but drifted — root version had blocking health check while `backend/main.py` had the fixed `asyncio.create_task()`. Root `main.py` now just re-exports from `backend.main:app`.
-3. ~~**start.bat backend startup unreliable**~~ — Increased wait loop from 15s to 20s. Added bridge mode (default) where Next.js manages Python process lifecycle. Bridge auto-detects `.venv`, auto-restarts on crash, monitors health. Use `start.bat --no-bridge` for old separate-process mode.
-
-### COMPLETED (v1.22 — Iteration 7)
-1. ~~**PipelineCache unbounded growth**~~ — Added LRU eviction with `OrderedDict` + max-entries cap (DEFAULT_MAX_ENTRIES=64). Expired/stale entries evicted first during `put()`, then LRU active entries. `stats()` now includes `total_entries` and `max_entries`.
-2. ~~**shadcn CLI + Tailwind v4 CSS-first**~~ — Verified `components.json` with `config: ""` works correctly with shadcn CLI for Tailwind v4. No changes needed — the empty config field is the correct setting for CSS-first approach.
-3. ~~**Backend won't start (PEP 668)**~~ — Root cause: `start.sh`/`start.bat` ran `pip install -r requirements.txt` system-wide, which fails on modern Python (PEP 668 "externally-managed-environment"). Fix: added automatic `.venv` creation and usage in both `start.sh` and `start.bat`. Venv python used for all pip installs and uvicorn. Added `.venv/` to `.gitignore`. `--clean` flag now also removes `.venv/` and recreates it.
-4. ~~**Header "More" button clipped**~~ — The three-dot menu button was hidden when the header was narrow because all items were in a single `flex-nowrap` container. Fix: split header into scrollable inner bar + fixed "More" button outside the scroll area. The button is always visible regardless of content width.
-5. ~~**Removed stale TODO items**~~ — Deleted TODO #1 (report POE2Scout `default_league_value` bug upstream) and merged TODO #2 (live E2E verification) into the remaining TODO list. The workaround for `default_league_value` is stable and `IsCurrent` now works; upstream bug report is low-priority.
-
-### COMPLETED (v1.21 — Iteration 6)
-1. ~~**BUG-7: Tailwind v3 config with v4 installed**~~ — Deleted `tailwind.config.ts` (dead code, v4 ignores it). Removed `tailwindcss-animate` from dependencies (replaced by `tw-animate-css` in devDependencies). Project fully on Tailwind v4 CSS-first approach.
-2. ~~**BUG-8: components.json tailwind.config empty**~~ — Confirmed `config: ""` is correct for Tailwind v4 CSS-first.
-3. ~~**BUG-9: SW cache version hardcoded**~~ — Created `scripts/bump-sw-cache.js`, added `postbuild` script.
-4. ~~**BUG-10: manifest.json missing icon-1024.png**~~ — Added to icons array.
-5. ~~**BUG-11: start.sh missing --clean flag**~~ — Added `--clean` flag to both start scripts.
-6. ~~**BUG-12: requirements.txt no pinned upper bounds**~~ — Added upper bounds for all 19 dependencies.
-7. ~~**Cold start timeout**~~ — `asyncio.create_task()` for health check, 5s timeout.
-8. ~~**Rate limiting race in poe2scout.py**~~ — Added `_rate_limit_lock` (asyncio.Lock).
-
-### COMPLETED (v1.20 — Iteration 5)
-1. ~~**HistoricalStore.clear_all_events() missing**~~ — Added method.
-2. ~~**WebSocket storage_value missing acceleration**~~ — Added to `_compute_storage_value()`.
-3. ~~**__pycache__ with stale .pyc committed**~~ — Deleted all `__pycache__/`, added `.wrangler/` to `.gitignore`.
-4. ~~**PROGRESS-NOTES.md redundant**~~ — Deleted.
-5. ~~**AnomalyDetector per-request instantiation**~~ — Changed to lazy singleton.
-6. ~~**BaseDataProvider.close() sync vs async mismatch**~~ — Changed to `async def`.
-7. ~~**Dead HTTPException catch in main.py**~~ — Removed.
-8. ~~**Canonical Formulas duplicate §11 numbering**~~ — Renamed second §11 to §14.
-9. ~~**Canonical Formulas Pitfall #3 outdated**~~ — Updated for gold fees permanently excluded.
-10. ~~**Canonical Formulas Pitfall #4 outdated**~~ — Updated Bellman-Ford formula.
-
-### COMPLETED (v1.19 — Iteration 4)
-1. ~~**triangular.py gold params removed**~~
-2. ~~**routes_arbitrage.py gold args removed**~~
-3. ~~**Dead i18n keys removed**~~ — Deleted `flipsGoldFeesExcluded` from all 4 locales
-4. ~~**test_triangular.py cleaned**~~
-5. ~~**config.py FeesConfig comment removed**~~
-6. ~~**Gold code removal fully complete**~~
-
-### COMPLETED (v1.18 — Iteration 3)
-1. ~~**Gold code fully removed**~~ — Deleted `FeesConfig`, `gold_costs.py`, `gold_cost_table.py`, fee warning UI
-2. ~~**Circuit breaker initial cooldown reduced**~~ — From 60s to 15s
-3. ~~**Documentation updated**~~
-
-### COMPLETED (v1.17 — Iteration 2)
-1. ~~**flipper-proxy.ts: Response body race condition**~~ — BufferedProxyResult
-2. ~~**backend/main.py: Race condition in health check**~~ — asyncio.Lock
-3. ~~**routes_optimizer.py: Dijkstra with negative weights**~~ — Bellman-Ford
-4. ~~**routes_arbitrage.py: gold_enabled stub removed**~~
-5. ~~**dashboard-page.tsx: Stale closure in tab useEffect**~~
-6. ~~**poe2api.ts: parseInt Retry-After NaN guard**~~
-7. ~~**flipper-proxy.ts: Circuit breaker resets on 503**~~
-8. ~~**analyst-fallback: Z-score on absolute prices**~~ — log-returns
-9. ~~**Arbitrage tab first-load bug**~~
-
-### COMPLETED (v1.15)
-1. ~~**Regenerate cache-snapshot.json with VPN**~~
-2. ~~**Generate bycategory fixture files**~~
+### COMPLETED (v1.20–v1.22 — Iterations 5–7)
+- PipelineCache LRU eviction, PEP 668 venv, header clipping, Tailwind v4 migration
+- SW cache auto-bump, requirements.txt upper bounds, rate limit lock
+- HistoricalStore.clear_all_events(), AnomalyDetector singleton, gold code removal
+- Circuit breaker cooldown 60s→15s, Canonical Formulas cleanup
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -247,10 +190,11 @@ When a new league launches, update these 7 files:
 27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`.
 28. **Health check is non-blocking** — `asyncio.create_task()` in lifespan, not awaited.
 29. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668). Always use venv python for backend.
-30. **Flipper backend bridge** — By default, Next.js manages the Python backend via `instrumentation.ts` → `scripts/flipper-backend-bridge.ts`. The bridge auto-starts, monitors health, and restarts on crash. **Project root detection**: uses `process.cwd()` (reliable for `next start`), not `__dirname` (which points inside `.next/` after bundling). **Python detection**: checks `PYTHON_CMD` env var first (set by start.bat/start.sh), then `.venv` heuristics, then system `python`. On Windows, uses `taskkill /PID /T /F` for reliable process tree termination (SIGTERM doesn't work for Python on Windows). On Unix, uses SIGTERM → SIGKILL (5s grace). Bridge logs to `flipper-bridge.log`. To disable: set `FLIPPER_BRIDGE_DISABLED=true` in `.env.local` or use `start.bat --no-bridge` / `./start.sh --no-bridge`. To start backend manually: `PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000`.
+30. **Flipper backend bridge** — By default, Next.js manages the Python backend via `instrumentation.ts` → `scripts/flipper-backend-bridge.ts`. The bridge auto-starts, monitors health, and restarts on crash. **Project root detection**: uses `process.cwd()` (reliable for `next start`), not `__dirname` (which points inside `.next/` after bundling). **Python detection**: checks `PYTHON_CMD` env var first (set by start.bat/start.sh), then `.venv` heuristics, then system `python`. **uvicorn invocation**: always uses `python -m uvicorn backend.main:app` (NOT `python backend.main:app` — Python treats the latter as a script filename). On Windows, uses `taskkill /PID /T /F` for reliable process tree termination (SIGTERM doesn't work for Python on Windows). On Unix, uses SIGTERM → SIGKILL (5s grace). Bridge logs to `flipper-bridge.log`. To disable: set `FLIPPER_BRIDGE_DISABLED=true` in `.env.local` or use `start.bat --no-bridge` / `./start.sh --no-bridge`. To start backend manually: `PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000`.
 31. **Root main.py is a re-export** — `./main.py` just does `from backend.main import app`. The real code is in `backend/main.py`. Never edit `./main.py` directly.
 32. **Bridge health monitoring kills stuck processes** — If health check fails 3 consecutive times, bridge kills the process (triggering auto-restart). This handles "stuck" processes that are alive but unresponsive.
 33. **start.bat uses `where.exe` not `where`** — Some Windows CMD versions misparse `where` without explicit `.exe` extension, producing `'ho.' is not recognized` errors.
+34. **Bridge must use `python -m uvicorn`, NOT `python backend.main:app`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes Python to treat `backend.main:app` as a script filename → ENOENT. This also affects non-ASCII (Cyrillic) paths on Windows because Python outputs the garbled path in its error message.
 
 ## 11. Documentation Map
 
