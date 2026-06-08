@@ -1154,10 +1154,12 @@ function mapSnapshotPair(raw: RawSnapshotPair): ExchangePair {
     // Numeric ItemId is required for the CurrencyPairHistory API endpoint
     // (/Currencies/Pairs/{ItemId1}/{ItemId2}/History expects integers, not ApiId strings)
     currency1ItemId: raw.CurrencyOne.ItemId,
+    currency1CategoryApiId: raw.CurrencyOne.CategoryApiId || "",
     currency2Id: raw.CurrencyTwo.ApiId,
     currency2Name: raw.CurrencyTwo.Text,
     currency2IconUrl: raw.CurrencyTwo.IconUrl,
     currency2ItemId: raw.CurrencyTwo.ItemId,
+    currency2CategoryApiId: raw.CurrencyTwo.CategoryApiId || "",
     price: relPrice1,                          // Fix 2.4: now number | null
     relativePrice: relPrice1,                   // null when no trade data ("0E-8")
     currency2RelativePrice: relPrice2,           // price of currency2 in base currency — needed for cross-rate

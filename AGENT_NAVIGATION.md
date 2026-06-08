@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.10 | **Date:** 2026-06-08
+> **Version:** 1.11 | **Date:** 2026-06-08
 
 ---
 
@@ -93,7 +93,12 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
 2. **Regenerate `cache-snapshot.json`** — User ran `npx tsx scripts/generate-cache-snapshot.ts` locally but hasn't pushed. Needs VPN for API access.
 3. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation × Great Enhancement, Orb of Cancellation) exist in current market. Requires VPN/API access.
-4. **Optimal payment for craft items (Omens, Soul Cores)** — The current integration groups by `currency1Id` in exchange pairs. For non-currency items priced on the exchange (Omens, Soul Cores), a different grouping by item ID would show which currency is cheapest for buying those items. Requires: (a) a way to distinguish items from currencies in exchange pairs, (b) optional `PoeItem.category` field or a set of known item apiIds, (c) backend `_find_optimal_payment` already handles generic grouping — frontend grouping in `dashboard-page.tsx` clientOptimalResult needs item-aware logic.
+4. **Item-aware optimal payment: test with live Omens/Soul Cores data** — The item-category grouping logic (v1.11) is implemented but current SnapshotPairs only contains currency↔currency pairs. When Omens/Soul Cores appear in exchange pairs (after POE2Scout adds them), the item-aware grouping will activate automatically. Verify with live data.
+5. **Expand `item_categories` in config.yaml** — Currently only `ritual` (Omens) and `ultimatum` (Soul Cores). Other exchange-traded non-currency categories (e.g. `idol`, `vaultkeys`) may need to be added based on market data.
+
+### COMPLETED (v1.11)
+1. ~~**Optimal payment for craft items (Omens, Soul Cores)**~~ — Done: Added `currency1CategoryApiId` / `currency2CategoryApiId` fields to `ExchangePair` type. Added `ITEM_CATEGORIES` set + `isItemCategory()` helper in `currency-optimal.ts`. Frontend `clientOptimalResult` now has a second pass that groups pairs by item category and finds cheapest payment currency per item. Backend `/optimal-currency` endpoint mirrors the same logic using `config.league.item_categories`. Added `item_categories` to `config.yaml` and `LeagueConfig`. Fixed critical bug: `currency_nameseta` typo in `routes_arbitrage.py` (was `currency_names[meta...]`, now correct).
+2. ~~**Fix `currency_names` typo in `routes_arbitrage.py`**~~ — Bug: line had `currency_nameseta.api_id.lower()]` instead of `currency_names[meta.api_id.lower()]`. This caused `NameError` at runtime when `/optimal-currency` endpoint was called. Fixed in v1.11.
 
 ### COMPLETED (v1.10)
 1. ~~**Wire frontend → backend `/api/flipper/optimal-currency`**~~ — Done: `dashboard-page.tsx` now uses `useQuery` to fetch from backend when online, falls back to client-side `useMemo` computation when offline. Backend response keys (`currencyFrom_currencyTo`) remapped to frontend `pair.id` for component lookups. New type `OptimalCurrencyResponse` added to `types.ts`.
@@ -171,6 +176,8 @@ When a new league launches, update these 7 files:
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
 16. **`baseCurrencyText` is nullable** — `PersistedUIState.baseCurrencyText` is `string | null`. Always use `?? ""` or `?? defaultText` when passing to components expecting `string`.
 17. **`_math` must be module-level import** — `_find_optimal_payment()` in `routes_arbitrage.py` uses `_math.isfinite()`. Previously `_math` was a local import inside `_build_flip_opportunities()`, causing NameError at runtime. Fixed in v1.10.
+18. **`item_categories` must stay in sync between `config.yaml` and `currency-optimal.ts`** — Backend reads from `config.yaml` → `LeagueConfig.item_categories`. Frontend reads from `ITEM_CATEGORIES` in `currency-optimal.ts`. Both must contain the same categories. When adding new item categories, update BOTH files.
+19. **`currency_names[meta...]` not `currency_nameseta`** — Critical typo in `routes_arbitrage.py` where `currency_names[meta.api_id.lower()]` was written as `currency_nameseta.api_id.lower()]`. This caused `NameError` at runtime. Fixed in v1.11.
 
 ## 11. Documentation Map
 

@@ -115,6 +115,7 @@ import {
   detectCrossRateFlips,
   buildRelativePriceMap,
   selectAnchor,
+  isItemCategory,
 } from "@/lib/currency-optimal";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
@@ -627,6 +628,46 @@ export function Dashboard() {
       if (result) {
         // Map result back to each pair in the group
         for (const p of groupPairs) {
+          optimalPaymentByPair.set(p.id, result);
+        }
+      }
+    }
+
+    // §11 extension: Item-aware optimal payment.
+    // For craft items (Omens, Soul Cores), currency1Id is the item itself.
+    // These items appear as CurrencyOne in exchange pairs, where CurrencyTwo
+    // is the payment currency. Group all pairs where currency1CategoryApiId
+    // is an item category, then for each item find the cheapest payment currency.
+    const itemGroups = new Map<string, ExchangePair[]>();
+    for (const pair of allPairs) {
+      if (isItemCategory(pair.currency1CategoryApiId)) {
+        const existing = itemGroups.get(pair.currency1Id);
+        if (existing) {
+          existing.push(pair);
+        } else {
+          itemGroups.set(pair.currency1Id, [pair]);
+        }
+      }
+    }
+
+    for (const [, itemPairs] of itemGroups) {
+      if (itemPairs.length < 2) continue;
+
+      // Each pair represents: "item X can be bought with currency Y"
+      // priceInCurrency = price of 1 unit of item X in currency Y
+      const pricingOptions = itemPairs
+        .filter((p) => p.currency2RelativePrice != null && p.currency2RelativePrice > 0 && p.relativePrice != null && p.relativePrice > 0)
+        .map((p) => ({
+          currencyId: p.currency2Id,
+          currencyName: p.currency2Name,
+          priceInCurrency: p.relativePrice! / p.currency2RelativePrice!,
+          relativePrice: p.currency2RelativePrice!,
+        }))
+        .filter((opt) => opt.priceInCurrency > 0 && opt.relativePrice > 0);
+
+      const result = findOptimalPayment(pricingOptions, anchorRelPrice);
+      if (result) {
+        for (const p of itemPairs) {
           optimalPaymentByPair.set(p.id, result);
         }
       }

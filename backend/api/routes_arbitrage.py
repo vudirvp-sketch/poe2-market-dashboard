@@ -984,8 +984,10 @@ async def get_optimal_currency(
     # Build metadata lookup for currency display names
     # Key: api_id (lowercase) -> display text
     currency_names: dict[str, str] = {}
+    currency_categories: dict[str, str] = {}  # api_id (lowercase) → category_api_id
     for meta in snapshot.currency_metadata:
         currency_names[meta.api_id.lower()] = meta.text
+        currency_categories[meta.api_id.lower()] = meta.category_api_id
 
     # Group exchange rates by currency_from — each group is one "item"
     # priced in multiple currencies (currency_to is the payment currency).
@@ -1031,6 +1033,50 @@ async def get_optimal_currency(
         if result is not None:
             # Map result back to each rate's pair key for frontend lookup
             for rate in group_rates:
+                pair_key = f"{rate.currency_from}_{rate.currency_to}"
+                optimal_by_pair[pair_key] = result
+
+    # Section 11 extension: Item-aware optimal payment.
+    # For craft items (Omens, Soul Cores), the currency_from is an item
+    # (not a pure currency). Group pairs where currency_from belongs to
+    # an item category, then for each item find the cheapest payment currency.
+    item_categories = set(config.league.item_categories)
+    item_groups: dict[str, list] = {}
+    for key, rate in rates.items():
+        cat = currency_categories.get(rate.currency_from.lower(), "")
+        if cat in item_categories:
+            existing = item_groups.get(rate.currency_from)
+            if existing is not None:
+                existing.append(rate)
+            else:
+                item_groups[rate.currency_from] = [rate]
+
+    for item_id, item_rates in item_groups.items():
+        if len(item_rates) < 2:
+            continue
+
+        pricing_options = []
+        for rate in item_rates:
+            c2_price = prices.get(rate.currency_to)
+            if c2_price is None or c2_price <= 0:
+                continue
+            c1_price = prices.get(rate.currency_from)
+            if c1_price is None or c1_price <= 0:
+                continue
+            price_in_currency = c1_price / c2_price if c2_price > 0 else 0
+            if price_in_currency <= 0:
+                continue
+            currency_name = currency_names.get(rate.currency_to.lower(), rate.currency_to)
+            pricing_options.append({
+                "currency_id": rate.currency_to,
+                "currency_name": currency_name,
+                "price_in_currency": price_in_currency,
+                "relative_price": c2_price,
+            })
+
+        result = _find_optimal_payment(pricing_options, anchor_rel_price)
+        if result is not None:
+            for rate in item_rates:
                 pair_key = f"{rate.currency_from}_{rate.currency_to}"
                 optimal_by_pair[pair_key] = result
 

@@ -44,6 +44,14 @@ league:
     - idol
     - verisium
     - vaal
+  # Categories where items are priced ON the exchange but are NOT pure currencies.
+  # Exchange pairs where currency1CategoryApiId ∈ item_categories represent
+  # craft items (Omens, Soul Cores, etc.) priced in multiple payment currencies.
+  # The optimal-payment logic groups these separately to find the cheapest
+  # currency to pay with for each item.
+  item_categories:
+    - ritual       # Ritual Omens
+    - ultimatum    # Soul Cores
 
 # Gold fee configuration — Step 3: Gold fee accounting.
 # The gold_to_chaos_rate is extracted dynamically from POE2Scout's data

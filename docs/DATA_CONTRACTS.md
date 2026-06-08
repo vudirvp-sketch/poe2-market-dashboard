@@ -79,10 +79,12 @@ interface ExchangePair {
   currency1Name: string;
   currency1IconUrl: string | null;
   currency1ItemId: number;              // Required for CurrencyPairHistory API
+  currency1CategoryApiId: string;       // POE2Scout category (e.g. "currency", "ritual", "ultimatum")
   currency2Id: string;
   currency2Name: string;
   currency2IconUrl: string | null;
   currency2ItemId: number;
+  currency2CategoryApiId: string;       // POE2Scout category (e.g. "currency", "ritual", "ultimatum")
   price: number | null;                 // null = data error (distinguished from "free")
   relativePrice: number | null;         // null when no trade data ("0E-8")
   currency2RelativePrice: number | null; // Required for cross-rate computation

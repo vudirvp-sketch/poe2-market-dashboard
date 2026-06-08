@@ -84,11 +84,17 @@ export interface ExchangePair {
   currency1IconUrl: string | null;
   /** Numeric ItemId — required for the CurrencyPairHistory API endpoint */
   currency1ItemId: number;
+  /** POE2Scout category of currency1 (e.g. "currency", "ritual", "ultimatum").
+   *  Used to distinguish pure currencies from craft items (Omens, Soul Cores). */
+  currency1CategoryApiId: string;
   currency2Id: string;
   currency2Name: string;
   currency2IconUrl: string | null;
   /** Numeric ItemId — required for the CurrencyPairHistory API endpoint */
   currency2ItemId: number;
+  /** POE2Scout category of currency2 (e.g. "currency", "ritual", "ultimatum").
+   *  Used to distinguish pure currencies from craft items (Omens, Soul Cores). */
+  currency2CategoryApiId: string;
   /** Fix 2.4: price is now number | null to distinguish "free" from "data error" */
   price: number | null;
   /** Relative price of currency1 in base currency. null when no trade data ("0E-8"). */

@@ -77,6 +77,33 @@ export interface CrossRateFlip {
 export const ANCHOR_CURRENCIES = ["mirror", "divine", "exalted", "chaos"] as const;
 export type AnchorCurrency = (typeof ANCHOR_CURRENCIES)[number];
 
+// ---------------------------------------------------------------------------
+// Item Category Constants
+// ---------------------------------------------------------------------------
+
+/**
+ * POE2Scout CategoryApiId values for items that are priced on the exchange
+ * but are NOT pure currencies. These are craft/consumable items like
+ * Ritual Omens and Soul Cores that appear as CurrencyOne in exchange pairs.
+ *
+ * When a pair's currency1CategoryApiId is in this set, the optimal-payment
+ * logic groups by currency1Id to find the cheapest payment currency.
+ *
+ * Must stay in sync with config.yaml → league.item_categories.
+ */
+export const ITEM_CATEGORIES = new Set([
+  "ritual",       // Ritual Omens
+  "ultimatum",    // Soul Cores
+]);
+
+/**
+ * Check if a CategoryApiId represents a non-currency item priced on the exchange.
+ */
+export function isItemCategory(categoryApiId: string | null | undefined): boolean {
+  if (!categoryApiId) return false;
+  return ITEM_CATEGORIES.has(categoryApiId);
+}
+
 /**
  * Select the best available anchor currency from the current data.
  * Prefers Mirror of Kalandra > Divine Orb > Exalted Orb > Chaos Orb.

@@ -57,6 +57,13 @@ class LeagueConfig(BaseModel):
         "uncutgems", "lineagesupportgems", "delirium", "incursion", "idol",
         "verisium", "vaal",
     ])
+    # Categories where items are priced on the exchange but are NOT pure currencies.
+    # Used by optimal-payment logic to distinguish craft items (Omens, Soul Cores)
+    # from pure currencies, so it can find the cheapest payment currency per item.
+    item_categories: list[str] = Field(default_factory=lambda: [
+        "ritual",      # Ritual Omens
+        "ultimatum",   # Soul Cores
+    ])
 
     @property
     def league_start_datetime(self) -> datetime:
