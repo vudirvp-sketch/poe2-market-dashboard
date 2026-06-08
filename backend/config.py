@@ -63,6 +63,9 @@ class LeagueConfig(BaseModel):
     item_categories: list[str] = Field(default_factory=lambda: [
         "ritual",      # Ritual Omens
         "ultimatum",   # Soul Cores
+        "idol",        # Idols (pending live verification)
+        "vaultkeys",   # Vault Keys (pending live verification)
+        "delirium",    # Delirium items (pending live verification)
     ])
 
     @property

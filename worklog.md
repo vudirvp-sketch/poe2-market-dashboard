@@ -1,27 +1,24 @@
 # Worklog
 
 ---
-Task ID: 7
+Task ID: 8
 Agent: main
-Task: Optimal payment for craft items (Omens, Soul Cores) + Fix currency_names typo
+Task: v1.12 — Expand item_categories, improve snapshot generation, add tests, create live data dump utility
 
 Work Log:
-- Added `currency1CategoryApiId` and `currency2CategoryApiId` fields to `ExchangePair` type in `src/lib/types.ts`
-- Updated `mapSnapshotPair()` in `src/lib/poe2api.ts` to populate categoryApiId from `raw.CurrencyOne.CategoryApiId` / `raw.CurrencyTwo.CategoryApiId`
-- Added `ITEM_CATEGORIES` set and `isItemCategory()` helper to `src/lib/currency-optimal.ts`
-- Added `item_categories` config field to `config.yaml` (ritual, ultimatum) and `LeagueConfig` in `backend/config.py`
-- Extended frontend `clientOptimalResult` in `dashboard-page.tsx` with item-aware second pass:
-  - Groups pairs where `currency1CategoryApiId ∈ ITEM_CATEGORIES`
-  - For each item with 2+ pricing options, finds cheapest payment currency
-- Extended backend `/optimal-currency` endpoint with item-aware grouping:
-  - Builds `currency_categories` lookup from `snapshot.currency_metadata`
-  - Groups rates where `currency_from` belongs to `config.league.item_categories`
-  - Computes optimal payment for each item group
-- Fixed critical bug: `currency_nameseta.api_id.lower()]` → `currency_names[meta.api_id.lower()]` in `routes_arbitrage.py` (NameError at runtime)
-- Updated test fixture in `src/__tests__/api.test.ts` with new category fields
-- Updated documentation: AGENT_NAVIGATION.md v1.11, DATA_CONTRACTS.md, worklog.md
-- All checks: tsc --noEmit (0 errors), 260 Jest tests pass, 308 pytest tests pass
+- Expanded `item_categories` in config.yaml: added idol, vaultkeys, delirium (pending live verification)
+- Expanded `item_categories` in backend/config.py: same additions with comments
+- Expanded `ITEM_CATEGORIES` in src/lib/currency-optimal.ts: same additions with comments
+- Improved generate-cache-snapshot.ts: added ByCategory endpoints for ritual/ultimatum categories
+- Improved generate-cache-snapshot.ts: SnapshotPairs truncation now prioritizes item-category pairs
+- Added backend tests: 5 new tests in TestItemAwareGrouping class (test_optimal_currency.py)
+- Created frontend tests: src/__tests__/currency-optimal.test.ts with 20+ tests
+- Created scripts/dump-live-data.ts: utility for generating JSON test fixtures from live API (requires VPN)
+- Updated AGENT_NAVIGATION.md to v1.12
+- Updated worklog.md
 
 Stage Summary:
-- Modified: src/lib/types.ts (ExchangePair + category fields), src/lib/poe2api.ts (mapSnapshotPair), src/lib/currency-optimal.ts (ITEM_CATEGORIES + isItemCategory), src/components/dashboard/dashboard-page.tsx (item-aware grouping), config.yaml (item_categories), backend/config.py (LeagueConfig.item_categories), backend/api/routes_arbitrage.py (item-aware endpoint + currency_names bugfix), src/__tests__/api.test.ts (test fixture), docs/DATA_CONTRACTS.md (ExchangePair contract)
-- Modified: AGENT_NAVIGATION.md (v1.11), worklog.md
+- Modified: config.yaml, backend/config.py, src/lib/currency-optimal.ts, scripts/generate-cache-snapshot.ts, tests/test_optimal_currency.py, AGENT_NAVIGATION.md, worklog.md
+- Created: src/__tests__/currency-optimal.test.ts, scripts/dump-live-data.ts
+- All backend tests pass: 40/40 (pytest test_optimal_currency.py)
+- Item categories now include: ritual, ultimatum, idol, vaultkeys, delirium

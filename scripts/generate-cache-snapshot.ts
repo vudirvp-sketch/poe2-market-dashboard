@@ -98,6 +98,14 @@ function getEndpoints(realm: string, league: string): EndpointConfig[] {
     // fetched on-demand once the user navigates to the Currencies tab.
     { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=currency&Page=1&PerPage=50`, label: "Currencies ByCategory (currency)" },
 
+    // ── Item categories (for item-aware optimal payment grouping) ──
+    // These categories contain craft items (Omens, Soul Cores) that appear
+    // in exchange pairs as CurrencyOne. Fetching their ByCategory data
+    // ensures the snapshot has enough metadata for item-aware grouping
+    // even when the live API is unreachable.
+    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=ritual&Page=1&PerPage=25`, label: "Currencies ByCategory (ritual)" },
+    { path: `/${realm}/Leagues/${league}/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=25`, label: "Currencies ByCategory (ultimatum)" },
+
     // ── Items ──
     // NOTE: The /Items endpoint returns ALL items in a flat array (ignores
     // pagination params).  With 1200+ items it takes ~437 KB which exceeds
@@ -187,11 +195,38 @@ async function main(): Promise<void> {
     // The /SnapshotPairs endpoint can return hundreds of pairs (each with
     // nested fields). Truncate to 30 pairs — enough for the initial
     // exchange view; the rest will be fetched on-demand.
+    //
+    // PRIORITY: Keep pairs where CurrencyOne.CategoryApiId is in item_categories
+    // (ritual, ultimatum, idol, vaultkeys, delirium) — these are needed for
+    // item-aware optimal payment grouping. Fill remaining slots with
+    // currency↔currency pairs.
     if (url.includes("/SnapshotPairs") && Array.isArray(entry.data)) {
-      const original = (entry.data as unknown[]).length;
+      const pairs = entry.data as Array<Record<string, unknown>>;
+      const original = pairs.length;
       if (original > 30) {
-        (entry as { data: unknown[] }).data = (entry.data as unknown[]).slice(0, 30);
-        console.log(`  Truncated /SnapshotPairs from ${original} to 30 entries`);
+        // Item categories that should be prioritized in the snapshot
+        const ITEM_CATS = new Set(["ritual", "ultimatum", "idol", "vaultkeys", "delirium"]);
+        
+        // Separate item-category pairs from regular currency pairs
+        const itemPairs: typeof pairs = [];
+        const currencyPairs: typeof pairs = [];
+        for (const pair of pairs) {
+          const c1 = pair.CurrencyOne as Record<string, unknown> | undefined;
+          const catId = c1?.CategoryApiId as string | undefined;
+          if (catId && ITEM_CATS.has(catId)) {
+            itemPairs.push(pair);
+          } else {
+            currencyPairs.push(pair);
+          }
+        }
+        
+        // Keep ALL item-category pairs (they're rare and valuable),
+        // then fill remaining slots with currency pairs
+        const maxCurrencySlots = Math.max(0, 30 - itemPairs.length);
+        const kept = [...itemPairs, ...currencyPairs.slice(0, maxCurrencySlots)];
+        
+        (entry as { data: unknown[] }).data = kept;
+        console.log(`  Truncated /SnapshotPairs from ${original} to ${kept.length} entries (kept ${itemPairs.length} item-category pairs)`);
       }
     }
   }

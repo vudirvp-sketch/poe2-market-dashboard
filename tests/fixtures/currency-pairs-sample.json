@@ -1,0 +1,1232 @@
+[
+  {
+    "CurrencyExchangeSnapshotPairId": 81945324,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "443.74215241",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 23,
+      "ItemId": 300,
+      "CurrencyCategoryId": 21,
+      "ApiId": "gcp",
+      "Text": "Gemcutter's Prism",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lHZW1RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f4bace18d7/CurrencyGemQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "443.74215241",
+      "RelativePrice": "1.29013252",
+      "StockValue": "510.72209994",
+      "VolumeTraded": 159,
+      "HighestStock": 183
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "205.13107046",
+      "RelativePrice": "2.99825779",
+      "StockValue": "514.21369689",
+      "VolumeTraded": 148,
+      "HighestStock": 371
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945331,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "27.90831147",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 261,
+      "ItemId": 4267,
+      "CurrencyCategoryId": 21,
+      "ApiId": "greater-orb-of-transmutation",
+      "Text": "Greater Orb of Transmutation",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "27.90831147",
+      "RelativePrice": "4.45226504",
+      "StockValue": "27.90831147",
+      "VolumeTraded": 10,
+      "HighestStock": 10
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "44.52265045",
+      "RelativePrice": "0.14166656",
+      "StockValue": "23.50434338",
+      "VolumeTraded": 197,
+      "HighestStock": 104
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945332,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "36.28080491",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 20,
+      "ItemId": 297,
+      "CurrencyCategoryId": 21,
+      "ApiId": "whetstone",
+      "Text": "Blacksmith's Whetstone",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/18715ea7be/CurrencyWeaponQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "36.28080491",
+      "RelativePrice": "0.21825889",
+      "StockValue": "16.74498688",
+      "VolumeTraded": 13,
+      "HighestStock": 6
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "2.83736557",
+      "RelativePrice": "2.79083115",
+      "StockValue": "6.98428447",
+      "VolumeTraded": 13,
+      "HighestStock": 32
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945336,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "555.37539830",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 265,
+      "ItemId": 4275,
+      "CurrencyCategoryId": 21,
+      "ApiId": "greater-chaos-orb",
+      "Text": "Greater Chaos Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "555.37539830",
+      "RelativePrice": "5.26864276",
+      "StockValue": "1761.01445390",
+      "VolumeTraded": 199,
+      "HighestStock": 631
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "1048.45990832",
+      "RelativePrice": "11.33419180",
+      "StockValue": "556.32566564",
+      "VolumeTraded": 49,
+      "HighestStock": 26
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945337,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "93.32914776",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 6,
+      "ItemId": 283,
+      "CurrencyCategoryId": 21,
+      "ApiId": "transmute",
+      "Text": "Orb of Transmutation",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "131.16906392",
+      "RelativePrice": "1.98572655",
+      "StockValue": "69.77077868",
+      "VolumeTraded": 47,
+      "HighestStock": 25
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "93.32914776",
+      "RelativePrice": "0.26878907",
+      "StockValue": "439.67973502",
+      "VolumeTraded": 488,
+      "HighestStock": 2299
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945339,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "55.81662294",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 206,
+      "ItemId": 4013,
+      "CurrencyCategoryId": 21,
+      "ApiId": "greater-jewellers-orb",
+      "Text": "Greater Jeweller's Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7dd6ee75be/CurrencyRerollSocketNumbers02.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "55.81662294",
+      "RelativePrice": "0.54310930",
+      "StockValue": "8.37249344",
+      "VolumeTraded": 20,
+      "HighestStock": 3
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "10.86218609",
+      "RelativePrice": "3.98690164",
+      "StockValue": "24.05198348",
+      "VolumeTraded": 14,
+      "HighestStock": 31
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945341,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "80.93410327",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 269,
+      "ItemId": 4283,
+      "CurrencyCategoryId": 21,
+      "ApiId": "greater-exalted-orb",
+      "Text": "Greater Exalted Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "80.93410327",
+      "RelativePrice": "6.69847922",
+      "StockValue": "295.82810161",
+      "VolumeTraded": 29,
+      "HighestStock": 106
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "194.25589744",
+      "RelativePrice": "2.79083115",
+      "StockValue": "0E-8",
+      "VolumeTraded": 29,
+      "HighestStock": 0
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945344,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "2.79083115",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 262,
+      "ItemId": 4269,
+      "CurrencyCategoryId": 21,
+      "ApiId": "perfect-orb-of-transmutation",
+      "Text": "Perfect Orb of Transmutation",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "2.79083115",
+      "RelativePrice": "10.38548396",
+      "StockValue": "242.80230981",
+      "VolumeTraded": 1,
+      "HighestStock": 87
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "10.38548396",
+      "RelativePrice": "2.79083115",
+      "StockValue": "0E-8",
+      "VolumeTraded": 1,
+      "HighestStock": 0
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945349,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "11013.67941662",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 10,
+      "ItemId": 287,
+      "CurrencyCategoryId": 21,
+      "ApiId": "chaos",
+      "Text": "Chaos Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "11071.22716105",
+      "RelativePrice": "2.77632453",
+      "StockValue": "18293.89817007",
+      "VolumeTraded": 3967,
+      "HighestStock": 6555
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "11013.67941662",
+      "RelativePrice": "7.37590084",
+      "StockValue": "6552.44218457",
+      "VolumeTraded": 1501,
+      "HighestStock": 893
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945351,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "69141.21971329",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 14,
+      "ItemId": 291,
+      "CurrencyCategoryId": 21,
+      "ApiId": "divine",
+      "Text": "Divine Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/2986e220b3/CurrencyModValues.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "69232.14826927",
+      "RelativePrice": "2.78716571",
+      "StockValue": "30129.81306547",
+      "VolumeTraded": 24807,
+      "HighestStock": 10796
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "69141.21971329",
+      "RelativePrice": "85.26126634",
+      "StockValue": "34059.71414448",
+      "VolumeTraded": 812,
+      "HighestStock": 400
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945355,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "36.28080491",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 16,
+      "ItemId": 293,
+      "CurrencyCategoryId": 21,
+      "ApiId": "artificers",
+      "Text": "Artificer's Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRFcXVpcG1lbnRTb2NrZXQiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/5131fd4774/CurrencyAddEquipmentSocket.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "36.28080491",
+      "RelativePrice": "0.22855047",
+      "StockValue": "2.79083115",
+      "VolumeTraded": 13,
+      "HighestStock": 1
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "2.97115613",
+      "RelativePrice": "2.01560027",
+      "StockValue": "116.53534614",
+      "VolumeTraded": 18,
+      "HighestStock": 706
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945357,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "64.12633120",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 9,
+      "ItemId": 286,
+      "CurrencyCategoryId": 21,
+      "ApiId": "alch",
+      "Text": "Orb of Alchemy",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9SYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/9b80b44821/CurrencyUpgradeToRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "83.72493442",
+      "RelativePrice": "2.13754437",
+      "StockValue": "58.60745409",
+      "VolumeTraded": 30,
+      "HighestStock": 21
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "64.12633120",
+      "RelativePrice": "0.49836270",
+      "StockValue": "492.39861455",
+      "VolumeTraded": 168,
+      "HighestStock": 1290
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945358,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "2.79083115",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 21,
+      "ItemId": 298,
+      "CurrencyCategoryId": 21,
+      "ApiId": "etcher",
+      "Text": "Arcanist's Etcher",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lXZWFwb25NYWdpY1F1YWxpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/516e8f1131/CurrencyWeaponMagicQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "2.79083115",
+      "RelativePrice": "6.10719919",
+      "StockValue": "5.58166229",
+      "VolumeTraded": 1,
+      "HighestStock": 2
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "6.10719919",
+      "RelativePrice": "0.25371192",
+      "StockValue": "525.21913009",
+      "VolumeTraded": 11,
+      "HighestStock": 946
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945361,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "650.26365730",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 15,
+      "ItemId": 292,
+      "CurrencyCategoryId": 21,
+      "ApiId": "annul",
+      "Text": "Orb of Annulment",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQW5udWxsT3JiIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/2daba8ccca/AnnullOrb.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "650.26365730",
+      "RelativePrice": "3.80025538",
+      "StockValue": "1883.81102438",
+      "VolumeTraded": 233,
+      "HighestStock": 675
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "885.45950315",
+      "RelativePrice": "26.01054629",
+      "StockValue": "743.78598264",
+      "VolumeTraded": 25,
+      "HighestStock": 21
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945362,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "22.32664918",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 17,
+      "ItemId": 294,
+      "CurrencyCategoryId": 21,
+      "ApiId": "fracturing-orb",
+      "Text": "Fracturing Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvRnJhY3R1cmluZ09yYiIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/8b85ed1dc2/FracturingOrb.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "22.32664918",
+      "RelativePrice": "7.99215010",
+      "StockValue": "145.12321966",
+      "VolumeTraded": 8,
+      "HighestStock": 52
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "63.93720081",
+      "RelativePrice": "22.32664918",
+      "StockValue": "255.74880325",
+      "VolumeTraded": 1,
+      "HighestStock": 4
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945363,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "149684.00000000",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 13,
+      "ItemId": 290,
+      "CurrencyCategoryId": 21,
+      "ApiId": "exalted",
+      "Text": "Exalted Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "149535.52369959",
+      "RelativePrice": "2.79360221",
+      "StockValue": "72444.39491973",
+      "VolumeTraded": 53581,
+      "HighestStock": 25958
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "149684.00000000",
+      "RelativePrice": "0.99900807",
+      "StockValue": "96060.00000000",
+      "VolumeTraded": 149684,
+      "HighestStock": 96060
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945364,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "315.36391964",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 8,
+      "ItemId": 285,
+      "CurrencyCategoryId": 21,
+      "ApiId": "chance",
+      "Text": "Orb of Chance",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9VbmlxdWUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/93c6cc8d5b/CurrencyUpgradeToUnique.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "315.36391964",
+      "RelativePrice": "3.66865880",
+      "StockValue": "438.16049011",
+      "VolumeTraded": 113,
+      "HighestStock": 157
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "414.55844486",
+      "RelativePrice": "11.68014517",
+      "StockValue": "967.30303800",
+      "VolumeTraded": 27,
+      "HighestStock": 63
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945367,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "0E-8",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 268,
+      "ItemId": 4281,
+      "CurrencyCategoryId": 21,
+      "ApiId": "perfect-regal-orb",
+      "Text": "Perfect Regal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "5.58166229",
+      "VolumeTraded": 0,
+      "HighestStock": 2
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "0E-8",
+      "VolumeTraded": 0,
+      "HighestStock": 0
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945368,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "8.37249344",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 12,
+      "ItemId": 289,
+      "CurrencyCategoryId": 21,
+      "ApiId": "regal",
+      "Text": "Regal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlTWFnaWNUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/e8fb148e80/CurrencyUpgradeMagicToRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "8.37249344",
+      "RelativePrice": "3.27248986",
+      "StockValue": "22.32664918",
+      "VolumeTraded": 3,
+      "HighestStock": 8
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "9.81746958",
+      "RelativePrice": "0.12134048",
+      "StockValue": "466.11638183",
+      "VolumeTraded": 69,
+      "HighestStock": 3276
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945369,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "36.28080491",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 22,
+      "ItemId": 299,
+      "CurrencyCategoryId": 21,
+      "ApiId": "bauble",
+      "Text": "Glassblower's Bauble",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lGbGFza1F1YWxpdHkiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/1cec279e01/CurrencyFlaskQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "36.28080491",
+      "RelativePrice": "1.31005153",
+      "StockValue": "2.79083115",
+      "VolumeTraded": 13,
+      "HighestStock": 1
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "17.03066990",
+      "RelativePrice": "2.79083115",
+      "StockValue": "293.45154288",
+      "VolumeTraded": 13,
+      "HighestStock": 224
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945371,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "0E-8",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 266,
+      "ItemId": 4277,
+      "CurrencyCategoryId": 21,
+      "ApiId": "perfect-chaos-orb",
+      "Text": "Perfect Chaos Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "55.81662294",
+      "VolumeTraded": 0,
+      "HighestStock": 20
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "0E-8",
+      "VolumeTraded": 0,
+      "HighestStock": 0
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945374,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "2.79083115",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 205,
+      "ItemId": 4011,
+      "CurrencyCategoryId": 21,
+      "ApiId": "lesser-jewellers-orb",
+      "Text": "Lesser Jeweller's Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDEiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/b0b9a43ed8/CurrencyRerollSocketNumbers01.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "2.79083115",
+      "RelativePrice": "0.57997566",
+      "StockValue": "0E-8",
+      "VolumeTraded": 1,
+      "HighestStock": 0
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0.57997566",
+      "RelativePrice": "0.34885389",
+      "StockValue": "19.93666319",
+      "VolumeTraded": 8,
+      "HighestStock": 275
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945375,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "0E-8",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 2,
+      "ItemId": 279,
+      "CurrencyCategoryId": 21,
+      "ApiId": "chance-shard",
+      "Text": "Chance Shard",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9VbmlxdWVTaGFyZCIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/9828a70270/CurrencyUpgradeToUniqueShard.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "0E-8",
+      "VolumeTraded": 0,
+      "HighestStock": 0
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "21.64948077",
+      "VolumeTraded": 0,
+      "HighestStock": 16
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945376,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "0E-8",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 7,
+      "ItemId": 284,
+      "CurrencyCategoryId": 21,
+      "ApiId": "aug",
+      "Text": "Orb of Augmentation",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb01hZ2ljIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c8ad0ddc84/CurrencyAddModToMagic.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "0E-8",
+      "VolumeTraded": 0,
+      "HighestStock": 0
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "89.41388743",
+      "VolumeTraded": 0,
+      "HighestStock": 1685
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945377,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "90.31116226",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 19,
+      "ItemId": 296,
+      "CurrencyCategoryId": 21,
+      "ApiId": "scrap",
+      "Text": "Armourer's Scrap",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBcm1vdXJRdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/d5868f596d/CurrencyArmourQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "167.44986883",
+      "RelativePrice": "1.50518604",
+      "StockValue": "69.77077868",
+      "VolumeTraded": 60,
+      "HighestStock": 25
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "90.31116226",
+      "RelativePrice": "1.12382462",
+      "StockValue": "643.69432428",
+      "VolumeTraded": 149,
+      "HighestStock": 1062
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945378,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "248.38397210",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 207,
+      "ItemId": 4015,
+      "CurrencyCategoryId": 21,
+      "ApiId": "perfect-jewellers-orb",
+      "Text": "Perfect Jeweller's Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDMiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ac6398e6a0/CurrencyRerollSocketNumbers03.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "248.38397210",
+      "RelativePrice": "1.48766956",
+      "StockValue": "1102.37830315",
+      "VolumeTraded": 89,
+      "HighestStock": 395
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "132.40259104",
+      "RelativePrice": "124.19198605",
+      "StockValue": "529.61036416",
+      "VolumeTraded": 2,
+      "HighestStock": 8
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945379,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "0E-8",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 11,
+      "ItemId": 288,
+      "CurrencyCategoryId": 21,
+      "ApiId": "vaal",
+      "Text": "Vaal Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lWYWFsIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/72bc84396c/CurrencyVaal.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 270,
+      "ItemId": 4285,
+      "CurrencyCategoryId": 21,
+      "ApiId": "perfect-exalted-orb",
+      "Text": "Perfect Exalted Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/ad7c366789/CurrencyAddModToRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "1071.67916054",
+      "VolumeTraded": 0,
+      "HighestStock": 384
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0E-8",
+      "RelativePrice": "0E-8",
+      "StockValue": "0E-8",
+      "VolumeTraded": 0,
+      "HighestStock": 0
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945386,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "2.77204149",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 23,
+      "ItemId": 300,
+      "CurrencyCategoryId": 21,
+      "ApiId": "gcp",
+      "Text": "Gemcutter's Prism",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lHZW1RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f4bace18d7/CurrencyGemQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 265,
+      "ItemId": 4275,
+      "CurrencyCategoryId": 21,
+      "ApiId": "greater-chaos-orb",
+      "Text": "Greater Chaos Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/c0ca392a78/CurrencyRerollRare.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "2.77204149",
+      "RelativePrice": "10.69857049",
+      "StockValue": "44.35266388",
+      "VolumeTraded": 2,
+      "HighestStock": 32
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "21.39714099",
+      "RelativePrice": "2.77204149",
+      "StockValue": "21.39714099",
+      "VolumeTraded": 1,
+      "HighestStock": 1
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945387,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "1.72123428",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 23,
+      "ItemId": 300,
+      "CurrencyCategoryId": 21,
+      "ApiId": "gcp",
+      "Text": "Gemcutter's Prism",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lHZW1RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f4bace18d7/CurrencyGemQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 6,
+      "ItemId": 283,
+      "CurrencyCategoryId": 21,
+      "ApiId": "transmute",
+      "Text": "Orb of Transmutation",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lVcGdyYWRlVG9NYWdpYyIsInNjYWxlIjoxLCJyZWFsbSI6InBvZTIifV0/2f8e1ff9f8/CurrencyUpgradeToMagic.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "2.77204149",
+      "RelativePrice": "0.86061714",
+      "StockValue": "0E-8",
+      "VolumeTraded": 2,
+      "HighestStock": 0
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "1.72123428",
+      "RelativePrice": "0.30800461",
+      "StockValue": "55.46199354",
+      "VolumeTraded": 9,
+      "HighestStock": 290
+    }
+  },
+  {
+    "CurrencyExchangeSnapshotPairId": 81945388,
+    "CurrencyExchangeSnapshotId": 284759,
+    "Volume": "2.77204149",
+    "BaseCurrencyApiId": "exalted",
+    "BaseCurrencyText": "Exalted Orb",
+    "CurrencyOne": {
+      "CurrencyItemId": 23,
+      "ItemId": 300,
+      "CurrencyCategoryId": 21,
+      "ApiId": "gcp",
+      "Text": "Gemcutter's Prism",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lHZW1RdWFsaXR5Iiwic2NhbGUiOjEsInJlYWxtIjoicG9lMiJ9XQ/f4bace18d7/CurrencyGemQuality.png",
+      "ItemMetadata": null
+    },
+    "CurrencyTwo": {
+      "CurrencyItemId": 206,
+      "ItemId": 4013,
+      "CurrencyCategoryId": 21,
+      "ApiId": "greater-jewellers-orb",
+      "Text": "Greater Jeweller's Orb",
+      "CategoryApiId": "currency",
+      "IconUrl": "https://web.poecdn.com//gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxTb2NrZXROdW1iZXJzMDIiLCJzY2FsZSI6MSwicmVhbG0iOiJwb2UyIn1d/7dd6ee75be/CurrencyRerollSocketNumbers02.png",
+      "ItemMetadata": null
+    },
+    "CurrencyOneData": {
+      "ValueTraded": "2.77204149",
+      "RelativePrice": "0.38793522",
+      "StockValue": "0E-8",
+      "VolumeTraded": 2,
+      "HighestStock": 0
+    },
+    "CurrencyTwoData": {
+      "ValueTraded": "0.77587043",
+      "RelativePrice": "2.77204149",
+      "StockValue": "32.58655826",
+      "VolumeTraded": 1,
+      "HighestStock": 42
+    }
+  }
+]

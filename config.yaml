@@ -52,6 +52,9 @@ league:
   item_categories:
     - ritual       # Ritual Omens
     - ultimatum    # Soul Cores
+    - idol         # Idols (pending live verification — POE2Scout may add to exchange pairs)
+    - vaultkeys    # Vault Keys (pending live verification)
+    - delirium     # Delirium items (pending live verification)
 
 # Gold fee configuration — Step 3: Gold fee accounting.
 # The gold_to_chaos_rate is extracted dynamically from POE2Scout's data

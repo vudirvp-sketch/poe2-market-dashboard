@@ -369,3 +369,97 @@ class TestDetectCrossRateFlips:
             prices[to_id] = 0.1
         flips = _detect_cross_rate_flips(rates, prices, threshold_pct=5.0)
         assert len(flips) <= 50
+
+
+# ---------------------------------------------------------------------------
+# Item-aware grouping tests (§11 extension)
+# ---------------------------------------------------------------------------
+
+class TestItemAwareGrouping:
+    """Tests for item-aware optimal payment grouping in the /optimal-currency endpoint.
+
+    These tests verify the logic that groups exchange pairs by item category
+    (ritual, ultimatum, idol, vaultkeys, delirium) and finds the cheapest
+    payment currency for each craft item.
+
+    The actual grouping logic runs inside the /optimal-currency endpoint,
+    but the underlying _find_optimal_payment function is the same.
+    These tests simulate what happens when item-category pairs are processed.
+    """
+
+    def test_item_with_two_payment_currencies(self):
+        """A Ritual Omen priced in both Exalted and Chaos — cheapest should win.
+
+        Scenario: 'Blood Filled Bowl' (ritual omen) is sold for:
+          - 0.5 Exalted (effective = 0.5 Exa)
+          - 8 Chaos (effective = 8 * 0.1 = 0.8 Exa)
+        → Exalted is cheaper payment.
+        """
+        # Simulating the pricing options that the item-aware grouping would build
+        options = [
+            {"currency_id": "exalted", "currency_name": "Exalted Orb",
+             "price_in_currency": 0.5, "relative_price": 1.0},
+            {"currency_id": "chaos", "currency_name": "Chaos Orb",
+             "price_in_currency": 8.0, "relative_price": 0.1},
+        ]
+        result = _find_optimal_payment(options, 1.0)
+        assert result is not None
+        assert result["best_currency_id"] == "exalted"
+        assert result["worst_currency_id"] == "chaos"
+        assert result["savings_pct"] > 0
+
+    def test_item_with_three_payment_currencies(self):
+        """A Soul Core priced in Exalted, Divine, and Chaos."""
+        options = [
+            {"currency_id": "exalted", "currency_name": "Exalted Orb",
+             "price_in_currency": 2.0, "relative_price": 1.0},
+            {"currency_id": "divine", "currency_name": "Divine Orb",
+             "price_in_currency": 0.02, "relative_price": 150.0},  # 0.02*150=3 Exa
+            {"currency_id": "chaos", "currency_name": "Chaos Orb",
+             "price_in_currency": 25.0, "relative_price": 0.1},   # 25*0.1=2.5 Exa
+        ]
+        result = _find_optimal_payment(options, 1.0)
+        assert result is not None
+        assert result["best_currency_id"] == "exalted"  # 2.0 Exa cheapest
+        assert result["worst_currency_id"] == "divine"  # 3.0 Exa most expensive
+        # Savings = 3.0 - 2.0 = 1.0 Exa
+        assert result["savings_anchor"] == pytest.approx(1.0)
+
+    def test_item_with_single_payment_returns_none(self):
+        """Item with only one payment option → no comparison possible."""
+        options = [
+            {"currency_id": "exalted", "currency_name": "Exalted Orb",
+             "price_in_currency": 1.0, "relative_price": 1.0},
+        ]
+        result = _find_optimal_payment(options, 1.0)
+        assert result is None
+
+    def test_divine_premium_on_items(self):
+        """Divine Orb typically has ~10% premium on items.
+
+        Scenario: An item priced at 1 Exalted or 0.008 Divine.
+        - Exalted: 1.0 * (1.0/1.0) = 1.0 Exa
+        - Divine: 0.008 * (150.0/1.0) = 1.2 Exa
+        → Exalted is 16.7% cheaper.
+        """
+        options = [
+            {"currency_id": "exalted", "currency_name": "Exalted Orb",
+             "price_in_currency": 1.0, "relative_price": 1.0},
+            {"currency_id": "divine", "currency_name": "Divine Orb",
+             "price_in_currency": 0.008, "relative_price": 150.0},
+        ]
+        result = _find_optimal_payment(options, 1.0)
+        assert result is not None
+        assert result["best_currency_id"] == "exalted"
+        assert result["savings_pct"] == pytest.approx(16.67, abs=0.5)
+
+    def test_new_item_categories_in_config(self):
+        """Verify that new item categories (idol, vaultkeys, delirium) are in config."""
+        from backend.config import get_settings
+        settings = get_settings()
+        item_cats = settings.league.item_categories
+        assert "ritual" in item_cats
+        assert "ultimatum" in item_cats
+        assert "idol" in item_cats
+        assert "vaultkeys" in item_cats
+        assert "delirium" in item_cats
