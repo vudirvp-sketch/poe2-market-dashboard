@@ -74,26 +74,9 @@ class LeagueConfig(BaseModel):
         return datetime.fromisoformat(self.league_start_date.replace("Z", "+00:00"))
 
 
-class FeesConfig(BaseModel):
-    """Fees configuration — gold fee accounting for PoE2 Currency Exchange.
-    
-    When gold_enabled is False (default), gold fees are EXCLUDED from all
-    flipper calculations. This is because gold is a consumable in PoE2 with
-    no real trade value for small-scale flippers, and including it made most
-    flips show net_profit_pct <= 0.
-    
-    Set gold_enabled to True to re-enable gold fee deduction in scoring,
-    arbitrage, and storage value calculations.
-    """
-    # Master switch for gold fee inclusion in profit calculations.
-    # When False, all flipper calculations ignore gold fees entirely.
-    gold_enabled: bool = False
-    # Source for gold_to_chaos_rate: "dynamic" (from POE2Scout) or "fixed" (from config)
-    gold_to_chaos_rate_source: str = "dynamic"
-    # Fallback when POE2Scout data is unavailable. Current estimate ~0.15-0.25 Chaos/Gold.
-    fixed_gold_to_chaos_rate: float = 0.002
-    # Default per-unit gold cost for currencies not in the verified table
-    unknown_item_gold_cost: int = 200
+# FeesConfig has been removed. Gold fees are permanently excluded from all
+# scoring, arbitrage, and storage-value calculations. Gold is a consumable
+# in PoE2 with no real trade value for small-scale flippers.
 
 
 class FiltersConfig(BaseModel):
@@ -199,7 +182,6 @@ class AppConfig(BaseModel):
     """Root configuration model matching config.yaml structure."""
     data: DataConfig = DataConfig()
     league: LeagueConfig = LeagueConfig()
-    fees: FeesConfig = FeesConfig()
     filters: FiltersConfig = FiltersConfig()
     scoring: ScoringConfig = ScoringConfig()
     forecasting: ForecastingConfig = ForecastingConfig()

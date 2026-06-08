@@ -208,12 +208,6 @@ export interface FlipEventStatus {
   summary: Record<string, unknown> | null;
 }
 
-/** Gold fee warning embedded in FlipsResponse and TriangularResponse */
-export interface FeeWarning {
-  goldFeesExcluded: boolean;
-  message: string;
-}
-
 /** Response shape from GET /api/flipper/flips */
 export interface FlipsResponse {
   league: string;
@@ -223,8 +217,6 @@ export interface FlipsResponse {
   fetchedAt: string;
   /** true when backend has not accumulated enough data yet */
   dataAvailable?: boolean;
-  /** Warning about gold fees being excluded from calculations */
-  feeWarning?: FeeWarning;
 }
 
 /** Triangular arbitrage cycle from GET /api/flipper/triangular
@@ -261,8 +253,6 @@ export interface TriangularResponse {
   fetchedAt: string;
   /** true when backend has not accumulated enough data yet */
   dataAvailable?: boolean;
-  /** Warning about gold fees being excluded from calculations */
-  feeWarning?: FeeWarning;
   /** Warning about cross-rate inconsistencies causing false positives */
   crossRateWarning?: CrossRateWarning | null;
 }

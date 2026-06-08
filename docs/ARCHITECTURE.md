@@ -58,7 +58,7 @@ Browser
   → fetchApi("/api/flipper/flips")
   → Next.js proxy route (src/app/api/flipper/flips/route.ts)
   → flipper-proxy.ts: proxyWithFallback("/api/arbitrage/flips")
-      → Circuit breaker check (3 failures → open for 30s)
+      → Circuit breaker check (5 failures → open for 15s)
       → fetch("http://localhost:8000/api/arbitrage/flips")
       ↓ on 503/502/422
       → Error type classification (backend_offline, insufficient_data, etc.)
@@ -112,7 +112,7 @@ I5.  config.yaml is the single source of truth for backend parameters
 I6.  League names use ShortName format ("runes" not "Runes of Aldur")
 I7.  IsCurrent now works for poe2 realm — prefer it when true, else fallback to default_league_value
 I8.  PriceLogs are REVERSE chronological — always sort before charting
-I9.  Gold fees currently disabled (gold_enabled: false) — do NOT add fee calculations
+I9.  Gold fees permanently excluded — do NOT add fee calculations (gold code removed in v1.17+)
 I10. npm is the package manager (not pnpm/yarn)
 I11. /api/flipper/* routes are pure proxies — no business logic in Next.js handlers
 I12. Backend schemas use PascalCase aliases (Python snake_case → serialized PascalCase)
@@ -130,7 +130,7 @@ P4.  Defensive nullability  — backend may omit fields; UI must handle undefine
 P5.  PascalCase→camelCase   — poe2api.ts transforms POE2Scout responses (except /Realms)
 P6.  Dual-write events      — EventManager writes to both in-memory + SQLite
 P7.  TTL caching everywhere — SnapshotManager (5 min), PipelineCache, DailyStatsCache
-P8.  Circuit breaker        — flipper-proxy.ts: 3 failures → open for 30s
+P8.  Circuit breaker        — flipper-proxy.ts: 5 failures → open for 15s (grows exponentially to max 5min)
 P9.  Single source of truth — types in types.ts, formulas in Canonical_Formulas.md, config in config.yaml
 P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edited
 ```
@@ -196,20 +196,20 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | PipelineCache | `pipeline_cache.py` | Configurable | endpoint+params | In-memory dict (no size limit, stale entries never evicted) |
 | DailyStatsCache | `daily_stats_cache.py` | Configurable | currency+league | LRU + TTL dict |
 | poe2api.ts cache | `src/lib/poe2api.ts` | 30 min | URL path | In-memory Map |
-| Circuit breaker | `flipper-proxy.ts` | 30s open | Backend URL | Failure counter |
+| Circuit breaker | `flipper-proxy.ts` | 15s initial (grows to 5min) | Backend URL | Failure counter |
 | cache-snapshot.json | `src/data/` | Regenerated | — | JSON file (pre-populated) |
 
 ## 8. Error Handling & Resilience
 
 ### Frontend (poe2api.ts)
-- **Circuit breaker:** 3 consecutive failures → open for 30s
+- **Circuit breaker:** 5 consecutive failures → open for 15s (exponential backoff to max 5min, health probe on recovery)
 - **Stale-while-revalidate:** serve cached data up to 30 min old while revalidating
 - **CORS proxy fallback:** automatic retry through Cloudflare Worker on ECONNRESET/ETIMEDOUT
 - **Pre-populated cache:** `cache-snapshot.json` seeds in-memory cache on startup
 - **Dynamic fallback:** last successful API response cached and served when unreachable
 
 ### Frontend (flipper-proxy.ts)
-- **Circuit breaker:** 3 failures → open for 30s
+- **Circuit breaker:** 5 failures → open for 15s (exponential backoff to 5min, half-open health probe)
 - **Request deduplication:** concurrent identical requests share one in-flight fetch
 - **Error type classification:** `backend_offline`, `insufficient_data`, `upstream_error`, etc.
 - **Graceful UI:** FlipperBackendStatusCard shows consistent offline/insufficient-data messages

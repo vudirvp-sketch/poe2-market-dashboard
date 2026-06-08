@@ -302,7 +302,7 @@ DataSnapshot
   ├── AnomalyDetector → anomaly indicators (Z-score, MACD, RSI, STL, momentum)
   ├── PhaseDetector → EARLY/MID/LATE (based on league_start_date)
   ├── EventManager → active events + scoring penalties
-  └── RecipeArb → vendor recipe profit calculations (gold_enabled: false)
+  └── RecipeArb → vendor recipe profit calculations (gold fees excluded)
 ```
 
 ### 4.4 HistoricalStore (SQLite)
@@ -608,7 +608,7 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 ### 8.5 Known Discrepancies
 
 1. **`scoreColor` re-export:** `src/components/dashboard/flips-helpers.ts` now re-exports `scoreColor` from `src/lib/flipper-helpers.ts` — no longer duplicated with different thresholds
-2. **Backend `FeesConfig` has `gold_enabled` flag** (default: `false`) — controls gold fee inclusion
+2. ~~`FeesConfig` with `gold_enabled` flag~~ — **removed** in v1.17+. Gold fees are permanently excluded from all calculations.
 3. ~~`routes_auth.py`~~ — **deleted** from codebase (was dead code, now removed)
 4. **`OfficialTradeProvider` exists** but requires env vars that are never configured — dead code unless manually set
 

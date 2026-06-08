@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.17 | **Date:** 2026-06-08
+> **Version:** 1.18 | **Date:** 2026-06-09
 
 ---
 
@@ -99,6 +99,11 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName or stale ShortName instead of current ShortName. Workaround exists: `DEFAULT_LEAGUE_OVERRIDES` in `poe2api.ts` + dual matching in `getLeagues()`. Additionally, `IsCurrent=true` now works for poe2 realm, so the fallback is less critical. Still worth reporting to POE2Scout maintainers.
 2. **Live E2E flip verification with VPN** — Start backend (`uvicorn backend.main:app --reload --port 8000`), open Flips tab at http://localhost:3000, compare displayed flips with fixture data from `tests/fixtures/item-category-pairs.json`. The offline verification script (`scripts/verify-flips-vs-fixtures.py`) confirms logic correctness, but a live browser check is still needed to verify: (a) BestPaymentBadge renders correctly for Omens/Soul Cores in the Flips table, (b) Premium column shows savings, (c) no rendering errors in production build.
 
+### COMPLETED (v1.18 — Iteration 3)
+1. ~~**Gold code fully removed**~~ — Deleted `FeesConfig` (config.py), `fees:` section (config.yaml), `gold_costs.py`, `gold_cost_table.py`, `FeeWarning`/`feeWarning` (types.ts), gold fee warning UI (arbitrage-tab.tsx, flips-tab.tsx), `Coins` icon imports
+2. ~~**Circuit breaker initial cooldown reduced**~~ — From 60s to 15s for faster recovery during backend cold start
+3. ~~**Documentation updated**~~ — ARCHITECTURE.md I9, BACKEND_GUIDE.md §6.9, DATA_FLOW.md §8.5, Canonical Formulas §3, AGENT_NAVIGATION.md
+
 ### COMPLETED (v1.17 — Iteration 2)
 1. ~~**flipper-proxy.ts: Response body race condition**~~ — Dedup map now stores BufferedProxyResult (data+status) instead of raw Response; each consumer gets a fresh NextResponse
 2. ~~**backend/main.py: Race condition in health check**~~ — Added asyncio.Lock (_health_check_lock) with double-check pattern
@@ -116,7 +121,7 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
-2. **Gold fees permanently excluded** — Gold is a consumable in PoE2, not a tradeable; gold_enabled code removed in v1.17
+2. **Gold fees permanently excluded** — `gold_enabled`, `FeesConfig`, `gold_costs.py`, `gold_cost_table.py` all removed in v1.18. `FeeWarning`/`feeWarning` removed from frontend types and components.
 3. **R_buy=bid, R_sell=ask** — Correct market-maker model (buy at bid, sell at ask)
 4. **Correlation min_overlap=2** — Intentionally low for early-league compatibility
 5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu
@@ -167,7 +172,7 @@ When a new league launches, update these 7 files:
 7. **`IsCurrent` works for poe2 realm:** Previously unreliable, now returns `true` for current leagues. Still use fallback to `default_league_value` when no league has `IsCurrent=true` (may happen for other realms).
 8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
 9. **Missing currency categories in config:** API returns categories not listed in `config.yaml`. Keep config complete for robustness.
-10. **Gold fees permanently excluded** — `gold_enabled` code removed in v1.17. Do NOT re-add gold fee deductions; gold is a consumable in PoE2 with no real trade value for flippers.
+10. **Gold fees permanently excluded** — `gold_enabled`, `FeesConfig`, `gold_costs.py`, `gold_cost_table.py` all removed in v1.18. Do NOT re-add gold fee deductions; gold is a consumable in PoE2 with no real trade value for flippers.
 11. **npm is the package manager** — not pnpm/yarn.
 12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.

@@ -1,7 +1,5 @@
 // ============================================================================
 // Arbitrage Tab — Flipper-scored arbitrage opportunities + triangular cycles
-// Uses the flipper backend for properly scored opportunities with real
-// volume/volatility/momentum data and gold fee accounting.
 // ============================================================================
 "use client";
 
@@ -15,7 +13,6 @@ import {
   Circle,
   Server,
   RefreshCw,
-  Coins,
   Layers,
   TrendingUp,
 } from "lucide-react";
@@ -204,23 +201,6 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
           </div>
         </CardContent>
       </Card>
-
-      {/* ---- Gold fee warning ---- */}
-      {(flipsData?.feeWarning?.goldFeesExcluded || triData?.feeWarning?.goldFeesExcluded) && (
-        <Card className="border-orange-500/30 bg-orange-500/5" role="alert" aria-live="polite">
-          <CardContent className="flex items-start gap-3 p-4">
-            <Coins className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" aria-hidden="true" />
-            <div className="text-sm">
-              <p className="font-medium text-orange-600 dark:text-orange-400">
-                {t("flipsGoldFeesExcluded")}
-              </p>
-              <p className="text-muted-foreground mt-1">
-                {t("flipsGoldFeesExcludedDesc")}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ---- Cross-rate inconsistency warning ---- */}
       {triData?.crossRateWarning && triData.crossRateWarning.suspiciousTriplesCount > 0 && (

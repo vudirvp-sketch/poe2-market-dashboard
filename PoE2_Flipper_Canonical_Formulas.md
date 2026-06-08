@@ -6,7 +6,7 @@
 >
 > **PoE2 vs PoE1 WARNING:** The gold fee model in §3 is specific to Path of Exile 2. Do NOT apply PoE1 fee assumptions. In PoE1, the exchange fee model is different. This entire document assumes PoE2 mechanics throughout.
 >
-> **⚠️ DEPRECATED SECTIONS NOTICE:** Sections marked `DEPRECATED` or `SIMPLIFIED` document formulas that are **no longer active in the codebase**. Gold fee calculations (§3) are disabled (`gold_enabled: false` in config); triangular arbitrage (§8) and recipe arbitrage (§9) use simplified no-fee formulas. The `gold_costs.py` and `gold_cost_table.py` modules still exist but are not wired into the active scoring/arbitrage pipeline. These sections are kept for reference only — do NOT implement the fee-aware versions unless `gold_enabled` is set to `true` AND the integration code is completed (currently a TODO stub).
+> **⚠️ DEPRECATED SECTIONS NOTICE:** Sections marked `DEPRECATED` or `SIMPLIFIED` document formulas that are **no longer active in the codebase**. Gold fee calculations (§3) are permanently disabled; `gold_enabled`, `FeesConfig`, `gold_costs.py`, and `gold_cost_table.py` have been removed from the codebase. These sections are kept for reference only — do NOT implement the fee-aware versions unless gold fee support is explicitly re-added to the project.
 
 ---
 
@@ -135,18 +135,12 @@ Standard financial mathematics. Log-returns are the standard in quantitative fin
 
 ## §3. Gold Fee Model (PoE2-Specific)
 
-> **⚠️ DEPRECATED — DISABLED IN CODEBASE:**
-> Gold fee calculations are currently disabled (`gold_enabled: false` in `config.yaml`).
-> The `gold_costs.py` and `gold_cost_table.py` modules still exist in `backend/economy/`
-> but are **not imported or called** from any active route. The `FeesConfig` fields
-> (`gold_to_chaos_rate_source`, `fixed_gold_to_chaos_rate`, `unknown_item_gold_cost`)
-> remain in `config.yaml` for when gold fees are re-enabled. The `/api/prices` endpoint
-> does not return `fee_fraction`, `gold_fee_actual`, or `gold_to_chaos_rate` while
-> gold is disabled. **Important:** The `gold_enabled=true` code path in
-> `routes_arbitrage.py` is a TODO stub — it does NOT actually compute gold fees
-> but misleadingly tells users that fees are included. This section documents the
-> game mechanics and the canonical formula for when gold fees are properly
-> re-integrated.
+> **⚠️ DEPRECATED — REMOVED FROM CODEBASE:**
+> Gold fee calculations are permanently disabled. `gold_enabled`, `FeesConfig`,
+> `gold_costs.py`, and `gold_cost_table.py` have been removed from the codebase.
+> The `/api/prices` endpoint does not return `fee_fraction`, `gold_fee_actual`,
+> or `gold_to_chaos_rate`. This section documents the game mechanics and the
+> canonical formula for reference only.
 
 ### 3.1 Core Formula
 

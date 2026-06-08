@@ -31,8 +31,8 @@ export const FLIPPER_CORS_PROXY_URL = process.env.FLIPPER_CORS_PROXY_URL || "";
 // Circuit breaker for flipper-backend requests
 let flipperCircuitBreakerOpen = false;
 let flipperCircuitBreakerOpenSince = 0;
-let flipperCircuitBreakerCooldownMs = 60_000; // P1-2: starts at 60s, grows exponentially
-export const FLIPPER_CB_INITIAL_COOLDOWN = 60_000; // 60s
+let flipperCircuitBreakerCooldownMs = 15_000; // starts at 15s for faster cold-start recovery, grows exponentially
+export const FLIPPER_CB_INITIAL_COOLDOWN = 15_000; // 15s — reduced from 60s for faster recovery during backend cold start
 export const FLIPPER_CB_MAX_COOLDOWN = 300_000; // P1-2: max 5 minutes
 let flipperConsecutiveFailures = 0;
 export const FLIPPER_CB_THRESHOLD = 5; // Open after 5 consecutive failures

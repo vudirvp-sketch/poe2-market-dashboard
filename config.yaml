@@ -56,20 +56,10 @@ league:
     - vaultkeys    # Reliquary Keys
     - delirium     # Delirium items
 
-# Gold fee configuration — Step 3: Gold fee accounting.
-# The gold_to_chaos_rate is extracted dynamically from POE2Scout's data
-# (chaosEquivalent of "Gold Coin"). If unavailable, fixed_gold_to_chaos_rate is used.
-#
-# gold_enabled: When false, gold fees are EXCLUDED from all flipper calculations.
-# This is the current default because gold is a consumable in PoE2 with no real
-# trade value for small-scale flippers, and including it made most flips show
-# net_profit_pct <= 0. Set to true to re-enable gold fee deduction in scoring,
-# arbitrage, and storage value calculations.
-fees:
-  gold_enabled: false                   # Set to true to include gold fees in profit calculations
-  gold_to_chaos_rate_source: "dynamic"  # "dynamic" (from POE2Scout) or "fixed"
-  fixed_gold_to_chaos_rate: 0.002       # Fallback: ~0.002 Chaos per Gold (current estimate)
-  unknown_item_gold_cost: 200           # Per-unit gold cost for currencies not in the verified table
+# Gold fee configuration has been removed. Gold fees are permanently excluded
+# from all scoring, arbitrage, and storage-value calculations because gold is
+# a consumable in PoE2 with no real trade value for small-scale flippers.
+# See AGENT_NAVIGATION.md §10 #10 and PoE2_Flipper_Canonical_Formulas.md §3.
 
 filters:
   min_volume_24h: 20  # Lowered from 200 for early-league compatibility (4-day-old league has low volumes)

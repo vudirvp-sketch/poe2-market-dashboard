@@ -229,7 +229,7 @@ score = raw_spread × fill_probability × momentum_penalty × vol_penalty × pha
 
 - Vendor recipe definitions from `config.yaml`
 - Profit calculation: recipe output value minus input costs
-- Gold fees excluded (gold_enabled: false)
+- Gold fees permanently excluded (gold code removed)
 
 ### 6.10 Quick Filter
 

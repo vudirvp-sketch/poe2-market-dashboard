@@ -1,6 +1,32 @@
 # Worklog
 
 ---
+Task ID: 14
+Agent: main
+Task: Iteration 3 — Gold code removal, circuit breaker tuning, documentation cleanup
+
+Work Log:
+- Removed FeesConfig class from backend/config.py (gold_enabled, gold_to_chaos_rate_source, fixed_gold_to_chaos_rate, unknown_item_gold_cost)
+- Removed fees: section from config.yaml, replaced with a comment noting gold fees are permanently excluded
+- Deleted backend/economy/gold_costs.py and gold_cost_table.py
+- Updated backend/economy/__init__.py to note deletion of gold modules
+- Removed FeeWarning interface and feeWarning fields from FlipsResponse/TriangularResponse in src/lib/types.ts
+- Removed gold fee warning UI blocks from arbitrage-tab.tsx and flips-tab.tsx
+- Removed unused Coins icon imports from both components
+- Reduced circuit breaker FLIPPER_CB_INITIAL_COOLDOWN from 60s to 15s for faster cold-start recovery
+- Updated docs/ARCHITECTURE.md: I9 (gold permanently excluded), P8 (5 failures → 15s), circuit breaker descriptions
+- Updated docs/BACKEND_GUIDE.md: §6.9 recipe gold note
+- Updated docs/DATA_FLOW.md: §4.3 recipe gold note, §8.5 known discrepancies (FeesConfig removed)
+- Updated PoE2_Flipper_Canonical_Formulas.md: DEPRECATED notice updated to reflect code removal
+- Updated AGENT_NAVIGATION.md: version 1.18, frequent bugs #10, confirmed intentional #2, COMPLETED section
+
+Stage Summary:
+- All gold-related code fully removed from config, backend modules, and frontend types/components
+- Circuit breaker initial cooldown reduced from 60s to 15s
+- Documentation fully updated and consistent
+- Remaining for next iteration: triangular.py gold_cost_per_unit parameter cleanup, E2E test updates, i18n key cleanup (flipsGoldFeesExcluded/Desc)
+
+---
 Task ID: 13
 Agent: main
 Task: Iteration 2 — Fix CRITICAL + HIGH code bugs
