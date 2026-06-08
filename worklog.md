@@ -1,24 +1,26 @@
 # Worklog
 
 ---
-Task ID: 18
+Task ID: 19
 Agent: main
-Task: Iteration 7 — PipelineCache LRU, venv fix, header fix, cleanup TODOs
+Task: Iteration 9 — Bridge Windows fix, file logging, stuck process kill, start.sh bridge mode, start.bat where.exe fix
 
 Work Log:
-- Added LRU eviction + max-entries cap (DEFAULT_MAX_ENTRIES=64) to PipelineCache using OrderedDict
-- Expired/stale entries evicted first during put(), then LRU active entries
-- PipelineCache.stats() now includes total_entries and max_entries
-- Fixed backend startup: start.sh/start.bat now auto-create .venv and use venv python
-- Added .venv/ to .gitignore
-- Fixed header "More" button: split into scrollable bar + fixed button outside scroll area
-- Removed stale TODO #1 (report default_league_value upstream) — workaround is stable
-- Merged TODO #2 (live E2E verification) into remaining TODO list
-- Marked TODO #3 (shadcn CLI v4) and #4 (PipelineCache) as completed
-- Updated AGENT_NAVIGATION.md to v1.22
+- Fixed flipper-backend-bridge.ts: Windows taskkill /PID /T /F fallback instead of SIGTERM/SIGKILL
+- Added file logging to flipper-bridge.log (2 MB rotation, dual output console+file)
+- Added consecutiveUnhealthy counter: kills stuck process after 3 failed health checks
+- Fixed start.bat: replaced `where` with `where.exe` to prevent CMD parse errors
+- Fixed start.bat: bridge disabled in --dev mode (FLIPPER_BRIDGE_DISABLED=true)
+- Fixed start.sh: added --no-bridge flag, bridge mode is now default (matches start.bat)
+- Fixed start.sh: bridge disabled in --dev mode
+- Verified use-websocket.ts: backendOnline transitions already handled correctly
+- Updated AGENT_NAVIGATION.md to v1.24
+- Updated ARCHITECTURE.md §10 to v1.24
 
 Stage Summary:
-- PipelineCache now bounded (64 entries, LRU eviction)
-- Backend should start reliably with venv (no more PEP 668 pip failures)
-- Header "More" button always visible
-- Documentation cleaned up, stale TODOs removed
+- Bridge now works on Windows (taskkill instead of SIGTERM)
+- Bridge logs to flipper-bridge.log for diagnostics
+- Bridge kills stuck processes (3 consecutive unhealthy → kill → auto-restart)
+- start.sh now has --no-bridge flag, bridge is default
+- start.bat uses where.exe (fixes 'ho.' parse error)
+- Documentation updated and current

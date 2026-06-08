@@ -4,10 +4,15 @@
 #
 #  Usage:
 #    chmod +x start.sh
-#    ./start.sh            # production mode (build + start)
+#    ./start.sh            # production mode (build + start, bridge enabled)
 #    ./start.sh --dev      # development mode (no build, hot reload)
 #    ./start.sh --skip-build  # skip build, use existing .next
 #    ./start.sh --clean    # remove .next + node_modules + .venv, reinstall, build
+#    ./start.sh --no-bridge  # start Python backend separately (legacy)
+#
+#  Bridge mode (default): Next.js manages the Python backend via
+#  instrumentation.ts → flipper-backend-bridge.ts. Auto-start, health
+#  monitoring, auto-restart on crash, graceful shutdown.
 # ============================================================
 set -euo pipefail
 
@@ -28,6 +33,21 @@ echo "============================================================"
 echo "  PoE2 Market Dashboard - Launcher (Linux/macOS)"
 echo "============================================================"
 echo ""
+
+# ---- Parse flags early ----
+DEV_MODE=0
+SKIP_BUILD=0
+CLEAN_MODE=0
+NO_BRIDGE=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --dev) DEV_MODE=1 ;;
+        --skip-build) SKIP_BUILD=1 ;;
+        --clean) CLEAN_MODE=1 ;;
+        --no-bridge) NO_BRIDGE=1 ;;
+    esac
+done
 
 # ---- Check Node.js ----
 if command -v node &>/dev/null; then
@@ -197,53 +217,63 @@ fi
 info "Port 8000 is free."
 echo ""
 
-# ---- Start FastAPI backend ----
+# ---- Backend startup mode ----
 FLIPPER_PID=""
+export FLIPPER_BRIDGE_DISABLED="false"
 
 if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
-    info "Starting FastAPI Flipper backend on port 8000..."
-    # Use the determined PY_CMD (venv python preferred)
-    # PYTHONPATH must include the project root so Python can find the 'backend' package
-    # Without this, uvicorn fails with "ModuleNotFoundError: No module named 'backend'"
-    PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
-    FLIPPER_PID=$!
+    if [ "$NO_BRIDGE" -eq 1 ]; then
+        # --no-bridge mode: start Python backend separately (legacy)
+        info "Starting FastAPI Flipper backend separately (--no-bridge mode)..."
+        PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
+        FLIPPER_PID=$!
 
-    # Wait for backend to start with retry loop (up to 30 seconds)
-    # The backend may take longer when poe2scout.com is unreachable
-    # (it tries to connect, times out, then starts in degraded mode)
-    _BACKEND_OK=0
-    for i in $(seq 1 30); do
-        sleep 1
-        if curl -s --max-time 3 http://localhost:8000/api/health &>/dev/null; then
-            _BACKEND_OK=1
-            info "Flipper backend started on http://localhost:8000 (after ${i}s)"
-            break
-        fi
-        # Check if the process is still running
-        if ! kill -0 "$FLIPPER_PID" 2>/dev/null; then
-            warn "Flipper backend process died! Check flipper-backend.log for errors."
-            # Print last few lines of the log for quick diagnosis
-            if [ -f "flipper-backend.log" ]; then
-                echo "--- Last 10 lines of flipper-backend.log ---"
-                tail -10 flipper-backend.log
-                echo "---"
+        # Wait for backend to start with retry loop (up to 30 seconds)
+        _BACKEND_OK=0
+        for i in $(seq 1 30); do
+            sleep 1
+            if curl -s --max-time 3 http://localhost:8000/api/health &>/dev/null; then
+                _BACKEND_OK=1
+                info "Flipper backend started on http://localhost:8000 (after ${i}s)"
+                break
             fi
-            break
-        fi
-    done
+            # Check if the process is still running
+            if ! kill -0 "$FLIPPER_PID" 2>/dev/null; then
+                warn "Flipper backend process died! Check flipper-backend.log for errors."
+                if [ -f "flipper-backend.log" ]; then
+                    echo "--- Last 10 lines of flipper-backend.log ---"
+                    tail -10 flipper-backend.log
+                    echo "---"
+                fi
+                break
+            fi
+        done
 
-    if [ "$_BACKEND_OK" -eq 0 ]; then
-        if kill -0 "$FLIPPER_PID" 2>/dev/null; then
-            warn "Flipper backend is still starting (degraded mode — upstream API may be unreachable)."
-            warn "It will become available shortly. Dashboard will work with cached data."
-        else
-            warn "Flipper backend failed to start. Check flipper-backend.log for errors."
-            warn "The dashboard will still work in frontend-only mode (no analytics)."
+        if [ "$_BACKEND_OK" -eq 0 ]; then
+            if kill -0 "$FLIPPER_PID" 2>/dev/null; then
+                warn "Flipper backend is still starting (degraded mode — upstream API may be unreachable)."
+                warn "It will become available shortly. Dashboard will work with cached data."
+            else
+                warn "Flipper backend failed to start. Check flipper-backend.log for errors."
+                warn "The dashboard will still work in frontend-only mode (no analytics)."
+            fi
         fi
+        echo ""
+
+        # Disable bridge since we started backend separately
+        export FLIPPER_BRIDGE_DISABLED="true"
+    else
+        # Bridge mode (default): Next.js manages the Python backend
+        info "Flipper backend will be managed by Next.js bridge (auto-start + auto-restart)."
+        info "Bridge logs: flipper-bridge.log"
+        info "The bridge starts the Python process when Next.js starts."
+        info "If the backend crashes, it will be restarted automatically."
+        echo ""
+        export FLIPPER_BRIDGE_DISABLED="false"
     fi
-    echo ""
 else
     warn "Flipper backend not started (uvicorn not available)."
+    export FLIPPER_BRIDGE_DISABLED="true"
     echo ""
 fi
 
@@ -280,19 +310,6 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
-# ---- Handle flags ----
-DEV_MODE=0
-SKIP_BUILD=0
-CLEAN_MODE=0
-
-for arg in "$@"; do
-    case "$arg" in
-        --dev) DEV_MODE=1 ;;
-        --skip-build) SKIP_BUILD=1 ;;
-        --clean) CLEAN_MODE=1 ;;
-    esac
-done
-
 # ---- Handle --clean flag ----
 if [ "$CLEAN_MODE" -eq 1 ]; then
     info "--clean flag: deep cleaning..."
@@ -320,13 +337,14 @@ if [ "$CLEAN_MODE" -eq 1 ]; then
     echo ""
 fi
 
+# ---- Dev mode ----
 if [ "$DEV_MODE" -eq 1 ]; then
     info "Starting in DEVELOPMENT mode (--dev flag)"
     echo ""
 
-    # Restart Flipper with --reload in dev mode
+    # Start Flipper with --reload in dev mode
     if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
-        info "Restarting Flipper backend with --reload for dev mode..."
+        info "Starting Flipper backend with --reload for dev mode..."
         if [ -n "$FLIPPER_PID" ]; then
             kill "$FLIPPER_PID" 2>/dev/null || true
             sleep 1
@@ -334,9 +352,12 @@ if [ "$DEV_MODE" -eq 1 ]; then
         PYTHONPATH="$SCRIPT_DIR" $PY_CMD -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000 > flipper-backend.log 2>&1 &
         FLIPPER_PID=$!
         sleep 2
-        info "Flipper backend restarted with --reload"
+        info "Flipper backend started with --reload"
         echo ""
     fi
+
+    # Disable bridge in dev mode (uvicorn --reload handles restarts)
+    export FLIPPER_BRIDGE_DISABLED="true"
 
     echo "============================================================"
     echo "  Starting PoE2 Market Dashboard - DEV MODE"
@@ -390,6 +411,7 @@ echo "  Starting PoE2 Market Dashboard..."
 echo "  Open your browser: http://localhost:3000"
 echo ""
 echo "  Flipper backend: http://localhost:8000"
+echo "  Bridge logs: flipper-bridge.log"
 echo ""
 echo "  Press Ctrl+C to stop all servers."
 echo "============================================================"

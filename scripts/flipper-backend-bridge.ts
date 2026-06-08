@@ -13,11 +13,17 @@
  *   FLIPPER_API_URL  — backend URL (default: http://localhost:8000)
  *   FLIPPER_BRIDGE_DISABLED — set to "true" to skip bridge startup
  *   PYTHON_CMD       — Python command (default: auto-detect .venv)
+ *
+ * Platform notes:
+ *   Windows: uses taskkill /PID /T /F for process termination because
+ *   child_process.kill("SIGTERM") does not reliably kill Python child
+ *   processes on Windows (no POSIX signal support).
+ *   Unix/macOS: uses SIGTERM → SIGKILL fallback as before.
  */
 
-import { spawn, ChildProcess } from "child_process";
-import { existsSync } from "fs";
-import { join } from "path";
+import { spawn, execSync, ChildProcess } from "child_process";
+import { existsSync, writeFileSync, appendFileSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
 
 const BACKEND_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
 const HEALTH_ENDPOINT = `${BACKEND_URL}/api/health`;
@@ -25,49 +31,155 @@ const HEALTH_CHECK_INTERVAL = 30_000; // 30s
 const RESTART_DELAY = 5_000; // 5s
 const MAX_RESTARTS = 5;
 const MAX_RESTART_WINDOW = 60_000; // 1 minute — if >MAX_RESTARTS restarts in this window, give up
+const MAX_CONSECUTIVE_UNHEALTHY = 3; // kill process after N consecutive unhealthy checks
+const LOG_FILE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB — rotate log after this size
+
+const isWindows = process.platform === "win32";
 
 let backendProcess: ChildProcess | null = null;
 let healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 let restartCount = 0;
 let restartWindowStart = Date.now();
 let isShuttingDown = false;
+let consecutiveUnhealthy = 0;
+
+// ---------------------------------------------------------------------------
+// File logging — writes to flipper-bridge.log in the project root
+// ---------------------------------------------------------------------------
+
+const projectRoot = join(__dirname, "..");
+const LOG_FILE = join(projectRoot, "flipper-bridge.log");
+
+function logToFile(message: string): void {
+  try {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${message}\n`;
+
+    // Rotate log if too large
+    if (existsSync(LOG_FILE)) {
+      try {
+        const { statSync } = require("fs");
+        const stats = statSync(LOG_FILE);
+        if (stats.size > LOG_FILE_MAX_BYTES) {
+          // Truncate: keep last ~256 KB by writing empty + appending
+          writeFileSync(LOG_FILE, "");
+        }
+      } catch {
+        // Ignore rotation errors
+      }
+    }
+
+    appendFileSync(LOG_FILE, line);
+  } catch {
+    // Log file write failures are non-critical — don't crash
+  }
+}
+
+/**
+ * Log a message to both console and the log file.
+ */
+function log(message: string): void {
+  console.log(message);
+  logToFile(message);
+}
+
+function logWarn(message: string): void {
+  console.warn(message);
+  logToFile(`[WARN] ${message}`);
+}
+
+function logError(message: string): void {
+  console.error(message);
+  logToFile(`[ERROR] ${message}`);
+}
+
+// ---------------------------------------------------------------------------
+// Windows-aware process termination
+// ---------------------------------------------------------------------------
+
+/**
+ * Kill a child process in a platform-appropriate way.
+ *
+ * On Windows, child_process.kill("SIGTERM") sends a signal that Python
+ * does not handle (no POSIX signals). The process and its children may
+ * survive. Using `taskkill /PID <pid> /T /F` kills the entire process
+ * tree forcefully.
+ *
+ * On Unix, we use the standard SIGTERM → SIGKILL (5s grace) approach.
+ */
+function killBackendProcess(child: ChildProcess): void {
+  if (isWindows && child.pid) {
+    try {
+      log(`[flipper-bridge] Windows: killing process tree with taskkill /PID ${child.pid} /T /F`);
+      execSync(`taskkill /PID ${child.pid} /T /F`, {
+        stdio: "ignore",
+        timeout: 10_000,
+      });
+    } catch {
+      // taskkill may fail if process already exited — that's fine
+      log("[flipper-bridge] taskkill failed (process may have already exited)");
+    }
+  } else {
+    // Unix: SIGTERM first, then SIGKILL after 5s
+    try {
+      child.kill("SIGTERM");
+    } catch {
+      // Process may have already exited
+    }
+
+    const forceKillTimer = setTimeout(() => {
+      try {
+        if (!child.killed) {
+          log("[flipper-bridge] Force killing backend process (SIGKILL)...");
+          child.kill("SIGKILL");
+        }
+      } catch {
+        // Ignore
+      }
+    }, 5_000);
+
+    // Don't keep the Node.js process alive just for this timer
+    forceKillTimer.unref();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Python / uvicorn detection
+// ---------------------------------------------------------------------------
 
 /**
  * Detect the Python command to use.
  * Prefers .venv Python if available.
  */
 function detectPythonCommand(): string {
-  const projectRoot = join(__dirname, "..");
-
   // Windows: check .venv\Scripts\python.exe
   const winVenvPython = join(projectRoot, ".venv", "Scripts", "python.exe");
   if (existsSync(winVenvPython)) {
-    console.log(`[flipper-bridge] Using venv Python: ${winVenvPython}`);
+    log(`[flipper-bridge] Using venv Python: ${winVenvPython}`);
     return winVenvPython;
   }
 
   // Unix: check .venv/bin/python
   const unixVenvPython = join(projectRoot, ".venv", "bin", "python");
   if (existsSync(unixVenvPython)) {
-    console.log(`[flipper-bridge] Using venv Python: ${unixVenvPython}`);
+    log(`[flipper-bridge] Using venv Python: ${unixVenvPython}`);
     return unixVenvPython;
   }
 
   // Fallback: system python
-  console.log("[flipper-bridge] No .venv found, using system python");
+  log("[flipper-bridge] No .venv found, using system python");
   return "python";
 }
 
 /**
  * Detect if uvicorn is available.
+ * Returns empty array if uvicorn binary found (use directly),
+ * or ["-m", "uvicorn"] to invoke via python -m uvicorn.
  */
 function getUvicornArgs(): string[] {
-  const projectRoot = join(__dirname, "..");
-
   // Check if .venv has uvicorn directly
   const winUvicorn = join(projectRoot, ".venv", "Scripts", "uvicorn.exe");
   if (existsSync(winUvicorn)) {
-    // Use uvicorn directly — faster than python -m uvicorn
     return [];
   }
 
@@ -80,13 +192,16 @@ function getUvicornArgs(): string[] {
   return ["-m", "uvicorn"];
 }
 
+// ---------------------------------------------------------------------------
+// Backend process management
+// ---------------------------------------------------------------------------
+
 /**
  * Start the Python backend process.
  */
 function startBackendProcess(): ChildProcess | null {
   if (isShuttingDown) return null;
 
-  const projectRoot = join(__dirname, "..");
   const pythonCmd = detectPythonCommand();
   const uvicornArgs = getUvicornArgs();
 
@@ -97,7 +212,7 @@ function startBackendProcess(): ChildProcess | null {
     "--port", "8000",
   ];
 
-  console.log(`[flipper-bridge] Starting backend: ${pythonCmd} ${args.join(" ")}`);
+  log(`[flipper-bridge] Starting backend: ${pythonCmd} ${args.join(" ")}`);
 
   const env = {
     ...process.env,
@@ -115,7 +230,7 @@ function startBackendProcess(): ChildProcess | null {
   child.stdout?.on("data", (data: Buffer) => {
     const lines = data.toString().trim().split("\n");
     for (const line of lines) {
-      console.log(`[flipper-backend] ${line}`);
+      log(`[flipper-backend] ${line}`);
     }
   });
 
@@ -123,23 +238,24 @@ function startBackendProcess(): ChildProcess | null {
   child.stderr?.on("data", (data: Buffer) => {
     const lines = data.toString().trim().split("\n");
     for (const line of lines) {
-      console.error(`[flipper-backend] ${line}`);
+      logError(`[flipper-backend] ${line}`);
     }
   });
 
   // Handle process exit
   child.on("exit", (code, signal) => {
-    console.log(
+    log(
       `[flipper-bridge] Backend process exited with code=${code}, signal=${signal}`
     );
 
     if (!isShuttingDown) {
+      consecutiveUnhealthy = 0;
       scheduleRestart();
     }
   });
 
   child.on("error", (err) => {
-    console.error(`[flipper-bridge] Failed to start backend process: ${err.message}`);
+    logError(`[flipper-bridge] Failed to start backend process: ${err.message}`);
     if (!isShuttingDown) {
       scheduleRestart();
     }
@@ -164,7 +280,7 @@ function scheduleRestart(): void {
   restartCount++;
 
   if (restartCount > MAX_RESTARTS) {
-    console.error(
+    logError(
       `[flipper-bridge] Backend crashed ${restartCount} times in ${MAX_RESTART_WINDOW / 1000}s. ` +
       `Giving up. Restart the dashboard manually.`
     );
@@ -172,7 +288,7 @@ function scheduleRestart(): void {
   }
 
   const delay = Math.min(RESTART_DELAY * restartCount, 30_000);
-  console.log(
+  log(
     `[flipper-bridge] Restarting backend in ${delay / 1000}s... ` +
     `(attempt ${restartCount}/${MAX_RESTARTS})`
   );
@@ -183,6 +299,10 @@ function scheduleRestart(): void {
     }
   }, delay);
 }
+
+// ---------------------------------------------------------------------------
+// Health monitoring
+// ---------------------------------------------------------------------------
 
 /**
  * Check backend health via HTTP.
@@ -207,6 +327,10 @@ async function checkHealth(): Promise<boolean> {
 
 /**
  * Start periodic health checks.
+ *
+ * If the backend is unhealthy for MAX_CONSECUTIVE_UNHEALTHY checks in a row,
+ * the bridge kills the process (which triggers auto-restart via the exit handler).
+ * This handles "stuck" processes that are alive but not responding.
  */
 function startHealthMonitoring(): void {
   if (healthCheckTimer) return;
@@ -217,14 +341,29 @@ function startHealthMonitoring(): void {
       if (isShuttingDown) return;
 
       const healthy = await checkHealth();
-      if (!healthy && backendProcess && !backendProcess.killed) {
-        console.warn("[flipper-bridge] Backend health check failed — process may be stuck");
-        // Don't kill immediately — the process may be recovering
-        // Only kill if it's been unhealthy for multiple checks
+      if (healthy) {
+        consecutiveUnhealthy = 0;
+      } else {
+        consecutiveUnhealthy++;
+        logWarn(
+          `[flipper-bridge] Backend health check failed (${consecutiveUnhealthy}/${MAX_CONSECUTIVE_UNHEALTHY})`
+        );
+
+        if (consecutiveUnhealthy >= MAX_CONSECUTIVE_UNHEALTHY && backendProcess && !backendProcess.killed) {
+          logWarn(
+            `[flipper-bridge] Backend unhealthy for ${MAX_CONSECUTIVE_UNHEALTHY} consecutive checks — killing process to trigger restart`
+          );
+          killBackendProcess(backendProcess);
+          // The exit handler will call scheduleRestart()
+        }
       }
     }, HEALTH_CHECK_INTERVAL);
   }, 15_000);
 }
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 /**
  * Start the flipper backend bridge.
@@ -233,23 +372,25 @@ function startHealthMonitoring(): void {
 export function startBackendBridge(): void {
   // Check if bridge is disabled
   if (process.env.FLIPPER_BRIDGE_DISABLED === "true") {
-    console.log("[flipper-bridge] Bridge disabled via FLIPPER_BRIDGE_DISABLED=true");
+    log("[flipper-bridge] Bridge disabled via FLIPPER_BRIDGE_DISABLED=true");
     return;
   }
 
   // Don't start in build mode
   if (process.env.NEXT_PHASE === "phase-production-build") {
-    console.log("[flipper-bridge] Skipping — build phase");
+    log("[flipper-bridge] Skipping — build phase");
     return;
   }
 
-  console.log("[flipper-bridge] Starting Flipper backend bridge...");
+  log("[flipper-bridge] Starting Flipper backend bridge...");
+  log(`[flipper-bridge] Platform: ${process.platform} (${isWindows ? "Windows" : "Unix"})`);
+  log(`[flipper-bridge] Log file: ${LOG_FILE}`);
 
   backendProcess = startBackendProcess();
 
   if (backendProcess) {
     startHealthMonitoring();
-    console.log("[flipper-bridge] Backend bridge active — Python process managed");
+    log("[flipper-bridge] Backend bridge active — Python process managed");
   }
 }
 
@@ -266,20 +407,19 @@ export function stopBackendBridge(): void {
   }
 
   if (backendProcess && !backendProcess.killed) {
-    console.log("[flipper-bridge] Stopping backend process...");
-    backendProcess.kill("SIGTERM");
-
-    // Force kill after 5s if still running
-    setTimeout(() => {
-      if (backendProcess && !backendProcess.killed) {
-        console.log("[flipper-bridge] Force killing backend process...");
-        backendProcess.kill("SIGKILL");
-      }
-    }, 5_000);
+    log("[flipper-bridge] Stopping backend process...");
+    killBackendProcess(backendProcess);
   }
 }
 
+// ---------------------------------------------------------------------------
 // Auto-cleanup on Node.js process exit
+// ---------------------------------------------------------------------------
+
+// On Windows, SIGINT/SIGTERM are not delivered the same way as Unix.
+// The 'exit' event is the most reliable cleanup hook across platforms.
+// We also hook SIGINT/SIGTERM for Unix for faster cleanup.
+
 process.on("SIGINT", () => {
   stopBackendBridge();
   process.exit(0);
@@ -291,5 +431,20 @@ process.on("SIGTERM", () => {
 });
 
 process.on("exit", () => {
-  stopBackendBridge();
+  // Use synchronous cleanup only — no async/child_process in 'exit' handler
+  if (backendProcess && !backendProcess.killed && backendProcess.pid) {
+    if (isWindows) {
+      try {
+        execSync(`taskkill /PID ${backendProcess.pid} /T /F`, { stdio: "ignore", timeout: 5_000 });
+      } catch {
+        // Best effort
+      }
+    } else {
+      try {
+        backendProcess.kill("SIGKILL");
+      } catch {
+        // Best effort
+      }
+    }
+  }
 });

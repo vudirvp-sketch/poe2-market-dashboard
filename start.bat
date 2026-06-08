@@ -1,6 +1,5 @@
 @echo off
 setlocal enabledelayedexpansion
-chcp 65001 >nul 2>&1
 
 cd /d "%~dp0"
 
@@ -18,6 +17,13 @@ REM  parenthesized if/for blocks must be read with !VAR! syntax.
 REM  Without delayed expansion, %VAR% inside blocks expands at
 REM  parse time, producing "0 was unexpected at this time" when
 REM  the variable is empty or not yet assigned.
+REM
+REM  Flags:
+REM    (default)       — Bridge mode: Next.js manages Python backend
+REM    --no-bridge     — Start Python backend separately (legacy)
+REM    --dev           — Development mode (no build, uvicorn --reload)
+REM    --skip-build    — Skip build, use existing .next
+REM    --clean         — Remove .next + node_modules + .venv, reinstall
 REM ============================================================
 
 echo ============================================================
@@ -26,7 +32,7 @@ echo ============================================================
 echo.
 
 REM ---- Check Node.js ----
-where node >nul 2>&1
+where.exe node >nul 2>&1
 if !ERRORLEVEL! neq 0 (
     echo [ERROR] Node.js is not installed or not in PATH.
     echo Please install Node.js from https://nodejs.org/
@@ -40,9 +46,12 @@ echo [OK] Node.js found: %NODE_VERSION%
 echo.
 
 REM ---- Check npm ----
-where npm >nul 2>&1
+where.exe npm >nul 2>&1
 if !ERRORLEVEL! neq 0 (
     echo [ERROR] npm is not found.
+    echo Node.js is installed but npm is missing.
+    echo This can happen with custom Node.js installations.
+    echo Please reinstall Node.js from https://nodejs.org/
     echo.
     pause
     exit /b 1
@@ -56,7 +65,7 @@ set PYTHON_AVAILABLE=0
 set UVICORN_AVAILABLE=0
 set PY_CMD=python
 
-where python >nul 2>&1
+where.exe python >nul 2>&1
 if !ERRORLEVEL! equ 0 (
     set PYTHON_AVAILABLE=1
     echo [OK] Python found.
@@ -91,7 +100,7 @@ if exist ".venv\Scripts\uvicorn.exe" (
     set UVICORN_AVAILABLE=1
     echo [OK] uvicorn found in venv.
 ) else (
-    where uvicorn >nul 2>&1
+    where.exe uvicorn >nul 2>&1
     if !ERRORLEVEL! equ 0 (
         set UVICORN_AVAILABLE=1
         echo [OK] uvicorn found.
@@ -213,8 +222,7 @@ REM (instrumentation.ts). The bridge auto-starts Python, monitors health, and
 REM restarts on crash. This eliminates the "backend dies after startup" problem.
 REM
 REM Use --no-bridge flag to start backend separately (old behavior).
-REM Use --bridge flag to force bridge mode (default when uvicorn is available).
-REM
+REM The bridge uses taskkill /PID /T /F on Windows for reliable cleanup.
 set USE_BRIDGE=1
 if "%~1"=="--no-bridge" (
     set USE_BRIDGE=0
@@ -226,6 +234,7 @@ if !UVICORN_AVAILABLE! equ 1 (
         echo [INFO] Flipper backend will be managed by Next.js bridge ^(auto-start + auto-restart^).
         echo        The bridge starts the Python process when Next.js starts.
         echo        If the backend crashes, it will be restarted automatically.
+        echo        Bridge logs: flipper-bridge.log
         echo.
         REM Set FLIPPER_BRIDGE_DISABLED=false explicitly to ensure bridge is enabled
         set FLIPPER_BRIDGE_DISABLED=false
@@ -302,9 +311,6 @@ if not exist "node_modules\" (
 )
 
 REM ---- Handle flags ----
-REM Use --dev flag for dev mode: start.bat --dev
-REM Use --skip-build flag to skip: start.bat --skip-build
-REM Use --clean flag to deep-clean .next + node_modules + .venv: start.bat --clean
 
 REM ---- --clean flag: deep clean ----
 if "%~1"=="--clean" (
@@ -359,6 +365,9 @@ if "%~1"=="--dev" (
         echo [OK] Flipper backend restarted with --reload
         echo.
     )
+
+    REM Disable bridge in dev mode (uvicorn --reload handles restarts)
+    set FLIPPER_BRIDGE_DISABLED=true
 
     echo ============================================================
     echo   Starting PoE2 Market Dashboard - DEV MODE
@@ -437,6 +446,7 @@ echo   Starting PoE2 Market Dashboard...
 echo   Open your browser: http://localhost:3000
 echo.
 echo   Flipper backend: http://localhost:8000
+echo   Bridge logs: flipper-bridge.log
 echo.
 echo   IMPORTANT: If you see 404 errors in browser after a rebuild:
 echo     1. Hard-refresh: Ctrl+Shift+R ^(^or Ctrl+F5^)
@@ -456,6 +466,7 @@ REM Start the server - cleanup is handled automatically:
 REM When this CMD window closes, Windows terminates
 REM the entire process tree including child node processes.
 REM We also kill port 3000 at the start of this script.
+REM The bridge handles Python process cleanup via taskkill on Windows.
 call npm run start
 
 :cleanup

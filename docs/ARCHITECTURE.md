@@ -242,7 +242,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 **Detailed data→component mapping:** See [`DATA_FLOW.md`](./DATA_FLOW.md) §9
 
-## 10. Backend Bridge (v1.23)
+## 10. Backend Bridge (v1.24)
 
 The Flipper backend is managed by Next.js via the `instrumentation.ts` hook and `scripts/flipper-backend-bridge.ts`.
 
@@ -252,10 +252,15 @@ The Flipper backend is managed by Next.js via the `instrumentation.ts` hook and 
 Next.js server starts
   → instrumentation.ts: register() called
   → imports flipper-backend-bridge.ts
+  → bridge detects platform (Windows vs Unix)
   → bridge spawns: python -m uvicorn backend.main:app --port 8000
   → bridge monitors /api/health every 30s
   → if process exits: auto-restart (up to 5 times in 60s)
-  → on Next.js shutdown: SIGTERM → SIGKILL (5s grace period)
+  → if health check fails 3 consecutive times: kill + auto-restart
+  → on Next.js shutdown:
+      Windows: taskkill /PID <pid> /T /F
+      Unix:    SIGTERM → SIGKILL (5s grace period)
+  → all bridge events logged to flipper-bridge.log
 ```
 
 ### Configuration
@@ -265,17 +270,27 @@ Next.js server starts
 | `FLIPPER_BRIDGE_DISABLED` | `false` | Set to `true` to disable bridge |
 | `FLIPPER_API_URL` | `http://localhost:8000` | Backend URL for health checks |
 
-### start.bat Modes
+### Platform-Specific Behavior
+
+| Platform | Process Kill Method | Notes |
+|----------|-------------------|-------|
+| Windows | `taskkill /PID <pid> /T /F` via `execSync()` | SIGTERM doesn't work for Python child processes on Windows |
+| Unix/macOS | `SIGTERM` → `SIGKILL` (5s grace) | Standard POSIX signal handling |
+
+### Launcher Modes (start.bat / start.sh)
 
 | Flag | Behavior |
 |------|----------|
 | (default) | Bridge mode — Next.js manages Python process |
-| `--no-bridge` | Legacy mode — start.bat starts Python separately |
-| `--dev` | Dev mode — bridge disabled, manual uvicorn --reload |
+| `--no-bridge` | Legacy mode — launcher starts Python separately |
+| `--dev` | Dev mode — bridge disabled, uvicorn --reload handles restarts |
 
 ### Key Benefits
 
 - **Auto-restart**: If the backend crashes (OOM, unhandled exception), the bridge restarts it
-- **No orphaned processes**: When Next.js exits, the Python process is properly terminated
-- **Single command**: `start.bat` now handles everything — no separate terminal windows
+- **No orphaned processes**: When Next.js exits, the Python process is properly terminated (including entire process tree on Windows)
+- **Single command**: `start.bat` / `start.sh` handles everything — no separate terminal windows
 - **Health monitoring**: Bridge checks `/api/health` every 30 seconds
+- **Stuck process detection**: If health check fails 3 consecutive times, bridge kills the process and triggers auto-restart
+- **File logging**: All bridge events written to `flipper-bridge.log` (2 MB rotation)
+- **WebSocket reconnect**: Frontend health polling detects backend restart and reconnects WebSocket automatically
