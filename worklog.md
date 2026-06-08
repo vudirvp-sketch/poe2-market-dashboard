@@ -1,34 +1,26 @@
 # Worklog
 
 ---
-Task ID: 5
+Task ID: 6
 Agent: main
-Task: Cross-currency premium tooltip + Backend optimal-currency endpoint + Documentation update
+Task: Wire frontend → backend optimal-currency + Backend pytest tests for §11 + Bugfix _math NameError
 
 Work Log:
-- Verified TS errors in poe2api-realms.test.ts are already fixed (tsc --noEmit passes, 30 tests pass)
-- Added `@radix-ui/react-tooltip` dependency
-- Created `src/components/ui/tooltip.tsx` (shadcn/ui Tooltip component)
-- Enhanced `CrossCurrencyPremiumCell` in `exchange-table.tsx`:
-  - Optimal payment pairs: Tooltip shows full `OptimalPaymentResult` breakdown — all payment options sorted by effective anchor price, savings in anchor units
-  - Cross-rate flip pairs: Tooltip shows fair rate vs market rate, direction, profit potential, volume
-  - Added `PaymentOptionRow` sub-component for tooltip rows
-  - Added `ANCHOR_DISPLAY` lookup for anchor currency display names
-- Added `anchorId` prop to `ExchangeTable` and `CrossCurrencyPremiumCell`
-- Updated `dashboard-page.tsx` useMemo to return `anchorId` (from `selectAnchor()`)
-- Passed `anchorId` from dashboard-page to ExchangeTable
-- Created backend endpoint `GET /api/arbitrage/optimal-currency` in `routes_arbitrage.py`:
-  - `_select_anchor()`: Select best anchor from prices_in_base
-  - `_effective_anchor_price()`: §11.2 formula
-  - `_find_optimal_payment()`: §11.4 best currency detection
-  - `_detect_cross_rate_flips()`: §11.5 cross-rate deviation finder
-  - Endpoint returns `optimalPaymentByPair`, `crossRateFlips`, `anchorId`, `dataAvailable`
-- Created Next.js proxy route `src/app/api/flipper/optimal-currency/route.ts`
-- Updated AGENT_NAVIGATION.md to v1.9 (moved completed items, updated TODOs)
-- All checks pass: tsc --noEmit, 260 Jest tests, 273 pytest tests, npm run build
+- Added `OptimalCurrencyResponse` type to `src/lib/types.ts` (API response shape for GET /api/flipper/optimal-currency)
+- Modified `dashboard-page.tsx` §11 section (lines 566-622):
+  - Replaced single useMemo with: (1) useQuery to backend endpoint when online, (2) client-side useMemo as fallback, (3) merge useMemo that picks backend data when dataAvailable=true, else client fallback
+  - Backend response keys ("currencyFrom_currencyTo") remapped to frontend pair.id for ExchangeTable/ExchangePairCard lookups
+  - Added import of `OptimalCurrencyResponse` type
+- Found and fixed bug: `_math` (import math as _math) was a local import inside `_build_flip_opportunities()` but referenced by `_find_optimal_payment()` at module scope → NameError at runtime. Moved `import math as _math` to module-level in `routes_arbitrage.py`.
+- Created `tests/test_optimal_currency.py` with 35 tests:
+  - TestSelectAnchor (9 tests): priority hierarchy, zero/negative/None handling, fallback
+  - TestEffectiveAnchorPrice (8 tests): basic computation, inf for invalid inputs, fractional prices
+  - TestFindOptimalPayment (7 tests): single option → None, cheapest wins, sorting, premium%, invalid filtering, 3-way comparison
+  - TestDetectCrossRateFlips (11 tests): undervalued/overvalued detection, threshold, low volume skip, missing prices, sorting, max 50 cap
+- Updated AGENT_NAVIGATION.md to v1.10 (moved completed items, added bug note #17, updated TODOs with Omens analysis notes)
+- All checks: tsc --noEmit (0 errors in src/), 308 pytest tests pass
 
 Stage Summary:
-- Modified: exchange-table.tsx (tooltip with full breakdown), dashboard-page.tsx (anchorId prop)
-- New: src/components/ui/tooltip.tsx, src/app/api/flipper/optimal-currency/route.ts
-- Modified: backend/api/routes_arbitrage.py (~285 lines added for §11 backend endpoint)
-- Modified: AGENT_NAVIGATION.md (v1.9), worklog.md
+- Modified: src/lib/types.ts (added OptimalCurrencyResponse), src/components/dashboard/dashboard-page.tsx (useQuery + fallback), backend/api/routes_arbitrage.py (_math import fix)
+- New: tests/test_optimal_currency.py (35 tests)
+- Modified: AGENT_NAVIGATION.md (v1.10)

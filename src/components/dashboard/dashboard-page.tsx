@@ -107,6 +107,7 @@ import type {
   FlipperPhaseResponse,
   FlipperEventsSummary,
   OptimalPaymentResult,
+  OptimalCurrencyResponse,
   CrossRateFlip,
 } from "@/lib/types";
 import {
@@ -563,9 +564,25 @@ export function Dashboard() {
     return pairs;
   }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites, uiState.exchange.extendedFilters]);
 
-  // §11: Cross-currency optimal payment — group pairs by currency1Id, find cheapest
-  // payment option for each currency across all its exchange pairs.
-  const { optimalPaymentByPair, crossRateFlips, anchorId: selectedAnchorId } = useMemo(() => {
+  // ==========================================================================
+  // §11: Cross-currency optimal payment — backend-first with client fallback
+  // ==========================================================================
+  // When the backend is online, fetch optimal-currency data from
+  // GET /api/flipper/optimal-currency (server-side computation).
+  // When the backend is offline, fall back to client-side computation
+  // using the same logic from currency-optimal.ts.
+
+  const { data: optimalCurrencyData } = useQuery<OptimalCurrencyResponse>({
+    queryKey: ["flipper-optimal-currency"],
+    queryFn: () => fetchApi<OptimalCurrencyResponse>("/api/flipper/optimal-currency"),
+    enabled: flipperBackendOnline,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    retry: 1,
+  });
+
+  // Client-side fallback: compute optimal payment from exchangeData when backend is offline
+  const clientOptimalResult = useMemo(() => {
     const allPairs = exchangeData ?? [];
     if (allPairs.length === 0) {
       return { optimalPaymentByPair: new Map<string, OptimalPaymentResult>(), crossRateFlips: [] as CrossRateFlip[], anchorId: "exalted" as string };
@@ -620,6 +637,36 @@ export function Dashboard() {
 
     return { optimalPaymentByPair, crossRateFlips, anchorId: anchor };
   }, [exchangeData]);
+
+  // Merge: backend data takes priority when available and has data; client fallback otherwise
+  const { optimalPaymentByPair, crossRateFlips, anchorId: selectedAnchorId } = useMemo(() => {
+    // Backend data available?
+    if (optimalCurrencyData?.dataAvailable && optimalCurrencyData.optimalPaymentByPair) {
+      // Remap backend keys ("currencyFrom_currencyTo") to frontend pair.id
+      // Backend groups by currency_from; each key covers a currency_from → currency_to pair.
+      // We need to map these back to the exchange pair IDs for component lookups.
+      const allPairs = exchangeData ?? [];
+      const pairMap = new Map<string, OptimalPaymentResult>();
+
+      for (const pair of allPairs) {
+        // Try the exact backend key format: currency1Id_currency2Id
+        const backendKey = `${pair.currency1Id}_${pair.currency2Id}`;
+        const result = optimalCurrencyData.optimalPaymentByPair[backendKey];
+        if (result) {
+          pairMap.set(pair.id, result);
+        }
+      }
+
+      return {
+        optimalPaymentByPair: pairMap,
+        crossRateFlips: optimalCurrencyData.crossRateFlips ?? [],
+        anchorId: optimalCurrencyData.anchorId || "exalted",
+      };
+    }
+
+    // Fallback: use client-side computation
+    return clientOptimalResult;
+  }, [optimalCurrencyData, exchangeData, clientOptimalResult]);
 
   // Categories
   const currencyCategories = useMemo(() => {

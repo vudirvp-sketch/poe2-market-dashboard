@@ -663,6 +663,19 @@ export interface CrossRateFlip {
   volume: number;
 }
 
+/** Response from GET /api/flipper/optimal-currency
+ *  Backend keys use "currencyFrom_currencyTo" format (not pair.id).
+ *  Frontend must remap to pair.id for component lookups. */
+export interface OptimalCurrencyResponse {
+  league: string;
+  anchorId: string;
+  /** Key: "currencyFrom_currencyTo", Value: OptimalPaymentResult */
+  optimalPaymentByPair: Record<string, OptimalPaymentResult>;
+  crossRateFlips: CrossRateFlip[];
+  dataAvailable: boolean;
+  fetchedAt: string;
+}
+
 // ============================================================================
 // Export helpers (CSV/JSON)
 // ============================================================================

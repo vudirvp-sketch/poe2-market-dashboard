@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.9 | **Date:** 2026-06-08
+> **Version:** 1.10 | **Date:** 2026-06-08
 
 ---
 
@@ -91,11 +91,14 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### TODO (next iterations)
 1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
-2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (VPN/proxy). Use `npx tsx scripts/generate-cache-snapshot.ts`.
+2. **Regenerate `cache-snapshot.json`** — User ran `npx tsx scripts/generate-cache-snapshot.ts` locally but hasn't pushed. Needs VPN for API access.
 3. **Verify flip opportunities against live API data** — Check if user's described flips (Perfect Transmutation × Great Enhancement, Orb of Cancellation) exist in current market. Requires VPN/API access.
-4. **Optimal payment for craft items (Omens, Soul Cores)** — The current integration groups by `currency1Id` in exchange pairs. For non-currency items priced on the exchange (Omens, Soul Cores), a different grouping by item ID would show which currency is cheapest for buying those items.
-5. **Wire frontend to use backend `/api/flipper/optimal-currency`** — The backend endpoint now exists (`GET /api/arbitrage/optimal-currency`), but the frontend still computes client-side in `dashboard-page.tsx`. For large datasets, the frontend should fetch from the backend and fall back to client-side computation when offline.
-6. **Add backend test for `/api/arbitrage/optimal-currency`** — Unit test for `_select_anchor`, `_find_optimal_payment`, `_detect_cross_rate_flips` functions.
+4. **Optimal payment for craft items (Omens, Soul Cores)** — The current integration groups by `currency1Id` in exchange pairs. For non-currency items priced on the exchange (Omens, Soul Cores), a different grouping by item ID would show which currency is cheapest for buying those items. Requires: (a) a way to distinguish items from currencies in exchange pairs, (b) optional `PoeItem.category` field or a set of known item apiIds, (c) backend `_find_optimal_payment` already handles generic grouping — frontend grouping in `dashboard-page.tsx` clientOptimalResult needs item-aware logic.
+
+### COMPLETED (v1.10)
+1. ~~**Wire frontend → backend `/api/flipper/optimal-currency`**~~ — Done: `dashboard-page.tsx` now uses `useQuery` to fetch from backend when online, falls back to client-side `useMemo` computation when offline. Backend response keys (`currencyFrom_currencyTo`) remapped to frontend `pair.id` for component lookups. New type `OptimalCurrencyResponse` added to `types.ts`.
+2. ~~**Backend pytest tests for §11 functions**~~ — Done: `tests/test_optimal_currency.py` with 35 tests covering `_select_anchor` (9), `_effective_anchor_price` (8), `_find_optimal_payment` (7), `_detect_cross_rate_flips` (11).
+3. ~~**Fix `_math` NameError in `routes_arbitrage.py`**~~ — Bug found and fixed: `_math` was imported locally inside `_build_flip_opportunities()` but used in `_find_optimal_payment()` which couldn't access it. Moved `import math as _math` to module level.
 
 ### COMPLETED (v1.9)
 1. ~~**Cross-currency premium tooltip**~~ — Done: Hovering over Premium column shows full `OptimalPaymentResult` breakdown (all payment options, exact savings in anchor units). For cross-rate flips, shows fair rate vs market rate + profit potential.
@@ -167,6 +170,7 @@ When a new league launches, update these 7 files:
 14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
 16. **`baseCurrencyText` is nullable** — `PersistedUIState.baseCurrencyText` is `string | null`. Always use `?? ""` or `?? defaultText` when passing to components expecting `string`.
+17. **`_math` must be module-level import** — `_find_optimal_payment()` in `routes_arbitrage.py` uses `_math.isfinite()`. Previously `_math` was a local import inside `_build_flip_opportunities()`, causing NameError at runtime. Fixed in v1.10.
 
 ## 11. Documentation Map
 

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math as _math
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -254,8 +255,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     # 8. Score each pair as a flip opportunity
     opportunities: list[FlipOpportunity] = []
-
-    import math as _math
 
     # Cache momentum results per currency to avoid recomputing the same
     # currency's momentum N times (once per pair it appears in)
