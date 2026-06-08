@@ -381,7 +381,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                         }
                         baseCurrencyApiId={uiState.baseCurrencyApiId ?? "exalted"}
                         targetCurrencyApiId={uiState.baseCurrencyApiId ?? "exalted"}
-                        baseCurrencyText={uiState.baseCurrencyText}
+                        baseCurrencyText={uiState.baseCurrencyText ?? ""}
                         exchangePairsForConversion={exchangePairsForConversion}
                       />
                     </span>

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.5 | **Date:** 2026-06-08
+> **Version:** 1.6 | **Date:** 2026-06-08
 
 ---
 
@@ -90,8 +90,9 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md).
-2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (blocked from RF). Use `npx tsx scripts/generate-cache-snapshot.ts` with VPN/proxy or via CI workflow.
+1. **Report POE2Scout `default_league_value` bug upstream** — `/Realms` returns displayName instead of ShortName. Bug report draft ready (see worklog.md). Requires manual submission.
+2. **Regenerate `cache-snapshot.json`** — Requires POE2Scout API access (VPN/proxy). Use `npx tsx scripts/generate-cache-snapshot.ts`.
+3. **Fix TS errors in `src/__tests__/poe2api-realms.test.ts`** — `Property 'active' missing on TestLeague` (11 errors). Non-blocking, tests pass at runtime.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -151,6 +152,7 @@ When a new league launches, update these 7 files:
 13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
 14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
 15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
+16. **`baseCurrencyText` is nullable** — `PersistedUIState.baseCurrencyText` is `string | null`. Always use `?? ""` or `?? defaultText` when passing to components expecting `string`.
 
 ## 11. Documentation Map
 
