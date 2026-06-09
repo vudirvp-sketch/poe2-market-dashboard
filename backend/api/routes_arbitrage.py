@@ -31,6 +31,7 @@ from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
 from backend.predictors.clustering import CurrencyClusterer
 from backend.models.currency import (
+    ExchangeRate,
     FlipOpportunity,
     LeaguePhase,
     ClusterLabel,
@@ -566,6 +567,7 @@ async def get_triangular_arbitrage(
     # to avoid recomputing O(n³) cross-rate validation on every request.
     # The cache TTL matches the snapshot TTL — results are refreshed when
     # new snapshot data arrives.
+    pipeline_cache = get_pipeline_cache()
     cache_key = f"triangular_arbitrage_{min_profit_pct}"
     cached_tri = pipeline_cache.get(cache_key)
     if cached_tri is not None and not cached_tri.stale:

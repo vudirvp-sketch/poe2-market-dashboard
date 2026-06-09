@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.31 | **Date:** 2026-06-09
+> **Version:** 1.32 | **Date:** 2026-06-09
 
 ---
 
@@ -99,7 +99,13 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Bridge real-world Windows testing** — v1.31 fixes the `turbopackIgnore` issue that prevented bridge from starting. Now needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes during heavy computation, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries (stderr now parsed for log level), (e) Cyrillic paths in project root work correctly.
+1. **Bridge real-world Windows testing** — v1.31+ fixes the `turbopackIgnore` issue and triangular NameError. Now needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes during heavy computation, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries (stderr now parsed for log level), (e) Cyrillic paths in project root work correctly.
+2. **E2E testing on Windows** — `npm run build` confirmed working. Need to verify all API endpoints return 200 (including `/api/arbitrage/triangular` which was 500 in v1.31).
+
+### COMPLETED (v1.32 — Iteration 17)
+1. ~~**`/api/arbitrage/triangular` returns 500: `NameError: name 'pipeline_cache' is not defined`**~~ — In `routes_arbitrage.py:570`, `pipeline_cache.get(cache_key)` was called without first calling `get_pipeline_cache()`. The `/flips` endpoint correctly called it, but `/triangular` was missed during the v1.30 refactor that added caching. Fix: Added `pipeline_cache = get_pipeline_cache()` before the cache lookup.
+2. ~~**Missing `ExchangeRate` import in `routes_arbitrage.py`**~~ — `ExchangeRate` was used in type hints (`_detect_cross_rate_flips`, `get_optimal_currency`) but not imported. Fix: Added `ExchangeRate` to the import from `backend.models.currency`.
+3. **326/326 pytest tests pass** — Full test suite confirmed passing after fixes.
 
 ### COMPLETED (v1.31 — Iteration 16)
 1. ~~**Bridge fails to start: `Cannot find module` error**~~ — `/* turbopackIgnore: true */` in `instrumentation.ts` prevented Turbopack from creating a chunk for `flipper-backend-bridge.ts`. At runtime, the dynamic import resolved from `.next/server/chunks/` instead of project root, and the chunk didn't exist. Fix: Removed `turbopackIgnore` from both the `import()` call and `process.cwd()` in the bridge. The NFT warning is harmless (build-time only). Also removed `turbopackIgnore` from `process.cwd()` in `getProjectRoot()`.
@@ -225,6 +231,7 @@ When a new league launches, update these 7 files:
 38. **`find_triangular_arbitrage()` is async** — Since v1.30, this function is `async def` and offloads all CPU-bound work to `run_in_executor()`. Calling it without `await` returns a coroutine object, not a `TriangularResult`. Tests must use `@pytest.mark.asyncio`.
 39. **Cross-rate threshold is 10%** — Raised from 5% in v1.30. With 613 currencies, 5% produced 1962 suspicious triples (noise). Do not lower back to 5% without measuring the impact on false-positive rates.
 40. **Do NOT use `/* turbopackIgnore: true */` on dynamic imports in server code** — Adding this comment to `import()` in `instrumentation.ts` prevents Turbopack from creating a chunk for the bridge module. At runtime, the import resolves from `.next/server/chunks/` and the module isn't found. The NFT warning that appears without the comment is harmless (build-time only) and should be ignored.
+41. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint function** — It's NOT a module-level variable. Every endpoint that uses `pipeline_cache.get()` / `pipeline_cache.put()` must call `pipeline_cache = get_pipeline_cache()` first. Missing this causes `NameError` at runtime (broke `/api/arbitrage/triangular` in v1.31).
 
 ## 11. Documentation Map
 
