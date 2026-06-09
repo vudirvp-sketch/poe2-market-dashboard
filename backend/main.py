@@ -214,6 +214,9 @@ async def lifespan(app: FastAPI):
             snapshot_mgr.start_periodic_refresh()
         )
         logger.info("Snapshot periodic refresh started as background task")
+        # Store reference for health endpoint (avoids repeated imports)
+        global _snapshot_manager_ref
+        _snapshot_manager_ref = snapshot_mgr
     except Exception as e:
         logger.error("Failed to start snapshot periodic refresh: %s — continuing without", e)
 
@@ -347,6 +350,23 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
+# Pre-import modules used by health check to avoid lazy import overhead.
+# These imports happen once at module load time, so the health endpoint
+# can access singletons directly without repeated import statements.
+# This reduces response time during GIL contention from executor threads.
+# ---------------------------------------------------------------------------
+from backend.economy.events import get_event_manager as _get_event_manager
+from backend.data.pipeline_cache import get_pipeline_cache as _get_pipeline_cache
+from backend.api.data_snapshot import get_snapshot_manager as _get_snapshot_manager
+from backend.data.daily_stats_cache import get_daily_stats_cache as _get_daily_stats_cache
+
+# Lazily-populated reference to the snapshot manager, set during lifespan.
+# Avoids calling get_snapshot_manager() on every health check, which would
+# trigger a module-level import if the function hasn't been called yet.
+_snapshot_manager_ref = None
+
+
+# ---------------------------------------------------------------------------
 # Fix 8 (POE2-FIX-SPEC): Health check endpoint with provider status
 # ---------------------------------------------------------------------------
 
@@ -356,14 +376,19 @@ async def health_check():
 
     Fix 8 (POE2-FIX-SPEC): returns provider reachability status so the
     frontend can distinguish "backend offline" from "no data".
+
+    PERFORMANCE: Pre-imports modules at function definition time to avoid
+    repeated import overhead. Uses cached snapshot_manager reference.
+    The response is built from in-memory state only — no I/O or heavy
+    computation. This ensures the endpoint responds within milliseconds
+    even when the event loop is under GIL contention from executor threads.
     """
     config = get_settings()
 
     # Include event status in health check
-    event_summary = {}
+    event_summary: dict = {}
     try:
-        from backend.economy.events import get_event_manager
-        manager = get_event_manager(config)
+        manager = _get_event_manager(config)
         event_summary = manager.get_active_event_summary() or {}
     except Exception:
         pass
@@ -371,39 +396,29 @@ async def health_check():
     # Include pipeline cache stats
     cache_entries = 0
     try:
-        from backend.data.pipeline_cache import get_pipeline_cache
-        pc = get_pipeline_cache()
+        pc = _get_pipeline_cache()
         cache_entries = len(pc._store)
     except Exception:
         pass
 
     # Include DataSnapshot health info (stale detection, age, etc.)
-    snapshot_health = {}
+    snapshot_health: dict = {}
     try:
-        from backend.api.data_snapshot import get_snapshot_manager
-        mgr = get_snapshot_manager()
+        mgr = _get_snapshot_manager()
         snapshot_health = mgr.health_info()
     except Exception:
         pass
 
     # Include DailyStatsCache stats
-    daily_stats_cache_stats = {}
+    daily_stats_cache_stats: dict = {}
     try:
-        from backend.data.daily_stats_cache import get_daily_stats_cache
-        ds_cache = get_daily_stats_cache()
+        ds_cache = _get_daily_stats_cache()
         daily_stats_cache_stats = ds_cache.stats()
     except Exception:
         pass
 
     # P0-1: Determine overall status based on both provider health AND snapshot availability
-    snapshot_manager = None
-    try:
-        from backend.api.data_snapshot import get_snapshot_manager as _get_sm
-        snapshot_manager = _get_sm()
-    except Exception:
-        pass
-
-    snapshot_ready = snapshot_manager is not None and snapshot_manager.last_snapshot is not None
+    snapshot_ready = _snapshot_manager_ref is not None and _snapshot_manager_ref.last_snapshot is not None
 
     if _provider_healthy and snapshot_ready:
         overall_status = "ok"

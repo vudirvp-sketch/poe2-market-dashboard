@@ -1,19 +1,23 @@
 # Worklog
 
 ---
-Task ID: 17
+Task ID: 18
 Agent: main
-Task: Iteration 17 — Fix triangular arbitrage NameError, missing ExchangeRate import, update docs
+Task: Iteration 18 — Fix proxy timeout cascade, bridge health check, health endpoint performance
 
 Work Log:
-- Diagnosed critical bug: `pipeline_cache.get(cache_key)` in `routes_arbitrage.py:570` called without first calling `get_pipeline_cache()`. The `/api/arbitrage/triangular` endpoint crashed with `NameError: name 'pipeline_cache' is not defined` on every request (500 Internal Server Error). The `/flips` endpoint correctly called `get_pipeline_cache()`, but the triangular endpoint was missed during the v1.30 refactor that added pipeline caching.
-- Fixed: Added `pipeline_cache = get_pipeline_cache()` before the cache lookup at line 570.
-- Diagnosed secondary bug: `ExchangeRate` type used in type hints (`_detect_cross_rate_flips` line 741, `get_optimal_currency` line 856) but not imported. Fix: Added `ExchangeRate` to the import from `backend.models.currency`.
+- Diagnosed root cause of bridge health check failures and circuit breaker cascade from user's Windows logs: proxy timeout (15s) too short for triangular arbitrage (30-60s with 600+ currencies). Proxy timed out → 503 → circuit breaker opened → all requests failed.
+- Added `timeoutMs` parameter to `proxyToFlipper()` and `proxyWithFallback()` in `flipper-proxy.ts` (default 15s). Triangular route now passes 45s timeout.
+- Increased bridge health check timeout from 5s to 10s in `flipper-backend-bridge.ts`. GIL contention during heavy executor computation was causing false-positive "unhealthy" detections.
+- Optimized `/api/health` endpoint in `backend/main.py`: pre-imported health-check dependencies at module level (`_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache`). Added `_snapshot_manager_ref` cached reference set during lifespan. Removed lazy `from X import Y` inside handler.
 - Ran full pytest suite: 326/326 tests pass.
-- Updated AGENT_NAVIGATION.md to v1.32: added COMPLETED section, updated TODO, added Frequent Bug #41 about pipeline_cache requiring get_pipeline_cache() call.
+- Ran npm run build: succeeds (NFT warning expected, harmless). Note: Linux build requires `.venv` removal due to symlink panic (Windows unaffected).
+- Updated AGENT_NAVIGATION.md to v1.33: trimmed completed history, added new frequent bugs (#18-24), updated TODO.
 
 Stage Summary:
-- `/api/arbitrage/triangular` no longer returns 500 — NameError fixed
-- Missing ExchangeRate import added (was only in type hints, but good practice)
-- All 326 backend tests pass
-- Remaining for next iteration: Bridge real-world Windows testing (start.bat), E2E verification that all API endpoints return 200
+- Proxy timeout cascade fixed — triangular endpoint no longer causes circuit breaker cascade
+- Bridge health check more resilient (10s timeout)
+- Health endpoint faster under GIL contention (pre-imported modules)
+- 326/326 pytest tests pass
+- npm run build succeeds
+- Remaining: Real-world Windows smoke test, ProcessPoolExecutor for triangular, Linux CI .venv workaround

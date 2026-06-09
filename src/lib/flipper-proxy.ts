@@ -103,6 +103,7 @@ export async function proxyToFlipper(
   method: string = "GET",
   body?: unknown,
   maxRetries: number = 1,
+  timeoutMs: number = 15_000,
 ): Promise<Response> {
   const url = new URL(path, FLIPPER_API_URL);
 
@@ -125,7 +126,7 @@ export async function proxyToFlipper(
       return NextResponse.json(buffered.data, { status: buffered.status });
     }
 
-    const promise = _doProxyWithRetry(url.toString(), method, body, maxRetries).finally(() => {
+    const promise = _doProxyWithRetry(url.toString(), method, body, maxRetries, timeoutMs).finally(() => {
       pendingRequests.delete(cacheKey);
     });
     pendingRequests.set(cacheKey, promise);
@@ -135,7 +136,7 @@ export async function proxyToFlipper(
     return NextResponse.json(buffered.data, { status: buffered.status });
   }
 
-  return _doProxyWithRetry(url.toString(), method, body, maxRetries)
+  return _doProxyWithRetry(url.toString(), method, body, maxRetries, timeoutMs)
     .then((buffered) => NextResponse.json(buffered.data, { status: buffered.status }));
 }
 
@@ -144,6 +145,7 @@ async function _doProxyWithRetry(
   method: string,
   body: unknown,
   maxRetries: number,
+  timeoutMs: number = 15_000,
 ): Promise<BufferedProxyResult> {
   let lastError: Error | null = null;
 
@@ -210,12 +212,11 @@ async function _doProxyWithRetry(
           Accept: "application/json",
           ...(body ? { "Content-Type": "application/json" } : {}),
         },
-        // FIX: Increased from 5s to 15s. The backend performs a full
-        // refresh snapshot + clustering + scoring on some requests,
-        // which can take >5 seconds. 5s was causing all such requests
-        // to time out. 15s is a better balance between responsiveness
-        // and allowing the backend to complete its work.
-        signal: AbortSignal.timeout(15_000),
+        // Configurable timeout (default 15s). Heavy endpoints like
+        // /api/arbitrage/triangular can take 30-60s (Bellman-Ford +
+        // cross-rate validation with 600+ currencies). Callers should
+        // pass a longer timeout for such endpoints.
+        signal: AbortSignal.timeout(timeoutMs),
       };
 
       if (body && method !== "GET") {
@@ -433,9 +434,10 @@ export async function proxyWithFallback(
   searchParams?: URLSearchParams,
   method: string = "GET",
   body?: unknown,
+  timeoutMs: number = 15_000,
 ): Promise<Response> {
   try {
-    const res = await proxyToFlipper(path, searchParams, method, body, 0);
+    const res = await proxyToFlipper(path, searchParams, method, body, 0, timeoutMs);
 
     // If the response is OK (2xx), pass it through
     if (res.ok) {

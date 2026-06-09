@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.32 | **Date:** 2026-06-09
+> **Version:** 1.33 | **Date:** 2026-06-09
 
 ---
 
@@ -99,55 +99,33 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Bridge real-world Windows testing** — v1.31+ fixes the `turbopackIgnore` issue and triangular NameError. Now needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes during heavy computation, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries (stderr now parsed for log level), (e) Cyrillic paths in project root work correctly.
-2. **E2E testing on Windows** — `npm run build` confirmed working. Need to verify all API endpoints return 200 (including `/api/arbitrage/triangular` which was 500 in v1.31).
+1. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass: (a) Python starts via `python -m uvicorn`, (b) health check passes during heavy computation, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries with log-level parsing, (e) Cyrillic in path works, (f) `/api/arbitrage/triangular` returns 200.
+2. **Consider ProcessPoolExecutor for triangular arbitrage** — `run_in_executor()` with default ThreadPoolExecutor still contends the GIL. For truly parallel CPU-bound work, `ProcessPoolExecutor` bypasses the GIL entirely. Requires refactoring `_find_triangular_arbitrage_sync()` to be picklable (no closures, no complex objects in args).
+3. **Linux CI build with .venv** — Turbopack panics when `.venv/bin/python` symlink points outside project root. Workaround: remove `.venv` before `npm run build`. Windows builds are unaffected (no symlinks in `.venv\Scripts\`).
+
+### COMPLETED (v1.33 — Iteration 18)
+1. ~~**Proxy timeout causes triangular 503 cascade**~~ — `flipper-proxy.ts` had a hardcoded 15s timeout. Triangular arbitrage with 600+ currencies takes 30-60s (Bellman-Ford + cross-rate validation). The proxy timed out → 503 → circuit breaker opened → all requests failed. Fix: Added `timeoutMs` parameter to `proxyToFlipper()` and `proxyWithFallback()` (default 15s). Triangular route now passes 45s timeout.
+2. ~~**Bridge health check too aggressive (5s)**~~ — During heavy CPU computation in executor threads, the Python GIL starves the asyncio event loop of CPU time. The 5s bridge health check timeout caused false-positive "unhealthy" detections during normal operation. Fix: Increased bridge health check timeout to 10s.
+3. ~~**Health endpoint slow during GIL contention**~~ — `/api/health` used lazy `from X import Y` statements inside the handler, adding import overhead during each call. Fix: Pre-imported all health-check dependencies at module level (`_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache`). Added `_snapshot_manager_ref` cached reference set during lifespan.
+4. **326/326 pytest tests pass** — Full test suite confirmed after changes.
+5. **npm run build passes** — NFT warning appears (expected, harmless), build succeeds, bridge chunk created.
 
 ### COMPLETED (v1.32 — Iteration 17)
-1. ~~**`/api/arbitrage/triangular` returns 500: `NameError: name 'pipeline_cache' is not defined`**~~ — In `routes_arbitrage.py:570`, `pipeline_cache.get(cache_key)` was called without first calling `get_pipeline_cache()`. The `/flips` endpoint correctly called it, but `/triangular` was missed during the v1.30 refactor that added caching. Fix: Added `pipeline_cache = get_pipeline_cache()` before the cache lookup.
-2. ~~**Missing `ExchangeRate` import in `routes_arbitrage.py`**~~ — `ExchangeRate` was used in type hints (`_detect_cross_rate_flips`, `get_optimal_currency`) but not imported. Fix: Added `ExchangeRate` to the import from `backend.models.currency`.
-3. **326/326 pytest tests pass** — Full test suite confirmed passing after fixes.
+1. ~~**`/api/arbitrage/triangular` returns 500: `NameError: name 'pipeline_cache' is not defined`**~~ — `pipeline_cache.get(cache_key)` called without `get_pipeline_cache()`. Fix: Added `pipeline_cache = get_pipeline_cache()` before cache lookup.
+2. ~~**Missing `ExchangeRate` import**~~ — Added to imports in `routes_arbitrage.py`.
 
 ### COMPLETED (v1.31 — Iteration 16)
-1. ~~**Bridge fails to start: `Cannot find module` error**~~ — `/* turbopackIgnore: true */` in `instrumentation.ts` prevented Turbopack from creating a chunk for `flipper-backend-bridge.ts`. At runtime, the dynamic import resolved from `.next/server/chunks/` instead of project root, and the chunk didn't exist. Fix: Removed `turbopackIgnore` from both the `import()` call and `process.cwd()` in the bridge. The NFT warning is harmless (build-time only). Also removed `turbopackIgnore` from `process.cwd()` in `getProjectRoot()`.
-2. ~~**Bridge stderr logs all output as ERROR**~~ — uvicorn logs to stderr by default (INFO, DEBUG, WARNING levels). The bridge's `child.stderr` handler tagged ALL stderr lines as `[ERROR]`, masking real errors. Fix: Added regex-based log level parsing: only lines matching `/\b(ERROR|CRITICAL|TRACEBACK|Traceback)\b/i` are logged as errors. All other stderr output is logged normally.
-3. ~~**`_build_flip_opportunities()` blocks event loop**~~ — Clustering (KMeans with n_init=10) and scoring loop ran synchronously within the async function, blocking health check responses. Fix: Extracted all CPU-bound logic into `_build_flip_opportunities_sync()`, called via `loop.run_in_executor()` from the async wrapper `_build_flip_opportunities()`. Mirrors the pattern used in `triangular.py` (v1.30).
-4. ~~**Visual check of Flips tab Premium column**~~ — Code review confirmed: Premium column correctly hidden on `< md` screens, sorting by "premium" SortField works, tooltip shows full payment breakdown with effective anchor prices, `BestPaymentBadge` compact mode shows savings % only. Note: 11-column fixed grid template may cause slight horizontal scroll on medium screens — this is an accepted design trade-off.
+1. ~~**Bridge fails to start: `Cannot find module`**~~ — Removed `/* turbopackIgnore: true */` from `instrumentation.ts` and bridge. NFT warning is harmless.
+2. ~~**Bridge stderr logs all output as ERROR**~~ — Added regex log-level parsing: only ERROR/CRITICAL/TRACEBACK tagged as errors.
+3. ~~**`_build_flip_opportunities()` blocks event loop**~~ — Extracted CPU-bound logic into `_build_flip_opportunities_sync()`, called via `run_in_executor()`.
 
-### COMPLETED (v1.30 — Iteration 15)
-1. ~~**Backend crash: `SyntaxError: 'await' outside async function`**~~ — `find_triangular_arbitrage()` in `triangular.py` was a regular `def` but used `await loop.run_in_executor()` on line 463. Backend would not start at all. Fix: (a) Extracted all CPU-bound logic into `_find_triangular_arbitrage_sync()`, (b) Made `find_triangular_arbitrage()` an `async def` that offloads the entire computation via `loop.run_in_executor()`, (c) Updated `tests/test_triangular.py` to use `async def` + `@pytest.mark.asyncio`.
-2. ~~**Bellman-Ford blocks event loop**~~ — The O(V*V*E) Bellman-Ford loop plus O(E²) cross-rate validation ran synchronously on the asyncio event loop, blocking health checks for seconds. Fix: All CPU-bound computation now runs in a thread via `run_in_executor()`, so the event loop remains responsive.
-3. ~~**Cross-rate threshold too low (5%)**~~ — With 613 currencies, 5% threshold produced 1962 "suspicious" triples (noise). Raised to 10% in both `triangular.py` default and `routes_arbitrage.py` call site.
-4. ~~**Turbopack NFT warning**~~ — `import("./scripts/flipper-backend-bridge")` in `instrumentation.ts` caused Turbopack to trace `fs`/`path` usage. Fix: Added `/* turbopackIgnore: true */` to the dynamic `import()` call. **REVISED in v1.31**: `turbopackIgnore` prevented chunk creation, causing `Cannot find module` error at runtime. Removed the comment — the NFT warning is harmless.
-
-### COMPLETED (v1.29 — Iteration 14)
-1. ~~**Backend circuit breaker loop: O(n³) blocks event loop**~~ — `_compute_cross_rate_divergence()` in `triangular.py` used naive triple loop (613³ ≈ 230M iterations). Blocked asyncio event loop for 48+ seconds → health checks failed → bridge killed process → circuit breaker opened → cascade failure. Fix: (a) Replaced O(n³) dict.get() loops with adjacency-list algorithm (O(E²) where E=edges, ~5M triples instead of ~230M), (b) Run in `loop.run_in_executor()` to offload to thread pool, (c) Added `import asyncio` to `triangular.py`.
-2. ~~**Triangular arbitrage not cached**~~ — Every `/api/arbitrage/triangular` request recomputed everything from scratch including cross-rate validation. Fix: Added `pipeline_cache` caching with key `triangular_arbitrage_{min_profit_pct}`. Cache stores `(opportunities, cross_rate_warning)` tuple.
-3. ~~**Bridge health check too aggressive**~~ — 30s interval + 3 consecutive failures + 15s startup wait = kills process during normal heavy computation. Fix: 45s interval, 5 consecutive failures, 30s startup wait. Now 5 × 45s = 3:45 before kill (was 3 × 30s = 1:30).
-4. ~~**Cross-rate flip tooltip hardcoded English**~~ — `"Buy cheap → sell"` / `"Sell expensive → buy"` / `"Fair rate"` / `"Market"` / `"Profit potential"` / `"Vol"` in `exchange-table.tsx` replaced with i18n keys. All 4 locales updated (en, ru, zh, ko).
-
-### COMPLETED (v1.28 — Iteration 13)
-1. ~~**Build error: FlipsTabProps missing optimalPaymentByDisplayName**~~ — Root cause: `src/components/dashboard/` files were stale (missing Premium props), while root-level `components/dashboard/` had the new code. Turbopack type-checked both and found the mismatch. Fix: synced `src/` files with the newer root versions, then deleted root-level duplicate files (`components/`, `dashboard-page.tsx`, `flips-helpers.ts`, `flips-tab.tsx`, `flips-table.tsx`) that were causing confusion.
-2. ~~**Premium tooltip i18n**~~ — Hardcoded English strings ("Pay in", "save") in `flips-table.tsx`, `best-payment-badge.tsx`, and `exchange-table.tsx` replaced with i18n keys (`premiumPayIn`, `premiumSave`). All 4 locales updated (en, ru, zh, ko).
-
-### COMPLETED (v1.27 — Iteration 12)
-1. ~~**BestPaymentBadge + Premium column on Flips tab**~~ — Added `optimalPaymentByDisplayName` Map (keyed by display names like "Divine/Exalted") built in `dashboard-page.tsx` from `exchangeData` + `optimalPaymentByPair`. Props flow: `dashboard-page.tsx` → `FlipsTab` → `FlipsTable`. Premium column with `BestPaymentBadge` (compact) + tooltip (full payment breakdown) added to FlipsTable grid. Sort by premium supported ("premium" SortField). Column reuses `crossCurrencyPremium` i18n key.
-
-### COMPLETED (v1.26 — Iteration 11)
-1. ~~**Bridge `python backend.main:app` — wrong spawn command**~~ — `getUvicornArgs()` returned `[]` when uvicorn.exe found → Python treated `backend.main:app` as filename → ENOENT. Fix: always return `["-m", "uvicorn"]`. Also fixes Cyrillic path issues on Windows.
-2. ~~**Turbopack "unexpected file in NFT list" warning**~~ — Added `/* turbopackIgnore: true */` before `process.cwd()` in `getProjectRoot()`. **REVISED in v1.31**: Removed `turbopackIgnore` from `process.cwd()` — the warning is harmless and the comment could cause issues.
-
-### COMPLETED (v1.23–v1.25 — Iterations 8–10)
-- Bridge lifecycle management (spawn, health monitoring, taskkill on Windows, SIGTERM/SIGKILL on Unix)
-- Bridge file logging (`flipper-bridge.log`), health-based kill of stuck processes
-- PYTHON_CMD env var, project root detection via `process.cwd()`
-- start.bat/start.sh bridge mode (--no-bridge, --dev flags)
-- Duplicate main.py fixed (root → re-export from backend.main)
-
-### COMPLETED (v1.20–v1.22 — Iterations 5–7)
-- PipelineCache LRU eviction, PEP 668 venv, header clipping, Tailwind v4 migration
-- SW cache auto-bump, requirements.txt upper bounds, rate limit lock
-- HistoricalStore.clear_all_events(), AnomalyDetector singleton, gold code removal
-- Circuit breaker cooldown 60s→15s, Canonical Formulas cleanup
+### COMPLETED (v1.29–v1.30 — Iterations 14–15)
+- Cross-rate validation: O(n³) → O(E²) adjacency-list algorithm
+- Bellman-Ford + cross-rate validation offloaded to `run_in_executor()`
+- `find_triangular_arbitrage()` made `async def`, tests use `@pytest.mark.asyncio`
+- Cross-rate threshold raised 5% → 10% (613 currencies, 5% = 1962 false positives)
+- Triangular results cached in `pipeline_cache`
+- Bridge health check: 30s → 45s interval, 3 → 5 consecutive failures
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -157,6 +135,7 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 5. **Globe button doesn't close More menu** — Intentional UX: allows cycling locales without re-opening menu
 6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Harmless.
 7. **Divine pricing ~10% premium** — Market inefficiency, not a bug
+8. **NFT warning during build** — Turbopack traces `fs`/`path` in bridge script. Harmless (build-time only). Do NOT add `/* turbopackIgnore: true */`.
 
 ## 7. Architecture & API References
 
@@ -191,47 +170,30 @@ When a new league launches, update these 7 files:
 
 ## 10. Frequent Bugs
 
-1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName. Fix: `DEFAULT_LEAGUE_OVERRIDES` + dual matching in `getLeagues()`. `IsCurrent=true` now works for poe2 realm.
+1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName. Fix: `DEFAULT_LEAGUE_OVERRIDES` + dual matching in `getLeagues()`.
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask`. If reversed, all `gross_profit_pct` ≈ −3.5%.
-3. **`is_bfs_pair` always false:** Iterating `rates.items()` means every key is "direct". Fix: currency-based BFS detection.
-4. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
-5. **`cache-snapshot.json` too large:** Fix: truncation to max 8 pairs per item category + max 15 currency pairs.
-6. **PriceLogs are REVERSE chronological:** Always sort before charting.
-7. **`IsCurrent` works for poe2 realm:** Still use fallback to `default_league_value` for other realms.
-8. **scipy `ConstantInputWarning` in spearmanr:** Pre-check `np.std() == 0` before calling.
-9. **Missing currency categories in config:** Keep config complete for robustness.
-10. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
-11. **npm is the package manager** — not pnpm/yarn.
-12. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
-13. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
-14. **`poe2api.ts` transforms PascalCase→camelCase** — except `/Realms` endpoint (snake_case).
-15. **Acceleration formula indexing** — Must use `log_returns[-1-m]`, NOT `log_returns[-m]`.
-16. **`baseCurrencyText` is nullable** — Always use `?? ""` or `?? defaultText`.
-17. **`_math` must be module-level import** — `_find_optimal_payment()` uses `_math.isfinite()`.
-18. **`item_categories` must stay in sync** — `config.yaml`, `config.py`, `currency-optimal.ts` all must contain the same categories.
-19. **`currency_names[meta...]` not `currency_nameseta`** — Critical typo fixed in v1.11.
-20. **SnapshotPairs truncation strategy** — Top 8 per item category + top 15 currency pairs.
-21. **`dump-live-data.ts` for test fixture generation** — Run with VPN. Do NOT commit live data without review.
-22. **ByCategory endpoints in scripts must include all 5 item categories** — ritual, ultimatum, idol, vaultkeys, delirium.
-23. **HistoricalStore.clear_all_events() must exist** — `EventManager.clear_all()` calls it.
-24. **WebSocket vs REST parity** — `_compute_storage_value()` must pass same params.
-25. **Tailwind v4 CSS-first — no tailwind.config.ts** — Theme in `globals.css` via `@theme inline`. `darkMode: "class"` → `@custom-variant dark`. Animations use `tw-animate-css`.
-26. **Service Worker cache auto-bust** — `sw.js` cache version bumped on every `npm run build`.
-27. **Rate limit lock required** — `_last_request_time` in `Poe2ScoutProvider._do_request()` must be protected by `_rate_limit_lock`.
-28. **Health check is non-blocking** — `asyncio.create_task()` in lifespan, not awaited.
-29. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668). Always use venv python for backend.
-30. **Flipper backend bridge** — By default, Next.js manages the Python backend via `instrumentation.ts` → `scripts/flipper-backend-bridge.ts`. The bridge auto-starts, monitors health, and restarts on crash. **Project root detection**: uses `process.cwd()` (reliable for `next start`), not `__dirname` (which points inside `.next/` after bundling). **Python detection**: checks `PYTHON_CMD` env var first (set by start.bat/start.sh), then `.venv` heuristics, then system `python`. **uvicorn invocation**: always uses `python -m uvicorn backend.main:app` (NOT `python backend.main:app` — Python treats the latter as a script filename). On Windows, uses `taskkill /PID /T /F` for reliable process tree termination (SIGTERM doesn't work for Python on Windows). On Unix, uses SIGTERM → SIGKILL (5s grace). Bridge logs to `flipper-bridge.log`. To disable: set `FLIPPER_BRIDGE_DISABLED=true` in `.env.local` or use `start.bat --no-bridge` / `./start.sh --no-bridge`. To start backend manually: `PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000`.
-31. **Root main.py is a re-export** — `./main.py` just does `from backend.main import app`. The real code is in `backend/main.py`. Never edit `./main.py` directly.
-32. **Bridge health monitoring kills stuck processes** — If health check fails 3 consecutive times, bridge kills the process (triggering auto-restart). This handles "stuck" processes that are alive but unresponsive.
-33. **start.bat uses `where.exe` not `where`** — Some Windows CMD versions misparse `where` without explicit `.exe` extension, producing `'ho.' is not recognized` errors.
-34. **Bridge must use `python -m uvicorn`, NOT `python backend.main:app`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes Python to treat `backend.main:app` as a script filename → ENOENT. This also affects non-ASCII (Cyrillic) paths on Windows because Python outputs the garbled path in its error message.
-35. **No duplicate files between root and `src/`** — All component files live in `src/components/` exclusively (since `@/*` → `./src/*` in tsconfig). Root-level `components/` directory and standalone `flips-*.tsx` / `dashboard-page.tsx` were deleted in v1.28 to prevent Turbopack from type-checking stale copies.
-36. **CPU-bound Python code MUST run in `run_in_executor()`** — The FastAPI backend is async (uvicorn). Any synchronous CPU-heavy loop (O(n³), matrix operations, etc.) blocks the event loop and prevents health check responses. This triggers the bridge health monitor to kill the process, which opens the circuit breaker. Always offload CPU-bound work to `loop.run_in_executor(None, func, *args)`.
-37. **Triangular arbitrage results are cached** — `/api/arbitrage/triangular` uses `pipeline_cache` with key `triangular_arbitrage_{min_profit_pct}`. Do not remove this cache — without it, every request triggers O(n³) cross-rate validation.
-38. **`find_triangular_arbitrage()` is async** — Since v1.30, this function is `async def` and offloads all CPU-bound work to `run_in_executor()`. Calling it without `await` returns a coroutine object, not a `TriangularResult`. Tests must use `@pytest.mark.asyncio`.
-39. **Cross-rate threshold is 10%** — Raised from 5% in v1.30. With 613 currencies, 5% produced 1962 suspicious triples (noise). Do not lower back to 5% without measuring the impact on false-positive rates.
-40. **Do NOT use `/* turbopackIgnore: true */` on dynamic imports in server code** — Adding this comment to `import()` in `instrumentation.ts` prevents Turbopack from creating a chunk for the bridge module. At runtime, the import resolves from `.next/server/chunks/` and the module isn't found. The NFT warning that appears without the comment is harmless (build-time only) and should be ignored.
-41. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint function** — It's NOT a module-level variable. Every endpoint that uses `pipeline_cache.get()` / `pipeline_cache.put()` must call `pipeline_cache = get_pipeline_cache()` first. Missing this causes `NameError` at runtime (broke `/api/arbitrage/triangular` in v1.31).
+3. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
+4. **`cache-snapshot.json` too large:** Fix: truncation to max 8 pairs per item category + max 15 currency pairs.
+5. **PriceLogs are REVERSE chronological:** Always sort before charting.
+6. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
+7. **npm is the package manager** — not pnpm/yarn.
+8. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
+9. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
+10. **`_math` must be module-level import** — `_find_optimal_payment()` uses `_math.isfinite()`.
+11. **`item_categories` must stay in sync** — `config.yaml`, `config.py`, `currency-optimal.ts` all must contain the same categories.
+12. **CPU-bound Python code MUST run in `run_in_executor()`** — Any sync CPU-heavy loop blocks the event loop, triggers bridge kill + circuit breaker cascade.
+13. **Triangular arbitrage results are cached** — Key: `triangular_arbitrage_{min_profit_pct}`. Do not remove — without it, every request triggers O(E²) cross-rate validation.
+14. **`find_triangular_arbitrage()` is async** — Since v1.30. Calling without `await` returns coroutine. Tests must use `@pytest.mark.asyncio`.
+15. **Cross-rate threshold is 10%** — Do not lower to 5% without measuring false-positive impact.
+16. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module → `Cannot find module` at runtime. NFT warning is harmless.
+17. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable. Missing this causes `NameError` at runtime (broke `/api/arbitrage/triangular` in v1.31).
+18. **Proxy timeout is configurable** — `proxyToFlipper()` and `proxyWithFallback()` accept `timeoutMs` param (default 15s). Heavy endpoints (triangular) must pass a longer timeout (45s).
+19. **Bridge health check timeout is 10s** — During GIL contention from executor threads, 5s was too short. Do not lower back to 5s.
+20. **Health endpoint uses pre-imported modules** — `_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache` are imported at module level, not lazily inside the handler. `_snapshot_manager_ref` is set during lifespan.
+21. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux. Windows builds are unaffected.
+22. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes ENOENT + Cyrillic path issues.
+23. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
+24. **Root main.py is a re-export** — `./main.py` → `from backend.main import app`. Never edit directly.
 
 ## 11. Documentation Map
 

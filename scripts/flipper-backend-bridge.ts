@@ -339,7 +339,11 @@ function scheduleRestart(): void {
 async function checkHealth(): Promise<boolean> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5_000);
+    // 10s timeout — increased from 5s. During heavy computation (Bellman-Ford
+    // with 600+ currencies), the Python GIL may starve the asyncio event loop
+    // of CPU time, delaying health check responses. 5s was too aggressive and
+    // caused false-positive "unhealthy" detections during normal operation.
+    const timeout = setTimeout(() => controller.abort(), 10_000);
 
     const res = await fetch(HEALTH_ENDPOINT, {
       method: "GET",
