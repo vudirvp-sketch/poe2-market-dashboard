@@ -828,6 +828,14 @@ const ru: Record<TranslationKeys, string> = {
   // ---- Premium tooltip (оптимальная оплата в другой валюте) ----
   premiumPayIn: "Платить в",
   premiumSave: "экономия",
+
+  // ---- Cross-rate Flip Tooltip i18n ----
+  crossRateBuyCheapSell: "Купить дешево → продать",
+  crossRateSellExpensiveBuy: "Продать дорого → купить",
+  crossRateFairRateLabel: "Справочный курс",
+  crossRateMarketLabel: "Рынок",
+  crossRateProfitPotential: "Потенциал прибыли",
+  crossRateVol: "Объём",
 };
 
 export default ru;

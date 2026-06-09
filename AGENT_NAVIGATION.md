@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.28 | **Date:** 2026-06-09
+> **Version:** 1.29 | **Date:** 2026-06-09
 
 ---
 
@@ -100,8 +100,13 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### TODO (next iterations)
 1. **Bridge real-world Windows testing** — v1.26 fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug and adds `/* turbopackIgnore: true */` for the NFT warning. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
-2. **Cross-rate flip tooltip i18n** — The cross-rate flip tooltip in `exchange-table.tsx` uses hardcoded English strings ("Buy cheap → sell", "Sell expensive → buy"). Should be i18n-ified.
-3. **Visual check of Flips tab Premium column** — Verify Premium column looks correct on all screen sizes (hidden on < md), sorting works, tooltip shows correct data.
+2. **Visual check of Flips tab Premium column** — Verify Premium column looks correct on all screen sizes (hidden on < md), sorting works, tooltip shows correct data.
+
+### COMPLETED (v1.29 — Iteration 14)
+1. ~~**Backend circuit breaker loop: O(n³) blocks event loop**~~ — `_compute_cross_rate_divergence()` in `triangular.py` used naive triple loop (613³ ≈ 230M iterations). Blocked asyncio event loop for 48+ seconds → health checks failed → bridge killed process → circuit breaker opened → cascade failure. Fix: (a) Replaced O(n³) dict.get() loops with adjacency-list algorithm (O(E²) where E=edges, ~5M triples instead of ~230M), (b) Run in `loop.run_in_executor()` to offload to thread pool, (c) Added `import asyncio` to `triangular.py`.
+2. ~~**Triangular arbitrage not cached**~~ — Every `/api/arbitrage/triangular` request recomputed everything from scratch including cross-rate validation. Fix: Added `pipeline_cache` caching with key `triangular_arbitrage_{min_profit_pct}`. Cache stores `(opportunities, cross_rate_warning)` tuple.
+3. ~~**Bridge health check too aggressive**~~ — 30s interval + 3 consecutive failures + 15s startup wait = kills process during normal heavy computation. Fix: 45s interval, 5 consecutive failures, 30s startup wait. Now 5 × 45s = 3:45 before kill (was 3 × 30s = 1:30).
+4. ~~**Cross-rate flip tooltip hardcoded English**~~ — `"Buy cheap → sell"` / `"Sell expensive → buy"` / `"Fair rate"` / `"Market"` / `"Profit potential"` / `"Vol"` in `exchange-table.tsx` replaced with i18n keys. All 4 locales updated (en, ru, zh, ko).
 
 ### COMPLETED (v1.28 — Iteration 13)
 1. ~~**Build error: FlipsTabProps missing optimalPaymentByDisplayName**~~ — Root cause: `src/components/dashboard/` files were stale (missing Premium props), while root-level `components/dashboard/` had the new code. Turbopack type-checked both and found the mismatch. Fix: synced `src/` files with the newer root versions, then deleted root-level duplicate files (`components/`, `dashboard-page.tsx`, `flips-helpers.ts`, `flips-tab.tsx`, `flips-table.tsx`) that were causing confusion.
@@ -204,6 +209,8 @@ When a new league launches, update these 7 files:
 33. **start.bat uses `where.exe` not `where`** — Some Windows CMD versions misparse `where` without explicit `.exe` extension, producing `'ho.' is not recognized` errors.
 34. **Bridge must use `python -m uvicorn`, NOT `python backend.main:app`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes Python to treat `backend.main:app` as a script filename → ENOENT. This also affects non-ASCII (Cyrillic) paths on Windows because Python outputs the garbled path in its error message.
 35. **No duplicate files between root and `src/`** — All component files live in `src/components/` exclusively (since `@/*` → `./src/*` in tsconfig). Root-level `components/` directory and standalone `flips-*.tsx` / `dashboard-page.tsx` were deleted in v1.28 to prevent Turbopack from type-checking stale copies.
+36. **CPU-bound Python code MUST run in `run_in_executor()`** — The FastAPI backend is async (uvicorn). Any synchronous CPU-heavy loop (O(n³), matrix operations, etc.) blocks the event loop and prevents health check responses. This triggers the bridge health monitor to kill the process, which opens the circuit breaker. Always offload CPU-bound work to `loop.run_in_executor(None, func, *args)`.
+37. **Triangular arbitrage results are cached** — `/api/arbitrage/triangular` uses `pipeline_cache` with key `triangular_arbitrage_{min_profit_pct}`. Do not remove this cache — without it, every request triggers O(n³) cross-rate validation.
 
 ## 11. Documentation Map
 

@@ -27,11 +27,11 @@ import { join, dirname } from "path";
 
 const BACKEND_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
 const HEALTH_ENDPOINT = `${BACKEND_URL}/api/health`;
-const HEALTH_CHECK_INTERVAL = 30_000; // 30s
+const HEALTH_CHECK_INTERVAL = 45_000; // 45s — increased from 30s: the backend may be busy with O(n³) cross-rate validation or snapshot refresh, which can take 10-20s even with async offloading. 30s was too aggressive, causing false-positive kills during normal operation.
 const RESTART_DELAY = 5_000; // 5s
 const MAX_RESTARTS = 5;
 const MAX_RESTART_WINDOW = 60_000; // 1 minute — if >MAX_RESTARTS restarts in this window, give up
-const MAX_CONSECUTIVE_UNHEALTHY = 3; // kill process after N consecutive unhealthy checks
+const MAX_CONSECUTIVE_UNHEALTHY = 5; // kill process after N consecutive unhealthy checks — increased from 3: the backend may be temporarily unresponsive during heavy computation (cross-rate validation with 600+ currencies). 3 consecutive failures at 45s intervals = 3:45 before kill, which gives enough headroom for transient overload.
 const LOG_FILE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB — rotate log after this size
 
 const isWindows = process.platform === "win32";
@@ -358,7 +358,9 @@ async function checkHealth(): Promise<boolean> {
 function startHealthMonitoring(): void {
   if (healthCheckTimer) return;
 
-  // Wait 15s for initial startup before first check
+  // Wait 30s for initial startup before first check — increased from 15s:
+  // The backend needs time to fetch all ByCategory pages (15+ API calls)
+  // and compute the initial snapshot before it can respond to health checks.
   setTimeout(() => {
     healthCheckTimer = setInterval(async () => {
       if (isShuttingDown) return;

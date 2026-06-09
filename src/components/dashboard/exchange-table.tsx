@@ -204,13 +204,13 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, a
             <TooltipContent side="left" className="max-w-[240px] p-2.5" sideOffset={6}>
               <div className="space-y-1 text-[11px]">
                 <div className="text-xs font-medium text-foreground">
-                  {crossRateFlip.direction === "buy_sell_with_buy" ? "Buy cheap → sell" : "Sell expensive → buy"}
+                  {crossRateFlip.direction === "buy_sell_with_buy" ? t("crossRateBuyCheapSell") : t("crossRateSellExpensiveBuy")}
                 </div>
                 <div className="text-muted-foreground">
-                  Fair rate: {fmt(crossRateFlip.fairRate)} | Market: {fmt(crossRateFlip.marketRate)}
+                  {t("crossRateFairRateLabel")}: {fmt(crossRateFlip.fairRate)} | {t("crossRateMarketLabel")}: {fmt(crossRateFlip.marketRate)}
                 </div>
                 <div className={crossRateFlip.deviationPct < 0 ? "text-emerald-400" : "text-red-400"}>
-                  Profit potential: ~{crossRateFlip.estimatedProfitPct.toFixed(1)}% | Vol: {fmtVolume(crossRateFlip.volume)}
+                  {t("crossRateProfitPotential")}: ~{crossRateFlip.estimatedProfitPct.toFixed(1)}% | {t("crossRateVol")}: {fmtVolume(crossRateFlip.volume)}
                 </div>
               </div>
             </TooltipContent>

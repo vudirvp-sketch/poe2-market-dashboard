@@ -895,6 +895,14 @@ const ko: Record<TranslationKeys, string> = {
   // ---- Premium tooltip (통화 간 최적 결제) ----
   premiumPayIn: "결제 수단",
   premiumSave: "절약",
+
+  // ---- Cross-rate Flip Tooltip i18n ----
+  crossRateBuyCheapSell: "싸게 사기 → 팔기",
+  crossRateSellExpensiveBuy: "비싸게 팔기 → 사기",
+  crossRateFairRateLabel: "공정 환율",
+  crossRateMarketLabel: "시장",
+  crossRateProfitPotential: "수익 잠재력",
+  crossRateVol: "거래량",
 };
 
 export default ko;

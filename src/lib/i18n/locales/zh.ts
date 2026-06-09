@@ -895,6 +895,14 @@ const zh: Record<TranslationKeys, string> = {
   // ---- Premium tooltip (跨币种最优支付) ----
   premiumPayIn: "支付方式",
   premiumSave: "节省",
+
+  // ---- Cross-rate Flip Tooltip i18n ----
+  crossRateBuyCheapSell: "低价买入 → 卖出",
+  crossRateSellExpensiveBuy: "高价卖出 → 买入",
+  crossRateFairRateLabel: "公允汇率",
+  crossRateMarketLabel: "市场",
+  crossRateProfitPotential: "盈利潜力",
+  crossRateVol: "成交量",
 };
 
 export default zh;

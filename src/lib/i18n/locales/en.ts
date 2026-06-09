@@ -900,6 +900,14 @@ const en = {
   // ---- Premium tooltip (cross-currency optimal payment) ----
   premiumPayIn: "Pay in",
   premiumSave: "save",
+
+  // ---- Cross-rate Flip Tooltip i18n ----
+  crossRateBuyCheapSell: "Buy cheap → sell",
+  crossRateSellExpensiveBuy: "Sell expensive → buy",
+  crossRateFairRateLabel: "Fair rate",
+  crossRateMarketLabel: "Market",
+  crossRateProfitPotential: "Profit potential",
+  crossRateVol: "Vol",
 } as const;
 
 export default en;

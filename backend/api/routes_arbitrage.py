@@ -660,32 +660,45 @@ async def get_triangular_arbitrage(
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
 
-    result = find_triangular_arbitrage(
-        rates=rates_for_bf,
-        prices=prices,
-        min_profit_pct=min_profit_pct,
-        pair_volumes=pair_volumes,
-        snapshot_time=datetime.now(timezone.utc),
-        cross_rate_threshold_pct=5.0,
-    )
-    opportunities = result.opportunities
-    suspicious_triples = result.suspicious_triples
+    # PERFORMANCE FIX: Cache triangular arbitrage results in pipeline_cache
+    # to avoid recomputing O(n³) cross-rate validation on every request.
+    # The cache TTL matches the snapshot TTL — results are refreshed when
+    # new snapshot data arrives.
+    cache_key = f"triangular_arbitrage_{min_profit_pct}"
+    cached_tri = pipeline_cache.get(cache_key)
+    if cached_tri is not None and not cached_tri.stale:
+        opportunities = cached_tri.value[0]
+        cross_rate_warning = cached_tri.value[1]
+    else:
+        result = await find_triangular_arbitrage(
+            rates=rates_for_bf,
+            prices=prices,
+            min_profit_pct=min_profit_pct,
+            pair_volumes=pair_volumes,
+            snapshot_time=datetime.now(timezone.utc),
+            cross_rate_threshold_pct=5.0,
+        )
+        opportunities = result.opportunities
+        suspicious_triples = result.suspicious_triples
 
-    cross_rate_warning = None
-    if suspicious_triples:
-        affected_currencies = set()
-        for triple in suspicious_triples:
-            affected_currencies.update(triple)
-        cross_rate_warning = {
-            "suspicious_triples_count": len(suspicious_triples),
-            "affected_currencies": sorted(affected_currencies),
-            "message": (
-                f"{len(suspicious_triples)} currency triples have >5% "
-                "cross-rate divergence (implied vs direct rates). "
-                "Some detected cycles may be false positives from "
-                "inconsistent relative_price data between pairs."
-            ),
-        }
+        cross_rate_warning = None
+        if suspicious_triples:
+            affected_currencies = set()
+            for triple in suspicious_triples:
+                affected_currencies.update(triple)
+            cross_rate_warning = {
+                "suspicious_triples_count": len(suspicious_triples),
+                "affected_currencies": sorted(affected_currencies),
+                "message": (
+                    f"{len(suspicious_triples)} currency triples have >5% "
+                    "cross-rate divergence (implied vs direct rates). "
+                    "Some detected cycles may be false positives from "
+                    "inconsistent relative_price data between pairs."
+                ),
+            }
+
+        # Cache the result: store (opportunities, cross_rate_warning) tuple
+        pipeline_cache.put(cache_key, (opportunities, cross_rate_warning))
 
     return {
         "league": config.league.league_name,
