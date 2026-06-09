@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.26 | **Date:** 2026-06-09
+> **Version:** 1.27 | **Date:** 2026-06-09
 
 ---
 
@@ -99,8 +99,11 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **BestPaymentBadge + Premium column on Flips tab** — Currently these features only exist on the Exchange tab. The Flips tab (`flips-table.tsx`) does not show BestPaymentBadge for Omens/Soul Cores or a Premium savings column. To add them: (a) pass `optimalPaymentByPair` + `anchorId` from `dashboard-page.tsx` → `FlipsTab` → `FlipsTable`, (b) build a name-based lookup (`Map<"currency1Name/currency2Name", OptimalPaymentResult>`) since flip `currency` field uses display names while `optimalPaymentByPair` is keyed by pair ID, (c) add Premium column to `FlipsTable` grid, (d) add i18n keys for "Premium" header. The Exchange tab already works correctly — verify at http://localhost:3000 → Exchange tab.
-2. **Bridge real-world Windows testing** — v1.26 fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug and adds `/* turbopackIgnore: true */` for the NFT warning. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
+1. **Bridge real-world Windows testing** — v1.26 fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug and adds `/* turbopackIgnore: true */` for the NFT warning. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
+2. **Premium column tooltip i18n** — The Premium column tooltip in `flips-table.tsx` currently uses hardcoded English strings ("Pay in", "save", "Exa"). Should be i18n-ified in a future iteration.
+
+### COMPLETED (v1.27 — Iteration 12)
+1. ~~**BestPaymentBadge + Premium column on Flips tab**~~ — Added `optimalPaymentByDisplayName` Map (keyed by display names like "Divine/Exalted") built in `dashboard-page.tsx` from `exchangeData` + `optimalPaymentByPair`. Props flow: `dashboard-page.tsx` → `FlipsTab` → `FlipsTable`. Premium column with `BestPaymentBadge` (compact) + tooltip (full payment breakdown) added to FlipsTable grid. Sort by premium supported ("premium" SortField). Column reuses `crossCurrencyPremium` i18n key.
 
 ### COMPLETED (v1.26 — Iteration 11)
 1. ~~**Bridge `python backend.main:app` — wrong spawn command**~~ — `getUvicornArgs()` returned `[]` when uvicorn.exe found → Python treated `backend.main:app` as filename → ENOENT. Fix: always return `["-m", "uvicorn"]`. Also fixes Cyrillic path issues on Windows.
