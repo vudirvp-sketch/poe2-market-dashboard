@@ -712,6 +712,20 @@ export function Dashboard() {
     return clientOptimalResult;
   }, [optimalCurrencyData, exchangeData, clientOptimalResult]);
 
+  // Build display-name-keyed map for FlipsTab (flip currency uses "Name1/Name2" format)
+  const optimalPaymentByDisplayName = useMemo(() => {
+    const map = new Map<string, OptimalPaymentResult>();
+    if (!exchangeData || !optimalPaymentByPair || optimalPaymentByPair.size === 0) return map;
+    for (const pair of exchangeData) {
+      const result = optimalPaymentByPair.get(pair.id);
+      if (result) {
+        const key = `${pair.currency1Name}/${pair.currency2Name}`;
+        map.set(key, result);
+      }
+    }
+    return map;
+  }, [exchangeData, optimalPaymentByPair]);
+
   // Categories
   const currencyCategories = useMemo(() => {
     const cats = uniqueCategories?.filter((c) => c.name !== "Unique") || [];
@@ -1578,7 +1592,7 @@ export function Dashboard() {
             {/* ============ FLIPS TAB ============ */}
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle={t("fallbackFlips")}>
-                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
+                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} optimalPaymentByDisplayName={optimalPaymentByDisplayName} anchorId={selectedAnchorId} />
               </ErrorBoundary>
               {/* P3-7: Tier Drift Tracker */}
               <ErrorBoundary fallbackTitle={t("fallbackTierDrift")}>

@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, getFlipperErrorType } from "@/lib/types";
-import type { TriangularResponse } from "@/lib/types";
+import type { TriangularResponse, OptimalPaymentResult } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 import { useFlipperWebSocket } from "@/hooks/use-websocket";
 import { FlipsTable } from "./flips-table";
@@ -68,13 +68,17 @@ interface FlipsTabProps {
   backendOnline: boolean;
   /** Backend is online but upstream API is unreachable (degraded mode) */
   upstreamDegraded?: boolean;
+  /** Optimal payment results keyed by display name ("Name1/Name2") */
+  optimalPaymentByDisplayName?: Map<string, OptimalPaymentResult>;
+  /** Anchor currency ID for premium display */
+  anchorId?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded }: FlipsTabProps) {
+export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded, optimalPaymentByDisplayName, anchorId }: FlipsTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -212,6 +216,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           aVal = a.tierDistance ?? 0;
           bVal = b.tierDistance ?? 0;
           break;
+        case "premium":
+          aVal = optimalPaymentByDisplayName?.get(a.currency)?.savingsPct ?? 0;
+          bVal = optimalPaymentByDisplayName?.get(b.currency)?.savingsPct ?? 0;
+          break;
         default:
           aVal = (a[sortField] as number) ?? 0;
           bVal = (b[sortField] as number) ?? 0;
@@ -222,7 +230,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     });
 
     return sorted;
-  }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection, minScore, minVolume, minSpread]);
+  }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection, minScore, minVolume, minSpread, optimalPaymentByDisplayName]);
 
   // ---- Summary stats ----
   const avgScore = useMemo(() => {
@@ -549,6 +557,8 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           page={page}
           perPage={perPage}
           onPageChange={setPage}
+          optimalPaymentByDisplayName={optimalPaymentByDisplayName}
+          anchorId={anchorId}
         />
       )}
 

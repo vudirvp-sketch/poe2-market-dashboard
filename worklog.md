@@ -1,41 +1,25 @@
 # Worklog
 
 ---
-Task ID: 22
+Task ID: 23
 Agent: main
-Task: Iteration 12 — BestPaymentBadge + Premium column on Flips tab
+Task: Iteration 13 — Fix build error + Premium tooltip i18n + remove duplicate files
 
 Work Log:
-- Added `optimalPaymentByDisplayName` Map in `dashboard-page.tsx` — maps display names ("Name1/Name2") to OptimalPaymentResult, built from exchangeData + optimalPaymentByPair
-- Updated FlipsTab props: added `optimalPaymentByDisplayName` and `anchorId`
-- Updated FlipsTable props: added `optimalPaymentByDisplayName` and `anchorId`
-- Added Premium column to FlipsTable grid (11 columns now, 60px width for Premium)
-- Premium cell renders BestPaymentBadge (compact) with tooltip showing full payment breakdown (mirrors Exchange tab CrossCurrencyPremiumCell pattern)
-- Added "premium" to SortField union type in flips-helpers.ts
-- Added "premium" sort case in flips-tab.tsx sort handler (looks up savingsPct from optimalPaymentByDisplayName)
-- Reuses existing `crossCurrencyPremium` i18n key for column header (no new i18n keys needed)
-- Updated AGENT_NAVIGATION.md: v1.27, completed task moved to COMPLETED section
-- TypeScript compilation passes (`tsc --noEmit` clean)
+- Diagnosed build error: `src/components/dashboard/flips-tab.tsx` was stale (missing `optimalPaymentByDisplayName` and `anchorId` props), while root-level `components/dashboard/flips-tab.tsx` had them. Turbopack type-checked both paths and found the mismatch.
+- Synced `src/components/dashboard/flips-helpers.ts`: added `"premium"` to `SortField` union type
+- Synced `src/components/dashboard/flips-tab.tsx`: added `optimalPaymentByDisplayName` and `anchorId` props to `FlipsTabProps`, updated destructuring, added `"premium"` sort case, added props to `FlipsTable` call, added `optimalPaymentByDisplayName` to `useMemo` deps
+- Synced `src/components/dashboard/flips-table.tsx`: replaced with Premium column version (11-column grid, `BestPaymentBadge`, tooltip with payment breakdown)
+- Updated `src/components/dashboard/dashboard-page.tsx`: added `optimalPaymentByDisplayName` Map computation, passed `optimalPaymentByDisplayName` and `selectedAnchorId` to `<FlipsTab>`
+- Added i18n keys `premiumPayIn` and `premiumSave` to all 4 locales (en, ru, zh, ko)
+- Replaced hardcoded "Pay in" and "save" in `best-payment-badge.tsx` with `t("premiumPayIn")` / `t("premiumSave")`
+- Replaced hardcoded "Pay in" and "save" in `exchange-table.tsx` CrossCurrencyPremiumCell tooltip with i18n keys
+- Deleted root-level duplicate files: `components/` directory, `dashboard-page.tsx`, `flips-helpers.ts`, `flips-tab.tsx`, `flips-table.tsx`
+- Updated `AGENT_NAVIGATION.md` to v1.28: added completed items, new TODOs (cross-rate flip tooltip i18n, visual Premium check), added Frequent Bug #35 about no duplicate files
+- Build passes: `npx next build` successful
 
 Stage Summary:
-- BestPaymentBadge + Premium column now works on Flips tab, same as Exchange tab
-- Key design: display-name-keyed map bridges the gap between flip currency names and pair-ID-keyed optimalPaymentByPair
-- Remaining: Premium tooltip text is hardcoded English (i18n todo for future iteration)
-
----
-Task ID: 21
-Agent: main
-Task: Iteration 11 — Fix bridge `python backend.main:app` wrong spawn command, Turbopack NFT warning
-
-Work Log:
-- Fixed `flipper-backend-bridge.ts`: `getUvicornArgs()` now always returns `["-m", "uvicorn"]` instead of conditionally returning `[]` when uvicorn.exe found. The old logic caused `spawn(pythonCmd, ["backend.main:app", ...])` — Python treated `backend.main:app` as a filename, not a uvicorn app spec.
-- Added `/* turbopackIgnore: true */` before `process.cwd()` in `getProjectRoot()` to suppress Turbopack "Encountered unexpected file in NFT list" build warning.
-- The Cyrillic path garbling in error messages was a symptom of the same bug — Python was outputting the full path to `backend.main:app` as a filename, and the console couldn't render Cyrillic in that context. Fixed by the `-m uvicorn` change.
-- Cleaned up AGENT_NAVIGATION.md: consolidated old iteration history (v1.15–v1.22) into compact summaries, added v1.26 iteration entry, added frequent bug #34.
-- Noted TODO: BestPaymentBadge + Premium column need to be added to Flips tab (currently only on Exchange tab). This requires passing `optimalPaymentByPair` through component hierarchy and adding UI column.
-
-Stage Summary:
-- Root cause of bridge failure: `getUvicornArgs()` returned `[]` when uvicorn.exe existed, making Python interpret `backend.main:app` as a script path, not a uvicorn module spec
-- Fix: always use `python -m uvicorn backend.main:app` (matches what start.bat/start.sh do manually)
-- Turbopack warning fixed with `/* turbopackIgnore: true */`
-- BestPaymentBadge/Premium column on Flips tab is TODO for next iteration
+- Build error fixed — all `src/` files now have Premium feature parity
+- Premium tooltip is i18n-ified across all 3 components (flips-table, best-payment-badge, exchange-table)
+- Root-level duplicates removed — single source of truth in `src/components/dashboard/`
+- Remaining: cross-rate flip tooltip i18n, visual testing of Premium column on real devices

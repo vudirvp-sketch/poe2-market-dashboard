@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.27 | **Date:** 2026-06-09
+> **Version:** 1.28 | **Date:** 2026-06-09
 
 ---
 
@@ -100,7 +100,12 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### TODO (next iterations)
 1. **Bridge real-world Windows testing** — v1.26 fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug and adds `/* turbopackIgnore: true */` for the NFT warning. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
-2. **Premium column tooltip i18n** — The Premium column tooltip in `flips-table.tsx` currently uses hardcoded English strings ("Pay in", "save", "Exa"). Should be i18n-ified in a future iteration.
+2. **Cross-rate flip tooltip i18n** — The cross-rate flip tooltip in `exchange-table.tsx` uses hardcoded English strings ("Buy cheap → sell", "Sell expensive → buy"). Should be i18n-ified.
+3. **Visual check of Flips tab Premium column** — Verify Premium column looks correct on all screen sizes (hidden on < md), sorting works, tooltip shows correct data.
+
+### COMPLETED (v1.28 — Iteration 13)
+1. ~~**Build error: FlipsTabProps missing optimalPaymentByDisplayName**~~ — Root cause: `src/components/dashboard/` files were stale (missing Premium props), while root-level `components/dashboard/` had the new code. Turbopack type-checked both and found the mismatch. Fix: synced `src/` files with the newer root versions, then deleted root-level duplicate files (`components/`, `dashboard-page.tsx`, `flips-helpers.ts`, `flips-tab.tsx`, `flips-table.tsx`) that were causing confusion.
+2. ~~**Premium tooltip i18n**~~ — Hardcoded English strings ("Pay in", "save") in `flips-table.tsx`, `best-payment-badge.tsx`, and `exchange-table.tsx` replaced with i18n keys (`premiumPayIn`, `premiumSave`). All 4 locales updated (en, ru, zh, ko).
 
 ### COMPLETED (v1.27 — Iteration 12)
 1. ~~**BestPaymentBadge + Premium column on Flips tab**~~ — Added `optimalPaymentByDisplayName` Map (keyed by display names like "Divine/Exalted") built in `dashboard-page.tsx` from `exchangeData` + `optimalPaymentByPair`. Props flow: `dashboard-page.tsx` → `FlipsTab` → `FlipsTable`. Premium column with `BestPaymentBadge` (compact) + tooltip (full payment breakdown) added to FlipsTable grid. Sort by premium supported ("premium" SortField). Column reuses `crossCurrencyPremium` i18n key.
@@ -198,6 +203,7 @@ When a new league launches, update these 7 files:
 32. **Bridge health monitoring kills stuck processes** — If health check fails 3 consecutive times, bridge kills the process (triggering auto-restart). This handles "stuck" processes that are alive but unresponsive.
 33. **start.bat uses `where.exe` not `where`** — Some Windows CMD versions misparse `where` without explicit `.exe` extension, producing `'ho.' is not recognized` errors.
 34. **Bridge must use `python -m uvicorn`, NOT `python backend.main:app`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes Python to treat `backend.main:app` as a script filename → ENOENT. This also affects non-ASCII (Cyrillic) paths on Windows because Python outputs the garbled path in its error message.
+35. **No duplicate files between root and `src/`** — All component files live in `src/components/` exclusively (since `@/*` → `./src/*` in tsconfig). Root-level `components/` directory and standalone `flips-*.tsx` / `dashboard-page.tsx` were deleted in v1.28 to prevent Turbopack from type-checking stale copies.
 
 ## 11. Documentation Map
 

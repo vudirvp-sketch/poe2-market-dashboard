@@ -891,6 +891,10 @@ const zh: Record<TranslationKeys, string> = {
   dataFreshnessCached: "缓存数据",
   dataFreshnessJustNow: "刚刚",
   dataFreshnessAgeMinutes: "{0}分钟前",
+
+  // ---- Premium tooltip (跨币种最优支付) ----
+  premiumPayIn: "支付方式",
+  premiumSave: "节省",
 };
 
 export default zh;

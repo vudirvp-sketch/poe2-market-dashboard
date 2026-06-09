@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingDown } from "lucide-react";
 import { fmt } from "@/lib/types";
 import type { OptimalPaymentResult } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 
 interface BestPaymentBadgeProps {
   /** Result from findOptimalPayment() in currency-optimal.ts */
@@ -33,6 +34,8 @@ export const BestPaymentBadge = memo(function BestPaymentBadge({
   anchorName = "Exa",
   compact = false,
 }: BestPaymentBadgeProps) {
+  const { t } = useI18n();
+
   // Don't show badge for negligible savings (< 1%)
   if (result.savingsPct < 1) return null;
 
@@ -62,10 +65,10 @@ export const BestPaymentBadge = memo(function BestPaymentBadge({
         className={`text-xs px-2 py-0.5 ${savingsColor}`}
       >
         <TrendingDown className="h-3 w-3 mr-1" aria-hidden="true" />
-        Pay in {result.bestCurrencyId}
+        {t("premiumPayIn")} {result.bestCurrencyId}
       </Badge>
       <span className="text-[10px] text-muted-foreground">
-        Save {fmt(result.savingsAnchor)} {anchorName} ({result.savingsPct.toFixed(1)}%)
+        {t("premiumSave")} {fmt(result.savingsAnchor)} {anchorName} ({result.savingsPct.toFixed(1)}%)
       </span>
     </div>
   );

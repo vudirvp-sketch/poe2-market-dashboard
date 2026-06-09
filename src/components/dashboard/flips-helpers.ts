@@ -24,7 +24,8 @@ export type SortField =
   | "qSpread"       // optimalLotProfitPct from quantized analysis
   | "minLot"        // minProfitableLot from quantized analysis
   | "brickRisk"     // brickResistance from quantized analysis
-  | "tierDistance";  // tier_distance between currencies
+  | "tierDistance"   // tier_distance between currencies
+  | "premium";      // savingsPct from optimal payment result
 
 export type SortDirection = "asc" | "desc";
 

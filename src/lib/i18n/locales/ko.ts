@@ -891,6 +891,10 @@ const ko: Record<TranslationKeys, string> = {
   dataFreshnessCached: "캐시 데이터",
   dataFreshnessJustNow: "방금",
   dataFreshnessAgeMinutes: "{0}분 전",
+
+  // ---- Premium tooltip (통화 간 최적 결제) ----
+  premiumPayIn: "결제 수단",
+  premiumSave: "절약",
 };
 
 export default ko;

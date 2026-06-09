@@ -824,6 +824,10 @@ const ru: Record<TranslationKeys, string> = {
   dataFreshnessCached: "Кэшированные данные",
   dataFreshnessJustNow: "только что",
   dataFreshnessAgeMinutes: "{0} мин назад",
+
+  // ---- Premium tooltip (оптимальная оплата в другой валюте) ----
+  premiumPayIn: "Платить в",
+  premiumSave: "экономия",
 };
 
 export default ru;

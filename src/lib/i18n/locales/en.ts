@@ -896,6 +896,10 @@ const en = {
   dataFreshnessCached: "Cached data",
   dataFreshnessJustNow: "just now",
   dataFreshnessAgeMinutes: "{0} min ago",
+
+  // ---- Premium tooltip (cross-currency optimal payment) ----
+  premiumPayIn: "Pay in",
+  premiumSave: "save",
 } as const;
 
 export default en;

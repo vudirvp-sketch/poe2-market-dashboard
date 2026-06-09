@@ -128,6 +128,7 @@ function PaymentOptionRow({ option, isBest, anchorName }: { option: PaymentOptio
 }
 
 function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, anchorId }: CrossCurrencyPremiumCellProps) {
+  const { t } = useI18n();
   const anchorName = ANCHOR_DISPLAY[anchorId ?? ""] ?? anchorId ?? "Exa";
 
   // Priority 1: Optimal payment savings (direct price comparison across currencies)
@@ -156,7 +157,7 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, a
             <TooltipContent side="left" className="max-w-[260px] p-2.5" sideOffset={6}>
               <div className="space-y-1.5">
                 <div className="text-xs font-medium text-foreground mb-1.5">
-                  Pay in <span className="text-emerald-400">{optimalPaymentResult.options[0]?.currencyName}</span> → save {fmt(optimalPaymentResult.savingsAnchor)} {anchorName}
+                  {t("premiumPayIn")} <span className="text-emerald-400">{optimalPaymentResult.options[0]?.currencyName}</span> → {t("premiumSave")} {fmt(optimalPaymentResult.savingsAnchor)} {anchorName}
                 </div>
                 <div className="border-t border-border/50 pt-1.5 space-y-0.5">
                   {optimalPaymentResult.options.map((opt, idx) => (

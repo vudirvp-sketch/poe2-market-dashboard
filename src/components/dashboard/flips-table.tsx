@@ -1,8 +1,11 @@
 // ============================================================================
 // Flips Opportunities Table — Sortable, filterable table of flip opportunities
-// with sort headers, cluster badges, momentum icons, and pagination.
+// with sort headers, cluster badges, momentum icons, pagination, and Premium
+// column showing cross-currency optimal payment.
 //
 // P1-1/P1-3: Added quantized columns (Q-Spread, Min Lot, Brick Risk, Tier)
+// Iteration 12: Added Premium column with BestPaymentBadge + tooltip
+// Iteration 13: i18n-ified Premium tooltip strings
 // ============================================================================
 "use client";
 
@@ -19,10 +22,12 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useI18n, type TranslationKeys } from "@/lib/i18n";
-import { fmt } from "@/lib/types";
+import { fmt, type OptimalPaymentResult } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 import { ApiErrorFallback } from "./api-error-fallback";
+import { BestPaymentBadge } from "./best-payment-badge";
 import {
   type FlipOpportunity,
   type SortField,
@@ -61,6 +66,10 @@ interface FlipsTableProps {
   page: number;
   perPage: number;
   onPageChange: (page: number) => void;
+  /** Optimal payment results keyed by display name ("Name1/Name2") */
+  optimalPaymentByDisplayName?: Map<string, OptimalPaymentResult>;
+  /** Anchor currency ID for premium display */
+  anchorId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +89,8 @@ export const FlipsTable = memo(function FlipsTable({
   page,
   perPage,
   onPageChange,
+  optimalPaymentByDisplayName,
+  anchorId,
 }: FlipsTableProps) {
   const { t } = useI18n();
 
@@ -128,8 +139,8 @@ export const FlipsTable = memo(function FlipsTable({
           </div>
         ) : (
           <div role="table" aria-label={t("flipsDetailedOpportunities")}>
-            {/* Table header — P1-1/P1-3: Added Q-Spread, Min Lot, Brick Risk, Tier columns */}
-            <div role="row" className="grid grid-cols-[1.5fr_50px_70px_50px_70px_60px_60px_55px_55px_30px] gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+            {/* Table header — P1-1/P1-3: Added Q-Spread, Min Lot, Brick Risk, Tier; Premium column */}
+            <div role="row" className="grid grid-cols-[1.5fr_50px_70px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
               <span role="columnheader">{t("flipperCurrency")}</span>
               <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
               <span role="columnheader" className="text-right"><SortHeader field="spreadAfterFees" label={t("flipperSpread")} /></span>
@@ -139,6 +150,7 @@ export const FlipsTable = memo(function FlipsTable({
               <span role="columnheader" className="text-center hidden sm:table-cell" title={t("brickRiskTooltip")}><SortHeader field="brickRisk" label={t("brickRisk")} /></span>
               <span role="columnheader" className="text-center">{t("flipperCluster")}</span>
               <span role="columnheader" className="text-center hidden md:table-cell" title={t("tierDistanceTooltip")}><SortHeader field="tierDistance" label={t("tierDist")} /></span>
+              <span role="columnheader" className="text-center hidden md:table-cell"><SortHeader field="premium" label={t("crossCurrencyPremium")} /></span>
               <span role="columnheader" />
             </div>
 
@@ -147,7 +159,7 @@ export const FlipsTable = memo(function FlipsTable({
               {paginatedOpportunities.map((opp) => (
                 <div
                   key={opp.currency}
-                  className="grid grid-cols-[1.5fr_50px_70px_50px_70px_60px_60px_55px_55px_30px] gap-1 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
+                  className="grid grid-cols-[1.5fr_50px_70px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
                   role="row"
                   onClick={() => onRowClick(opp)}
                   onKeyDown={(e) => {
@@ -258,6 +270,49 @@ export const FlipsTable = memo(function FlipsTable({
                     ) : (
                       <span className="text-muted-foreground text-[10px]">—</span>
                     )}
+                  </span>
+
+                  {/* Premium — BestPaymentBadge showing cheapest payment currency */}
+                  <span className="flex justify-center hidden md:table-cell">
+                    {(() => {
+                      const result = optimalPaymentByDisplayName?.get(opp.currency);
+                      if (!result || result.savingsPct < 1) {
+                        return <span className="text-muted-foreground text-[10px]">—</span>;
+                      }
+                      const cell = <BestPaymentBadge result={result} anchorName={anchorId ?? "exalted"} compact />;
+                      if (result.options.length >= 2) {
+                        return (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="cursor-help">{cell}</div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-[260px] p-2.5" sideOffset={6}>
+                                <div className="space-y-1.5">
+                                  <div className="text-xs font-medium text-foreground mb-1.5">
+                                    {t("premiumPayIn")} <span className="text-emerald-400">{result.options[0]?.currencyName}</span> → {t("premiumSave")} {fmt(result.savingsAnchor)} {anchorId ?? "Exa"}
+                                  </div>
+                                  <div className="border-t border-border/50 pt-1.5 space-y-0.5">
+                                    {result.options.map((opt, idx) => (
+                                      <div key={opt.currencyId} className={`flex items-center justify-between gap-3 text-[11px] ${idx === 0 ? "font-semibold text-emerald-400" : "text-muted-foreground"}`}>
+                                        <span className="truncate max-w-[100px]">{opt.currencyName}</span>
+                                        <span className="font-mono whitespace-nowrap">
+                                          {fmt(opt.effectiveAnchorPrice)} {anchorId ?? "Exa"}
+                                          {opt.premiumPct > 0 && (
+                                            <span className="text-amber-400 ml-1">+{opt.premiumPct.toFixed(1)}%</span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      }
+                      return cell;
+                    })()}
                   </span>
 
                   {/* Detail arrow */}
