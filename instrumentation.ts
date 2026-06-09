@@ -22,7 +22,7 @@ export async function register() {
   // Only run on the server (not during build)
   if (process.env.NEXT_RUNTIME === "nodejs") {
     try {
-      const { startBackendBridge } = await import(/* turbopackIgnore: true */ "./scripts/flipper-backend-bridge");
+      const { startBackendBridge } = await import("./scripts/flipper-backend-bridge");
       startBackendBridge();
     } catch (err) {
       // Bridge is optional — if it fails, dashboard still works

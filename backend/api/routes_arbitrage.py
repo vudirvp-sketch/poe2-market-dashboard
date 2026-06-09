@@ -86,43 +86,36 @@ def _find_price_24h_ago(
 
 
 # ---------------------------------------------------------------------------
-# Helper: build flip opportunities from live data
+# Helper: build flip opportunities from live data — CPU-bound sync function
 # ---------------------------------------------------------------------------
 
-async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
-    """Fetch live data and compute scored flip opportunities.
+def _build_flip_opportunities_sync(
+    snapshot,
+    config: AppConfig,
+    phase_info,
+    phase_multiplier: float,
+    event_manager,
+    pipeline_cache,
+) -> list[FlipOpportunity]:
+    """CPU-bound flip opportunity computation — runs in executor thread.
 
-    OPTIMIZATION: Uses DataSnapshot instead of making N individual
-    get_historical_prices() calls. The snapshot already contains
-    price histories from the ByCategory response.
+    All data is pre-fetched by the async wrapper (snapshot, phase, event manager,
+    pipeline cache). This function does pure computation: price history lookups,
+    clustering, scoring, and filtering. No async calls are made here.
 
-    Pipeline:
-    1. Get exchange rates + currencies from DataSnapshot (0 additional API calls)
-    2. Compute momentum/volatility for each currency (from snapshot price_logs)
-    3. Score each opportunity
-    4. Apply event penalties
-    5. Apply quick filter
+    Returns a sorted list of FlipOpportunity objects.
     """
-    detector = _get_phase_detector()
-    pipeline_cache = get_pipeline_cache()
-
-    # 1. Use DataSnapshot instead of N+1 API calls
-    snapshot = await get_snapshot()
-
     rates = snapshot.exchange_rates
     if not rates:
         return []
 
-    event_manager = get_event_manager(config)
-
-    # 2. Build price history lookup from snapshot
+    # Build price history lookup from snapshot
     currency_price_history: dict[str, list[float]] = {}
-    # Fix 2.2: Also store timestamped history for accurate 24h-ago lookup
     currency_price_history_timestamped: dict[str, list[tuple[datetime, float]]] = {}
     for api_id_lower, points in snapshot.price_histories.items():
         currency_price_history[api_id_lower] = [p.price for p in points]
         currency_price_history_timestamped[api_id_lower] = [(p.timestamp, p.price) for p in points]
-    # Also store by original-case api_id using DataSnapshot.get_currency()
+    # Also store by original-case api_id
     for api_id_lower in list(snapshot.price_histories.keys()):
         curr = snapshot.get_currency(api_id_lower)
         if curr:
@@ -131,47 +124,25 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 currency_price_history[orig_id] = currency_price_history[api_id_lower]
                 currency_price_history_timestamped[orig_id] = currency_price_history_timestamped.get(api_id_lower, [])
 
-    # 3. Get phase info
-    phase_info = detector.get_phase_info()
-    # Bug 26 fix: Use PhaseDetector.get_phase_multiplier() which accounts for
-    # LeagueType (standard/flashback/event). Previously, scorer.get_phase_multiplier()
-    # was used which only considered EARLY/MID/LATE, making the LeagueType multiplier
-    # (flashback=1.5, event=2.0) dead code.
-    phase_multiplier = detector.get_phase_multiplier()
-
-    # 4. Compute max volume across all pairs for fill probability normalization
+    # Compute max volume for fill probability normalization
     max_volume = max(
         (r.volume_traded for r in rates.values() if r.volume_traded > 0),
         default=1,
     )
 
-    # 5. Build price mapping from snapshot.
-    # Variable naming: `prices` holds prices in a consistent reference currency.
-    # The triangular algorithm needs a common unit;
-    # when the base is Exalted we convert to Chaos for consistency.
-    prices = dict(snapshot.prices_in_base)  # shallow copy — prevents mutation of shared state
-
+    # Build price mapping
+    prices = dict(snapshot.prices_in_base)
     if "chaos" in prices and config.league.base_currency != "chaos":
-        # prices["chaos"] is the price of 1 chaos in base_currency (e.g. 0.1 exalted)
-        # To convert from exalted-based to chaos-based, multiply by (1 / chaos_price)
-        # i.e. exalted_to_chaos = 1 / prices["chaos"]
         chaos_in_base = prices.get("chaos", 0)
         if chaos_in_base and chaos_in_base > 0:
             base_to_chaos = 1.0 / chaos_in_base
             for k in list(prices.keys()):
                 if k != "chaos":
                     prices[k] = prices[k] * base_to_chaos
-
-    # Step 1.4: Explicitly set chaos price to 1.0
-    # Chaos Orb = 1.0 Chaos by definition. POE2Scout's model may return
-    # slightly off values (0.98 or 1.02) due to modeling noise.
     prices["chaos"] = 1.0
     prices["Chaos Orb"] = 1.0
 
-    # 6. Run currency clustering
-    # FIX: Cache clustering result with pipeline_cache instead of recreating
-    # CurrencyClusterer on every request. KMeans with n_init=10 means ~10
-    # KMeans runs per call, which is expensive. Cache with same TTL as snapshot.
+    # Currency clustering (cached)
     clusterer = CurrencyClusterer(config)
     cluster_labels: dict[str, ClusterLabel] = {}
 
@@ -201,13 +172,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             for curr, history in cluster_price_histories.items():
                 if history:
                     cluster_prices_now[curr] = history[-1]
-                    # Fix 2.2: Use timestamped history for accurate 24h-ago price
                     ts_history = currency_price_history_timestamped.get(curr, [])
                     if ts_history:
                         price_24h = _find_price_24h_ago(ts_history)
                         cluster_prices_24h_ago[curr] = price_24h if price_24h is not None else (history[-2] if len(history) >= 2 else history[-1])
                     else:
-                        # No timestamps available — fallback to second-to-last point
                         cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
                 else:
                     cluster_prices_now[curr] = prices.get(curr, 0)
@@ -220,7 +189,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 )
                 cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
                 logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
-                # Cache the result
                 pipeline_cache.put("arbitrage_cluster_labels", cluster_labels)
             else:
                 logger.warning(
@@ -231,16 +199,8 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         logger.error("Clustering failed, using MODERATE default: %s", e)
         cluster_labels = {}
 
-    # 7. Build reverse-rate lookup (kept for potential future use)
-    rate_by_pair: dict[tuple[str, str], object] = {}
-    for rk, rv in rates.items():
-        rate_by_pair[(rv.currency_from, rv.currency_to)] = rv
-
-    # 8. Score each pair as a flip opportunity
+    # Score each pair
     opportunities: list[FlipOpportunity] = []
-
-    # Cache momentum results per currency to avoid recomputing the same
-    # currency's momentum N times (once per pair it appears in)
     _momentum_cache: dict[str, object] = {}
 
     def _get_momentum(currency: str):
@@ -256,13 +216,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         _momentum_cache[currency] = result
         return result
 
-    # Step 4: Identify direct vs BFS-computed pairs for spread widening.
-    # All keys in snapshot.exchange_rates come directly from the
-    # SnapshotPairs API — they are never BFS-generated.  However, a pair
-    # is "BFS-computed" when either of its currencies does NOT appear as
-    # CurrencyOne in any SnapshotPair with the base currency (meaning its
-    # price_in_base was derived transitively rather than from a direct
-    # observation).  We track those currencies to widen their spread.
+    # BFS detection
     _currencies_with_direct_base: set[str] = set()
     for _rk, _rv in rates.items():
         if _rv.currency_to == config.league.base_currency:
@@ -272,74 +226,30 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     for key, rate in rates.items():
         momentum_result = _get_momentum(rate.currency_from)
-
         mid_price = rate.raw_rate
         volume = float(rate.volume_traded)
         highest_stock = rate.highest_stock
-        stock_value = rate.stock_value
 
-        # --- Step 4: Real bid/ask from SnapshotPair data ---
-        #
-        # PREVIOUS MODEL (synthetic): 0.05 / (1 + log1p(volume) / 8) + volatility * 0.5
-        # This produced plausible-looking but fabricated spreads. All derived
-        # numbers were estimates, not grounded in actual trade data.
-        #
-        # NEW MODEL: Spread estimation anchored in real SnapshotPair fields:
-        #   - RelativePrice → mid_price (already used as raw_rate)
-        #   - VolumeTraded → volume (already used)
-        #   - HighestStock → order book depth indicator
-        #   - StockValue → total available inventory value
-        #   - price_histories → momentum/volatility (already computed)
-        #
-        # The spread model now uses stock depth as a liquidity proxy:
-        #   Deep order book (high HighestStock) → tighter spread
-        #   Shallow order book → wider spread
-        # This is closer to how real exchange bid/ask spreads behave.
-
-        # --- Liquidity-based spread component ---
-        # Use HighestStock as the primary liquidity indicator.
-        # Higher stock = more listed inventory = tighter spread.
-        # Typical range: 1–10000 units.
-        # We use log1p for smooth compression and combine with volume.
+        # Spread model
         if volume > 0 and highest_stock > 0:
-            # Combined liquidity score from volume AND stock depth
-            # Both contribute: high-volume + deep-book → tightest spread
             liquidity_score = _math.log1p(volume) * _math.log1p(highest_stock)
             liquidity_spread = 0.04 / (1.0 + liquidity_score / 40.0)
         elif volume > 0:
-            # Has volume but no stock data — use volume-only model
             liquidity_spread = 0.05 / (1.0 + _math.log1p(volume) / 8.0)
         else:
-            # Zero volume pair — widest spread
             liquidity_spread = 0.08
 
-        # --- Volatility contribution ---
-        # vol=0.01 → 0.5%, vol=0.05 → 2.5%, vol=0.10 → 5%
         vol_spread = momentum_result.volatility * 0.5
-
-        # --- Base spread ---
         market_spread = liquidity_spread + vol_spread
 
-        # --- Step 4: BFS fallback widening ---
-        # If neither currency in this pair has a direct SnapshotPair with the
-        # base currency, the mid_price was effectively computed via a
-        # transitive path (BFS).  Widen the spread by 50% to account for
-        # path-length uncertainty.
         is_bfs_pair = (
             rate.currency_from not in _currencies_with_direct_base
             and rate.currency_to not in _currencies_with_direct_base
         )
         bfs_widening = 1.5 if is_bfs_pair else 1.0
         market_spread *= bfs_widening
-
-        # Apply realistic bounds:
-        #   Minimum 0.5% — highly liquid pairs with direct data
-        #   Maximum 15% — beyond this the spread is too wide to be tradeable
         market_spread = max(0.005, min(0.15, market_spread))
 
-        # --- Momentum amplification ---
-        # Trending pairs may have wider effective spread because the
-        # midpoint is less reliable. Capped at 50% wider.
         momentum_24h_raw = 0.0
         history = currency_price_history.get(rate.currency_from, [])
         if len(history) >= 2 and momentum_result.momentum != 0:
@@ -347,52 +257,28 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
         momentum_factor = min(momentum_24h_raw, 0.5)
         total_spread = market_spread * (1.0 + momentum_factor)
-        total_spread = min(total_spread, 0.20)  # hard cap at 20%
+        total_spread = min(total_spread, 0.20)
 
-        # --- Derive bid/ask from mid_price and total_spread ---
         bid = mid_price * (1 - total_spread / 2)
         ask = mid_price * (1 + total_spread / 2)
 
-        # --- Step 4: Data freshness indicator ---
-        # The timestamp on the ExchangeRate tells us when the SnapshotPair
-        # data was last fetched. Stale data (older than TTL) should be
-        # flagged. The snapshot TTL is configured in config.yaml
-        # (cache_ttl_prices_minutes, default 5 min).
         data_age_seconds = (
             (datetime.now(timezone.utc) - rate.timestamp).total_seconds()
             if rate.timestamp else None
         )
         is_stale = data_age_seconds is not None and data_age_seconds > config.data.cache_ttl_prices_minutes * 60
 
-        logger.debug(
-            "spread_model pair=%s volume=%.0f highest_stock=%d vol=%.4f "
-            "liq_spread=%.4f vol_spread=%.4f market_spread=%.4f bfs=%s "
-            "momentum_factor=%.4f total_spread=%.4f bid=%.6f ask=%.6f mid=%.6f "
-            "data_age=%s stale=%s",
-            rate.currency_from + "/" + rate.currency_to,
-            volume, highest_stock, momentum_result.volatility,
-            liquidity_spread, vol_spread, market_spread,
-            "yes" if is_bfs_pair else "no",
-            momentum_factor, total_spread, bid, ask, mid_price,
-            f"{data_age_seconds:.0f}s" if data_age_seconds else "N/A",
-            "yes" if is_stale else "no",
-        )
-
         score = compute_opportunity_score(
-            bid=bid,
-            ask=ask,
-            mid_price=mid_price,
-            volume_24h=float(rate.volume_traded),
-            max_volume=float(max_volume),
-            volatility=momentum_result.volatility,
-            phase_multiplier=phase_multiplier,
+            bid=bid, ask=ask, mid_price=mid_price,
+            volume_24h=float(rate.volume_traded), max_volume=float(max_volume),
+            volatility=momentum_result.volatility, phase_multiplier=phase_multiplier,
             momentum=momentum_result.momentum,
             momentum_neg_threshold=config.scoring.momentum_negative_threshold,
             vol_reference=config.scoring.volatility_reference,
-            volatility_period="hourly",  # FIX: PriceMomentumTracker uses hourly-period data
+            volatility_period="hourly",
         )
 
-        # Apply event penalties
+        # Event penalties
         event_penalty = event_manager.get_event_score_penalty(rate.currency_from)
         if event_penalty == 0.0:
             continue
@@ -407,29 +293,17 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
         currency_key = rate.currency_from
         cluster = cluster_labels.get(currency_key, ClusterLabel.MODERATE)
-
         spread_value = (ask - bid) / mid_price if mid_price > 0 else 0.0
 
-        # P1-1: Compute quantized analysis for this pair
-        # BUG FIX (2026-06-04 v2): R_buy and R_sell were swapped!
-        #
-        # A "flip" opportunity means you BUY at the BID (the lower, maker-buy
-        # price) and SELL at the ASK (the higher, maker-sell price), earning
-        # the spread.  Passing R_buy=ask, R_sell=bid modeled the TAKER's
-        # round-trip (buy at ask, sell at bid), which is ALWAYS a loss when
-        # ask > bid.  That caused gross_profit_pct ≈ -3.5% for every pair.
-        #
-        # Correct: R_buy = bid (your cost to buy), R_sell = ask (your revenue
-        # from selling).  The market-maker earns the spread; the taker pays it.
         quantized = compute_quantized_analysis(
-            R_buy=bid if mid_price > 0 else 0,   # you BUY at bid (lower cost)
-            R_sell=ask if mid_price > 0 else 0,  # you SELL at ask (higher revenue)
+            R_buy=bid if mid_price > 0 else 0,
+            R_sell=ask if mid_price > 0 else 0,
             mid_price=mid_price if mid_price > 0 else 1.0,
             lot_sizes=config.quantization.default_lot_sizes,
             max_lot_search=config.quantization.max_lot_search,
         )
 
-        # P1-3: Compute tier penalty
+        # Tier penalty
         t_penalty = 1.0
         t_distance = 0
         if snapshot.tiers:
@@ -438,7 +312,6 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             if tier_a and tier_b:
                 t_penalty = tier_penalty(tier_a.tier, tier_b.tier)
                 t_distance = tier_distance(tier_a.tier, tier_b.tier)
-                # Re-score with tier penalty
                 score = score * t_penalty
                 score = min(max(score, 0.0), 1.0)
 
@@ -447,30 +320,21 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
-            score=score,
-            spread=spread_value,
-            spread_after_fees=net_spread,  # backward compat
+            score=score, spread=spread_value,
+            spread_after_fees=net_spread,
             volume_24h=float(rate.volume_traded),
             momentum=momentum_result.momentum,
             volatility=momentum_result.volatility,
-            cluster=cluster,
-            bid=bid,
-            ask=ask,
-            mid_price=mid_price,
-            quantized_analysis=quantized,
-            tier_distance=t_distance,
+            cluster=cluster, bid=bid, ask=ask, mid_price=mid_price,
+            quantized_analysis=quantized, tier_distance=t_distance,
         )
 
-        # Step 4: Skip stale data opportunities (data too old to be reliable)
         if is_stale:
             logger.info("Skipping stale opportunity %s (data_age=%.0fs > TTL=%ds)",
                         opp.currency, data_age_seconds or 0,
                         config.data.cache_ttl_prices_minutes * 60)
             continue
 
-        # Filter out flips where net profit is negative (spread is effectively zero).
-        # This shouldn't happen with our spread model that ensures min 0.5% spread,
-        # but kept as a safety net.
         if net_profit_pct <= 0:
             continue
 
@@ -478,6 +342,44 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             opportunities.append(opp)
 
     opportunities.sort(key=lambda o: o.score, reverse=True)
+    return opportunities
+
+
+# ---------------------------------------------------------------------------
+# Async wrapper — fetches data, then offloads computation to executor
+# ---------------------------------------------------------------------------
+
+async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
+    """Fetch live data and compute scored flip opportunities.
+
+    OPTIMIZATION: Uses DataSnapshot instead of making N individual
+    get_historical_prices() calls. The snapshot already contains
+    price histories from the ByCategory response.
+
+    PERFORMANCE: CPU-bound computation (clustering, scoring, filtering)
+    is offloaded to a thread via loop.run_in_executor() to avoid blocking
+    the asyncio event loop. This prevents health check timeouts and
+    circuit breaker cascade failures during heavy computation.
+    """
+    detector = _get_phase_detector()
+    pipeline_cache = get_pipeline_cache()
+
+    # 1. Fetch snapshot (async — the only await in this function)
+    snapshot = await get_snapshot()
+
+    # 2. Pre-fetch all data needed by the sync function
+    phase_info = detector.get_phase_info()
+    phase_multiplier = detector.get_phase_multiplier()
+    event_manager = get_event_manager(config)
+
+    # 3. Offload CPU-bound computation to thread pool
+    loop = asyncio.get_running_loop()
+    opportunities = await loop.run_in_executor(
+        None,  # default ThreadPoolExecutor
+        _build_flip_opportunities_sync,
+        snapshot, config, phase_info, phase_multiplier,
+        event_manager, pipeline_cache,
+    )
     return opportunities
 
 

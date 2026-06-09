@@ -54,7 +54,7 @@ let consecutiveUnhealthy = 0;
 // We also check for package.json as a sanity check, falling back to __dirname
 // if CWD looks wrong (e.g. during development with tsx).
 function getProjectRoot(): string {
-  const cwd = /* turbopackIgnore: true */ process.cwd();
+  const cwd = process.cwd();
   if (existsSync(join(cwd, "package.json"))) {
     return cwd;
   }
@@ -257,11 +257,17 @@ function startBackendProcess(): ChildProcess | null {
     }
   });
 
-  // Log stderr
+  // Log stderr — parse Python log level to avoid tagging all stderr as ERROR.
+  // uvicorn logs to stderr by default; INFO/DEBUG/WARNING lines should not
+  // be tagged as errors, only actual ERROR/CRITICAL lines.
   child.stderr?.on("data", (data: Buffer) => {
     const lines = data.toString().trim().split("\n");
     for (const line of lines) {
-      logError(`[flipper-backend] ${line}`);
+      if (/\b(ERROR|CRITICAL|TRACEBACK|Traceback)\b/i.test(line)) {
+        logError(`[flipper-backend] ${line}`);
+      } else {
+        log(`[flipper-backend] ${line}`);
+      }
     }
   });
 
