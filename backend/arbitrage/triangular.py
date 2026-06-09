@@ -237,41 +237,23 @@ def _compute_cross_rate_divergence(
     return suspicious_triples
 
 
-def find_triangular_arbitrage(
+def _find_triangular_arbitrage_sync(
     rates: dict[tuple[str, str], float],
     prices: dict[str, float],
-    min_profit_pct: float = 1.0,    # §6a: increased from 0.1% to 1.0% (0.1% is numerical artifact)
-    pair_volumes: dict[tuple[str, str], float] | None = None,
-    snapshot_time: datetime | None = None,
-    cross_rate_threshold_pct: float = 5.0,
+    min_profit_pct: float,
+    pair_volumes: dict[tuple[str, str], float] | None,
+    snapshot_time: datetime | None,
+    cross_rate_threshold_pct: float,
 ) -> TriangularResult:
-    """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
+    """Synchronous triangular arbitrage computation — runs in executor.
 
-    Gold fees are permanently excluded — gold is a consumable in PoE2
-    with no real trade value for small-scale flippers.
+    This function contains ALL CPU-bound logic (Bellman-Ford, cross-rate
+    validation, integer simulation) and is designed to be called via
+    ``loop.run_in_executor()`` from the async wrapper. Running in a
+    thread avoids blocking the asyncio event loop, which would otherwise
+    prevent health check responses and trigger circuit breaker failures.
 
-    Edge weight: -ln(effective_rate) where:
-      effective_rate = raw_rate * (1 - market_spread/2)
-    Low-liquidity edges (volume < 200) are filtered out.
-
-    Cross-rate validation: Before returning results, each detected cycle is
-    checked against a cross-rate divergence map. If the cycle passes through
-    a triple where the implied cross-rate diverges from the direct rate by
-    more than cross_rate_threshold_pct (default 5%), the cycle is flagged
-    as suspicious and its profit is discounted.
-
-    Args:
-        rates: Dict mapping (currency_from, currency_to) to raw exchange rate
-        prices: Current price of each currency in the reference currency
-        min_profit_pct: Minimum profit percentage to report (default 1.0%)
-        pair_volumes: Optional volume data per edge
-        snapshot_time: When the snapshot data was taken
-        cross_rate_threshold_pct: Divergence threshold for cross-rate
-            inconsistency detection (default 5%). Cycles involving triples
-            with >5% implied-vs-direct divergence are flagged.
-
-    Returns:
-        List of TriangularOpportunity objects
+    See ``find_triangular_arbitrage()`` for parameter documentation.
     """
     # Build currency list
     currencies = set()
@@ -283,9 +265,6 @@ def find_triangular_arbitrage(
     curr_to_idx = {c: i for i, c in enumerate(currencies)}
 
     # §6b: Minimum edge volume — skip illiquid pairs
-    # RAISED from 50 to 200 for more aggressive filtering of illiquid pairs
-    # (e.g. Armourer's Scrap volume ~1700 still passes, but very low-volume
-    # pairs with 50-200 volume are typically too noisy for reliable arbitrage)
     MIN_EDGE_VOLUME = 200
 
     # Build edge list with spread model (§7)
@@ -309,7 +288,6 @@ def find_triangular_arbitrage(
         market_spread = max(0.01, min(0.15, volume_spread))
 
         # Effective rate = raw_rate * (1 - market_spread/2)
-        # Market spread models the bid-ask gap.
         total_deduction = market_spread / 2
         if total_deduction >= 1.0:
             continue  # Fees eat all profit
@@ -348,14 +326,7 @@ def find_triangular_arbitrage(
         for u, v, w, *_ in edges:
             if dist[u] != INF and dist[u] + w < dist[v]:
                 # Extract the cycle (§8.2)
-                # Walk back V steps via predecessor to ensure we're in the cycle.
-                # FIX: If we encounter a node with no predecessor (pred == -1)
-                # during the walk-back, it means this node is unreachable from
-                # the source via the negative cycle — skip this candidate.
-                # Also add a safety check: if dist[u] is extremely large
-                # (but not INF), skip to avoid arithmetic overflow artifacts.
                 node = v
-                found_cycle_entry = False
                 for _ in range(n):
                     if node == -1 or pred[node] == -1:
                         break
@@ -364,17 +335,15 @@ def find_triangular_arbitrage(
                 if node == -1 or pred[node] == -1:
                     continue
 
-                # Now walk from node via predecessors to extract the actual cycle
+                # Walk from node via predecessors to extract the actual cycle
                 cycle_idx = []
                 current = node
-                visited_order = []
                 while True:
                     cycle_idx.append(current)
                     current = pred[current]
                     if current == -1:
                         break
                     if current in cycle_idx:
-                        # Found the cycle — trim to just the cycle portion
                         start_idx = cycle_idx.index(current)
                         cycle_idx = cycle_idx[start_idx:]
                         cycle_idx.append(current)  # close the cycle
@@ -410,7 +379,6 @@ def find_triangular_arbitrage(
                     cum_rate *= raw
                     step_rates.append(raw)
 
-                    # Phase 2 (Spec §11): Track volume per edge
                     edge_vol = volumes_map.get(pair, 0.0)
                     step_volumes.append(edge_vol)
 
@@ -426,7 +394,6 @@ def find_triangular_arbitrage(
                 # Phase 2 (Spec §11.1): Compute total volume (bottleneck = min across edges)
                 total_volume = 0.0
                 if step_volumes and any(v > 0 for v in step_volumes):
-                    # Use min of non-zero volumes as bottleneck
                     nonzero_vols = [v for v in step_volumes if v > 0]
                     total_volume = min(nonzero_vols) if nonzero_vols else 0.0
 
@@ -451,21 +418,7 @@ def find_triangular_arbitrage(
     # direct rates by >threshold%. Any cycle that passes through such a
     # triple is likely a false positive from inconsistent relative_price
     # data, not a real market inefficiency.
-    #
-    # PERFORMANCE FIX: Run in a thread executor to avoid blocking the
-    # asyncio event loop. With 600+ currencies, this computation takes
-    # 2-5 seconds even with the optimized adjacency-list algorithm.
-    # Without offloading, it would block all HTTP handling (including
-    # /api/health) for that duration, triggering circuit breaker and
-    # bridge health check failures.
-    import concurrent.futures
-    loop = asyncio.get_event_loop()
-    suspicious_triples = await loop.run_in_executor(
-        None,  # default ThreadPoolExecutor
-        _compute_cross_rate_divergence,
-        rates,
-        cross_rate_threshold_pct,
-    )
+    suspicious_triples = _compute_cross_rate_divergence(rates, cross_rate_threshold_pct)
     if suspicious_triples:
         logger.info(
             "Cross-rate validation: %d suspicious triples detected (threshold=%.1f%%)",
@@ -494,7 +447,6 @@ def find_triangular_arbitrage(
     # P1-2: Validate detected cycles with integer simulation
     validated_results: list[TriangularOpportunity] = []
     for opp in results:
-        # Build rates dict for the cycle currencies (excluding closing node)
         cycle_currencies = opp.cycle[:-1] if len(opp.cycle) > 1 else opp.cycle
         step_rates_map: dict[tuple[str, str], float] = {}
         for i in range(len(cycle_currencies)):
@@ -504,10 +456,8 @@ def find_triangular_arbitrage(
             if pair in rates:
                 step_rates_map[pair] = rates[pair]
             else:
-                # Try reverse
                 reverse = (to_curr, from_curr)
                 if reverse in rates and rates[reverse] > 0:
-                    # Store as forward rate (1/reverse)
                     step_rates_map[pair] = 1.0 / rates[reverse]
 
         min_start = find_min_profitable_start(cycle_currencies, step_rates_map)
@@ -521,11 +471,62 @@ def find_triangular_arbitrage(
             opp.integer_simulation = sim_amounts
             validated_results.append(opp)
         else:
-            # Cycle is lossy at all lot sizes up to max_start — discard
-            # Don't show false opportunities
             logger.debug(
                 "Discarding cycle %s: no profitable integer amount found (continuous profit=%.2f%%)",
                 opp.cycle, opp.continuous_profit_pct,
             )
 
     return TriangularResult(opportunities=validated_results, suspicious_triples=suspicious_triples)
+
+
+async def find_triangular_arbitrage(
+    rates: dict[tuple[str, str], float],
+    prices: dict[str, float],
+    min_profit_pct: float = 1.0,
+    pair_volumes: dict[tuple[str, str], float] | None = None,
+    snapshot_time: datetime | None = None,
+    cross_rate_threshold_pct: float = 10.0,
+) -> TriangularResult:
+    """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
+
+    Gold fees are permanently excluded — gold is a consumable in PoE2
+    with no real trade value for small-scale flippers.
+
+    Edge weight: -ln(effective_rate) where:
+      effective_rate = raw_rate * (1 - market_spread/2)
+    Low-liquidity edges (volume < 200) are filtered out.
+
+    Cross-rate validation: Before returning results, each detected cycle is
+    checked against a cross-rate divergence map. If the cycle passes through
+    a triple where the implied cross-rate diverges from the direct rate by
+    more than cross_rate_threshold_pct (default 10%), the cycle is flagged
+    as suspicious and its profit is discounted.
+
+    PERFORMANCE: The entire computation (Bellman-Ford O(V*V*E) +
+    cross-rate validation O(E²) + integer simulation) is offloaded to
+    a thread via ``loop.run_in_executor()`` to avoid blocking the
+    asyncio event loop. Without this offloading, CPU-bound loops prevent
+    health check responses, triggering circuit breaker and bridge health
+    check failures.
+
+    Args:
+        rates: Dict mapping (currency_from, currency_to) to raw exchange rate
+        prices: Current price of each currency in the reference currency
+        min_profit_pct: Minimum profit percentage to report (default 1.0%)
+        pair_volumes: Optional volume data per edge
+        snapshot_time: When the snapshot data was taken
+        cross_rate_threshold_pct: Divergence threshold for cross-rate
+            inconsistency detection (default 10%). Cycles involving triples
+            with >10% implied-vs-direct divergence are flagged.
+
+    Returns:
+        TriangularResult with opportunities and suspicious_triples
+    """
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(
+        None,  # default ThreadPoolExecutor
+        _find_triangular_arbitrage_sync,
+        rates, prices, min_profit_pct, pair_volumes, snapshot_time,
+        cross_rate_threshold_pct,
+    )
+    return result

@@ -256,9 +256,9 @@ Next.js server starts
   → bridge detects project root (process.cwd() → __dirname fallback)
   → bridge detects Python (PYTHON_CMD env → .venv → system)
   → bridge spawns: <python> -m uvicorn backend.main:app --port 8000
-  → bridge monitors /api/health every 30s
+  → bridge monitors /api/health every 45s
   → if process exits: auto-restart (up to 5 times in 60s)
-  → if health check fails 3 consecutive times: kill + auto-restart
+  → if health check fails 5 consecutive times: kill + auto-restart
   → on Next.js shutdown:
       Windows: taskkill /PID <pid> /T /F
       Unix:    SIGTERM → SIGKILL (5s grace period)
@@ -293,7 +293,7 @@ Next.js server starts
 - **Auto-restart**: If the backend crashes (OOM, unhandled exception), the bridge restarts it
 - **No orphaned processes**: When Next.js exits, the Python process is properly terminated (including entire process tree on Windows)
 - **Single command**: `start.bat` / `start.sh` handles everything — no separate terminal windows
-- **Health monitoring**: Bridge checks `/api/health` every 30 seconds
-- **Stuck process detection**: If health check fails 3 consecutive times, bridge kills the process and triggers auto-restart
+- **Health monitoring**: Bridge checks `/api/health` every 45 seconds
+- **Stuck process detection**: If health check fails 5 consecutive times, bridge kills the process and triggers auto-restart
 - **File logging**: All bridge events written to `flipper-bridge.log` (2 MB rotation)
 - **WebSocket reconnect**: Frontend health polling detects backend restart and reconnects WebSocket automatically

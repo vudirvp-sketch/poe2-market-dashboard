@@ -676,7 +676,7 @@ async def get_triangular_arbitrage(
             min_profit_pct=min_profit_pct,
             pair_volumes=pair_volumes,
             snapshot_time=datetime.now(timezone.utc),
-            cross_rate_threshold_pct=5.0,
+            cross_rate_threshold_pct=10.0,
         )
         opportunities = result.opportunities
         suspicious_triples = result.suspicious_triples
@@ -690,7 +690,7 @@ async def get_triangular_arbitrage(
                 "suspicious_triples_count": len(suspicious_triples),
                 "affected_currencies": sorted(affected_currencies),
                 "message": (
-                    f"{len(suspicious_triples)} currency triples have >5% "
+                    f"{len(suspicious_triples)} currency triples have >10% "
                     "cross-rate divergence (implied vs direct rates). "
                     "Some detected cycles may be false positives from "
                     "inconsistent relative_price data between pairs."

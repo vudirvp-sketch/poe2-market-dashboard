@@ -160,8 +160,9 @@ score = raw_spread × fill_probability × momentum_penalty × vol_penalty × pha
 
 - Bellman-Ford algorithm for negative cycle detection
 - Volume-based spread estimation for edge weights
-- Cross-rate divergence filtering to remove false positives
+- Cross-rate divergence filtering to remove false positives (threshold: 10%, raised from 5% in v1.30)
 - Integer simulation validation (P1-2): verifies profit at integer amounts
+- **Async with executor offload (v1.30):** `find_triangular_arbitrage()` is `async def` and offloads ALL CPU-bound work (Bellman-Ford + cross-rate validation + integer simulation) to a thread via `loop.run_in_executor()`. The sync implementation lives in `_find_triangular_arbitrage_sync()`. This prevents the O(V*V*E) loop from blocking the asyncio event loop and triggering circuit breaker failures.
 
 ### 6.3 Portfolio
 

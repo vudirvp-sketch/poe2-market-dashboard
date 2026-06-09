@@ -1,25 +1,26 @@
 # Worklog
 
 ---
-Task ID: 23
+Task ID: 15
 Agent: main
-Task: Iteration 13 — Fix build error + Premium tooltip i18n + remove duplicate files
+Task: Iteration 15 — Fix backend crash (SyntaxError) + Bellman-Ford executor offload + cross-rate threshold + Turbopack NFT warning
 
 Work Log:
-- Diagnosed build error: `src/components/dashboard/flips-tab.tsx` was stale (missing `optimalPaymentByDisplayName` and `anchorId` props), while root-level `components/dashboard/flips-tab.tsx` had them. Turbopack type-checked both paths and found the mismatch.
-- Synced `src/components/dashboard/flips-helpers.ts`: added `"premium"` to `SortField` union type
-- Synced `src/components/dashboard/flips-tab.tsx`: added `optimalPaymentByDisplayName` and `anchorId` props to `FlipsTabProps`, updated destructuring, added `"premium"` sort case, added props to `FlipsTable` call, added `optimalPaymentByDisplayName` to `useMemo` deps
-- Synced `src/components/dashboard/flips-table.tsx`: replaced with Premium column version (11-column grid, `BestPaymentBadge`, tooltip with payment breakdown)
-- Updated `src/components/dashboard/dashboard-page.tsx`: added `optimalPaymentByDisplayName` Map computation, passed `optimalPaymentByDisplayName` and `selectedAnchorId` to `<FlipsTab>`
-- Added i18n keys `premiumPayIn` and `premiumSave` to all 4 locales (en, ru, zh, ko)
-- Replaced hardcoded "Pay in" and "save" in `best-payment-badge.tsx` with `t("premiumPayIn")` / `t("premiumSave")`
-- Replaced hardcoded "Pay in" and "save" in `exchange-table.tsx` CrossCurrencyPremiumCell tooltip with i18n keys
-- Deleted root-level duplicate files: `components/` directory, `dashboard-page.tsx`, `flips-helpers.ts`, `flips-tab.tsx`, `flips-table.tsx`
-- Updated `AGENT_NAVIGATION.md` to v1.28: added completed items, new TODOs (cross-rate flip tooltip i18n, visual Premium check), added Frequent Bug #35 about no duplicate files
-- Build passes: `npx next build` successful
+- Diagnosed critical bug: `find_triangular_arbitrage()` in `backend/arbitrage/triangular.py` was `def` (not `async def`) but used `await loop.run_in_executor()` on line 463 → SyntaxError → backend would not start
+- Extracted all CPU-bound logic into `_find_triangular_arbitrage_sync()` (new function)
+- Made `find_triangular_arbitrage()` an `async def` that calls `_find_triangular_arbitrage_sync` via `loop.run_in_executor()` — this offloads BOTH Bellman-Ford O(V*V*E) AND cross-rate validation O(E²) to a thread
+- Cross-rate validation (`_compute_cross_rate_divergence`) is now called synchronously inside the executor function (no separate `await run_in_executor` needed — the entire sync function runs in one executor call)
+- Raised `cross_rate_threshold_pct` default from 5.0 to 10.0 in `triangular.py` and from 5.0 to 10.0 in `routes_arbitrage.py` call site
+- Updated cross_rate_warning message: ">5%" → ">10%"
+- Fixed Turbopack NFT warning: added `/* turbopackIgnore: true */` to `import("./scripts/flipper-backend-bridge")` in `instrumentation.ts`
+- Updated `tests/test_triangular.py`: all test methods now `async def` with `@pytest.mark.asyncio` (pytest-asyncio already in requirements, asyncio_mode=auto in pytest.ini)
+- Updated `AGENT_NAVIGATION.md` to v1.30: new COMPLETED items, new Frequent Bugs #38-40, updated TODO
+- Python syntax validated for both modified .py files
 
 Stage Summary:
-- Build error fixed — all `src/` files now have Premium feature parity
-- Premium tooltip is i18n-ified across all 3 components (flips-table, best-payment-badge, exchange-table)
-- Root-level duplicates removed — single source of truth in `src/components/dashboard/`
-- Remaining: cross-rate flip tooltip i18n, visual testing of Premium column on real devices
+- Backend crash fixed — `find_triangular_arbitrage()` is now async with full executor offload
+- Bellman-Ford no longer blocks event loop (was the root cause of circuit breaker cascade failures)
+- Cross-rate noise reduced (5% → 10% threshold)
+- Turbopack build warning eliminated
+- Tests updated for async API
+- Remaining for next iteration: _build_flip_opportunities() offload, real Windows testing, visual Premium check

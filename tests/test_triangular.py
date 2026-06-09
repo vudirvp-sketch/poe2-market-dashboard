@@ -14,11 +14,16 @@ Prices in Chaos: C=1, D=125, E=10.5
   cumulative = 0.008 * 12 * 10.5 = 1.008
   profit = 0.8% → valid arbitrage
 
-IMPORTANT: find_triangular_arbitrage() applies MIN_EDGE_VOLUME=200 filtering.
-All tests MUST provide pair_volumes >= 200 for edges that should be considered,
-otherwise edges are filtered out and no cycles are detected.
+IMPORTANT: find_triangular_arbitrage() is now async and offloads all
+CPU-bound computation to a thread via run_in_executor(). All tests
+MUST use `await` inside async test functions.
+
+find_triangular_arbitrage() applies MIN_EDGE_VOLUME=200 filtering.
+All tests MUST provide pair_volumes >= 200 for edges that should be
+considered, otherwise edges are filtered out and no cycles are detected.
 """
 
+import asyncio
 import pytest
 import math
 
@@ -34,7 +39,8 @@ _HIGH_VOLUME = 500
 class TestTriangularArbitrageNoFees:
     """Test with zero fees to verify basic cycle detection."""
 
-    def test_simple_profitable_cycle_no_fees(self):
+    @pytest.mark.asyncio
+    async def test_simple_profitable_cycle_no_fees(self):
         """
         A→B = 2, B→C = 2, C→A = 2
         cumulative = 2 * 2 * 2 = 8 → 700% profit
@@ -51,7 +57,7 @@ class TestTriangularArbitrageNoFees:
             ("C", "A"): _HIGH_VOLUME,
         }
 
-        results = find_triangular_arbitrage(
+        results = await find_triangular_arbitrage(
             rates, prices,
             min_profit_pct=0.1,
             pair_volumes=volumes,
@@ -60,7 +66,8 @@ class TestTriangularArbitrageNoFees:
         assert len(results.opportunities) >= 1
         assert results.opportunities[0].net_profit_pct > 100  # very profitable
 
-    def test_no_cycle_no_profit(self):
+    @pytest.mark.asyncio
+    async def test_no_cycle_no_profit(self):
         """
         A→B = 0.5, B→C = 0.5, C→A = 0.5
         cumulative = 0.5 * 0.5 * 0.5 = 0.125 → not profitable
@@ -77,7 +84,7 @@ class TestTriangularArbitrageNoFees:
             ("C", "A"): _HIGH_VOLUME,
         }
 
-        results = find_triangular_arbitrage(
+        results = await find_triangular_arbitrage(
             rates, prices,
             min_profit_pct=0.1,
             pair_volumes=volumes,
@@ -85,7 +92,8 @@ class TestTriangularArbitrageNoFees:
 
         assert len(results.opportunities) == 0
 
-    def test_marginal_profitable_cycle(self):
+    @pytest.mark.asyncio
+    async def test_marginal_profitable_cycle(self):
         """
         A→B = 1.1, B→C = 1.0, C→A = 1.0
         cumulative = 1.1 * 1.0 * 1.0 = 1.1 → 10% profit
@@ -102,7 +110,7 @@ class TestTriangularArbitrageNoFees:
             ("C", "A"): _HIGH_VOLUME,
         }
 
-        results = find_triangular_arbitrage(
+        results = await find_triangular_arbitrage(
             rates, prices,
             min_profit_pct=0.1,
             pair_volumes=volumes,
@@ -144,11 +152,12 @@ class TestTriangularArbitrageCanonical:
         }
         return rates, prices, volumes
 
-    def test_no_fee_profitable(self):
+    @pytest.mark.asyncio
+    async def test_no_fee_profitable(self):
         """Without fees, the cycle is profitable after spread deduction."""
         rates, prices, volumes = self._get_canonical_test_data()
 
-        results = find_triangular_arbitrage(
+        results = await find_triangular_arbitrage(
             rates, prices,
             min_profit_pct=0.1,
             pair_volumes=volumes,
@@ -158,14 +167,16 @@ class TestTriangularArbitrageCanonical:
         # Raw profit: 0.01 * 12 * 10.5 = 1.26 → 26%
         assert results.opportunities[0].net_profit_pct > 0
 
-    def test_empty_rates_returns_empty(self):
+    @pytest.mark.asyncio
+    async def test_empty_rates_returns_empty(self):
         """No rates should return no opportunities."""
-        results = find_triangular_arbitrage(
+        results = await find_triangular_arbitrage(
             {}, {},
         )
         assert len(results.opportunities) == 0
 
-    def test_two_currencies_no_cycle(self):
+    @pytest.mark.asyncio
+    async def test_two_currencies_no_cycle(self):
         """Two currencies with reciprocal rates cannot form a cycle."""
         rates = {
             ("A", "B"): 2.0,
@@ -177,7 +188,7 @@ class TestTriangularArbitrageCanonical:
             ("B", "A"): _HIGH_VOLUME,
         }
 
-        results = find_triangular_arbitrage(
+        results = await find_triangular_arbitrage(
             rates, prices,
             min_profit_pct=0.1,
             pair_volumes=volumes,
@@ -189,17 +200,18 @@ class TestTriangularArbitrageCanonical:
 class TestProductionDefaultThreshold:
     """Verify detection works with the production default min_profit_pct=1.0."""
 
-    def test_with_production_default_threshold(self):
+    @pytest.mark.asyncio
+    async def test_with_production_default_threshold(self):
         """Verify detection works with the production default min_profit_pct=1.0.
 
         Uses rates designed so that:
         1. Raw profit > 1% (passes min_profit_pct filter)
-        2. Cross-rate divergence < 5% (avoids suspicious triple filtering)
+        2. Cross-rate divergence < 10% (avoids suspicious triple filtering)
         3. Effective rates (after spread) still create a negative cycle in Bellman-Ford
 
         With A→B = B→C = C→A = 1.015:
           cumulative = 1.015^3 ≈ 1.0457 → 4.57% raw profit
-          Cross-rate divergence ≈ 4.57% < 5% threshold
+          Cross-rate divergence ≈ 4.57% < 10% threshold
         """
         rates = {
             ("A", "B"): 1.015, ("B", "A"): 1 / 1.015,
@@ -213,7 +225,7 @@ class TestProductionDefaultThreshold:
             ("B", "C"): _HIGH_VOLUME, ("C", "B"): _HIGH_VOLUME,
             ("C", "A"): _HIGH_VOLUME, ("A", "C"): _HIGH_VOLUME,
         }
-        result = find_triangular_arbitrage(
+        result = await find_triangular_arbitrage(
             rates,
             prices,
             min_profit_pct=1.0,  # production default

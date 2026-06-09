@@ -200,3 +200,653 @@
 [2026-06-09T03:55:17.474Z] [ERROR] [flipper-backend] 2026-06-09 08:55:16,792 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
 [2026-06-09T03:55:17.812Z] [ERROR] [flipper-backend] 2026-06-09 08:55:17,813 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
 [2026-06-09T03:55:18.818Z] [ERROR] [flipper-backend] 2026-06-09 08:55:18,818 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-09T04:18:06.844Z] [flipper-bridge] Starting Flipper backend bridge...
+[2026-06-09T04:18:06.845Z] [flipper-bridge] Platform: win32 (Windows)
+[2026-06-09T04:18:06.846Z] [flipper-bridge] Project root: C:\Users\fallo\OneDrive\Desktop\репозитории\poe2-market-dashboard
+[2026-06-09T04:18:06.846Z] [flipper-bridge] Log file: C:\Users\fallo\OneDrive\Desktop\репозитории\poe2-market-dashboard\flipper-bridge.log
+[2026-06-09T04:18:06.847Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:18:06.847Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:18:06.850Z] [flipper-bridge] Backend bridge active — Python process managed
+[2026-06-09T04:18:07.568Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:18:07.569Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:18:07.570Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:18:07.570Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:18:07.570Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:18:07.571Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:18:07.571Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:18:07.571Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:18:07.571Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:07.572Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:18:07.572Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:18:07.572Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:18:07.572Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:18:07.573Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:07.573Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:18:07.573Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:18:07.573Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:18:07.574Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:18:07.574Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:18:07.574Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:18:07.574Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:18:07.574Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:18:07.575Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:18:07.575Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:07.575Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:18:07.575Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:18:07.576Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:18:07.576Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:18:07.576Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:18:07.576Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:18:07.577Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:18:07.577Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:18:07.577Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:18:07.577Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:07.577Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:18:07.578Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:18:07.578Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:07.578Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:18:07.578Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:18:07.579Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:18:07.579Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:18:07.579Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:18:07.579Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:18:07.579Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:18:07.580Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:18:07.580Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:18:07.580Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:18:07.580Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:18:07.581Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:18:07.581Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:18:07.581Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:18:07.581Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:18:07.581Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:07.582Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:18:07.582Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:18:07.582Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:18:07.582Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:18:07.583Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:18:07.583Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:18:07.583Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:18:07.583Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:18:07.583Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:18:07.584Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:18:07.584Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:18:07.584Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:18:07.584Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:07.585Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:18:07.680Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:18:07.680Z] [flipper-bridge] Restarting backend in 5s... (attempt 1/5)
+[2026-06-09T04:18:12.686Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:18:12.686Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:18:13.392Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:18:13.394Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:18:13.394Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:18:13.394Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:18:13.395Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:18:13.395Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:18:13.395Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:18:13.395Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:18:13.396Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:13.396Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:18:13.396Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:18:13.396Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:18:13.397Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:18:13.397Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:13.397Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:18:13.397Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:18:13.398Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:18:13.398Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:18:13.398Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:18:13.398Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:18:13.398Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:18:13.399Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:18:13.399Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:18:13.399Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:13.399Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:18:13.400Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:18:13.400Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:18:13.400Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:18:13.400Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:18:13.401Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:18:13.401Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:18:13.401Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:18:13.401Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:18:13.401Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:13.402Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:18:13.402Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:18:13.402Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:13.402Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:18:13.403Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:18:13.403Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:18:13.403Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:18:13.403Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:18:13.403Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:18:13.404Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:18:13.404Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:18:13.404Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:18:13.404Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:18:13.405Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:18:13.405Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:18:13.405Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:18:13.405Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:18:13.406Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:18:13.406Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:13.406Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:18:13.406Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:18:13.407Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:18:13.407Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:18:13.407Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:18:13.407Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:18:13.407Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:18:13.408Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:18:13.408Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:18:13.408Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:18:13.408Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:18:13.409Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:18:13.409Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:13.409Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:18:13.501Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:18:13.501Z] [flipper-bridge] Restarting backend in 10s... (attempt 2/5)
+[2026-06-09T04:18:23.503Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:18:23.504Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:18:24.229Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:18:24.231Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:18:24.231Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:18:24.232Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:18:24.232Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:18:24.232Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:18:24.232Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:18:24.233Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:18:24.233Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:24.233Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:18:24.234Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:18:24.234Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:18:24.234Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:18:24.234Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:24.234Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:18:24.235Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:18:24.235Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:18:24.235Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:18:24.235Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:18:24.236Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:18:24.236Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:18:24.236Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:18:24.236Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:18:24.237Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:24.237Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:18:24.237Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:18:24.237Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:18:24.238Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:18:24.238Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:18:24.238Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:18:24.238Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:18:24.239Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:18:24.239Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:18:24.239Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:24.239Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:18:24.240Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:18:24.240Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:24.240Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:18:24.240Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:18:24.241Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:18:24.241Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:18:24.241Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:18:24.241Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:18:24.242Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:18:24.242Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:18:24.243Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:18:24.244Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:18:24.244Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:18:24.244Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:18:24.244Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:18:24.245Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:18:24.245Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:18:24.245Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:24.245Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:18:24.246Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:18:24.246Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:18:24.246Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:18:24.246Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:18:24.247Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:18:24.247Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:18:24.247Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:18:24.247Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:18:24.247Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:18:24.248Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:18:24.248Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:18:24.248Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:24.248Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:18:24.352Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:18:24.352Z] [flipper-bridge] Restarting backend in 15s... (attempt 3/5)
+[2026-06-09T04:18:39.363Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:18:39.364Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:18:40.070Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:18:40.071Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:18:40.072Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:18:40.072Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:18:40.072Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:18:40.073Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:18:40.073Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:18:40.073Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:18:40.073Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:40.073Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:18:40.074Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:18:40.074Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:18:40.074Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:18:40.074Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:40.075Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:18:40.075Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:18:40.075Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:18:40.075Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:18:40.076Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:18:40.076Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:18:40.076Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:18:40.076Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:18:40.077Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:18:40.077Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:40.077Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:18:40.077Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:18:40.078Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:18:40.078Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:18:40.078Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:18:40.078Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:18:40.078Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:18:40.079Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:18:40.079Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:18:40.079Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:40.079Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:18:40.080Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:18:40.080Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:18:40.080Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:18:40.080Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:18:40.082Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:18:40.082Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:18:40.082Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:18:40.082Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:18:40.083Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:18:40.083Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:18:40.083Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:18:40.083Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:18:40.084Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:18:40.084Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:18:40.084Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:18:40.084Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:18:40.085Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:18:40.085Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:40.085Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:18:40.085Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:18:40.085Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:18:40.086Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:18:40.086Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:18:40.086Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:18:40.086Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:18:40.086Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:18:40.087Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:18:40.087Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:18:40.087Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\�����������\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:18:40.087Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:18:40.088Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:18:40.088Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:18:40.181Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:18:40.181Z] [flipper-bridge] Restarting backend in 20s... (attempt 4/5)
+[2026-06-09T04:19:15.743Z] [flipper-bridge] Starting Flipper backend bridge...
+[2026-06-09T04:19:15.743Z] [flipper-bridge] Platform: win32 (Windows)
+[2026-06-09T04:19:15.744Z] [flipper-bridge] Project root: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard
+[2026-06-09T04:19:15.744Z] [flipper-bridge] Log file: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\flipper-bridge.log
+[2026-06-09T04:19:15.744Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:19:15.745Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:19:15.748Z] [flipper-bridge] Backend bridge active — Python process managed
+[2026-06-09T04:19:16.464Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:19:16.465Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:19:16.466Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:19:16.466Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:19:16.466Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:19:16.466Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:19:16.466Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:19:16.467Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:19:16.467Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:16.467Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:19:16.468Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:19:16.468Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:19:16.468Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:19:16.468Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:16.469Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:19:16.469Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:19:16.469Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:19:16.469Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:19:16.470Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:19:16.470Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:19:16.470Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:19:16.470Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:19:16.470Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:19:16.471Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:16.471Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:19:16.471Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:19:16.471Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:19:16.472Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:19:16.472Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:19:16.472Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:19:16.472Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:19:16.473Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:19:16.473Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:19:16.473Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:16.473Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:19:16.473Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:19:16.474Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:16.474Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:19:16.474Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:19:16.474Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:19:16.475Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:19:16.475Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:19:16.475Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:19:16.475Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:19:16.476Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:19:16.476Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:19:16.476Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:19:16.478Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:19:16.478Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:19:16.478Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:19:16.478Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:19:16.479Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:19:16.479Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:16.479Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:19:16.479Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:19:16.480Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:19:16.480Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:19:16.480Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:19:16.480Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:19:16.481Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:19:16.481Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:19:16.481Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:19:16.481Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:19:16.482Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:19:16.482Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:19:16.482Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:16.482Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:19:16.580Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:19:16.580Z] [flipper-bridge] Restarting backend in 5s... (attempt 1/5)
+[2026-06-09T04:19:21.601Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:19:21.602Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:19:22.302Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:19:22.303Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:19:22.304Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:19:22.304Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:19:22.304Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:19:22.305Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:19:22.305Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:19:22.305Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:19:22.305Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:22.306Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:19:22.306Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:19:22.306Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:19:22.306Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:19:22.307Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:22.307Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:19:22.307Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:19:22.307Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:19:22.307Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:19:22.308Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:19:22.308Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:19:22.308Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:19:22.308Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:19:22.309Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:19:22.309Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:22.309Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:19:22.309Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:19:22.310Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:19:22.310Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:19:22.310Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:19:22.310Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:19:22.311Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:19:22.311Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:19:22.311Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:19:22.311Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:22.311Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:19:22.312Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:19:22.312Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:22.312Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:19:22.312Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:19:22.313Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:19:22.313Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:19:22.313Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:19:22.313Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:19:22.313Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:19:22.314Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:19:22.314Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:19:22.314Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:19:22.314Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:19:22.315Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:19:22.315Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:19:22.315Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:19:22.315Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:19:22.316Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:22.316Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:19:22.316Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:19:22.316Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:19:22.316Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:19:22.317Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:19:22.317Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:19:22.317Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:19:22.319Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:19:22.319Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:19:22.319Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:19:22.320Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:19:22.320Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:19:22.320Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:22.320Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:19:22.408Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:19:22.409Z] [flipper-bridge] Restarting backend in 10s... (attempt 2/5)
+[2026-06-09T04:19:33.253Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:19:33.254Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:19:33.960Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:19:33.962Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:19:33.962Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:19:33.963Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:19:33.963Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:19:33.963Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:19:33.963Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:19:33.964Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:19:33.964Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:33.964Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:19:33.964Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:19:33.965Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:19:33.965Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:19:33.965Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:33.965Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:19:33.966Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:19:33.966Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:19:33.966Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:19:33.966Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:19:33.967Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:19:33.967Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:19:33.967Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:19:33.968Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:19:33.968Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:33.968Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:19:33.968Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:19:33.969Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:19:33.969Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:19:33.969Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:19:33.970Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:19:33.970Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:19:33.970Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:19:33.970Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:19:33.971Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:33.971Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:19:33.971Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:19:33.971Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:33.972Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:19:33.972Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:19:33.972Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:19:33.972Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:19:33.973Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:19:33.973Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:19:33.973Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:19:33.973Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:19:33.974Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:19:33.975Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:19:33.976Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:19:33.976Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:19:33.976Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:19:33.976Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:19:33.977Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:19:33.977Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:33.977Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:19:33.977Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:19:33.978Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:19:33.978Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:19:33.978Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:19:33.978Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:19:33.979Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:19:33.979Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:19:33.979Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:19:33.979Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:19:33.980Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:19:33.980Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:19:33.980Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:33.980Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:19:34.082Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:19:34.082Z] [flipper-bridge] Restarting backend in 15s... (attempt 3/5)
+[2026-06-09T04:19:49.087Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:19:49.087Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:19:49.793Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:19:49.794Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:19:49.795Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:19:49.795Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:19:49.795Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:19:49.795Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:19:49.796Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:19:49.796Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:19:49.796Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:49.796Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:19:49.797Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:19:49.797Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:19:49.797Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:19:49.797Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:49.798Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:19:49.798Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:19:49.798Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:19:49.799Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:19:49.799Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:19:49.799Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:19:49.799Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:19:49.800Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:19:49.800Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:19:49.800Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:49.800Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:19:49.801Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:19:49.801Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:19:49.801Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:19:49.801Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:19:49.802Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:19:49.802Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:19:49.802Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:19:49.802Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:19:49.803Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:49.803Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:19:49.803Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:19:49.803Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:19:49.804Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:19:49.804Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:19:49.804Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:19:49.804Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:19:49.805Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:19:49.805Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:19:49.805Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:19:49.805Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:19:49.806Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:19:49.806Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:19:49.806Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:19:49.806Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:19:49.807Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:19:49.807Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:19:49.807Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:19:49.807Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:49.807Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:19:49.808Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:19:49.808Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:19:49.808Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:19:49.808Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:19:49.809Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:19:49.809Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:19:49.809Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:19:49.810Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:19:49.810Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:19:49.810Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:19:49.810Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:19:49.811Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:19:49.811Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:19:49.917Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:19:49.917Z] [flipper-bridge] Restarting backend in 20s... (attempt 4/5)
+[2026-06-09T04:20:09.938Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-09T04:20:09.939Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-09T04:20:10.670Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-09T04:20:10.671Z] [ERROR] [flipper-backend] File "<frozen runpy>", line 198, in _run_module_as_main
+[2026-06-09T04:20:10.672Z] [ERROR] [flipper-backend]   File "<frozen runpy>", line 88, in _run_code
+[2026-06-09T04:20:10.672Z] [ERROR] [flipper-backend] File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\__main__.py", line 4, in <module>
+[2026-06-09T04:20:10.672Z] [ERROR] [flipper-backend]     uvicorn.main()
+[2026-06-09T04:20:10.672Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~~^^
+[2026-06-09T04:20:10.673Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1524, in __call__
+[2026-06-09T04:20:10.673Z] [ERROR] [flipper-backend]     return self.main(*args, **kwargs)
+[2026-06-09T04:20:10.673Z] [ERROR] [flipper-backend]            ~~~~~~~~~^^^^^^^^^^^^^^^^^
+[2026-06-09T04:20:10.673Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1445, in main
+[2026-06-09T04:20:10.674Z] [ERROR] [flipper-backend]     rv = self.invoke(ctx)
+[2026-06-09T04:20:10.674Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 1308, in invoke
+[2026-06-09T04:20:10.674Z] [ERROR] [flipper-backend]     return ctx.invoke(self.callback, **ctx.params)
+[2026-06-09T04:20:10.674Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:20:10.674Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\click\core.py", line 877, in invoke
+[2026-06-09T04:20:10.675Z] [ERROR] [flipper-backend]     return callback(*args, **kwargs)
+[2026-06-09T04:20:10.675Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 423, in main
+[2026-06-09T04:20:10.675Z] [ERROR] [flipper-backend]     run(
+[2026-06-09T04:20:10.675Z] [ERROR] [flipper-backend]     ~~~^
+[2026-06-09T04:20:10.676Z] [ERROR] [flipper-backend]         app,
+[2026-06-09T04:20:10.676Z] [ERROR] [flipper-backend]         ^^^^
+[2026-06-09T04:20:10.676Z] [ERROR] [flipper-backend]     ...<46 lines>...
+[2026-06-09T04:20:10.676Z] [ERROR] [flipper-backend]         h11_max_incomplete_event_size=h11_max_incomplete_event_size,
+[2026-06-09T04:20:10.677Z] [ERROR] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:20:10.677Z] [ERROR] [flipper-backend]     )
+[2026-06-09T04:20:10.677Z] [ERROR] [flipper-backend]     ^
+[2026-06-09T04:20:10.677Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\main.py", line 593, in run
+[2026-06-09T04:20:10.678Z] [ERROR] [flipper-backend]     server.run()
+[2026-06-09T04:20:10.678Z] [ERROR] [flipper-backend]     ~~~~~~~~~~^^
+[2026-06-09T04:20:10.678Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 67, in run
+[2026-06-09T04:20:10.678Z] [ERROR] [flipper-backend]     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+[2026-06-09T04:20:10.678Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 204, in run
+[2026-06-09T04:20:10.679Z] [ERROR] [flipper-backend]     return runner.run(main)
+[2026-06-09T04:20:10.679Z] [ERROR] [flipper-backend]            ~~~~~~~~~~^^^^^^
+[2026-06-09T04:20:10.679Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\runners.py", line 127, in run
+[2026-06-09T04:20:10.679Z] [ERROR] [flipper-backend]     return self._loop.run_until_complete(task)
+[2026-06-09T04:20:10.681Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+[2026-06-09T04:20:10.681Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\asyncio\base_events.py", line 719, in run_until_complete
+[2026-06-09T04:20:10.682Z] [ERROR] [flipper-backend]     return future.result()
+[2026-06-09T04:20:10.682Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~^^
+[2026-06-09T04:20:10.682Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 71, in serve
+[2026-06-09T04:20:10.682Z] [ERROR] [flipper-backend]     await self._serve(sockets)
+[2026-06-09T04:20:10.682Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\server.py", line 78, in _serve
+[2026-06-09T04:20:10.683Z] [ERROR] [flipper-backend]     config.load()
+[2026-06-09T04:20:10.683Z] [ERROR] [flipper-backend]     ~~~~~~~~~~~^^
+[2026-06-09T04:20:10.683Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\config.py", line 439, in load
+[2026-06-09T04:20:10.683Z] [ERROR] [flipper-backend]     self.loaded_app = import_from_string(self.app)
+[2026-06-09T04:20:10.684Z] [ERROR] [flipper-backend]                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+[2026-06-09T04:20:10.684Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\importer.py", line 19, in import_from_string
+[2026-06-09T04:20:10.684Z] [ERROR] [flipper-backend]     module = importlib.import_module(module_str)
+[2026-06-09T04:20:10.684Z] [ERROR] [flipper-backend]   File "C:\Program Files\Python314\Lib\importlib\__init__.py", line 88, in import_module
+[2026-06-09T04:20:10.685Z] [ERROR] [flipper-backend]     return _bootstrap._gcd_import(name[level:], package, level)
+[2026-06-09T04:20:10.685Z] [ERROR] [flipper-backend]            ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:20:10.685Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1398, in _gcd_import
+[2026-06-09T04:20:10.685Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+[2026-06-09T04:20:10.686Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+[2026-06-09T04:20:10.686Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+[2026-06-09T04:20:10.686Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+[2026-06-09T04:20:10.686Z] [ERROR] [flipper-backend]   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+[2026-06-09T04:20:10.687Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 36, in <module>
+[2026-06-09T04:20:10.687Z] [ERROR] [flipper-backend]     from backend.api.routes_arbitrage import router as arbitrage_router
+[2026-06-09T04:20:10.687Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_arbitrage.py", line 31, in <module>
+[2026-06-09T04:20:10.687Z] [ERROR] [flipper-backend]     from backend.arbitrage.triangular import find_triangular_arbitrage
+[2026-06-09T04:20:10.688Z] [ERROR] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\arbitrage\triangular.py", line 463
+[2026-06-09T04:20:10.688Z] [ERROR] [flipper-backend]     suspicious_triples = await loop.run_in_executor(
+[2026-06-09T04:20:10.688Z] [ERROR] [flipper-backend]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-09T04:20:10.688Z] [ERROR] [flipper-backend] SyntaxError: 'await' outside async function
+[2026-06-09T04:20:10.790Z] [flipper-bridge] Backend process exited with code=1, signal=null
+[2026-06-09T04:20:10.790Z] [flipper-bridge] Restarting backend in 25s... (attempt 5/5)
+[2026-06-09T04:20:15.796Z] [WARN] [flipper-bridge] Backend health check failed (1/5)

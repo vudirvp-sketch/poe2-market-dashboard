@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.29 | **Date:** 2026-06-09
+> **Version:** 1.30 | **Date:** 2026-06-09
 
 ---
 
@@ -99,8 +99,15 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Bridge real-world Windows testing** — v1.26 fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug and adds `/* turbopackIgnore: true */` for the NFT warning. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
+1. **Bridge real-world Windows testing** — v1.26+ fixes the `python backend.main:app` → `python -m uvicorn backend.main:app` bug, adds `/* turbopackIgnore: true */` for the NFT warning, and offloads Bellman-Ford to executor. Needs real-world testing: (a) start.bat without --no-bridge → Python starts via `python -m uvicorn`, (b) health check passes during heavy computation, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries, (e) Cyrillic paths in project root work correctly.
 2. **Visual check of Flips tab Premium column** — Verify Premium column looks correct on all screen sizes (hidden on < md), sorting works, tooltip shows correct data.
+3. **_build_flip_opportunities() offload** — Candidate for executor offload or caching (clustering, scoring). Currently cached via pipeline_cache but the computation itself is synchronous within the async function.
+
+### COMPLETED (v1.30 — Iteration 15)
+1. ~~**Backend crash: `SyntaxError: 'await' outside async function`**~~ — `find_triangular_arbitrage()` in `triangular.py` was a regular `def` but used `await loop.run_in_executor()` on line 463. Backend would not start at all. Fix: (a) Extracted all CPU-bound logic into `_find_triangular_arbitrage_sync()`, (b) Made `find_triangular_arbitrage()` an `async def` that offloads the entire computation via `loop.run_in_executor()`, (c) Updated `tests/test_triangular.py` to use `async def` + `@pytest.mark.asyncio`.
+2. ~~**Bellman-Ford blocks event loop**~~ — The O(V*V*E) Bellman-Ford loop plus O(E²) cross-rate validation ran synchronously on the asyncio event loop, blocking health checks for seconds. Fix: All CPU-bound computation now runs in a thread via `run_in_executor()`, so the event loop remains responsive.
+3. ~~**Cross-rate threshold too low (5%)**~~ — With 613 currencies, 5% threshold produced 1962 "suspicious" triples (noise). Raised to 10% in both `triangular.py` default and `routes_arbitrage.py` call site.
+4. ~~**Turbopack NFT warning**~~ — `import("./scripts/flipper-backend-bridge")` in `instrumentation.ts` caused Turbopack to trace `fs`/`path` usage. Fix: Added `/* turbopackIgnore: true */` to the dynamic `import()` call.
 
 ### COMPLETED (v1.29 — Iteration 14)
 1. ~~**Backend circuit breaker loop: O(n³) blocks event loop**~~ — `_compute_cross_rate_divergence()` in `triangular.py` used naive triple loop (613³ ≈ 230M iterations). Blocked asyncio event loop for 48+ seconds → health checks failed → bridge killed process → circuit breaker opened → cascade failure. Fix: (a) Replaced O(n³) dict.get() loops with adjacency-list algorithm (O(E²) where E=edges, ~5M triples instead of ~230M), (b) Run in `loop.run_in_executor()` to offload to thread pool, (c) Added `import asyncio` to `triangular.py`.
@@ -211,6 +218,9 @@ When a new league launches, update these 7 files:
 35. **No duplicate files between root and `src/`** — All component files live in `src/components/` exclusively (since `@/*` → `./src/*` in tsconfig). Root-level `components/` directory and standalone `flips-*.tsx` / `dashboard-page.tsx` were deleted in v1.28 to prevent Turbopack from type-checking stale copies.
 36. **CPU-bound Python code MUST run in `run_in_executor()`** — The FastAPI backend is async (uvicorn). Any synchronous CPU-heavy loop (O(n³), matrix operations, etc.) blocks the event loop and prevents health check responses. This triggers the bridge health monitor to kill the process, which opens the circuit breaker. Always offload CPU-bound work to `loop.run_in_executor(None, func, *args)`.
 37. **Triangular arbitrage results are cached** — `/api/arbitrage/triangular` uses `pipeline_cache` with key `triangular_arbitrage_{min_profit_pct}`. Do not remove this cache — without it, every request triggers O(n³) cross-rate validation.
+38. **`find_triangular_arbitrage()` is async** — Since v1.30, this function is `async def` and offloads all CPU-bound work to `run_in_executor()`. Calling it without `await` returns a coroutine object, not a `TriangularResult`. Tests must use `@pytest.mark.asyncio`.
+39. **Cross-rate threshold is 10%** — Raised from 5% in v1.30. With 613 currencies, 5% produced 1962 suspicious triples (noise). Do not lower back to 5% without measuring the impact on false-positive rates.
+40. **Turbopack `/* turbopackIgnore: true */` on dynamic imports** — The `import()` in `instrumentation.ts` that loads `flipper-backend-bridge.ts` must have this comment. Without it, Turbopack traces `fs`/`path` imports in the bridge file and emits an NFT warning.
 
 ## 11. Documentation Map
 
