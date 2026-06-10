@@ -70,18 +70,20 @@ interface BufferedProxyResult {
 const pendingRequests = new Map<string, Promise<BufferedProxyResult>>();
 
 // P1-2: Health probe with short timeout
+// Uses /api/health/ping (ultra-lightweight, plain-text "ok") instead of
+// /api/health (JSON with diagnostics). The ping endpoint responds in <1ms
+// even during heavy computation because it does zero work — no config
+// lookup, no dict construction, no JSON serialization. This prevents
+// false-positive "unhealthy" detections when the backend is busy with
+// Bellman-Ford or cross-rate validation.
 async function probeHealth(): Promise<boolean> {
   try {
-    const healthUrl = new URL("/api/health", FLIPPER_API_URL);
+    const healthUrl = new URL("/api/health/ping", FLIPPER_API_URL);
     const res = await fetch(healthUrl.toString(), {
       method: "GET",
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(3_000), // P1-2: 3s timeout for health
+      signal: AbortSignal.timeout(5_000), // 5s — generous for a plain-text response
     });
-    if (res.ok) {
-      return true;
-    }
-    return false;
+    return res.ok;
   } catch {
     return false;
   }

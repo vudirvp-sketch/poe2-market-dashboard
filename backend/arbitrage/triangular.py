@@ -504,10 +504,10 @@ async def find_triangular_arbitrage(
 
     PERFORMANCE: The entire computation (Bellman-Ford O(V*V*E) +
     cross-rate validation O(E²) + integer simulation) is offloaded to
-    a thread via ``loop.run_in_executor()`` to avoid blocking the
-    asyncio event loop. Without this offloading, CPU-bound loops prevent
-    health check responses, triggering circuit breaker and bridge health
-    check failures.
+    the ProcessPoolExecutor (imported from backend.main) to bypass the
+    Python GIL. This prevents CPU-bound computation from starving the
+    asyncio event loop, which was the root cause of health check timeouts
+    and circuit breaker cascade failures.
 
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
@@ -523,8 +523,18 @@ async def find_triangular_arbitrage(
         TriangularResult with opportunities and suspicious_triples
     """
     loop = asyncio.get_running_loop()
+
+    # Use ProcessPoolExecutor from backend.main for GIL bypass.
+    # Falls back to default ThreadPoolExecutor if not available (e.g. tests).
+    executor = None
+    try:
+        from backend.main import process_pool
+        executor = process_pool
+    except (ImportError, AttributeError):
+        pass
+
     result = await loop.run_in_executor(
-        None,  # default ThreadPoolExecutor
+        executor,
         _find_triangular_arbitrage_sync,
         rates, prices, min_profit_pct, pair_volumes, snapshot_time,
         cross_rate_threshold_pct,

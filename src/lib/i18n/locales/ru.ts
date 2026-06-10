@@ -856,6 +856,8 @@ const ru: Record<TranslationKeys, string> = {
   liquidChainProfitPct: "Профит %",
   liquidChainCumulativePaths: "Кумулятивные пути перекрафта",
   liquidChainPath: "Путь",
+  ritualOmensTitle: "Омены ритуала — ценовые уровни",
+  ritualOmensNoReforgeNotice: "Омены ритуала нельзя перекрафтить у торговца. Эта цепочка показывает сравнение цен — определить, когда омен высшего уровня недооценён.",
   fallbackLiquidChain: "Цепочка жидкостей",
 };
 

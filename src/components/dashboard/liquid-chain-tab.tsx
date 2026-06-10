@@ -228,12 +228,13 @@ function chainDisplayName(chainName: string, t: ReturnType<typeof useI18n>["t"])
   // Map config chain names to i18n keys for human-readable titles.
   // This allows future chains to have proper display names.
   // Fallback: use the raw chainName from config if no i18n mapping exists.
-  const NAMES: Record<string, "liquidChainTitle"> = {
+  const NAMES: Record<string, string> = {
     delirium_liquids: "liquidChainTitle",
+    ritual_omens: "ritualOmensTitle",
   };
   const i18nKey = NAMES[chainName];
   if (i18nKey) {
-    return t(i18nKey);
+    return t(i18nKey as any);
   }
   return chainName;
 }

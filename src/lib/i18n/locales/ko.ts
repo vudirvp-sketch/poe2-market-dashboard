@@ -923,6 +923,8 @@ const ko: Record<TranslationKeys, string> = {
   liquidChainProfitPct: "수익률",
   liquidChainCumulativePaths: "누적 재조합 경로",
   liquidChainPath: "경로",
+  ritualOmensTitle: "의식 징조 — 가격 등급",
+  ritualOmensNoReforgeNotice: "의식 징조는 상인에게서 재조합할 수 없습니다. 이 체인은 가격 비교만 표시합니다 — 상위 등급 징조가 저평가된 경우를 식별하세요.",
   fallbackLiquidChain: "액체 체인",
 };
 

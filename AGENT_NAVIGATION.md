@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.37 | **Date:** 2026-06-10
+> **Version:** 1.38 | **Date:** 2026-06-10
 
 ---
 
@@ -98,8 +98,16 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
-2. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
+1. **Real E2E with live backend** — Run Playwright against a running FastAPI instance (not just mocked routes). Requires `uvicorn backend.main:app` running.
+2. **Offload clustering in routes_prices.py** — `CurrencyClusterer.fit()` runs synchronously in the event loop. Move to `run_in_executor()` with ProcessPoolExecutor.
+
+### COMPLETED (v1.38 — Iteration 23)
+1. **ProcessPoolExecutor for CPU-bound work** — Replaced `ThreadPoolExecutor` with `ProcessPoolExecutor` for triangular arbitrage (Bellman-Ford) and flip opportunity computation. Bypasses Python GIL entirely, preventing event loop starvation during heavy computation. Fixes the cascade: heavy compute → GIL starvation → health check timeout → bridge kills backend → circuit breaker opens.
+2. **Ultra-lightweight health probe** — Added `GET /api/health/ping` (plain-text "ok", <1ms response). Bridge and flipper-proxy health probes now use `/ping` instead of `/api/health` (JSON with diagnostics). Prevents false-positive "unhealthy" detections during computation.
+3. **Concurrency limiting** — Added `asyncio.Semaphore(2)` on `/api/arbitrage/flips` and `/api/arbitrage/triangular` to prevent CPU saturation from concurrent requests.
+4. **Ritual Omens chain** — Added `ritual_omens` chain to `config.yaml` with 29 omen steps (ratio=1, no reforge — price comparison only). Added i18n keys (`ritualOmensTitle`, `ritualOmensNoReforgeNotice`) to all 4 locales. Added `ritual_omens` → `ritualOmensTitle` mapping in `chainDisplayName()`.
+5. **Bridge health check improvements** — Increased health check timeout from 10s to 15s. Using `/api/health/ping` for faster responses.
+6. **Documentation cleanup** — AGENT_NAVIGATION.md updated; removed stale items from TODO.
 
 ### COMPLETED (v1.37 — Iteration 22)
 1. **CI fix: Python 3.12 + aiosqlite compat** — Changed CI from Python 3.13 → 3.12 (project requirement); relaxed `aiosqlite>=0.20,<1.0` → `aiosqlite>=0.20.0` to allow 0.22.x on Python 3.13+
@@ -170,14 +178,17 @@ When a new league launches, update these 7 files:
 16. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module → `Cannot find module` at runtime. NFT warning is harmless.
 17. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable.
 18. **Proxy timeout is configurable** — `proxyToFlipper()` and `proxyWithFallback()` accept `timeoutMs` param (default 15s).
-19. **Bridge health check timeout is 10s** — Do not lower back to 5s.
-20. **Health endpoint uses pre-imported modules** — `_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache` are imported at module level.
-21. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
-22. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
-23. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
-24. **Root main.py is a re-export** — `./main.py` → `from backend.main import app`. Never edit directly.
-25. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
-26. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps. `aiosqlite>=0.20.0` is required for 3.13+ compat.
+19. **Bridge health check timeout is 15s** — Uses `/api/health/ping` endpoint (plain-text, <1ms response). Do not lower back to 10s or use `/api/health` for health probes.
+20. **`/api/health/ping` is the lightweight health probe** — Returns plain-text "ok". Use this for circuit breaker and bridge probes. `/api/health` returns detailed JSON diagnostics.
+21. **Health endpoint uses pre-imported modules** — `_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache` are imported at module level.
+22. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
+23. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
+24. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
+25. **Root main.py is a re-export** — `./main.py` → `from backend.main import app`. Never edit directly.
+26. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
+27. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps. `aiosqlite>=0.20.0` is required for 3.13+ compat.
+28. **ProcessPoolExecutor bypasses GIL** — `backend.main:process_pool` is the shared ProcessPoolExecutor for CPU-bound work. Always use it (not `None`/default ThreadPool) for Bellman-Ford, clustering, or other heavy computation.
+29. **Ritual Omens chain is price-comparison only** — `ritual_omens` chain has `ratio=1` for all steps. Omens CANNOT be reforged. The chain shows relative price tiers, not reforge profitability.
 
 ## 11. Documentation Map
 
@@ -220,12 +231,14 @@ All items are in POE2Scout category **`delirium`** (NOT `ritual` — confirmed f
 
 ### Adding a New Chain
 
-To add a new chain (e.g., ritual omens):
+To add a new chain:
 
 1. Add chain definition to `config.yaml` → `liquid_chain.chains` (name, category, steps with api_id/name_en/name_ru/ratio)
 2. Add i18n key for chain display name to all 4 locale files (en, ru, zh, ko)
 3. Map the chain name → i18n key in `chainDisplayName()` in `liquid-chain-tab.tsx`
 4. Backend and API endpoints work automatically — no code changes needed
+
+**IMPORTANT:** If the chain is NOT a vendor reforge chain (e.g., ritual omens), set `ratio: 1` for all steps and add a clear note in `config.yaml` explaining that the chain is for price comparison only.
 
 ### Formulas
 

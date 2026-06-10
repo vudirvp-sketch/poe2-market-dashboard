@@ -43,6 +43,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/arbitrage", tags=["arbitrage"])
 
+# Concurrency limiter for expensive endpoints — prevents OOM and CPU
+# saturation when multiple clients hit /flips or /triangular simultaneously.
+# With ProcessPoolExecutor, each concurrent request gets its own process,
+# so we limit to avoid spawning too many worker processes.
+_arbitrage_semaphore = asyncio.Semaphore(2)
+
 
 # ---------------------------------------------------------------------------
 # Fix 2.2: Helper to find price closest to 24 hours ago
@@ -373,10 +379,17 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     phase_multiplier = detector.get_phase_multiplier()
     event_manager = get_event_manager(config)
 
-    # 3. Offload CPU-bound computation to thread pool
+    # 3. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
+    # Falls back to default ThreadPoolExecutor if process_pool is unavailable.
     loop = asyncio.get_running_loop()
+    executor = None
+    try:
+        from backend.main import process_pool
+        executor = process_pool
+    except (ImportError, AttributeError):
+        pass
     opportunities = await loop.run_in_executor(
-        None,  # default ThreadPoolExecutor
+        executor,
         _build_flip_opportunities_sync,
         snapshot, config, phase_info, phase_multiplier,
         event_manager, pipeline_cache,
@@ -425,7 +438,8 @@ async def get_flip_opportunities(
         opportunities = cached.value
     else:
         try:
-            opportunities = await _build_flip_opportunities(config)
+            async with _arbitrage_semaphore:
+                opportunities = await _build_flip_opportunities(config)
             pipeline_cache.put("flip_opportunities", opportunities)
         except HTTPException:
             raise
@@ -574,7 +588,8 @@ async def get_triangular_arbitrage(
         opportunities = cached_tri.value[0]
         cross_rate_warning = cached_tri.value[1]
     else:
-        result = await find_triangular_arbitrage(
+        async with _arbitrage_semaphore:
+            result = await find_triangular_arbitrage(
             rates=rates_for_bf,
             prices=prices,
             min_profit_pct=min_profit_pct,

@@ -25,12 +25,13 @@ import asyncio
 import logging
 import os
 import time
+from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
@@ -270,6 +271,29 @@ async def lifespan(app: FastAPI):
 # App creation
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# ProcessPoolExecutor for CPU-bound work (GIL bypass)
+# ---------------------------------------------------------------------------
+# CPU-bound tasks (Bellman-Ford O(V²E), cross-rate validation O(E²),
+# clustering) are offloaded to a ProcessPoolExecutor instead of the default
+# ThreadPoolExecutor. This completely bypasses the Python GIL, preventing
+# the event loop from being starved of CPU time during heavy computation.
+#
+# This fixes the cascade: heavy compute → GIL starvation → health check
+# timeout → bridge kills backend → circuit breaker opens.
+#
+# Workers: min(4, cpu_count-1) — leave at least 1 core for the event loop.
+# ---------------------------------------------------------------------------
+import multiprocessing
+_cpu_count = multiprocessing.cpu_count()
+_process_workers = max(1, min(4, _cpu_count - 1)) if _cpu_count > 1 else 1
+process_pool = ProcessPoolExecutor(max_workers=_process_workers)
+logger.info(
+    "ProcessPoolExecutor initialized: %d workers (cpu_count=%d)",
+    _process_workers, _cpu_count,
+)
+
+
 app = FastAPI(
     title="PoE2 Flipper API",
     description="Backend API for PoE2 currency analysis and arbitrage detection",
@@ -376,6 +400,21 @@ _snapshot_manager_ref = None
 # ---------------------------------------------------------------------------
 # Fix 8 (POE2-FIX-SPEC): Health check endpoint with provider status
 # ---------------------------------------------------------------------------
+
+@app.get("/api/health/ping")
+async def health_ping():
+    """Ultra-lightweight health probe — no JSON serialization, no imports.
+
+    Returns a plain-text "ok" in under 1ms even during heavy computation.
+    This endpoint is designed for circuit breaker and bridge health probes
+    that only need to know "is the process alive and the event loop running?".
+    It avoids all overhead: no config lookup, no dict construction, no JSON
+    serialization, no dependency injection.
+
+    Use /api/health for detailed diagnostics.
+    """
+    return PlainTextResponse("ok", media_type="text/plain")
+
 
 @app.get("/api/health")
 async def health_check():

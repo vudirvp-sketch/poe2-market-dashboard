@@ -928,6 +928,8 @@ const en = {
   liquidChainProfitPct: "Profit %",
   liquidChainCumulativePaths: "Cumulative Reforge Paths",
   liquidChainPath: "Path",
+  ritualOmensTitle: "Ritual Omens — Price Tiers",
+  ritualOmensNoReforgeNotice: "Ritual Omens cannot be reforged at the vendor. This chain shows price comparison only — identify when a higher-tier omen is undervalued.",
   fallbackLiquidChain: "Liquid Chain",
 } as const;
 

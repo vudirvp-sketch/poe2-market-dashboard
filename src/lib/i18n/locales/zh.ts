@@ -923,6 +923,8 @@ const zh: Record<TranslationKeys, string> = {
   liquidChainProfitPct: "利润率",
   liquidChainCumulativePaths: "累计重铸路径",
   liquidChainPath: "路径",
+  ritualOmensTitle: "仪式预兆 — 价格层级",
+  ritualOmensNoReforgeNotice: "仪式预兆无法在商贩处重铸。此链仅显示价格对比 — 帮助识别高级预兆被低估的情况。",
   fallbackLiquidChain: "液体链",
 };
 
