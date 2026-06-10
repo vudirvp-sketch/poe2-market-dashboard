@@ -159,6 +159,14 @@ export interface SnapshotHistoryPoint {
  */
 export interface FlipOpportunity {
   currency: string;
+  /** Russian name for currency_from (from backend currency_names_ru mapping) */
+  currencyFromRu?: string | null;
+  /** English name for currency_from */
+  currencyFromEn?: string | null;
+  /** Russian name for currency_to */
+  currencyToRu?: string | null;
+  /** English name for currency_to */
+  currencyToEn?: string | null;
   score: number;
   /** Raw spread (ask - bid) / mid_price — no fees deducted.
    *  May be undefined when backend has insufficient data. */

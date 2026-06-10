@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.42 | **Date:** 2026-06-11
+> **Version:** 1.43 | **Date:** 2026-06-11
 
 ---
 
@@ -13,13 +13,13 @@
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
-| `backend/data/` | Providers, cache, schemas, historical, pipeline_cache, daily_stats_cache | Import nothing from `api/` |
+| `backend/data/` | Providers, cache, schemas, historical, pipeline_cache, daily_stats_cache, **currency_names_ru** | Import nothing from `api/` |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
 | `src/components/ui/` | shadcn/ui primitives | **NO dashboard imports** |
-| `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal | **Types in `types.ts` ONLY** |
+| `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal, **currency-names** | **Types in `types.ts` ONLY** |
 | `src/hooks/` | React hooks | Import from `@lib` |
 | `src/lib/i18n/` | Locales (en, ru, zh, ko) | No code imports from other `src/` |
 | `src/data/` | `cache-snapshot.json` | **READ-ONLY artifact — NEVER edit manually** |
@@ -98,10 +98,11 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Real E2E with live backend** — Run Playwright against a running FastAPI instance (not just mocked routes). Requires `uvicorn backend.main:app` running.
-2. **Windows start.bat verification** — Confirm ProcessPoolExecutor with `spawn` start method works correctly on Windows (create_process, pickle, etc.).
-3. **Gold fee model** — Currently all gold fee code is removed. Real PoE2 trading has gold costs that can dominate cheap-to-expensive flips. Re-adding gold fees would make profit estimates much more realistic.
-4. **Russian item name translation** — User requested translation of all currency/item names to Russian as they appear in the PoE2 Russian client. Would require a name mapping table (api_id → ru_name).
+1. **E2E with live backend — Playwright spec** created at `e2e/live-backend.spec.ts`. Requires both uvicorn and Next.js running. Run: `npx playwright test e2e/live-backend.spec.ts`.
+2. **Verify Russian name coverage** — `backend/data/currency_names_ru.py` has 268 entries, ~130 marked `# approximate`. Need verification against official PoE2 RU client.
+3. **Gold fees permanently excluded** — User confirmed: "В path of exile плевать на голду!" Do NOT re-add gold fee deductions.
+4. **ProcessPoolExecutor with spawn** — Already uses `mp_context=spawn` explicitly (line 331 of `backend/main.py`). Works on Windows. Verified.
+5. **Live backend smoke test** — Backend crashes in low-memory environments. Add `--workers 1` or reduce snapshot TTL to reduce memory pressure.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -152,7 +153,7 @@ When a new league launches, update these 7 files:
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask`. If reversed, all `gross_profit_pct` ≈ −3.5%.
 3. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
 4. **PriceLogs are REVERSE chronological:** Always sort before charting.
-5. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
+5. **Gold fees permanently excluded** — User confirmed gold is irrelevant for PoE2 trading. Do NOT re-add gold fee deductions.
 6. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
 7. **Backend API responses MUST use snake_case** — The flipper-proxy `transformKeys()` converts `snake_case → camelCase`. PascalCase/camelCase keys pass through unchanged → `undefined` in React. ALL backend serializers must use snake_case, including optimal-currency (`anchor_id`, `optimal_payment_by_pair`, `cross_rate_flips`, etc.).
 8. **CPU-bound Python code MUST run in `run_in_executor()`** — Any sync CPU-heavy loop blocks the event loop, triggers bridge kill + circuit breaker cascade. All CPU-bound endpoints (flips, triangular, prices/clustering, anomalies, portfolio/correlation) now use ProcessPoolExecutor.
@@ -176,6 +177,9 @@ When a new league launches, update these 7 files:
 26. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
 27. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module. NFT warning is harmless.
 28. **Fallback data in proxy routes uses camelCase** — `proxyWithFallback()` returns fallback directly without `transformKeys()`. Fallback must match frontend type format.
+29. **`prices` vs `prices_in_base` in `_build_flip_opportunities_sync`** — Fixed bug where `prices.get()` was used instead of `prices_in_base.get()` on lines 195-196 of `routes_arbitrage.py`. The `prices` variable is not defined in that function scope — only `prices_in_base` exists.
+30. **Russian name mapping** — `backend/data/currency_names_ru.py` provides api_id → ru_name/en_name for 268 items. Flips API response now includes `currency_from_ru`, `currency_from_en`, `currency_to_ru`, `currency_to_en`. Frontend fallback: `src/lib/currency-names.ts`.
+31. **FlipOpportunity type extended** — Added `currencyFromRu`, `currencyFromEn`, `currencyToRu`, `currencyToEn` optional fields to `FlipOpportunity` interface in `src/lib/types.ts`.
 
 ## 11. Documentation Map
 

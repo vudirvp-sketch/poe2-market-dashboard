@@ -192,8 +192,8 @@ def _build_flip_opportunities_sync(
                     else:
                         cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
                 else:
-                    cluster_prices_now[curr] = prices.get(curr, 0)
-                    cluster_prices_24h_ago[curr] = prices.get(curr, 0)
+                    cluster_prices_now[curr] = prices_in_base.get(curr, 0)
+                    cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
 
             if len(cluster_price_histories) >= 3:
                 cluster_labels_result = clusterer.fit(
@@ -563,12 +563,26 @@ async def get_flip_opportunities(
     ]
     filtered = filtered[:limit]
 
+    # Enrich with Russian/English names from currency_names_ru mapping
+    from backend.data.currency_names_ru import get_ru_name, get_en_name
+
+    def _currency_display_names(pair_str: str) -> dict:
+        """Extract ru_name and en_name for both sides of a currency pair like 'exalted/chaos'."""
+        parts = pair_str.split("/")
+        return {
+            "currency_from_ru": get_ru_name(parts[0]) if len(parts) >= 1 else None,
+            "currency_from_en": get_en_name(parts[0]) if len(parts) >= 1 else None,
+            "currency_to_ru": get_ru_name(parts[1]) if len(parts) >= 2 else None,
+            "currency_to_en": get_en_name(parts[1]) if len(parts) >= 2 else None,
+        }
+
     return {
         "league": config.league.league_name,
         "total": len(filtered),
         "opportunities": [
             {
                 "currency": o.currency,
+                **_currency_display_names(o.currency),
                 "score": round(o.score, 4),
                 "spread": round(o.spread, 6),
                 "spread_after_fees": round(o.spread_after_fees, 6),  # backward compat
@@ -670,7 +684,11 @@ async def get_triangular_arbitrage(
     # Build prices in a consistent reference currency.
     prices = dict(snapshot.prices_in_base)  # shallow copy
     if "chaos" in prices and config.league.base_currency != "chaos":
-        # Same conversion as in _build_flip_opportunities: invert chaos price
+        # Convert all prices from base-currency (exalted) to chaos-normalized
+        # for Bellman-Ford. Unlike _build_flip_opportunities which works in
+        # base currency directly, triangular arbitrage uses BFS/relaxation
+        # that requires a single consistent numeraire — chaos (price=1.0)
+        # is simplest for detecting profit cycles.
         chaos_in_base = prices.get("chaos", 0)
         if chaos_in_base and chaos_in_base > 0:
             base_to_chaos = 1.0 / chaos_in_base
