@@ -6,17 +6,21 @@ Used by the backend API to return translated names alongside the api_id.
 
 Sources:
   - poe2db.tw/ru/ — verified Russian localization from the PoE2 wiki
+  - poedb.tw/ru/ — verified Russian names from the PoE1 client
   - config.yaml liquid_chain sections (confirmed ru_name values)
   - PoE1 Russian client names carried over to PoE2 (standard orbs, scrolls)
   - Best-effort translation for items without official RU client data (# approximate)
 
 Maintainer notes:
-  - Entries marked "# approximate" are not verified against the official RU client.
+  - Entries marked "# poe2db" are verified against poe2db.tw/ru/ (PoE2 wiki).
+  - Entries marked "# poedb" are verified against poedb.tw/ru/ (PoE1 Russian client).
+  - Entries marked "# approximate" are not verified against any official source.
   - When the official RU translation becomes available, remove the # approximate tag.
   - Standard PoE1 orbs (portal, scouring, regret, etc.) are verified — no tag.
   - Keep entries sorted by category for maintainability.
   - PoE2 uses a different essence system: Lesser -> base -> Greater -> Perfect
     (no "Deafening" tier — those are PoE1 carryovers that may not exist in PoE2).
+  - PoE2 Russian client uses "Иш" for "Esh" (not "Эш" as in some PoE1 translations).
 """
 
 # ---------------------------------------------------------------------------
@@ -28,13 +32,13 @@ CATEGORY_NAMES_RU: dict[str, str] = {
     "runes": "Руны",
     "essences": "Сущности",
     "ultimatum": "Ядра душ",
-    "expedition": "Монеты экспедиции",
+    "expedition": "Экспедиция",
     "ritual": "Омены ритуала",
     "vaultkeys": "Ключи реликвария",
     "breach": "Разлом",
     "abyss": "Бездна",
     "uncutgems": "Неогранённые камни",
-    "lineagesupportgems": "Камни поддержки родословной",
+    "lineagesupportgems": "Династические камни поддержки",
     "delirium": "Делирий",
     "incursion": "Вторжение",
     "idol": "Идолы",
@@ -148,14 +152,14 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # PoE1 essences (not in PoE2 — may not appear in API data)
     "essence-of-enfeeblement": "Сущность ослабления",  # approximate — PoE1 only
-    "essence-of-sorrow": "Сущность печали",  # approximate — PoE1 only
-    "essence-of-rage": "Сущность ярости",  # approximate — PoE1 only
-    "essence-of-suffering": "Сущность страдания",  # approximate — PoE1 only
-    "essence-of-wrath": "Сущность гнева",  # approximate — PoE1 only
-    "essence-of-doubt": "Сущность сомнения",  # approximate — PoE1 only
-    "essence-of-anger": "Сущность злости",  # approximate — PoE1 only
-    "essence-of-torment": "Сущность мучения",  # approximate — PoE1 only
-    "essence-of-fear": "Сущность страха",  # approximate — PoE1 only
+    "essence-of-sorrow": "Сущность печали",  # poedb — PoE1 only
+    "essence-of-rage": "Сущность ярости",  # poedb — PoE1 only
+    "essence-of-suffering": "Сущность страдания",  # poedb — PoE1 only
+    "essence-of-wrath": "Сущность гнева",  # poedb — PoE1 only
+    "essence-of-doubt": "Сущность сомнения",  # poedb — PoE1 only
+    "essence-of-anger": "Сущность злобы",  # poedb — PoE1 only
+    "essence-of-torment": "Сущность мучения",  # poedb — PoE1 only
+    "essence-of-fear": "Сущность страха",  # poedb — PoE1 only
     # PoE2 essences (confirmed from poe2db)
     "essence-of-horror": "Сущность ужаса",  # poe2db
     "essence-of-delirium": "Сущность бреда",  # poe2db
@@ -184,18 +188,18 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "essence-of-the-infinite": "Сущность бесконечности",  # poe2db
     # PoE1 Deafening essences (not in PoE2)
     "deafening-essence-of-enfeeblement": "Оглушающая сущность ослабления",  # approximate — PoE1 only
-    "deafening-essence-of-sorrow": "Оглушающая сущность печали",  # approximate — PoE1 only
-    "deafening-essence-of-rage": "Оглушающая сущность ярости",  # approximate — PoE1 only
-    "deafening-essence-of-suffering": "Оглушающая сущность страдания",  # approximate — PoE1 only
-    "deafening-essence-of-wrath": "Оглушающая сущность гнева",  # approximate — PoE1 only
-    "deafening-essence-of-doubt": "Оглушающая сущность сомнения",  # approximate — PoE1 only
-    "deafening-essence-of-anger": "Оглушающая сущность злости",  # approximate — PoE1 only
-    "deafening-essence-of-torment": "Оглушающая сущность мучения",  # approximate — PoE1 only
-    "deafening-essence-of-fear": "Оглушающая сущность страха",  # approximate — PoE1 only
-    "deafening-essence-of-horror": "Оглушающая сущность ужаса",  # approximate — PoE1 only
-    "deafening-essence-of-delirium": "Оглушающая сущность безумия",  # approximate — PoE1 only
-    "deafening-essence-of-hysteria": "Оглушающая сущность истерики",  # approximate — PoE1 only
-    "deafening-essence-of-insanity": "Оглушающая сущность безумия (великая)",  # approximate — PoE1 only
+    "deafening-essence-of-sorrow": "Оглушающая сущность печали",  # poedb — PoE1 only
+    "deafening-essence-of-rage": "Оглушающая сущность ярости",  # poedb — PoE1 only
+    "deafening-essence-of-suffering": "Оглушающая сущность страдания",  # poedb — PoE1 only
+    "deafening-essence-of-wrath": "Оглушающая сущность гнева",  # poedb — PoE1 only
+    "deafening-essence-of-doubt": "Оглушающая сущность сомнения",  # poedb — PoE1 only
+    "deafening-essence-of-anger": "Оглушающая сущность злобы",  # poedb — PoE1 only (злобы, not злости)
+    "deafening-essence-of-torment": "Оглушающая сущность мучения",  # poedb — PoE1 only
+    "deafening-essence-of-fear": "Оглушающая сущность страха",  # poedb — PoE1 only
+    "deafening-essence-of-horror": "Оглушающая сущность ужаса",  # poedb — PoE1 only
+    "deafening-essence-of-delirium": "Оглушающая сущность бреда",  # poedb — PoE1 only (delirium = бред, not безумие)
+    "deafening-essence-of-hysteria": "Оглушающая сущность истерии",  # poedb — PoE1 only
+    "deafening-essence-of-insanity": "Оглушающая сущность безумия",  # poedb — PoE1 only
     "life-essence": "Сущность жизни",  # approximate
     "mana-essence": "Сущность маны",  # approximate
     # PoE2 Greater essences (confirmed from poe2db)
@@ -297,10 +301,10 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # EXPEDITION  (CategoryApiId: expedition)
     # ===================================================================
-    "aldurs-saga": "Сага Алдура",
-    "olroths-conviction": "Убеждённость Олрота",
-    "rigwalds-ferocity": "Свирепость Ригвальда",
-    "voranas-siege": "Осада Вораны",
+    "aldurs-saga": "Сага Альдура",  # poe2db (Альдура, not Алдура)
+    "olroths-conviction": "Сага Олрота",  # poe2db (PoE2: Olroth's Saga)
+    "rigwalds-ferocity": "Свирепость Ригвальда",  # poe2db
+    "voranas-siege": "Сага Вораны",  # poe2db (PoE2: Vorana's Saga)
     "gwenithas-gamble": "Азарт Гвенифы",  # approximate
     "medveds-might": "Мощь Медведя",  # approximate
     "tujen-penny": "Пенни Туджена",  # approximate
@@ -309,7 +313,7 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "sukaas-dash": "Рывок Сукаа",  # approximate
     "dannigs-honour": "Честь Даннига",  # approximate
     "kalguur-rune": "Руна Калгура",  # approximate
-    "expedition-logbook": "Журналы экспедиции",  # poe2db
+    "expedition-logbook": "Журнал экспедиции",  # poe2db
     "artifact-of-the-chayula": "Артефакт Чаюлы",  # approximate
     "artifact-of-the-vaal": "Артефакт Ваала",  # approximate
     "artifact-of-the-abyss": "Артефакт Бездны",  # approximate
@@ -380,32 +384,28 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "ritualistic-reliquary-key": "Ритуалистический ключ реликвария",
     "olroths-reliquary-key": "Ключ реликвария Олрота",
     "the-trialmasters-reliquary-key": "Ключ реликвария Мастера испытаний",
-    "against-the-darkness": "Против тьмы",  # approximate
+    "against-the-darkness": "Ключ от Реликвария Зарока: Противление тьме",  # poe2db
     "tangmazus-reliquary-key": "Ключ реликвария Тангмазу",
-    "temporalis": "Времинар",  # approximate — Zarokh's Key: Temporalis
+    "temporalis": "Ключ от Реликвария Зарока: Темпоралис",  # poe2db
 
     # ===================================================================
     # BREACH  (CategoryApiId: breach)
     # ===================================================================
     "uul-netols-embrace": "Объятие Уул-Нетола",
-    "xophs-blood": "Кровь Ксофа",  # approximate
-    "tul-fall": "Падение Тул",  # approximate
-    "eshs-breach": "Разлом Эш",  # approximate
-    "chayulas-breach": "Разлом Чаюлы",  # approximate
-    "splinter-of-uul-netol": "Осколок Уул-Нетола",  # approximate
-    "splinter-of-xoph": "Осколок Ксофа",  # approximate
-    "splinter-of-tul": "Осколок Тул",  # approximate
-    "splinter-of-esh": "Осколок Эш",  # approximate
-    "splinter-of-chayula": "Осколок Чаюлы",  # approximate
-    "breachstone-of-uul-netol": "Камень разлома Уул-Нетола",  # approximate
-    "breachstone-of-xoph": "Камень разлома Ксофа",  # approximate
-    "breachstone-of-tul": "Камень разлома Тул",  # approximate
-    "breachstone-of-esh": "Камень разлома Эш",  # approximate
-    "breachstone-of-chayula": "Камень разлома Чаюлы",  # approximate
-    "breach-catalyst-life": "Катализатор разлома: жизнь",  # approximate
-    "breach-catalyst-fire": "Катализатор разлома: огонь",  # approximate
-    "breach-catalyst-cold": "Катализатор разлома: холод",  # approximate
-    "breach-catalyst-lightning": "Катализатор разлома: молния",  # approximate
+    "xophs-blood": "Кровь Ксофа",  # poedb
+    "tul-fall": "Падение Тул",  # poedb
+    "eshs-breach": "Разлом Иш",  # poe2db (Иш, not Эш)
+    "chayulas-breach": "Разлом Чаюлы",  # poedb
+    "splinter-of-uul-netol": "Осколок Уул-Нетола",  # poedb
+    "splinter-of-xoph": "Осколок Ксофа",  # poedb
+    "splinter-of-tul": "Осколок Тул",  # poedb
+    "splinter-of-esh": "Осколок Иш",  # poe2db (Иш, not Эш)
+    "splinter-of-chayula": "Осколок Чаюлы",  # poedb
+    "breachstone-of-uul-netol": "Камень Разлома Уул-Нетола",  # poedb
+    "breachstone-of-xoph": "Камень Разлома Ксофа",  # poedb
+    "breachstone-of-tul": "Камень Разлома Тул",  # poedb
+    "breachstone-of-esh": "Камень Разлома Иш",  # poe2db (Иш, not Эш)
+    "breachstone-of-chayula": "Камень Разлома Чаюлы",  # poedb
 
     # ===================================================================
     # ABYSS  (CategoryApiId: abyss)
@@ -422,16 +422,16 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # UNCUT GEMS  (CategoryApiId: uncutgems)
     # ===================================================================
-    "uncut-skill-gem": "Неогранённый камень умения",  # approximate
-    "uncut-support-gem": "Неогранённый камень поддержки",  # approximate
-    "uncut-spirit-gem": "Неогранённый духовный камень",  # approximate
+    "uncut-skill-gem": "Неогранённый камень умения",  # poe2db
+    "uncut-support-gem": "Неогранённый камень поддержки",  # poe2db
+    "uncut-spirit-gem": "Неогранённый камень духа",  # poe2db (PoE2 uses "камень духа", not "духовный камень")
 
     # ===================================================================
     # LINEAGE SUPPORT GEMS  (CategoryApiId: lineagesupportgems)
     # ===================================================================
-    "lineage-lifetap": "Родословная: похищение жизни",  # approximate
-    "lineage-omnicurse": "Родословная: всепроклятие",  # approximate
-    "lineage-unbound-malice": "Родословная: неограниченная злоба",  # approximate
+    "lineage-lifetap": "Кровопускание Аталуи",  # approximate — poe2db: Atalui's Bloodletting
+    "lineage-omnicurse": "Пагуба Доэдре",  # approximate — poe2db: Doedre's Undoing
+    "lineage-unbound-malice": "Мука Ишчейла",  # approximate — poe2db: Ixchel's Torment
 
     # ===================================================================
     # DELIRIUM  (CategoryApiId: delirium)
@@ -561,12 +561,12 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "refined-xophs-catalyst": "Очищенный катализатор Ксофа",  # poe2db
 
     # ===================================================================
-    # BREACH CATALYSTS  (from poe2db — replace approximate entries)
+    # BREACH CATALYSTS  (PoE1 only — not found on poe2db, may not exist in PoE2)
     # ===================================================================
-    "breach-catalyst-life": "Катализатор разлома: жизнь",  # approximate
-    "breach-catalyst-fire": "Катализатор разлома: огонь",  # approximate
-    "breach-catalyst-cold": "Катализатор разлома: холод",  # approximate
-    "breach-catalyst-lightning": "Катализатор разлома: молния",  # approximate
+    "breach-catalyst-life": "Катализатор разлома: жизнь",  # approximate — PoE1 only
+    "breach-catalyst-fire": "Катализатор разлома: огонь",  # approximate — PoE1 only
+    "breach-catalyst-cold": "Катализатор разлома: холод",  # approximate — PoE1 only
+    "breach-catalyst-lightning": "Катализатор разлома: молния",  # approximate — PoE1 only
 }
 
 CURRENCY_NAMES_EN: dict[str, str] = {
