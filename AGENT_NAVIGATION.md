@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.33 | **Date:** 2026-06-09
+> **Version:** 1.34 | **Date:** 2026-06-10
 
 ---
 
@@ -99,9 +99,14 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass: (a) Python starts via `python -m uvicorn`, (b) health check passes during heavy computation, (c) Ctrl+C kills both processes, (d) flipper-bridge.log shows correct entries with log-level parsing, (e) Cyrillic in path works, (f) `/api/arbitrage/triangular` returns 200.
-2. **Consider ProcessPoolExecutor for triangular arbitrage** — `run_in_executor()` with default ThreadPoolExecutor still contends the GIL. For truly parallel CPU-bound work, `ProcessPoolExecutor` bypasses the GIL entirely. Requires refactoring `_find_triangular_arbitrage_sync()` to be picklable (no closures, no complex objects in args).
-3. **Linux CI build with .venv** — Turbopack panics when `.venv/bin/python` symlink points outside project root. Workaround: remove `.venv` before `npm run build`. Windows builds are unaffected (no symlinks in `.venv\Scripts\`).
+1. **Liquid Chain module (Iteration 19+)** — New module for tracking liquid item conversion chain profit/loss. See §12 for detailed plan. Status: **plan designed, implementation pending**.
+   - Etap 1: `config.yaml` + `backend/models/currency.py` (LiquidChainStep, LiquidChainResult) + `backend/arbitrage/liquid_chain.py` + `backend/api/routes_liquid_chain.py`
+   - Etap 2: `src/app/api/flipper/liquid-chain/` proxy routes + `src/lib/types.ts` additions
+   - Etap 3: `src/components/dashboard/liquid-chain-tab.tsx` + i18n keys
+   - Etap 4: Tests + docs
+2. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
+3. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
+4. **Linux CI build with .venv** — Turbopack panics on `.venv/bin/python` symlinks.
 
 ### COMPLETED (v1.33 — Iteration 18)
 1. ~~**Proxy timeout causes triangular 503 cascade**~~ — `flipper-proxy.ts` had a hardcoded 15s timeout. Triangular arbitrage with 600+ currencies takes 30-60s (Bellman-Ford + cross-rate validation). The proxy timed out → 503 → circuit breaker opened → all requests failed. Fix: Added `timeoutMs` parameter to `proxyToFlipper()` and `proxyWithFallback()` (default 15s). Triangular route now passes 45s timeout.
@@ -208,3 +213,68 @@ When a new league launches, update these 7 files:
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup + fallback mechanisms | On proxy changes |
 | `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§14) | On algorithm changes |
 | `src/lib/currency-optimal.ts` | §11: Cross-currency arbitrage helpers | On flip logic changes |
+
+## 12. Liquid Chain Module (Planned — Iteration 19+)
+
+### Overview
+
+A module for tracking the profitability of the **Liquid Item conversion chain** — a sequence of 10 PoE2 items where 3 units of item N can be reforged into 1 unit of item N+1 at the vendor. The module computes per-step and cumulative profit/loss to help users decide whether reforging is worthwhile.
+
+### Item Chain
+
+```
+1.  Разбавленный жидкий гнев           → 3:1 →
+2.  Разбавленная жидкая вина           → 3:1 →
+3.  Разбавленная жидкая жадность       → 3:1 →
+4.  Жидкая паранойя                    → 3:1 →
+5.  Жидкая зависть                     → 3:1 →
+6.  Жидкое отвращение                  → 3:1 →
+7.  Жидкое отчаяние                    → 3:1 →
+8.  Концентрированный жидкий страх     → 3:1 →
+9.  Концентрированное жидкое страдание → 3:1 →
+10. Концентрированное жидкое отчуждение
+```
+
+### Formulas
+
+For each step `i → i+1`:
+- `input_cost = ratio × price(item_i)` — cost to buy input items
+- `output_value = 1 × price(item_{i+1})` — value of output item
+- `profit = output_value − input_cost`
+- `profit_pct = profit / input_cost × 100`
+
+Cumulative (position j to k): `cost = ratio^(k-j) × price(item_j)`, `value = price(item_k)`
+
+### Implementation Plan
+
+| Step | Files | Description |
+|------|-------|-------------|
+| 1 | `config.yaml`, `backend/models/currency.py`, `backend/arbitrage/liquid_chain.py`, `backend/api/routes_liquid_chain.py` | Config + models + backend logic + API endpoint |
+| 2 | `src/app/api/flipper/liquid-chain/`, `src/lib/types.ts` | Frontend proxy routes + TypeScript types |
+| 3 | `src/components/dashboard/liquid-chain-tab.tsx`, `src/lib/i18n/locales/*.ts` | UI component + i18n |
+| 4 | `tests/test_liquid_chain.py`, `src/__tests__/liquid-chain-tab.test.tsx`, docs | Tests + documentation |
+
+### Key Design Decisions
+
+1. **Chain config in `config.yaml`** — No hardcoded item names. Each step has `api_id`, `name_en`, `name_ru`, `ratio`.
+2. **Prices from existing providers** — `Poe2ScoutProvider` already fetches currency prices. Liquid items are normal currency items with category `ritual`.
+3. **Backend-first** — Computation on FastAPI, frontend only displays via `/api/flipper/liquid-chain/*` proxy.
+4. **Extensible** — Config supports multiple chains (not just Liquids).
+5. **api_id discovery** — Exact POE2Scout `api_id` values TBD; must be confirmed from API response.
+
+### New API Endpoints (Planned)
+
+```
+GET /api/liquid-chain/analysis     → LiquidChainResult (all steps + cumulative paths)
+GET /api/liquid-chain/opportunities → Only profitable step/cumulative combinations
+```
+
+### New Data Models (Planned)
+
+**Backend (`backend/models/currency.py`):**
+- `LiquidChainStep` — one step: api_id, name, price, input_cost, output_value, profit, profit_pct
+- `LiquidChainResult` — full chain: steps[], totals, best/worst step, data_available
+
+**Frontend (`src/lib/types.ts`):**
+- `LiquidChainStep` (camelCase mirror)
+- `LiquidChainResult` (camelCase mirror)

@@ -1,23 +1,24 @@
 # Worklog
 
 ---
-Task ID: 18
+Task ID: 19
 Agent: main
-Task: Iteration 18 — Fix proxy timeout cascade, bridge health check, health endpoint performance
+Task: Iteration 19 — Design Liquid Chain module plan (no code implementation)
 
 Work Log:
-- Diagnosed root cause of bridge health check failures and circuit breaker cascade from user's Windows logs: proxy timeout (15s) too short for triangular arbitrage (30-60s with 600+ currencies). Proxy timed out → 503 → circuit breaker opened → all requests failed.
-- Added `timeoutMs` parameter to `proxyToFlipper()` and `proxyWithFallback()` in `flipper-proxy.ts` (default 15s). Triangular route now passes 45s timeout.
-- Increased bridge health check timeout from 5s to 10s in `flipper-backend-bridge.ts`. GIL contention during heavy executor computation was causing false-positive "unhealthy" detections.
-- Optimized `/api/health` endpoint in `backend/main.py`: pre-imported health-check dependencies at module level (`_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache`). Added `_snapshot_manager_ref` cached reference set during lifespan. Removed lazy `from X import Y` inside handler.
-- Ran full pytest suite: 326/326 tests pass.
-- Ran npm run build: succeeds (NFT warning expected, harmless). Note: Linux build requires `.venv` removal due to symlink panic (Windows unaffected).
-- Updated AGENT_NAVIGATION.md to v1.33: trimmed completed history, added new frequent bugs (#18-24), updated TODO.
+- Cloned and explored full repo structure: Next.js 16 + FastAPI dual-process architecture
+- Analyzed existing recipe module (`backend/arbitrage/recipe.py`) — closest analog to liquid chain
+- Reviewed data models, config patterns, API routing, frontend types, i18n
+- Confirmed recipe module exists but is NOT wired to any API endpoint or UI yet
+- Identified that liquid items are currency items priced via existing POE2Scout provider
+- Designed complete implementation plan: 9 etapes across 4 iterations
+- Updated AGENT_NAVIGATION.md: v1.33 → v1.34, added §12 (Liquid Chain Module plan), updated TODO
+- No code implementation in this iteration — plan-only as requested
 
 Stage Summary:
-- Proxy timeout cascade fixed — triangular endpoint no longer causes circuit breaker cascade
-- Bridge health check more resilient (10s timeout)
-- Health endpoint faster under GIL contention (pre-imported modules)
-- 326/326 pytest tests pass
-- npm run build succeeds
-- Remaining: Real-world Windows smoke test, ProcessPoolExecutor for triangular, Linux CI .venv workaround
+- Liquid Chain module plan fully designed and documented in AGENT_NAVIGATION.md §12
+- Key decisions: config.yaml for chain definition, backend-first computation, extensible for multiple chains
+- Formulas defined: per-step profit (3×price_in − 1×price_out) and cumulative (ratio^(k-j) × price_j)
+- 4 implementation etapes: (1) backend config+models+logic+API, (2) frontend proxy+types, (3) UI+i18n, (4) tests+docs
+- Stopping point: plan designed, implementation starts with Etap 1 in next iteration
+- Exact api_id values for liquid items TBD — need to query POE2Scout API
