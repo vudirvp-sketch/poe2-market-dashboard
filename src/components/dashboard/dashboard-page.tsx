@@ -20,6 +20,7 @@ import {
   Filter,
   List,
   LayoutGrid,
+  Droplets,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ import { MarketHeatmap } from "@/components/dashboard/market-heatmap";
 import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
+import { LiquidChainTab } from "@/components/dashboard/liquid-chain-tab";
 
 // Heavy tab component — lazy-loaded via next/dynamic to reduce initial bundle size.
 // ForecastTab and PortfolioTab were removed (forecast was unreliable, portfolio was mock-only).
@@ -808,7 +810,7 @@ export function Dashboard() {
   // ============================================================================
   // Tab index mapping for shortcuts 1–9 (matching visible tab order)
   // "forecast" and "portfolio" removed from TAB_MAP
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "graph", "watchlist"];
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "liquid-chain", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -1071,6 +1073,9 @@ export function Dashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="analyst" className="gap-1.5" aria-label={t("tabAnalyst") || "Analyst"}>
                   <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabAnalyst") || "Analyst"}
+                </TabsTrigger>
+                <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
+                  <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}
                 </TabsTrigger>
                 <TabsTrigger value="graph" className="gap-1.5" aria-label={t("tabGraph")}>
                   <Network className="h-4 w-4" aria-hidden="true" /> {t("tabGraph")}
@@ -1611,6 +1616,13 @@ export function Dashboard() {
             <TabsContent value="analyst">
               <ErrorBoundary fallbackTitle="Analyst Error">
                 <AnalystTab backendOnline={flipperBackendOnline} realm={realm} league={effectiveLeague} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ LIQUID CHAIN TAB ============ */}
+            <TabsContent value="liquid-chain">
+              <ErrorBoundary fallbackTitle={t("fallbackLiquidChain")}>
+                <LiquidChainTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
               </ErrorBoundary>
             </TabsContent>
 

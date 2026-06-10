@@ -673,6 +673,74 @@ export interface OptimalCurrencyResponse {
 }
 
 // ============================================================================
+// §12: Liquid Chain — vendor reforge conversion chain profitability
+// ============================================================================
+
+/** One step in a vendor reforge conversion chain (e.g. 3 Diluted Liquid Ire → 1 Diluted Liquid Guilt).
+ *  Backend serializes with PascalCase keys; proxy transforms to camelCase. */
+export interface LiquidChainStep {
+  apiId: string;
+  nameEn: string;
+  nameRu: string;
+  ratio: number;
+  price: number;
+  inputCost: number;
+  outputValue: number;
+  profit: number;
+  profitPct: number;
+}
+
+/** Cumulative profit/loss from reforging from step `fromIndex` to step `toIndex`. */
+export interface LiquidChainCumulativePath {
+  fromIndex: number;
+  toIndex: number;
+  totalInputCost: number;
+  totalOutputValue: number;
+  cumulativeRatio: number;
+  profit: number;
+  profitPct: number;
+}
+
+/** Complete analysis result for a single liquid chain (e.g. delirium_liquids). */
+export interface LiquidChainResult {
+  chainName: string;
+  category: string;
+  steps: LiquidChainStep[];
+  cumulativePaths: LiquidChainCumulativePath[];
+  bestStep: number | null;
+  worstStep: number | null;
+  dataAvailable: boolean;
+  stepsWithData: number;
+  totalSteps: number;
+}
+
+/** Response from GET /api/liquid-chain/analysis */
+export interface LiquidChainAnalysisResponse {
+  chains: LiquidChainResult[];
+  dataAvailable: boolean;
+  fetchedAt: string;
+  message?: string;
+}
+
+/** Response from GET /api/liquid-chain/opportunities */
+export interface LiquidChainOpportunitiesResponse {
+  chains: Array<{
+    chainName: string;
+    category: string;
+    profitableSteps: LiquidChainStep[];
+    profitableCumulativePaths: LiquidChainCumulativePath[];
+    bestStep: number | null;
+    worstStep: number | null;
+    dataAvailable: boolean;
+    stepsWithData: number;
+    totalSteps: number;
+  }>;
+  dataAvailable: boolean;
+  fetchedAt: string;
+  message?: string;
+}
+
+// ============================================================================
 // Export helpers (CSV/JSON)
 // ============================================================================
 export function exportToCsv(data: Record<string, unknown>[], filename: string) {

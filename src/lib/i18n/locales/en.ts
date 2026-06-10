@@ -908,6 +908,27 @@ const en = {
   crossRateMarketLabel: "Market",
   crossRateProfitPotential: "Profit potential",
   crossRateVol: "Vol",
+
+  // ---- §12: Liquid Chain Tab ----
+  tabLiquidChain: "Liquid Chain",
+  liquidChainTitle: "Delirium Liquid Reforge Chain",
+  liquidChainNoData: "No liquid chain data available",
+  liquidChainNoReforge: "No reforge",
+  liquidChainNoReforgeNotice: "Ancient and Concentrated liquids (last 3 steps) cannot be reforged further. They are end products of the chain.",
+  liquidChainBestStep: "Best",
+  liquidChainProfitable: "profit",
+  liquidChainUnprofitable: "loss",
+  liquidChainStepsAvailable: "prices",
+  liquidChainName: "Liquid",
+  liquidChainRatioCol: "Ratio",
+  liquidChainRatio: "Ratio",
+  liquidChainInputCost: "Input Cost",
+  liquidChainOutput: "Output",
+  liquidChainProfit: "Profit",
+  liquidChainProfitPct: "Profit %",
+  liquidChainCumulativePaths: "Cumulative Reforge Paths",
+  liquidChainPath: "Path",
+  fallbackLiquidChain: "Liquid Chain",
 } as const;
 
 export default en;

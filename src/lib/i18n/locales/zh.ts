@@ -903,6 +903,27 @@ const zh: Record<TranslationKeys, string> = {
   crossRateMarketLabel: "市场",
   crossRateProfitPotential: "盈利潜力",
   crossRateVol: "成交量",
+
+  // ---- §12: Liquid Chain Tab ----
+  tabLiquidChain: "液体链",
+  liquidChainTitle: "谵妄液体重铸链",
+  liquidChainNoData: "液体链数据不可用",
+  liquidChainNoReforge: "不可重铸",
+  liquidChainNoReforgeNotice: "远古和浓缩液体（最后3步）无法继续重铸。它们是链的最终产物。",
+  liquidChainBestStep: "最佳",
+  liquidChainProfitable: "盈利",
+  liquidChainUnprofitable: "亏损",
+  liquidChainStepsAvailable: "价格",
+  liquidChainName: "液体",
+  liquidChainRatioCol: "比例",
+  liquidChainRatio: "比例",
+  liquidChainInputCost: "投入成本",
+  liquidChainOutput: "产出",
+  liquidChainProfit: "利润",
+  liquidChainProfitPct: "利润率",
+  liquidChainCumulativePaths: "累计重铸路径",
+  liquidChainPath: "路径",
+  fallbackLiquidChain: "液体链",
 };
 
 export default zh;

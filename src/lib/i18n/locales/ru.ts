@@ -836,6 +836,27 @@ const ru: Record<TranslationKeys, string> = {
   crossRateMarketLabel: "Рынок",
   crossRateProfitPotential: "Потенциал прибыли",
   crossRateVol: "Объём",
+
+  // ---- §12: Liquid Chain Tab ----
+  tabLiquidChain: "Цепочка жидкостей",
+  liquidChainTitle: "Цепочка перекрафта жидкостей делирия",
+  liquidChainNoData: "Данные о цепочке жидкостей недоступны",
+  liquidChainNoReforge: "Не крафтится",
+  liquidChainNoReforgeNotice: "Древние и концентрированные жидкости (последние 3 шага) нельзя перекрафтить дальше. Это конечные продукты цепочки.",
+  liquidChainBestStep: "Лучш.",
+  liquidChainProfitable: "прибыль",
+  liquidChainUnprofitable: "убыток",
+  liquidChainStepsAvailable: "цены",
+  liquidChainName: "Жидкость",
+  liquidChainRatioCol: "Коэфф.",
+  liquidChainRatio: "Коэффициент",
+  liquidChainInputCost: "Вход. цена",
+  liquidChainOutput: "Выход",
+  liquidChainProfit: "Профит",
+  liquidChainProfitPct: "Профит %",
+  liquidChainCumulativePaths: "Кумулятивные пути перекрафта",
+  liquidChainPath: "Путь",
+  fallbackLiquidChain: "Цепочка жидкостей",
 };
 
 export default ru;

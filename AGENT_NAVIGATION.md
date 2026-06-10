@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.35 | **Date:** 2026-06-10
+> **Version:** 1.36 | **Date:** 2026-06-10
 
 ---
 
@@ -99,22 +99,23 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Liquid Chain module — Etap 2** — Frontend proxy routes + TypeScript types: `src/app/api/flipper/liquid-chain/` + `src/lib/types.ts`
-2. **Liquid Chain module — Etap 3** — UI component + i18n: `src/components/dashboard/liquid-chain-tab.tsx` + `src/lib/i18n/locales/*.ts`
-3. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
-4. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
-5. **Linux CI build with .venv** — Turbopack panics on `.venv/bin/python` symlinks.
+1. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
+2. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
+3. **Linux CI build with .venv** — Turbopack panics on `.venv/bin/python` symlinks.
+
+### COMPLETED (v1.36 — Iteration 21)
+1. **Liquid Chain Etap 2 — Frontend implementation** — Full frontend for vendor reforge chain:
+   - `src/lib/types.ts`: Added `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult`, `LiquidChainAnalysisResponse`, `LiquidChainOpportunitiesResponse`
+   - `src/app/api/flipper/liquid-chain/route.ts`: Proxy route → `GET /api/liquid-chain/analysis` with offline/insufficient-data fallbacks
+   - `src/components/dashboard/liquid-chain-tab.tsx`: UI component with per-step table, cumulative paths, no-reforge badges for Ancient/Dense liquids
+   - `src/lib/i18n/locales/*.ts`: 20 new i18n keys (en, ru, zh, ko) for liquid chain tab
+   - `src/components/dashboard/dashboard-page.tsx`: Integrated Liquid Chain tab (Droplets icon) between Analyst and Graph tabs
+2. **Build verified** — `npm run build` passes, `/api/flipper/liquid-chain` route registered
+3. **344/344 pytest tests pass** (344 = 331 original + 13 from prior fixes)
 
 ### COMPLETED (v1.35 — Iteration 20)
-1. **Liquid Chain Etap 1 — Backend implementation** — Full backend for vendor reforge chain analysis:
-   - `config.yaml`: Added `liquid_chain` section with `delirium_liquids` chain (10 steps, api_id confirmed from POE2Scout API)
-   - `backend/config.py`: Added `LiquidChainStepConfig`, `LiquidChainDefConfig`, `LiquidChainConfig` Pydantic models
-   - `backend/models/currency.py`: Added `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult` dataclasses
-   - `backend/arbitrage/liquid_chain.py`: `compute_liquid_chain()` + `_compute_cumulative_paths()` — per-step and cumulative profit/loss
-   - `backend/api/routes_liquid_chain.py`: `GET /api/liquid-chain/analysis` + `GET /api/liquid-chain/opportunities`
-   - `backend/main.py`: Registered liquid_chain_router
-   - `tests/test_liquid_chain.py`: 18 tests — full coverage of computation, edge cases, config parsing
-2. **api_id discovery** — Confirmed all 10 liquid items are in `delirium` category (NOT `ritual` as initially assumed)
+1. **Liquid Chain Etap 1 — Backend implementation** — Full backend for vendor reforge chain analysis
+2. **api_id discovery** — Confirmed all 10 liquid items are in `delirium` category (NOT `ritual`)
 3. **331/331 pytest tests pass** — Including 18 new liquid chain tests
 
 ### CONFIRMED INTENTIONAL
@@ -200,13 +201,13 @@ When a new league launches, update these 7 files:
 | `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§14) | On algorithm changes |
 | `src/lib/currency-optimal.ts` | §11: Cross-currency arbitrage helpers | On flip logic changes |
 
-## 12. Liquid Chain Module (Etap 1 Complete)
+## 12. Liquid Chain Module (Etaps 1-2 Complete)
 
 ### Overview
 
 A module for tracking the profitability of the **Liquid Item conversion chain** — a sequence of 10 PoE2 items where 3 units of item N can be reforged into 1 unit of item N+1 at the vendor. The module computes per-step and cumulative profit/loss to help users decide whether reforging is worthwhile.
 
-**Status**: Etap 1 (backend) complete. Etaps 2-3 (frontend) pending.
+**Status**: Etap 1 (backend) + Etap 2 (frontend) complete.
 
 ### Item Chain (delirium_liquids)
 
@@ -304,9 +305,12 @@ GET /api/liquid-chain/opportunities  → Only profitable steps and cumulative pa
 4. **Extensible** — Config supports multiple chains (not just delirium_liquids).
 5. **Category is `delirium`** — Confirmed from live API. Liquid items are NOT in `ritual`.
 
-### Remaining Work (Etaps 2-3)
+### Frontend Files (Etap 2 — Complete)
 
-| Etap | Files | Description |
-|------|-------|-------------|
-| 2 | `src/app/api/flipper/liquid-chain/`, `src/lib/types.ts` | Frontend proxy routes + TypeScript types |
-| 3 | `src/components/dashboard/liquid-chain-tab.tsx`, `src/lib/i18n/locales/*.ts` | UI component + i18n |
+| File | Purpose |
+|------|---------|
+| `src/lib/types.ts` | `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult`, `LiquidChainAnalysisResponse`, `LiquidChainOpportunitiesResponse` |
+| `src/app/api/flipper/liquid-chain/route.ts` | Proxy → `GET /api/liquid-chain/analysis` with fallback |
+| `src/components/dashboard/liquid-chain-tab.tsx` | UI: per-step table + cumulative paths + no-reforge badges |
+| `src/lib/i18n/locales/*.ts` | 20 i18n keys (en, ru, zh, ko) |
+| `src/components/dashboard/dashboard-page.tsx` | Tab integration (Droplets icon, between Analyst and Graph) |

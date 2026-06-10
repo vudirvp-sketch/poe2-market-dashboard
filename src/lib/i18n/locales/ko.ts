@@ -903,6 +903,27 @@ const ko: Record<TranslationKeys, string> = {
   crossRateMarketLabel: "시장",
   crossRateProfitPotential: "수익 잠재력",
   crossRateVol: "거래량",
+
+  // ---- §12: Liquid Chain Tab ----
+  tabLiquidChain: "액체 체인",
+  liquidChainTitle: "섬막 액체 재조합 체인",
+  liquidChainNoData: "액체 체인 데이터를 사용할 수 없습니다",
+  liquidChainNoReforge: "재조합 불가",
+  liquidChainNoReforgeNotice: "고대 및 농축 액체(마지막 3단계)는 더 이상 재조합할 수 없습니다. 체인의 최종 산물입니다.",
+  liquidChainBestStep: "최고",
+  liquidChainProfitable: "수익",
+  liquidChainUnprofitable: "손실",
+  liquidChainStepsAvailable: "가격",
+  liquidChainName: "액체",
+  liquidChainRatioCol: "비율",
+  liquidChainRatio: "비율",
+  liquidChainInputCost: "투입 비용",
+  liquidChainOutput: "산출",
+  liquidChainProfit: "수익",
+  liquidChainProfitPct: "수익률",
+  liquidChainCumulativePaths: "누적 재조합 경로",
+  liquidChainPath: "경로",
+  fallbackLiquidChain: "액체 체인",
 };
 
 export default ko;
