@@ -179,6 +179,16 @@ export interface FlipOpportunity {
   quantizedAnalysis?: QuantizedAnalysis;
   /** P1-3: Tier distance between the two currencies */
   tierDistance?: number;
+  /** Absolute profit per 1 unit of currency_from in base currency (exalted). */
+  profitPerUnitBase?: number;
+  /** Fair cross-rate: how many currency_to per 1 currency_from based on prices_in_base. */
+  fairRate?: number;
+  /** Deviation of market rate from fair rate as percentage. */
+  deviationPct?: number;
+  /** Price of currency_from in base currency (exalted). */
+  priceFromInBase?: number;
+  /** Price of currency_to in base currency (exalted). */
+  priceToInBase?: number;
 }
 
 /** P1-1: Quantized spread result at a specific lot size */

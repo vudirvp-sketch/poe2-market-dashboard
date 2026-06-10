@@ -149,17 +149,9 @@ def _build_flip_opportunities_sync(
         default=1,
     )
 
-    # Build price mapping
-    prices = dict(snapshot.prices_in_base)
-    if "chaos" in prices and config.league.base_currency != "chaos":
-        chaos_in_base = prices.get("chaos", 0)
-        if chaos_in_base and chaos_in_base > 0:
-            base_to_chaos = 1.0 / chaos_in_base
-            for k in list(prices.keys()):
-                if k != "chaos":
-                    prices[k] = prices[k] * base_to_chaos
-    prices["chaos"] = 1.0
-    prices["Chaos Orb"] = 1.0
+    # Build price mapping — keep original prices_in_base (in base currency = exalted)
+    # for profit calculation. The chaos-normalized copy is unused now.
+    prices_in_base = dict(snapshot.prices_in_base)  # prices in base currency (exalted)
 
     # Currency clustering (cached)
     clusterer = CurrencyClusterer(config)
@@ -343,6 +335,41 @@ def _build_flip_opportunities_sync(
         net_spread = spread_value
         net_profit_pct = net_spread * 100 if mid_price > 0 else 0.0
 
+        # Absolute profit calculation in base currency (exalted)
+        # Uses prices_in_base to convert profit from pair-relative to absolute.
+        price_from_in_base = prices_in_base.get(rate.currency_from, 0.0)
+        price_to_in_base = prices_in_base.get(rate.currency_to, 0.0)
+
+        # Fair cross-rate: how many currency_to per 1 currency_from,
+        # based on their individual prices in base currency.
+        fair_rate = 0.0
+        deviation_pct = 0.0
+        profit_per_unit_base = 0.0
+
+        if price_from_in_base > 0 and price_to_in_base > 0:
+            fair_rate = price_from_in_base / price_to_in_base
+
+            # Deviation between market rate and fair rate
+            if fair_rate > 0:
+                deviation_pct = abs(mid_price - fair_rate) / fair_rate * 100
+
+            # Cross-rate profit: the arbitrage profit from the deviation
+            # between market rate and fair (implied) rate.
+            # If market_rate != fair_rate, you can profit by buying
+            # in the cheaper direction and converting via base currency.
+            #
+            # For 1 unit of currency_from:
+            #   Option A: Sell 1 from → get mid_price units of to
+            #     → convert to base: mid_price * price_to_in_base
+            #   Option B: Convert 1 from → price_from_in_base units of base
+            #     → buy to: price_from_in_base / price_to_in_base units of to
+            #
+            # Cross-rate profit per 1 unit of from:
+            #   max of both directions = abs(price_from_in_base - mid_price * price_to_in_base)
+            profit_per_unit_base = abs(
+                price_from_in_base - mid_price * price_to_in_base
+            )
+
         opp = FlipOpportunity(
             currency=f"{rate.currency_from}/{rate.currency_to}",
             score=score, spread=spread_value,
@@ -352,6 +379,11 @@ def _build_flip_opportunities_sync(
             volatility=momentum_result.volatility,
             cluster=cluster, bid=bid, ask=ask, mid_price=mid_price,
             quantized_analysis=quantized, tier_distance=t_distance,
+            profit_per_unit_base=profit_per_unit_base,
+            fair_rate=fair_rate,
+            deviation_pct=deviation_pct,
+            price_from_in_base=price_from_in_base,
+            price_to_in_base=price_to_in_base,
         )
 
         if is_stale:
@@ -568,6 +600,12 @@ async def get_flip_opportunities(
                     "theoretical_spread": round(o.quantized_analysis.theoretical_spread, 6),
                 } if o.quantized_analysis else None,
                 "tier_distance": o.tier_distance,
+                # Absolute profit in base currency (exalted)
+                "profit_per_unit_base": round(o.profit_per_unit_base, 8),
+                "fair_rate": round(o.fair_rate, 8),
+                "deviation_pct": round(o.deviation_pct, 4),
+                "price_from_in_base": round(o.price_from_in_base, 8),
+                "price_to_in_base": round(o.price_to_in_base, 8),
             }
             for o in filtered
         ],

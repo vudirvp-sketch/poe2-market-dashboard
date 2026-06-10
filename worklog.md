@@ -1,6 +1,38 @@
 # Worklog
 
 ---
+Task ID: 27
+Agent: main
+Task: Iteration 27 — Add absolute profit in exalted to flip opportunities + cross-rate deviation analysis
+
+Work Log:
+- Identified core problem: flips tab showed dimensionless spread percentages, NOT absolute profit in any currency
+- Added 5 new fields to FlipOpportunity model (backend/models/currency.py):
+  - profit_per_unit_base: absolute profit per 1 unit of currency_from in base currency (exalted)
+  - fair_rate: fair cross-rate based on prices_in_base
+  - deviation_pct: |market_rate - fair_rate| / fair_rate * 100
+  - price_from_in_base: price of currency_from in base currency
+  - price_to_in_base: price of currency_to in base currency
+- Updated _build_flip_opportunities_sync in routes_arbitrage.py:
+  - Replaced chaos-normalized prices dict with original prices_in_base for profit calculation
+  - Added cross-rate profit: abs(price_from_in_base - mid_price * price_to_in_base)
+  - Added fair_rate = price_from_in_base / price_to_in_base
+  - Added deviation_pct = abs(mid_price - fair_rate) / fair_rate * 100
+- Added all 5 new fields to /api/arbitrage/flips JSON response
+- Updated frontend FlipOpportunity type (src/lib/types.ts) with 5 new optional fields
+- Updated flips-table.tsx: added "Profit (Exa)" column between Score and Spread
+- Updated flips-detail-dialog.tsx: added profit in exalted panel, cross-rate deviation panel, fair vs market rate breakdown
+- Added i18n keys to all 4 locales (en, ru, zh, ko): flipperProfitExa, profitExaTooltip, profitPerUnitExa, crossRateDeviation, crossRateBreakdown, marketRate, fairRate, priceFromInBase, priceToInBase
+- Updated AGENT_NAVIGATION.md to v1.42
+
+Stage Summary:
+- Flips tab now shows absolute profit in exalted orbs (the number traders actually care about)
+- Cross-rate deviation reveals WHY each opportunity exists (market rate ≠ fair rate)
+- Detail dialog shows full breakdown: market rate vs fair rate + prices of both currencies in exalted
+- Python syntax verified OK
+- Stopping point: Code changes complete. Pending: npm run build verification, E2E testing with live backend, Windows verification, gold fee re-integration, Russian item name translation
+
+---
 Task ID: 26
 Agent: main
 Task: Iteration 26 — Fix event loop blocking, circuit breaker cascade, executor timeouts, case consistency

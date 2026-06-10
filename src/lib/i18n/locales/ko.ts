@@ -300,6 +300,15 @@ const ko: Record<TranslationKeys, string> = {
   flipperNetProfitPct: "순이익 %",
   flipperTotalVolume: "총 거래량",
   flipperNoTriangular: "삼각 차익거래 사이클이 감지되지 않음",
+  flipperProfitExa: "수익 (Exa)",
+  profitExaTooltip: "통화 1단위당 절대 수익 (엑설티드 오브 기준). 시장 환율과 공정 크로스 레이트 간 편차로 계산.",
+  profitPerUnitExa: "수익 (Exa/단위)",
+  crossRateDeviation: "크로스 레이트 편차",
+  crossRateBreakdown: "크로스 레이트: 시장 vs 공정",
+  marketRate: "시장 환율",
+  fairRate: "공정 환율",
+  priceFromInBase: "가격 (출발) Exa 기준",
+  priceToInBase: "가격 (도착) Exa 기준",
 
   // Forecast Tab
   forecastCurrency: "통화",

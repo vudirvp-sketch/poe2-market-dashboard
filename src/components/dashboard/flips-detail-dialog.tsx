@@ -69,6 +69,43 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
         </div>
       </div>
 
+      {/* Profit in Exalted & Cross-Rate Deviation */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-lg border p-3">
+          <p className="text-xs text-muted-foreground">{t("profitPerUnitExa")}</p>
+          <p className={`text-lg font-bold font-mono ${(selectedFlip.profitPerUnitBase ?? 0) > 0 ? "text-emerald-600 dark:text-emerald-400" : ""}`}>
+            {(selectedFlip.profitPerUnitBase ?? 0) > 0 ? "+" : ""}{fmt(selectedFlip.profitPerUnitBase)} Exa
+          </p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <p className="text-xs text-muted-foreground">{t("crossRateDeviation")}</p>
+          <p className={`text-lg font-bold font-mono ${(selectedFlip.deviationPct ?? 0) > 10 ? "text-amber-600 dark:text-amber-400" : ""}`}>
+            {(selectedFlip.deviationPct ?? 0).toFixed(2)}%
+          </p>
+        </div>
+      </div>
+
+      {/* Fair Rate vs Market Rate breakdown */}
+      {(selectedFlip.fairRate ?? 0) > 0 && (
+        <div className="rounded-lg border p-3 space-y-2">
+          <p className="text-xs font-semibold">{t("crossRateBreakdown")}</p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <span className="text-muted-foreground">
+              {t("marketRate")}: <span className="font-mono font-medium">{fmt(selectedFlip.midPrice)}</span>
+            </span>
+            <span className="text-muted-foreground">
+              {t("fairRate")}: <span className="font-mono font-medium">{fmt(selectedFlip.fairRate)}</span>
+            </span>
+            <span className="text-muted-foreground">
+              {t("priceFromInBase")}: <span className="font-mono font-medium">{fmt(selectedFlip.priceFromInBase)} Exa</span>
+            </span>
+            <span className="text-muted-foreground">
+              {t("priceToInBase")}: <span className="font-mono font-medium">{fmt(selectedFlip.priceToInBase)} Exa</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Momentum, Volatility, Cluster */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg border p-3">

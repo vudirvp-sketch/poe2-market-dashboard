@@ -300,6 +300,15 @@ const en = {
   flipperNetProfitPct: "Net Profit %",
   flipperTotalVolume: "Total Volume",
   flipperNoTriangular: "No triangular arbitrage cycles detected",
+  flipperProfitExa: "Profit (Exa)",
+  profitExaTooltip: "Absolute profit per 1 unit of currency in exalted orbs. Computed as deviation between market rate and fair cross-rate.",
+  profitPerUnitExa: "Profit (Exa/unit)",
+  crossRateDeviation: "Cross-rate Deviation",
+  crossRateBreakdown: "Cross-rate: Market vs Fair",
+  marketRate: "Market Rate",
+  fairRate: "Fair Rate",
+  priceFromInBase: "Price (from) in Exa",
+  priceToInBase: "Price (to) in Exa",
 
   // Forecast Tab
   forecastCurrency: "Currency",

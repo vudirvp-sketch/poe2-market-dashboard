@@ -300,6 +300,15 @@ const zh: Record<TranslationKeys, string> = {
   flipperNetProfitPct: "净利润 %",
   flipperTotalVolume: "总交易量",
   flipperNoTriangular: "未检测到三角套利循环",
+  flipperProfitExa: "利润 (Exa)",
+  profitExaTooltip: "每单位货币的绝对利润（以崇高石计）。按市场汇率与公允交叉汇率之间的偏差计算。",
+  profitPerUnitExa: "利润 (Exa/单位)",
+  crossRateDeviation: "交叉汇率偏差",
+  crossRateBreakdown: "交叉汇率：市场 vs 公允",
+  marketRate: "市场汇率",
+  fairRate: "公允汇率",
+  priceFromInBase: "价格（源）以Exa计",
+  priceToInBase: "价格（目标）以Exa计",
 
   // Forecast Tab
   forecastCurrency: "货币",

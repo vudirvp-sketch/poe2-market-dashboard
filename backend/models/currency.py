@@ -171,6 +171,12 @@ class FlipOpportunity:
     # NEW quantized fields
     quantized_analysis: QuantizedAnalysis | None = None
     tier_distance: int = 0  # Will be populated after P1-3 is done
+    # Absolute profit in base currency (exalted)
+    profit_per_unit_base: float = 0.0  # profit per 1 unit of currency_from in base currency
+    fair_rate: float = 0.0             # fair cross-rate based on prices_in_base
+    deviation_pct: float = 0.0          # |market_rate - fair_rate| / fair_rate * 100
+    price_from_in_base: float = 0.0     # price of currency_from in base currency
+    price_to_in_base: float = 0.0       # price of currency_to in base currency
 
 
 @dataclass

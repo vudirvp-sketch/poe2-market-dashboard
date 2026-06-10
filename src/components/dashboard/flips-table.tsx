@@ -139,10 +139,11 @@ export const FlipsTable = memo(function FlipsTable({
           </div>
         ) : (
           <div role="table" aria-label={t("flipsDetailedOpportunities")}>
-            {/* Table header — P1-1/P1-3: Added Q-Spread, Min Lot, Brick Risk, Tier; Premium column */}
-            <div role="row" className="grid grid-cols-[1.5fr_50px_70px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+            {/* Table header — Profit in base currency + spread + quantized columns */}
+            <div role="row" className="grid grid-cols-[1.5fr_50px_80px_65px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
               <span role="columnheader">{t("flipperCurrency")}</span>
               <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
+              <span role="columnheader" className="text-right">{t("flipperProfitExa")}</span>
               <span role="columnheader" className="text-right"><SortHeader field="spreadAfterFees" label={t("flipperSpread")} /></span>
               <span role="columnheader" className="text-right hidden sm:table-cell" title={t("qSpreadTooltip")}><SortHeader field="qSpread" label={t("qSpread")} /></span>
               <span role="columnheader" className="text-right">{t("flipperMomentum")}</span>
@@ -159,7 +160,7 @@ export const FlipsTable = memo(function FlipsTable({
               {paginatedOpportunities.map((opp) => (
                 <div
                   key={opp.currency}
-                  className="grid grid-cols-[1.5fr_50px_70px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
+                  className="grid grid-cols-[1.5fr_50px_80px_65px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
                   role="row"
                   onClick={() => onRowClick(opp)}
                   onKeyDown={(e) => {
@@ -182,6 +183,17 @@ export const FlipsTable = memo(function FlipsTable({
                   {/* Score */}
                   <span className={`text-center text-xs font-bold ${scoreColor(opp.score ?? 0)}`}>
                     {((opp.score ?? 0) * 100).toFixed(1)}%
+                  </span>
+
+                  {/* Profit per unit in base currency (exalted) */}
+                  <span className="text-right font-mono text-xs" title={t("profitExaTooltip")}>
+                    {(opp.profitPerUnitBase ?? 0) > 0 ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                        +{fmt(opp.profitPerUnitBase)} Exa
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </span>
 
                   {/* Spread (theoretical) */}

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.41 | **Date:** 2026-06-11
+> **Version:** 1.42 | **Date:** 2026-06-11
 
 ---
 
@@ -100,6 +100,8 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Real E2E with live backend** — Run Playwright against a running FastAPI instance (not just mocked routes). Requires `uvicorn backend.main:app` running.
 2. **Windows start.bat verification** — Confirm ProcessPoolExecutor with `spawn` start method works correctly on Windows (create_process, pickle, etc.).
+3. **Gold fee model** — Currently all gold fee code is removed. Real PoE2 trading has gold costs that can dominate cheap-to-expensive flips. Re-adding gold fees would make profit estimates much more realistic.
+4. **Russian item name translation** — User requested translation of all currency/item names to Russian as they appear in the PoE2 Russian client. Would require a name mapping table (api_id → ru_name).
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -110,6 +112,8 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 6. **React 19 "script tag" warnings in dev console** — Upstream Next.js 16 bug (#72213). Harmless.
 7. **Divine pricing ~10% premium** — Market inefficiency, not a bug
 8. **NFT warning during build** — Turbopack traces `fs`/`path` in bridge script. Harmless (build-time only). Do NOT add `/* turbopackIgnore: true */`.
+9. **Absolute profit (profit_per_unit_base) is cross-rate deviation** — Not a spread capture. Measures |price_from_in_base − mid_price × price_to_in_base|, i.e. the discrepancy between the market exchange rate and the "fair" rate implied by each currency's price in exalted. This is the real arbitrage opportunity.
+10. **Fair rate may be zero for currencies without prices_in_base** — If a currency has no direct or BFS-derived price in exalted, fair_rate=0 and profit_per_unit_base=0. These currencies are typically very low-liquidity.
 
 ## 7. Architecture & API References
 
