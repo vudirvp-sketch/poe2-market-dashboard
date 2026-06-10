@@ -229,7 +229,44 @@ async def lifespan(app: FastAPI):
     # "optimistic" mode and updates to "unreachable" if the check fails.
     asyncio.create_task(check_provider_health())
 
+    # ProcessPoolExecutor warm-up: submit trivial tasks to all workers
+    # so the first real request doesn't suffer from ~5s cold-start latency
+    # (sklearn/numpy/scipy import time in each spawn process).
+    try:
+        loop = asyncio.get_running_loop()
+        warmup_futures = [
+            loop.run_in_executor(process_pool, _executor_warmup_task)
+            for _ in range(_process_workers)
+        ]
+        # Don't block startup — just fire and forget, but log when done
+        async def _log_warmup():
+            try:
+                results = await asyncio.wait_for(
+                    asyncio.gather(*warmup_futures, return_exceptions=True),
+                    timeout=30.0,
+                )
+                ok = sum(1 for r in results if r is True)
+                logger.info(
+                    "ProcessPoolExecutor warm-up complete: %d/%d workers ready",
+                    ok, _process_workers,
+                )
+            except asyncio.TimeoutError:
+                logger.warning("ProcessPoolExecutor warm-up timed out (30s)")
+            except Exception as e:
+                logger.warning("ProcessPoolExecutor warm-up error: %s", e)
+        asyncio.create_task(_log_warmup())
+    except Exception as e:
+        logger.warning("ProcessPoolExecutor warm-up failed: %s", e)
+
     yield
+
+    # --- Shutdown ProcessPoolExecutor ---
+    try:
+        logger.info("Shutting down ProcessPoolExecutor...")
+        process_pool.shutdown(wait=False, cancel_futures=True)
+        logger.info("ProcessPoolExecutor shut down")
+    except Exception as e:
+        logger.warning("ProcessPoolExecutor shutdown error: %s", e)
 
     # --- P0-1: Shutdown background tasks ---
     # Cancel snapshot refresh task
@@ -297,6 +334,16 @@ logger.info(
     "ProcessPoolExecutor initialized: %d workers (cpu_count=%d, start_method=spawn)",
     _process_workers, _cpu_count,
 )
+
+
+def _executor_warmup_task() -> bool:
+    """Trivial task submitted to ProcessPoolExecutor at startup.
+
+    Forces spawn of all worker processes so the first real request doesn't
+    suffer from cold-start latency (~5s for sklearn import in each worker).
+    Returns True on success.
+    """
+    return True
 
 
 app = FastAPI(

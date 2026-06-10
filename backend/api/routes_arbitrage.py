@@ -443,12 +443,22 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     except (ImportError, AttributeError):
         pass
 
-    opportunities = await loop.run_in_executor(
-        executor,
-        _build_flip_opportunities_sync,
-        snapshot, config, phase_info, phase_multiplier,
-        event_penalties, cached_cluster_labels,
-    )
+    # Timeout for flip computation (seconds). Clustering + scoring for 600+
+    # currencies typically takes 5-15s. If executor hangs (sklearn deadlock),
+    # the timeout prevents indefinite blocking.
+    try:
+        opportunities = await asyncio.wait_for(
+            loop.run_in_executor(
+                executor,
+                _build_flip_opportunities_sync,
+                snapshot, config, phase_info, phase_multiplier,
+                event_penalties, cached_cluster_labels,
+            ),
+            timeout=60.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error("Flip computation timed out after 60s — returning empty result")
+        return []
 
     # 5. Cache clustering result back to PipelineCache (only if computed fresh)
     # The sync function may have computed new cluster_labels. We can't cache
@@ -804,11 +814,11 @@ def _find_optimal_payment(
         "savings_pct": round(savings_pct, 2),
         "options": [
             {
-                "currencyId": o["currency_id"],
-                "currencyName": o["currency_name"],
-                "priceInCurrency": round(o["price_in_currency"], 6),
-                "effectiveAnchorPrice": round(o["effective_anchor_price"], 8),
-                "premiumPct": round(o["premium_pct"], 2),
+                "currency_id": o["currency_id"],
+                "currency_name": o["currency_name"],
+                "price_in_currency": round(o["price_in_currency"], 6),
+                "effective_anchor_price": round(o["effective_anchor_price"], 8),
+                "premium_pct": round(o["premium_pct"], 2),
             }
             for o in options
         ],
@@ -857,18 +867,18 @@ def _detect_cross_rate_flips(
             estimated_profit_pct = abs(deviation_pct)
 
             results.append({
-                "buyCurrencyId": rate.currency_from if deviation_pct < 0 else rate.currency_to,
-                "sellCurrencyId": rate.currency_to if deviation_pct < 0 else rate.currency_from,
-                "fairRate": round(fair_rate, 8),
-                "marketRate": round(market_rate, 8),
-                "deviationPct": round(deviation_pct, 2),
+                "buy_currency_id": rate.currency_from if deviation_pct < 0 else rate.currency_to,
+                "sell_currency_id": rate.currency_to if deviation_pct < 0 else rate.currency_from,
+                "fair_rate": round(fair_rate, 8),
+                "market_rate": round(market_rate, 8),
+                "deviation_pct": round(deviation_pct, 2),
                 "direction": direction,
-                "estimatedProfitPct": round(estimated_profit_pct, 2),
+                "estimated_profit_pct": round(estimated_profit_pct, 2),
                 "volume": rate.volume_traded,
             })
 
     # Sort by estimated profit descending
-    results.sort(key=lambda r: r["estimatedProfitPct"], reverse=True)
+    results.sort(key=lambda r: r["estimated_profit_pct"], reverse=True)
     return results[:50]
 
 
@@ -896,11 +906,11 @@ async def get_optimal_currency(
     if snapshot_mgr.last_snapshot is None:
         return {
             "league": config.league.league_name,
-            "anchorId": "exalted",
-            "optimalPaymentByPair": {},
-            "crossRateFlips": [],
-            "dataAvailable": False,
-            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+            "anchor_id": "exalted",
+            "optimal_payment_by_pair": {},
+            "cross_rate_flips": [],
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
 
     snapshot = await get_snapshot()
@@ -908,11 +918,11 @@ async def get_optimal_currency(
     if not rates:
         return {
             "league": config.league.league_name,
-            "anchorId": "exalted",
-            "optimalPaymentByPair": {},
-            "crossRateFlips": [],
-            "dataAvailable": False,
-            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+            "anchor_id": "exalted",
+            "optimal_payment_by_pair": {},
+            "cross_rate_flips": [],
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
 
     prices = dict(snapshot.prices_in_base)
@@ -1025,9 +1035,9 @@ async def get_optimal_currency(
 
     return {
         "league": config.league.league_name,
-        "anchorId": anchor,
-        "optimalPaymentByPair": optimal_by_pair,
-        "crossRateFlips": cross_rate_flips,
-        "dataAvailable": True,
-        "fetchedAt": datetime.now(timezone.utc).isoformat(),
+        "anchor_id": anchor,
+        "optimal_payment_by_pair": optimal_by_pair,
+        "cross_rate_flips": cross_rate_flips,
+        "data_available": True,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }

@@ -250,15 +250,24 @@ async def get_all_prices():
             except (ImportError, AttributeError):
                 pass
 
-            cluster_labels_raw = await loop.run_in_executor(
-                executor,
-                _run_clustering_sync,
-                config,
-                cluster_price_histories,
-                cluster_volumes,
-                cluster_prices_now,
-                cluster_prices_24h_ago,
-            )
+            # Timeout for clustering computation (seconds).
+            # KMeans with n_init=10 on 600+ currencies typically takes 3-10s.
+            try:
+                cluster_labels_raw = await asyncio.wait_for(
+                    loop.run_in_executor(
+                        executor,
+                        _run_clustering_sync,
+                        config,
+                        cluster_price_histories,
+                        cluster_volumes,
+                        cluster_prices_now,
+                        cluster_prices_24h_ago,
+                    ),
+                    timeout=30.0,
+                )
+            except asyncio.TimeoutError:
+                logger.error("Clustering timed out after 30s — using empty labels")
+                cluster_labels_raw = {}
 
             # Convert plain string labels back to ClusterLabel enums
             cluster_labels = {k: ClusterLabel(v) for k, v in cluster_labels_raw.items()}

@@ -533,10 +533,24 @@ async def find_triangular_arbitrage(
     except (ImportError, AttributeError):
         pass
 
-    result = await loop.run_in_executor(
-        executor,
-        _find_triangular_arbitrage_sync,
-        rates, prices, min_profit_pct, pair_volumes, snapshot_time,
-        cross_rate_threshold_pct,
-    )
+    # Timeout for triangular arbitrage computation (seconds).
+    # Bellman-Ford O(V*V*E) + cross-rate validation + integer simulation
+    # can take 30-60s with 600+ currencies. The timeout prevents indefinite
+    # blocking if the computation hangs.
+    try:
+        result = await asyncio.wait_for(
+            loop.run_in_executor(
+                executor,
+                _find_triangular_arbitrage_sync,
+                rates, prices, min_profit_pct, pair_volumes, snapshot_time,
+                cross_rate_threshold_pct,
+            ),
+            timeout=90.0,
+        )
+    except asyncio.TimeoutError:
+        logger.error(
+            "Triangular arbitrage computation timed out after 90s — "
+            "returning empty result. Consider reducing currency count."
+        )
+        return TriangularResult(opportunities=[], suspicious_triples=[])
     return result

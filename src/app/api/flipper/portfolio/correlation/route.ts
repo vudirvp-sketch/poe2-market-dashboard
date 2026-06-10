@@ -11,6 +11,9 @@ export const dynamic = "force-dynamic";
  *  When the backend is offline or returns any error, we return empty data
  *  with dataAvailable: false instead of propagating the error.
  *  The ComparativeChart component has client-side correlation computation as fallback.
+ *
+ *  TIMEOUT: 60s — correlation matrix O(n^2) Spearman with 600+ currencies
+ *  runs in ProcessPoolExecutor and can take 20-40s.
  */
 const FALLBACK = {
   currencies: [],
@@ -21,7 +24,14 @@ const FALLBACK = {
 
 export async function GET() {
   try {
-    const res = await proxyToFlipper("/api/portfolio/correlation");
+    const res = await proxyToFlipper(
+      "/api/portfolio/correlation",
+      undefined,
+      "GET",
+      undefined,
+      0,
+      60_000, // 60s timeout — correlation matrix is CPU-heavy
+    );
 
     // Backend returned a response — check if it's usable
     if (res.ok) {

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.40 | **Date:** 2026-06-11
+> **Version:** 1.41 | **Date:** 2026-06-11
 
 ---
 
@@ -100,7 +100,6 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Real E2E with live backend** — Run Playwright against a running FastAPI instance (not just mocked routes). Requires `uvicorn backend.main:app` running.
 2. **Windows start.bat verification** — Confirm ProcessPoolExecutor with `spawn` start method works correctly on Windows (create_process, pickle, etc.).
-3. **ProcessPoolExecutor warm-up** — Submit a trivial task to the pool at startup to avoid cold-start latency on the first real request.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -151,22 +150,28 @@ When a new league launches, update these 7 files:
 4. **PriceLogs are REVERSE chronological:** Always sort before charting.
 5. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
 6. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
-7. **Backend API responses MUST use snake_case** — The flipper-proxy `transformKeys()` converts `snake_case → camelCase`. PascalCase keys pass through unchanged → `undefined` in React. ALL backend serializers must use snake_case.
-8. **CPU-bound Python code MUST run in `run_in_executor()`** — Any sync CPU-heavy loop blocks the event loop, triggers bridge kill + circuit breaker cascade.
-9. **ProcessPoolExecutor requires picklable arguments** — Never pass objects holding `sqlite3.Connection` (EventManager, PipelineCache, HistoricalStore) into `run_in_executor()` with ProcessPoolExecutor. Pre-extract needed data as plain dicts/lists.
-10. **ProcessPoolExecutor uses `spawn` start method** — `mp_context=spawn` set explicitly. Functions called in executor must be importable without side effects.
-11. **Proxy timeout is configurable** — Heavy endpoints (flips: 30s, triangular: 45s, prices: 30s) need longer timeouts than default 15s. Without this, the proxy times out → circuit breaker opens → ALL endpoints blocked.
-12. **Triangular arbitrage results are cached** — Key: `triangular_arbitrage_{min_profit_pct}`. Do not remove — without it, every request triggers O(E²) cross-rate validation.
-13. **`find_triangular_arbitrage()` is async** — Since v1.30. Calling without `await` returns coroutine. Tests must use `@pytest.mark.asyncio`.
-14. **`/api/health/ping` is the lightweight health probe** — Returns plain-text "ok". Use this for circuit breaker and bridge probes. `/api/health` returns detailed JSON diagnostics.
-15. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
-16. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
-17. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
-18. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps.
-19. **Ritual Omens chain is price-comparison only** — `ritual_omens` chain has `ratio=1` for all steps. Omens CANNOT be reforged.
-20. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable.
-21. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
-22. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module. NFT warning is harmless.
+7. **Backend API responses MUST use snake_case** — The flipper-proxy `transformKeys()` converts `snake_case → camelCase`. PascalCase/camelCase keys pass through unchanged → `undefined` in React. ALL backend serializers must use snake_case, including optimal-currency (`anchor_id`, `optimal_payment_by_pair`, `cross_rate_flips`, etc.).
+8. **CPU-bound Python code MUST run in `run_in_executor()`** — Any sync CPU-heavy loop blocks the event loop, triggers bridge kill + circuit breaker cascade. All CPU-bound endpoints (flips, triangular, prices/clustering, anomalies, portfolio/correlation) now use ProcessPoolExecutor.
+9. **All `run_in_executor()` calls MUST have `asyncio.wait_for(timeout=...)`** — Prevents indefinite blocking if executor hangs. Timeouts: flips=60s, triangular=90s, clustering=30s, anomalies=45s, correlation=60s.
+10. **ProcessPoolExecutor requires picklable arguments** — Never pass objects holding `sqlite3.Connection` (EventManager, PipelineCache, HistoricalStore) into `run_in_executor()` with ProcessPoolExecutor. Pre-extract needed data as plain dicts/lists/numpy arrays.
+11. **ProcessPoolExecutor uses `spawn` start method** — `mp_context=spawn` set explicitly. Functions called in executor must be importable without side effects.
+12. **ProcessPoolExecutor warm-up at startup** — Trivial task submitted to all workers during lifespan startup to avoid ~5s cold-start on first real request (sklearn/scipy import time in spawn process).
+13. **ProcessPoolExecutor shutdown on exit** — `process_pool.shutdown(wait=False, cancel_futures=True)` called during lifespan shutdown to prevent worker process leaks.
+14. **Proxy timeout is configurable** — Heavy endpoints need longer timeouts than default 15s: flips=30s, triangular=45s, prices=30s, anomalies=45s, correlation=60s.
+15. **Triangular arbitrage results are cached** — Key: `triangular_arbitrage_{min_profit_pct}`. Do not remove.
+16. **Correlation matrix results are cached** — Key: `portfolio_correlation` in PipelineCache. TTL matches snapshot TTL.
+17. **Anomaly detection results are cached** — Key: `anomalies_{currency}_{min_alert_score}` in PipelineCache.
+18. **`find_triangular_arbitrage()` is async** — Since v1.30. Calling without `await` returns coroutine. Tests must use `@pytest.mark.asyncio`.
+19. **`/api/health/ping` is the lightweight health probe** — Returns plain-text "ok". Use this for circuit breaker and bridge probes. `/api/health` returns detailed JSON diagnostics.
+20. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
+21. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
+22. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
+23. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps.
+24. **Ritual Omens chain is price-comparison only** — `ritual_omens` chain has `ratio=1` for all steps. Omens CANNOT be reforged.
+25. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable.
+26. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
+27. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module. NFT warning is harmless.
+28. **Fallback data in proxy routes uses camelCase** — `proxyWithFallback()` returns fallback directly without `transformKeys()`. Fallback must match frontend type format.
 
 ## 11. Documentation Map
 
