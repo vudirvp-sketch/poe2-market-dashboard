@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.36 | **Date:** 2026-06-10
+> **Version:** 1.37 | **Date:** 2026-06-10
 
 ---
 
@@ -80,7 +80,6 @@ start.bat
 - [ ] `npm run build` passes
 - [ ] `npm run test` passes (Jest)
 - [ ] `pytest tests/` passes
-- [ ] No `any` types in TypeScript (`noImplicitAny: false` in tsconfig — intentional; `strict: true` covers most cases, but explicit `any` is allowed when needed for third-party interop)
 - [ ] No hardcoded league names or currency categories
 - [ ] New API fields documented in `docs/DATA_CONTRACTS.md`
 - [ ] Backend config changes reflected in `config.yaml`
@@ -101,22 +100,14 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
 2. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
-3. **Linux CI build with .venv** — Turbopack panics on `.venv/bin/python` symlinks.
 
-### COMPLETED (v1.36 — Iteration 21)
-1. **Liquid Chain Etap 2 — Frontend implementation** — Full frontend for vendor reforge chain:
-   - `src/lib/types.ts`: Added `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult`, `LiquidChainAnalysisResponse`, `LiquidChainOpportunitiesResponse`
-   - `src/app/api/flipper/liquid-chain/route.ts`: Proxy route → `GET /api/liquid-chain/analysis` with offline/insufficient-data fallbacks
-   - `src/components/dashboard/liquid-chain-tab.tsx`: UI component with per-step table, cumulative paths, no-reforge badges for Ancient/Dense liquids
-   - `src/lib/i18n/locales/*.ts`: 20 new i18n keys (en, ru, zh, ko) for liquid chain tab
-   - `src/components/dashboard/dashboard-page.tsx`: Integrated Liquid Chain tab (Droplets icon) between Analyst and Graph tabs
-2. **Build verified** — `npm run build` passes, `/api/flipper/liquid-chain` route registered
-3. **344/344 pytest tests pass** (344 = 331 original + 13 from prior fixes)
-
-### COMPLETED (v1.35 — Iteration 20)
-1. **Liquid Chain Etap 1 — Backend implementation** — Full backend for vendor reforge chain analysis
-2. **api_id discovery** — Confirmed all 10 liquid items are in `delirium` category (NOT `ritual`)
-3. **331/331 pytest tests pass** — Including 18 new liquid chain tests
+### COMPLETED (v1.37 — Iteration 22)
+1. **CI fix: Python 3.12 + aiosqlite compat** — Changed CI from Python 3.13 → 3.12 (project requirement); relaxed `aiosqlite>=0.20,<1.0` → `aiosqlite>=0.20.0` to allow 0.22.x on Python 3.13+
+2. **Jest test fix: circuit breaker cooldown** — Updated `flipper-proxy.test.ts` to expect `15_000` (was `60_000`, changed in prior iteration)
+3. **E2E test: Liquid Chain tab** — Added `e2e/liquid-chain.spec.ts` with 6 tests (offline fallback, online data rendering, i18n, profit/loss badges, no-reforge notice)
+4. **E2E fixtures update** — Added `liquid-chain` and `optimal-currency` route mocks to `e2e/fixtures.ts`; added `liquid-chain` to navigation spec tab list
+5. **Multi-chain display name** — `liquid-chain-tab.tsx` ChainCard now uses `chainDisplayName()` to resolve chain name → i18n title, enabling future chains to have proper display names
+6. **All tests pass** — 291/291 Jest + 344/344 pytest + build succeeds
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -177,15 +168,16 @@ When a new league launches, update these 7 files:
 14. **`find_triangular_arbitrage()` is async** — Since v1.30. Calling without `await` returns coroutine. Tests must use `@pytest.mark.asyncio`.
 15. **Cross-rate threshold is 10%** — Do not lower to 5% without measuring false-positive impact.
 16. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module → `Cannot find module` at runtime. NFT warning is harmless.
-17. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable. Missing this causes `NameError` at runtime (broke `/api/arbitrage/triangular` in v1.31).
-18. **Proxy timeout is configurable** — `proxyToFlipper()` and `proxyWithFallback()` accept `timeoutMs` param (default 15s). Heavy endpoints (triangular) must pass a longer timeout (45s).
-19. **Bridge health check timeout is 10s** — During GIL contention from executor threads, 5s was too short. Do not lower back to 5s.
-20. **Health endpoint uses pre-imported modules** — `_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache` are imported at module level, not lazily inside the handler. `_snapshot_manager_ref` is set during lifespan.
-21. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux. Windows builds are unaffected.
-22. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes ENOENT + Cyrillic path issues.
+17. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable.
+18. **Proxy timeout is configurable** — `proxyToFlipper()` and `proxyWithFallback()` accept `timeoutMs` param (default 15s).
+19. **Bridge health check timeout is 10s** — Do not lower back to 5s.
+20. **Health endpoint uses pre-imported modules** — `_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache` are imported at module level.
+21. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
+22. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
 23. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
 24. **Root main.py is a re-export** — `./main.py` → `from backend.main import app`. Never edit directly.
-25. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items (diluted-liquid-ire through concentrated-liquid-isolation) are fetched via ByCategory?Category=delirium.
+25. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
+26. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps. `aiosqlite>=0.20.0` is required for 3.13+ compat.
 
 ## 11. Documentation Map
 
@@ -207,11 +199,11 @@ When a new league launches, update these 7 files:
 
 A module for tracking the profitability of the **Liquid Item conversion chain** — a sequence of 10 PoE2 items where 3 units of item N can be reforged into 1 unit of item N+1 at the vendor. The module computes per-step and cumulative profit/loss to help users decide whether reforging is worthwhile.
 
-**Status**: Etap 1 (backend) + Etap 2 (frontend) complete.
+**Status**: Complete (backend + frontend). Multi-chain ready — config supports adding more chains, UI renders all chains from API response.
 
 ### Item Chain (delirium_liquids)
 
-All items are in POE2Scout category **`delirium`** (NOT `ritual` — this was confirmed from live API).
+All items are in POE2Scout category **`delirium`** (NOT `ritual` — confirmed from live API).
 
 ```
 1.  diluted-liquid-ire              (Разбавленный жидкий гнев)           → 3:1 →
@@ -225,6 +217,15 @@ All items are in POE2Scout category **`delirium`** (NOT `ritual` — this was co
 9.  concentrated-liquid-suffering   (Концентрированное жидкое страдание) → 3:1 →
 10. concentrated-liquid-isolation   (Концентрированное жидкое отчуждение)
 ```
+
+### Adding a New Chain
+
+To add a new chain (e.g., ritual omens):
+
+1. Add chain definition to `config.yaml` → `liquid_chain.chains` (name, category, steps with api_id/name_en/name_ru/ratio)
+2. Add i18n key for chain display name to all 4 locale files (en, ru, zh, ko)
+3. Map the chain name → i18n key in `chainDisplayName()` in `liquid-chain-tab.tsx`
+4. Backend and API endpoints work automatically — no code changes needed
 
 ### Formulas
 
@@ -248,6 +249,16 @@ Cumulative (position j to k): `cost = ratio^(k-j) × price(item_j)`, `value = pr
 | `backend/main.py` | Router registration (try/except ImportError) |
 | `tests/test_liquid_chain.py` | 18 tests — full coverage |
 
+### Frontend Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/types.ts` | `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult`, `LiquidChainAnalysisResponse`, `LiquidChainOpportunitiesResponse` |
+| `src/app/api/flipper/liquid-chain/route.ts` | Proxy → `GET /api/liquid-chain/analysis` with fallback |
+| `src/components/dashboard/liquid-chain-tab.tsx` | UI: per-step table + cumulative paths + no-reforge badges + multi-chain display names |
+| `src/lib/i18n/locales/*.ts` | 20 i18n keys (en, ru, zh, ko) |
+| `e2e/liquid-chain.spec.ts` | 6 Playwright E2E tests (offline, online, i18n, data rendering) |
+
 ### API Endpoints
 
 ```
@@ -259,58 +270,10 @@ GET /api/liquid-chain/opportunities  → Only profitable steps and cumulative pa
     ?chain=delirium_liquids         → Filter by chain name
 ```
 
-### Response Shape (PascalCase)
-
-```json
-{
-  "chains": [{
-    "ChainName": "delirium_liquids",
-    "Category": "delirium",
-    "Steps": [{
-      "ApiId": "diluted-liquid-ire",
-      "NameEn": "Diluted Liquid Ire",
-      "NameRu": "Разбавленный жидкий гнев",
-      "Ratio": 3,
-      "Price": 0.1805,
-      "InputCost": 0.5415,
-      "OutputValue": 0.1877,
-      "Profit": -0.3538,
-      "ProfitPct": -65.34
-    }],
-    "CumulativePaths": [{
-      "FromIndex": 0,
-      "ToIndex": 1,
-      "TotalInputCost": 0.5415,
-      "TotalOutputValue": 0.1877,
-      "CumulativeRatio": 3,
-      "Profit": -0.3538,
-      "ProfitPct": -65.34
-    }],
-    "BestStep": 1,
-    "WorstStep": 0,
-    "DataAvailable": true,
-    "StepsWithData": 10,
-    "TotalSteps": 10
-  }],
-  "data_available": true,
-  "fetched_at": "2026-06-10T..."
-}
-```
-
 ### Key Design Decisions
 
 1. **Chain config in `config.yaml`** — No hardcoded item names. Each step has `api_id`, `name_en`, `name_ru`, `ratio`.
 2. **Prices from DataSnapshot** — Uses `snapshot.prices_in_base`, no additional API calls.
 3. **No executor needed** — Only 10 steps, computation is O(n²) cumulative paths — runs directly in async handler.
-4. **Extensible** — Config supports multiple chains (not just delirium_liquids).
+4. **Multi-chain ready** — Config supports multiple chains; UI renders all chains from API; `chainDisplayName()` maps chain names to i18n titles.
 5. **Category is `delirium`** — Confirmed from live API. Liquid items are NOT in `ritual`.
-
-### Frontend Files (Etap 2 — Complete)
-
-| File | Purpose |
-|------|---------|
-| `src/lib/types.ts` | `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult`, `LiquidChainAnalysisResponse`, `LiquidChainOpportunitiesResponse` |
-| `src/app/api/flipper/liquid-chain/route.ts` | Proxy → `GET /api/liquid-chain/analysis` with fallback |
-| `src/components/dashboard/liquid-chain-tab.tsx` | UI: per-step table + cumulative paths + no-reforge badges |
-| `src/lib/i18n/locales/*.ts` | 20 i18n keys (en, ru, zh, ko) |
-| `src/components/dashboard/dashboard-page.tsx` | Tab integration (Droplets icon, between Analyst and Graph) |

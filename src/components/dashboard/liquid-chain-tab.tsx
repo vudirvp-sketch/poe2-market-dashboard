@@ -223,6 +223,21 @@ const CumulativePathsSection = memo(function CumulativePathsSection({
   );
 });
 
+/** Display name for a chain based on its chainName from config */
+function chainDisplayName(chainName: string, t: ReturnType<typeof useI18n>["t"]): string {
+  // Map config chain names to i18n keys for human-readable titles.
+  // This allows future chains to have proper display names.
+  // Fallback: use the raw chainName from config if no i18n mapping exists.
+  const NAMES: Record<string, "liquidChainTitle"> = {
+    delirium_liquids: "liquidChainTitle",
+  };
+  const i18nKey = NAMES[chainName];
+  if (i18nKey) {
+    return t(i18nKey);
+  }
+  return chainName;
+}
+
 /** Single chain card */
 const ChainCard = memo(function ChainCard({
   chain,
@@ -234,13 +249,16 @@ const ChainCard = memo(function ChainCard({
   const profitableSteps = chain.steps.filter((s) => s.profitPct > 0 && s.inputCost > 0);
   const unprofitableSteps = chain.steps.filter((s) => s.profitPct < 0 && s.inputCost > 0);
 
+  // Use i18n key for chain title if available, fallback to chain name
+  const chainTitle = chainDisplayName(chain.chainName, t);
+
   return (
     <Card>
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             <Droplets className="h-4 w-4" aria-hidden="true" />
-            {t("liquidChainTitle")}
+            {chainTitle}
           </CardTitle>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{chain.stepsWithData}/{chain.totalSteps} {t("liquidChainStepsAvailable")}</span>

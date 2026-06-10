@@ -172,8 +172,8 @@ describe("flipper-proxy configuration defaults", () => {
     expect(FLIPPER_CORS_PROXY_URL).toBe("");
   });
 
-  it("circuit breaker initial cooldown is 60 seconds", () => {
-    expect(FLIPPER_CB_INITIAL_COOLDOWN).toBe(60_000);
+  it("circuit breaker initial cooldown is 15 seconds", () => {
+    expect(FLIPPER_CB_INITIAL_COOLDOWN).toBe(15_000);
   });
 
   it("circuit breaker max cooldown is 5 minutes", () => {

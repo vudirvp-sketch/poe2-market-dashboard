@@ -33,6 +33,7 @@ Browser → Next.js (port 3000)
 - **Flips** — Detailed scored flip opportunities with cluster filtering, sorting, and storage value integration
 - **Optimizer** — Optimal currency conversion path (Dijkstra-based) and effective rate matrix
 - **Analyst** — League analysis summary: trends, anomalies, phase, tier distribution (fallback mode works without backend)
+- **Liquid Chain** — Vendor reforge chain profitability: per-step profit/loss and cumulative reforge paths for delirium liquids
 - **Currency Graph** — Force-directed network visualization of currency trade pairs with cycle highlighting and real-time cluster classification
 - **Events** — Flag market events (patches, league starts, economy shifts) that affect scoring, with auto-expiry and persistence in SQLite
 

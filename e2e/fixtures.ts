@@ -258,6 +258,24 @@ export async function installApiMocks(page: Page): Promise<void> {
       body: JSON.stringify({ error: "backend_offline" }),
     });
   });
+
+  // Flipper liquid-chain — 503 (backend offline)
+  await page.route("**/api/flipper/liquid-chain**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
+
+  // Flipper optimal-currency — 503 (backend offline)
+  await page.route("**/api/flipper/optimal-currency**", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "backend_offline" }),
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

@@ -38,6 +38,7 @@ test.describe("Tab Navigation", () => {
       "flips",
       "optimizer",
       "analyst",
+      "liquid-chain",
       "graph",
       "watchlist",
     ];
