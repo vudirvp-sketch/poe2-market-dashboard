@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.44 | **Date:** 2026-06-11
+> **Version:** 1.45 | **Date:** 2026-06-11
 
 ---
 
@@ -98,8 +98,8 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Flips detail dialog i18n** — `flips-detail-dialog.tsx` uses raw `opp.currency` for storage value label. Should use `getLocalizedCurrencyPair()` like the flips table.
-2. **Verify Russian name coverage** — `backend/data/currency_names_ru.py` has ~110 entries still marked `# approximate`. Need verification against official PoE2 RU client.
+1. **~87 remaining # approximate entries** — Mostly PoE1-only items (deafening essences, breach splinters/stones, expedition artifacts) not found in poe2db. Will need official RU client data dump.
+2. **Live E2E testing** — Run `npx playwright test e2e/live-backend.spec.ts` with new Russian names to verify UI display.
 3. **Gold fees permanently excluded** — User confirmed: "В path of exile плевать на голду!" Do NOT re-add gold fee deductions.
 
 ### CONFIRMED INTENTIONAL
@@ -176,7 +176,7 @@ When a new league launches, update these 7 files:
 27. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module. NFT warning is harmless.
 28. **Fallback data in proxy routes uses camelCase** — `proxyWithFallback()` returns fallback directly without `transformKeys()`. Fallback must match frontend type format.
 29. **`prices` vs `prices_in_base` in `_build_flip_opportunities_sync`** — Fixed bug where `prices.get()` was used instead of `prices_in_base.get()` on lines 195-196 of `routes_arbitrage.py`. The `prices` variable is not defined in that function scope — only `prices_in_base` exists.
-30. **Russian name mapping** — `backend/data/currency_names_ru.py` provides api_id → ru_name/en_name for 268 items. Flips API response includes `currency_from_ru`, `currency_from_en`, `currency_to_ru`, `currency_to_en`. Frontend uses these for locale-aware display in flips tables.
+30. **Russian name mapping** — `backend/data/currency_names_ru.py` provides api_id → ru_name/en_name for 404 RU items / 268 EN items. ~230 entries confirmed from poe2db.tw, ~87 still `# approximate` (mostly PoE1-only items). Flips API response includes `currency_from_ru`, `currency_from_en`, `currency_to_ru`, `currency_to_en`. Frontend uses these for locale-aware display in flips tables and detail dialog.
 31. **FlipOpportunity type extended** — `currencyFromRu`, `currencyFromEn`, `currencyToRu`, `currencyToEn` optional fields in `FlipOpportunity` interface in `src/lib/types.ts`.
 32. **FLIPPER_WORKERS env var** — Controls ProcessPoolExecutor worker count (default: 1). Each worker loads sklearn/numpy/scipy (~300-500 MB). Set `FLIPPER_WORKERS=0` for auto-detect (min(4, cpu_count-1)), or a specific number for more parallelism. Configured in `start.bat`/`start.sh`.
 33. **E2E Playwright tests passing** — `e2e/live-backend.spec.ts` runs 3 tests against live uvicorn + Next.js. Requires both running. Run: `npx playwright test e2e/live-backend.spec.ts`.

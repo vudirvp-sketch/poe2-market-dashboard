@@ -1,35 +1,33 @@
 # Worklog
 
 ---
-Task ID: 28
+Task ID: 29
 Agent: main
-Task: Iteration 28 — OOM fix, Russian names in UI, Russian name verification, docs cleanup
+Task: Iteration 29 — flips-detail-dialog i18n fix, poe2db Russian names mass update, build verification
 
 Work Log:
-- Added FLIPPER_WORKERS env var to backend/main.py:
-  - Default: 1 worker (was auto-detect min(4, cpu_count-1))
-  - Each worker loads sklearn/numpy/scipy (~300-500 MB), causing OOM with 600+ currencies
-  - FLIPPER_WORKERS=0 re-enables auto-detect for high-RAM environments
-- Updated start.bat: sets FLIPPER_WORKERS=1 by default with OOM protection comment
-- Updated start.sh: sets FLIPPER_WORKERS=1 by default with same logic
-- Fixed Russian names in flips-table.tsx:
-  - Added getLocalizedCurrencyPair() helper using currencyFromRu/currencyToRu
-  - Shows localized names when locale is "ru" or "en"
-  - Falls back to raw api_id pair when no localized names available
-- Fixed Russian names in arbitrage-flipper-flips.tsx:
-  - Same getLocalizedCurrencyPair() helper and locale-aware display
-- Verified Russian names in currency_names_ru.py:
-  - Removed # approximate from 23 entries (standard PoE1 orbs carried over to PoE2)
-  - Standard orbs: portal, identify, scouring, regret, fusings, chromatic, jeweller, blessed, eternal, silver, perandus, alteration
-  - Rune tiers: fire/ice/lightning tier 1-3 (consistent naming pattern)
-  - astrids-creativity (appears in multiple categories)
-  - Updated module docstring to reflect PoE1 carryover as verified source
-- Cleaned up AGENT_NAVIGATION.md: updated known issues, added FLIPPER_WORKERS docs
-- Cleaned up worklog.md: removed old iterations, keeping only current
+- Fixed flips-detail-dialog.tsx: replaced `selectedFlip.currency.split("/")[0]` with `getLocalizedCurrencyPair(selectedFlip, locale)` for storage value label
+- Added getLocalizedCurrencyPair() helper function to flips-detail-dialog.tsx (same pattern as flips-table.tsx and arbitrage-flipper-flips.tsx)
+- Added `locale` import from useI18n hook
+- Scraped poe2db.tw/ru/ for Russian currency names (10 pages, 598 items extracted)
+- Updated backend/data/currency_names_ru.py with confirmed names from poe2db:
+  - Currency orbs: etcher → Резец чародея, artificers → Сфера астромантии, etc.
+  - Greater/Perfect orbs: updated to poe2db-confirmed names (Большая/Совершенная)
+  - Essences: 4 PoE1 essences confirmed (horror, delirium, hysteria, insanity), 20+ new PoE2 essences added (ice, flames, mind, body, etc.)
+  - Added Greater/Lesser/Perfect essence tiers (19 each = 57 new entries)
+  - Soul cores: 11 entries updated with poe2db-confirmed names, 5 new soul cores added
+  - Omens: all 29 omens updated from "Омен" to "Предзнаменование" (poE2db-confirmed), 16 new omens added
+  - Idols: 6 entries confirmed, 14 new idols added (hawk, panther, snake, etc.)
+  - Delirium: potent/ancient liquids updated with poe2db-confirmed names
+  - Added 23 new catalyst entries (breach, adaptive, carapace, flesh, etc.)
+  - Added ancient-diluted-liquid-ire (was missing)
+- Total RU entries: 404 (was 268), confirmed poe2db: ~230, remaining approximate: ~87 (mostly PoE1-only)
+- npm run build: PASSED (no TypeScript errors)
+- Updated AGENT_NAVIGATION.md v1.45
 
 Stage Summary:
-- OOM fixed: FLIPPER_WORKERS=1 default prevents memory exhaustion on 32 GB RAM systems
-- Russian names now display in flips table when locale is "ru" (uses backend currencyFromRu/currencyToRu)
-- 23 Russian name entries upgraded from "approximate" to verified (PoE1 carryover)
-- E2E Playwright tests already passing (3/3, 18.9s) — no changes needed
-- Stopping point: Code changes complete. Pending: npm run build verification, E2E with live backend, flips-detail-dialog i18n
+- flips-detail-dialog.tsx now uses getLocalizedCurrencyPair() for storage value label (i18n fix complete)
+- ~130 approximate entries resolved with poe2db-confirmed names, ~136 new entries added
+- ~87 entries still approximate (PoE1-only items: deafening essences, breach splinters/stones, expedition artifacts)
+- npm run build passes
+- Pending: Live E2E testing, remaining ~87 approximate entries

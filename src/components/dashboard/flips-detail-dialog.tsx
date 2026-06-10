@@ -10,7 +10,7 @@
 import React from "react";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Shield, Boxes } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Locale } from "@/lib/i18n";
 import { fmt } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
@@ -23,6 +23,25 @@ import {
   clusterLabel,
   decisionBadgeClass,
 } from "./flips-helpers";
+
+/**
+ * Get localized display name for a currency pair.
+ * Uses backend-provided Russian names (currencyFromRu/currencyToRu) when
+ * available and locale is "ru". Falls back to the raw api_id pair otherwise.
+ */
+function getLocalizedCurrencyPair(opp: FlipOpportunity, locale: Locale): string {
+  if (locale === "ru" && (opp.currencyFromRu || opp.currencyToRu)) {
+    const from = opp.currencyFromRu || opp.currency.split("/")[0];
+    const to = opp.currencyToRu || opp.currency.split("/")[1];
+    return `${from}/${to}`;
+  }
+  if (locale === "en" && (opp.currencyFromEn || opp.currencyToEn)) {
+    const from = opp.currencyFromEn || opp.currency.split("/")[0];
+    const to = opp.currencyToEn || opp.currency.split("/")[1];
+    return `${from}/${to}`;
+  }
+  return opp.currency;
+}
 
 function momentumIconLocal(momentum: number | undefined) {
   const m = momentum ?? 0;
@@ -37,7 +56,7 @@ interface FlipsDetailDialogProps {
 }
 
 export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDialogProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { uiState } = useDashboardStore();
   const suspicious = isFlipDataSuspicious(selectedFlip);
 
@@ -263,7 +282,7 @@ export function FlipsDetailDialog({ selectedFlip, storageData }: FlipsDetailDial
         <div className="rounded-lg border p-3 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">
-              {t("forecastStorageValue", { "0": selectedFlip.currency.split("/")[0] })}
+              {t("forecastStorageValue", { "0": getLocalizedCurrencyPair(selectedFlip, locale) })}
             </p>
           </div>
           <div className="flex items-center gap-3">

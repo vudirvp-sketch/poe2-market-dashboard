@@ -5,7 +5,7 @@ Maps api_id (from POE2Scout API) to localized display names.
 Used by the backend API to return translated names alongside the api_id.
 
 Sources:
-  - Official PoE2 Russian client localization (where confirmed)
+  - poe2db.tw/ru/ — verified Russian localization from the PoE2 wiki
   - config.yaml liquid_chain sections (confirmed ru_name values)
   - PoE1 Russian client names carried over to PoE2 (standard orbs, scrolls)
   - Best-effort translation for items without official RU client data (# approximate)
@@ -15,6 +15,8 @@ Maintainer notes:
   - When the official RU translation becomes available, remove the # approximate tag.
   - Standard PoE1 orbs (portal, scouring, regret, etc.) are verified — no tag.
   - Keep entries sorted by category for maintainability.
+  - PoE2 uses a different essence system: Lesser -> base -> Greater -> Perfect
+    (no "Deafening" tier — those are PoE1 carryovers that may not exist in PoE2).
 """
 
 # ---------------------------------------------------------------------------
@@ -83,29 +85,29 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "scrap": "Кусок брони",
     "bauble": "Стеклодувная бусина",
     "gcp": "Призма резчика камней",
-    "etcher": "Травитель мистика",  # approximate
-    "artificers": "Сфера механика",
+    "etcher": "Резец чародея",  # poe2db
+    "artificers": "Сфера астромантии",  # poe2db
     "wisdom": "Свиток мудрости",
     "fracturing-orb": "Сфера раскалывания",
     "chance-shard": "Осколок удачи",
     "regal-shard": "Осколок коронованной сферы",
-    "artificers-shard": "Осколок сферы механика",
+    "artificers-shard": "Осколок астромантии",  # poe2db
     "transmutation-shard": "Осколок сферы превращения",
-    "greater-chaos-orb": "Великая сфера хаоса",
-    "greater-exalted-orb": "Великая благородная сфера",
-    "greater-orb-of-transmutation": "Великая сфера превращения",
-    "greater-orb-of-augmentation": "Великая сфера дополнения",
-    "greater-regal-orb": "Великая коронованная сфера",
-    "greater-jewellers-orb": "Великая сфера ювелира",
-    "lesser-jewellers-orb": "Малая сфера ювелира",
-    "perfect-chaos-orb": "Идеальная сфера хаоса",
-    "perfect-exalted-orb": "Идеальная благородная сфера",
-    "perfect-jewellers-orb": "Идеальная сфера ювелира",
-    "perfect-orb-of-transmutation": "Идеальная сфера превращения",
-    "perfect-orb-of-augmentation": "Идеальная сфера дополнения",
-    "perfect-regal-orb": "Идеальная коронованная сфера",
-    "cryptic-key": "Таинственный ключ",
-    "hinekoras-lock": "Замок Хинекоры",
+    "greater-chaos-orb": "Большая сфера хаоса",  # poe2db
+    "greater-exalted-orb": "Большая сфера возвышения",  # poe2db
+    "greater-orb-of-transmutation": "Большая сфера превращения",  # poe2db
+    "greater-orb-of-augmentation": "Большая сфера усиления",  # poe2db
+    "greater-regal-orb": "Большая сфера царей",  # poe2db
+    "greater-jewellers-orb": "Большая сфера златокузнеца",  # poe2db
+    "lesser-jewellers-orb": "Малая сфера златокузнеца",  # poe2db
+    "perfect-chaos-orb": "Совершенная сфера хаоса",  # poe2db
+    "perfect-exalted-orb": "Совершенная сфера возвышения",  # poe2db
+    "perfect-jewellers-orb": "Совершенная сфера златокузнеца",  # poe2db
+    "perfect-orb-of-transmutation": "Совершенная сфера превращения",  # poe2db
+    "perfect-orb-of-augmentation": "Совершенная сфера усиления",  # poe2db
+    "perfect-regal-orb": "Совершенная сфера царей",  # poe2db
+    "cryptic-key": "Скрытый ключ",  # poe2db
+    "hinekoras-lock": "Прядь Хинекоры",  # poe2db
     "portal": "Свиток портала",
     "identify": "Свиток опознания",
     "scouring": "Сфера очищения",
@@ -144,34 +146,118 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # ESSENCES  (CategoryApiId: essences)
     # ===================================================================
-    "essence-of-enfeeblement": "Сущность ослабления",  # approximate
-    "essence-of-sorrow": "Сущность печали",  # approximate
-    "essence-of-rage": "Сущность ярости",  # approximate
-    "essence-of-suffering": "Сущность страдания",  # approximate
-    "essence-of-wrath": "Сущность гнева",  # approximate
-    "essence-of-doubt": "Сущность сомнения",  # approximate
-    "essence-of-anger": "Сущность злости",  # approximate
-    "essence-of-torment": "Сущность мучения",  # approximate
-    "essence-of-fear": "Сущность страха",  # approximate
-    "essence-of-horror": "Сущность ужаса",  # approximate
-    "essence-of-delirium": "Сущность безумия",  # approximate
-    "essence-of-hysteria": "Сущность истерики",  # approximate
-    "essence-of-insanity": "Сущность безумия (великая)",  # approximate
-    "deafening-essence-of-enfeeblement": "Оглушающая сущность ослабления",  # approximate
-    "deafening-essence-of-sorrow": "Оглушающая сущность печали",  # approximate
-    "deafening-essence-of-rage": "Оглушающая сущность ярости",  # approximate
-    "deafening-essence-of-suffering": "Оглушающая сущность страдания",  # approximate
-    "deafening-essence-of-wrath": "Оглушающая сущность гнева",  # approximate
-    "deafening-essence-of-doubt": "Оглушающая сущность сомнения",  # approximate
-    "deafening-essence-of-anger": "Оглушающая сущность злости",  # approximate
-    "deafening-essence-of-torment": "Оглушающая сущность мучения",  # approximate
-    "deafening-essence-of-fear": "Оглушающая сущность страха",  # approximate
-    "deafening-essence-of-horror": "Оглушающая сущность ужаса",  # approximate
-    "deafening-essence-of-delirium": "Оглушающая сущность безумия",  # approximate
-    "deafening-essence-of-hysteria": "Оглушающая сущность истерики",  # approximate
-    "deafening-essence-of-insanity": "Оглушающая сущность безумия (великая)",  # approximate
+    # PoE1 essences (not in PoE2 — may not appear in API data)
+    "essence-of-enfeeblement": "Сущность ослабления",  # approximate — PoE1 only
+    "essence-of-sorrow": "Сущность печали",  # approximate — PoE1 only
+    "essence-of-rage": "Сущность ярости",  # approximate — PoE1 only
+    "essence-of-suffering": "Сущность страдания",  # approximate — PoE1 only
+    "essence-of-wrath": "Сущность гнева",  # approximate — PoE1 only
+    "essence-of-doubt": "Сущность сомнения",  # approximate — PoE1 only
+    "essence-of-anger": "Сущность злости",  # approximate — PoE1 only
+    "essence-of-torment": "Сущность мучения",  # approximate — PoE1 only
+    "essence-of-fear": "Сущность страха",  # approximate — PoE1 only
+    # PoE2 essences (confirmed from poe2db)
+    "essence-of-horror": "Сущность ужаса",  # poe2db
+    "essence-of-delirium": "Сущность бреда",  # poe2db
+    "essence-of-hysteria": "Сущность истерии",  # poe2db
+    "essence-of-insanity": "Сущность безумия",  # poe2db
+    "essence-of-ice": "Сущность льда",  # poe2db
+    "essence-of-flames": "Сущность пламени",  # poe2db
+    "essence-of-the-mind": "Сущность разума",  # poe2db
+    "essence-of-the-body": "Сущность тела",  # poe2db
+    "essence-of-opulence": "Сущность изобилия",  # poe2db
+    "essence-of-ruin": "Сущность гибели",  # poe2db
+    "essence-of-battle": "Сущность битвы",  # poe2db
+    "essence-of-sorcery": "Сущность колдовства",  # poe2db
+    "essence-of-alacrity": "Сущность живости",  # poe2db
+    "essence-of-command": "Сущность повеления",  # poe2db
+    "essence-of-enhancement": "Сущность улучшения",  # poe2db
+    "essence-of-electricity": "Сущность электричества",  # poe2db
+    "essence-of-grounding": "Сущность заземления",  # poe2db
+    "essence-of-haste": "Сущность спешки",  # poe2db
+    "essence-of-insulation": "Сущность изоляции",  # poe2db
+    "essence-of-seeking": "Сущность искания",  # poe2db
+    "essence-of-thawing": "Сущность таяния",  # poe2db
+    "essence-of-abrasion": "Сущность разрушения",  # poe2db
+    "essence-of-the-abyss": "Сущность Бездны",  # poe2db
+    "essence-of-the-breach": "Сущность Разлома",  # poe2db
+    "essence-of-the-infinite": "Сущность бесконечности",  # poe2db
+    # PoE1 Deafening essences (not in PoE2)
+    "deafening-essence-of-enfeeblement": "Оглушающая сущность ослабления",  # approximate — PoE1 only
+    "deafening-essence-of-sorrow": "Оглушающая сущность печали",  # approximate — PoE1 only
+    "deafening-essence-of-rage": "Оглушающая сущность ярости",  # approximate — PoE1 only
+    "deafening-essence-of-suffering": "Оглушающая сущность страдания",  # approximate — PoE1 only
+    "deafening-essence-of-wrath": "Оглушающая сущность гнева",  # approximate — PoE1 only
+    "deafening-essence-of-doubt": "Оглушающая сущность сомнения",  # approximate — PoE1 only
+    "deafening-essence-of-anger": "Оглушающая сущность злости",  # approximate — PoE1 only
+    "deafening-essence-of-torment": "Оглушающая сущность мучения",  # approximate — PoE1 only
+    "deafening-essence-of-fear": "Оглушающая сущность страха",  # approximate — PoE1 only
+    "deafening-essence-of-horror": "Оглушающая сущность ужаса",  # approximate — PoE1 only
+    "deafening-essence-of-delirium": "Оглушающая сущность безумия",  # approximate — PoE1 only
+    "deafening-essence-of-hysteria": "Оглушающая сущность истерики",  # approximate — PoE1 only
+    "deafening-essence-of-insanity": "Оглушающая сущность безумия (великая)",  # approximate — PoE1 only
     "life-essence": "Сущность жизни",  # approximate
     "mana-essence": "Сущность маны",  # approximate
+    # PoE2 Greater essences (confirmed from poe2db)
+    "greater-essence-of-ice": "Большая сущность льда",  # poe2db
+    "greater-essence-of-flames": "Большая сущность пламени",  # poe2db
+    "greater-essence-of-the-mind": "Большая сущность разума",  # poe2db
+    "greater-essence-of-the-body": "Большая сущность тела",  # poe2db
+    "greater-essence-of-opulence": "Большая сущность изобилия",  # poe2db
+    "greater-essence-of-ruin": "Большая сущность гибели",  # poe2db
+    "greater-essence-of-battle": "Большая сущность битвы",  # poe2db
+    "greater-essence-of-sorcery": "Большая сущность колдовства",  # poe2db
+    "greater-essence-of-alacrity": "Большая сущность живости",  # poe2db
+    "greater-essence-of-command": "Большая сущность повеления",  # poe2db
+    "greater-essence-of-enhancement": "Большая сущность улучшения",  # poe2db
+    "greater-essence-of-electricity": "Большая сущность электричества",  # poe2db
+    "greater-essence-of-grounding": "Большая сущность заземления",  # poe2db
+    "greater-essence-of-haste": "Большая сущность спешки",  # poe2db
+    "greater-essence-of-insulation": "Большая сущность изоляции",  # poe2db
+    "greater-essence-of-seeking": "Большая сущность искания",  # poe2db
+    "greater-essence-of-thawing": "Большая сущность таяния",  # poe2db
+    "greater-essence-of-abrasion": "Большая сущность разрушения",  # poe2db
+    "greater-essence-of-the-infinite": "Большая сущность бесконечности",  # poe2db
+    # PoE2 Lesser essences (confirmed from poe2db)
+    "lesser-essence-of-ice": "Малая сущность льда",  # poe2db
+    "lesser-essence-of-flames": "Малая сущность пламени",  # poe2db
+    "lesser-essence-of-the-mind": "Малая сущность разума",  # poe2db
+    "lesser-essence-of-the-body": "Малая сущность тела",  # poe2db
+    "lesser-essence-of-opulence": "Малая сущность изобилия",  # poe2db
+    "lesser-essence-of-ruin": "Малая сущность гибели",  # poe2db
+    "lesser-essence-of-battle": "Малая сущность битвы",  # poe2db
+    "lesser-essence-of-sorcery": "Малая сущность колдовства",  # poe2db
+    "lesser-essence-of-alacrity": "Малая сущность живости",  # poe2db
+    "lesser-essence-of-command": "Малая сущность повеления",  # poe2db
+    "lesser-essence-of-enhancement": "Малая сущность улучшения",  # poe2db
+    "lesser-essence-of-electricity": "Малая сущность электричества",  # poe2db
+    "lesser-essence-of-grounding": "Малая сущность заземления",  # poe2db
+    "lesser-essence-of-haste": "Малая сущность спешки",  # poe2db
+    "lesser-essence-of-insulation": "Малая сущность изоляции",  # poe2db
+    "lesser-essence-of-seeking": "Малая сущность искания",  # poe2db
+    "lesser-essence-of-thawing": "Малая сущность таяния",  # poe2db
+    "lesser-essence-of-abrasion": "Малая сущность разрушения",  # poe2db
+    "lesser-essence-of-the-infinite": "Малая сущность бесконечности",  # poe2db
+    # PoE2 Perfect essences (confirmed from poe2db)
+    "perfect-essence-of-ice": "Совершенная сущность льда",  # poe2db
+    "perfect-essence-of-flames": "Совершенная сущность пламени",  # poe2db
+    "perfect-essence-of-the-mind": "Совершенная сущность разума",  # poe2db
+    "perfect-essence-of-the-body": "Совершенная сущность тела",  # poe2db
+    "perfect-essence-of-opulence": "Совершенная сущность изобилия",  # poe2db
+    "perfect-essence-of-ruin": "Совершенная сущность гибели",  # poe2db
+    "perfect-essence-of-battle": "Совершенная сущность битвы",  # poe2db
+    "perfect-essence-of-sorcery": "Совершенная сущность колдовства",  # poe2db
+    "perfect-essence-of-alacrity": "Совершенная сущность живости",  # poe2db
+    "perfect-essence-of-command": "Совершенная сущность повеления",  # poe2db
+    "perfect-essence-of-enhancement": "Совершенная сущность улучшения",  # poe2db
+    "perfect-essence-of-electricity": "Совершенная сущность электричества",  # poe2db
+    "perfect-essence-of-grounding": "Совершенная сущность заземления",  # poe2db
+    "perfect-essence-of-haste": "Совершенная сущность спешки",  # poe2db
+    "perfect-essence-of-insulation": "Совершенная сущность изоляции",  # poe2db
+    "perfect-essence-of-seeking": "Совершенная сущность искания",  # poe2db
+    "perfect-essence-of-thawing": "Совершенная сущность таяния",  # poe2db
+    "perfect-essence-of-abrasion": "Совершенная сущность разрушения",  # poe2db
+    "perfect-essence-of-the-infinite": "Совершенная сущность бесконечности",  # poe2db
 
     # ===================================================================
     # ULTIMATUM / SOUL CORES  (CategoryApiId: ultimatum)
@@ -180,27 +266,33 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "soul-core-of-azcapa": "Ядро души Ацкапы",
     "soul-core-of-opiloti": "Ядро души Опилоти",
     "soul-core-of-zalatl": "Ядро души Салатля",
-    "soul-core-of-cholotl": "Ядро души Чолотля",  # approximate
-    "soul-core-of-tacati": "Ядро души Такати",  # approximate
-    "soul-core-of-citaqualotl": "Ядро души Ситаквалотля",  # approximate
-    "soul-core-of-jiquani": "Ядро души Хиквани",  # approximate
-    "soul-core-of-zantipi": "Ядро души Цантипи",  # approximate
-    "soul-core-of-ticaba": "Ядро души Тикабы",  # approximate
-    "soul-core-of-topotante": "Ядро души Топотанте",  # approximate
-    "soul-core-of-xopec": "Ядро души Шопека",  # approximate
-    "soul-core-of-atmohua": "Ядро души Атмоуа",  # approximate
-    "soul-core-of-tzamoto": "Ядро души Цамото",  # approximate
-    "soul-core-of-puhuarte": "Ядро души Пухуарте",  # approximate
+    "soul-core-of-cholotl": "Ядро душ Чолотля",  # poe2db
+    "soul-core-of-tacati": "Ядро душ Такати",  # poe2db
+    "soul-core-of-citaqualotl": "Ядро душ Ситаквалотля",  # poe2db
+    "soul-core-of-jiquani": "Ядро душ Джиквани",  # poe2db
+    "soul-core-of-zantipi": "Ядро душ Зантипи",  # poe2db
+    "soul-core-of-ticaba": "Ядро душ Тикабы",  # poe2db
+    "soul-core-of-topotante": "Ядро душ Топотанте",  # poe2db
+    "soul-core-of-xopec": "Ядро душ Шопека",  # poe2db
+    "soul-core-of-atmohua": "Ядро душ Атмохвы",  # poe2db
+    "soul-core-of-tzamoto": "Ядро душ Цамото",  # poe2db
+    "soul-core-of-puhuarte": "Ядро душ Пухварте",  # poe2db
     "opilotis-soul-core-of-assault": "Ядро души натиска Опилоти",
     "xopecs-soul-core-of-power": "Ядро души мощи Шопека",
-    "quipolatls-soul-core-of-flow": "Ядро души потока Киполатля",  # approximate
-    "tzamotos-soul-core-of-ferocity": "Ядро души свирепости Цамото",  # approximate
-    "guatelitzis-soul-core-of-endurance": "Ядро души стойкости Гвателици",  # approximate
-    "estazuntis-soul-core-of-convalescence": "Ядро души выздоровления Эстазунти",  # approximate
-    "xipocados-soul-core-of-dominion": "Ядро души господства Шипокадо",  # approximate
-    "tacatis-soul-core-of-affliction": "Ядро души недуга Такати",  # approximate
-    "hayoxis-soul-core-of-heatproofing": "Ядро души жароустойчивости Хайокси",  # approximate
-    "atmohuas-soul-core-of-retreat": "Ядро души отступления Атмоуа",  # approximate
+    "quipolatls-soul-core-of-flow": "Ядро душ потока Квиполатля",  # poe2db
+    "tzamotos-soul-core-of-ferocity": "Ядро душ свирепости Цамото",  # poe2db
+    "guatelitzis-soul-core-of-endurance": "Ядро душ выносливости Гвателитзи",  # poe2db
+    "estazuntis-soul-core-of-convalescence": "Ядро душ оздоровления Эстазунти",  # poe2db
+    "xipocados-soul-core-of-dominion": "Ядро душ господства Шипокадо",  # poe2db
+    "tacatis-soul-core-of-affliction": "Ядро душ недуга Такати",  # poe2db
+    "hayoxis-soul-core-of-heatproofing": "Ядро душ жаростойкости Хайоши",  # poe2db
+    "atmohuas-soul-core-of-retreat": "Ядро душ отступления Атмохвы",  # poe2db
+    # New PoE2 soul cores (from poe2db)
+    "cholotls-soul-core-of-war": "Ядро душ войны Чолотля",  # poe2db
+    "citaqualotls-soul-core-of-foulness": "Ядро душ гнусности Ситаквалотля",  # poe2db
+    "topotantes-soul-core-of-dampening": "Ядро душ подавления Топотанте",  # poe2db
+    "uromotis-soul-core-of-attenuation": "Ядро душ истощения Уромоти",  # poe2db
+    "zalatls-soul-core-of-insulation": "Ядро душ изоляции Залатля",  # poe2db
 
     # ===================================================================
     # EXPEDITION  (CategoryApiId: expedition)
@@ -217,7 +309,7 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "sukaas-dash": "Рывок Сукаа",  # approximate
     "dannigs-honour": "Честь Даннига",  # approximate
     "kalguur-rune": "Руна Калгура",  # approximate
-    "expedition-logbook": "Журнал экспедиции",  # approximate
+    "expedition-logbook": "Журналы экспедиции",  # poe2db
     "artifact-of-the-chayula": "Артефакт Чаюлы",  # approximate
     "artifact-of-the-vaal": "Артефакт Ваала",  # approximate
     "artifact-of-the-abyss": "Артефакт Бездны",  # approximate
@@ -231,35 +323,53 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # RITUAL OMENS  (CategoryApiId: ritual)
     # ===================================================================
-    "omen-of-whittling": "Омен вырезывания",
-    "omen-of-chance": "Омен шанса",
-    "omen-of-light": "Омен света",
-    "omen-of-abyssal-echoes": "Омен бездных отголосков",
-    "omen-of-amelioration": "Омен улучшения",
-    "omen-of-sinistral-erasure": "Омен левого стирания",
-    "omen-of-sinistral-annulment": "Омен левого аннулирования",
-    "omen-of-dextral-annulment": "Омен правого аннулирования",
-    "omen-of-dextral-erasure": "Омен правого стирания",
-    "omen-of-sinistral-crystallisation": "Омен левой кристаллизации",
-    "omen-of-dextral-crystallisation": "Омен правой кристаллизации",
-    "omen-of-sinistral-exaltation": "Омен левого возвышения",
-    "omen-of-greater-exaltation": "Омен великого возвышения",
-    "omen-of-sanctification": "Омен освящения",
-    "omen-of-the-blessed": "Омен благословенных",
-    "omen-of-catalysing-exaltation": "Омен катализирующего возвышения",
-    "omen-of-the-hunt": "Омен охоты",
-    "omen-of-secret-compartments": "Омен тайных отделений",
-    "omen-of-reinforcements": "Омен подкрепления",
-    "omen-of-answered-prayers": "Омен отвеченных молитв",
-    "omen-of-the-ancients": "Омен древних",
-    "omen-of-chaotic-quantity": "Омен хаотичного количества",
-    "omen-of-chaotic-monsters": "Омен хаотичных монстров",
-    "omen-of-chaotic-rarity": "Омен хаотичной редкости",
-    "omen-of-chaotic-effectiveness": "Омен хаотичной эффективности",
-    "omen-of-sinistral-necromancy": "Омен левой некромантии",
-    "omen-of-the-blackblooded": "Омен чернокровных",
-    "omen-of-putrefaction": "Омен гниения",
-    "omen-of-bartering": "Омен обмена",
+    # Confirmed from poe2db — PoE2 uses "Предзнаменование" (not "Омен")
+    "omen-of-whittling": "Предзнаменование оттачивания",  # poe2db
+    "omen-of-chance": "Предзнаменование удачи",  # poe2db
+    "omen-of-light": "Предзнаменование света",  # poe2db
+    "omen-of-abyssal-echoes": "Предзнаменование отголосков Бездны",  # poe2db
+    "omen-of-amelioration": "Предзнаменование избавления",  # poe2db
+    "omen-of-sinistral-erasure": "Предзнаменование истирания левши",  # poe2db
+    "omen-of-sinistral-annulment": "Предзнаменование очищения левши",  # poe2db
+    "omen-of-dextral-annulment": "Предзнаменование очищения правши",  # poe2db
+    "omen-of-dextral-erasure": "Предзнаменование истирания правши",  # poe2db
+    "omen-of-sinistral-crystallisation": "Предзнаменование кристаллизации левши",  # poe2db
+    "omen-of-dextral-crystallisation": "Предзнаменование кристаллизации правши",  # poe2db
+    "omen-of-sinistral-exaltation": "Предзнаменование возвышения левши",  # poe2db
+    "omen-of-greater-exaltation": "Предзнаменование великого возвышения",  # poe2db
+    "omen-of-sanctification": "Предзнаменование освящения",  # poe2db
+    "omen-of-the-blessed": "Предзнаменование благодатных",  # poe2db
+    "omen-of-catalysing-exaltation": "Предзнаменование катализованного возвышения",  # poe2db
+    "omen-of-the-hunt": "Предзнаменование охоты",  # poe2db
+    "omen-of-secret-compartments": "Предзнаменование тайных отсеков",  # poe2db
+    "omen-of-reinforcements": "Предзнаменование подкреплений",  # poe2db
+    "omen-of-answered-prayers": "Предзнаменование услышанных молитв",  # poe2db
+    "omen-of-the-ancients": "Предзнаменование древних",  # poe2db
+    "omen-of-chaotic-quantity": "Предзнаменование хаотичного количества",  # poe2db
+    "omen-of-chaotic-monsters": "Предзнаменование хаотичных монстров",  # poe2db
+    "omen-of-chaotic-rarity": "Предзнаменование хаотичной редкости",  # poe2db
+    "omen-of-chaotic-effectiveness": "Предзнаменование хаотичной эффективности",  # poe2db
+    "omen-of-sinistral-necromancy": "Предзнаменование некромантии левши",  # poe2db
+    "omen-of-the-blackblooded": "Предзнаменование чернокровных",  # poe2db
+    "omen-of-putrefaction": "Предзнаменование разложения",  # poe2db
+    "omen-of-bartering": "Предзнаменование бартера",  # poe2db
+    # New PoE2 omens (from poe2db)
+    "omen-of-corruption": "Предзнаменование осквернения",  # poe2db
+    "omen-of-dextral-alchemy": "Предзнаменование алхимии правши",  # poe2db
+    "omen-of-dextral-coronation": "Предзнаменование коронации правши",  # poe2db
+    "omen-of-dextral-exaltation": "Предзнаменование возвышения правши",  # poe2db
+    "omen-of-dextral-necromancy": "Предзнаменование некромантии правши",  # poe2db
+    "omen-of-gambling": "Предзнаменование азарта",  # poe2db
+    "omen-of-greater-annulment": "Предзнаменование великого очищения",  # poe2db
+    "omen-of-homogenising-coronation": "Предзнаменование единой коронации",  # poe2db
+    "omen-of-homogenising-exaltation": "Предзнаменование единого возвышения",  # poe2db
+    "omen-of-recombination": "Предзнаменование рекомбинации",  # poe2db
+    "omen-of-refreshment": "Предзнаменование восполнения",  # poe2db
+    "omen-of-resurgence": "Предзнаменование возрождения",  # poe2db
+    "omen-of-sinistral-alchemy": "Предзнаменование алхимии левши",  # poe2db
+    "omen-of-sinistral-coronation": "Предзнаменование коронации левши",  # poe2db
+    "omen-of-the-liege": "Предзнаменование властителя",  # poe2db
+    "omen-of-the-sovereign": "Предзнаменование правителя",  # poe2db
 
     # ===================================================================
     # VAULTKEYS / RELIQUARY KEYS  (CategoryApiId: vaultkeys)
@@ -304,7 +414,7 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "garukhans-resolve": "Решимость Гарухан",
     "astrids-creativity": "Творчество Астрид",
     # Note: "astrids-creativity" also appears under runes category in API data
-    "gnawed-jawbone": "Изгрызенная челюсть",  # approximate
+    "gnawed-jawbone": "Обглоданная челюсть",  # poe2db
     "abyssal-wail": "Бездонный плач",  # approximate
     "stibnite-doom": "Стибнитовая гибель",  # approximate
     "profane-vigor": "Кощунственная сила",  # approximate
@@ -338,22 +448,23 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "concentrated-liquid-suffering": "Концентрированное жидкое страдание",
     "concentrated-liquid-isolation": "Концентрированное жидкое отчуждение",
     # --- Potent liquids (from API data) ---
-    "potent-liquid-contempt": "Крепкая жидкость презрения",  # approximate
-    "potent-liquid-ferocity": "Крепкая жидкость свирепости",  # approximate
-    "potent-liquid-melancholy": "Крепкая жидкость меланхолии",  # approximate
+    "potent-liquid-contempt": "Густое жидкое презрение",  # poe2db
+    "potent-liquid-ferocity": "Густая жидкая свирепость",  # poe2db
+    "potent-liquid-melancholy": "Густая жидкая меланхолия",  # poe2db
     # --- Ancient variants (from API data) ---
-    "ancient-potent-liquid-contempt": "Древняя крепкая жидкость презрения",  # approximate
-    "ancient-potent-liquid-ferocity": "Древняя крепкая жидкость свирепости",  # approximate
-    "ancient-potent-liquid-melancholy": "Древняя крепкая жидкость меланхолии",  # approximate
-    "ancient-concentrated-liquid-isolation": "Древняя концентрированная жидкость отчуждения",  # approximate
-    "ancient-concentrated-liquid-fear": "Древний концентрированный жидкий страх",  # approximate
-    "ancient-concentrated-liquid-suffering": "Древнее концентрированное жидкое страдание",  # approximate
-    "ancient-liquid-despair": "Древняя жидкость отчаяния",  # approximate
-    "ancient-liquid-disgust": "Древняя жидкость отвращения",  # approximate
-    "ancient-liquid-paranoia": "Древняя жидкость паранойи",  # approximate
-    "ancient-liquid-envy": "Древняя жидкость зависти",  # approximate
-    "ancient-diluted-liquid-greed": "Древняя разбавленная жидкость жадности",  # approximate
-    "ancient-diluted-liquid-guilt": "Древняя разбавленная жидкая вина",  # approximate
+    "ancient-potent-liquid-contempt": "Древнее густое жидкое презрение",  # poe2db
+    "ancient-potent-liquid-ferocity": "Древняя густая жидкая свирепость",  # poe2db
+    "ancient-potent-liquid-melancholy": "Древняя густая жидкая меланхолия",  # poe2db
+    "ancient-concentrated-liquid-isolation": "Древнее концентрированное жидкое отчуждение",  # poe2db
+    "ancient-concentrated-liquid-fear": "Древний концентрированный жидкий страх",  # poe2db
+    "ancient-concentrated-liquid-suffering": "Древнее концентрированное жидкое страдание",  # poe2db
+    "ancient-liquid-despair": "Древнее жидкое отчаяние",  # poe2db
+    "ancient-liquid-disgust": "Древнее жидкое отвращение",  # poe2db
+    "ancient-liquid-paranoia": "Древняя жидкая паранойя",  # poe2db
+    "ancient-liquid-envy": "Древняя жидкая зависть",  # poe2db
+    "ancient-diluted-liquid-greed": "Древняя разбавленная жидкая жадность",  # poe2db
+    "ancient-diluted-liquid-guilt": "Древняя разбавленная жидкая вина",  # poe2db
+    "ancient-diluted-liquid-ire": "Древний разбавленный жидкий гнев",  # poe2db
     # --- Distilled emotions (common PoE2 delirium items) ---
     "distilled-ire": "Дистиллированный гнев",  # approximate
     "distilled-guilt": "Дистиллированная вина",  # approximate
@@ -381,19 +492,34 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "wolf-idol": "Идол волка",
     "ox-idol": "Идол быка",
     "bear-idol": "Идол медведя",
-    "boar-idol": "Идол вепря",
+    "boar-idol": "Идол кабана",  # poe2db
     "owl-idol": "Идол совы",
     "cat-idol": "Идол кошки",
     "stag-idol": "Идол оленя",
     "primate-idol": "Идол примата",
     "idol-of-ralakesh": "Идол Ралакеша",
     "idol-of-sirrius": "Идол Сирриуса",
-    "idol-of-eramir": "Идол Эрамира",  # approximate
-    "idol-of-eeshta": "Идол Ишты",  # approximate
-    "idol-of-grold": "Идол Гролда",  # approximate
-    "idol-of-thruldana": "Идол Трульданы",  # approximate
-    "idol-of-egrin": "Идол Эгрина",  # approximate
-    "idol-of-maxarius": "Идол Максариуса",  # approximate
+    "idol-of-eramir": "Идол Эрамира",  # poe2db
+    "idol-of-eeshta": "Идол Ишты",  # poe2db
+    "idol-of-grold": "Идол Грольда",  # poe2db
+    "idol-of-thruldana": "Идол Трулданы",  # poe2db
+    "idol-of-egrin": "Идол Эгрина",  # poe2db
+    "idol-of-maxarius": "Идол Макерия",  # poe2db
+    # New PoE2 idols (from poe2db)
+    "hawk-idol": "Идол ястреба",  # poe2db
+    "panther-idol": "Идол пантеры",  # poe2db
+    "snake-idol": "Идол змеи",  # poe2db
+    "stoat-idol": "Идол горностая",  # poe2db
+    "idol-of-alira": "Идол Алиры",  # poe2db
+    "idol-of-greust": "Идол Груста",  # poe2db
+    "idol-of-kraityn": "Идол Крайтина",  # poe2db
+    "idol-of-oak": "Идол Дуба",  # poe2db
+    "idol-of-silk": "Идол Шёлка",  # poe2db
+    "idol-of-yeena": "Идол Йины",  # poe2db
+    "idol-of-the-martyr": "Идол жертвы",  # poe2db
+    "idol-of-the-pharisee": "Идол фарисея",  # poe2db
+    "idol-of-the-sycophant": "Идол прислужника",  # poe2db
+    "idolatry": "Идолопоклонство",  # poe2db
 
     # ===================================================================
     # VERISIUM  (CategoryApiId: verisium)
@@ -407,6 +533,40 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     "vaal-orb-of-the-ancients": "Сфера Ваала древних",  # approximate
     "corrupted-vaal-orb": "Осквернённая сфера Ваала",  # approximate
+
+    # ===================================================================
+    # CATALYSTS  (from poe2db)
+    # ===================================================================
+    "xophs-catalyst": "Катализатор Ксофа",  # poe2db
+    "eshs-catalyst": "Катализатор Иш",  # poe2db
+    "tuls-catalyst": "Катализатор Тул",  # poe2db
+    "chayulas-catalyst": "Катализатор Чаюлы",  # poe2db
+    "adaptive-catalyst": "Адаптивный катализатор",  # poe2db
+    "carapace-catalyst": "Панцирный катализатор",  # poe2db
+    "flesh-catalyst": "Плотский катализатор",  # poe2db
+    "neural-catalyst": "Невральный катализатор",  # poe2db
+    "reaver-catalyst": "Разбойничий катализатор",  # poe2db
+    "sibilant-catalyst": "Свистящий катализатор",  # poe2db
+    "skittering-catalyst": "Шуршащий катализатор",  # poe2db
+    "refined-adaptive-catalyst": "Очищенный адаптивный катализатор",  # poe2db
+    "refined-carapace-catalyst": "Очищенный панцирный катализатор",  # poe2db
+    "refined-chayulas-catalyst": "Очищенный катализатор Чаюлы",  # poe2db
+    "refined-eshs-catalyst": "Очищенный катализатор Иш",  # poe2db
+    "refined-flesh-catalyst": "Очищенный плотский катализатор",  # poe2db
+    "refined-neural-catalyst": "Очищенный невральный катализатор",  # poe2db
+    "refined-reaver-catalyst": "Очищенный разбойничий катализатор",  # poe2db
+    "refined-sibilant-catalyst": "Очищенный свистящий катализатор",  # poe2db
+    "refined-skittering-catalyst": "Очищенный шуршащий катализатор",  # poe2db
+    "refined-tuls-catalyst": "Очищенный катализатор Тул",  # poe2db
+    "refined-xophs-catalyst": "Очищенный катализатор Ксофа",  # poe2db
+
+    # ===================================================================
+    # BREACH CATALYSTS  (from poe2db — replace approximate entries)
+    # ===================================================================
+    "breach-catalyst-life": "Катализатор разлома: жизнь",  # approximate
+    "breach-catalyst-fire": "Катализатор разлома: огонь",  # approximate
+    "breach-catalyst-cold": "Катализатор разлома: холод",  # approximate
+    "breach-catalyst-lightning": "Катализатор разлома: молния",  # approximate
 }
 
 CURRENCY_NAMES_EN: dict[str, str] = {
