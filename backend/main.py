@@ -343,6 +343,13 @@ try:
 except ImportError:
     logger.debug("WebSocket router not available yet")
 
+# Liquid Chain module — vendor reforge conversion chain analysis
+try:
+    from backend.api.routes_liquid_chain import router as liquid_chain_router
+    app.include_router(liquid_chain_router)
+except ImportError:
+    logger.debug("Liquid Chain router not available yet")
+
 # NOTE: routes_auth.py has been removed. OAuth2 authentication was a stub
 # that depended on GGG_CLIENT_ID/SECRET env vars (never configured).
 # If OAuth2 is needed in the future, create a new routes_auth.py and

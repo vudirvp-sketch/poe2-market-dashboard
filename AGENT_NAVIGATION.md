@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.34 | **Date:** 2026-06-10
+> **Version:** 1.35 | **Date:** 2026-06-10
 
 ---
 
@@ -10,7 +10,7 @@
 |-----------|---------|-------|
 | `backend/` | Python FastAPI analytics engine | Tests mandatory (pytest) |
 | `backend/api/` | Route handlers | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
-| `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter | No direct API imports |
+| `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
 | `backend/data/` | Providers, cache, schemas, historical, pipeline_cache, daily_stats_cache | Import nothing from `api/` |
@@ -99,38 +99,23 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Liquid Chain module (Iteration 19+)** — New module for tracking liquid item conversion chain profit/loss. See §12 for detailed plan. Status: **plan designed, implementation pending**.
-   - Etap 1: `config.yaml` + `backend/models/currency.py` (LiquidChainStep, LiquidChainResult) + `backend/arbitrage/liquid_chain.py` + `backend/api/routes_liquid_chain.py`
-   - Etap 2: `src/app/api/flipper/liquid-chain/` proxy routes + `src/lib/types.ts` additions
-   - Etap 3: `src/components/dashboard/liquid-chain-tab.tsx` + i18n keys
-   - Etap 4: Tests + docs
-2. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
-3. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
-4. **Linux CI build with .venv** — Turbopack panics on `.venv/bin/python` symlinks.
+1. **Liquid Chain module — Etap 2** — Frontend proxy routes + TypeScript types: `src/app/api/flipper/liquid-chain/` + `src/lib/types.ts`
+2. **Liquid Chain module — Etap 3** — UI component + i18n: `src/components/dashboard/liquid-chain-tab.tsx` + `src/lib/i18n/locales/*.ts`
+3. **Real-world Windows end-to-end smoke test** — Run `start.bat` (no --no-bridge) and verify all 6 sub-tests pass.
+4. **Consider ProcessPoolExecutor for triangular arbitrage** — GIL contention with ThreadPoolExecutor.
+5. **Linux CI build with .venv** — Turbopack panics on `.venv/bin/python` symlinks.
 
-### COMPLETED (v1.33 — Iteration 18)
-1. ~~**Proxy timeout causes triangular 503 cascade**~~ — `flipper-proxy.ts` had a hardcoded 15s timeout. Triangular arbitrage with 600+ currencies takes 30-60s (Bellman-Ford + cross-rate validation). The proxy timed out → 503 → circuit breaker opened → all requests failed. Fix: Added `timeoutMs` parameter to `proxyToFlipper()` and `proxyWithFallback()` (default 15s). Triangular route now passes 45s timeout.
-2. ~~**Bridge health check too aggressive (5s)**~~ — During heavy CPU computation in executor threads, the Python GIL starves the asyncio event loop of CPU time. The 5s bridge health check timeout caused false-positive "unhealthy" detections during normal operation. Fix: Increased bridge health check timeout to 10s.
-3. ~~**Health endpoint slow during GIL contention**~~ — `/api/health` used lazy `from X import Y` statements inside the handler, adding import overhead during each call. Fix: Pre-imported all health-check dependencies at module level (`_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache`). Added `_snapshot_manager_ref` cached reference set during lifespan.
-4. **326/326 pytest tests pass** — Full test suite confirmed after changes.
-5. **npm run build passes** — NFT warning appears (expected, harmless), build succeeds, bridge chunk created.
-
-### COMPLETED (v1.32 — Iteration 17)
-1. ~~**`/api/arbitrage/triangular` returns 500: `NameError: name 'pipeline_cache' is not defined`**~~ — `pipeline_cache.get(cache_key)` called without `get_pipeline_cache()`. Fix: Added `pipeline_cache = get_pipeline_cache()` before cache lookup.
-2. ~~**Missing `ExchangeRate` import**~~ — Added to imports in `routes_arbitrage.py`.
-
-### COMPLETED (v1.31 — Iteration 16)
-1. ~~**Bridge fails to start: `Cannot find module`**~~ — Removed `/* turbopackIgnore: true */` from `instrumentation.ts` and bridge. NFT warning is harmless.
-2. ~~**Bridge stderr logs all output as ERROR**~~ — Added regex log-level parsing: only ERROR/CRITICAL/TRACEBACK tagged as errors.
-3. ~~**`_build_flip_opportunities()` blocks event loop**~~ — Extracted CPU-bound logic into `_build_flip_opportunities_sync()`, called via `run_in_executor()`.
-
-### COMPLETED (v1.29–v1.30 — Iterations 14–15)
-- Cross-rate validation: O(n³) → O(E²) adjacency-list algorithm
-- Bellman-Ford + cross-rate validation offloaded to `run_in_executor()`
-- `find_triangular_arbitrage()` made `async def`, tests use `@pytest.mark.asyncio`
-- Cross-rate threshold raised 5% → 10% (613 currencies, 5% = 1962 false positives)
-- Triangular results cached in `pipeline_cache`
-- Bridge health check: 30s → 45s interval, 3 → 5 consecutive failures
+### COMPLETED (v1.35 — Iteration 20)
+1. **Liquid Chain Etap 1 — Backend implementation** — Full backend for vendor reforge chain analysis:
+   - `config.yaml`: Added `liquid_chain` section with `delirium_liquids` chain (10 steps, api_id confirmed from POE2Scout API)
+   - `backend/config.py`: Added `LiquidChainStepConfig`, `LiquidChainDefConfig`, `LiquidChainConfig` Pydantic models
+   - `backend/models/currency.py`: Added `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult` dataclasses
+   - `backend/arbitrage/liquid_chain.py`: `compute_liquid_chain()` + `_compute_cumulative_paths()` — per-step and cumulative profit/loss
+   - `backend/api/routes_liquid_chain.py`: `GET /api/liquid-chain/analysis` + `GET /api/liquid-chain/opportunities`
+   - `backend/main.py`: Registered liquid_chain_router
+   - `tests/test_liquid_chain.py`: 18 tests — full coverage of computation, edge cases, config parsing
+2. **api_id discovery** — Confirmed all 10 liquid items are in `delirium` category (NOT `ritual` as initially assumed)
+3. **331/331 pytest tests pass** — Including 18 new liquid chain tests
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -199,6 +184,7 @@ When a new league launches, update these 7 files:
 22. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`. Returning `[]` causes ENOENT + Cyrillic path issues.
 23. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
 24. **Root main.py is a re-export** — `./main.py` → `from backend.main import app`. Never edit directly.
+25. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items (diluted-liquid-ire through concentrated-liquid-isolation) are fetched via ByCategory?Category=delirium.
 
 ## 11. Documentation Map
 
@@ -214,25 +200,29 @@ When a new league launches, update these 7 files:
 | `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§14) | On algorithm changes |
 | `src/lib/currency-optimal.ts` | §11: Cross-currency arbitrage helpers | On flip logic changes |
 
-## 12. Liquid Chain Module (Planned — Iteration 19+)
+## 12. Liquid Chain Module (Etap 1 Complete)
 
 ### Overview
 
 A module for tracking the profitability of the **Liquid Item conversion chain** — a sequence of 10 PoE2 items where 3 units of item N can be reforged into 1 unit of item N+1 at the vendor. The module computes per-step and cumulative profit/loss to help users decide whether reforging is worthwhile.
 
-### Item Chain
+**Status**: Etap 1 (backend) complete. Etaps 2-3 (frontend) pending.
+
+### Item Chain (delirium_liquids)
+
+All items are in POE2Scout category **`delirium`** (NOT `ritual` — this was confirmed from live API).
 
 ```
-1.  Разбавленный жидкий гнев           → 3:1 →
-2.  Разбавленная жидкая вина           → 3:1 →
-3.  Разбавленная жидкая жадность       → 3:1 →
-4.  Жидкая паранойя                    → 3:1 →
-5.  Жидкая зависть                     → 3:1 →
-6.  Жидкое отвращение                  → 3:1 →
-7.  Жидкое отчаяние                    → 3:1 →
-8.  Концентрированный жидкий страх     → 3:1 →
-9.  Концентрированное жидкое страдание → 3:1 →
-10. Концентрированное жидкое отчуждение
+1.  diluted-liquid-ire              (Разбавленный жидкий гнев)           → 3:1 →
+2.  diluted-liquid-guilt            (Разбавленная жидкая вина)           → 3:1 →
+3.  diluted-liquid-greed            (Разбавленная жидкая жадность)       → 3:1 →
+4.  liquid-paranoia                 (Жидкая паранойя)                    → 3:1 →
+5.  liquid-envy                     (Жидкая зависть)                     → 3:1 →
+6.  liquid-disgust                  (Жидкое отвращение)                  → 3:1 →
+7.  liquid-despair                  (Жидкое отчаяние)                    → 3:1 →
+8.  concentrated-liquid-fear        (Концентрированный жидкий страх)     → 3:1 →
+9.  concentrated-liquid-suffering   (Концентрированное жидкое страдание) → 3:1 →
+10. concentrated-liquid-isolation   (Концентрированное жидкое отчуждение)
 ```
 
 ### Formulas
@@ -245,36 +235,78 @@ For each step `i → i+1`:
 
 Cumulative (position j to k): `cost = ratio^(k-j) × price(item_j)`, `value = price(item_k)`
 
-### Implementation Plan
+### Backend Files
 
-| Step | Files | Description |
-|------|-------|-------------|
-| 1 | `config.yaml`, `backend/models/currency.py`, `backend/arbitrage/liquid_chain.py`, `backend/api/routes_liquid_chain.py` | Config + models + backend logic + API endpoint |
-| 2 | `src/app/api/flipper/liquid-chain/`, `src/lib/types.ts` | Frontend proxy routes + TypeScript types |
-| 3 | `src/components/dashboard/liquid-chain-tab.tsx`, `src/lib/i18n/locales/*.ts` | UI component + i18n |
-| 4 | `tests/test_liquid_chain.py`, `src/__tests__/liquid-chain-tab.test.tsx`, docs | Tests + documentation |
+| File | Purpose |
+|------|---------|
+| `config.yaml` → `liquid_chain` | Chain definitions (name, category, steps with api_id/name_en/name_ru/ratio) |
+| `backend/config.py` → `LiquidChainConfig` | Pydantic models: `LiquidChainStepConfig`, `LiquidChainDefConfig`, `LiquidChainConfig` |
+| `backend/models/currency.py` | `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult` dataclasses |
+| `backend/arbitrage/liquid_chain.py` | `compute_liquid_chain()` — pure computation, no API calls |
+| `backend/api/routes_liquid_chain.py` | `GET /api/liquid-chain/analysis` + `GET /api/liquid-chain/opportunities` |
+| `backend/main.py` | Router registration (try/except ImportError) |
+| `tests/test_liquid_chain.py` | 18 tests — full coverage |
+
+### API Endpoints
+
+```
+GET /api/liquid-chain/analysis       → Full analysis for all chains (steps + cumulative paths)
+    ?chain=delirium_liquids          → Filter by chain name
+
+GET /api/liquid-chain/opportunities  → Only profitable steps and cumulative paths
+    ?min_profit_pct=0.0             → Minimum profit % threshold
+    ?chain=delirium_liquids         → Filter by chain name
+```
+
+### Response Shape (PascalCase)
+
+```json
+{
+  "chains": [{
+    "ChainName": "delirium_liquids",
+    "Category": "delirium",
+    "Steps": [{
+      "ApiId": "diluted-liquid-ire",
+      "NameEn": "Diluted Liquid Ire",
+      "NameRu": "Разбавленный жидкий гнев",
+      "Ratio": 3,
+      "Price": 0.1805,
+      "InputCost": 0.5415,
+      "OutputValue": 0.1877,
+      "Profit": -0.3538,
+      "ProfitPct": -65.34
+    }],
+    "CumulativePaths": [{
+      "FromIndex": 0,
+      "ToIndex": 1,
+      "TotalInputCost": 0.5415,
+      "TotalOutputValue": 0.1877,
+      "CumulativeRatio": 3,
+      "Profit": -0.3538,
+      "ProfitPct": -65.34
+    }],
+    "BestStep": 1,
+    "WorstStep": 0,
+    "DataAvailable": true,
+    "StepsWithData": 10,
+    "TotalSteps": 10
+  }],
+  "data_available": true,
+  "fetched_at": "2026-06-10T..."
+}
+```
 
 ### Key Design Decisions
 
 1. **Chain config in `config.yaml`** — No hardcoded item names. Each step has `api_id`, `name_en`, `name_ru`, `ratio`.
-2. **Prices from existing providers** — `Poe2ScoutProvider` already fetches currency prices. Liquid items are normal currency items with category `ritual`.
-3. **Backend-first** — Computation on FastAPI, frontend only displays via `/api/flipper/liquid-chain/*` proxy.
-4. **Extensible** — Config supports multiple chains (not just Liquids).
-5. **api_id discovery** — Exact POE2Scout `api_id` values TBD; must be confirmed from API response.
+2. **Prices from DataSnapshot** — Uses `snapshot.prices_in_base`, no additional API calls.
+3. **No executor needed** — Only 10 steps, computation is O(n²) cumulative paths — runs directly in async handler.
+4. **Extensible** — Config supports multiple chains (not just delirium_liquids).
+5. **Category is `delirium`** — Confirmed from live API. Liquid items are NOT in `ritual`.
 
-### New API Endpoints (Planned)
+### Remaining Work (Etaps 2-3)
 
-```
-GET /api/liquid-chain/analysis     → LiquidChainResult (all steps + cumulative paths)
-GET /api/liquid-chain/opportunities → Only profitable step/cumulative combinations
-```
-
-### New Data Models (Planned)
-
-**Backend (`backend/models/currency.py`):**
-- `LiquidChainStep` — one step: api_id, name, price, input_cost, output_value, profit, profit_pct
-- `LiquidChainResult` — full chain: steps[], totals, best/worst step, data_available
-
-**Frontend (`src/lib/types.ts`):**
-- `LiquidChainStep` (camelCase mirror)
-- `LiquidChainResult` (camelCase mirror)
+| Etap | Files | Description |
+|------|-------|-------------|
+| 2 | `src/app/api/flipper/liquid-chain/`, `src/lib/types.ts` | Frontend proxy routes + TypeScript types |
+| 3 | `src/components/dashboard/liquid-chain-tab.tsx`, `src/lib/i18n/locales/*.ts` | UI component + i18n |

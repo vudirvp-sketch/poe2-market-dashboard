@@ -291,3 +291,84 @@ class StorageValueResult:
     net_value: float         # Renamed from net_value_after_fees (gold fees disabled)
     ratio: float
     decision: Decision
+
+
+# ---------------------------------------------------------------------------
+# Liquid Chain
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class LiquidChainStep:
+    """One step in a vendor reforge conversion chain (e.g. 3 Diluted Liquid Ire → 1 Diluted Liquid Guilt).
+
+    Fields:
+        api_id: POE2Scout ApiId for the INPUT item of this step.
+        name_en: English display name.
+        name_ru: Russian display name.
+        ratio: How many input items needed to produce 1 output (e.g. 3).
+        price: Current price of the INPUT item in base currency (Exalted).
+        input_cost: Total cost to buy `ratio` units of input item = ratio × price.
+        output_value: Price of the OUTPUT item (next step's item) in base currency.
+        profit: output_value − input_cost.
+        profit_pct: profit / input_cost × 100.
+    """
+    api_id: str
+    name_en: str
+    name_ru: str
+    ratio: int
+    price: float
+    input_cost: float
+    output_value: float
+    profit: float
+    profit_pct: float
+
+
+@dataclass(frozen=True)
+class LiquidChainCumulativePath:
+    """Cumulative profit/loss from reforging from step `from_index` to step `to_index`.
+
+    Example: from_index=0, to_index=3 means starting with diluted-liquid-ire
+    and reforging all the way to liquid-paranoia.
+
+    Fields:
+        from_index: Starting step index (0-based).
+        to_index: Ending step index (0-based, inclusive).
+        total_input_cost: Cost to buy enough of the starting item and reforge through.
+        total_output_value: Value of the final output item in base currency.
+        cumulative_ratio: Total multiplier from all reforge steps (ratio^(to_index-from_index)).
+        profit: total_output_value − total_input_cost.
+        profit_pct: profit / total_input_cost × 100.
+    """
+    from_index: int
+    to_index: int
+    total_input_cost: float
+    total_output_value: float
+    cumulative_ratio: int
+    profit: float
+    profit_pct: float
+
+
+@dataclass
+class LiquidChainResult:
+    """Complete analysis result for a single liquid chain.
+
+    Fields:
+        chain_name: Identifier from config (e.g. "delirium_liquids").
+        category: POE2Scout category for price fetching (e.g. "delirium").
+        steps: Per-step analysis, one for each item in the chain.
+        cumulative_paths: Profitable cumulative reforge paths (from position j to k).
+        best_step: Index of the most profitable single step (or None if no data).
+        worst_step: Index of the least profitable single step (or None if no data).
+        data_available: Whether price data was available for all items.
+        steps_with_data: Number of steps that had price data.
+        total_steps: Total number of steps in the chain.
+    """
+    chain_name: str
+    category: str
+    steps: list[LiquidChainStep]
+    cumulative_paths: list[LiquidChainCumulativePath]
+    best_step: int | None
+    worst_step: int | None
+    data_available: bool
+    steps_with_data: int
+    total_steps: int

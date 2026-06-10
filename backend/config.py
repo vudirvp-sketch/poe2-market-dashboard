@@ -173,6 +173,30 @@ class StorageValueConfig(BaseModel):
     liquidity_normalization: float = 10.0
 
 
+class LiquidChainStepConfig(BaseModel):
+    """Configuration for a single step in a liquid chain."""
+    api_id: str
+    name_en: str = ""
+    name_ru: str = ""
+    ratio: int = 3  # How many input items to produce 1 output
+
+
+class LiquidChainDefConfig(BaseModel):
+    """Configuration for a single chain (e.g. delirium_liquids)."""
+    name: str
+    category: str  # POE2Scout ByCategory for price fetching
+    steps: list[LiquidChainStepConfig] = Field(default_factory=list)
+
+
+class LiquidChainConfig(BaseModel):
+    """Configuration for the Liquid Chain module.
+
+    Supports multiple chains (extensible for future vendor reforge paths).
+    Each chain defines a sequence of items with conversion ratios.
+    """
+    chains: list[LiquidChainDefConfig] = Field(default_factory=list)
+
+
 class AppConfig(BaseModel):
     """Root configuration model matching config.yaml structure."""
     data: DataConfig = DataConfig()
@@ -192,6 +216,8 @@ class AppConfig(BaseModel):
     quantization: QuantizationConfig = QuantizationConfig()
     # P1-5: Historical benchmarks config
     benchmarks: BenchmarksConfig = BenchmarksConfig()
+    # Liquid Chain module config
+    liquid_chain: LiquidChainConfig = LiquidChainConfig()
 
 
 def load_config_from_yaml(yaml_path: str | Path) -> AppConfig:

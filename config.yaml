@@ -145,3 +145,53 @@ quantization:
 benchmarks:
   lookback_days: 30
   include_league_lifetime: true
+
+# Liquid Chain: vendor reforge conversion chains (3:1 ratio by default).
+# Each chain step defines an item that can be reforged into the next item
+# at the vendor. The module computes per-step and cumulative profit/loss
+# to help users decide whether reforging is worthwhile.
+liquid_chain:
+  chains:
+    - name: "delirium_liquids"
+      category: "delirium"  # POE2Scout ByCategory — where to fetch prices
+      steps:
+        - api_id: "diluted-liquid-ire"
+          name_en: "Diluted Liquid Ire"
+          name_ru: "Разбавленный жидкий гнев"
+          ratio: 3
+        - api_id: "diluted-liquid-guilt"
+          name_en: "Diluted Liquid Guilt"
+          name_ru: "Разбавленная жидкая вина"
+          ratio: 3
+        - api_id: "diluted-liquid-greed"
+          name_en: "Diluted Liquid Greed"
+          name_ru: "Разбавленная жидкая жадность"
+          ratio: 3
+        - api_id: "liquid-paranoia"
+          name_en: "Liquid Paranoia"
+          name_ru: "Жидкая паранойя"
+          ratio: 3
+        - api_id: "liquid-envy"
+          name_en: "Liquid Envy"
+          name_ru: "Жидкая зависть"
+          ratio: 3
+        - api_id: "liquid-disgust"
+          name_en: "Liquid Disgust"
+          name_ru: "Жидкое отвращение"
+          ratio: 3
+        - api_id: "liquid-despair"
+          name_en: "Liquid Despair"
+          name_ru: "Жидкое отчаяние"
+          ratio: 3
+        - api_id: "concentrated-liquid-fear"
+          name_en: "Concentrated Liquid Fear"
+          name_ru: "Концентрированный жидкий страх"
+          ratio: 3
+        - api_id: "concentrated-liquid-suffering"
+          name_en: "Concentrated Liquid Suffering"
+          name_ru: "Концентрированное жидкое страдание"
+          ratio: 3
+        - api_id: "concentrated-liquid-isolation"
+          name_en: "Concentrated Liquid Isolation"
+          name_ru: "Концентрированное жидкое отчуждение"
+          ratio: 1  # Last step — no further reforge
