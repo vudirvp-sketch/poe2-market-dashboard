@@ -161,7 +161,7 @@ const CumulativePathsSection = memo(function CumulativePathsSection({
 }) {
   const { t } = useI18n();
 
-  const profitablePaths = paths.filter((p) => p.profitPct > 0);
+  const profitablePaths = (paths ?? []).filter((p) => p.profitPct > 0);
 
   if (profitablePaths.length === 0) return null;
 
@@ -247,8 +247,8 @@ const ChainCard = memo(function ChainCard({
 }) {
   const { t } = useI18n();
 
-  const profitableSteps = chain.steps.filter((s) => s.profitPct > 0 && s.inputCost > 0);
-  const unprofitableSteps = chain.steps.filter((s) => s.profitPct < 0 && s.inputCost > 0);
+  const profitableSteps = (chain.steps ?? []).filter((s) => s.profitPct > 0 && s.inputCost > 0);
+  const unprofitableSteps = (chain.steps ?? []).filter((s) => s.profitPct < 0 && s.inputCost > 0);
 
   // Use i18n key for chain title if available, fallback to chain name
   const chainTitle = chainDisplayName(chain.chainName, t);

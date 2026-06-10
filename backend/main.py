@@ -287,9 +287,14 @@ async def lifespan(app: FastAPI):
 import multiprocessing
 _cpu_count = multiprocessing.cpu_count()
 _process_workers = max(1, min(4, _cpu_count - 1)) if _cpu_count > 1 else 1
-process_pool = ProcessPoolExecutor(max_workers=_process_workers)
+# Windows uses 'spawn' by default; Linux/macOS defaults to 'fork'.
+# Explicitly use 'spawn' context for cross-platform consistency —
+# child processes must be able to import the module without side effects
+# (no re-creating ProcessPoolExecutor on import).
+_mp_ctx = multiprocessing.get_context("spawn")
+process_pool = ProcessPoolExecutor(max_workers=_process_workers, mp_context=_mp_ctx)
 logger.info(
-    "ProcessPoolExecutor initialized: %d workers (cpu_count=%d)",
+    "ProcessPoolExecutor initialized: %d workers (cpu_count=%d, start_method=spawn)",
     _process_workers, _cpu_count,
 )
 

@@ -15,6 +15,7 @@ After: all routes share a single cached snapshot (~16 requests total per TTL win
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 
@@ -64,6 +65,39 @@ def _compute_momentum_from_logs(
     except Exception as e:
         logger.debug("Momentum computation failed: %s", e)
         return {"momentum": 0.0, "volatility": 0.001, "acceleration": 0.0}
+
+
+def _run_clustering_sync(
+    config,
+    cluster_price_histories: dict[str, list[float]],
+    cluster_volumes: dict[str, float],
+    cluster_prices_now: dict[str, float],
+    cluster_prices_24h_ago: dict[str, float],
+) -> dict[str, str]:
+    """CPU-bound clustering — runs in ProcessPoolExecutor.
+
+    Returns a dict mapping currency_name → cluster_label string.
+    This function receives only picklable data (plain dicts, no objects
+    holding sqlite3.Connection) so it can safely run in a subprocess.
+    """
+    from backend.predictors.clustering import CurrencyClusterer
+    from backend.models.currency import ClusterLabel
+
+    if len(cluster_price_histories) < 3:
+        logger.warning(
+            "Only %d currencies for clustering (need >=3), using MODERATE default",
+            len(cluster_price_histories),
+        )
+        return {}
+
+    clusterer = CurrencyClusterer(config)
+    output = clusterer.fit(
+        cluster_price_histories, cluster_volumes,
+        cluster_prices_now, cluster_prices_24h_ago,
+    )
+    result = {c.currency: c.cluster.value for c in output.clusters}
+    logger.info("Prices clustering completed: %d currencies assigned", len(result))
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -205,21 +239,32 @@ async def get_all_prices():
                 if cluster_prices_24h_ago[curr] == 0:
                     cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
 
-            if len(cluster_price_histories) >= 3:
-                clusterer = CurrencyClusterer(config)
-                output = clusterer.fit(
-                    cluster_price_histories, cluster_volumes,
-                    cluster_prices_now, cluster_prices_24h_ago,
-                )
-                cluster_labels = {c.currency: c.cluster for c in output.clusters}
-                logger.info("Prices clustering completed: %d currencies assigned", len(cluster_labels))
-                # Cache the result
-                pipeline_cache.put("price_cluster_labels", cluster_labels)
-            else:
-                logger.warning(
-                    "Only %d currencies for clustering (need >=3), using MODERATE default",
-                    len(cluster_price_histories),
-                )
+            # Offload CPU-bound clustering to ProcessPoolExecutor.
+            # CurrencyClusterer.fit() uses sklearn KMeans which is CPU-heavy
+            # and would block the event loop if run synchronously.
+            loop = asyncio.get_running_loop()
+            executor = None
+            try:
+                from backend.main import process_pool
+                executor = process_pool
+            except (ImportError, AttributeError):
+                pass
+
+            cluster_labels_raw = await loop.run_in_executor(
+                executor,
+                _run_clustering_sync,
+                config,
+                cluster_price_histories,
+                cluster_volumes,
+                cluster_prices_now,
+                cluster_prices_24h_ago,
+            )
+
+            # Convert plain string labels back to ClusterLabel enums
+            cluster_labels = {k: ClusterLabel(v) for k, v in cluster_labels_raw.items()}
+
+            # Cache the result
+            pipeline_cache.put("price_cluster_labels", cluster_labels)
         except Exception as e:
             logger.error("Clustering in prices route failed: %s", e)
             cluster_labels = {}

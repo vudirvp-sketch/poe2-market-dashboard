@@ -1,30 +1,23 @@
 # Worklog
 
 ---
-Task ID: 22
+Task ID: 24
 Agent: main
-Task: Iteration 22 — CI fix, E2E tests for Liquid Chain, multi-chain display
+Task: Iteration 24 — Fix Liquid Chain crash, ProcessPoolExecutor pickle bug, offload clustering, Windows compat
 
 Work Log:
-- Investigated CI failure: Python 3.13 + aiosqlite incompatibility
-- Fixed CI: changed Python version from 3.13 → 3.12 in `.github/workflows/ci.yml`
-- Relaxed aiosqlite pin: `aiosqlite>=0.20,<1.0` → `aiosqlite>=0.20.0` (allows 0.22.x which supports Python 3.13+)
-- Fixed failing Jest test: `flipper-proxy.test.ts` expected `60_000` for `FLIPPER_CB_INITIAL_COOLDOWN`, but code was changed to `15_000` in a prior iteration — updated test
-- Added E2E test: `e2e/liquid-chain.spec.ts` with 6 tests:
-  - Liquid Chain tab is visible and clickable (offline mode)
-  - Graceful backend offline fallback
-  - No raw English strings in Russian locale
-  - Chain steps render when backend returns data (online mode)
-  - Profit/loss badges are visible
-  - No-reforge notice for last step
-- Updated E2E fixtures: added `liquid-chain` and `optimal-currency` route mocks to `e2e/fixtures.ts`
-- Updated `e2e/navigation.spec.ts`: added `liquid-chain` to tab navigation test
-- Enhanced multi-chain support: `chainDisplayName()` function in `liquid-chain-tab.tsx` maps chain names to i18n titles, enabling future chains to have proper display names without code changes
-- Updated AGENT_NAVIGATION.md: v1.36 → v1.37, cleaned up completed items, added bug #26 (CI Python version)
-- All tests pass: 291/291 Jest + 344/344 pytest + build succeeds
+- Diagnosed Liquid Chain ErrorBoundary crash: `routes_liquid_chain.py` used PascalCase keys (Steps, CumulativePaths, ChainName). flipper-proxy `transformKeys()` only converts snake_case → camelCase, so PascalCase passed through → `chain.steps` undefined → `.filter()` TypeError
+- Fixed all serializers in `routes_liquid_chain.py` to use snake_case (api_id, name_en, steps, cumulative_paths, etc.)
+- Added defensive `?? []` null-checks in `liquid-chain-tab.tsx` for `chain.steps` and `paths`
+- Fixed ProcessPoolExecutor pickle bug: `_build_flip_opportunities_sync()` received `event_manager` and `pipeline_cache` as args, which hold sqlite3.Connection → can't pickle. Refactored to pre-extract `event_penalties` dict and `cached_cluster_labels` dict in async wrapper
+- Offloaded `CurrencyClusterer.fit()` in `routes_prices.py` to ProcessPoolExecutor via `run_in_executor()` with new `_run_clustering_sync()` function
+- Set explicit `mp_context="spawn"` on ProcessPoolExecutor for Windows/Linux cross-platform consistency
+- Updated AGENT_NAVIGATION.md: v1.38 → v1.39, added new frequent bugs #30-#32
+- All modified Python files pass `py_compile` syntax validation
 
 Stage Summary:
-- CI fix: Python 3.12 in CI, aiosqlite>=0.20.0
-- E2E: 6 new Liquid Chain Playwright tests
-- Multi-chain: display name resolution via chainDisplayName()
-- Stopping point: All 3 proposed tasks completed. Next possible: add more chains (e.g., ritual omens), real E2E against live backend, or ProcessPoolExecutor for triangular arbitrage
+- Frontend crash fixed (snake_case serializer + null-checks)
+- Backend pickle bug fixed (pre-extract picklable data before executor)
+- Clustering no longer blocks event loop (run_in_executor + ProcessPoolExecutor)
+- ProcessPoolExecutor uses explicit spawn context for Windows compat
+- Stopping point: Code changes complete. Pending: real E2E against live backend, Windows start.bat verification

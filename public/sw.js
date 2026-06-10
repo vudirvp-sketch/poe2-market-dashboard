@@ -16,7 +16,7 @@
 // - Other static:      cache-first (icons, manifest, etc.)
 // ============================================================================
 
-const CACHE_NAME = 'poe2-market-v1780984496771';
+const CACHE_NAME = 'poe2-market-v1781104927405';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

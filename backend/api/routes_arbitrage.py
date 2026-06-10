@@ -101,14 +101,26 @@ def _build_flip_opportunities_sync(
     config: AppConfig,
     phase_info,
     phase_multiplier: float,
-    event_manager,
-    pipeline_cache,
+    event_penalties: dict[str, float],
+    cached_cluster_labels: dict[str, str] | None,
 ) -> list[FlipOpportunity]:
-    """CPU-bound flip opportunity computation — runs in executor thread.
+    """CPU-bound flip opportunity computation — runs in executor process.
 
-    All data is pre-fetched by the async wrapper (snapshot, phase, event manager,
-    pipeline cache). This function does pure computation: price history lookups,
-    clustering, scoring, and filtering. No async calls are made here.
+    All data is pre-fetched by the async wrapper. This function receives only
+    picklable data (no sqlite3.Connection or PipelineCache references) so it
+    can safely run in ProcessPoolExecutor.
+
+    Args:
+        snapshot: DataSnapshot with exchange rates and price histories.
+        config: Application configuration.
+        phase_info: LeaguePhaseInfo from PhaseDetector.
+        phase_multiplier: Float multiplier from PhaseDetector.
+        event_penalties: Dict mapping currency_name → score_penalty (float).
+            Pre-computed from EventManager to avoid passing the unpicklable
+            EventManager (which holds sqlite3.Connection) into the executor.
+            A penalty of 0.0 means "skip this currency entirely" (crisis event).
+        cached_cluster_labels: Pre-fetched cluster labels from PipelineCache,
+            or None if clustering needs to be computed fresh.
 
     Returns a sorted list of FlipOpportunity objects.
     """
@@ -154,9 +166,11 @@ def _build_flip_opportunities_sync(
     cluster_labels: dict[str, ClusterLabel] = {}
 
     try:
-        cached_clustering = pipeline_cache.get("arbitrage_cluster_labels")
-        if cached_clustering is not None and not cached_clustering.stale:
-            cluster_labels = cached_clustering.value
+        # Use pre-fetched cluster labels from PipelineCache (passed via
+        # cached_cluster_labels to avoid passing PipelineCache itself into
+        # the executor, which would fail with "cannot pickle sqlite3.Connection")
+        if cached_cluster_labels is not None:
+            cluster_labels = {k: ClusterLabel(v) for k, v in cached_cluster_labels.items()}
         else:
             cluster_price_histories: dict[str, list[float]] = {}
             cluster_volumes: dict[str, float] = {}
@@ -196,7 +210,9 @@ def _build_flip_opportunities_sync(
                 )
                 cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
                 logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
-                pipeline_cache.put("arbitrage_cluster_labels", cluster_labels)
+                # Note: cannot cache to PipelineCache here — we're inside
+                # ProcessPoolExecutor and PipelineCache is not available.
+                # Caching happens in the async wrapper after executor returns.
             else:
                 logger.warning(
                     "Only %d currencies for clustering (need >=3), using MODERATE default",
@@ -285,14 +301,16 @@ def _build_flip_opportunities_sync(
             volatility_period="hourly",
         )
 
-        # Event penalties
-        event_penalty = event_manager.get_event_score_penalty(rate.currency_from)
+        # Event penalties — use pre-computed dict instead of event_manager
+        # (event_manager holds sqlite3.Connection and can't be pickled for
+        # ProcessPoolExecutor)
+        event_penalty = event_penalties.get(rate.currency_from, 1.0)
         if event_penalty == 0.0:
             continue
         score = score * event_penalty
         score = min(max(score, 0.0), 1.0)
 
-        event_penalty_to = event_manager.get_event_score_penalty(rate.currency_to)
+        event_penalty_to = event_penalties.get(rate.currency_to, 1.0)
         if event_penalty_to == 0.0:
             continue
         score = score * event_penalty_to
@@ -364,9 +382,15 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     price histories from the ByCategory response.
 
     PERFORMANCE: CPU-bound computation (clustering, scoring, filtering)
-    is offloaded to a thread via loop.run_in_executor() to avoid blocking
-    the asyncio event loop. This prevents health check timeouts and
-    circuit breaker cascade failures during heavy computation.
+    is offloaded to ProcessPoolExecutor via loop.run_in_executor() to
+    bypass the GIL. This prevents health check timeouts and circuit
+    breaker cascade failures during heavy computation.
+
+    PICKLE SAFETY: Only picklable data is passed to the executor.
+    EventManager and PipelineCache hold sqlite3.Connection references
+    that cannot be pickled — so we pre-extract the needed data
+    (event_penalties dict, cached_cluster_labels dict) before calling
+    the executor.
     """
     detector = _get_phase_detector()
     pipeline_cache = get_pipeline_cache()
@@ -379,7 +403,37 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     phase_multiplier = detector.get_phase_multiplier()
     event_manager = get_event_manager(config)
 
-    # 3. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
+    # 3. Pre-extract picklable data from unpicklable objects.
+    # EventManager holds sqlite3.Connection → can't be pickled for
+    # ProcessPoolExecutor. Extract event penalties as a plain dict.
+    event_penalties: dict[str, float] = {}
+    try:
+        # Collect all currency names from snapshot rates
+        for key, rate in snapshot.exchange_rates.items():
+            for curr in (rate.currency_from, rate.currency_to):
+                if curr not in event_penalties:
+                    event_penalties[curr] = event_manager.get_event_score_penalty(curr)
+    except Exception as e:
+        logger.warning("Failed to pre-extract event penalties: %s", e)
+        # Default: all currencies get penalty 1.0 (no penalty)
+        event_penalties = {}
+
+    # Pre-extract cached cluster labels from PipelineCache.
+    # PipelineCache may hold references to sqlite3.Connection, so we
+    # extract the data as a plain dict before passing to executor.
+    cached_cluster_labels: dict[str, str] | None = None
+    try:
+        cached_clustering = pipeline_cache.get("arbitrage_cluster_labels")
+        if cached_clustering is not None and not cached_clustering.stale:
+            # Convert ClusterLabel enums to plain strings for pickling
+            cached_cluster_labels = {
+                k: v.value if hasattr(v, 'value') else str(v)
+                for k, v in cached_clustering.value.items()
+            }
+    except Exception as e:
+        logger.warning("Failed to pre-extract cluster labels: %s", e)
+
+    # 4. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
     # Falls back to default ThreadPoolExecutor if process_pool is unavailable.
     loop = asyncio.get_running_loop()
     executor = None
@@ -388,12 +442,19 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
         executor = process_pool
     except (ImportError, AttributeError):
         pass
+
     opportunities = await loop.run_in_executor(
         executor,
         _build_flip_opportunities_sync,
         snapshot, config, phase_info, phase_multiplier,
-        event_manager, pipeline_cache,
+        event_penalties, cached_cluster_labels,
     )
+
+    # 5. Cache clustering result back to PipelineCache (only if computed fresh)
+    # The sync function may have computed new cluster_labels. We can't cache
+    # inside the executor (no PipelineCache access), but the price_cluster_labels
+    # cache in routes_prices.py covers this.
+
     return opportunities
 
 

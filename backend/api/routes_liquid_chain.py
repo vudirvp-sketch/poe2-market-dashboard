@@ -27,45 +27,51 @@ router = APIRouter(prefix="/api/liquid-chain", tags=["liquid-chain"])
 
 
 def _serialize_step(step) -> dict:
-    """Serialize a LiquidChainStep to a JSON-friendly dict."""
+    """Serialize a LiquidChainStep to a JSON-friendly dict (snake_case).
+
+    The flipper-proxy transformKeys() converts snake_case → camelCase
+    for the frontend. PascalCase keys would pass through unchanged,
+    causing 'Cannot read properties of undefined (reading .filter)'
+    errors in the React component.
+    """
     return {
-        "ApiId": step.api_id,
-        "NameEn": step.name_en,
-        "NameRu": step.name_ru,
-        "Ratio": step.ratio,
-        "Price": round(step.price, 8),
-        "InputCost": round(step.input_cost, 8),
-        "OutputValue": round(step.output_value, 8),
-        "Profit": round(step.profit, 8),
-        "ProfitPct": round(step.profit_pct, 4),
+        "api_id": step.api_id,
+        "name_en": step.name_en,
+        "name_ru": step.name_ru,
+        "ratio": step.ratio,
+        "price": round(step.price, 8),
+        "input_cost": round(step.input_cost, 8),
+        "output_value": round(step.output_value, 8),
+        "profit": round(step.profit, 8),
+        "profit_pct": round(step.profit_pct, 4),
     }
 
 
 def _serialize_cumulative_path(path) -> dict:
-    """Serialize a LiquidChainCumulativePath to a JSON-friendly dict."""
+    """Serialize a LiquidChainCumulativePath to a JSON-friendly dict (snake_case)."""
     return {
-        "FromIndex": path.from_index,
-        "ToIndex": path.to_index,
-        "TotalInputCost": round(path.total_input_cost, 8),
-        "TotalOutputValue": round(path.total_output_value, 8),
-        "CumulativeRatio": path.cumulative_ratio,
-        "Profit": round(path.profit, 8),
-        "ProfitPct": round(path.profit_pct, 4),
+        "from_index": path.from_index,
+        "to_index": path.to_index,
+        "total_input_cost": round(path.total_input_cost, 8),
+        "total_output_value": round(path.total_output_value, 8),
+        "cumulative_ratio": path.cumulative_ratio,
+        "profit": round(path.profit, 8),
+        "profit_pct": round(path.profit_pct, 4),
     }
 
 
 def _serialize_result(result: LiquidChainResult) -> dict:
-    """Serialize a LiquidChainResult to a JSON-friendly dict."""
+    """Serialize a LiquidChainResult to a JSON-friendly dict (snake_case)."""
     return {
-        "ChainName": result.chain_name,
-        "Category": result.category,
-        "Steps": [_serialize_step(s) for s in result.steps],
-        "CumulativePaths": [_serialize_cumulative_path(p) for p in result.cumulative_paths],
-        "BestStep": result.best_step,
-        "WorstStep": result.worst_step,
-        "DataAvailable": result.data_available,
-        "StepsWithData": result.steps_with_data,
-        "TotalSteps": result.total_steps,
+        "chain_name": result.chain_name,
+        "category": result.category,
+        "steps": [_serialize_step(s) for s in result.steps],
+        "cumulative_paths": [_serialize_cumulative_path(p) for p in result.cumulative_paths],
+        "best_step": result.best_step,
+        "worst_step": result.worst_step,
+        "data_available": result.data_available,
+        "steps_with_data": result.steps_with_data,
+        "total_steps": result.total_steps,
     }
 
 
@@ -168,15 +174,15 @@ async def get_liquid_chain_opportunities(
         ]
 
         filtered_chains.append({
-            "ChainName": r.chain_name,
-            "Category": r.category,
-            "ProfitableSteps": profitable_steps,
-            "ProfitableCumulativePaths": profitable_paths,
-            "BestStep": r.best_step,
-            "WorstStep": r.worst_step,
-            "DataAvailable": r.data_available,
-            "StepsWithData": r.steps_with_data,
-            "TotalSteps": r.total_steps,
+            "chain_name": r.chain_name,
+            "category": r.category,
+            "profitable_steps": profitable_steps,
+            "profitable_cumulative_paths": profitable_paths,
+            "best_step": r.best_step,
+            "worst_step": r.worst_step,
+            "data_available": r.data_available,
+            "steps_with_data": r.steps_with_data,
+            "total_steps": r.total_steps,
         })
 
     return {

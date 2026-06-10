@@ -1103,3 +1103,293 @@
 [2026-06-09T05:56:12.355Z] [flipper-backend] 2026-06-09 10:56:12,355 [INFO] backend.arbitrage.triangular: Discarding cycle ['exalted', 'verisium', 'chaos', 'potent-liquid-ferocity', 'exalted']: passes through cross-rate-inconsistent triple (profit=5478.37% likely false positive)
 [2026-06-09T05:56:12.599Z] [flipper-backend] 2026-06-09 10:56:12,599 [INFO] backend.api.routes_arbitrage: Clustering completed: 615 currencies assigned
 [2026-06-09T05:56:47.411Z] [WARN] [flipper-bridge] Backend health check failed (2/5)
+[2026-06-10T14:26:48.543Z] [flipper-bridge] Starting Flipper backend bridge...
+[2026-06-10T14:26:48.545Z] [flipper-bridge] Platform: win32 (Windows)
+[2026-06-10T14:26:48.545Z] [flipper-bridge] Project root: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard
+[2026-06-10T14:26:48.546Z] [flipper-bridge] Log file: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\flipper-bridge.log
+[2026-06-10T14:26:48.546Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-10T14:26:48.546Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-10T14:26:48.550Z] [flipper-bridge] Backend bridge active — Python process managed
+[2026-06-10T14:26:51.329Z] [flipper-backend] 2026-06-10 19:26:51,330 [INFO] backend.main: CORS origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+[2026-06-10T14:26:51.386Z] [flipper-backend] INFO:     Started server process [23096]
+[2026-06-10T14:26:51.387Z] [flipper-backend] INFO:     Waiting for application startup.
+[2026-06-10T14:26:51.387Z] [flipper-backend] 2026-06-10 19:26:51,388 [INFO] backend.main: PoE2 Flipper backend starting up...
+[2026-06-10T14:26:51.396Z] [flipper-backend] 2026-06-10 19:26:51,398 [INFO] backend.main: League: runes, Realm: poe2, Base currency: exalted
+[2026-06-10T14:26:51.431Z] [flipper-backend] 2026-06-10 19:26:51,432 [INFO] backend.data.historical: No old league data found in HistoricalStore (current: 'runes')
+[2026-06-10T14:26:51.432Z] [flipper-backend] 2026-06-10 19:26:51,433 [INFO] backend.main: HistoricalStore initialized
+[2026-06-10T14:26:51.432Z] [flipper-backend] 2026-06-10 19:26:51,434 [INFO] backend.main: Loaded 0 persisted events from SQLite
+[2026-06-10T14:26:51.470Z] [flipper-backend] 2026-06-10 19:26:51,472 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-10T14:26:51.471Z] [flipper-backend] 2026-06-10 19:26:51,472 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-10T14:26:51.471Z] [flipper-backend] 2026-06-10 19:26:51,472 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-10T14:26:51.472Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
+[2026-06-10T14:26:51.472Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
+[2026-06-10T14:26:51.472Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
+[2026-06-10T14:26:51.473Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] apscheduler.scheduler: Scheduler started
+[2026-06-10T14:26:51.473Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] backend.scheduler: Scheduler: started with 3 jobs (price=30m, prune=15m, model=30m)
+[2026-06-10T14:26:51.473Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] backend.main: Snapshot periodic refresh started as background task
+[2026-06-10T14:26:51.473Z] [flipper-backend] 2026-06-10 19:26:51,473 [INFO] backend.api.data_snapshot: SnapshotManager: starting periodic refresh (TTL=300s)
+[2026-06-10T14:26:51.678Z] [flipper-backend] INFO:     Application startup complete.
+[2026-06-10T14:26:51.679Z] [flipper-backend] INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[2026-06-10T14:26:52.259Z] [flipper-backend] 2026-06-10 19:26:52,261 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T14:26:52.741Z] [flipper-backend] 2026-06-10 19:26:52,743 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T14:26:53.827Z] [flipper-backend] 2026-06-10 19:26:53,829 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T14:26:54.881Z] [flipper-backend] 2026-06-10 19:26:54,882 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:26:55.821Z] [flipper-backend] 2026-06-10 19:26:55,823 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:26:56.858Z] [flipper-backend] 2026-06-10 19:26:56,860 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:26:57.858Z] [flipper-backend] 2026-06-10 19:26:57,860 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:26:58.857Z] [flipper-backend] 2026-06-10 19:26:58,859 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:26:59.866Z] [flipper-backend] 2026-06-10 19:26:59,868 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:00.904Z] [flipper-backend] 2026-06-10 19:27:00,905 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:01.877Z] [flipper-backend] 2026-06-10 19:27:01,879 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:03.440Z] [flipper-backend] 2026-06-10 19:27:03,442 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:03.916Z] [flipper-backend] 2026-06-10 19:27:03,917 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:04.894Z] [flipper-backend] 2026-06-10 19:27:04,896 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:05.920Z] [flipper-backend] 2026-06-10 19:27:05,921 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:06.913Z] [flipper-backend] 2026-06-10 19:27:06,915 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:07.930Z] [flipper-backend] 2026-06-10 19:27:07,931 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:08.953Z] [flipper-backend] 2026-06-10 19:27:08,955 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:09.946Z] [flipper-backend] 2026-06-10 19:27:09,947 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:10.954Z] [flipper-backend] 2026-06-10 19:27:10,956 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T14:27:10.963Z] [flipper-backend] 2026-06-10 19:27:10,965 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 620/620 currencies have price histories (ByCategory: 620, individual fetch: 0)
+[2026-06-10T14:27:10.966Z] [flipper-backend] 2026-06-10 19:27:10,968 [INFO] backend.api.data_snapshot: Tier classification: 620 currencies classified
+[2026-06-10T14:27:10.967Z] [flipper-backend] 2026-06-10 19:27:10,968 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3190 exchange rates, 633 currencies
+[2026-06-10T14:27:48.604Z] [flipper-backend] INFO:     127.0.0.1:54952 - "GET /api/health HTTP/1.1" 200 OK
+[2026-06-10T14:27:59.397Z] [flipper-backend] INFO:     127.0.0.1:59467 - "GET /api/health HTTP/1.1" 200 OK
+[2026-06-10T14:27:59.450Z] [flipper-backend] INFO:     127.0.0.1:57271 - "GET /api/phase HTTP/1.1" 200 OK
+[2026-06-10T14:27:59.451Z] [flipper-backend] INFO:     127.0.0.1:57272 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-10T14:28:05.430Z] [flipper-backend] INFO:     127.0.0.1:57273 - "GET /api/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-10T14:28:40.432Z] [flipper-backend] 2026-06-10 19:28:40,437 [INFO] backend.api.routes_prices: Prices clustering completed: 620 currencies assigned
+[2026-06-10T14:28:40.595Z] [flipper-backend] INFO:     127.0.0.1:57272 - "GET /api/prices HTTP/1.1" 200 OK
+[2026-06-10T14:28:41.302Z] [flipper-backend] INFO:     127.0.0.1:57276 - "GET /api/currencies HTTP/1.1" 200 OK
+[2026-06-10T14:28:41.577Z] [flipper-backend] INFO:     127.0.0.1:59513 - "GET /api/health HTTP/1.1" 200 OK
+[2026-06-10T14:28:42.015Z] [flipper-backend] INFO:     127.0.0.1:64904 - "GET /api/prices/heatmap HTTP/1.1" 200 OK
+[2026-06-10T14:28:43.458Z] [flipper-backend] 2026-06-10 19:28:43,463 [INFO] backend.api.routes_arbitrage: Clustering completed: 620 currencies assigned
+[2026-06-10T14:28:43.596Z] [WARN] [flipper-bridge] Backend health check failed (1/5)
+[2026-06-10T14:28:56.776Z] [flipper-backend] 2026-06-10 19:28:56,779 [INFO] backend.arbitrage.triangular: Cross-rate validation: 1921 suspicious triples detected (threshold=10.0%)
+[2026-06-10T14:28:56.778Z] [flipper-backend] 2026-06-10 19:28:56,780 [INFO] backend.arbitrage.triangular: Discarding cycle ['chaos', 'vaal-blacksmiths-infuser', 'exalted', 'verisium', 'chaos']: passes through cross-rate-inconsistent triple (profit=7867.82% likely false positive)
+[2026-06-10T14:29:28.599Z] [WARN] [flipper-bridge] Backend health check failed (2/5)
+[2026-06-10T15:22:07.984Z] [flipper-bridge] Starting Flipper backend bridge...
+[2026-06-10T15:22:07.986Z] [flipper-bridge] Platform: win32 (Windows)
+[2026-06-10T15:22:07.986Z] [flipper-bridge] Project root: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard
+[2026-06-10T15:22:07.986Z] [flipper-bridge] Log file: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\flipper-bridge.log
+[2026-06-10T15:22:07.986Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-10T15:22:07.987Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-10T15:22:07.990Z] [flipper-bridge] Backend bridge active — Python process managed
+[2026-06-10T15:22:10.371Z] [flipper-backend] 2026-06-10 20:22:10,377 [INFO] backend.main: ProcessPoolExecutor initialized: 4 workers (cpu_count=16)
+[2026-06-10T15:22:10.372Z] [flipper-backend] 2026-06-10 20:22:10,377 [INFO] backend.main: CORS origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+[2026-06-10T15:22:10.403Z] [flipper-backend] INFO:     Started server process [16920]
+[2026-06-10T15:22:10.404Z] [flipper-backend] INFO:     Waiting for application startup.
+[2026-06-10T15:22:10.404Z] [flipper-backend] 2026-06-10 20:22:10,410 [INFO] backend.main: PoE2 Flipper backend starting up...
+[2026-06-10T15:22:10.421Z] [flipper-backend] 2026-06-10 20:22:10,427 [INFO] backend.main: League: runes, Realm: poe2, Base currency: exalted
+[2026-06-10T15:22:10.446Z] [flipper-backend] 2026-06-10 20:22:10,453 [INFO] backend.data.historical: No old league data found in HistoricalStore (current: 'runes')
+[2026-06-10T15:22:10.447Z] [flipper-backend] 2026-06-10 20:22:10,453 [INFO] backend.main: HistoricalStore initialized
+[2026-06-10T15:22:10.447Z] [flipper-backend] 2026-06-10 20:22:10,454 [INFO] backend.main: Loaded 0 persisted events from SQLite
+[2026-06-10T15:22:10.480Z] [flipper-backend] 2026-06-10 20:22:10,486 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-10T15:22:10.480Z] [flipper-backend] 2026-06-10 20:22:10,486 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-10T15:22:10.480Z] [flipper-backend] 2026-06-10 20:22:10,486 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-10T15:22:10.481Z] [flipper-backend] 2026-06-10 20:22:10,487 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
+[2026-06-10T15:22:10.481Z] [flipper-backend] 2026-06-10 20:22:10,487 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
+[2026-06-10T15:22:10.481Z] [flipper-backend] 2026-06-10 20:22:10,487 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
+[2026-06-10T15:22:10.482Z] [flipper-backend] 2026-06-10 20:22:10,487 [INFO] apscheduler.scheduler: Scheduler started
+[2026-06-10T15:22:10.482Z] [flipper-backend] 2026-06-10 20:22:10,487 [INFO] backend.scheduler: Scheduler: started with 3 jobs (price=30m, prune=15m, model=30m)
+[2026-06-10T15:22:10.482Z] [flipper-backend] 2026-06-10 20:22:10,487 [INFO] backend.main: Snapshot periodic refresh started as background task
+[2026-06-10T15:22:10.482Z] [flipper-backend] 2026-06-10 20:22:10,488 [INFO] backend.api.data_snapshot: SnapshotManager: starting periodic refresh (TTL=300s)
+[2026-06-10T15:22:10.680Z] [flipper-backend] INFO:     Application startup complete.
+[2026-06-10T15:22:10.682Z] [flipper-backend] INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[2026-06-10T15:22:11.249Z] [flipper-backend] 2026-06-10 20:22:11,255 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:22:11.744Z] [flipper-backend] 2026-06-10 20:22:11,750 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:22:12.850Z] [flipper-backend] 2026-06-10 20:22:12,857 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T15:22:13.860Z] [flipper-backend] 2026-06-10 20:22:13,866 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:14.860Z] [flipper-backend] 2026-06-10 20:22:14,866 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:15.888Z] [flipper-backend] 2026-06-10 20:22:15,895 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:16.890Z] [flipper-backend] 2026-06-10 20:22:16,897 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:17.895Z] [flipper-backend] 2026-06-10 20:22:17,901 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:18.904Z] [flipper-backend] 2026-06-10 20:22:18,910 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:19.913Z] [flipper-backend] 2026-06-10 20:22:19,919 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:20.941Z] [flipper-backend] 2026-06-10 20:22:20,948 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:22.004Z] [flipper-backend] 2026-06-10 20:22:22,011 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:22.933Z] [flipper-backend] 2026-06-10 20:22:22,940 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:23.952Z] [flipper-backend] 2026-06-10 20:22:23,958 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:24.957Z] [flipper-backend] 2026-06-10 20:22:24,963 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:25.974Z] [flipper-backend] 2026-06-10 20:22:25,980 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:27.074Z] [flipper-backend] 2026-06-10 20:22:27,081 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:28.008Z] [flipper-backend] 2026-06-10 20:22:28,015 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:28.975Z] [flipper-backend] 2026-06-10 20:22:28,982 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:29.984Z] [flipper-backend] 2026-06-10 20:22:29,991 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:22:29.993Z] [flipper-backend] 2026-06-10 20:22:30,000 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 624/624 currencies have price histories (ByCategory: 624, individual fetch: 0)
+[2026-06-10T15:22:29.999Z] [flipper-backend] 2026-06-10 20:22:30,005 [INFO] backend.api.data_snapshot: Tier classification: 624 currencies classified
+[2026-06-10T15:22:29.999Z] [flipper-backend] 2026-06-10 20:22:30,005 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3302 exchange rates, 633 currencies
+[2026-06-10T15:23:08.046Z] [flipper-backend] INFO:     127.0.0.1:56279 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:23:53.042Z] [flipper-backend] INFO:     127.0.0.1:58284 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:24:38.056Z] [flipper-backend] INFO:     127.0.0.1:51140 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:25:23.068Z] [flipper-backend] INFO:     127.0.0.1:51167 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:26:08.080Z] [flipper-backend] INFO:     127.0.0.1:54724 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:26:53.089Z] [flipper-backend] INFO:     127.0.0.1:50804 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:27:30.542Z] [flipper-backend] 2026-06-10 20:27:30,544 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:27:31.131Z] [flipper-backend] 2026-06-10 20:27:31,133 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T15:27:32.180Z] [flipper-backend] 2026-06-10 20:27:32,182 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:33.181Z] [flipper-backend] 2026-06-10 20:27:33,183 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:34.203Z] [flipper-backend] 2026-06-10 20:27:34,205 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:35.193Z] [flipper-backend] 2026-06-10 20:27:35,195 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:36.182Z] [flipper-backend] 2026-06-10 20:27:36,184 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:37.196Z] [flipper-backend] 2026-06-10 20:27:37,198 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:38.098Z] [flipper-backend] INFO:     127.0.0.1:51608 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:27:38.286Z] [flipper-backend] 2026-06-10 20:27:38,289 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:39.312Z] [flipper-backend] 2026-06-10 20:27:39,314 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:40.266Z] [flipper-backend] 2026-06-10 20:27:40,268 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:41.258Z] [flipper-backend] 2026-06-10 20:27:41,260 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:42.278Z] [flipper-backend] 2026-06-10 20:27:42,280 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:43.263Z] [flipper-backend] 2026-06-10 20:27:43,265 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:44.288Z] [flipper-backend] 2026-06-10 20:27:44,290 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:45.267Z] [flipper-backend] 2026-06-10 20:27:45,269 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:46.281Z] [flipper-backend] 2026-06-10 20:27:46,284 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:47.296Z] [flipper-backend] 2026-06-10 20:27:47,298 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:51.656Z] [flipper-backend] 2026-06-10 20:27:51,658 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:27:51.664Z] [flipper-backend] 2026-06-10 20:27:51,666 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 624/624 currencies have price histories (ByCategory: 624, individual fetch: 0)
+[2026-06-10T15:27:51.667Z] [flipper-backend] 2026-06-10 20:27:51,669 [INFO] backend.api.data_snapshot: Tier classification: 624 currencies classified
+[2026-06-10T15:27:51.668Z] [flipper-backend] 2026-06-10 20:27:51,670 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3302 exchange rates, 633 currencies
+[2026-06-10T15:28:23.104Z] [flipper-backend] INFO:     127.0.0.1:51639 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:29:08.119Z] [flipper-backend] INFO:     127.0.0.1:61987 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:29:53.130Z] [flipper-backend] INFO:     127.0.0.1:65358 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:30:38.143Z] [flipper-backend] INFO:     127.0.0.1:55852 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:31:23.161Z] [flipper-backend] INFO:     127.0.0.1:55879 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:32:08.178Z] [flipper-backend] INFO:     127.0.0.1:53228 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:32:52.286Z] [flipper-backend] 2026-06-10 20:32:52,288 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:32:53.186Z] [flipper-backend] INFO:     127.0.0.1:53549 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:33:00.105Z] [flipper-backend] 2026-06-10 20:33:00,106 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T15:33:01.205Z] [flipper-backend] 2026-06-10 20:33:01,206 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:02.116Z] [flipper-backend] 2026-06-10 20:33:02,118 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:03.180Z] [flipper-backend] 2026-06-10 20:33:03,182 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:04.157Z] [flipper-backend] 2026-06-10 20:33:04,159 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:05.256Z] [flipper-backend] 2026-06-10 20:33:05,257 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:06.166Z] [flipper-backend] 2026-06-10 20:33:06,167 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:07.904Z] [flipper-backend] 2026-06-10 20:33:07,906 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:08.765Z] [flipper-backend] 2026-06-10 20:33:08,768 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:09.574Z] [flipper-backend] 2026-06-10 20:33:09,577 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:10.209Z] [flipper-backend] 2026-06-10 20:33:10,212 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:11.237Z] [flipper-backend] 2026-06-10 20:33:11,240 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:12.316Z] [flipper-backend] 2026-06-10 20:33:12,320 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:13.283Z] [flipper-backend] 2026-06-10 20:33:13,286 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:14.308Z] [flipper-backend] 2026-06-10 20:33:14,311 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:15.385Z] [flipper-backend] 2026-06-10 20:33:15,388 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:16.337Z] [flipper-backend] 2026-06-10 20:33:16,341 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:17.344Z] [flipper-backend] 2026-06-10 20:33:17,347 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:33:17.352Z] [flipper-backend] 2026-06-10 20:33:17,356 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 624/624 currencies have price histories (ByCategory: 624, individual fetch: 0)
+[2026-06-10T15:33:17.355Z] [flipper-backend] 2026-06-10 20:33:17,358 [INFO] backend.api.data_snapshot: Tier classification: 624 currencies classified
+[2026-06-10T15:33:17.356Z] [flipper-backend] 2026-06-10 20:33:17,360 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3302 exchange rates, 633 currencies
+[2026-06-10T15:33:38.185Z] [flipper-backend] INFO:     127.0.0.1:55171 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:34:23.201Z] [flipper-backend] INFO:     127.0.0.1:58812 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:35:08.203Z] [flipper-backend] INFO:     127.0.0.1:61074 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:35:53.217Z] [flipper-backend] INFO:     127.0.0.1:53595 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:36:38.231Z] [flipper-backend] INFO:     127.0.0.1:49284 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:37:10.509Z] [flipper-backend] 2026-06-10 20:37:10,509 [INFO] apscheduler.executors.default: Running job "Prune expired events (trigger: interval[0:15:00], next run at: 2026-06-10 20:52:10 +05)" (scheduled at 2026-06-10 20:37:10.486635+05:00)
+[2026-06-10T15:37:10.510Z] [flipper-backend] 2026-06-10 20:37:10,510 [INFO] apscheduler.executors.default: Job "Prune expired events (trigger: interval[0:15:00], next run at: 2026-06-10 20:52:10 +05)" executed successfully
+[2026-06-10T15:37:23.236Z] [flipper-backend] INFO:     127.0.0.1:49311 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:38:08.244Z] [flipper-backend] INFO:     127.0.0.1:54358 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:38:17.850Z] [flipper-backend] 2026-06-10 20:38:17,854 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:38:18.501Z] [flipper-backend] 2026-06-10 20:38:18,506 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T15:38:19.527Z] [flipper-backend] 2026-06-10 20:38:19,532 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:20.552Z] [flipper-backend] 2026-06-10 20:38:20,557 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:21.580Z] [flipper-backend] 2026-06-10 20:38:21,584 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:22.584Z] [flipper-backend] 2026-06-10 20:38:22,589 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:23.580Z] [flipper-backend] 2026-06-10 20:38:23,584 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:24.599Z] [flipper-backend] 2026-06-10 20:38:24,603 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:25.609Z] [flipper-backend] 2026-06-10 20:38:25,614 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:26.608Z] [flipper-backend] 2026-06-10 20:38:26,613 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:27.624Z] [flipper-backend] 2026-06-10 20:38:27,628 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:28.603Z] [flipper-backend] 2026-06-10 20:38:28,608 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:29.644Z] [flipper-backend] 2026-06-10 20:38:29,649 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:30.649Z] [flipper-backend] 2026-06-10 20:38:30,654 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:31.647Z] [flipper-backend] 2026-06-10 20:38:31,652 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:32.640Z] [flipper-backend] 2026-06-10 20:38:32,645 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:33.666Z] [flipper-backend] 2026-06-10 20:38:33,671 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:34.660Z] [flipper-backend] 2026-06-10 20:38:34,665 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:35.671Z] [flipper-backend] 2026-06-10 20:38:35,676 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:38:35.680Z] [flipper-backend] 2026-06-10 20:38:35,685 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 624/624 currencies have price histories (ByCategory: 624, individual fetch: 0)
+[2026-06-10T15:38:35.683Z] [flipper-backend] 2026-06-10 20:38:35,688 [INFO] backend.api.data_snapshot: Tier classification: 624 currencies classified
+[2026-06-10T15:38:35.685Z] [flipper-backend] 2026-06-10 20:38:35,690 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3302 exchange rates, 633 currencies
+[2026-06-10T15:38:53.252Z] [flipper-backend] INFO:     127.0.0.1:54387 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:39:38.272Z] [flipper-backend] INFO:     127.0.0.1:53281 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:40:23.290Z] [flipper-backend] INFO:     127.0.0.1:53309 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:41:08.302Z] [flipper-backend] INFO:     127.0.0.1:59909 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:41:53.316Z] [flipper-backend] INFO:     127.0.0.1:65052 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:42:38.318Z] [flipper-backend] INFO:     127.0.0.1:54747 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:43:23.321Z] [flipper-backend] INFO:     127.0.0.1:61412 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:43:36.294Z] [flipper-backend] 2026-06-10 20:43:36,296 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:43:36.880Z] [flipper-backend] 2026-06-10 20:43:36,881 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T15:43:37.896Z] [flipper-backend] 2026-06-10 20:43:37,898 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:38.909Z] [flipper-backend] 2026-06-10 20:43:38,915 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:39.939Z] [flipper-backend] 2026-06-10 20:43:39,945 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:40.968Z] [flipper-backend] 2026-06-10 20:43:40,974 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:41.957Z] [flipper-backend] 2026-06-10 20:43:41,962 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:42.976Z] [flipper-backend] 2026-06-10 20:43:42,982 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:43.992Z] [flipper-backend] 2026-06-10 20:43:43,998 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:44.985Z] [flipper-backend] 2026-06-10 20:43:44,990 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:46.028Z] [flipper-backend] 2026-06-10 20:43:46,033 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:47.031Z] [flipper-backend] 2026-06-10 20:43:47,037 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:48.047Z] [flipper-backend] 2026-06-10 20:43:48,053 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:49.049Z] [flipper-backend] 2026-06-10 20:43:49,055 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:50.056Z] [flipper-backend] 2026-06-10 20:43:50,061 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:51.056Z] [flipper-backend] 2026-06-10 20:43:51,062 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:52.075Z] [flipper-backend] 2026-06-10 20:43:52,081 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:53.093Z] [flipper-backend] 2026-06-10 20:43:53,099 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:54.112Z] [flipper-backend] 2026-06-10 20:43:54,118 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:43:54.121Z] [flipper-backend] 2026-06-10 20:43:54,126 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 624/624 currencies have price histories (ByCategory: 624, individual fetch: 0)
+[2026-06-10T15:43:54.123Z] [flipper-backend] 2026-06-10 20:43:54,129 [INFO] backend.api.data_snapshot: Tier classification: 624 currencies classified
+[2026-06-10T15:43:54.125Z] [flipper-backend] 2026-06-10 20:43:54,130 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3302 exchange rates, 633 currencies
+[2026-06-10T15:44:08.325Z] [flipper-backend] INFO:     127.0.0.1:54790 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:44:53.331Z] [flipper-backend] INFO:     127.0.0.1:62423 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:45:38.350Z] [flipper-backend] INFO:     127.0.0.1:62449 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:46:23.357Z] [flipper-backend] INFO:     127.0.0.1:62474 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:47:08.373Z] [flipper-backend] INFO:     127.0.0.1:62500 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:47:53.373Z] [flipper-backend] INFO:     127.0.0.1:62539 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:48:38.385Z] [flipper-backend] INFO:     127.0.0.1:62566 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:48:54.727Z] [flipper-backend] 2026-06-10 20:48:54,730 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-10T15:48:55.286Z] [flipper-backend] 2026-06-10 20:48:55,289 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-10T15:48:56.329Z] [flipper-backend] 2026-06-10 20:48:56,333 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:48:57.315Z] [flipper-backend] 2026-06-10 20:48:57,319 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:48:58.332Z] [flipper-backend] 2026-06-10 20:48:58,336 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:00.457Z] [flipper-backend] 2026-06-10 20:49:00,461 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:00.602Z] [flipper-backend] 2026-06-10 20:49:00,606 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:01.617Z] [flipper-backend] 2026-06-10 20:49:01,620 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:02.627Z] [flipper-backend] 2026-06-10 20:49:02,631 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:03.642Z] [flipper-backend] 2026-06-10 20:49:03,646 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:04.692Z] [flipper-backend] 2026-06-10 20:49:04,696 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:05.676Z] [flipper-backend] 2026-06-10 20:49:05,680 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:06.697Z] [flipper-backend] 2026-06-10 20:49:06,701 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:07.687Z] [flipper-backend] 2026-06-10 20:49:07,691 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:08.722Z] [flipper-backend] 2026-06-10 20:49:08,726 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:09.731Z] [flipper-backend] 2026-06-10 20:49:09,735 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:10.724Z] [flipper-backend] 2026-06-10 20:49:10,728 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:11.730Z] [flipper-backend] 2026-06-10 20:49:11,733 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:12.775Z] [flipper-backend] 2026-06-10 20:49:12,779 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-10T15:49:12.783Z] [flipper-backend] 2026-06-10 20:49:12,787 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 624/624 currencies have price histories (ByCategory: 624, individual fetch: 0)
+[2026-06-10T15:49:12.786Z] [flipper-backend] 2026-06-10 20:49:12,790 [INFO] backend.api.data_snapshot: Tier classification: 624 currencies classified
+[2026-06-10T15:49:12.787Z] [flipper-backend] 2026-06-10 20:49:12,791 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3302 exchange rates, 633 currencies
+[2026-06-10T15:49:23.387Z] [flipper-backend] INFO:     127.0.0.1:59601 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:50:08.408Z] [flipper-backend] INFO:     127.0.0.1:59630 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:50:34.537Z] [flipper-backend] INFO:     127.0.0.1:50723 - "GET /api/health HTTP/1.1" 200 OK
+[2026-06-10T15:50:34.588Z] [flipper-backend] INFO:     127.0.0.1:52781 - "GET /api/phase HTTP/1.1" 200 OK
+[2026-06-10T15:50:34.589Z] [flipper-backend] 2026-06-10 20:50:34,590 [WARNING] backend.api.routes_arbitrage: Failed to recompute flip_opportunities: cannot pickle 'sqlite3.Connection' object
+[2026-06-10T15:50:34.589Z] [ERROR] [flipper-backend] 2026-06-10 20:50:34,590 [ERROR] backend.api.routes_arbitrage: No cache available for flip_opportunities, returning empty: cannot pickle 'sqlite3.Connection' object
+[2026-06-10T15:50:34.591Z] [flipper-backend] INFO:     127.0.0.1:50723 - "GET /api/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-10T15:50:40.818Z] [flipper-backend] INFO:     127.0.0.1:52782 - "GET /api/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-10T15:50:40.881Z] [flipper-backend] INFO:     127.0.0.1:52781 - "GET /api/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-10T15:50:42.671Z] [flipper-backend] INFO:     127.0.0.1:52790 - "GET /api/prices/heatmap HTTP/1.1" 200 OK
+[2026-06-10T15:50:42.706Z] [flipper-backend] INFO:     127.0.0.1:52790 - "GET /api/liquid-chain/analysis HTTP/1.1" 200 OK
+[2026-06-10T15:50:42.726Z] [flipper-backend] INFO:     127.0.0.1:52781 - "GET /api/prices/heatmap HTTP/1.1" 200 OK
+[2026-06-10T15:50:53.408Z] [flipper-backend] INFO:     127.0.0.1:52803 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:51:04.552Z] [flipper-backend] INFO:     127.0.0.1:55006 - "GET /api/health HTTP/1.1" 200 OK
+[2026-06-10T15:51:22.386Z] [flipper-backend] INFO:     127.0.0.1:49450 - "GET /api/analyst/summary HTTP/1.1" 200 OK
+[2026-06-10T15:51:23.299Z] [flipper-backend] INFO:     127.0.0.1:49450 - "GET /api/tiers HTTP/1.1" 200 OK
+[2026-06-10T15:51:34.560Z] [flipper-backend] INFO:     127.0.0.1:60032 - "GET /api/health HTTP/1.1" 200 OK
+[2026-06-10T15:51:34.597Z] [flipper-backend] INFO:     127.0.0.1:60032 - "GET /api/phase HTTP/1.1" 200 OK
+[2026-06-10T15:51:38.423Z] [flipper-backend] INFO:     127.0.0.1:60032 - "GET /api/health/ping HTTP/1.1" 200 OK
+[2026-06-10T15:51:40.799Z] [flipper-backend] 2026-06-10 20:51:40,799 [INFO] backend.api.routes_prices: Prices clustering completed: 624 currencies assigned
+[2026-06-10T15:51:40.894Z] [flipper-backend] INFO:     127.0.0.1:60032 - "GET /api/prices HTTP/1.1" 200 OK
+[2026-06-10T15:51:40.942Z] [flipper-backend] INFO:     127.0.0.1:63207 - "GET /api/arbitrage/triangular HTTP/1.1" 200 OK
+[2026-06-10T15:51:40.943Z] [flipper-backend] INFO:     127.0.0.1:63209 - "GET /api/currencies HTTP/1.1" 200 OK
+[2026-06-10T15:51:40.943Z] [flipper-backend] INFO:     127.0.0.1:61926 - "GET /api/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-10T15:51:40.957Z] [flipper-backend] 2026-06-10 20:51:40,926 [WARNING] backend.api.routes_arbitrage: Failed to recompute flip_opportunities: cannot pickle 'sqlite3.Connection' object
+[2026-06-10T15:51:40.958Z] [ERROR] [flipper-backend] 2026-06-10 20:51:40,926 [ERROR] backend.api.routes_arbitrage: No cache available for flip_opportunities, returning empty: cannot pickle 'sqlite3.Connection' object
+[2026-06-10T15:51:40.962Z] [flipper-backend] INFO:     127.0.0.1:60032 - "GET /api/events?active_only=true HTTP/1.1" 200 OK

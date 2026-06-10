@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.38 | **Date:** 2026-06-10
+> **Version:** 1.39 | **Date:** 2026-06-11
 
 ---
 
@@ -99,15 +99,20 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 
 ### TODO (next iterations)
 1. **Real E2E with live backend** — Run Playwright against a running FastAPI instance (not just mocked routes). Requires `uvicorn backend.main:app` running.
-2. **Offload clustering in routes_prices.py** — `CurrencyClusterer.fit()` runs synchronously in the event loop. Move to `run_in_executor()` with ProcessPoolExecutor.
+2. **Windows start.bat verification** — Confirm ProcessPoolExecutor with `spawn` start method works correctly on Windows (create_process, pickle, etc.).
+
+### COMPLETED (v1.39 — Iteration 24)
+1. **Fix Liquid Chain crash: PascalCase → snake_case** — `routes_liquid_chain.py` returned PascalCase keys (`Steps`, `CumulativePaths`, `ChainName`). The flipper-proxy `transformKeys()` only converts snake_case → camelCase, so PascalCase passed through unchanged → `chain.steps` was `undefined` → `.filter()` TypeError. Fixed all serializers in `routes_liquid_chain.py` to use snake_case. Added defensive `?? []` null-checks in `liquid-chain-tab.tsx`.
+2. **Fix ProcessPoolExecutor pickle bug** — `_build_flip_opportunities_sync()` received `event_manager` and `pipeline_cache` as arguments, but these hold `sqlite3.Connection` references that can't be pickled. Refactored to pre-extract picklable data (`event_penalties` dict, `cached_cluster_labels` dict) in the async wrapper before passing to executor.
+3. **Offload CurrencyClusterer.fit() to executor** — `routes_prices.py` previously ran clustering synchronously in the event loop. Added `_run_clustering_sync()` standalone function and offloaded via `run_in_executor()` with ProcessPoolExecutor.
+4. **Cross-platform ProcessPoolExecutor** — Explicitly use `multiprocessing.get_context("spawn")` for ProcessPoolExecutor, ensuring consistent behavior on Windows (which defaults to spawn) and Linux (which defaults to fork).
 
 ### COMPLETED (v1.38 — Iteration 23)
-1. **ProcessPoolExecutor for CPU-bound work** — Replaced `ThreadPoolExecutor` with `ProcessPoolExecutor` for triangular arbitrage (Bellman-Ford) and flip opportunity computation. Bypasses Python GIL entirely, preventing event loop starvation during heavy computation. Fixes the cascade: heavy compute → GIL starvation → health check timeout → bridge kills backend → circuit breaker opens.
-2. **Ultra-lightweight health probe** — Added `GET /api/health/ping` (plain-text "ok", <1ms response). Bridge and flipper-proxy health probes now use `/ping` instead of `/api/health` (JSON with diagnostics). Prevents false-positive "unhealthy" detections during computation.
-3. **Concurrency limiting** — Added `asyncio.Semaphore(2)` on `/api/arbitrage/flips` and `/api/arbitrage/triangular` to prevent CPU saturation from concurrent requests.
-4. **Ritual Omens chain** — Added `ritual_omens` chain to `config.yaml` with 29 omen steps (ratio=1, no reforge — price comparison only). Added i18n keys (`ritualOmensTitle`, `ritualOmensNoReforgeNotice`) to all 4 locales. Added `ritual_omens` → `ritualOmensTitle` mapping in `chainDisplayName()`.
-5. **Bridge health check improvements** — Increased health check timeout from 10s to 15s. Using `/api/health/ping` for faster responses.
-6. **Documentation cleanup** — AGENT_NAVIGATION.md updated; removed stale items from TODO.
+1. **ProcessPoolExecutor for CPU-bound work** — Replaced `ThreadPoolExecutor` with `ProcessPoolExecutor` for triangular arbitrage (Bellman-Ford) and flip opportunity computation. Bypasses Python GIL entirely, preventing event loop starvation during heavy computation.
+2. **Ultra-lightweight health probe** — Added `GET /api/health/ping` (plain-text "ok", <1ms response). Bridge and flipper-proxy health probes now use `/ping` instead of `/api/health`.
+3. **Concurrency limiting** — Added `asyncio.Semaphore(2)` on `/api/arbitrage/flips` and `/api/arbitrage/triangular`.
+4. **Ritual Omens chain** — Added `ritual_omens` chain to `config.yaml` with 29 omen steps. Added i18n keys and `chainDisplayName()` mapping.
+5. **Bridge health check improvements** — Increased health check timeout from 10s to 15s.
 
 ### COMPLETED (v1.37 — Iteration 22)
 1. **CI fix: Python 3.12 + aiosqlite compat** — Changed CI from Python 3.13 → 3.12 (project requirement); relaxed `aiosqlite>=0.20,<1.0` → `aiosqlite>=0.20.0` to allow 0.22.x on Python 3.13+
@@ -189,6 +194,9 @@ When a new league launches, update these 7 files:
 27. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps. `aiosqlite>=0.20.0` is required for 3.13+ compat.
 28. **ProcessPoolExecutor bypasses GIL** — `backend.main:process_pool` is the shared ProcessPoolExecutor for CPU-bound work. Always use it (not `None`/default ThreadPool) for Bellman-Ford, clustering, or other heavy computation.
 29. **Ritual Omens chain is price-comparison only** — `ritual_omens` chain has `ratio=1` for all steps. Omens CANNOT be reforged. The chain shows relative price tiers, not reforge profitability.
+30. **Backend API responses MUST use snake_case** — The flipper-proxy `transformKeys()` converts `snake_case → camelCase` for the frontend. PascalCase keys pass through unchanged, causing `undefined` property access in React components. ALL backend serializers must use snake_case. (Bug fixed v1.39: `routes_liquid_chain.py` was returning PascalCase.)
+31. **ProcessPoolExecutor requires picklable arguments** — Never pass objects holding `sqlite3.Connection` (EventManager, PipelineCache, HistoricalStore) into `run_in_executor()` with ProcessPoolExecutor. Pre-extract needed data as plain dicts/lists before calling the executor.
+32. **ProcessPoolExecutor uses `spawn` start method** — `mp_context=spawn` is set explicitly for cross-platform consistency. Functions called in the executor must be importable without side effects (module-level re-imports will occur on Windows).
 
 ## 11. Documentation Map
 
