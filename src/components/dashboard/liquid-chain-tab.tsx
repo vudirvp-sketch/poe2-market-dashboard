@@ -296,7 +296,7 @@ const ChainCard = memo(function ChainCard({
             <span className="text-right" role="columnheader">{t("liquidChainProfitPct")}</span>
           </div>
           <div className="max-h-80 overflow-y-auto" role="rowgroup">
-            {chain.steps.map((step, idx) => (
+            {(chain.steps ?? []).map((step, idx) => (
               <ChainStepRow
                 key={step.apiId}
                 step={step}

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.39 | **Date:** 2026-06-11
+> **Version:** 1.40 | **Date:** 2026-06-11
 
 ---
 
@@ -100,27 +100,7 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ### TODO (next iterations)
 1. **Real E2E with live backend** — Run Playwright against a running FastAPI instance (not just mocked routes). Requires `uvicorn backend.main:app` running.
 2. **Windows start.bat verification** — Confirm ProcessPoolExecutor with `spawn` start method works correctly on Windows (create_process, pickle, etc.).
-
-### COMPLETED (v1.39 — Iteration 24)
-1. **Fix Liquid Chain crash: PascalCase → snake_case** — `routes_liquid_chain.py` returned PascalCase keys (`Steps`, `CumulativePaths`, `ChainName`). The flipper-proxy `transformKeys()` only converts snake_case → camelCase, so PascalCase passed through unchanged → `chain.steps` was `undefined` → `.filter()` TypeError. Fixed all serializers in `routes_liquid_chain.py` to use snake_case. Added defensive `?? []` null-checks in `liquid-chain-tab.tsx`.
-2. **Fix ProcessPoolExecutor pickle bug** — `_build_flip_opportunities_sync()` received `event_manager` and `pipeline_cache` as arguments, but these hold `sqlite3.Connection` references that can't be pickled. Refactored to pre-extract picklable data (`event_penalties` dict, `cached_cluster_labels` dict) in the async wrapper before passing to executor.
-3. **Offload CurrencyClusterer.fit() to executor** — `routes_prices.py` previously ran clustering synchronously in the event loop. Added `_run_clustering_sync()` standalone function and offloaded via `run_in_executor()` with ProcessPoolExecutor.
-4. **Cross-platform ProcessPoolExecutor** — Explicitly use `multiprocessing.get_context("spawn")` for ProcessPoolExecutor, ensuring consistent behavior on Windows (which defaults to spawn) and Linux (which defaults to fork).
-
-### COMPLETED (v1.38 — Iteration 23)
-1. **ProcessPoolExecutor for CPU-bound work** — Replaced `ThreadPoolExecutor` with `ProcessPoolExecutor` for triangular arbitrage (Bellman-Ford) and flip opportunity computation. Bypasses Python GIL entirely, preventing event loop starvation during heavy computation.
-2. **Ultra-lightweight health probe** — Added `GET /api/health/ping` (plain-text "ok", <1ms response). Bridge and flipper-proxy health probes now use `/ping` instead of `/api/health`.
-3. **Concurrency limiting** — Added `asyncio.Semaphore(2)` on `/api/arbitrage/flips` and `/api/arbitrage/triangular`.
-4. **Ritual Omens chain** — Added `ritual_omens` chain to `config.yaml` with 29 omen steps. Added i18n keys and `chainDisplayName()` mapping.
-5. **Bridge health check improvements** — Increased health check timeout from 10s to 15s.
-
-### COMPLETED (v1.37 — Iteration 22)
-1. **CI fix: Python 3.12 + aiosqlite compat** — Changed CI from Python 3.13 → 3.12 (project requirement); relaxed `aiosqlite>=0.20,<1.0` → `aiosqlite>=0.20.0` to allow 0.22.x on Python 3.13+
-2. **Jest test fix: circuit breaker cooldown** — Updated `flipper-proxy.test.ts` to expect `15_000` (was `60_000`, changed in prior iteration)
-3. **E2E test: Liquid Chain tab** — Added `e2e/liquid-chain.spec.ts` with 6 tests (offline fallback, online data rendering, i18n, profit/loss badges, no-reforge notice)
-4. **E2E fixtures update** — Added `liquid-chain` and `optimal-currency` route mocks to `e2e/fixtures.ts`; added `liquid-chain` to navigation spec tab list
-5. **Multi-chain display name** — `liquid-chain-tab.tsx` ChainCard now uses `chainDisplayName()` to resolve chain name → i18n title, enabling future chains to have proper display names
-6. **All tests pass** — 291/291 Jest + 344/344 pytest + build succeeds
+3. **ProcessPoolExecutor warm-up** — Submit a trivial task to the pool at startup to avoid cold-start latency on the first real request.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -163,40 +143,30 @@ When a new league launches, update these 7 files:
 6. `e2e/fixtures.ts` — `MOCK_LEAGUES`, `MOCK_REALMS`
 7. `AGENT_NAVIGATION.md` — Update version + date
 
-## 10. Frequent Bugs
+## 10. Frequent Bugs & Critical Rules
 
 1. **`default_league_value` format mismatch:** POE2Scout `/Realms` returns displayName or stale ShortName. Fix: `DEFAULT_LEAGUE_OVERRIDES` + dual matching in `getLeagues()`.
 2. **R_buy/R_sell swapped:** Must be `R_buy=bid, R_sell=ask`. If reversed, all `gross_profit_pct` ≈ −3.5%.
 3. **Correlation matrix 0 valid pairs:** `min_overlap=10` impossible for young leagues. Fix: `min_overlap=max(2, 0.3*min_len)`.
-4. **`cache-snapshot.json` too large:** Fix: truncation to max 8 pairs per item category + max 15 currency pairs.
-5. **PriceLogs are REVERSE chronological:** Always sort before charting.
-6. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
-7. **npm is the package manager** — not pnpm/yarn.
-8. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
-9. **Backend Pydantic schemas use PascalCase aliases** — Python attrs are snake_case, serialized as PascalCase.
-10. **`_math` must be module-level import** — `_find_optimal_payment()` uses `_math.isfinite()`.
-11. **`item_categories` must stay in sync** — `config.yaml`, `config.py`, `currency-optimal.ts` all must contain the same categories.
-12. **CPU-bound Python code MUST run in `run_in_executor()`** — Any sync CPU-heavy loop blocks the event loop, triggers bridge kill + circuit breaker cascade.
-13. **Triangular arbitrage results are cached** — Key: `triangular_arbitrage_{min_profit_pct}`. Do not remove — without it, every request triggers O(E²) cross-rate validation.
-14. **`find_triangular_arbitrage()` is async** — Since v1.30. Calling without `await` returns coroutine. Tests must use `@pytest.mark.asyncio`.
-15. **Cross-rate threshold is 10%** — Do not lower to 5% without measuring false-positive impact.
-16. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module → `Cannot find module` at runtime. NFT warning is harmless.
-17. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable.
-18. **Proxy timeout is configurable** — `proxyToFlipper()` and `proxyWithFallback()` accept `timeoutMs` param (default 15s).
-19. **Bridge health check timeout is 15s** — Uses `/api/health/ping` endpoint (plain-text, <1ms response). Do not lower back to 10s or use `/api/health` for health probes.
-20. **`/api/health/ping` is the lightweight health probe** — Returns plain-text "ok". Use this for circuit breaker and bridge probes. `/api/health` returns detailed JSON diagnostics.
-21. **Health endpoint uses pre-imported modules** — `_get_event_manager`, `_get_pipeline_cache`, `_get_snapshot_manager`, `_get_daily_stats_cache` are imported at module level.
-22. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
-23. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
-24. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
-25. **Root main.py is a re-export** — `./main.py` → `from backend.main import app`. Never edit directly.
-26. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
-27. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps. `aiosqlite>=0.20.0` is required for 3.13+ compat.
-28. **ProcessPoolExecutor bypasses GIL** — `backend.main:process_pool` is the shared ProcessPoolExecutor for CPU-bound work. Always use it (not `None`/default ThreadPool) for Bellman-Ford, clustering, or other heavy computation.
-29. **Ritual Omens chain is price-comparison only** — `ritual_omens` chain has `ratio=1` for all steps. Omens CANNOT be reforged. The chain shows relative price tiers, not reforge profitability.
-30. **Backend API responses MUST use snake_case** — The flipper-proxy `transformKeys()` converts `snake_case → camelCase` for the frontend. PascalCase keys pass through unchanged, causing `undefined` property access in React components. ALL backend serializers must use snake_case. (Bug fixed v1.39: `routes_liquid_chain.py` was returning PascalCase.)
-31. **ProcessPoolExecutor requires picklable arguments** — Never pass objects holding `sqlite3.Connection` (EventManager, PipelineCache, HistoricalStore) into `run_in_executor()` with ProcessPoolExecutor. Pre-extract needed data as plain dicts/lists before calling the executor.
-32. **ProcessPoolExecutor uses `spawn` start method** — `mp_context=spawn` is set explicitly for cross-platform consistency. Functions called in the executor must be importable without side effects (module-level re-imports will occur on Windows).
+4. **PriceLogs are REVERSE chronological:** Always sort before charting.
+5. **Gold fees permanently excluded** — Do NOT re-add gold fee deductions.
+6. **Frontend types are in `src/lib/types.ts` ONLY** — no duplicates elsewhere.
+7. **Backend API responses MUST use snake_case** — The flipper-proxy `transformKeys()` converts `snake_case → camelCase`. PascalCase keys pass through unchanged → `undefined` in React. ALL backend serializers must use snake_case.
+8. **CPU-bound Python code MUST run in `run_in_executor()`** — Any sync CPU-heavy loop blocks the event loop, triggers bridge kill + circuit breaker cascade.
+9. **ProcessPoolExecutor requires picklable arguments** — Never pass objects holding `sqlite3.Connection` (EventManager, PipelineCache, HistoricalStore) into `run_in_executor()` with ProcessPoolExecutor. Pre-extract needed data as plain dicts/lists.
+10. **ProcessPoolExecutor uses `spawn` start method** — `mp_context=spawn` set explicitly. Functions called in executor must be importable without side effects.
+11. **Proxy timeout is configurable** — Heavy endpoints (flips: 30s, triangular: 45s, prices: 30s) need longer timeouts than default 15s. Without this, the proxy times out → circuit breaker opens → ALL endpoints blocked.
+12. **Triangular arbitrage results are cached** — Key: `triangular_arbitrage_{min_profit_pct}`. Do not remove — without it, every request triggers O(E²) cross-rate validation.
+13. **`find_triangular_arbitrage()` is async** — Since v1.30. Calling without `await` returns coroutine. Tests must use `@pytest.mark.asyncio`.
+14. **`/api/health/ping` is the lightweight health probe** — Returns plain-text "ok". Use this for circuit breaker and bridge probes. `/api/health` returns detailed JSON diagnostics.
+15. **Linux build requires `.venv` removal** — Turbopack panics on `.venv/bin/python` symlinks. Run `rm -rf .venv` before `npm run build` on Linux.
+16. **Python venv required** — `start.sh`/`start.bat` create `.venv/` automatically. System pip may fail (PEP 668).
+17. **Liquid items are in `delirium` category** — NOT `ritual`. All 10 liquid chain items are fetched via ByCategory?Category=delirium.
+18. **CI uses Python 3.12** — Do NOT change to 3.13+ without verifying aiosqlite and all deps.
+19. **Ritual Omens chain is price-comparison only** — `ritual_omens` chain has `ratio=1` for all steps. Omens CANNOT be reforged.
+20. **`pipeline_cache` must be obtained via `get_pipeline_cache()` in every endpoint** — NOT a module-level variable.
+21. **Bridge must use `python -m uvicorn`** — `getUvicornArgs()` must always return `["-m", "uvicorn"]`.
+22. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module. NFT warning is harmless.
 
 ## 11. Documentation Map
 
@@ -210,91 +180,30 @@ When a new league launches, update these 7 files:
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals | On backend changes |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup + fallback mechanisms | On proxy changes |
 | `PoE2_Flipper_Canonical_Formulas.md` | All mathematical formulas (§1-§14) | On algorithm changes |
-| `src/lib/currency-optimal.ts` | §11: Cross-currency arbitrage helpers | On flip logic changes |
 
-## 12. Liquid Chain Module (Etaps 1-2 Complete)
+## 12. Liquid Chain Module
 
 ### Overview
 
-A module for tracking the profitability of the **Liquid Item conversion chain** — a sequence of 10 PoE2 items where 3 units of item N can be reforged into 1 unit of item N+1 at the vendor. The module computes per-step and cumulative profit/loss to help users decide whether reforging is worthwhile.
+Tracks profitability of **vendor reforge conversion chains**. Currently supports `delirium_liquids` (10 steps, 3:1 ratio) and `ritual_omens` (29 steps, price-comparison only, ratio=1).
 
-**Status**: Complete (backend + frontend). Multi-chain ready — config supports adding more chains, UI renders all chains from API response.
-
-### Item Chain (delirium_liquids)
-
-All items are in POE2Scout category **`delirium`** (NOT `ritual` — confirmed from live API).
-
-```
-1.  diluted-liquid-ire              (Разбавленный жидкий гнев)           → 3:1 →
-2.  diluted-liquid-guilt            (Разбавленная жидкая вина)           → 3:1 →
-3.  diluted-liquid-greed            (Разбавленная жидкая жадность)       → 3:1 →
-4.  liquid-paranoia                 (Жидкая паранойя)                    → 3:1 →
-5.  liquid-envy                     (Жидкая зависть)                     → 3:1 →
-6.  liquid-disgust                  (Жидкое отвращение)                  → 3:1 →
-7.  liquid-despair                  (Жидкое отчаяние)                    → 3:1 →
-8.  concentrated-liquid-fear        (Концентрированный жидкий страх)     → 3:1 →
-9.  concentrated-liquid-suffering   (Концентрированное жидкое страдание) → 3:1 →
-10. concentrated-liquid-isolation   (Концентрированное жидкое отчуждение)
-```
+**Status**: Complete. Multi-chain ready — config supports adding more chains, UI renders all from API.
 
 ### Adding a New Chain
 
-To add a new chain:
-
-1. Add chain definition to `config.yaml` → `liquid_chain.chains` (name, category, steps with api_id/name_en/name_ru/ratio)
-2. Add i18n key for chain display name to all 4 locale files (en, ru, zh, ko)
+1. Add chain definition to `config.yaml` → `liquid_chain.chains`
+2. Add i18n key for chain display name to all 4 locale files
 3. Map the chain name → i18n key in `chainDisplayName()` in `liquid-chain-tab.tsx`
-4. Backend and API endpoints work automatically — no code changes needed
+4. Backend and API endpoints work automatically
 
-**IMPORTANT:** If the chain is NOT a vendor reforge chain (e.g., ritual omens), set `ratio: 1` for all steps and add a clear note in `config.yaml` explaining that the chain is for price comparison only.
+**IMPORTANT:** Non-reforge chains (e.g. ritual omens) must set `ratio: 1` for all steps.
 
-### Formulas
-
-For each step `i → i+1`:
-- `input_cost = ratio × price(item_i)` — cost to buy input items
-- `output_value = 1 × price(item_{i+1})` — value of output item
-- `profit = output_value − input_cost`
-- `profit_pct = profit / input_cost × 100`
-
-Cumulative (position j to k): `cost = ratio^(k-j) × price(item_j)`, `value = price(item_k)`
-
-### Backend Files
+### Key Files
 
 | File | Purpose |
 |------|---------|
-| `config.yaml` → `liquid_chain` | Chain definitions (name, category, steps with api_id/name_en/name_ru/ratio) |
-| `backend/config.py` → `LiquidChainConfig` | Pydantic models: `LiquidChainStepConfig`, `LiquidChainDefConfig`, `LiquidChainConfig` |
-| `backend/models/currency.py` | `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult` dataclasses |
-| `backend/arbitrage/liquid_chain.py` | `compute_liquid_chain()` — pure computation, no API calls |
-| `backend/api/routes_liquid_chain.py` | `GET /api/liquid-chain/analysis` + `GET /api/liquid-chain/opportunities` |
-| `backend/main.py` | Router registration (try/except ImportError) |
+| `config.yaml` → `liquid_chain` | Chain definitions (name, category, steps) |
+| `backend/arbitrage/liquid_chain.py` | `compute_liquid_chain()` — pure computation |
+| `backend/api/routes_liquid_chain.py` | `GET /api/liquid-chain/analysis` + `/opportunities` |
+| `src/components/dashboard/liquid-chain-tab.tsx` | UI: per-step table + cumulative paths |
 | `tests/test_liquid_chain.py` | 18 tests — full coverage |
-
-### Frontend Files
-
-| File | Purpose |
-|------|---------|
-| `src/lib/types.ts` | `LiquidChainStep`, `LiquidChainCumulativePath`, `LiquidChainResult`, `LiquidChainAnalysisResponse`, `LiquidChainOpportunitiesResponse` |
-| `src/app/api/flipper/liquid-chain/route.ts` | Proxy → `GET /api/liquid-chain/analysis` with fallback |
-| `src/components/dashboard/liquid-chain-tab.tsx` | UI: per-step table + cumulative paths + no-reforge badges + multi-chain display names |
-| `src/lib/i18n/locales/*.ts` | 20 i18n keys (en, ru, zh, ko) |
-| `e2e/liquid-chain.spec.ts` | 6 Playwright E2E tests (offline, online, i18n, data rendering) |
-
-### API Endpoints
-
-```
-GET /api/liquid-chain/analysis       → Full analysis for all chains (steps + cumulative paths)
-    ?chain=delirium_liquids          → Filter by chain name
-
-GET /api/liquid-chain/opportunities  → Only profitable steps and cumulative paths
-    ?min_profit_pct=0.0             → Minimum profit % threshold
-    ?chain=delirium_liquids         → Filter by chain name
-```
-
-### Key Design Decisions
-
-1. **Chain config in `config.yaml`** — No hardcoded item names. Each step has `api_id`, `name_en`, `name_ru`, `ratio`.
-2. **Prices from DataSnapshot** — Uses `snapshot.prices_in_base`, no additional API calls.
-3. **No executor needed** — Only 10 steps, computation is O(n²) cumulative paths — runs directly in async handler.
-4. **Multi-chain ready** — Config supports multiple chains; UI renders all chains from API; `chainDisplayName()` maps chain names to i18n titles.
-5. **Category is `delirium`** — Confirmed from live API. Liquid items are NOT in `ritual`.

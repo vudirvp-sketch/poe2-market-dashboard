@@ -8,6 +8,12 @@ export const dynamic = "force-dynamic";
  *  FIX: When the backend is offline, return empty flips with dataAvailable: false
  *  instead of 503. The frontend already handles this gracefully by showing
  *  "backend offline" / "insufficient data" UI states.
+ *
+ *  TIMEOUT: Uses 30s timeout (instead of default 15s) because flips computation
+ *  involves ProcessPoolExecutor (GIL bypass) + clustering + scoring for 600+
+ *  currencies. The first request after backend cold-start is especially slow
+ *  (ProcessPoolExecutor spawn + sklearn import). Without the longer timeout,
+ *  the proxy times out → circuit breaker opens → ALL endpoints blocked.
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -40,5 +46,8 @@ export async function GET(req: NextRequest) {
       },
     },
     searchParams,
+    "GET",
+    undefined,
+    30_000, // 30s timeout for ProcessPoolExecutor + clustering + scoring
   );
 }

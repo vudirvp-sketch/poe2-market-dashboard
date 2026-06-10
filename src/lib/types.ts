@@ -677,7 +677,7 @@ export interface OptimalCurrencyResponse {
 // ============================================================================
 
 /** One step in a vendor reforge conversion chain (e.g. 3 Diluted Liquid Ire → 1 Diluted Liquid Guilt).
- *  Backend serializes with PascalCase keys; proxy transforms to camelCase. */
+ *  Backend serializes with snake_case keys; proxy transforms to camelCase. */
 export interface LiquidChainStep {
   apiId: string;
   nameEn: string;
