@@ -65,6 +65,14 @@ set PYTHON_AVAILABLE=0
 set UVICORN_AVAILABLE=0
 set PY_CMD=python
 
+REM ---- OOM protection: limit ProcessPoolExecutor workers ----
+REM Each worker loads sklearn/numpy/scipy (~300-500 MB). With 600+ currencies,
+REM multiple workers cause OOM on systems with <16 GB RAM. Default: 1 worker.
+REM Override: set FLIPPER_WORKERS=0 for auto-detect, or a specific number.
+if not defined FLIPPER_WORKERS (
+    set FLIPPER_WORKERS=1
+)
+
 where.exe python >nul 2>&1
 if !ERRORLEVEL! equ 0 (
     set PYTHON_AVAILABLE=1

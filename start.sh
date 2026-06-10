@@ -67,6 +67,14 @@ else
     exit 1
 fi
 
+# ---- OOM protection: limit ProcessPoolExecutor workers ----
+# Each worker loads sklearn/numpy/scipy (~300-500 MB). With 600+ currencies,
+# multiple workers cause OOM on systems with <16 GB RAM. Default: 1 worker.
+# Override: set FLIPPER_WORKERS=0 for auto-detect, or a specific number.
+if [ -z "${FLIPPER_WORKERS:-}" ]; then
+    export FLIPPER_WORKERS=1
+fi
+
 # ---- Check Python & set up venv ----
 PYTHON_AVAILABLE=0
 UVICORN_AVAILABLE=0

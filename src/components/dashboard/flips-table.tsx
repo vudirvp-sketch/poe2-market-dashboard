@@ -23,7 +23,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useI18n, type TranslationKeys } from "@/lib/i18n";
+import { useI18n, type Locale, type TranslationKeys } from "@/lib/i18n";
 import { fmt, type OptimalPaymentResult } from "@/lib/types";
 import { Pagination } from "@/components/dashboard/pagination";
 import { ApiErrorFallback } from "./api-error-fallback";
@@ -47,6 +47,25 @@ function momentumIcon(momentum: number | undefined) {
   if (m > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
   if (m < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
   return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />;
+}
+
+/**
+ * Get localized display name for a currency pair.
+ * Uses backend-provided Russian names (currencyFromRu/currencyToRu) when
+ * available and locale is "ru". Falls back to the raw api_id pair otherwise.
+ */
+function getLocalizedCurrencyPair(opp: FlipOpportunity, locale: Locale): string {
+  if (locale === "ru" && (opp.currencyFromRu || opp.currencyToRu)) {
+    const from = opp.currencyFromRu || opp.currency.split("/")[0];
+    const to = opp.currencyToRu || opp.currency.split("/")[1];
+    return `${from}/${to}`;
+  }
+  if (locale === "en" && (opp.currencyFromEn || opp.currencyToEn)) {
+    const from = opp.currencyFromEn || opp.currency.split("/")[0];
+    const to = opp.currencyToEn || opp.currency.split("/")[1];
+    return `${from}/${to}`;
+  }
+  return opp.currency;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +111,7 @@ export const FlipsTable = memo(function FlipsTable({
   optimalPaymentByDisplayName,
   anchorId,
 }: FlipsTableProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Sort header helper
   const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
@@ -170,14 +189,14 @@ export const FlipsTable = memo(function FlipsTable({
                     }
                   }}
                   tabIndex={0}
-                  aria-label={t("ariaFlipRowScore", { "0": opp.currency, "1": ((opp.score ?? 0) * 100).toFixed(0) })}
+                  aria-label={t("ariaFlipRowScore", { "0": getLocalizedCurrencyPair(opp, locale), "1": ((opp.score ?? 0) * 100).toFixed(0) })}
                 >
                   {/* Currency pair + suspicious data indicator */}
                   <span className="flex items-center gap-1 text-xs font-medium truncate">
                     {isFlipDataSuspicious(opp) && (
                       <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" aria-hidden="true" />
                     )}
-                    {opp.currency}
+                    {getLocalizedCurrencyPair(opp, locale)}
                   </span>
 
                   {/* Score */}

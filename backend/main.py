@@ -319,11 +319,28 @@ async def lifespan(app: FastAPI):
 # This fixes the cascade: heavy compute → GIL starvation → health check
 # timeout → bridge kills backend → circuit breaker opens.
 #
-# Workers: min(4, cpu_count-1) — leave at least 1 core for the event loop.
+# Workers: controlled by FLIPPER_WORKERS env var (default: 1).
+# Each worker process loads sklearn/numpy/scipy (~300-500 MB), so
+# multiple workers can cause OOM. Set FLIPPER_WORKERS=0 to auto-detect
+# (min(4, cpu_count-1)), or set to a specific number for more parallelism.
 # ---------------------------------------------------------------------------
 import multiprocessing
 _cpu_count = multiprocessing.cpu_count()
-_process_workers = max(1, min(4, _cpu_count - 1)) if _cpu_count > 1 else 1
+
+# FLIPPER_WORKERS env var: override the number of ProcessPoolExecutor workers.
+# Default: 1 worker (safe for low-memory environments; sklearn/numpy/scipy
+# each worker imports ~300-500 MB). With 600+ currencies, multiple workers
+# can cause OOM on systems with <16 GB RAM. Set FLIPPER_WORKERS=0 to use
+# the automatic formula: min(4, cpu_count-1).
+_env_workers = os.environ.get("FLIPPER_WORKERS", "1")
+if _env_workers.strip() == "0":
+    _process_workers = max(1, min(4, _cpu_count - 1)) if _cpu_count > 1 else 1
+else:
+    try:
+        _process_workers = max(1, int(_env_workers))
+    except ValueError:
+        _process_workers = 1
+
 # Windows uses 'spawn' by default; Linux/macOS defaults to 'fork'.
 # Explicitly use 'spawn' context for cross-platform consistency —
 # child processes must be able to import the module without side effects
@@ -331,8 +348,8 @@ _process_workers = max(1, min(4, _cpu_count - 1)) if _cpu_count > 1 else 1
 _mp_ctx = multiprocessing.get_context("spawn")
 process_pool = ProcessPoolExecutor(max_workers=_process_workers, mp_context=_mp_ctx)
 logger.info(
-    "ProcessPoolExecutor initialized: %d workers (cpu_count=%d, start_method=spawn)",
-    _process_workers, _cpu_count,
+    "ProcessPoolExecutor initialized: %d workers (cpu_count=%d, FLIPPER_WORKERS=%s, start_method=spawn)",
+    _process_workers, _cpu_count, _env_workers,
 )
 
 

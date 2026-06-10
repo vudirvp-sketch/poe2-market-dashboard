@@ -15,9 +15,31 @@ import { AlertTriangle, TrendingUp, RefreshCw, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/lib/i18n";
-import type { FlipsResponse } from "@/lib/types";
+import { useI18n, type Locale } from "@/lib/i18n";
+import type { FlipsResponse, FlipOpportunity } from "@/lib/types";
 import { ApiErrorFallback } from "./api-error-fallback";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Get localized display name for a currency pair.
+ * Uses backend-provided Russian names when available and locale is "ru".
+ */
+function getLocalizedCurrencyPair(opp: FlipOpportunity, locale: Locale): string {
+  if (locale === "ru" && (opp.currencyFromRu || opp.currencyToRu)) {
+    const from = opp.currencyFromRu || opp.currency.split("/")[0];
+    const to = opp.currencyToRu || opp.currency.split("/")[1];
+    return `${from}/${to}`;
+  }
+  if (locale === "en" && (opp.currencyFromEn || opp.currencyToEn)) {
+    const from = opp.currencyFromEn || opp.currency.split("/")[0];
+    const to = opp.currencyToEn || opp.currency.split("/")[1];
+    return `${from}/${to}`;
+  }
+  return opp.currency;
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -44,7 +66,7 @@ export const ArbitrageFlipperFlips = memo(function ArbitrageFlipperFlips({
   upstreamDegraded,
   onRetry,
 }: ArbitrageFlipperFlipsProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <Card>
@@ -129,7 +151,7 @@ export const ArbitrageFlipperFlips = memo(function ArbitrageFlipperFlips({
                 >
                   {/* Currency pair */}
                   <span className="text-xs font-medium truncate" role="cell">
-                    {opp.currency}
+                    {getLocalizedCurrencyPair(opp, locale)}
                   </span>
 
                   {/* Score */}

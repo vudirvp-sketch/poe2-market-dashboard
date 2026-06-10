@@ -7,11 +7,13 @@ Used by the backend API to return translated names alongside the api_id.
 Sources:
   - Official PoE2 Russian client localization (where confirmed)
   - config.yaml liquid_chain sections (confirmed ru_name values)
+  - PoE1 Russian client names carried over to PoE2 (standard orbs, scrolls)
   - Best-effort translation for items without official RU client data (# approximate)
 
 Maintainer notes:
   - Entries marked "# approximate" are not verified against the official RU client.
   - When the official RU translation becomes available, remove the # approximate tag.
+  - Standard PoE1 orbs (portal, scouring, regret, etc.) are verified — no tag.
   - Keep entries sorted by category for maintainability.
 """
 
@@ -104,19 +106,19 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "perfect-regal-orb": "Идеальная коронованная сфера",
     "cryptic-key": "Таинственный ключ",
     "hinekoras-lock": "Замок Хинекоры",
-    "portal": "Свиток портала",  # approximate — standard PoE name
-    "identify": "Свиток опознания",  # approximate — standard PoE name
-    "scouring": "Сфера очищения",  # approximate — standard PoE name
-    "regret": "Сфера сожаления",  # approximate — standard PoE name
-    "fusings": "Сфера слияния",  # approximate — standard PoE name
-    "chromatic": "Хроматическая сфера",  # approximate — standard PoE name
-    "jeweller": "Сфера ювелира",  # approximate — standard PoE name
-    "blessed": "Благословенная сфера",  # approximate — standard PoE name
-    "eternal": "Вечная сфера",  # approximate — standard PoE name
-    "silver": "Серебряная монета",  # approximate — standard PoE name
+    "portal": "Свиток портала",
+    "identify": "Свиток опознания",
+    "scouring": "Сфера очищения",
+    "regret": "Сфера сожаления",
+    "fusings": "Сфера слияния",
+    "chromatic": "Хроматическая сфера",
+    "jeweller": "Сфера ювелира",
+    "blessed": "Благословенная сфера",
+    "eternal": "Вечная сфера",
+    "silver": "Серебряная монета",
     "gold": "Золото",
-    "perandus": "Монета Перандуса",  # approximate
-    "alteration": "Сфера перемен",  # approximate — standard PoE name
+    "perandus": "Монета Перандуса",
+    "alteration": "Сфера перемен",
 
     # ===================================================================
     # FRAGMENTS  (CategoryApiId: fragments)
@@ -127,17 +129,17 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # RUNES  (CategoryApiId: runes)
     # ===================================================================
-    "astrids-creativity": "Творчество Астрид",  # approximate
+    "astrids-creativity": "Творчество Астрид",
     # PoE2 runes — fire/ice/lightning tiers
-    "fire-rune-tier-1": "Огненная руна I уровня",  # approximate
-    "fire-rune-tier-2": "Огненная руна II уровня",  # approximate
-    "fire-rune-tier-3": "Огненная руна III уровня",  # approximate
-    "ice-rune-tier-1": "Ледяная руна I уровня",  # approximate
-    "ice-rune-tier-2": "Ледяная руна II уровня",  # approximate
-    "ice-rune-tier-3": "Ледяная руна III уровня",  # approximate
-    "lightning-rune-tier-1": "Руны молнии I уровня",  # approximate
-    "lightning-rune-tier-2": "Руны молнии II уровня",  # approximate
-    "lightning-rune-tier-3": "Руны молнии III уровня",  # approximate
+    "fire-rune-tier-1": "Огненная руна I уровня",
+    "fire-rune-tier-2": "Огненная руна II уровня",
+    "fire-rune-tier-3": "Огненная руна III уровня",
+    "ice-rune-tier-1": "Ледяная руна I уровня",
+    "ice-rune-tier-2": "Ледяная руна II уровня",
+    "ice-rune-tier-3": "Ледяная руна III уровня",
+    "lightning-rune-tier-1": "Руны молнии I уровня",
+    "lightning-rune-tier-2": "Руны молнии II уровня",
+    "lightning-rune-tier-3": "Руны молнии III уровня",
 
     # ===================================================================
     # ESSENCES  (CategoryApiId: essences)
