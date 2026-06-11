@@ -6,21 +6,24 @@ Used by the backend API to return translated names alongside the api_id.
 
 Sources:
   - poe2db.tw/ru/ — verified Russian localization from the PoE2 wiki
-  - poedb.tw/ru/ — verified Russian names from the PoE1 client
+  - POE2Scout API — api_id verification (items not in API noted as such)
   - config.yaml liquid_chain sections (confirmed ru_name values)
-  - PoE1 Russian client names carried over to PoE2 (standard orbs, scrolls)
 
 Maintainer notes:
-  - Entries marked "# poe2db" are verified against poe2db.tw/ru/ (PoE2 wiki).
-  - Entries marked "# poedb" are verified against poedb.tw/ru/ (PoE1 Russian client).
-  - Standard PoE1 orbs (portal, scouring, regret, etc.) are verified — no tag.
-  - Keep entries sorted by category for maintainability.
+  - "# poe2db" = verified against poe2db.tw/ru/ (PoE2 wiki)
+  - "# poe2db, POE2Scout confirmed" = api_id verified in POE2Scout API
+  - "# poe2db, not in POE2Scout API" = exists in game but not tracked by POE2Scout
+  - "# poedb" = verified against poedb.tw/ru/ (PoE1 client, may need re-verification)
+  - Standard PoE1 orbs (portal, scouring, regret, etc.) — no tag
+  - Keep entries sorted by category for maintainability
   - PoE2 uses a different essence system: Lesser -> base -> Greater -> Perfect
-    (no "Deafening" tier — those are PoE1-only and have been removed).
-  - PoE1-only items (Deafening essences, Distilled emotions, Breach catalysts,
-    certain expedition/abyss/incursion/Vaal items) have been removed since this
-    is a PoE2-only dashboard.
-  - PoE2 Russian client uses "Иш" for "Esh" (not "Эш" as in some PoE1 translations).
+    (no "Deafening" tier — those are PoE1-only and have been removed)
+  - PoE1-only items have been removed — this is a PoE2-only dashboard
+  - PoE2 Russian client uses "Иш" for "Esh" (not "Эш" as in some PoE1 translations)
+  - PoE2 runes were overhauled: fire/ice/lightning tiers replaced with
+    adept/body/iron/mind/stone/storm rune system with lesser/greater/perfect tiers
+  - As of iteration 32: 625 items in POE2Scout API, 349 RU entries, 356 EN entries
+    336 API items still need Russian names (runes, lineage support gems, etc.)
 """
 
 # ---------------------------------------------------------------------------
@@ -136,16 +139,11 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # RUNES  (CategoryApiId: runes)
     # ===================================================================
     "astrids-creativity": "Творчество Астрид",
-    # PoE2 runes — fire/ice/lightning tiers
-    "fire-rune-tier-1": "Огненная руна I уровня",
-    "fire-rune-tier-2": "Огненная руна II уровня",
-    "fire-rune-tier-3": "Огненная руна III уровня",
-    "ice-rune-tier-1": "Ледяная руна I уровня",
-    "ice-rune-tier-2": "Ледяная руна II уровня",
-    "ice-rune-tier-3": "Ледяная руна III уровня",
-    "lightning-rune-tier-1": "Руны молнии I уровня",
-    "lightning-rune-tier-2": "Руны молнии II уровня",
-    "lightning-rune-tier-3": "Руны молнии III уровня",
+    # NOTE: PoE2 runes were overhauled — fire/ice/lightning tier system removed.
+    # Current POE2Scout API uses: adept-rune, body-rune, iron-rune, mind-rune,
+    # stone-rune, storm-rune, etc. with lesser/greater/perfect tiers.
+    # Old tier entries (fire-rune-tier-1/2/3 etc.) removed — not in API.
+    # Russian names for new rune system will be added in a future iteration.
 
     # ===================================================================
     # ESSENCES  (CategoryApiId: essences)
@@ -281,15 +279,18 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "voranas-siege": "Сага Вораны",  # poe2db (PoE2: Vorana's Saga)
     "expedition-logbook": "Журнал экспедиции",  # poe2db
     # PoE2 expedition artifacts (verified from poe2db)
-    "broken-circle-artifact": "Артефакт Разомкнутого круга",  # poe2db
-    "black-scythe-artifact": "Артефакт Чёрной косы",  # poe2db
-    "order-artifact": "Артефакт Ордена",  # poe2db
-    "sun-artifact": "Артефакт Солнца",  # poe2db
-    "olroths-crest-of-the-sun": "Знак Солнца Олрота",  # poe2db
-    "medveds-crest-of-the-circle": "Знак Круга Медведя",  # poe2db
-    "voranas-crest-of-the-scythe": "Знак Косы Вораны",  # poe2db
-    "the-runebinders-alloy": "Сплав Повелителя рун",  # poe2db
-    "the-runefathers-alloy": "Сплав Рунного отца",  # poe2db
+    # NOTE: 4 artifact items below exist on poe2db but are NOT tracked by POE2Scout API.
+    # Their api_ids are guessed and may not match if POE2Scout adds them later.
+    "broken-circle-artifact": "Артефакт Разомкнутого круга",  # poe2db, not in POE2Scout API
+    "black-scythe-artifact": "Артефакт Чёрной косы",  # poe2db, not in POE2Scout API
+    "order-artifact": "Артефакт Ордена",  # poe2db, not in POE2Scout API
+    "sun-artifact": "Артефакт Солнца",  # poe2db, not in POE2Scout API
+    # Crests & alloys below are confirmed in POE2Scout API (cat: verisium)
+    "olroths-crest-of-the-sun": "Знак Солнца Олрота",  # poe2db, POE2Scout confirmed
+    "medveds-crest-of-the-circle": "Знак Круга Медведя",  # poe2db, POE2Scout confirmed
+    "voranas-crest-of-the-scythe": "Знак Косы Вораны",  # poe2db, POE2Scout confirmed
+    "the-runebinders-alloy": "Сплав Повелителя рун",  # poe2db, POE2Scout confirmed
+    "the-runefathers-alloy": "Сплав Рунного отца",  # poe2db, POE2Scout confirmed
 
     # ===================================================================
     # RITUAL OMENS  (CategoryApiId: ritual)
@@ -385,7 +386,7 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # PoE2 abyss bones (verified from poe2db)
     "gnawed-rib": "Обглоданное ребро",  # poe2db
     "gnawed-collarbone": "Обглоданная ключица",  # poe2db
-    "mark-of-the-abyssal-lord": "Знак повелителя Бездны",  # poe2db
+    "mark-of-the-abyssal-lord": "Знак повелителя Бездны",  # poe2db, not in POE2Scout API
 
     # ===================================================================
     # UNCUT GEMS  (CategoryApiId: uncutgems)
@@ -581,15 +582,9 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     # RUNES  (CategoryApiId: runes)
     # ===================================================================
     "astrids-creativity": "Astrid's Creativity",
-    "fire-rune-tier-1": "Fire Rune Tier 1",
-    "fire-rune-tier-2": "Fire Rune Tier 2",
-    "fire-rune-tier-3": "Fire Rune Tier 3",
-    "ice-rune-tier-1": "Ice Rune Tier 1",
-    "ice-rune-tier-2": "Ice Rune Tier 2",
-    "ice-rune-tier-3": "Ice Rune Tier 3",
-    "lightning-rune-tier-1": "Lightning Rune Tier 1",
-    "lightning-rune-tier-2": "Lightning Rune Tier 2",
-    "lightning-rune-tier-3": "Lightning Rune Tier 3",
+    # NOTE: PoE2 runes overhauled — fire/ice/lightning tiers removed.
+    # New rune system uses: adept-rune, body-rune, iron-rune, etc.
+    # with lesser/greater/perfect tiers. EN names will be added in a future iteration.
 
     # ===================================================================
     # ESSENCES  (CategoryApiId: essences)
@@ -865,6 +860,7 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "ancient-liquid-envy": "Ancient Liquid Envy",
     "ancient-diluted-liquid-greed": "Ancient Diluted Liquid Greed",
     "ancient-diluted-liquid-guilt": "Ancient Diluted Liquid Guilt",
+    "ancient-diluted-liquid-ire": "Ancient Diluted Liquid Ire",
 
     # ===================================================================
     # INCURSION  (CategoryApiId: incursion)
@@ -918,6 +914,32 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     # ===================================================================
     "verisium": "Verisium",  # poe2db
     "exceptional-verisium": "Exceptional Verisium",  # poe2db
+
+    # ===================================================================
+    # CATALYSTS  (from poe2db)
+    # ===================================================================
+    "xophs-catalyst": "Xoph's Catalyst",
+    "eshs-catalyst": "Esh's Catalyst",
+    "tuls-catalyst": "Tul's Catalyst",
+    "chayulas-catalyst": "Chayula's Catalyst",
+    "adaptive-catalyst": "Adaptive Catalyst",
+    "carapace-catalyst": "Carapace Catalyst",
+    "flesh-catalyst": "Flesh Catalyst",
+    "neural-catalyst": "Neural Catalyst",
+    "reaver-catalyst": "Reaver Catalyst",
+    "sibilant-catalyst": "Sibilant Catalyst",
+    "skittering-catalyst": "Skittering Catalyst",
+    "refined-adaptive-catalyst": "Refined Adaptive Catalyst",
+    "refined-carapace-catalyst": "Refined Carapace Catalyst",
+    "refined-chayulas-catalyst": "Refined Chayula's Catalyst",
+    "refined-eshs-catalyst": "Refined Esh's Catalyst",
+    "refined-flesh-catalyst": "Refined Flesh Catalyst",
+    "refined-neural-catalyst": "Refined Neural Catalyst",
+    "refined-reaver-catalyst": "Refined Reaver Catalyst",
+    "refined-sibilant-catalyst": "Refined Sibilant Catalyst",
+    "refined-skittering-catalyst": "Refined Skittering Catalyst",
+    "refined-tuls-catalyst": "Refined Tul's Catalyst",
+    "refined-xophs-catalyst": "Refined Xoph's Catalyst",
 }
 
 # ---------------------------------------------------------------------------

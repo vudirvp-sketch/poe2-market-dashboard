@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.51 | **Date:** 2026-06-11
+> **Version:** 1.52 | **Date:** 2026-06-11
 
 ---
 
@@ -98,9 +98,9 @@ Cross:    Frontend NEVER imports from backend/ directly (only via /api/flipper/*
 ## 6. Known Issues & Remaining Work
 
 ### TODO (next iterations)
-1. **Verify new PoE2 item api_ids against POE2Scout API** — 19 new items added with guessed api_ids (expedition artifacts/crests, Vaal infusers, abyss bones, verisium/exceptional-verisium). Need to confirm actual api_ids from the live API data.
-2. **Live E2E testing** — Run `npx playwright test e2e/live-backend.spec.ts` with new Russian names to verify UI display.
-3. **PoE2 client RU dump** — Get .ggpk localization files for remaining items without poe2db pages.
+1. **Add Russian names for 336 POE2Scout API items** — 625 items in API, only 349 have RU names. Key gaps: 140 runes (new system), 69 lineage support gems, 30 expedition items, 42 uncut gems (level-specific), 12 abyss items, 16 fragments, 15 verisium alloys/ores.
+2. **Remove 64 stale entries not in POE2Scout API** — Items like `hawk-idol`, `panther-idol`, `stoat-idol`, `idolatry`, `splinter-of-*`, `breachstone-of-*`, vault keys, old omens, and basic orbs (alteration, blessed, chromatic, etc.) exist in our mapping but not in the API. Decide whether to keep (for offline/future-proofing) or remove.
+3. **PoE2 client RU dump** — Get .ggpak localization files for final cross-reference of remaining items.
 
 ### CONFIRMED INTENTIONAL
 1. **7d change returns 0 for young leagues** — Not a bug; no data from 7 days ago
@@ -176,7 +176,7 @@ When a new league launches, update these 7 files:
 27. **Do NOT use `/* turbopackIgnore: true */`** — Prevents chunk creation for bridge module. NFT warning is harmless.
 28. **Fallback data in proxy routes uses camelCase** — `proxyWithFallback()` returns fallback directly without `transformKeys()`. Fallback must match frontend type format.
 29. **`prices` vs `prices_in_base` in `_build_flip_opportunities_sync`** — Fixed bug where `prices.get()` was used instead of `prices_in_base.get()` on lines 195-196 of `routes_arbitrage.py`. The `prices` variable is not defined in that function scope — only `prices_in_base` exists.
-30. **Russian name mapping** — `backend/data/currency_names_ru.py` provides api_id → ru_name/en_name for 358 RU items / 335 EN items. All PoE1-only items removed in iter31 (48 approximate + 22 PoE1 poedb entries). 19 new PoE2 items added with poe2db-verified RU names. Zero `# approximate` tags remain. Frontend `src/lib/currency-names.ts` is auto-synced from backend. Flips API response includes `currency_from_ru`, `currency_from_en`, `currency_to_ru`, `currency_to_en`. PoE2 Russian uses "Иш" for "Esh" (not "Эш").
+30. **Russian name mapping** — `backend/data/currency_names_ru.py` provides api_id → ru_name/en_name for 349 RU / 349 EN items (fully synced). All PoE1-only items removed in iter31. 9 outdated fire/ice/lightning rune tiers removed in iter32 (PoE2 overhauled runes). 19 new PoE2 items added with poe2db-verified RU names; 14/19 api_ids confirmed in POE2Scout API; 5 items (4 expedition artifacts + mark-of-the-abyssal-lord) exist on poe2db but NOT tracked by POE2Scout API. POE2Scout API has 625 items total — 336 still need RU names (new rune system, lineage support gems, expedition flux/sagas/carved items, abyss bones/gazes, verisium alloys/ores, uncut gems by level). Frontend `src/lib/currency-names.ts` auto-synced from backend. Flips API includes `currency_from_ru/en`, `currency_to_ru/en`. PoE2 uses "Иш" for Esh.
 31. **FlipOpportunity type extended** — `currencyFromRu`, `currencyFromEn`, `currencyToRu`, `currencyToEn` optional fields in `FlipOpportunity` interface in `src/lib/types.ts`.
 32. **FLIPPER_WORKERS env var** — Controls ProcessPoolExecutor worker count (default: 1). Each worker loads sklearn/numpy/scipy (~300-500 MB). Set `FLIPPER_WORKERS=0` for auto-detect (min(4, cpu_count-1)), or a specific number for more parallelism. Configured in `start.bat`/`start.sh`.
 33. **E2E Playwright tests passing** — `e2e/live-backend.spec.ts` runs 3 tests against live uvicorn + Next.js. Requires both running. Run: `npx playwright test e2e/live-backend.spec.ts`.

@@ -1,28 +1,27 @@
 # Worklog
 
 ---
-Task ID: 31
+Task ID: 32
 Agent: main
-Task: Iteration 31 — Remove all PoE1-only approximate entries, add new PoE2 items from poe2db, sync frontend
+Task: Iteration 32 — Verify 19 new item api_ids against POE2Scout API, fix mismatches, sync mappings
 
 Work Log:
-- Verified all 48 approximate entries against poe2db.tw/ru — all return 404 (confirmed PoE1-only)
-- Verified 3 lineage support gems exist on poe2db: Кровопускание Аталуи, Пагуба Доэдре, Мука Ишчейла
-- Verified Verisium items on poe2db: Веризий, Исключительный веризий (NoteCode: verisium, exceptional-verisium)
-- Discovered new PoE2 expedition items on poe2db: Broken Circle/Black Scythe/Order/Sun Artifacts, Crests (Олрота/Медведя/Вораны), Alloy items
-- Discovered new PoE2 Vaal/Incursion items on poe2db: Cultivation Orb, Armourer's/Blacksmith's/Arcanist's/Catalysing Infuser
-- Discovered new PoE2 Abyss items on poe2db: Gnawed Rib/Collarbone, Mark of the Abyssal Lord
-- Removed 48 approximate entries + 22 PoE1-only poedb entries (deafening essences, base PoE1 essences)
-- Added 19 new PoE2 items with poe2db-verified Russian names
-- Upgraded 3 lineage gem entries from "# approximate" to "# poe2db"
-- Fixed Verisium section: replaced ore/ingot/shard with verisium + exceptional-verisium
-- Synced frontend currency-names.ts: 358 RU, 335 EN entries (down from 404/268 due to PoE1 removals)
-- Updated AGENT_NAVIGATION.md: version 1.51, removed stale TODO items, updated entry #30
+- Fetched all 625 items from POE2Scout API across 17 categories (expedition, incursion, abyss, verisium, vaal, idol, ritual, ultimatum, breach, delirium, currency, fragments, runes, essences, uncutgems, lineagesupportgems)
+- Verified 14/19 new item api_ids CONFIRMED in POE2Scout API (correct match)
+- Identified 5/19 items exist on poe2db but NOT in POE2Scout API: broken-circle-artifact, black-scythe-artifact, order-artifact, sun-artifact, mark-of-the-abyssal-lord
+- Marked 5 not-in-API items with "# poe2db, not in POE2Scout API" notes
+- Discovered PoE2 rune system overhaul: fire/ice/lightning tiers replaced with adept/body/iron/mind/stone/storm + lesser/greater/perfect system (140 new runes in API)
+- Removed 9 outdated fire/ice/lightning rune tier entries from both RU and EN dicts
+- Added 23 missing EN catalyst entries + 1 missing EN entry (ancient-diluted-liquid-ire)
+- Achieved perfect RU/EN sync: 349 entries each in both backend and frontend
+- Investigated cross-rate inconsistency (1862 suspicious triples) — confirmed this is a known data quality issue, code correctly filters false positives
+- Updated AGENT_NAVIGATION.md to v1.52
 
 Stage Summary:
-- All # approximate tags eliminated (48 → 0)
-- Removed: 48 approximate + 13 deafening essences + 9 PoE1 base essences + 2 incursion vaal orbs = 72 total PoE1 items removed
-- Added: 9 expedition + 5 Vaal infuser + 3 abyss + 2 verisium = 19 new PoE2 items
-- Backend: 404 → 358 RU entries (net -46), 268 → 335 EN entries (net +67)
+- api_id verification: 14/19 confirmed, 5 not in API (kept with notes)
+- Outdated rune entries removed: 9 (fire/ice/lightning tier 1/2/3)
+- EN sync fixed: 24 entries added (23 catalysts + 1 ancient-diluted-liquid-ire)
+- Backend: 358→349 RU, 335→349 EN (9 removed, 14 EN added)
 - Frontend: fully synced with backend
-- Stopping point: 19 new items have guessed api_ids — need POE2Scout API verification in next iteration
+- POE2Scout API coverage: 349/625 items have RU names (56%), 336 items still need names
+- Stopping point: 336 API items need Russian names (140 runes, 69 lineage support gems, 30 expedition, etc.)

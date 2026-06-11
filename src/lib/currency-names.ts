@@ -14,10 +14,12 @@
  *   const ruName = getCurrencyRuName("exalted"); // "Благородная сфера"
  *
  * MAINTAINER NOTES:
- *   - Auto-synced from backend/data/currency_names_ru.py (iteration 31)
+ *   - Auto-synced from backend/data/currency_names_ru.py (iteration 32)
  *   - Source tags (# poe2db, # poedb) are stripped in this file for cleanliness
- *   - The full backend has 358 RU entries; this file mirrors all of them
+ *   - The full backend has 349 RU entries; this file mirrors all of them
  *   - PoE1-only items have been removed — this is a PoE2-only dashboard
+ *   - 9 outdated fire/ice/lightning rune tier entries removed (PoE2 overhauled runes)
+ *   - 5 items exist on poe2db but not in POE2Scout API (noted in backend)
  */
 
 // ---------------------------------------------------------------------------
@@ -79,15 +81,8 @@ const CURRENCY_NAMES_RU: Record<string, string> = {
   "raven-touched-shard": "Осколок, тронутый вороном",
   "head-of-the-king": "Голова короля",
   "astrids-creativity": "Творчество Астрид",
-  "fire-rune-tier-1": "Огненная руна I уровня",
-  "fire-rune-tier-2": "Огненная руна II уровня",
-  "fire-rune-tier-3": "Огненная руна III уровня",
-  "ice-rune-tier-1": "Ледяная руна I уровня",
-  "ice-rune-tier-2": "Ледяная руна II уровня",
-  "ice-rune-tier-3": "Ледяная руна III уровня",
-  "lightning-rune-tier-1": "Руны молнии I уровня",
-  "lightning-rune-tier-2": "Руны молнии II уровня",
-  "lightning-rune-tier-3": "Руны молнии III уровня",
+  // NOTE: PoE2 runes overhauled — fire/ice/lightning tiers removed. New rune system
+  // (adept/body/iron/mind/stone/storm + lesser/greater/perfect) needs RU names added later.
   "essence-of-horror": "Сущность ужаса",
   "essence-of-delirium": "Сущность бреда",
   "essence-of-hysteria": "Сущность истерии",
@@ -443,16 +438,8 @@ const CURRENCY_NAMES_EN: Record<string, string> = {
   "alteration": "Orb of Alteration",
   "raven-touched-shard": "Raven-Touched Shard",
   "head-of-the-king": "Head of the King",
-  "astrids-creativity": "Astrid\'s Creativity",
-  "fire-rune-tier-1": "Fire Rune Tier 1",
-  "fire-rune-tier-2": "Fire Rune Tier 2",
-  "fire-rune-tier-3": "Fire Rune Tier 3",
-  "ice-rune-tier-1": "Ice Rune Tier 1",
-  "ice-rune-tier-2": "Ice Rune Tier 2",
-  "ice-rune-tier-3": "Ice Rune Tier 3",
-  "lightning-rune-tier-1": "Lightning Rune Tier 1",
-  "lightning-rune-tier-2": "Lightning Rune Tier 2",
-  "lightning-rune-tier-3": "Lightning Rune Tier 3",
+  "astrids-creativity": "Astrid's Creativity",
+  // NOTE: PoE2 runes overhauled — fire/ice/lightning tiers removed.
   "essence-of-horror": "Essence of Horror",
   "essence-of-delirium": "Essence of Delirium",
   "essence-of-hysteria": "Essence of Hysteria",
@@ -685,6 +672,7 @@ const CURRENCY_NAMES_EN: Record<string, string> = {
   "ancient-liquid-envy": "Ancient Liquid Envy",
   "ancient-diluted-liquid-greed": "Ancient Diluted Liquid Greed",
   "ancient-diluted-liquid-guilt": "Ancient Diluted Liquid Guilt",
+  "ancient-diluted-liquid-ire": "Ancient Diluted Liquid Ire",
   "call-of-the-shadows": "Call of the Shadows",
   "vaal-cultivation-orb": "Vaal Cultivation Orb",
   "vaal-armourers-infuser": "Vaal Armourer\'s Infuser",
@@ -725,6 +713,29 @@ const CURRENCY_NAMES_EN: Record<string, string> = {
   "idolatry": "Idolatry",
   "verisium": "Verisium",
   "exceptional-verisium": "Exceptional Verisium",
+  // Catalysts
+  "xophs-catalyst": "Xoph's Catalyst",
+  "eshs-catalyst": "Esh's Catalyst",
+  "tuls-catalyst": "Tul's Catalyst",
+  "chayulas-catalyst": "Chayula's Catalyst",
+  "adaptive-catalyst": "Adaptive Catalyst",
+  "carapace-catalyst": "Carapace Catalyst",
+  "flesh-catalyst": "Flesh Catalyst",
+  "neural-catalyst": "Neural Catalyst",
+  "reaver-catalyst": "Reaver Catalyst",
+  "sibilant-catalyst": "Sibilant Catalyst",
+  "skittering-catalyst": "Skittering Catalyst",
+  "refined-adaptive-catalyst": "Refined Adaptive Catalyst",
+  "refined-carapace-catalyst": "Refined Carapace Catalyst",
+  "refined-chayulas-catalyst": "Refined Chayula's Catalyst",
+  "refined-eshs-catalyst": "Refined Esh's Catalyst",
+  "refined-flesh-catalyst": "Refined Flesh Catalyst",
+  "refined-neural-catalyst": "Refined Neural Catalyst",
+  "refined-reaver-catalyst": "Refined Reaver Catalyst",
+  "refined-sibilant-catalyst": "Refined Sibilant Catalyst",
+  "refined-skittering-catalyst": "Refined Skittering Catalyst",
+  "refined-tuls-catalyst": "Refined Tul's Catalyst",
+  "refined-xophs-catalyst": "Refined Xoph's Catalyst",
 };
 
 // ---------------------------------------------------------------------------
