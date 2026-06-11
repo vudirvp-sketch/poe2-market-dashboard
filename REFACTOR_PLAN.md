@@ -107,13 +107,14 @@ MarketOverview, MarketHeatmap, AnalystTab — все показывают top ga
 
 ## Фаза 2: Переиспользование данных (приоритет: HIGH)
 
-### 2.1 Единый exchange pair store
+### 2.1 Единый exchange pair store ✅ (итерация 35)
 - **Проблема:** Exchange pairs запрашиваются в 5+ местах с разными queryKeys.
 - **Решение:** `useExchangePairs()` hook с единым queryKey `["exchangePairs", realm, league]`.
 - **Действие:**
   - Создать `src/hooks/use-exchange-pairs.ts`
   - Заменить все вызовы с разными queryKeys
   - Включить `placeholderData: keepPreviousData`
+- **Статус:** DONE
 
 ### 2.2 Общий currency price store
 - **Проблема:** Currencies и items запрашиваются отдельно, хотя это один и тот же API.
@@ -163,7 +164,7 @@ MarketOverview, MarketHeatmap, AnalystTab — все показывают top ga
 |----------|-----------|-----------|--------|
 | 33 | MultiCurrencyPrice + REFACTOR_PLAN v1 | LOW | DONE |
 | 34 | Аудит вкладок + Фаза 1.1 (queryKeys) + merge Arbitrage→Flips + merge Heatmap→Overview | HIGH | DONE |
-| 35 | Фаза 2.1: useExchangePairs() + замена дублирующих вызовов | MEDIUM | — |
+| 35 | Фаза 2.1: useExchangePairs() + замена дублирующих вызовов | MEDIUM | DONE |
 | 36 | Фаза 2.3: useCrossRates() + интеграция | MEDIUM | — |
 | 37 | Фаза 1.2: Unified backend cache | HIGH | — |
 | 38 | Фаза 3.1: Batch endpoint | MEDIUM | — |

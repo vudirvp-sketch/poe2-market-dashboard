@@ -20,7 +20,7 @@
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
 | `src/components/ui/` | shadcn/ui primitives | **NO dashboard imports** |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal, currency-names | **Types in `types.ts` ONLY** |
-| `src/hooks/` | React hooks | Import from `@lib` |
+| `src/hooks/` | React hooks | Import from `@lib`; exchange pairs MUST use `useExchangePairs()` |
 | `src/lib/i18n/` | Locales (en, ru, zh, ko) | No code imports from other `src/` |
 | `src/data/` | `cache-snapshot.json` | **READ-ONLY — NEVER edit manually** |
 
@@ -52,6 +52,7 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 13. **FLIPPER_WORKERS env var** — controls ProcessPoolExecutor workers (default: 1)
 14. **Ritual Omens: ratio=1** — cannot be reforged, price-comparison only
 15. **Query keys MUST use `QUERY_KEYS` from `providers.tsx`** — no ad-hoc string keys (see §4)
+16. **Exchange pair queries MUST use `useExchangePairs()` hook** — no direct `fetchApi("/api/poe2/exchange", ...)` in components (see §8)
 
 ## 4. Query Key Convention (iteration 34+)
 
@@ -106,3 +107,15 @@ All React Query keys MUST use the centralized `QUERY_KEYS` constants from `src/c
 | CORS proxy setup | `docs/CORS_PROXY_GUIDE.md` |
 | Canonical formulas | `PoE2_Flipper_Canonical_Formulas.md` |
 | Refactoring plan | `REFACTOR_PLAN.md` |
+
+## 8. Shared Hooks (iteration 35+)
+
+All components MUST use shared hooks instead of inline `useQuery` + `fetchApi` for common data. This ensures single-source-of-truth for query keys, consistent caching, and `placeholderData: keepPreviousData`.
+
+| Hook | File | Replaces |
+|------|------|----------|
+| `useExchangePairs()` | `src/hooks/use-exchange-pairs.ts` | All `fetchApi("/api/poe2/exchange", { action: "pairs" })` calls |
+| `useReferenceCurrencies()` | `src/hooks/use-exchange-pairs.ts` | All `fetchApi("/api/poe2/exchange", { action: "reference" })` calls |
+| `useFlipsQuery()` | `src/hooks/use-flips-query.ts` | All `/api/flipper/flips` calls |
+
+**Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.
