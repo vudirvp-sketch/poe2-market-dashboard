@@ -9,17 +9,17 @@ Sources:
   - poedb.tw/ru/ — verified Russian names from the PoE1 client
   - config.yaml liquid_chain sections (confirmed ru_name values)
   - PoE1 Russian client names carried over to PoE2 (standard orbs, scrolls)
-  - Best-effort translation for items without official RU client data (# approximate)
 
 Maintainer notes:
   - Entries marked "# poe2db" are verified against poe2db.tw/ru/ (PoE2 wiki).
   - Entries marked "# poedb" are verified against poedb.tw/ru/ (PoE1 Russian client).
-  - Entries marked "# approximate" are not verified against any official source.
-  - When the official RU translation becomes available, remove the # approximate tag.
   - Standard PoE1 orbs (portal, scouring, regret, etc.) are verified — no tag.
   - Keep entries sorted by category for maintainability.
   - PoE2 uses a different essence system: Lesser -> base -> Greater -> Perfect
-    (no "Deafening" tier — those are PoE1 carryovers that may not exist in PoE2).
+    (no "Deafening" tier — those are PoE1-only and have been removed).
+  - PoE1-only items (Deafening essences, Distilled emotions, Breach catalysts,
+    certain expedition/abyss/incursion/Vaal items) have been removed since this
+    is a PoE2-only dashboard.
   - PoE2 Russian client uses "Иш" for "Esh" (not "Эш" as in some PoE1 translations).
 """
 
@@ -150,17 +150,7 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # ESSENCES  (CategoryApiId: essences)
     # ===================================================================
-    # PoE1 essences (not in PoE2 — may not appear in API data)
-    "essence-of-enfeeblement": "Сущность ослабления",  # approximate — PoE1 only
-    "essence-of-sorrow": "Сущность печали",  # poedb — PoE1 only
-    "essence-of-rage": "Сущность ярости",  # poedb — PoE1 only
-    "essence-of-suffering": "Сущность страдания",  # poedb — PoE1 only
-    "essence-of-wrath": "Сущность гнева",  # poedb — PoE1 only
-    "essence-of-doubt": "Сущность сомнения",  # poedb — PoE1 only
-    "essence-of-anger": "Сущность злобы",  # poedb — PoE1 only
-    "essence-of-torment": "Сущность мучения",  # poedb — PoE1 only
-    "essence-of-fear": "Сущность страха",  # poedb — PoE1 only
-    # PoE2 essences (confirmed from poe2db)
+    # PoE2 base essences (confirmed from poe2db)
     "essence-of-horror": "Сущность ужаса",  # poe2db
     "essence-of-delirium": "Сущность бреда",  # poe2db
     "essence-of-hysteria": "Сущность истерии",  # poe2db
@@ -186,22 +176,6 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "essence-of-the-abyss": "Сущность Бездны",  # poe2db
     "essence-of-the-breach": "Сущность Разлома",  # poe2db
     "essence-of-the-infinite": "Сущность бесконечности",  # poe2db
-    # PoE1 Deafening essences (not in PoE2)
-    "deafening-essence-of-enfeeblement": "Оглушающая сущность ослабления",  # approximate — PoE1 only
-    "deafening-essence-of-sorrow": "Оглушающая сущность печали",  # poedb — PoE1 only
-    "deafening-essence-of-rage": "Оглушающая сущность ярости",  # poedb — PoE1 only
-    "deafening-essence-of-suffering": "Оглушающая сущность страдания",  # poedb — PoE1 only
-    "deafening-essence-of-wrath": "Оглушающая сущность гнева",  # poedb — PoE1 only
-    "deafening-essence-of-doubt": "Оглушающая сущность сомнения",  # poedb — PoE1 only
-    "deafening-essence-of-anger": "Оглушающая сущность злобы",  # poedb — PoE1 only (злобы, not злости)
-    "deafening-essence-of-torment": "Оглушающая сущность мучения",  # poedb — PoE1 only
-    "deafening-essence-of-fear": "Оглушающая сущность страха",  # poedb — PoE1 only
-    "deafening-essence-of-horror": "Оглушающая сущность ужаса",  # poedb — PoE1 only
-    "deafening-essence-of-delirium": "Оглушающая сущность бреда",  # poedb — PoE1 only (delirium = бред, not безумие)
-    "deafening-essence-of-hysteria": "Оглушающая сущность истерии",  # poedb — PoE1 only
-    "deafening-essence-of-insanity": "Оглушающая сущность безумия",  # poedb — PoE1 only
-    "life-essence": "Сущность жизни",  # approximate
-    "mana-essence": "Сущность маны",  # approximate
     # PoE2 Greater essences (confirmed from poe2db)
     "greater-essence-of-ice": "Большая сущность льда",  # poe2db
     "greater-essence-of-flames": "Большая сущность пламени",  # poe2db
@@ -305,24 +279,17 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "olroths-conviction": "Сага Олрота",  # poe2db (PoE2: Olroth's Saga)
     "rigwalds-ferocity": "Свирепость Ригвальда",  # poe2db
     "voranas-siege": "Сага Вораны",  # poe2db (PoE2: Vorana's Saga)
-    "gwenithas-gamble": "Азарт Гвенифы",  # approximate
-    "medveds-might": "Мощь Медведя",  # approximate
-    "tujen-penny": "Пенни Туджена",  # approximate
-    "rostas-faith": "Вера Росты",  # approximate
-    "ursas-resolution": "Решимость Урсы",  # approximate
-    "sukaas-dash": "Рывок Сукаа",  # approximate
-    "dannigs-honour": "Честь Даннига",  # approximate
-    "kalguur-rune": "Руна Калгура",  # approximate
     "expedition-logbook": "Журнал экспедиции",  # poe2db
-    "artifact-of-the-chayula": "Артефакт Чаюлы",  # approximate
-    "artifact-of-the-vaal": "Артефакт Ваала",  # approximate
-    "artifact-of-the-abyss": "Артефакт Бездны",  # approximate
-    "artifact-of-the-breach": "Артефакт Разлома",  # approximate
-    "sun-touched-helmet": "Солнцеликый шлем",  # approximate
-    "sun-touched-armour": "Солнцеликый доспех",  # approximate
-    "sun-touched-gloves": "Солнцеликые перчатки",  # approximate
-    "sun-touched-boots": "Солнцеликые сапоги",  # approximate
-    "sun-touched-weapon": "Солнцеликое оружие",  # approximate
+    # PoE2 expedition artifacts (verified from poe2db)
+    "broken-circle-artifact": "Артефакт Разомкнутого круга",  # poe2db
+    "black-scythe-artifact": "Артефакт Чёрной косы",  # poe2db
+    "order-artifact": "Артефакт Ордена",  # poe2db
+    "sun-artifact": "Артефакт Солнца",  # poe2db
+    "olroths-crest-of-the-sun": "Знак Солнца Олрота",  # poe2db
+    "medveds-crest-of-the-circle": "Знак Круга Медведя",  # poe2db
+    "voranas-crest-of-the-scythe": "Знак Косы Вораны",  # poe2db
+    "the-runebinders-alloy": "Сплав Повелителя рун",  # poe2db
+    "the-runefathers-alloy": "Сплав Рунного отца",  # poe2db
 
     # ===================================================================
     # RITUAL OMENS  (CategoryApiId: ritual)
@@ -415,9 +382,10 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "astrids-creativity": "Творчество Астрид",
     # Note: "astrids-creativity" also appears under runes category in API data
     "gnawed-jawbone": "Обглоданная челюсть",  # poe2db
-    "abyssal-wail": "Бездонный плач",  # approximate
-    "stibnite-doom": "Стибнитовая гибель",  # approximate
-    "profane-vigor": "Кощунственная сила",  # approximate
+    # PoE2 abyss bones (verified from poe2db)
+    "gnawed-rib": "Обглоданное ребро",  # poe2db
+    "gnawed-collarbone": "Обглоданная ключица",  # poe2db
+    "mark-of-the-abyssal-lord": "Знак повелителя Бездны",  # poe2db
 
     # ===================================================================
     # UNCUT GEMS  (CategoryApiId: uncutgems)
@@ -429,9 +397,9 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # LINEAGE SUPPORT GEMS  (CategoryApiId: lineagesupportgems)
     # ===================================================================
-    "lineage-lifetap": "Кровопускание Аталуи",  # approximate — poe2db: Atalui's Bloodletting
-    "lineage-omnicurse": "Пагуба Доэдре",  # approximate — poe2db: Doedre's Undoing
-    "lineage-unbound-malice": "Мука Ишчейла",  # approximate — poe2db: Ixchel's Torment
+    "lineage-lifetap": "Кровопускание Аталуи",  # poe2db
+    "lineage-omnicurse": "Пагуба Доэдре",  # poe2db
+    "lineage-unbound-malice": "Мука Ишчейла",  # poe2db
 
     # ===================================================================
     # DELIRIUM  (CategoryApiId: delirium)
@@ -465,24 +433,17 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "ancient-diluted-liquid-greed": "Древняя разбавленная жидкая жадность",  # poe2db
     "ancient-diluted-liquid-guilt": "Древняя разбавленная жидкая вина",  # poe2db
     "ancient-diluted-liquid-ire": "Древний разбавленный жидкий гнев",  # poe2db
-    # --- Distilled emotions (common PoE2 delirium items) ---
-    "distilled-ire": "Дистиллированный гнев",  # approximate
-    "distilled-guilt": "Дистиллированная вина",  # approximate
-    "distilled-greed": "Дистиллированная жадность",  # approximate
-    "distilled-paranoia": "Дистиллированная паранойя",  # approximate
-    "distilled-envy": "Дистиллированная зависть",  # approximate
-    "distilled-disgust": "Дистиллированное отвращение",  # approximate
-    "distilled-despair": "Дистиллированное отчаяние",  # approximate
-    "distilled-fear": "Дистиллированный страх",  # approximate
-    "distilled-suffering": "Дистиллированное страдание",  # approximate
-    "distilled-isolation": "Дистиллированное отчуждение",  # approximate
 
     # ===================================================================
     # INCURSION  (CategoryApiId: incursion)
     # ===================================================================
     "call-of-the-shadows": "Зов теней",
-    "incursion-greater-vaal-orb": "Великая сфера Ваала вторжения",  # approximate
-    "incursion-vaal-orb": "Сфера Ваала вторжения",  # approximate
+    # PoE2 Vaal/Incursion items (verified from poe2db)
+    "vaal-cultivation-orb": "Культивирующая сфера ваал",  # poe2db
+    "vaal-armourers-infuser": "Нагнетатель бронника ваал",  # poe2db
+    "vaal-blacksmiths-infuser": "Нагнетатель кузнеца ваал",  # poe2db
+    "vaal-arcanists-infuser": "Нагнетатель чародея ваал",  # poe2db
+    "vaal-catalysing-infuser": "Катализирующий нагнетатель ваал",  # poe2db
 
     # ===================================================================
     # IDOLS  (CategoryApiId: idol)
@@ -524,15 +485,8 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     # ===================================================================
     # VERISIUM  (CategoryApiId: verisium)
     # ===================================================================
-    "verisium-ore": "Веризиевая руда",  # approximate
-    "verisium-ingot": "Веризиевый слиток",  # approximate
-    "verisium-shard": "Веризиевый осколок",  # approximate
-
-    # ===================================================================
-    # VAAL  (CategoryApiId: vaal)
-    # ===================================================================
-    "vaal-orb-of-the-ancients": "Сфера Ваала древних",  # approximate
-    "corrupted-vaal-orb": "Осквернённая сфера Ваала",  # approximate
+    "verisium": "Веризий",  # poe2db
+    "exceptional-verisium": "Исключительный веризий",  # poe2db
 
     # ===================================================================
     # CATALYSTS  (from poe2db)
@@ -559,14 +513,6 @@ CURRENCY_NAMES_RU: dict[str, str] = {
     "refined-skittering-catalyst": "Очищенный шуршащий катализатор",  # poe2db
     "refined-tuls-catalyst": "Очищенный катализатор Тул",  # poe2db
     "refined-xophs-catalyst": "Очищенный катализатор Ксофа",  # poe2db
-
-    # ===================================================================
-    # BREACH CATALYSTS  (PoE1 only — not found on poe2db, may not exist in PoE2)
-    # ===================================================================
-    "breach-catalyst-life": "Катализатор разлома: жизнь",  # approximate — PoE1 only
-    "breach-catalyst-fire": "Катализатор разлома: огонь",  # approximate — PoE1 only
-    "breach-catalyst-cold": "Катализатор разлома: холод",  # approximate — PoE1 only
-    "breach-catalyst-lightning": "Катализатор разлома: молния",  # approximate — PoE1 only
 }
 
 CURRENCY_NAMES_EN: dict[str, str] = {
@@ -648,34 +594,88 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     # ===================================================================
     # ESSENCES  (CategoryApiId: essences)
     # ===================================================================
-    "essence-of-enfeeblement": "Essence of Enfeeblement",
-    "essence-of-sorrow": "Essence of Sorrow",
-    "essence-of-rage": "Essence of Rage",
-    "essence-of-suffering": "Essence of Suffering",
-    "essence-of-wrath": "Essence of Wrath",
-    "essence-of-doubt": "Essence of Doubt",
-    "essence-of-anger": "Essence of Anger",
-    "essence-of-torment": "Essence of Torment",
-    "essence-of-fear": "Essence of Fear",
     "essence-of-horror": "Essence of Horror",
     "essence-of-delirium": "Essence of Delirium",
     "essence-of-hysteria": "Essence of Hysteria",
     "essence-of-insanity": "Essence of Insanity",
-    "deafening-essence-of-enfeeblement": "Deafening Essence of Enfeeblement",
-    "deafening-essence-of-sorrow": "Deafening Essence of Sorrow",
-    "deafening-essence-of-rage": "Deafening Essence of Rage",
-    "deafening-essence-of-suffering": "Deafening Essence of Suffering",
-    "deafening-essence-of-wrath": "Deafening Essence of Wrath",
-    "deafening-essence-of-doubt": "Deafening Essence of Doubt",
-    "deafening-essence-of-anger": "Deafening Essence of Anger",
-    "deafening-essence-of-torment": "Deafening Essence of Torment",
-    "deafening-essence-of-fear": "Deafening Essence of Fear",
-    "deafening-essence-of-horror": "Deafening Essence of Horror",
-    "deafening-essence-of-delirium": "Deafening Essence of Delirium",
-    "deafening-essence-of-hysteria": "Deafening Essence of Hysteria",
-    "deafening-essence-of-insanity": "Deafening Essence of Insanity",
-    "life-essence": "Life Essence",
-    "mana-essence": "Mana Essence",
+    "essence-of-ice": "Essence of Ice",
+    "essence-of-flames": "Essence of Flames",
+    "essence-of-the-mind": "Essence of the Mind",
+    "essence-of-the-body": "Essence of the Body",
+    "essence-of-opulence": "Essence of Opulence",
+    "essence-of-ruin": "Essence of Ruin",
+    "essence-of-battle": "Essence of Battle",
+    "essence-of-sorcery": "Essence of Sorcery",
+    "essence-of-alacrity": "Essence of Alacrity",
+    "essence-of-command": "Essence of Command",
+    "essence-of-enhancement": "Essence of Enhancement",
+    "essence-of-electricity": "Essence of Electricity",
+    "essence-of-grounding": "Essence of Grounding",
+    "essence-of-haste": "Essence of Haste",
+    "essence-of-insulation": "Essence of Insulation",
+    "essence-of-seeking": "Essence of Seeking",
+    "essence-of-thawing": "Essence of Thawing",
+    "essence-of-abrasion": "Essence of Abrasion",
+    "essence-of-the-abyss": "Essence of the Abyss",
+    "essence-of-the-breach": "Essence of the Breach",
+    "essence-of-the-infinite": "Essence of the Infinite",
+    "greater-essence-of-ice": "Greater Essence of Ice",
+    "greater-essence-of-flames": "Greater Essence of Flames",
+    "greater-essence-of-the-mind": "Greater Essence of the Mind",
+    "greater-essence-of-the-body": "Greater Essence of the Body",
+    "greater-essence-of-opulence": "Greater Essence of Opulence",
+    "greater-essence-of-ruin": "Greater Essence of Ruin",
+    "greater-essence-of-battle": "Greater Essence of Battle",
+    "greater-essence-of-sorcery": "Greater Essence of Sorcery",
+    "greater-essence-of-alacrity": "Greater Essence of Alacrity",
+    "greater-essence-of-command": "Greater Essence of Command",
+    "greater-essence-of-enhancement": "Greater Essence of Enhancement",
+    "greater-essence-of-electricity": "Greater Essence of Electricity",
+    "greater-essence-of-grounding": "Greater Essence of Grounding",
+    "greater-essence-of-haste": "Greater Essence of Haste",
+    "greater-essence-of-insulation": "Greater Essence of Insulation",
+    "greater-essence-of-seeking": "Greater Essence of Seeking",
+    "greater-essence-of-thawing": "Greater Essence of Thawing",
+    "greater-essence-of-abrasion": "Greater Essence of Abrasion",
+    "greater-essence-of-the-infinite": "Greater Essence of the Infinite",
+    "lesser-essence-of-ice": "Lesser Essence of Ice",
+    "lesser-essence-of-flames": "Lesser Essence of Flames",
+    "lesser-essence-of-the-mind": "Lesser Essence of the Mind",
+    "lesser-essence-of-the-body": "Lesser Essence of the Body",
+    "lesser-essence-of-opulence": "Lesser Essence of Opulence",
+    "lesser-essence-of-ruin": "Lesser Essence of Ruin",
+    "lesser-essence-of-battle": "Lesser Essence of Battle",
+    "lesser-essence-of-sorcery": "Lesser Essence of Sorcery",
+    "lesser-essence-of-alacrity": "Lesser Essence of Alacrity",
+    "lesser-essence-of-command": "Lesser Essence of Command",
+    "lesser-essence-of-enhancement": "Lesser Essence of Enhancement",
+    "lesser-essence-of-electricity": "Lesser Essence of Electricity",
+    "lesser-essence-of-grounding": "Lesser Essence of Grounding",
+    "lesser-essence-of-haste": "Lesser Essence of Haste",
+    "lesser-essence-of-insulation": "Lesser Essence of Insulation",
+    "lesser-essence-of-seeking": "Lesser Essence of Seeking",
+    "lesser-essence-of-thawing": "Lesser Essence of Thawing",
+    "lesser-essence-of-abrasion": "Lesser Essence of Abrasion",
+    "lesser-essence-of-the-infinite": "Lesser Essence of the Infinite",
+    "perfect-essence-of-ice": "Perfect Essence of Ice",
+    "perfect-essence-of-flames": "Perfect Essence of Flames",
+    "perfect-essence-of-the-mind": "Perfect Essence of the Mind",
+    "perfect-essence-of-the-body": "Perfect Essence of the Body",
+    "perfect-essence-of-opulence": "Perfect Essence of Opulence",
+    "perfect-essence-of-ruin": "Perfect Essence of Ruin",
+    "perfect-essence-of-battle": "Perfect Essence of Battle",
+    "perfect-essence-of-sorcery": "Perfect Essence of Sorcery",
+    "perfect-essence-of-alacrity": "Perfect Essence of Alacrity",
+    "perfect-essence-of-command": "Perfect Essence of Command",
+    "perfect-essence-of-enhancement": "Perfect Essence of Enhancement",
+    "perfect-essence-of-electricity": "Perfect Essence of Electricity",
+    "perfect-essence-of-grounding": "Perfect Essence of Grounding",
+    "perfect-essence-of-haste": "Perfect Essence of Haste",
+    "perfect-essence-of-insulation": "Perfect Essence of Insulation",
+    "perfect-essence-of-seeking": "Perfect Essence of Seeking",
+    "perfect-essence-of-thawing": "Perfect Essence of Thawing",
+    "perfect-essence-of-abrasion": "Perfect Essence of Abrasion",
+    "perfect-essence-of-the-infinite": "Perfect Essence of the Infinite",
 
     # ===================================================================
     # ULTIMATUM / SOUL CORES  (CategoryApiId: ultimatum)
@@ -705,6 +705,11 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "tacatis-soul-core-of-affliction": "Tacati's Soul Core of Affliction",
     "hayoxis-soul-core-of-heatproofing": "Hayoxi's Soul Core of Heatproofing",
     "atmohuas-soul-core-of-retreat": "Atmohua's Soul Core of Retreat",
+    "cholotls-soul-core-of-war": "Cholotl's Soul Core of War",
+    "citaqualotls-soul-core-of-foulness": "Citaqualotl's Soul Core of Foulness",
+    "topotantes-soul-core-of-dampening": "Topotante's Soul Core of Dampening",
+    "uromotis-soul-core-of-attenuation": "Uromoti's Soul Core of Attenuation",
+    "zalatls-soul-core-of-insulation": "Zalatl's Soul Core of Insulation",
 
     # ===================================================================
     # EXPEDITION  (CategoryApiId: expedition)
@@ -713,24 +718,17 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "olroths-conviction": "Olroth's Conviction",
     "rigwalds-ferocity": "Rigwald's Ferocity",
     "voranas-siege": "Vorana's Siege",
-    "gwenithas-gamble": "Gwenitha's Gamble",
-    "medveds-might": "Medved's Might",
-    "tujen-penny": "Tujen's Penny",
-    "rostas-faith": "Rosta's Faith",
-    "ursas-resolution": "Ursa's Resolution",
-    "sukaas-dash": "Sukaa's Dash",
-    "dannigs-honour": "Dannig's Honour",
-    "kalguur-rune": "Kalguur Rune",
     "expedition-logbook": "Expedition Logbook",
-    "artifact-of-the-chayula": "Artifact of the Chayula",
-    "artifact-of-the-vaal": "Artifact of the Vaal",
-    "artifact-of-the-abyss": "Artifact of the Abyss",
-    "artifact-of-the-breach": "Artifact of the Breach",
-    "sun-touched-helmet": "Sun-Touched Helmet",
-    "sun-touched-armour": "Sun-Touched Armour",
-    "sun-touched-gloves": "Sun-Touched Gloves",
-    "sun-touched-boots": "Sun-Touched Boots",
-    "sun-touched-weapon": "Sun-Touched Weapon",
+    # PoE2 expedition artifacts (verified from poe2db)
+    "broken-circle-artifact": "Broken Circle Artifact",  # poe2db
+    "black-scythe-artifact": "Black Scythe Artifact",  # poe2db
+    "order-artifact": "Order Artifact",  # poe2db
+    "sun-artifact": "Sun Artifact",  # poe2db
+    "olroths-crest-of-the-sun": "Olroth's Crest of the Sun",  # poe2db
+    "medveds-crest-of-the-circle": "Medved's Crest of the Circle",  # poe2db
+    "voranas-crest-of-the-scythe": "Vorana's Crest of the Scythe",  # poe2db
+    "the-runebinders-alloy": "The Runebinder's Alloy",  # poe2db
+    "the-runefathers-alloy": "The Runefather's Alloy",  # poe2db
 
     # ===================================================================
     # RITUAL OMENS  (CategoryApiId: ritual)
@@ -764,6 +762,22 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "omen-of-the-blackblooded": "Omen of the Blackblooded",
     "omen-of-putrefaction": "Omen of Putrefaction",
     "omen-of-bartering": "Omen of Bartering",
+    "omen-of-corruption": "Omen of Corruption",
+    "omen-of-dextral-alchemy": "Omen of Dextral Alchemy",
+    "omen-of-dextral-coronation": "Omen of Dextral Coronation",
+    "omen-of-dextral-exaltation": "Omen of Dextral Exaltation",
+    "omen-of-dextral-necromancy": "Omen of Dextral Necromancy",
+    "omen-of-gambling": "Omen of Gambling",
+    "omen-of-greater-annulment": "Omen of Greater Annulment",
+    "omen-of-homogenising-coronation": "Omen of Homogenising Coronation",
+    "omen-of-homogenising-exaltation": "Omen of Homogenising Exaltation",
+    "omen-of-recombination": "Omen of Recombination",
+    "omen-of-refreshment": "Omen of Refreshment",
+    "omen-of-resurgence": "Omen of Resurgence",
+    "omen-of-sinistral-alchemy": "Omen of Sinistral Alchemy",
+    "omen-of-sinistral-coronation": "Omen of Sinistral Coronation",
+    "omen-of-the-liege": "Omen of the Liege",
+    "omen-of-the-sovereign": "Omen of the Sovereign",
 
     # ===================================================================
     # VAULTKEYS / RELIQUARY KEYS  (CategoryApiId: vaultkeys)
@@ -796,10 +810,6 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "breachstone-of-tul": "Breachstone of Tul",
     "breachstone-of-esh": "Breachstone of Esh",
     "breachstone-of-chayula": "Breachstone of Chayula",
-    "breach-catalyst-life": "Breach Catalyst: Life",
-    "breach-catalyst-fire": "Breach Catalyst: Fire",
-    "breach-catalyst-cold": "Breach Catalyst: Cold",
-    "breach-catalyst-lightning": "Breach Catalyst: Lightning",
 
     # ===================================================================
     # ABYSS  (CategoryApiId: abyss)
@@ -808,9 +818,10 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "garukhans-resolve": "Garukhan's Resolve",
     "astrids-creativity": "Astrid's Creativity",
     "gnawed-jawbone": "Gnawed Jawbone",
-    "abyssal-wail": "Abyssal Wail",
-    "stibnite-doom": "Stibnite Doom",
-    "profane-vigor": "Profane Vigor",
+    # PoE2 abyss bones (verified from poe2db)
+    "gnawed-rib": "Gnawed Rib",  # poe2db
+    "gnawed-collarbone": "Gnawed Collarbone",  # poe2db
+    "mark-of-the-abyssal-lord": "Mark of the Abyssal Lord",  # poe2db
 
     # ===================================================================
     # UNCUT GEMS  (CategoryApiId: uncutgems)
@@ -854,23 +865,17 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "ancient-liquid-envy": "Ancient Liquid Envy",
     "ancient-diluted-liquid-greed": "Ancient Diluted Liquid Greed",
     "ancient-diluted-liquid-guilt": "Ancient Diluted Liquid Guilt",
-    "distilled-ire": "Distilled Ire",
-    "distilled-guilt": "Distilled Guilt",
-    "distilled-greed": "Distilled Greed",
-    "distilled-paranoia": "Distilled Paranoia",
-    "distilled-envy": "Distilled Envy",
-    "distilled-disgust": "Distilled Disgust",
-    "distilled-despair": "Distilled Despair",
-    "distilled-fear": "Distilled Fear",
-    "distilled-suffering": "Distilled Suffering",
-    "distilled-isolation": "Distilled Isolation",
 
     # ===================================================================
     # INCURSION  (CategoryApiId: incursion)
     # ===================================================================
     "call-of-the-shadows": "Call of the Shadows",
-    "incursion-greater-vaal-orb": "Incursion Greater Vaal Orb",
-    "incursion-vaal-orb": "Incursion Vaal Orb",
+    # PoE2 Vaal/Incursion items (verified from poe2db)
+    "vaal-cultivation-orb": "Vaal Cultivation Orb",  # poe2db
+    "vaal-armourers-infuser": "Vaal Armourer's Infuser",  # poe2db
+    "vaal-blacksmiths-infuser": "Vaal Blacksmith's Infuser",  # poe2db
+    "vaal-arcanists-infuser": "Vaal Arcanist's Infuser",  # poe2db
+    "vaal-catalysing-infuser": "Vaal Catalysing Infuser",  # poe2db
 
     # ===================================================================
     # IDOLS  (CategoryApiId: idol)
@@ -893,19 +898,26 @@ CURRENCY_NAMES_EN: dict[str, str] = {
     "idol-of-thruldana": "Idol of Thruldana",
     "idol-of-egrin": "Idol of Egrin",
     "idol-of-maxarius": "Idol of Maxarius",
+    "hawk-idol": "Hawk Idol",
+    "panther-idol": "Panther Idol",
+    "snake-idol": "Snake Idol",
+    "stoat-idol": "Stoat Idol",
+    "idol-of-alira": "Idol of Alira",
+    "idol-of-greust": "Idol of Greust",
+    "idol-of-kraityn": "Idol of Kraityn",
+    "idol-of-oak": "Idol of Oak",
+    "idol-of-silk": "Idol of Silk",
+    "idol-of-yeena": "Idol of Yeena",
+    "idol-of-the-martyr": "Idol of the Martyr",
+    "idol-of-the-pharisee": "Idol of the Pharisee",
+    "idol-of-the-sycophant": "Idol of the Sycophant",
+    "idolatry": "Idolatry",
 
     # ===================================================================
     # VERISIUM  (CategoryApiId: verisium)
     # ===================================================================
-    "verisium-ore": "Verisium Ore",
-    "verisium-ingot": "Verisium Ingot",
-    "verisium-shard": "Verisium Shard",
-
-    # ===================================================================
-    # VAAL  (CategoryApiId: vaal)
-    # ===================================================================
-    "vaal-orb-of-the-ancients": "Vaal Orb of the Ancients",
-    "corrupted-vaal-orb": "Corrupted Vaal Orb",
+    "verisium": "Verisium",  # poe2db
+    "exceptional-verisium": "Exceptional Verisium",  # poe2db
 }
 
 # ---------------------------------------------------------------------------
