@@ -146,7 +146,7 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
     isLoading: eventsLoading,
     refetch: refetchEvents,
   } = useQuery<EventsListResponse>({
-    queryKey: ["flipper-events"],
+    queryKey: ["flipperEvents"],
     queryFn: () => fetchApi<EventsListResponse>("/api/flipper/events", { active_only: "true" }),
     enabled: backendOnline && open,
     staleTime: 30_000,
@@ -170,8 +170,8 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
         return res.json() as Promise<CreateEventResponse>;
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["flipper-events"] });
-      queryClient.invalidateQueries({ queryKey: ["flipper-health"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperEvents"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperHealth"] });
       // Reset form
       setDescription("");
       setAffectedCurrencies("");
@@ -196,8 +196,8 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
         },
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["flipper-events"] });
-      queryClient.invalidateQueries({ queryKey: ["flipper-health"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperEvents"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperHealth"] });
     },
   });
 
@@ -214,8 +214,8 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
         },
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["flipper-events"] });
-      queryClient.invalidateQueries({ queryKey: ["flipper-health"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperEvents"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperHealth"] });
     },
   });
 

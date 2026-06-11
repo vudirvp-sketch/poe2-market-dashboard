@@ -73,7 +73,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   // No refetchInterval — ArbitrageTab or Dashboard-level already polls this key
   // when visible. We only read from the shared cache here.
   const { data: triangularData } = useQuery<TriangularResponse>({
-    queryKey: ["flipper-triangular"],
+    queryKey: ["flipperTriangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
@@ -86,7 +86,7 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
   // We skip refetchInterval here to avoid duplicate network calls — React Query
   // will use the data from Dashboard's query via the shared cache key.
   const { data: phaseData } = useQuery<FlipperPhaseResponse>({
-    queryKey: ["flipper-phase"],
+    queryKey: ["flipperPhase"],
     queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: backendOnline,
     staleTime: 60_000,

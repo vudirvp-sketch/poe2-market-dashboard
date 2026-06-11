@@ -29,8 +29,7 @@ Browser → Next.js (port 3000)
 - **Watchlist** — Track favorite items with price alerts and browser notifications
 
 ### Flipper Analytics (requires FastAPI backend)
-- **Arbitrage** — Client-side simple arbitrage + backend-powered flipper mode
-- **Flips** — Detailed scored flip opportunities with cluster filtering, sorting, and storage value integration
+- **Flips** — Scored flip opportunities with cluster filtering, sorting, storage value integration, plus triangular arbitrage cycles and phase overview
 - **Optimizer** — Optimal currency conversion path (Dijkstra-based) and effective rate matrix
 - **Analyst** — League analysis summary: trends, anomalies, phase, tier distribution (fallback mode works without backend)
 - **Liquid Chain** — Vendor reforge chain profitability: per-step profit/loss and cumulative reforge paths for delirium liquids

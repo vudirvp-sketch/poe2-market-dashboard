@@ -262,7 +262,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
     isError: pricesError,
     refetch: refetchPrices,
   } = useQuery<PricesResponse>({
-    queryKey: ["flipper-prices-graph"],
+    queryKey: ["flipperPrices", "graph"],
     queryFn: () => fetchApi<PricesResponse>("/api/flipper/prices"),
     enabled: backendOnline,
     staleTime: 60_000,
@@ -271,7 +271,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
 
   // ---- Fetch triangular cycles ----
   const { data: triangularData } = useQuery<TriangularResponse>({
-    queryKey: ["flipper-triangular-graph"],
+    queryKey: ["flipperTriangular", "graph"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
@@ -280,7 +280,7 @@ export const CurrencyGraphTab = memo(function CurrencyGraphTab({ backendOnline, 
 
   // ---- Fetch currency metadata ----
   const { data: currenciesData } = useQuery<CurrenciesResponse>({
-    queryKey: ["flipper-currencies-graph"],
+    queryKey: ["flipperCurrencies", "graph"],
     queryFn: () => fetchApi<CurrenciesResponse>("/api/flipper/currencies"),
     enabled: backendOnline,
     staleTime: 120_000,

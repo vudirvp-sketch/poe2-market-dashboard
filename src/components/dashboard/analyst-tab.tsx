@@ -110,7 +110,7 @@ export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
     error: analystErrorObj,
     refetch: refetchAnalyst,
   } = useQuery<AnalystSummaryResponse>({
-    queryKey: ["flipper-analyst-summary"],
+    queryKey: ["flipperAnalystSummary"],
     queryFn: () => fetchApi<AnalystSummaryResponse>("/api/flipper/analyst/summary"),
     enabled: backendOnline,
     staleTime: 30_000,
@@ -125,7 +125,7 @@ export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
     isError: fallbackError,
     refetch: refetchFallback,
   } = useQuery<AnalystSummaryResponse & { _fallback?: boolean }>({
-    queryKey: ["analyst-fallback", realm, league],
+    queryKey: ["analystFallback", realm, league],
     queryFn: () =>
       fetchApi<AnalystSummaryResponse & { _fallback?: boolean }>(
         "/api/poe2/analyst-fallback",

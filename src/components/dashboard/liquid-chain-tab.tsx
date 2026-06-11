@@ -332,7 +332,7 @@ export const LiquidChainTab = memo(function LiquidChainTab({
     refetch,
     isPending: liquidChainLoading,
   } = useQuery<LiquidChainAnalysisResponse>({
-    queryKey: ["flipper-liquid-chain"],
+    queryKey: ["flipperLiquidChain"],
     queryFn: () => fetchApi<LiquidChainAnalysisResponse>("/api/flipper/liquid-chain"),
     enabled: backendOnline,
     staleTime: 30_000,

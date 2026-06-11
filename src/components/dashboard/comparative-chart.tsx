@@ -152,7 +152,7 @@ export const ComparativeChart = memo(function ComparativeChart({
 
   // P3-3: Fetch backend correlation matrix (Step 3 — primary source)
   const { data: backendCorrelation } = useQuery<BackendCorrelationResponse>({
-    queryKey: ["portfolio-correlation"],
+    queryKey: ["portfolioCorrelation"],
     queryFn: () => fetchApi<BackendCorrelationResponse>("/api/flipper/portfolio/correlation"),
     staleTime: 120_000,
     retry: 0,

@@ -96,7 +96,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   // flipper backend returns empty results. Realm and league are passed so the
   // POE2Scout fallback knows which league to query.
   const { data: heatmapData } = useQuery<HeatmapItem[]>({
-    queryKey: ["flipper-heatmap", realm, league],
+    queryKey: ["heatmap", realm, league],
     queryFn: () => fetchApi<HeatmapItem[]>("/api/flipper/heatmap", { realm, league }),
     enabled: !!league,
     staleTime: 60_000,

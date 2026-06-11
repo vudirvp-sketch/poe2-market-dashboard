@@ -139,7 +139,7 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
     error: pathErrorObj,
     refetch: refetchPath,
   } = useQuery<OptimizerPathResponse>({
-    queryKey: ["flipper-optimizer-path", pathQueryKey],
+    queryKey: ["flipperOptimizerPath", pathQueryKey],
     queryFn: () =>
       fetchApi<OptimizerPathResponse>("/api/flipper/optimizer/path", {
         from_currency: fromCurrency.trim().toLowerCase(),
@@ -170,7 +170,7 @@ export function OptimizerTab({ backendOnline }: OptimizerTabProps) {
     error: matrixErrorObj,
     refetch: refetchMatrix,
   } = useQuery<OptimizerMatrixResponse>({
-    queryKey: ["flipper-optimizer-matrix"],
+    queryKey: ["flipperOptimizerMatrix"],
     queryFn: () => fetchApi<OptimizerMatrixResponse>("/api/flipper/optimizer/matrix"),
     enabled: backendOnline && matrixLoaded,
     staleTime: 60_000,

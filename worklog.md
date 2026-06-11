@@ -6,18 +6,36 @@ Agent: main
 Task: Итерация 33 — Анализ poe2db.tw, создание MultiCurrencyPrice, план рефакторинга
 
 Work Log:
-- Проанализировал страницу poe2db.tw/ru/Her_Declaration — понял формат: таблица обмена (Divine/Exalted/Chaos), ECharts графики с candlestick + MA + volume
-- Изучил ключевые файлы проекта: types.ts, poe2api.ts, store.ts, currency-optimal.ts, detail-dialog.tsx, currency-card.tsx, candlestick-chart.tsx, best-payment-badge.tsx
-- Создал `src/components/dashboard/multi-currency-price.tsx` — компонент отображения цены в нескольких валютах (Divine/Exalted/Chaos/Mirror)
-- Обновил `src/components/dashboard/detail-dialog.tsx` — добавил MultiCurrencyPrice и fetch exchange pairs
-- Добавил i18n ключи (multiCurrencyTitle, divineOrb, exaltedOrb, chaosOrb, mirror) во все 4 локали
-- Создал `REFACTOR_PLAN.md` — план рефакторинга кеша/API/переиспользования данных (4 фазы, 8 итераций)
-- Обновил `AGENT_NAVIGATION.md` — убрал раздутую секцию §10 (33 пункта → 14 критических правил), добавил секцию про MultiCurrencyPrice
+- Создал `multi-currency-price.tsx` — отображение цены в нескольких валютах
+- Обновил `detail-dialog.tsx` — добавил MultiCurrencyPrice
+- Добавил i18n ключи (5 ключей × 4 локали)
+- Создал `REFACTOR_PLAN.md` v1.0
+- Обновил `AGENT_NAVIGATION.md`
 
 Stage Summary:
-- Новый компонент: multi-currency-price.tsx (показывает цену в Divine/Exalted/Chaos/Mirror с premium %)
-- DetailDialog интегрирован: fetch exchange pairs + MultiCurrencyPrice panel
-- i18n: 5 новых ключей × 4 локали = 20 строк
-- REFACTOR_PLAN.md: 4 фазы (кеш, переиспользование, API, архитектура)
-- AGENT_NAVIGATION.md: сокращён с 223 до ~80 строк
-- Точка остановки: Phase 1.1 REFACTOR_PLAN (стандартизация queryKeys) — следующая итерация
+- MultiCurrencyPrice + DetailDialog integration
+- REFACTOR_PLAN v1.0 (4 фазы)
+- Точка остановки: Phase 1.1 (стандартизация queryKeys)
+
+---
+Task ID: 34
+Agent: main
+Task: Итерация 34 — Аудит вкладок, стандартизация queryKeys, merge Arbitrage→Flips, merge Heatmap→Overview
+
+Work Log:
+- Провёл аудит всех 11 вкладок: оценена ценность, дублирование, сложность каждой
+- Обновил REFACTOR_PLAN.md до v2.0 с детальным аудитом вкладок (таблица + вердикты)
+- Стандартизировал все queryKeys: `["exchange", ...]` → `["exchangePairs", ...]`, `["flipper-heatmap", ...]` → `["heatmap", ...]`, все flipper-ключи в camelCase
+- Добавил `QUERY_KEYS` константы и `STALE_TIME_DEFAULTS` в `providers.tsx` (25+ ключей с per-key staleTime)
+- Объединил ArbitrageTab + FlipsTab в единую FlipsTab: добавлены stats row (6 карточек), disclaimer, ArbitrageFlipperTriangular секция, FlipperPhaseResponse query
+- Убрал standalone MarketHeatmap из рендера Overview (функционал уже есть в MarketOverview)
+- Пометил arbitrage-tab.tsx и market-heatmap.tsx как DEPRECATED
+- Обновил AGENT_NAVIGATION.md: добавил §4 (Query Key Convention), §5 (Tab Structure), обновил критические правила
+
+Stage Summary:
+- **queryKeys:** 30+ инстансов стандартизировано (6 файлов: dashboard-page, flips-tab, arbitrage-tab, market-overview, watchlist-tab, events-sidebar, flipper-sticky-bar, optimizer-tab, analyst-tab, liquid-chain-tab, currency-graph-tab, comparative-chart, providers.tsx)
+- **providers.tsx:** QUERY_KEYS (25 констант) + STALE_TIME_DEFAULTS (25 записей) + setQueryDefaults()
+- **Tab merge:** 11 → 10 вкладок. ArbitrageTab → FlipsTab (stats row + disclaimer + triangular section)
+- **MarketHeatmap:** убран из рендера, помечен DEPRECATED
+- **REFACTOR_PLAN.md:** v2.0 с аудитом вкладок
+- **Точка остановки:** Phase 2.1 (useExchangePairs hook) — следующая итерация

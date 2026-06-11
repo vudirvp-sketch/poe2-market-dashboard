@@ -1,5 +1,9 @@
 // ============================================================================
-// Arbitrage Tab — Flipper-scored arbitrage opportunities + triangular cycles
+// Arbitrage Tab — DEPRECATED (iteration 34)
+//
+// This component is no longer rendered. Its functionality (scored flips overview,
+// triangular arbitrage, stats row, disclaimer) has been merged into FlipsTab.
+// Kept for reference only. Safe to delete in a future cleanup iteration.
 // ============================================================================
 "use client";
 
@@ -72,7 +76,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
     error: triErrorObj,
     refetch: refetchTri,
   } = useQuery<TriangularResponse>({
-    queryKey: ["flipper-triangular"],
+    queryKey: ["flipperTriangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
@@ -82,7 +86,7 @@ export const ArbitrageTab = memo(function ArbitrageTab({ realm, league, backendO
 
   // ---- Flipper: phase info ----
   const { data: phaseData } = useQuery<FlipperPhaseResponse>({
-    queryKey: ["flipper-phase"],
+    queryKey: ["flipperPhase"],
     queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: backendOnline,
     staleTime: 60_000,

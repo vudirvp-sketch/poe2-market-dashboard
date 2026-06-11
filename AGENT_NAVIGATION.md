@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 1.53 | **Date:** 2026-06-12
+> **Version:** 2.0 | **Date:** 2026-06-12
 
 ---
 
@@ -17,7 +17,7 @@
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
-| `src/components/dashboard/` | Tab components, dialogs, multi-currency-price, sidebar, sticky bar | Import from `@lib`, `@hooks` |
+| `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
 | `src/components/ui/` | shadcn/ui primitives | **NO dashboard imports** |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal, currency-names | **Types in `types.ts` ONLY** |
 | `src/hooks/` | React hooks | Import from `@lib` |
@@ -51,22 +51,52 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 12. **CI uses Python 3.12** — do NOT change to 3.13+
 13. **FLIPPER_WORKERS env var** — controls ProcessPoolExecutor workers (default: 1)
 14. **Ritual Omens: ratio=1** — cannot be reforged, price-comparison only
+15. **Query keys MUST use `QUERY_KEYS` from `providers.tsx`** — no ad-hoc string keys (see §4)
 
-## 4. New Components (Iter 33)
+## 4. Query Key Convention (iteration 34+)
 
-### MultiCurrencyPrice
-- **File:** `src/components/dashboard/multi-currency-price.tsx`
-- **Purpose:** Shows item price in Divine/Exalted/Chaos/Mirror — like poe2db.tw
-- **Props:** `priceInBase`, `baseCurrencyId`, `baseCurrencyName`, `exchangePairs`, `compact`, `maxCurrencies`
-- **Integration:** Added to `DetailDialog` — appears after key metrics, before benchmark panel
-- **Data:** Fetches exchange pairs via `useQuery` with 5-min staleTime
-- **Logic:** Converts price via `convertBaseCurrency()`, computes premium % vs cheapest option
+All React Query keys MUST use the centralized `QUERY_KEYS` constants from `src/components/providers.tsx`. This prevents cache fragmentation where the same data is fetched under different keys.
 
-### REFACTOR_PLAN.md
-- Comprehensive refactoring plan for cache unification, data reuse, and API optimization
-- See `REFACTOR_PLAN.md` for phased implementation schedule
+| Data | Key Pattern | staleTime |
+|------|-------------|-----------|
+| Exchange pairs | `["exchangePairs", realm, league]` | 5 min |
+| Heatmap | `["heatmap", realm, league]` | 5 min |
+| Item history | `["itemHistory", realm, league, id, ref]` | 2 min |
+| Flipper flips | `["flipper-flips"]` | 60s |
+| Flipper triangular | `["flipperTriangular"]` | 60s |
+| Flipper phase | `["flipperPhase"]` | 60s |
+| Flipper health | `["flipperHealth"]` | 30s |
+| Overview | `["overview", realm, league]` | 2 min |
+| Realms | `["realms"]` | 30 min |
 
-## 5. Architecture References
+**Rule:** When adding a new query, add the key to `QUERY_KEYS` in `providers.tsx` and set its `staleTime` in `STALE_TIME_DEFAULTS`.
+
+## 5. Tab Structure (iteration 34+)
+
+| Tab | Component | Status |
+|-----|-----------|--------|
+| Overview | MarketOverview + ComparativeChart | Active |
+| Currencies | VirtualCurrencyGrid / CurrencyCard | Active |
+| Uniques | UniqueTable | Active |
+| Exchange | ExchangeTable / ExchangePairCard + VolumeLiquidityIndicators | Active |
+| Flips | FlipsTab (includes triangular section + TierDriftTracker) | Active — merged Arbitrage into this |
+| Optimizer | OptimizerTab | Active |
+| Analyst | AnalystTab | Active |
+| Liquid Chain | LiquidChainTab | Active |
+| Currency Graph | CurrencyGraphTab | Active (lazy-loaded) |
+| Watchlist | WatchlistTab | Active |
+| ~~Arbitrage~~ | ~~ArbitrageTab~~ | **DEPRECATED** — merged into FlipsTab |
+
+**Deprecated files** (kept for reference, safe to delete): `arbitrage-tab.tsx`, `market-heatmap.tsx`, `arbitrage-flipper-flips.tsx` (sub-component only used by old ArbitrageTab).
+
+## 6. Known Gaps
+
+1. **336 POE2Scout items need RU names** — 140 runes, 69 lineage support gems, 30 expedition, etc.
+2. **64 stale entries in name mapping** — not in POE2Scout API, decide keep/remove
+3. **No unified data layer** — see `REFACTOR_PLAN.md` Phase 2
+4. **No cross-rate calculator for flip analysis** — see `REFACTOR_PLAN.md` Phase 2.3
+
+## 7. Architecture References
 
 | Topic | Document |
 |-------|----------|
@@ -76,16 +106,3 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 | CORS proxy setup | `docs/CORS_PROXY_GUIDE.md` |
 | Canonical formulas | `PoE2_Flipper_Canonical_Formulas.md` |
 | Refactoring plan | `REFACTOR_PLAN.md` |
-
-## 6. i18n Conventions
-
-- 4 locales: **en**, **ru**, **zh**, **ko** (~465 keys each)
-- Canonical source: `src/lib/i18n/locales/en.ts`
-- New keys: `multiCurrencyTitle`, `divineOrb`, `exaltedOrb`, `chaosOrb`, `mirror`
-
-## 7. Known Gaps
-
-1. **336 POE2Scout items need RU names** — 140 runes, 69 lineage support gems, 30 expedition, etc.
-2. **64 stale entries in name mapping** — not in POE2Scout API, decide keep/remove
-3. **No unified data layer** — see `REFACTOR_PLAN.md` Phase 2
-4. **No cross-rate calculator for flip analysis** — see `REFACTOR_PLAN.md` Phase 2.3

@@ -1,9 +1,9 @@
 // ============================================================================
-// Market Heatmap — P2-2: Visual heatmap of 24h price changes + Market Tops
+// Market Heatmap — DEPRECATED (iteration 34)
 //
-// Fetches heatmap data from /api/flipper/heatmap (with POE2Scout fallback).
-// Displays currency 24h changes as colored blocks, plus a "Market Tops" list
-// showing the top gainers and losers.
+// This component is no longer rendered. Its functionality (heatmap grid +
+// Market Tops) is already present in MarketOverview. Kept for reference only.
+// Safe to delete in a future cleanup iteration.
 // ============================================================================
 "use client";
 

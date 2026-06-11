@@ -88,7 +88,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
 
   // Fetch exchange pairs for the league
   const { data: exchangeData, isLoading } = useQuery({
-    queryKey: ["exchange", realm, league],
+    queryKey: ["exchangePairs", realm, league],
     queryFn: () =>
       fetchApi<ExchangePair[]>("/api/poe2/exchange", {
         realm,

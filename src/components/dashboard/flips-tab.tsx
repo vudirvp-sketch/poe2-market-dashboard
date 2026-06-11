@@ -1,16 +1,22 @@
 // ============================================================================
-// Flips Tab — Detailed flip opportunities analysis with scoring, filtering,
-// sorting, and per-opportunity detail panel.
+// Flips Tab — Unified flip opportunities + triangular arbitrage analysis
 //
-// This is the DETAILED version of the flip scoring view. The existing
-// ArbitrageTab's flipper mode serves as a quick overview; this tab provides
-// full detail panels, storage value integration, and cluster-based filtering.
+// Merged from arbitrage-tab.tsx + flips-tab.tsx (iteration 34).
+// The old ArbitrageTab was a "quick overview" that duplicated the same
+// API calls and warnings as FlipsTab. Now this single tab provides:
+//   - Stats overview (scored flips, triangular cycles, phase, avg score)
+//   - Disclaimer card
+//   - Rich filter/sort/search for scored flips
+//   - Detail dialog with storage value integration
+//   - Triangular arbitrage cycles section
+//   - WebSocket live updates
+//   - Tier drift tracker (below flips section)
 //
-// Fix 5.6: Split from 771 lines into 4 files:
-//   - flips-helpers.ts     — types + pure helpers
-//   - flips-detail-dialog  — detail dialog sub-component
-//   - flips-table.tsx      — opportunities table sub-component
-//   - flips-tab.tsx        — this file: orchestrator (state, queries, layout)
+// Fix 5.6: Split from 771 lines into helper files:
+//   - flips-helpers.ts      — types + pure helpers
+//   - flips-detail-dialog   — detail dialog sub-component
+//   - flips-table.tsx       — opportunities table sub-component
+//   - flips-tab.tsx         — this file: orchestrator (state, queries, layout)
 // ============================================================================
 "use client";
 
@@ -24,6 +30,8 @@ import {
   AlertTriangle,
   Clock,
   RefreshCw,
+  Layers,
+  Zap,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,11 +52,12 @@ import {
 } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, getFlipperErrorType } from "@/lib/types";
-import type { TriangularResponse, OptimalPaymentResult } from "@/lib/types";
+import type { TriangularResponse, OptimalPaymentResult, FlipperPhaseResponse } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
 import { useFlipperWebSocket } from "@/hooks/use-websocket";
 import { FlipsTable } from "./flips-table";
 import { FlipsDetailDialog } from "./flips-detail-dialog";
+import { ArbitrageFlipperTriangular } from "./arbitrage-flipper-triangular";
 import {
   type FlipOpportunity,
   type FlipsResponse,
@@ -72,13 +81,15 @@ interface FlipsTabProps {
   optimalPaymentByDisplayName?: Map<string, OptimalPaymentResult>;
   /** Anchor currency ID for premium display */
   anchorId?: string;
+  /** Current league name (for phase display) */
+  league?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded, optimalPaymentByDisplayName, anchorId }: FlipsTabProps) {
+export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded, optimalPaymentByDisplayName, anchorId, league }: FlipsTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -90,10 +101,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       invalidateFlips();
       // Bug 13 fix: Also invalidate triangular data when flips update via WS,
       // since triangular arbitrage uses the same snapshot data.
-      queryClient.invalidateQueries({ queryKey: ["flipper-triangular"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperTriangular"] });
     },
     onAnomaly: () => {
-      queryClient.invalidateQueries({ queryKey: ["flipper-anomalies"] });
+      queryClient.invalidateQueries({ queryKey: ["flipperAnomalies"] });
     },
     enabled: backendOnline,
     backendOnline,  // Graceful degradation: react to health-polling signal
@@ -132,7 +143,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
 
   // ---- Storage value for selected flip (detail dialog) ----
   const { data: storageData } = useQuery<StorageValueResponse>({
-    queryKey: ["flipper-storage-value-flips", selectedFlip?.currency],
+    queryKey: ["flipperStorageValue-flips", selectedFlip?.currency],
     queryFn: () => {
       const firstCurrency = selectedFlip?.currency?.split("/")[0] ?? "";
       return fetchApi<StorageValueResponse>(
@@ -144,15 +155,28 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     retry: 1,
   });
 
-  // ---- Triangular data (for cross-rate warning) ----
+  // ---- Triangular data (for cross-rate warning + triangular section) ----
   // Bug 13 fix: Added refetchInterval so triangular data auto-refreshes.
-  // This ensures the cross-rate warning stays current with the latest data.
-  const { data: triData } = useQuery<TriangularResponse>({
-    queryKey: ["flipper-triangular"],
+  const {
+    data: triData,
+    isError: triError,
+    error: triErrorObj,
+    refetch: refetchTri,
+  } = useQuery<TriangularResponse>({
+    queryKey: ["flipperTriangular"],
     queryFn: () => fetchApi<TriangularResponse>("/api/flipper/triangular"),
     enabled: backendOnline,
     staleTime: 60_000,
     refetchInterval: 60_000,
+    retry: 1,
+  });
+
+  // ---- Flipper phase info (for stats row) ----
+  const { data: phaseData } = useQuery<FlipperPhaseResponse>({
+    queryKey: ["flipperPhase"],
+    queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
+    enabled: backendOnline,
+    staleTime: 60_000,
     retry: 1,
   });
 
@@ -302,8 +326,23 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
         insufficientData={insufficientData}
         fetchedAt={flipsData?.fetchedAt}
         dataAvailable={flipsData?.dataAvailable}
-        onRefresh={() => refetchFlips()}
+        onRefresh={() => { refetchFlips(); refetchTri(); }}
       />
+
+      {/* ---- Disclaimer (from old ArbitrageTab) ---- */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardContent className="flex items-start gap-3 p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-600 dark:text-amber-400">
+              {t("arbitrageTheoretical")}
+            </p>
+            <p className="text-muted-foreground mt-1">
+              {t("arbitrageTheoreticalDesc")}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ---- Cross-rate inconsistency warning ---- */}
       {triData?.crossRateWarning && triData.crossRateWarning.suspiciousTriplesCount > 0 && (
@@ -383,17 +422,47 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
         </Card>
       )}
 
-      {/* ---- Summary stats row ---- */}
+      {/* ---- Summary stats row (expanded: from old ArbitrageTab + FlipsTab) ---- */}
       {backendOnline && flipsData && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
-                {t("flipsTotalOpportunities")}
+              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("flipperScoredFlips")}
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
-              <p className="text-2xl font-bold">{filteredOpportunities.length}</p>
+              <p className="text-2xl font-bold">{flipsData.total ?? filteredOpportunities.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("flipperScoredFlipsDesc")}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("flipperTriangularCycles")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0">
+              <p className="text-2xl font-bold">{triData?.total ?? "—"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("flipperTriangularCyclesDesc")}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+                {t("flipperPhase")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 pt-0">
+              <p className="text-2xl font-bold capitalize">
+                {phaseData?.phase ?? league ?? "—"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("flipperPhaseDesc")}</p>
             </CardContent>
           </Card>
 
@@ -542,7 +611,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
         </div>
       )}
 
-      {/* ---- Opportunities table ---- */}
+      {/* ---- Scored Flip Opportunities table ---- */}
       {backendOnline && (
         <FlipsTable
           opportunities={filteredOpportunities}
@@ -559,6 +628,18 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
           onPageChange={setPage}
           optimalPaymentByDisplayName={optimalPaymentByDisplayName}
           anchorId={anchorId}
+        />
+      )}
+
+      {/* ---- Triangular Arbitrage section (from old ArbitrageTab) ---- */}
+      {backendOnline && (
+        <ArbitrageFlipperTriangular
+          triData={triData}
+          triError={!!triError}
+          triErrorObj={triErrorObj}
+          backendOnline={backendOnline}
+          upstreamDegraded={upstreamDegraded}
+          onRetry={() => refetchTri()}
         />
       )}
 

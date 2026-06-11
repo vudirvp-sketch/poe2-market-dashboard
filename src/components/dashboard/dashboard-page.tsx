@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   GitCompare,
   Bell,
-  Zap,
   TrendingUp,
   Route,
   Network,
@@ -41,12 +40,12 @@ import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
 import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dialog";
 import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
-import { ArbitrageTab } from "@/components/dashboard/arbitrage-tab";
+// ArbitrageTab removed (iteration 34): merged into FlipsTab
 import { FlipsTab } from "@/components/dashboard/flips-tab";
 import { OptimizerTab } from "@/components/dashboard/optimizer-tab";
 import { AnalystTab } from "@/components/dashboard/analyst-tab";
 import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
-import { MarketHeatmap } from "@/components/dashboard/market-heatmap";
+// MarketHeatmap removed (iteration 34): consolidated into MarketOverview
 import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
@@ -237,7 +236,7 @@ export function Dashboard() {
   // Flipper backend health check (dashboard-level, shared across components)
   // ============================================================================
   const { data: flipperHealthData, isError: flipperHealthError, isPending: flipperHealthPending } = useQuery<FlipperHealthResponse>({
-    queryKey: ["flipper-health"],
+    queryKey: ["flipperHealth"],
     queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
     staleTime: 30_000,
     refetchInterval: 30_000,
@@ -260,7 +259,7 @@ export function Dashboard() {
   // Flipper phase info (for header phase badge)
   // ============================================================================
   const { data: flipperPhaseData } = useQuery<FlipperPhaseResponse>({
-    queryKey: ["flipper-phase"],
+    queryKey: ["flipperPhase"],
     queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: flipperBackendOnline,
     staleTime: 60_000,
@@ -275,7 +274,7 @@ export function Dashboard() {
   // Flipper events count (for header events button indicator)
   // ============================================================================
   const { data: flipperEventsData } = useQuery<FlipperEventsSummary>({
-    queryKey: ["flipper-events-count"],
+    queryKey: ["flipperEventsCount"],
     queryFn: () => fetchApi<FlipperEventsSummary>("/api/flipper/events", { active_only: "true" }),
     enabled: flipperBackendOnline,
     staleTime: 30_000,
@@ -513,7 +512,7 @@ export function Dashboard() {
     error: exchangeError,
     dataUpdatedAt: exchangeFetchedAt,
   } = useQuery({
-    queryKey: ["exchange", realm, effectiveLeague],
+    queryKey: ["exchangePairs", realm, effectiveLeague],
     queryFn: () =>
       fetchApi<ExchangePair[]>("/api/poe2/exchange", {
         realm,
@@ -579,7 +578,7 @@ export function Dashboard() {
   // using the same logic from currency-optimal.ts.
 
   const { data: optimalCurrencyData } = useQuery<OptimalCurrencyResponse>({
-    queryKey: ["flipper-optimal-currency"],
+    queryKey: ["flipperOptimalCurrency"],
     queryFn: () => fetchApi<OptimalCurrencyResponse>("/api/flipper/optimal-currency"),
     enabled: flipperBackendOnline,
     staleTime: 60_000,
@@ -1062,9 +1061,7 @@ export function Dashboard() {
                 <TabsTrigger value="exchange" className="gap-1.5" aria-label={t("tabExchange")}>
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> {t("tabExchange")}
                 </TabsTrigger>
-                <TabsTrigger value="arbitrage" className="gap-1.5" aria-label={t("tabArbitrage")}>
-                  <Zap className="h-4 w-4" aria-hidden="true" /> {t("tabArbitrage")}
-                </TabsTrigger>
+                {/* Arbitrage tab removed (iter 34) — merged into Flips */}
                 <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
                   <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
                 </TabsTrigger>
@@ -1185,14 +1182,7 @@ export function Dashboard() {
                   backendOnline={flipperBackendOnline}
                 />
               </ErrorBoundary>
-              {/* P2-2: Market Heatmap with Market Tops (standalone component) */}
-              <ErrorBoundary fallbackTitle={t("fallbackMarketHeatmap")}>
-                <MarketHeatmap
-                  realm={realm}
-                  league={effectiveLeague}
-                  backendOnline={flipperBackendOnline}
-                />
-              </ErrorBoundary>
+              {/* Market Heatmap removed (iter 34) — consolidated into MarketOverview internally */}
 
               {/* P3-3: Comparative Analytics — integrated into Overview tab */}
               <ErrorBoundary fallbackTitle={t("fallbackComparativeAnalytics")}>
@@ -1581,23 +1571,10 @@ export function Dashboard() {
               )}
             </TabsContent>
 
-            {/* ============ ARBITRAGE TAB ============ */}
-            <TabsContent value="arbitrage">
-              <ErrorBoundary fallbackTitle={t("fallbackArbitrageCalculator")}>
-                <ArbitrageTab
-                  realm={realm}
-                  league={effectiveLeague}
-                  backendOnline={flipperBackendOnline}
-                  backendChecking={flipperHealthPending}
-                  upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable}
-                />
-              </ErrorBoundary>
-            </TabsContent>
-
-            {/* ============ FLIPS TAB ============ */}
+            {/* ============ FLIPS TAB (unified with old Arbitrage) ============ */}
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle={t("fallbackFlips")}>
-                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} optimalPaymentByDisplayName={optimalPaymentByDisplayName} anchorId={selectedAnchorId} />
+                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} optimalPaymentByDisplayName={optimalPaymentByDisplayName} anchorId={selectedAnchorId} league={effectiveLeague} />
               </ErrorBoundary>
               {/* P3-7: Tier Drift Tracker */}
               <ErrorBoundary fallbackTitle={t("fallbackTierDrift")}>
