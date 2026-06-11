@@ -940,6 +940,13 @@ const en = {
   ritualOmensTitle: "Ritual Omens — Price Tiers",
   ritualOmensNoReforgeNotice: "Ritual Omens cannot be reforged at the vendor. This chain shows price comparison only — identify when a higher-tier omen is undervalued.",
   fallbackLiquidChain: "Liquid Chain",
+
+  // ---- Multi-Currency Price Display ----
+  multiCurrencyTitle: "Price in Currencies",
+  divineOrb: "Divine Orb",
+  exaltedOrb: "Exalted Orb",
+  chaosOrb: "Chaos Orb",
+  mirror: "Mirror of Kalandra",
 } as const;
 
 export default en;

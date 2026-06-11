@@ -935,6 +935,13 @@ const ko: Record<TranslationKeys, string> = {
   ritualOmensTitle: "의식 징조 — 가격 등급",
   ritualOmensNoReforgeNotice: "의식 징조는 상인에게서 재조합할 수 없습니다. 이 체인은 가격 비교만 표시합니다 — 상위 등급 징조가 저평가된 경우를 식별하세요.",
   fallbackLiquidChain: "액체 체인",
+
+  // ---- Multi-Currency Price Display ----
+  multiCurrencyTitle: "통화별 가격",
+  divineOrb: "신성한 오브",
+  exaltedOrb: "승천 오브",
+  chaosOrb: "카오스 오브",
+  mirror: "칼란드라의 거울",
 };
 
 export default ko;

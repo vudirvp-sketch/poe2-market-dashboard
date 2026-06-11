@@ -868,6 +868,13 @@ const ru: Record<TranslationKeys, string> = {
   ritualOmensTitle: "Омены ритуала — ценовые уровни",
   ritualOmensNoReforgeNotice: "Омены ритуала нельзя перекрафтить у торговца. Эта цепочка показывает сравнение цен — определить, когда омен высшего уровня недооценён.",
   fallbackLiquidChain: "Цепочка жидкостей",
+
+  // ---- Multi-Currency Price Display ----
+  multiCurrencyTitle: "Цена в валютах",
+  divineOrb: "Божественная сфера",
+  exaltedOrb: "Сфера возвышения",
+  chaosOrb: "Сфера хаоса",
+  mirror: "Зеркало Каландры",
 };
 
 export default ru;

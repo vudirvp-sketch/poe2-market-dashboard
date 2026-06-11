@@ -935,6 +935,13 @@ const zh: Record<TranslationKeys, string> = {
   ritualOmensTitle: "仪式预兆 — 价格层级",
   ritualOmensNoReforgeNotice: "仪式预兆无法在商贩处重铸。此链仅显示价格对比 — 帮助识别高级预兆被低估的情况。",
   fallbackLiquidChain: "液体链",
+
+  // ---- Multi-Currency Price Display ----
+  multiCurrencyTitle: "多货币价格",
+  divineOrb: "神圣石",
+  exaltedOrb: "崇高石",
+  chaosOrb: "混沌石",
+  mirror: "卡兰德之镜",
 };
 
 export default zh;

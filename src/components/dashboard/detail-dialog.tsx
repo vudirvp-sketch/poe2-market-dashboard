@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
-import type { PoeItem, PoeItemHistoryPoint, DailyStat, BenchmarksResponse, OHLCVCandle } from "@/lib/types";
+import type { PoeItem, PoeItemHistoryPoint, DailyStat, BenchmarksResponse, OHLCVCandle, ExchangePair } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
@@ -43,6 +43,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ChartSkeleton } from "./skeletons";
 import { EmptyState } from "./empty-state";
 import { CandlestickChart, type OHLCVData, type Timeframe, computeTimeframeAlignments, type TimeframeAlignment } from "./candlestick-chart";
+import { MultiCurrencyPrice } from "./multi-currency-price";
 
 interface DetailDialogProps {
   item: PoeItem | null;
@@ -114,6 +115,20 @@ export function DetailDialog({
       }),
     enabled: !!item && open && chartMode === "daily" && (candleTimeframe === "1H" || candleTimeframe === "4H" || candleTimeframe === "1W"),
     staleTime: 120_000,
+    retry: 1,
+  });
+
+  // Fetch exchange pairs for multi-currency price display
+  const { data: exchangePairs } = useQuery<ExchangePair[]>({
+    queryKey: ["exchangePairs", realm, league],
+    queryFn: () =>
+      fetchApi<ExchangePair[]>("/api/poe2/exchange", {
+        realm,
+        league,
+        action: "pairs",
+      }),
+    enabled: !!item && open,
+    staleTime: 300_000, // 5 min cache
     retry: 1,
   });
 
@@ -246,6 +261,14 @@ export function DetailDialog({
               </p>
             </div>
           </div>
+
+          {/* Multi-Currency Price Display — like poe2db.tw */}
+          <MultiCurrencyPrice
+            priceInBase={item.relativePrice ?? item.chaosEquivalentRate}
+            baseCurrencyId={uiState.baseCurrencyApiId}
+            baseCurrencyName={uiState.baseCurrencyText}
+            exchangePairs={exchangePairs}
+          />
 
           {/* P1-5: Benchmark Info Panel — 30-day range, percentile, vs avg */}
           {benchmark && (

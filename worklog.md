@@ -1,27 +1,23 @@
 # Worklog
 
 ---
-Task ID: 32
+Task ID: 33
 Agent: main
-Task: Iteration 32 — Verify 19 new item api_ids against POE2Scout API, fix mismatches, sync mappings
+Task: Итерация 33 — Анализ poe2db.tw, создание MultiCurrencyPrice, план рефакторинга
 
 Work Log:
-- Fetched all 625 items from POE2Scout API across 17 categories (expedition, incursion, abyss, verisium, vaal, idol, ritual, ultimatum, breach, delirium, currency, fragments, runes, essences, uncutgems, lineagesupportgems)
-- Verified 14/19 new item api_ids CONFIRMED in POE2Scout API (correct match)
-- Identified 5/19 items exist on poe2db but NOT in POE2Scout API: broken-circle-artifact, black-scythe-artifact, order-artifact, sun-artifact, mark-of-the-abyssal-lord
-- Marked 5 not-in-API items with "# poe2db, not in POE2Scout API" notes
-- Discovered PoE2 rune system overhaul: fire/ice/lightning tiers replaced with adept/body/iron/mind/stone/storm + lesser/greater/perfect system (140 new runes in API)
-- Removed 9 outdated fire/ice/lightning rune tier entries from both RU and EN dicts
-- Added 23 missing EN catalyst entries + 1 missing EN entry (ancient-diluted-liquid-ire)
-- Achieved perfect RU/EN sync: 349 entries each in both backend and frontend
-- Investigated cross-rate inconsistency (1862 suspicious triples) — confirmed this is a known data quality issue, code correctly filters false positives
-- Updated AGENT_NAVIGATION.md to v1.52
+- Проанализировал страницу poe2db.tw/ru/Her_Declaration — понял формат: таблица обмена (Divine/Exalted/Chaos), ECharts графики с candlestick + MA + volume
+- Изучил ключевые файлы проекта: types.ts, poe2api.ts, store.ts, currency-optimal.ts, detail-dialog.tsx, currency-card.tsx, candlestick-chart.tsx, best-payment-badge.tsx
+- Создал `src/components/dashboard/multi-currency-price.tsx` — компонент отображения цены в нескольких валютах (Divine/Exalted/Chaos/Mirror)
+- Обновил `src/components/dashboard/detail-dialog.tsx` — добавил MultiCurrencyPrice и fetch exchange pairs
+- Добавил i18n ключи (multiCurrencyTitle, divineOrb, exaltedOrb, chaosOrb, mirror) во все 4 локали
+- Создал `REFACTOR_PLAN.md` — план рефакторинга кеша/API/переиспользования данных (4 фазы, 8 итераций)
+- Обновил `AGENT_NAVIGATION.md` — убрал раздутую секцию §10 (33 пункта → 14 критических правил), добавил секцию про MultiCurrencyPrice
 
 Stage Summary:
-- api_id verification: 14/19 confirmed, 5 not in API (kept with notes)
-- Outdated rune entries removed: 9 (fire/ice/lightning tier 1/2/3)
-- EN sync fixed: 24 entries added (23 catalysts + 1 ancient-diluted-liquid-ire)
-- Backend: 358→349 RU, 335→349 EN (9 removed, 14 EN added)
-- Frontend: fully synced with backend
-- POE2Scout API coverage: 349/625 items have RU names (56%), 336 items still need names
-- Stopping point: 336 API items need Russian names (140 runes, 69 lineage support gems, 30 expedition, etc.)
+- Новый компонент: multi-currency-price.tsx (показывает цену в Divine/Exalted/Chaos/Mirror с premium %)
+- DetailDialog интегрирован: fetch exchange pairs + MultiCurrencyPrice panel
+- i18n: 5 новых ключей × 4 локали = 20 строк
+- REFACTOR_PLAN.md: 4 фазы (кеш, переиспользование, API, архитектура)
+- AGENT_NAVIGATION.md: сокращён с 223 до ~80 строк
+- Точка остановки: Phase 1.1 REFACTOR_PLAN (стандартизация queryKeys) — следующая итерация
