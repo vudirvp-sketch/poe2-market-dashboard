@@ -6,7 +6,7 @@ and hold/sell decision for a currency using the formulas from
 PoE2_Flipper_Canonical_Formulas.md Section 6.
 
 Endpoints:
-    GET /api/storage-value/{currency} — projected value and hold/sell decision
+    GET /api/v1/storage-value/{currency} — projected value and hold/sell decision
 """
 
 from __future__ import annotations
@@ -20,13 +20,14 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings
 from backend.economy.momentum import PriceMomentumTracker
 from backend.predictors.storage_value import project_value
+from backend.api.response_models import StorageValueResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["storage-value"])
+router = APIRouter(prefix="/api/v1", tags=["storage-value"])
 
 
-@router.get("/storage-value/{currency}")
+@router.get("/storage-value/{currency}", response_model=StorageValueResponse)
 async def get_storage_value(
     currency: str,
     horizon_hours: int = Query(default=24, ge=1, le=168, description="Projection horizon in hours"),

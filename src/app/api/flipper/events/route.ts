@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   return proxyWithFallback(
-    "/api/events",
+    "/api/v1/events",
     {
       offlineFallback: {
         events: [],
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     return proxyWithFallback(
-      "/api/events",
+      "/api/v1/events",
       {
         offlineFallback: {
           error: "Flipper backend unavailable",

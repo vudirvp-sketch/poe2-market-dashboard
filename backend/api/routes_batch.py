@@ -1,7 +1,7 @@
 """
 Batch API endpoint — combine multiple API calls into a single HTTP request.
 
-POST /api/batch
+POST /api/v1/batch
 
 Accepts a JSON body with a list of request descriptors. Each descriptor
 specifies a backend API path and optional query parameters. The server
@@ -14,14 +14,14 @@ This reduces network overhead on initial page load:
   After:  1 HTTP request with all results bundled together.
 
 Request format:
-    POST /api/batch
+    POST /api/v1/batch
     Content-Type: application/json
     {
       "requests": [
-        { "id": "health", "path": "/api/health" },
-        { "id": "phase", "path": "/api/phase" },
-        { "id": "events", "path": "/api/events", "params": {"active_only": "true"} },
-        { "id": "currencies", "path": "/api/currencies" }
+        { "id": "health", "path": "/api/v1/health" },
+        { "id": "phase", "path": "/api/v1/phase" },
+        { "id": "events", "path": "/api/v1/events", "params": {"active_only": "true"} },
+        { "id": "currencies", "path": "/api/v1/currencies" }
       ]
     }
 
@@ -62,7 +62,7 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["batch"])
+router = APIRouter(prefix="/api/v1", tags=["batch"])
 
 # Maximum number of sub-requests in a single batch call
 MAX_BATCH_SIZE = 10
@@ -72,24 +72,24 @@ SUB_REQUEST_TIMEOUT = 15.0
 
 # Allowed path prefixes for batch requests (safety: only GET endpoints)
 ALLOWED_PREFIXES = (
-    "/api/health",
-    "/api/phase",
-    "/api/currencies",
-    "/api/prices",
-    "/api/arbitrage",
-    "/api/events",
-    "/api/anomalies",
-    "/api/storage-value",
-    "/api/optimizer",
-    "/api/analyst",
-    "/api/portfolio",
-    "/api/scanner",
-    "/api/liquid-chain",
+    "/api/v1/health",
+    "/api/v1/phase",
+    "/api/v1/currencies",
+    "/api/v1/prices",
+    "/api/v1/arbitrage",
+    "/api/v1/events",
+    "/api/v1/anomalies",
+    "/api/v1/storage-value",
+    "/api/v1/optimizer",
+    "/api/v1/analyst",
+    "/api/v1/portfolio",
+    "/api/v1/scanner",
+    "/api/v1/liquid-chain",
 )
 
 # Denied paths — mutations or dangerous endpoints
 DENIED_PATHS = (
-    "/api/events/",       # POST/DELETE mutations — not safe for batch
+    "/api/v1/events/",       # POST/DELETE mutations — not safe for batch
 )
 
 # Shared httpx client for internal requests (reused across batch calls)
@@ -129,7 +129,7 @@ class BatchSubRequest(BaseModel):
     )
     path: str = Field(
         ...,
-        description="API path, e.g. /api/phase",
+        description="API path, e.g. /api/v1/phase",
     )
     params: Optional[dict[str, str]] = Field(
         default=None,

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
  *  dataAvailable: false instead of 503.
  */
 export async function GET() {
-  return proxyWithFallback("/api/phase", {
+  return proxyWithFallback("/api/v1/phase", {
     offlineFallback: {
       phase: "unknown",
       daysSinceReference: 0,

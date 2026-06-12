@@ -2,8 +2,8 @@
 API routes for arbitrage / flip opportunity data.
 
 Endpoints:
-    GET /api/arbitrage/flips        — scored flip opportunities
-    GET /api/arbitrage/triangular   — detected triangular arbitrage cycles
+    GET /api/v1/arbitrage/flips        — scored flip opportunities
+    GET /api/v1/arbitrage/triangular   — detected triangular arbitrage cycles
 
 OPTIMIZATION: Uses DataSnapshot instead of making N individual
 get_historical_prices() calls per currency. Before: 50+ API requests.
@@ -38,10 +38,11 @@ from backend.models.currency import (
 )
 from backend.economy.tiers import tier_penalty, tier_distance
 from backend.economy.events import get_event_manager
+from backend.api.response_models import FlipsResponse, TriangularResponse, OptimalCurrencyResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/arbitrage", tags=["arbitrage"])
+router = APIRouter(prefix="/api/v1/arbitrage", tags=["arbitrage"])
 
 # Concurrency limiter for expensive endpoints — prevents OOM and CPU
 # saturation when multiple clients hit /flips or /triangular simultaneously.
@@ -504,7 +505,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.get("/flips")
+@router.get("/flips", response_model=FlipsResponse)
 async def get_flip_opportunities(
     min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum score filter"),
     min_volume: int = Query(0, ge=0, description="Minimum 24h volume filter"),
@@ -640,7 +641,7 @@ async def get_flip_opportunities(
     }
 
 
-@router.get("/triangular")
+@router.get("/triangular", response_model=TriangularResponse)
 async def get_triangular_arbitrage(
     min_profit_pct: float = Query(1.0, ge=0.0, description="Min profit % to report"),
 ):
@@ -938,7 +939,7 @@ def _detect_cross_rate_flips(
     return results[:50]
 
 
-@router.get("/optimal-currency")
+@router.get("/optimal-currency", response_model=OptimalCurrencyResponse)
 async def get_optimal_currency(
     threshold_pct: float = Query(5.0, ge=0.1, le=50.0, description="Cross-rate flip threshold %"),
     min_volume: int = Query(10, ge=0, description="Min volume for cross-rate flip detection"),

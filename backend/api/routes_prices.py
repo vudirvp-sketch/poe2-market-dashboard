@@ -2,11 +2,11 @@
 API routes for price data.
 
 Endpoints:
-    GET /api/prices              — all current prices for the configured league
-    GET /api/prices/heatmap      — 24h price change heatmap data (Phase 2, Spec Section 2)
-    GET /api/prices/{pair}       — current price for a specific pair (e.g. "divine/exalted")
-    GET /api/currencies          — currency metadata (names, icons, etc.)
-    GET /api/phase               — current league phase info
+    GET /api/v1/prices              — all current prices for the configured league
+    GET /api/v1/prices/heatmap      — 24h price change heatmap data (Phase 2, Spec Section 2)
+    GET /api/v1/prices/{pair}       — current price for a specific pair (e.g. "divine/exalted")
+    GET /api/v1/currencies          — currency metadata (names, icons, etc.)
+    GET /api/v1/phase               — current league phase info
 
 OPTIMIZATION: Uses DataSnapshot to avoid redundant API calls.
 Before: each route made 15-30+ requests to ByCategory independently.
@@ -26,10 +26,14 @@ from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.data.pipeline_cache import get_pipeline_cache
 from backend.models.currency import PhaseInfo, CurrencyTier
+from backend.api.response_models import (
+    PhaseResponse, CurrenciesResponse, PricesResponse, HeatmapResponse,
+    PriceForPairResponse, TiersResponse, BenchmarksResponse,
+)
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["prices"])
+router = APIRouter(prefix="/api/v1", tags=["prices"])
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +108,7 @@ def _run_clustering_sync(
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.get("/phase")
+@router.get("/phase", response_model=PhaseResponse)
 async def get_phase():
     """Return current league phase information."""
     detector = _get_phase_detector()
@@ -119,7 +123,7 @@ async def get_phase():
     }
 
 
-@router.get("/currencies")
+@router.get("/currencies", response_model=CurrenciesResponse)
 async def get_currencies():
     """Return currency metadata for the configured league.
 
@@ -145,7 +149,7 @@ async def get_currencies():
     }
 
 
-@router.get("/prices")
+@router.get("/prices", response_model=PricesResponse)
 async def get_all_prices():
     """Return all current exchange rates for the configured league.
 
@@ -316,7 +320,7 @@ async def get_all_prices():
     }
 
 
-@router.get("/prices/heatmap")
+@router.get("/prices/heatmap", response_model=HeatmapResponse)
 async def get_heatmap_data():
     """Return 24h price change percentages for all currencies.
 
@@ -376,7 +380,7 @@ async def get_heatmap_data():
     }
 
 
-@router.get("/prices/{pair:path}")
+@router.get("/prices/{pair:path}", response_model=PriceForPairResponse)
 async def get_price_for_pair(pair: str):
     """Return current price for a specific currency pair (e.g. 'divine/exalted').
 
@@ -442,7 +446,7 @@ async def get_price_for_pair(pair: str):
 # P1-3: Tiers endpoint
 # ---------------------------------------------------------------------------
 
-@router.get("/tiers")
+@router.get("/tiers", response_model=TiersResponse)
 async def get_tiers():
     """Return currency tier classifications for the configured league."""
     config = get_settings()
@@ -493,7 +497,7 @@ async def get_tiers():
 # P1-5: Benchmarks endpoint
 # ---------------------------------------------------------------------------
 
-@router.get("/benchmarks/{currency_api_id}")
+@router.get("/benchmarks/{currency_api_id}", response_model=BenchmarksResponse)
 async def get_benchmarks(
     currency_api_id: str,
     days: int = Query(30, ge=7, le=90, description="Lookback days"),

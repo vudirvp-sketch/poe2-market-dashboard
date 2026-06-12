@@ -2,7 +2,7 @@
 API routes for enhanced flip scanning with custom filters.
 
 Endpoint:
-    GET /api/scanner/scan — Advanced flip opportunity scanner with custom filters
+    GET /api/v1/scanner/scan — Advanced flip opportunity scanner with custom filters
 """
 
 from __future__ import annotations
@@ -16,13 +16,14 @@ from fastapi import APIRouter, Query
 from backend.config import get_settings, AppConfig
 from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.routes_arbitrage import _build_flip_opportunities
+from backend.api.response_models import ScannerResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/scanner", tags=["scanner"])
+router = APIRouter(prefix="/api/v1/scanner", tags=["scanner"])
 
 
-@router.get("/scan")
+@router.get("/scan", response_model=ScannerResponse)
 async def scan_flips(
     min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum score filter"),
     max_score: float = Query(1.0, ge=0.0, le=1.0, description="Maximum score filter"),

@@ -195,20 +195,20 @@ describe("flipper-proxy configuration defaults", () => {
 
 describe("flipper-proxy URL construction", () => {
   it("constructs URL with path segment", () => {
-    const url = new URL("/api/health", FLIPPER_API_URL);
+    const url = new URL("/api/v1/health", FLIPPER_API_URL);
     expect(url.toString()).toContain("localhost:8000");
-    expect(url.pathname).toBe("/api/health");
+    expect(url.pathname).toBe("/api/v1/health");
   });
 
   it("appends search params to URL", () => {
-    const url = new URL("/api/events", FLIPPER_API_URL);
+    const url = new URL("/api/v1/events", FLIPPER_API_URL);
     url.searchParams.set("active_only", "true");
     expect(url.search).toContain("active_only=true");
   });
 
   it("constructs prices endpoint URL", () => {
-    const url = new URL("/api/prices", FLIPPER_API_URL);
-    expect(url.toString()).toContain("/api/prices");
+    const url = new URL("/api/v1/prices", FLIPPER_API_URL);
+    expect(url.toString()).toContain("/api/v1/prices");
   });
 
   it("constructs flips endpoint URL", () => {

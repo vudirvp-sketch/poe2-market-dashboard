@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   return proxyWithFallback(
-    "/api/arbitrage/flips",
+    "/api/v1/arbitrage/flips",
     {
       offlineFallback: {
         league: "",

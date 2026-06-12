@@ -13,7 +13,7 @@ export async function POST(
 ) {
   const { eventId } = await params;
   return proxyWithFallback(
-    `/api/events/${eventId}/deactivate`,
+    `/api/v1/events/${eventId}/deactivate`,
     {
       offlineFallback: {
         error: "Cannot deactivate event — backend is offline",

@@ -15,7 +15,7 @@ export async function GET(
   const { currency } = await params;
   const { searchParams } = new URL(_req.url);
   return proxyWithFallback(
-    `/api/storage-value/${encodeURIComponent(currency)}`,
+    `/api/v1/storage-value/${encodeURIComponent(currency)}`,
     {
       offlineFallback: {
         currency,

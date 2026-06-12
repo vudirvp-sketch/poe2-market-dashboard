@@ -78,7 +78,7 @@ const pendingRequests = new Map<string, Promise<BufferedProxyResult>>();
 // Bellman-Ford or cross-rate validation.
 async function probeHealth(): Promise<boolean> {
   try {
-    const healthUrl = new URL("/api/health/ping", FLIPPER_API_URL);
+    const healthUrl = new URL("/api/v1/health/ping", FLIPPER_API_URL);
     const res = await fetch(healthUrl.toString(), {
       method: "GET",
       signal: AbortSignal.timeout(5_000), // 5s — generous for a plain-text response
@@ -92,7 +92,7 @@ async function probeHealth(): Promise<boolean> {
 /**
  * Proxy a request to the FastAPI flipper backend with retry and deduplication.
  *
- * @param path       API path relative to the backend root, e.g. "/api/prices"
+ * @param path       API path relative to the backend root, e.g. "/api/v1/prices"
  * @param searchParams  Optional query params to forward
  * @param method     HTTP method (GET, POST, etc.)
  * @param body       Optional request body (for POST/PUT)

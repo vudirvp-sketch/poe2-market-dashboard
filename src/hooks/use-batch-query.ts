@@ -12,9 +12,9 @@
 // Usage:
 //   const { results, errors, isLoading } = useBatchQuery({
 //     requests: [
-//       { id: "health", path: "/api/health" },
-//       { id: "phase", path: "/api/phase" },
-//       { id: "events", path: "/api/events", params: { active_only: "true" } },
+//       { id: "health", path: "/api/v1/health" },
+//       { id: "phase", path: "/api/v1/phase" },
+//       { id: "events", path: "/api/v1/events", params: { active_only: "true" } },
 //     ],
 //     enabled: flipperBackendOnline,
 //   });
@@ -43,7 +43,7 @@ import type {
 export interface BatchSubRequest {
   /** Client-defined identifier for result lookup */
   id: string;
-  /** Backend API path, e.g. "/api/health" */
+  /** Backend API path, e.g. "/api/v1/health" */
   path: string;
   /** Optional query parameters */
   params?: Record<string, string>;
@@ -190,10 +190,10 @@ export interface UseInitialBatchOptions {
  * Batch the most common dashboard initial-load queries into a single request.
  *
  * This replaces 5 separate useQuery calls in dashboard-page.tsx:
- *   - flipperHealth → /api/health
- *   - flipperPhase → /api/phase
- *   - flipperEventsCount → /api/events?active_only=true
- *   - flipperOptimalCurrency → /api/arbitrage/optimal-currency
+ *   - flipperHealth → /api/v1/health
+ *   - flipperPhase → /api/v1/phase
+ *   - flipperEventsCount → /api/v1/events?active_only=true
+ *   - flipperOptimalCurrency → /api/v1/arbitrage/optimal-currency
  *
  * Results are populated into the React Query cache so existing useQuery
  * hooks in dashboard-page.tsx consume them without changes.
@@ -201,10 +201,10 @@ export interface UseInitialBatchOptions {
 export function useInitialBatch({ enabled = true }: UseInitialBatchOptions): UseBatchQueryResult {
   return useBatchQuery({
     requests: [
-      { id: "health", path: "/api/health" },
-      { id: "phase", path: "/api/phase" },
-      { id: "events", path: "/api/events", params: { active_only: "true" } },
-      { id: "optimalCurrency", path: "/api/arbitrage/optimal-currency" },
+      { id: "health", path: "/api/v1/health" },
+      { id: "phase", path: "/api/v1/phase" },
+      { id: "events", path: "/api/v1/events", params: { active_only: "true" } },
+      { id: "optimalCurrency", path: "/api/v1/arbitrage/optimal-currency" },
     ],
     enabled,
     staleTime: 30_000,

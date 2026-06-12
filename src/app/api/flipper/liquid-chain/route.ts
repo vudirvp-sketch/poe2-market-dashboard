@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   return proxyWithFallback(
-    "/api/liquid-chain/analysis",
+    "/api/v1/liquid-chain/analysis",
     {
       offlineFallback: {
         chains: [],

@@ -5,11 +5,11 @@ From PoE2_Flipper_Implementation_Spec.md §6:
 Events are flagged manually by the user via API/UI.
 
 Endpoints:
-    POST   /api/events           — create a new event
-    GET    /api/events           — list all active events
-    GET    /api/events/{id}      — get a specific event
-    DELETE /api/events/{id}      — delete an event
-    POST   /api/events/{id}/deactivate — deactivate an event without deleting
+    POST   /api/v1/events           — create a new event
+    GET    /api/v1/events           — list all active events
+    GET    /api/v1/events/{id}      — get a specific event
+    DELETE /api/v1/events/{id}      — delete an event
+    POST   /api/v1/events/{id}/deactivate — deactivate an event without deleting
 """
 
 from __future__ import annotations
@@ -26,10 +26,11 @@ from backend.economy.events import get_event_manager, EventManager
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.models.currency import EventType
 from backend.data.pipeline_cache import get_pipeline_cache
+from backend.api.response_models import EventCreateResponse, EventsListResponse, EventSummaryResponse, EventMessageResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/events", tags=["events"])
+router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
 
 # ---------------------------------------------------------------------------
@@ -68,7 +69,7 @@ class CreateEventRequest(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("")
+@router.post("", response_model=EventCreateResponse)
 async def create_event(request: CreateEventRequest):
     """Create a new manual event flag.
 
@@ -140,7 +141,7 @@ async def create_event(request: CreateEventRequest):
     }
 
 
-@router.get("")
+@router.get("", response_model=EventsListResponse)
 async def list_events(
     active_only: bool = Query(True, description="Only return active events"),
 ):
@@ -157,7 +158,7 @@ async def list_events(
     }
 
 
-@router.get("/summary")
+@router.get("/summary", response_model=EventSummaryResponse)
 async def get_event_summary():
     """Get a summary of the most important active event.
 
@@ -189,7 +190,7 @@ async def get_event(event_id: str):
     return event.to_dict()
 
 
-@router.delete("/{event_id}")
+@router.delete("/{event_id}", response_model=EventMessageResponse)
 async def delete_event(event_id: str):
     """Delete an event by ID."""
     config = get_settings()
@@ -207,7 +208,7 @@ async def delete_event(event_id: str):
     return {"message": f"Event {event_id} deleted successfully"}
 
 
-@router.post("/{event_id}/deactivate")
+@router.post("/{event_id}/deactivate", response_model=EventMessageResponse)
 async def deactivate_event(event_id: str):
     """Deactivate an event without deleting it.
 

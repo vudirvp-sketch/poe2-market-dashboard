@@ -24,5 +24,5 @@ export async function GET(request: NextRequest) {
   params.set("amount", amount);
   params.set("max_hops", maxHops);
 
-  return proxyToFlipper("/api/optimizer/path", params);
+  return proxyToFlipper("/api/v1/optimizer/path", params);
 }

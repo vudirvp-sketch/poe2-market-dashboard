@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  *  without generating any console errors.
  */
 export async function GET() {
-  const res = await proxyToFlipper("/api/health");
+  const res = await proxyToFlipper("/api/v1/health");
 
   // If backend responded successfully, pass through
   if (res.ok) {

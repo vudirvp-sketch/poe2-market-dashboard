@@ -88,7 +88,7 @@ class TestDegradedMode:
         This should NOT be a 500 error; the health check should report
         degraded status.
         """
-        resp = await client.get("/api/health")
+        resp = await client.get("/api/v1/health")
         # Health check should succeed (backend is online)
         assert resp.status_code == 200
 
@@ -98,13 +98,13 @@ class TestDegradedMode:
         May return 503 (service unavailable) when upstream is unreachable,
         but should NOT crash or return 500.
         """
-        resp = await client.get("/api/prices")
+        resp = await client.get("/api/v1/prices")
         # 200 (cached data) or 503 (no data available) are acceptable
         assert resp.status_code in [200, 503]
 
     async def test_anomalies_endpoint_handles_upstream_failure(self, client):
         """Anomalies endpoint should handle upstream failure gracefully."""
-        resp = await client.get("/api/anomalies")
+        resp = await client.get("/api/v1/anomalies")
         assert resp.status_code in [200, 503]
 
     async def test_phase_endpoint_independent_of_upstream(self, client):
@@ -112,7 +112,7 @@ class TestDegradedMode:
 
         Should always return 200 with valid phase info.
         """
-        resp = await client.get("/api/phase")
+        resp = await client.get("/api/v1/phase")
         assert resp.status_code == 200
         data = resp.json()
         assert data["phase"] in ["early", "mid", "late"]
@@ -247,7 +247,7 @@ class TestFlakyIntegration:
         """Health endpoint should return OK before provider is broken."""
         client, provider = flaky_client
 
-        resp = await client.get("/api/health")
+        resp = await client.get("/api/v1/health")
         assert resp.status_code == 200
 
     async def test_flaky_phase_always_works(self, flaky_client):
@@ -255,13 +255,13 @@ class TestFlakyIntegration:
         client, provider = flaky_client
 
         # Before break
-        resp = await client.get("/api/phase")
+        resp = await client.get("/api/v1/phase")
         assert resp.status_code == 200
         assert resp.json()["phase"] in ["early", "mid", "late"]
 
         # After break — phase is still computed from config
         provider.break_provider()
-        resp = await client.get("/api/phase")
+        resp = await client.get("/api/v1/phase")
         assert resp.status_code == 200
 
     async def test_flaky_prices_before_and_after_break(self, flaky_client):
@@ -269,12 +269,12 @@ class TestFlakyIntegration:
         client, provider = flaky_client
 
         # Before break — should get data or 503 (depends on snapshot state)
-        resp = await client.get("/api/prices")
+        resp = await client.get("/api/v1/prices")
         assert resp.status_code in [200, 503]
 
         # After break — should still respond gracefully (not crash)
         provider.break_provider()
-        resp = await client.get("/api/prices")
+        resp = await client.get("/api/v1/prices")
         assert resp.status_code in [200, 503]
 
 

@@ -4,20 +4,23 @@ FastAPI application entry point for the PoE2 Flipper backend.
 Start with:
     uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
+All endpoints are versioned under /api/v1/ (Phase 4.2).
+Responses include X-API-Version header.
+
 Provides:
-    GET /api/phase              — current league phase
-    GET /api/currencies         — currency metadata
-    GET /api/prices             — all exchange rates with fee info
-    GET /api/prices/heatmap     — 24h price change heatmap data
-    GET /api/prices/{pair}      — price for a specific pair
-    GET /api/arbitrage/flips    — scored flip opportunities
-    GET /api/arbitrage/triangular — triangular arbitrage cycles
-    GET /api/anomalies          — anomaly detection across currencies
-    GET /api/storage-value/{currency} — projected value and hold/sell decision
-    POST /api/events            — create a manual event flag
-    GET /api/events             — list active events
-    GET /api/health             — health check
-    POST /api/batch             — batch multiple GET requests into one call
+    GET /api/v1/phase              — current league phase
+    GET /api/v1/currencies         — currency metadata
+    GET /api/v1/prices             — all exchange rates with fee info
+    GET /api/v1/prices/heatmap     — 24h price change heatmap data
+    GET /api/v1/prices/{pair}      — price for a specific pair
+    GET /api/v1/arbitrage/flips    — scored flip opportunities
+    GET /api/v1/arbitrage/triangular — triangular arbitrage cycles
+    GET /api/v1/anomalies          — anomaly detection across currencies
+    GET /api/v1/storage-value/{currency} — projected value and hold/sell decision
+    POST /api/v1/events            — create a manual event flag
+    GET /api/v1/events             — list active events
+    GET /api/v1/health             — health check
+    POST /api/v1/batch             — batch multiple GET requests into one call
 """
 
 from __future__ import annotations
@@ -30,11 +33,13 @@ from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.api.middleware_compression import CompressionMiddleware
+from backend.api.response_models import HealthResponse
 
 from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
@@ -416,6 +421,27 @@ app.add_middleware(
 # excluded because compression adds latency to real-time data.
 app.add_middleware(CompressionMiddleware)
 
+# Phase 4.2: API versioning — add X-API-Version header to all responses
+API_VERSION = "1"
+
+
+class APIVersionMiddleware(BaseHTTPMiddleware):
+    """Add X-API-Version header to all responses.
+
+    This middleware adds a `X-API-Version: 1` header to every response,
+    allowing clients to detect which API version they are consuming.
+    The header is added after all other middleware has processed the request
+    so it appears on every response (including error responses).
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-API-Version"] = API_VERSION
+        return response
+
+
+app.add_middleware(APIVersionMiddleware)
+
 # Register routers
 app.include_router(prices_router)
 app.include_router(arbitrage_router)
@@ -514,7 +540,7 @@ _snapshot_manager_ref = None
 # Fix 8 (POE2-FIX-SPEC): Health check endpoint with provider status
 # ---------------------------------------------------------------------------
 
-@app.get("/api/health/ping")
+@app.get("/api/v1/health/ping")
 async def health_ping():
     """Ultra-lightweight health probe — no JSON serialization, no imports.
 
@@ -524,12 +550,12 @@ async def health_ping():
     It avoids all overhead: no config lookup, no dict construction, no JSON
     serialization, no dependency injection.
 
-    Use /api/health for detailed diagnostics.
+    Use /api/v1/health for detailed diagnostics.
     """
     return PlainTextResponse("ok", media_type="text/plain")
 
 
-@app.get("/api/health")
+@app.get("/api/v1/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint with provider status and cache info.
 

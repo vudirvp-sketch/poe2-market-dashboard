@@ -1,7 +1,7 @@
 import { proxyWithFallback } from '@/lib/flipper-proxy';
 
 export async function GET() {
-  return proxyWithFallback('/api/tiers', {
+  return proxyWithFallback('/api/v1/tiers', {
     offlineFallback: {
       tiers: [],
       boundaries: { t0Min: 50, t1Min: 10, t2Min: 1, t3Min: 0.1, t4Min: 0.01 },

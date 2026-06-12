@@ -2,7 +2,7 @@
 API routes for League Analyst — trends, anomalies, league comparison, and auto-generated facts.
 
 Endpoint:
-    GET /api/analyst/summary — Comprehensive league analysis summary
+    GET /api/v1/analyst/summary — Comprehensive league analysis summary
 """
 
 from __future__ import annotations
@@ -18,10 +18,11 @@ from fastapi.responses import JSONResponse
 from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
 from backend.data.pipeline_cache import get_pipeline_cache
+from backend.api.response_models import AnalystSummaryResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/analyst", tags=["analyst"])
+router = APIRouter(prefix="/api/v1/analyst", tags=["analyst"])
 
 
 def _compute_trends(prices_in_base: dict[str, float],
@@ -168,7 +169,7 @@ def _generate_facts(trends: list[dict], anomalies: list[dict],
     return facts
 
 
-@router.get("/summary")
+@router.get("/summary", response_model=AnalystSummaryResponse)
 async def get_league_summary():
     """Comprehensive league analysis: trends, anomalies, and auto-generated facts."""
     config = get_settings()

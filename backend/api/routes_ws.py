@@ -2,11 +2,11 @@
 WebSocket routes for live-updating data.
 
 Endpoints:
-    WS /ws/storage-value/{currency}  — pushes StorageValueResult every N seconds
-    WS /ws/forecast/{currency}       — pushes ForecastResponse every N seconds
-    WS /ws/anomalies                 — pushes anomaly alerts every N seconds
-    WS /ws/flips                     — pushes flip scoring updates every N seconds
-    WS /ws/events                    — pushes event creation/deactivation notifications
+    WS /v1/ws/storage-value/{currency}  — pushes StorageValueResult every N seconds
+    WS /v1/ws/forecast/{currency}       — pushes ForecastResponse every N seconds
+    WS /v1/ws/anomalies                 — pushes anomaly alerts every N seconds
+    WS /v1/ws/flips                     — pushes flip scoring updates every N seconds
+    WS /v1/ws/events                    — pushes event creation/deactivation notifications
 
 The server polls the existing computation logic at a configurable interval
 (default: 30 seconds) and pushes JSON updates to all connected clients.
@@ -39,7 +39,7 @@ from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["websocket"])
+router = APIRouter(prefix="/v1", tags=["websocket"])
 
 # ---------------------------------------------------------------------------
 # Configuration

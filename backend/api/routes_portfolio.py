@@ -2,7 +2,7 @@
 API routes for portfolio analytics.
 
 Endpoints:
-    GET /api/portfolio/correlation — correlation matrix for all eligible currencies
+    GET /api/v1/portfolio/correlation — correlation matrix for all eligible currencies
 
 P3-3: Provides a server-side correlation matrix for the ComparativeChart component.
 The frontend can fall back to client-side computation, but the backend version
@@ -33,10 +33,11 @@ from fastapi.responses import JSONResponse
 
 from backend.api.data_snapshot import get_snapshot
 from backend.config import get_settings
+from backend.api.response_models import CorrelationResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
+router = APIRouter(prefix="/api/v1/portfolio", tags=["portfolio"])
 
 # Minimum number of log-returns required to compute correlation.
 # We need at least 2 returns for Spearman (it needs ranks).
@@ -213,7 +214,7 @@ def _compute_correlation_matrix_sync(
     }
 
 
-@router.get("/correlation")
+@router.get("/correlation", response_model=CorrelationResponse)
 async def get_correlation_matrix():
     """Return the pairwise Spearman rank correlation matrix for all eligible currencies.
 

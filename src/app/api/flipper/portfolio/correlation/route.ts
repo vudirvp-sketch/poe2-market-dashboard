@@ -25,7 +25,7 @@ const FALLBACK = {
 export async function GET() {
   try {
     const res = await proxyToFlipper(
-      "/api/portfolio/correlation",
+      "/api/v1/portfolio/correlation",
       undefined,
       "GET",
       undefined,

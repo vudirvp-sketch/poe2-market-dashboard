@@ -13,7 +13,7 @@ export async function DELETE(
 ) {
   const { eventId } = await params;
   return proxyWithFallback(
-    `/api/events/${eventId}`,
+    `/api/v1/events/${eventId}`,
     {
       offlineFallback: {
         error: "Cannot delete event — backend is offline",

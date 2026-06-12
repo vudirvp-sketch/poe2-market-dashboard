@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   return proxyWithFallback(
-    "/api/anomalies",
+    "/api/v1/anomalies",
     {
       offlineFallback: {
         anomalies: [],

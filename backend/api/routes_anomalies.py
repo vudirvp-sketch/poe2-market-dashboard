@@ -5,7 +5,7 @@ Phase 2 (Spec Section 6): Exposes the already-implemented AnomalyDetector
 via a REST endpoint, enabling the frontend forecast tab to display anomaly alerts.
 
 Endpoints:
-    GET /api/anomalies — detect anomalies across all currencies or a specific one
+    GET /api/v1/anomalies — detect anomalies across all currencies or a specific one
 
 PERFORMANCE: Anomaly detection (5 indicators per currency, including STL
 decomposition) is CPU-bound. The computation is offloaded to ProcessPoolExecutor
@@ -26,10 +26,11 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
 from backend.predictors.anomaly import AnomalyDetector
+from backend.api.response_models import AnomaliesResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/anomalies", tags=["anomalies"])
+router = APIRouter(prefix="/api/v1/anomalies", tags=["anomalies"])
 
 # Singleton AnomalyDetector — reuse across requests to avoid re-initialization overhead
 _detector: AnomalyDetector | None = None
@@ -87,7 +88,7 @@ def _detect_anomalies_sync(
     return alerts
 
 
-@router.get("")
+@router.get("", response_model=AnomaliesResponse)
 async def get_anomalies(
     currency: str | None = Query(default=None, description="Specific currency API ID, or None for all"),
     min_alert_score: float = Query(default=0.4, ge=0.0, le=1.0, description="Minimum alert score to include"),

@@ -2,8 +2,8 @@
 API routes for Liquid Chain analysis — vendor reforge conversion chain profitability.
 
 Endpoints:
-    GET /api/liquid-chain/analysis       — Full analysis for all configured chains
-    GET /api/liquid-chain/opportunities   — Only profitable steps and cumulative paths
+    GET /api/v1/liquid-chain/analysis       — Full analysis for all configured chains
+    GET /api/v1/liquid-chain/opportunities   — Only profitable steps and cumulative paths
 
 Prices are sourced from DataSnapshot (prices_in_base), which is already
 populated by the periodic snapshot refresh. No additional API calls needed.
@@ -20,10 +20,11 @@ from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
 from backend.arbitrage.liquid_chain import compute_liquid_chain
 from backend.models.currency import LiquidChainResult
+from backend.api.response_models import LiquidChainAnalysisResponse, LiquidChainOpportunitiesResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/liquid-chain", tags=["liquid-chain"])
+router = APIRouter(prefix="/api/v1/liquid-chain", tags=["liquid-chain"])
 
 
 def _serialize_step(step) -> dict:
@@ -100,7 +101,7 @@ async def _compute_all_chains() -> list[LiquidChainResult]:
     return results
 
 
-@router.get("/analysis")
+@router.get("/analysis", response_model=LiquidChainAnalysisResponse)
 async def get_liquid_chain_analysis(
     chain: str | None = Query(None, description="Chain name filter (e.g. 'delirium_liquids')"),
 ):
@@ -134,7 +135,7 @@ async def get_liquid_chain_analysis(
     }
 
 
-@router.get("/opportunities")
+@router.get("/opportunities", response_model=LiquidChainOpportunitiesResponse)
 async def get_liquid_chain_opportunities(
     min_profit_pct: float = Query(0.0, ge=-100.0, description="Minimum profit % threshold"),
     chain: str | None = Query(None, description="Chain name filter"),

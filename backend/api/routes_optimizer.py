@@ -2,8 +2,8 @@
 API routes for the Currency Optimizer feature.
 
 Endpoints:
-    GET /api/optimizer/path    — find the optimal conversion path between two currencies
-    GET /api/optimizer/matrix  — return the full rate matrix for all currency pairs
+    GET /api/v1/optimizer/path    — find the optimal conversion path between two currencies
+    GET /api/v1/optimizer/matrix  — return the full rate matrix for all currency pairs
 
 Uses Bellman-Ford algorithm on the exchange rate graph to find the best
 multi-hop conversion path. Edge weights are -log(raw_rate) so that the
@@ -27,10 +27,11 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.api.data_snapshot import get_snapshot
 from backend.config import get_settings
 from backend.data.pipeline_cache import get_pipeline_cache
+from backend.api.response_models import OptimizerPathResponse, OptimizerMatrixResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/optimizer", tags=["optimizer"])
+router = APIRouter(prefix="/api/v1/optimizer", tags=["optimizer"])
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +177,7 @@ def _collect_currencies(exchange_rates: dict) -> list[str]:
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.get("/path")
+@router.get("/path", response_model=OptimizerPathResponse)
 async def get_optimal_path(
     from_currency: str = Query(..., description="Source currency api_id (e.g. 'chaos')"),
     to_currency: str = Query(..., description="Target currency api_id (e.g. 'divine')"),
@@ -323,7 +324,7 @@ async def get_optimal_path(
     return response
 
 
-@router.get("/matrix")
+@router.get("/matrix", response_model=OptimizerMatrixResponse)
 async def get_rate_matrix():
     """Return the full rate matrix for all currency pairs in the snapshot.
 

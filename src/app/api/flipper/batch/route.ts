@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     return proxyToFlipper(
-      "/api/batch",
+      "/api/v1/batch",
       undefined, // no searchParams for POST
       "POST",
       body,

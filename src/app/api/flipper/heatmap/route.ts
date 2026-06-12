@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const league = searchParams.get("league") || "runes";
 
   const res = await proxyWithFallback(
-    "/api/prices/heatmap",
+    "/api/v1/prices/heatmap",
     {
       offlineFallback: [],  // Empty heatmap — will try POE2Scout fallback below
     },

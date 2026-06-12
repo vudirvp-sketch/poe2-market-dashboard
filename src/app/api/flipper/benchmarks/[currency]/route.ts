@@ -30,7 +30,7 @@ export async function GET(
   };
 
   const res = await proxyWithFallback(
-    `/api/benchmarks/${currency}`,
+    `/api/v1/benchmarks/${currency}`,
     {
       offlineFallback: benchmarksFallback,
       insufficientDataFallback: benchmarksFallback,

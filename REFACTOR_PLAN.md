@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — План рефакторинга
 
-> Версия: 9.0 | Дата: 2026-06-12
+> Версия: 10.0 | Дата: 2026-06-12
 
 ## Фаза 1: Унификация кеша — DONE ✅
 
@@ -18,29 +18,36 @@
   - Ошибки (4xx/5xx) — НЕ сжимаются
   - Добавляет `Vary: Accept-Encoding` для корректности кешей
   - Настройка через env: `COMPRESSION_MIN_SIZE`, `COMPRESSION_GZIP_LEVEL`, `COMPRESSION_BROTLI_LEVEL`
-- `brotli>=1.0` добавлен в requirements.txt
-- Batch endpoint: `Accept-Encoding: identity` для внутренних запросов (skip compression на localhost)
-- `nginx.example.conf`: добавлены gzip/brotli директивы для static assets
-- 13 тестов в `tests/test_compression.py`
 
 ---
 
 ## Фаза 4: Архитектурные улучшения
 
 ### 4.1 Lazy-loaded tabs ✅ (iter 40)
-### 4.2 Backend API versioning — NOT STARTED
-### 4.3 Typed API client — NOT STARTED
+### 4.2 Backend API versioning ✅ (iter 43)
+- Все маршруты FastAPI используют префикс `/api/v1/` (было `/api/`)
+- WebSocket маршруты используют префикс `/v1/` (было без префикса)
+- `X-API-Version: 1` заголовок на всех ответах (APIVersionMiddleware)
+- Обновлено 12 router файлов, 22 Next.js proxy routes, batch ALLOWED_PREFIXES
+- `flipper-proxy.ts` health probe: `/api/v1/health/ping`
+- Все тесты обновлены на `/api/v1/` пути
+- `backend/main.py`: APIVersionMiddleware добавлена после CompressionMiddleware
 
----
-
-## Порядок реализации
-
-| Итерация | Что делаем | Статус |
-|----------|-----------|--------|
-| 40 | Фаза 3.1: Batch endpoint + Фаза 4.1: Lazy-loaded tabs | DONE |
-| 41 | Фаза 3.2: SSE для price updates + фикс 5 тестов | DONE |
-| 42 | Фаза 3.3: Compressed responses (gzip + brotli) | DONE |
-| 43 | Фаза 4.2: Backend API versioning / Фаза 4.3: Typed API client | — |
+### 4.3 Typed API client ✅ (iter 43)
+- `backend/api/response_models.py` — Pydantic response models для 28 endpoints
+  - HealthResponse, PhaseResponse, CurrenciesResponse, PricesResponse
+  - HeatmapResponse, PriceForPairResponse, TiersResponse, BenchmarksResponse
+  - FlipsResponse, TriangularResponse, OptimalCurrencyResponse
+  - EventCreateResponse, EventsListResponse, EventSummaryResponse, EventMessageResponse
+  - AnomaliesResponse, StorageValueResponse
+  - OptimizerPathResponse, OptimizerMatrixResponse
+  - AnalystSummaryResponse, CorrelationResponse
+  - ScannerResponse, LiquidChainAnalysisResponse, LiquidChainOpportunitiesResponse
+- `response_model=` добавлен ко всем endpoint декораторам
+- OpenAPI схема генерируется автоматически (56 схем, 26 путей)
+- `src/lib/api-types.ts` — TypeScript типы из OpenAPI (3286 строк)
+  - Генерация: `npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts`
+  - Содержит типы для всех paths и components/schemas
 
 ---
 
@@ -52,3 +59,4 @@
 4. **Документация** — каждый новый файл получает JSDoc-комментарии
 5. **SSE — дополнение к polling, не замена** — React Query продолжает polling, SSE добавляет push-инвалидацию
 6. **Compression — прозрачный** — не ломает API контракт, только уменьшает размер ответов
+7. **API Versioning — /v1/ префикс** — все маршруты под /api/v1/, заголовок X-API-Version
