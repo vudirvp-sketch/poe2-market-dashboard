@@ -281,11 +281,14 @@ def daily_stats_cache():
         assert result.stale is True
     """
     from backend.data.daily_stats_cache import DailyStatsCache
-    from cachetools import TTLCache
+    from backend.config import AppConfig
 
-    cache = DailyStatsCache()
+    # Pass config to get an isolated UnifiedCache (not the global singleton)
+    cache = DailyStatsCache(config=AppConfig())
     cache._ttl = 0.1  # 100ms TTL for fast test execution
-    cache._cache = TTLCache(maxsize=256, ttl=cache._ttl)  # Must recreate TTLCache with new TTL
+    # In unified_cache architecture, setting _ttl is enough —
+    # no need to recreate a TTLCache. The proxy _cache.clear()
+    # will work correctly with the unified store.
     yield cache
     cache.invalidate()
 
@@ -303,11 +306,11 @@ def daily_stats_cache_with_flaky_provider(flaky_client):
     Only available when --flaky is passed.
     """
     from backend.data.daily_stats_cache import DailyStatsCache
-    from cachetools import TTLCache
+    from backend.config import AppConfig
 
     client, provider = flaky_client
-    cache = DailyStatsCache()
+    # Pass config to get an isolated UnifiedCache (not the global singleton)
+    cache = DailyStatsCache(config=AppConfig())
     cache._ttl = 0.5  # 500ms TTL — fast but not too aggressive for async tests
-    cache._cache = TTLCache(maxsize=256, ttl=cache._ttl)  # Must recreate TTLCache with new TTL
     yield cache, client, provider
     cache.invalidate()

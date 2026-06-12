@@ -456,9 +456,9 @@ except ImportError:
 # This reduces response time during GIL contention from executor threads.
 # ---------------------------------------------------------------------------
 from backend.economy.events import get_event_manager as _get_event_manager
-from backend.data.pipeline_cache import get_pipeline_cache as _get_pipeline_cache
+from backend.data.unified_cache import get_pipeline_cache as _get_pipeline_cache
 from backend.api.data_snapshot import get_snapshot_manager as _get_snapshot_manager
-from backend.data.daily_stats_cache import get_daily_stats_cache as _get_daily_stats_cache
+from backend.data.unified_cache import get_daily_stats_cache as _get_daily_stats_cache
 
 # Lazily-populated reference to the snapshot manager, set during lifespan.
 # Avoids calling get_snapshot_manager() on every health check, which would
@@ -512,7 +512,7 @@ async def health_check():
     cache_entries = 0
     try:
         pc = _get_pipeline_cache()
-        cache_entries = len(pc._store)
+        cache_entries = pc.stats()["total_entries"]
     except Exception:
         pass
 

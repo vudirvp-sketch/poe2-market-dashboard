@@ -102,6 +102,7 @@ HistoricalStore (SQLite: historical.db)
 
 PipelineCache (TTL in-memory) — caches expensive analytics computations
 DailyStatsCache (LRU + TTL)   — OHLCV daily statistics
+↑ Both are now facades over UnifiedCache (unified_cache.py)
 ModelStore (disk)              — LightGBM model persistence
 ```
 
@@ -163,8 +164,9 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | `OfficialTradeProvider` | `backend/data/providers/official.py` | OAuth2 fallback provider (rarely used) |
 | `SnapshotManager` | `backend/api/data_snapshot.py` | TTL-cached DataSnapshot with periodic refresh |
 | `HistoricalStore` | `backend/data/historical.py` | SQLite store (prices_history, events, price_snapshots) |
-| `PipelineCache` | `backend/data/pipeline_cache.py` | TTL-based analytics result cache |
-| `DailyStatsCache` | `backend/data/daily_stats_cache.py` | LRU + TTL OHLCV statistics cache |
+| `PipelineCache` | `backend/data/pipeline_cache.py` → `unified_cache.py` | TTL-based analytics result cache (facade over UnifiedCache) |
+| `DailyStatsCache` | `backend/data/daily_stats_cache.py` → `unified_cache.py` | LRU + TTL OHLCV statistics cache (facade over UnifiedCache) |
+| `UnifiedCache` | `backend/data/unified_cache.py` | Shared LRU + stale store, namespace-scoped TTL (Phase 1.2) |
 | `ModelStore` | `backend/predictors/model_store.py` | LightGBM model persistence to disk |
 | `DataScheduler` | `backend/scheduler.py` | APScheduler: price snapshots, event pruning, model persistence |
 | `Scorer` | `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis |
@@ -198,8 +200,9 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | Cache | Location | TTL | Key | Storage |
 |-------|----------|-----|-----|---------|
 | SnapshotManager | `data_snapshot.py` | 5 min (prices) | league name | In-memory DataSnapshot |
-| PipelineCache | `pipeline_cache.py` | Configurable | endpoint+params | In-memory dict (no size limit, stale entries never evicted) |
-| DailyStatsCache | `daily_stats_cache.py` | Configurable | currency+league | LRU + TTL dict |
+| UnifiedCache | `unified_cache.py` | Namespace-scoped | namespace:key | In-memory OrderedDict + LRUDict stale store |
+| ├ PipelineCache | `pipeline_cache.py` (facade) | Configurable | endpoint+params | Delegates to UnifiedCache ns="pipeline" |
+| └ DailyStatsCache | `daily_stats_cache.py` (facade) | 1 hour | currency+league | Delegates to UnifiedCache ns="daily_stats" |
 | poe2api.ts cache | `src/lib/poe2api.ts` | 30 min | URL path | In-memory Map |
 | Circuit breaker | `flipper-proxy.ts` | 15s initial (grows to 5min) | Backend URL | Failure counter |
 | cache-snapshot.json | `src/data/` | Regenerated | — | JSON file (pre-populated) |

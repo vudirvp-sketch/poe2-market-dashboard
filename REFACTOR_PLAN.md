@@ -1,12 +1,12 @@
 # PoE2 Market Dashboard — План рефакторинга
 
-> Версия: 5.0 | Дата: 2026-06-12
+> Версия: 6.0 | Дата: 2026-06-12
 
 ## Диагноз (resolved)
 
 Исходные 4 проблемы:
 1. ~~Дублирование вкладок~~ → FIXED (iter 34)
-2. **3 уровня кеша без координации** — Phase 1.2 (NOT STARTED)
+2. ~~3 уровня кеша без координации~~ → FIXED (iter 39: unified_cache.py)
 3. ~~Дублирование API-запросов~~ → FIXED (iter 34-37: queryKeys + все hooks)
 4. ~~Нет cross-rate калькулятора~~ → FIXED (iter 36)
 
@@ -19,10 +19,13 @@
 - iter 37: все queryKey в dashboard-page.tsx и use-price-alerts.ts переведены на QUERY_KEYS
 - Статус: DONE
 
-### 1.2 Синхронизация backend cache
-- Объединить `pipeline_cache.py` + `daily_stats_cache.py` → `unified_cache.py`
-- Примечание: PipelineCache (sync, OrderedDict+TTL+LRU) и DailyStatsCache (async, cachetools.TTLCache+stale_store) имеют фундаментально разные паттерны доступа — объединение требует осторожной архитектуры
-- Статус: NOT STARTED
+### 1.2 Синхронизация backend cache ✅ (iter 39)
+- `pipeline_cache.py` + `daily_stats_cache.py` → `unified_cache.py`
+- UnifiedCache: единый OrderedDict + LRUDict stale store, namespace-scoped TTL/max_entries
+- PipelineCache и DailyStatsCache — фасады над UnifiedCache с полная backward compat
+- Старые модули — тонкие re-export (все импорты работают без изменений)
+- Убрана зависимость от cachetools (OrderedDict + LRUDict вместо TTLCache)
+- Статус: DONE
 
 ### 1.3 Prefetch при смене league/realm ✅ (iter 38)
 - `usePrefetch()` в `src/hooks/use-prefetch.ts`
@@ -75,7 +78,7 @@
 | 36 | Фаза 2.1 (фактически) + Фаза 2.3: useCrossRates() + интеграция | DONE |
 | 37 | Фаза 2.2 + cleanup: useCurrencyItems/useUniqueItems + delete deprecated files + queryKeys normalization | DONE |
 | 38 | Фаза 1.3: Prefetch при смене league/realm | DONE |
-| 39 | Фаза 1.2: Unified backend cache | — |
+| 39 | Фаза 1.2: Unified backend cache (pipeline_cache + daily_stats_cache → unified_cache.py) | DONE |
 | 40 | Фаза 3.1: Batch endpoint | — |
 | 41 | Фаза 4.1: Lazy-loaded tabs | — |
 

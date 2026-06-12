@@ -104,26 +104,46 @@ APScheduler-based background scheduler running 3 jobs:
 
 ## 5. Cache Layers
 
-### PipelineCache
+### UnifiedCache (Phase 1.2)
 
-**Location:** `backend/data/pipeline_cache.py`
+**Location:** `backend/data/unified_cache.py`
 
-TTL-based in-memory cache for expensive analytics computations. Prevents redundant recomputation when multiple API calls request the same data within the TTL window.
+Single TTL + LRU cache supporting both sync and async access patterns. All entries live in one OrderedDict (LRU-ordered) with namespace-scoped TTL and max_entries. A separate LRUDict serves as a stale fallback store.
 
-**Key:** Composite of endpoint name + parameters  
-**TTL:** Configurable per-entry  
-**Stats:** Exposed via `/api/health` (cache_entries count)
+**Namespaces:**
+- `pipeline`: TTL from config (5 min default), max 64 entries
+- `daily_stats`: TTL 3600s (1 hour), max 256 entries
 
-### DailyStatsCache
+**Key features:**
+- Shared storage: PipelineCache and DailyStatsCache share one LRU store
+- Namespace-scoped TTL and eviction policies
+- Stale fallback: expired entries kept for degraded-mode serving
+- No external dependencies (cachetools removed)
 
-**Location:** `backend/data/daily_stats_cache.py`
+### PipelineCache (facade)
 
-LRU + TTL cache for OHLCV (Open-High-Low-Close-Volume) daily statistics. These are expensive to compute from raw price logs, so they're cached with a generous TTL.
+**Location:** `backend/data/pipeline_cache.py` → `unified_cache.py`
 
-**Key:** Currency + league  
-**Max size:** Configurable  
-**TTL:** Configurable  
-**Stats:** Exposed via `/api/health` (size, max, stale_entries, ttl_seconds)
+Thin facade over UnifiedCache with namespace="pipeline". Provides the same interface as the original PipelineCache:
+
+- `get(key)` → CachedEntry | None
+- `put(key, value)` → None
+- `invalidate(key=None)` → None
+- `stats()` → dict
+
+**Backward compatibility:** All existing imports from `pipeline_cache.py` work without changes.
+
+### DailyStatsCache (facade)
+
+**Location:** `backend/data/daily_stats_cache.py` → `unified_cache.py`
+
+Thin facade over UnifiedCache with namespace="daily_stats". Provides the same interface as the original DailyStatsCache:
+
+- `get_or_fetch(fetch_fn, league, item_id, days)` → DailyStatsResult
+- `invalidate()` → None
+- `stats()` → dict
+
+**Backward compatibility:** All existing imports from `daily_stats_cache.py` work without changes. The `_cache` property returns a proxy object that supports `.clear()` for test compatibility.
 
 ### ModelStore
 
