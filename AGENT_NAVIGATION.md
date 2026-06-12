@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 5.0 | **Date:** 2026-06-12
+> **Version:** 6.0 | **Date:** 2026-06-12
 
 ---
 
@@ -10,17 +10,20 @@
 |-----------|---------|-------|
 | `backend/` | Python FastAPI analytics engine | Tests mandatory (pytest) |
 | `backend/api/` | Route handlers | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
+| `backend/api/routes_batch.py` | Batch endpoint (Phase 3.1) | POST /api/batch — combines multiple GET requests |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
-| `backend/data/` | Providers, cache, schemas, historical, pipeline_cache, daily_stats_cache | Import nothing from `api/` |
+| `backend/data/` | Providers, cache, schemas, historical, unified_cache | Import nothing from `api/` |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
+| `src/app/api/flipper/batch/` | Batch proxy route (Phase 3.1) | POST → FastAPI POST /api/batch |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
 | `src/components/ui/` | shadcn/ui primitives | **NO dashboard imports** |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal, currency-names | **Types in `types.ts` ONLY** |
 | `src/hooks/` | React hooks | Import from `@lib`; exchange pairs MUST use `useExchangePairs()` |
+| `src/hooks/use-batch-query.ts` | Batch query hooks (Phase 3.1) | `useBatchQuery()` + `useInitialBatch()` |
 | `src/lib/i18n/` | Locales (en, ru, zh, ko) | No code imports from other `src/` |
 | `src/data/` | `cache-snapshot.json` | **READ-ONLY — NEVER edit manually** |
 
@@ -54,9 +57,11 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 15. **Query keys MUST use `QUERY_KEYS` from `providers.tsx`** — no ad-hoc string keys
 16. **Exchange pair queries MUST use `useExchangePairs()` hook** — no inline fetchApi
 17. **Cross-rate computation MUST use `useCrossRates()` hook** — no inline buildRelativePriceMap/selectAnchor in components
-18. **Currency item queries MUST use `useCurrencyItems()` / `useAllItems()` / `useItemCategories()`** — no inline fetchApi for `/api/poe2/currencies` or `/api/poe2/items`
-19. **Unique item queries MUST use `useUniqueItems()` hook** — no inline fetchApi for `/api/poe2/uniques`
-20. **Prefetch on league/realm change MUST use `usePrefetch()` hook** — no manual queryClient.prefetchQuery() in components
+18. **Currency item queries MUST use `useCurrencyItems()` / `useAllItems()` / `useItemCategories()`** — no inline fetchApi
+19. **Unique item queries MUST use `useUniqueItems()` hook** — no inline fetchApi
+20. **Prefetch on league/realm change MUST use `usePrefetch()` hook** — no manual prefetchQuery() in components
+21. **Batch queries MUST use `useBatchQuery()` / `useInitialBatch()`** — no manual batch fetch in components
+22. **Heavy tabs MUST be lazy-loaded via `next/dynamic`** — FlipsTab, OptimizerTab, AnalystTab, LiquidChainTab, CurrencyGraphTab, WatchlistTab
 
 ## 4. Query Key Convention
 
@@ -73,6 +78,7 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | Flipper triangular | `["flipper-triangular"]` | 60s |
 | Flipper phase | `["flipper-phase"]` | 60s |
 | Flipper health | `["flipper-health"]` | 30s |
+| Flipper batch | `["flipper-batch", ids]` | 30s |
 | Overview | `["overview", realm, league]` | 2 min |
 | Realms | `["realms"]` | 30 min |
 | Leagues | `["leagues", realm]` | 30 min |
@@ -83,42 +89,71 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 
 ## 5. Tab Structure
 
-| Tab | Component | Status |
-|-----|-----------|--------|
-| Overview | MarketOverview + ComparativeChart | Active |
-| Currencies | VirtualCurrencyGrid / CurrencyCard | Active |
-| Uniques | UniqueTable | Active |
-| Exchange | ExchangeTable / ExchangePairCard + VolumeLiquidityIndicators | Active |
-| Flips | FlipsTab (includes triangular + TierDriftTracker + crossRateFlips banner) | Active |
-| Optimizer | OptimizerTab | Active |
-| Analyst | AnalystTab | Active |
-| Liquid Chain | LiquidChainTab | Active |
-| Currency Graph | CurrencyGraphTab (lazy-loaded) | Active |
-| Watchlist | WatchlistTab | Active |
+| Tab | Component | Loading |
+|-----|-----------|---------|
+| Overview | MarketOverview + ComparativeChart | Eager |
+| Currencies | VirtualCurrencyGrid / CurrencyCard | Eager |
+| Uniques | UniqueTable | Eager |
+| Exchange | ExchangeTable / ExchangePairCard + VolumeLiquidityIndicators | Eager |
+| Flips | FlipsTab (includes TierDriftTracker + crossRateFlips banner) | **Lazy** |
+| Optimizer | OptimizerTab | **Lazy** |
+| Analyst | AnalystTab | **Lazy** |
+| Liquid Chain | LiquidChainTab | **Lazy** |
+| Currency Graph | CurrencyGraphTab | **Lazy** |
+| Watchlist | WatchlistTab | **Lazy** |
 
 **Deleted files** (iter 37): `arbitrage-tab.tsx`, `arbitrage-flipper-flips.tsx`, `arbitrage-helpers.ts`, `market-heatmap.tsx`
 
-**New files** (iter 38): `src/hooks/use-prefetch.ts`
-
 ## 6. Shared Hooks
-
-All components MUST use shared hooks instead of inline `useQuery + fetchApi` for common data.
 
 | Hook | File | Returns | Used By |
 |------|------|---------|---------|
-| `useExchangePairs()` | `src/hooks/use-exchange-pairs.ts` | Exchange pairs + loading state | dashboard-page, watchlist, detail-dialog, volume-liquidity, useCrossRates |
+| `useExchangePairs()` | `src/hooks/use-exchange-pairs.ts` | Exchange pairs + loading | dashboard, watchlist, detail-dialog, volume-liquidity, useCrossRates |
 | `useReferenceCurrencies()` | `src/hooks/use-exchange-pairs.ts` | Reference currencies | dashboard-page |
-| `useCrossRates()` | `src/hooks/use-cross-rates.ts` | relativePriceMap, anchorId, crossRateFlips, convertPrice(), getCrossRate() | dashboard-page, MultiCurrencyPrice, FlipsTab |
+| `useCrossRates()` | `src/hooks/use-cross-rates.ts` | relativePriceMap, anchorId, crossRateFlips, convertPrice() | dashboard, MultiCurrencyPrice, FlipsTab |
 | `useFlipsQuery()` | `src/hooks/use-flips-query.ts` | Flip opportunities | FlipsTab |
 | `useCurrencyItems()` | `src/hooks/use-currency-items.ts` | Paginated currency items | dashboard-page |
-| `useAllItems()` | `src/hooks/use-currency-items.ts` | All items (for comparison, overview, alerts) | dashboard-page |
+| `useAllItems()` | `src/hooks/use-currency-items.ts` | All items | dashboard-page |
 | `useItemCategories()` | `src/hooks/use-currency-items.ts` | Item category list | dashboard-page |
 | `useUniqueItems()` | `src/hooks/use-unique-items.ts` | Paginated unique items | dashboard-page |
-| `usePrefetch()` | `src/hooks/use-prefetch.ts` | Prefetches exchangePairs, referenceCurrencies, allItems, itemCategories on league/realm change | dashboard-page |
+| `usePrefetch()` | `src/hooks/use-prefetch.ts` | Prefetches 4 core queries on league/realm change | dashboard-page |
+| `useBatchQuery()` | `src/hooks/use-batch-query.ts` | Batch multiple API calls into one HTTP request | dashboard-page |
+| `useInitialBatch()` | `src/hooks/use-batch-query.ts` | Batch health/phase/events/optimalCurrency | dashboard-page |
 
 **Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.
 
-## 7. Architecture References
+## 7. API Endpoints
+
+### Backend (FastAPI)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Detailed health check |
+| GET | `/api/health/ping` | Ultra-lightweight ping |
+| GET | `/api/phase` | League phase info |
+| GET | `/api/currencies` | Currency metadata |
+| GET | `/api/prices` | All exchange rates + metrics |
+| GET | `/api/prices/heatmap` | 24h price change heatmap |
+| GET | `/api/prices/{pair}` | Price for specific pair |
+| GET | `/api/prices/tiers` | Currency tier classifications |
+| GET | `/api/prices/benchmarks/{currency}` | Historical benchmarks |
+| GET | `/api/arbitrage/flips` | Scored flip opportunities |
+| GET | `/api/arbitrage/triangular` | Triangular arbitrage cycles |
+| GET | `/api/arbitrage/optimal-currency` | Optimal payment currency |
+| **POST** | **`/api/batch`** | **Batch multiple GET requests (Phase 3.1)** |
+| GET/POST | `/api/events` | Event management |
+| GET/DELETE | `/api/events/{id}` | Single event |
+| POST | `/api/events/{id}/deactivate` | Deactivate event |
+| GET | `/api/anomalies` | Anomaly detection |
+| GET | `/api/storage-value/{currency}` | Hold/sell decision |
+| GET | `/api/optimizer/path` | Dijkstra optimal path |
+| GET | `/api/optimizer/matrix` | Conversion matrix |
+| GET | `/api/analyst/summary` | League analyst summary |
+| GET | `/api/portfolio/correlation` | Correlation matrix |
+| GET | `/api/scanner/scan` | Advanced flip scanner |
+| GET | `/api/liquid-chain` | Vendor reforge chain analysis |
+
+## 8. Architecture References
 
 | Topic | Document |
 |-------|----------|

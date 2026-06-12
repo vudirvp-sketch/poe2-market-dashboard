@@ -35,44 +35,73 @@ import { ExchangeTable } from "@/components/dashboard/exchange-table";
 import { DetailDialog } from "@/components/dashboard/detail-dialog";
 import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
 import { MarketOverview } from "@/components/dashboard/market-overview";
-import { WatchlistTab } from "@/components/dashboard/watchlist-tab";
+// WatchlistTab — lazy-loaded (Phase 4.1)
 import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
 import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dialog";
 import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 // ArbitrageTab, ArbitrageFlipperFlips, ArbitrageHelpers — deleted (iter 37)
-import { FlipsTab } from "@/components/dashboard/flips-tab";
-import { OptimizerTab } from "@/components/dashboard/optimizer-tab";
-import { AnalystTab } from "@/components/dashboard/analyst-tab";
+// FlipsTab, OptimizerTab, AnalystTab — lazy-loaded (Phase 4.1)
 import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
 // MarketHeatmap — deleted (iter 37)
 import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
-import { LiquidChainTab } from "@/components/dashboard/liquid-chain-tab";
+// LiquidChainTab — lazy-loaded (Phase 4.1)
 
-// Heavy tab component — lazy-loaded via next/dynamic to reduce initial bundle size.
-// ForecastTab and PortfolioTab were removed (forecast was unreliable, portfolio was mock-only).
-// CurrencyGraphTab kept as it provides real value.
+// Phase 4.1: Lazy-loaded tab components via next/dynamic.
+// Heavy tabs (Flips, Optimizer, Analyst, LiquidChain, CurrencyGraph, Watchlist)
+// are only loaded when the user actually navigates to them, reducing the
+// initial JavaScript bundle size significantly.
+//
+// Lightweight tabs (Overview, Currencies, Uniques, Exchange) are still
+// eagerly imported because they're the most commonly viewed tabs.
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Generic tab skeleton loader — shown while lazy tab chunk loads */
+const TabSkeleton = () => (
+  <div className="space-y-4 p-4">
+    <Skeleton className="h-8 w-48" />
+    <Skeleton className="h-4 w-full max-w-md" />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <Skeleton className="h-24" />
+      <Skeleton className="h-24" />
+      <Skeleton className="h-24" />
+      <Skeleton className="h-24" />
+    </div>
+    <Skeleton className="h-[400px] w-full" />
+  </div>
+);
+
+const FlipsTab = dynamic(
+  () => import("@/components/dashboard/flips-tab").then((m) => ({ default: m.FlipsTab })),
+  { loading: TabSkeleton },
+);
+
+const OptimizerTab = dynamic(
+  () => import("@/components/dashboard/optimizer-tab").then((m) => ({ default: m.OptimizerTab })),
+  { loading: TabSkeleton },
+);
+
+const AnalystTab = dynamic(
+  () => import("@/components/dashboard/analyst-tab").then((m) => ({ default: m.AnalystTab })),
+  { loading: TabSkeleton },
+);
+
+const LiquidChainTab = dynamic(
+  () => import("@/components/dashboard/liquid-chain-tab").then((m) => ({ default: m.LiquidChainTab })),
+  { loading: TabSkeleton },
+);
+
 const CurrencyGraphTab = dynamic(
   () => import("@/components/dashboard/currency-graph-tab").then((m) => ({ default: m.CurrencyGraphTab })),
-  {
-    loading: () => (
-      <div className="space-y-4">
-        <Skeleton className="h-20 w-full" />
-        <div className="grid grid-cols-4 gap-4">
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-          <Skeleton className="h-24" />
-        </div>
-        <Skeleton className="h-[500px] w-full" />
-      </div>
-    ),
-  },
+  { loading: TabSkeleton },
+);
+
+const WatchlistTab = dynamic(
+  () => import("@/components/dashboard/watchlist-tab").then((m) => ({ default: m.WatchlistTab })),
+  { loading: TabSkeleton },
 );
 
 import { EventsSidebar } from "@/components/dashboard/events-sidebar";
@@ -101,6 +130,7 @@ import { useCrossRates } from "@/hooks/use-cross-rates";
 import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
 import { useUniqueItems } from "@/hooks/use-unique-items";
 import { usePrefetch } from "@/hooks/use-prefetch";
+import { useInitialBatch } from "@/hooks/use-batch-query";
 import { QUERY_KEYS } from "@/components/providers";
 import type {
   Realm,
@@ -372,6 +402,11 @@ export function Dashboard() {
   // the "flash of loading" when switching leagues because React Query
   // starts fetching the new data before the components re-render.
   usePrefetch({ realm, league: effectiveLeague });
+
+  // Phase 3.1: Batch initial dashboard queries into a single HTTP request.
+  // Pre-populates React Query cache for health, phase, events, optimalCurrency
+  // so the individual useQuery hooks below find data already cached.
+  useInitialBatch({ enabled: !!effectiveLeague });
 
   // Reference currencies — uses shared hook (Phase 2.1)
   const { data: referenceCurrencies } = useReferenceCurrencies({

@@ -1,58 +1,41 @@
 # Worklog
 
 ---
-Task ID: 37
+Task ID: 40
 Agent: main
-Task: Итерация 37 — Фаза 2.2 (useCurrencyItems/useUniqueItems) + cleanup deprecated files + queryKeys normalization
+Task: Итерация 40 — Фаза 3.1 (Batch-запросы) + Фаза 4.1 (Lazy-loaded tabs)
 
 Work Log:
-- Удалены 4 deprecated файла: arbitrage-tab.tsx, arbitrage-flipper-flips.tsx, arbitrage-helpers.ts, market-heatmap.tsx
-- Создан `src/hooks/use-currency-items.ts` с 3 hooks:
-  - `useCurrencyItems()` — paginated currency items с keepPreviousData
-  - `useAllItems()` — все items (comparison, overview, alerts)
-  - `useItemCategories()` — категории items
-- Создан `src/hooks/use-unique-items.ts`:
-  - `useUniqueItems()` — paginated unique items с keepPreviousData
-- В `dashboard-page.tsx`:
-  - 4 inline useQuery+fetchApi заменены на hooks (allItems, currencies, itemCategories, uniques)
-  - Все queryKey строки переведены на QUERY_KEYS константы (flipperHealth, flipperPhase, flipperEventsCount, realms, leagues, flipperOptimalCurrency)
-  - Убраны неиспользуемые типы ItemCategory, PaginatedResponse из импортов
-  - Добавлен импорт QUERY_KEYS из providers.tsx
-- В `use-price-alerts.ts`:
-  - queryKey "allItems" переведён на QUERY_KEYS.allItems
-  - Добавлен импорт QUERY_KEYS
-- В `docs/ARCHITECTURE.md`:
-  - Убрана ссылка на market-heatmap из Overview tab
-  - Убрана дублирующая строка Arbitrage tab (заменена на актуальную Flips tab)
-- TypeScript type-check: 0 ошибок
-- Обновлена документация: REFACTOR_PLAN v4.0, AGENT_NAVIGATION v4.0
-
-Stage Summary:
-- **Phase 2.2 DONE**: useCurrencyItems/useAllItems/useItemCategories/useUniqueItems созданы и интегрированы
-- **Все inline queries в dashboard-page.tsx переведены на shared hooks**
-- **Все queryKey строки → QUERY_KEYS константы** в dashboard-page.tsx и use-price-alerts.ts
-- **4 deprecated файла удалены**
-- **Точка остановки:** Phase 1.2 (Unified backend cache) или Phase 1.3 (Prefetch при смене лиги)
-
----
-Task ID: 38
-Agent: main
-Task: Итерация 38 — Фаза 1.3: Prefetch при смене league/realm
-
-Work Log:
-- Создан `src/hooks/use-prefetch.ts` с hook `usePrefetch()`
-  - Отслеживает изменения realm/league через useRef(prev, current)
-  - При изменении: prefetchQuery для 4 ключевых запросов (exchangePairs, referenceCurrencies, allItems, itemCategories)
-  - prefetchQuery безопасен — не повторяет запрос, если данные свежие
-  - Не prefetch tab-зависимые запросы (currencies, uniques) — они зависят от category/page/search
-- В `dashboard-page.tsx`:
-  - Добавлен импорт `usePrefetch` из `@/hooks/use-prefetch`
-  - Вызов `usePrefetch({ realm, league: effectiveLeague })` перед хуками данных
+- Создан `backend/api/routes_batch.py`:
+  - POST /api/batch — объединяет несколько GET-запросов в один HTTP-вызов
+  - До 10 sub-requests, asyncio.gather для параллельного выполнения
+  - 15s timeout на каждый sub-request
+  - Whitelist путей + denied mutations (/api/events/ — POST/DELETE)
+  - Внутренние HTTP-вызовы через httpx.AsyncClient (localhost:8000)
+- Зарегистрирован batch router в `backend/main.py`
+- Создан `src/app/api/flipper/batch/route.ts`:
+  - POST /api/flipper/batch → proxy к FastAPI POST /api/batch
+  - 30s timeout (тяжёлые sub-requests типа flips)
+- Создан `src/hooks/use-batch-query.ts`:
+  - `useBatchQuery()` — универсальный hook для batch-запросов
+  - `useInitialBatch()` — convenience hook для начальной загрузки (health, phase, events, optimalCurrency)
+  - Pre-populates React Query cache для индивидуальных query keys
+- Интегрировано в `dashboard-page.tsx`:
+  - `useInitialBatch({ enabled: !!effectiveLeague })` предзаполняет кеш
+  - Существующие useQuery hooks получают данные из кеша — без дублирующих запросов
+- Добавлен QUERY_KEYS.flipperBatch в providers.tsx + staleTime 30s
+- Фаза 4.1: 6 табов переведены на lazy loading:
+  - FlipsTab, OptimizerTab, AnalystTab, LiquidChainTab, CurrencyGraphTab, WatchlistTab
+  - Общий `TabSkeleton` компонент для loading state
+  - Лёгкие табы (Overview, Currencies, Uniques, Exchange) остаются eagerly loaded
 - TypeScript type-check: 0 ошибок
 - Jest: 291/291 тестов пройдено
-- Обновлена документация: REFACTOR_PLAN v5.0, AGENT_NAVIGATION v5.0
+- Python pytest: 339/344 пройдено (5 предсуществующих падений в test_optimal_currency.py — KeyError, не связаны с итерацией)
+- Обновлена документация: REFACTOR_PLAN v7.0, AGENT_NAVIGATION v6.0
 
 Stage Summary:
-- **Phase 1.3 DONE**: usePrefetch() создаёт и интегрируется в dashboard-page.tsx
-- **Prefetch 4 запроса** при смене league/realm — устраняет "flash of loading"
-- **Точка остановки:** Phase 1.2 (Unified backend cache) — требует осторожной архитектуры из-за разных паттернов PipelineCache (sync) vs DailyStatsCache (async)
+- **Phase 3.1 DONE**: Batch endpoint + useBatchQuery/useInitialBatch hooks + интеграция
+- **Phase 4.1 DONE**: 6 из 10 табов переведены на lazy loading via next/dynamic
+- **Новые файлы**: backend/api/routes_batch.py, src/app/api/flipper/batch/route.ts, src/hooks/use-batch-query.ts
+- **Изменённые файлы**: backend/main.py, src/components/dashboard/dashboard-page.tsx, src/components/providers.tsx
+- **Точка остановки:** Фаза 3.2 (SSE/WebSocket) или Фаза 3.3 (Compressed responses) или Фаза 4.2 (API versioning)

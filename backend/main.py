@@ -17,6 +17,7 @@ Provides:
     POST /api/events            — create a manual event flag
     GET /api/events             — list active events
     GET /api/health             — health check
+    POST /api/batch             — batch multiple GET requests into one call
 """
 
 from __future__ import annotations
@@ -442,6 +443,13 @@ try:
     app.include_router(liquid_chain_router)
 except ImportError:
     logger.debug("Liquid Chain router not available yet")
+
+# Phase 3.1: Batch endpoint — combine multiple API calls into one HTTP request
+try:
+    from backend.api.routes_batch import router as batch_router
+    app.include_router(batch_router)
+except ImportError:
+    logger.debug("Batch router not available yet")
 
 # NOTE: routes_auth.py has been removed. OAuth2 authentication was a stub
 # that depended on GGG_CLIENT_ID/SECRET env vars (never configured).

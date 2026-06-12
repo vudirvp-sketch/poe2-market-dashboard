@@ -82,6 +82,8 @@ export const QUERY_KEYS = {
   pairHoverHistory: "pairHoverHistory",
   /** Cross-rates derived data (relativePriceMap, anchor, flips) */
   crossRates: "crossRates",
+  /** Batch initial-load queries */
+  flipperBatch: "flipper-batch",
 } as const;
 
 /**
@@ -134,6 +136,8 @@ const STALE_TIME_DEFAULTS: Record<string, number> = {
   [QUERY_KEYS.portfolioCorrelation]: 5 * 60_000,
   /** Cross-rates: 5 minutes — derived from exchange pairs, same staleness */
   [QUERY_KEYS.crossRates]: 5 * 60_000,
+  /** Batch: 30 seconds — refreshes health/phase/events/optimal-currency */
+  [QUERY_KEYS.flipperBatch]: 30_000,
 };
 
 export function Providers({ children }: { children: ReactNode }) {

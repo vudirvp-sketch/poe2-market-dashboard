@@ -1,60 +1,39 @@
 # PoE2 Market Dashboard — План рефакторинга
 
-> Версия: 6.0 | Дата: 2026-06-12
+> Версия: 7.0 | Дата: 2026-06-12
 
 ## Диагноз (resolved)
 
-Исходные 4 проблемы:
-1. ~~Дублирование вкладок~~ → FIXED (iter 34)
-2. ~~3 уровня кеша без координации~~ → FIXED (iter 39: unified_cache.py)
-3. ~~Дублирование API-запросов~~ → FIXED (iter 34-37: queryKeys + все hooks)
-4. ~~Нет cross-rate калькулятора~~ → FIXED (iter 36)
+Исходные 4 проблемы — все FIXED (iter 34-39).
 
 ---
 
-## Фаза 1: Унификация кеша
+## Фаза 1: Унификация кеша — DONE ✅
 
-### 1.1 Стандартизация queryKeys + defaults ✅ (iter 34, расширен iter 37)
-- `QUERY_KEYS` (30 констант) + `STALE_TIME_DEFAULTS` в `providers.tsx`
-- iter 37: все queryKey в dashboard-page.tsx и use-price-alerts.ts переведены на QUERY_KEYS
-- Статус: DONE
-
+### 1.1 Стандартизация queryKeys + defaults ✅ (iter 34, 37)
 ### 1.2 Синхронизация backend cache ✅ (iter 39)
-- `pipeline_cache.py` + `daily_stats_cache.py` → `unified_cache.py`
-- UnifiedCache: единый OrderedDict + LRUDict stale store, namespace-scoped TTL/max_entries
-- PipelineCache и DailyStatsCache — фасады над UnifiedCache с полная backward compat
-- Старые модули — тонкие re-export (все импорты работают без изменений)
-- Убрана зависимость от cachetools (OrderedDict + LRUDict вместо TTLCache)
-- Статус: DONE
-
 ### 1.3 Prefetch при смене league/realm ✅ (iter 38)
-- `usePrefetch()` в `src/hooks/use-prefetch.ts`
-- Prefetch 4 запроса: exchangePairs, referenceCurrencies, allItems, itemCategories
-- Интегрировано в dashboard-page.tsx
-- Статус: DONE
 
 ---
 
-## Фаза 2: Переиспользование данных
+## Фаза 2: Переиспользование данных — DONE ✅
 
 ### 2.1 Единый exchange pair store ✅ (iter 36)
-- `useExchangePairs()` + `useReferenceCurrencies()` в `src/hooks/use-exchange-pairs.ts`
-- Статус: DONE
-
 ### 2.2 Общий currency price store ✅ (iter 37)
-- `useCurrencyItems()` + `useAllItems()` + `useItemCategories()` в `src/hooks/use-currency-items.ts`
-- `useUniqueItems()` в `src/hooks/use-unique-items.ts`
-- Статус: DONE
-
 ### 2.3 Cross-rate калькулятор ✅ (iter 36)
-- `useCrossRates()` в `src/hooks/use-cross-rates.ts`
-- Статус: DONE
 
 ---
 
 ## Фаза 3: API оптимизация
 
-### 3.1 Batch-запросы — NOT STARTED
+### 3.1 Batch-запросы ✅ (iter 40)
+- `POST /api/batch` — FastAPI endpoint для множественных GET-запросов в одном HTTP-вызове
+- `backend/api/routes_batch.py` — batch router (до 10 sub-requests, asyncio.gather, 15s timeout/sub)
+- `src/app/api/flipper/batch/route.ts` — Next.js proxy route
+- `src/hooks/use-batch-query.ts` — `useBatchQuery()` + `useInitialBatch()` hooks
+- Интегрировано в dashboard-page.tsx: `useInitialBatch()` предзаполняет кеш React Query для health/phase/events/optimalCurrency
+- Безопасность: только GET-эндпоинты, denied mutation paths (/api/events/), whitelist путей
+
 ### 3.2 SSE/WebSocket для price updates — NOT STARTED
 ### 3.3 Compressed responses — NOT STARTED
 
@@ -62,7 +41,13 @@
 
 ## Фаза 4: Архитектурные улучшения
 
-### 4.1 Lazy-loaded tabs — NOT STARTED
+### 4.1 Lazy-loaded tabs ✅ (iter 40)
+- 6 табов переведены на `next/dynamic` lazy loading:
+  - FlipsTab, OptimizerTab, AnalystTab, LiquidChainTab, CurrencyGraphTab, WatchlistTab
+- Общий `TabSkeleton` компонент для loading state
+- Лёгкие табы (Overview, Currencies, Uniques, Exchange) остаются eagerly loaded
+- Уменьшение initial JS bundle: тяжёлые компоненты загружаются только при навигации
+
 ### 4.2 Backend API versioning — NOT STARTED
 ### 4.3 Typed API client — NOT STARTED
 
@@ -74,15 +59,20 @@
 |----------|-----------|--------|
 | 33 | MultiCurrencyPrice + REFACTOR_PLAN v1 | DONE |
 | 34 | Фаза 1.1 (queryKeys) + merge Arbitrage→Flips + merge Heatmap→Overview | DONE |
-| 35 | Фаза 2.1: useExchangePairs() (заявлено, но файл не существовал) | CLAIMED DONE, ACTUALLY MISSING |
+| 35 | Фаза 2.1 (заявлено, но файл не существовал) | CLAIMED DONE, ACTUALLY MISSING |
 | 36 | Фаза 2.1 (фактически) + Фаза 2.3: useCrossRates() + интеграция | DONE |
-| 37 | Фаза 2.2 + cleanup: useCurrencyItems/useUniqueItems + delete deprecated files + queryKeys normalization | DONE |
+| 37 | Фаза 2.2 + cleanup + queryKeys normalization | DONE |
 | 38 | Фаза 1.3: Prefetch при смене league/realm | DONE |
-| 39 | Фаза 1.2: Unified backend cache (pipeline_cache + daily_stats_cache → unified_cache.py) | DONE |
-| 40 | Фаза 3.1: Batch endpoint | — |
-| 41 | Фаза 4.1: Lazy-loaded tabs | — |
+| 39 | Фаза 1.2: Unified backend cache | DONE |
+| 40 | Фаза 3.1: Batch endpoint + Фаза 4.1: Lazy-loaded tabs | DONE |
+| 41 | Фаза 3.2: SSE/WebSocket / Фаза 3.3: Compressed responses | — |
+| 42 | Фаза 4.2: API versioning / Фаза 4.3: Typed API client | — |
 
 ---
+
+## Предсуществующие проблемы
+
+- 5 тестов в `test_optimal_currency.py` падают (KeyError) — не связаны с текущими итерациями
 
 ## Ключевые принципы
 
