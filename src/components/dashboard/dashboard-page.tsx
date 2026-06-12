@@ -131,6 +131,7 @@ import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-cu
 import { useUniqueItems } from "@/hooks/use-unique-items";
 import { usePrefetch } from "@/hooks/use-prefetch";
 import { useInitialBatch } from "@/hooks/use-batch-query";
+import { usePriceStream } from "@/hooks/use-price-stream";
 import { QUERY_KEYS } from "@/components/providers";
 import type {
   Realm,
@@ -331,6 +332,19 @@ export function Dashboard() {
     onAnomaly: () => {
       // Anomaly detected via WS — could trigger a toast notification
     },
+  });
+
+  // ============================================================================
+  // Phase 3.2: SSE price stream — real-time price change notifications
+  // Connects to /api/flipper/prices/stream and invalidates React Query
+  // caches when significant price changes are detected.
+  // This is a complement to polling (not a replacement): SSE provides
+  // push-based invalidation, reducing perceived latency for price updates.
+  // ============================================================================
+  const { status: sseStatus } = usePriceStream({
+    enabled: flipperBackendOnline,
+    backendOnline: flipperBackendOnline,
+    invalidationThresholdPct: 1.0, // Invalidate caches on ≥1% price changes
   });
 
   // --- Data queries ---

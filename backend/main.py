@@ -230,6 +230,16 @@ async def lifespan(app: FastAPI):
     # "optimistic" mode and updates to "unreachable" if the check fails.
     asyncio.create_task(check_provider_health())
 
+    # Phase 3.2: Start SSE monitor for live price updates
+    # The SSE monitor watches DataSnapshot for changes and broadcasts
+    # price_update events to connected SSE clients.
+    try:
+        from backend.api.routes_sse import start_sse_monitor
+        start_sse_monitor()
+        logger.info("SSE price monitor started")
+    except Exception as e:
+        logger.warning("SSE monitor failed to start: %s — continuing without SSE", e)
+
     # ProcessPoolExecutor warm-up: submit trivial tasks to all workers
     # so the first real request doesn't suffer from ~5s cold-start latency
     # (sklearn/numpy/scipy import time in each spawn process).
@@ -281,6 +291,14 @@ async def lifespan(app: FastAPI):
             logger.info("Snapshot periodic refresh task cancelled")
         except Exception as e:
             logger.warning("Snapshot refresh task cancellation error: %s", e)
+
+    # Phase 3.2: Stop SSE monitor
+    try:
+        from backend.api.routes_sse import stop_sse_monitor
+        stop_sse_monitor()
+        logger.info("SSE monitor stopped")
+    except Exception as e:
+        logger.warning("SSE monitor stop error: %s", e)
 
     # --- Phase 2: Shutdown Scheduler ---
     if scheduler is not None:
@@ -450,6 +468,13 @@ try:
     app.include_router(batch_router)
 except ImportError:
     logger.debug("Batch router not available yet")
+
+# Phase 3.2: SSE endpoint — live price updates via Server-Sent Events
+try:
+    from backend.api.routes_sse import router as sse_router
+    app.include_router(sse_router)
+except ImportError:
+    logger.debug("SSE router not available yet")
 
 # NOTE: routes_auth.py has been removed. OAuth2 authentication was a stub
 # that depended on GGG_CLIENT_ID/SECRET env vars (never configured).

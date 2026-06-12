@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 6.0 | **Date:** 2026-06-12
+> **Version:** 7.0 | **Date:** 2026-06-12
 
 ---
 
@@ -11,6 +11,7 @@
 | `backend/` | Python FastAPI analytics engine | Tests mandatory (pytest) |
 | `backend/api/` | Route handlers | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
 | `backend/api/routes_batch.py` | Batch endpoint (Phase 3.1) | POST /api/batch — combines multiple GET requests |
+| `backend/api/routes_sse.py` | SSE price stream (Phase 3.2) | GET /api/prices/stream — live price updates via SSE |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
@@ -18,12 +19,14 @@
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
 | `src/app/api/flipper/batch/` | Batch proxy route (Phase 3.1) | POST → FastAPI POST /api/batch |
+| `src/app/api/flipper/prices/stream/` | SSE proxy route (Phase 3.2) | GET → FastAPI GET /api/prices/stream |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
 | `src/components/ui/` | shadcn/ui primitives | **NO dashboard imports** |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api, currency-optimal, currency-names | **Types in `types.ts` ONLY** |
 | `src/hooks/` | React hooks | Import from `@lib`; exchange pairs MUST use `useExchangePairs()` |
 | `src/hooks/use-batch-query.ts` | Batch query hooks (Phase 3.1) | `useBatchQuery()` + `useInitialBatch()` |
+| `src/hooks/use-price-stream.ts` | SSE price stream hook (Phase 3.2) | `usePriceStream()` — invalidates RQ cache on price changes |
 | `src/lib/i18n/` | Locales (en, ru, zh, ko) | No code imports from other `src/` |
 | `src/data/` | `cache-snapshot.json` | **READ-ONLY — NEVER edit manually** |
 
@@ -33,6 +36,7 @@
 npm install && npm run dev        # Frontend (port 3000)
 npm run build && npm run test     # Build + Jest
 pytest tests/ -v                  # Backend tests
+npx tsc --noEmit                  # TypeScript type check
 
 # Backend (start.sh creates .venv automatically)
 PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
@@ -62,6 +66,8 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 20. **Prefetch on league/realm change MUST use `usePrefetch()` hook** — no manual prefetchQuery() in components
 21. **Batch queries MUST use `useBatchQuery()` / `useInitialBatch()`** — no manual batch fetch in components
 22. **Heavy tabs MUST be lazy-loaded via `next/dynamic`** — FlipsTab, OptimizerTab, AnalystTab, LiquidChainTab, CurrencyGraphTab, WatchlistTab
+23. **SSE price stream MUST use `usePriceStream()` hook** — no manual EventSource in components
+24. **SSE is complement to polling, NOT replacement** — React Query refetchInterval continues working
 
 ## 4. Query Key Convention
 
@@ -79,6 +85,7 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | Flipper phase | `["flipper-phase"]` | 60s |
 | Flipper health | `["flipper-health"]` | 30s |
 | Flipper batch | `["flipper-batch", ids]` | 30s |
+| Flipper price stream | `["flipper-price-stream"]` | — |
 | Overview | `["overview", realm, league]` | 2 min |
 | Realms | `["realms"]` | 30 min |
 | Leagues | `["leagues", realm]` | 30 min |
@@ -102,8 +109,6 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | Currency Graph | CurrencyGraphTab | **Lazy** |
 | Watchlist | WatchlistTab | **Lazy** |
 
-**Deleted files** (iter 37): `arbitrage-tab.tsx`, `arbitrage-flipper-flips.tsx`, `arbitrage-helpers.ts`, `market-heatmap.tsx`
-
 ## 6. Shared Hooks
 
 | Hook | File | Returns | Used By |
@@ -119,6 +124,7 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | `usePrefetch()` | `src/hooks/use-prefetch.ts` | Prefetches 4 core queries on league/realm change | dashboard-page |
 | `useBatchQuery()` | `src/hooks/use-batch-query.ts` | Batch multiple API calls into one HTTP request | dashboard-page |
 | `useInitialBatch()` | `src/hooks/use-batch-query.ts` | Batch health/phase/events/optimalCurrency | dashboard-page |
+| `usePriceStream()` | `src/hooks/use-price-stream.ts` | SSE live price updates + RQ cache invalidation | dashboard-page |
 
 **Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.
 
@@ -137,10 +143,11 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | GET | `/api/prices/{pair}` | Price for specific pair |
 | GET | `/api/prices/tiers` | Currency tier classifications |
 | GET | `/api/prices/benchmarks/{currency}` | Historical benchmarks |
+| **GET** | **`/api/prices/stream`** | **SSE live price updates (Phase 3.2)** |
 | GET | `/api/arbitrage/flips` | Scored flip opportunities |
 | GET | `/api/arbitrage/triangular` | Triangular arbitrage cycles |
 | GET | `/api/arbitrage/optimal-currency` | Optimal payment currency |
-| **POST** | **`/api/batch`** | **Batch multiple GET requests (Phase 3.1)** |
+| POST | `/api/batch` | Batch multiple GET requests |
 | GET/POST | `/api/events` | Event management |
 | GET/DELETE | `/api/events/{id}` | Single event |
 | POST | `/api/events/{id}/deactivate` | Deactivate event |

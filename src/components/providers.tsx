@@ -84,6 +84,8 @@ export const QUERY_KEYS = {
   crossRates: "crossRates",
   /** Batch initial-load queries */
   flipperBatch: "flipper-batch",
+  /** SSE price stream connection status */
+  flipperPriceStream: "flipper-price-stream",
 } as const;
 
 /**

@@ -176,7 +176,7 @@ class TestFindOptimalPayment:
         assert result["savings_pct"] > 0
 
     def test_options_sorted_by_effective_price(self):
-        """Options in result should be sorted by effectiveAnchorPrice ascending."""
+        """Options in result should be sorted by effective_anchor_price ascending."""
         options = [
             {"currency_id": "chaos", "currency_name": "Chaos Orb",
              "price_in_currency": 4500.0, "relative_price": 0.1},
@@ -187,7 +187,7 @@ class TestFindOptimalPayment:
         ]
         result = _find_optimal_payment(options, 1.0)
         assert result is not None
-        effective_prices = [o["effectiveAnchorPrice"] for o in result["options"]]
+        effective_prices = [o["effective_anchor_price"] for o in result["options"]]
         assert effective_prices == sorted(effective_prices)
 
     def test_premium_pct_is_zero_for_cheapest(self):
@@ -200,7 +200,7 @@ class TestFindOptimalPayment:
         ]
         result = _find_optimal_payment(options, 1.0)
         assert result is not None
-        assert result["options"][0]["premiumPct"] == pytest.approx(0.0)
+        assert result["options"][0]["premium_pct"] == pytest.approx(0.0)
 
     def test_filters_invalid_options(self):
         """Options with zero or negative relative_price are filtered out."""
@@ -268,10 +268,10 @@ class TestDetectCrossRateFlips:
 
         assert len(flips) >= 1
         flip = flips[0]
-        assert flip["buyCurrencyId"] == "exalted"
-        assert flip["sellCurrencyId"] == "chaos"
-        assert flip["deviationPct"] < 0  # market < fair → negative deviation
-        assert flip["estimatedProfitPct"] > 0
+        assert flip["buy_currency_id"] == "exalted"
+        assert flip["sell_currency_id"] == "chaos"
+        assert flip["deviation_pct"] < 0  # market < fair → negative deviation
+        assert flip["estimated_profit_pct"] > 0
 
     def test_detects_overvalued_currency(self):
         """When market rate > fair rate, the 'to' currency is undervalued."""
@@ -285,9 +285,9 @@ class TestDetectCrossRateFlips:
 
         assert len(flips) >= 1
         flip = flips[0]
-        assert flip["buyCurrencyId"] == "chaos"
-        assert flip["sellCurrencyId"] == "exalted"
-        assert flip["deviationPct"] > 0  # market > fair → positive deviation
+        assert flip["buy_currency_id"] == "chaos"
+        assert flip["sell_currency_id"] == "exalted"
+        assert flip["deviation_pct"] > 0  # market > fair → positive deviation
 
     def test_no_flips_below_threshold(self):
         """Pairs within threshold should not be flagged."""
@@ -353,7 +353,7 @@ class TestDetectCrossRateFlips:
         prices = {"a": 10.0, "b": 0.1, "c": 10.0, "d": 0.1}
         flips = _detect_cross_rate_flips(rates, prices, threshold_pct=5.0)
         if len(flips) >= 2:
-            profits = [f["estimatedProfitPct"] for f in flips]
+            profits = [f["estimated_profit_pct"] for f in flips]
             assert profits == sorted(profits, reverse=True)
 
     def test_max_50_results(self):
