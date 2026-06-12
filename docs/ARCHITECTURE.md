@@ -153,6 +153,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | `case-transform.ts` | `src/lib/` | snake_case → camelCase key transformer |
 | `cache-prepopulator.ts` | `src/lib/` | Seeds in-memory cache from cache-snapshot.json |
 | `technical-indicators.ts` | `src/lib/` | Frontend-side technical indicator calculations |
+| `use-prefetch.ts` | `src/hooks/` | Prefetches 4 core queries on league/realm change (exchangePairs, referenceCurrencies, allItems, itemCategories) |
 
 ### 5.2 Backend Key Modules
 

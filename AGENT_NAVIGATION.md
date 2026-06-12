@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 4.0 | **Date:** 2026-06-12
+> **Version:** 5.0 | **Date:** 2026-06-12
 
 ---
 
@@ -56,6 +56,7 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 17. **Cross-rate computation MUST use `useCrossRates()` hook** — no inline buildRelativePriceMap/selectAnchor in components
 18. **Currency item queries MUST use `useCurrencyItems()` / `useAllItems()` / `useItemCategories()`** — no inline fetchApi for `/api/poe2/currencies` or `/api/poe2/items`
 19. **Unique item queries MUST use `useUniqueItems()` hook** — no inline fetchApi for `/api/poe2/uniques`
+20. **Prefetch on league/realm change MUST use `usePrefetch()` hook** — no manual queryClient.prefetchQuery() in components
 
 ## 4. Query Key Convention
 
@@ -97,6 +98,8 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 
 **Deleted files** (iter 37): `arbitrage-tab.tsx`, `arbitrage-flipper-flips.tsx`, `arbitrage-helpers.ts`, `market-heatmap.tsx`
 
+**New files** (iter 38): `src/hooks/use-prefetch.ts`
+
 ## 6. Shared Hooks
 
 All components MUST use shared hooks instead of inline `useQuery + fetchApi` for common data.
@@ -111,6 +114,7 @@ All components MUST use shared hooks instead of inline `useQuery + fetchApi` for
 | `useAllItems()` | `src/hooks/use-currency-items.ts` | All items (for comparison, overview, alerts) | dashboard-page |
 | `useItemCategories()` | `src/hooks/use-currency-items.ts` | Item category list | dashboard-page |
 | `useUniqueItems()` | `src/hooks/use-unique-items.ts` | Paginated unique items | dashboard-page |
+| `usePrefetch()` | `src/hooks/use-prefetch.ts` | Prefetches exchangePairs, referenceCurrencies, allItems, itemCategories on league/realm change | dashboard-page |
 
 **Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.
 

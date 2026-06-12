@@ -33,3 +33,26 @@ Stage Summary:
 - **Все queryKey строки → QUERY_KEYS константы** в dashboard-page.tsx и use-price-alerts.ts
 - **4 deprecated файла удалены**
 - **Точка остановки:** Phase 1.2 (Unified backend cache) или Phase 1.3 (Prefetch при смене лиги)
+
+---
+Task ID: 38
+Agent: main
+Task: Итерация 38 — Фаза 1.3: Prefetch при смене league/realm
+
+Work Log:
+- Создан `src/hooks/use-prefetch.ts` с hook `usePrefetch()`
+  - Отслеживает изменения realm/league через useRef(prev, current)
+  - При изменении: prefetchQuery для 4 ключевых запросов (exchangePairs, referenceCurrencies, allItems, itemCategories)
+  - prefetchQuery безопасен — не повторяет запрос, если данные свежие
+  - Не prefetch tab-зависимые запросы (currencies, uniques) — они зависят от category/page/search
+- В `dashboard-page.tsx`:
+  - Добавлен импорт `usePrefetch` из `@/hooks/use-prefetch`
+  - Вызов `usePrefetch({ realm, league: effectiveLeague })` перед хуками данных
+- TypeScript type-check: 0 ошибок
+- Jest: 291/291 тестов пройдено
+- Обновлена документация: REFACTOR_PLAN v5.0, AGENT_NAVIGATION v5.0
+
+Stage Summary:
+- **Phase 1.3 DONE**: usePrefetch() создаёт и интегрируется в dashboard-page.tsx
+- **Prefetch 4 запроса** при смене league/realm — устраняет "flash of loading"
+- **Точка остановки:** Phase 1.2 (Unified backend cache) — требует осторожной архитектуры из-за разных паттернов PipelineCache (sync) vs DailyStatsCache (async)

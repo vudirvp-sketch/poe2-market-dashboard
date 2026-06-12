@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — План рефакторинга
 
-> Версия: 4.0 | Дата: 2026-06-12
+> Версия: 5.0 | Дата: 2026-06-12
 
 ## Диагноз (resolved)
 
@@ -21,11 +21,14 @@
 
 ### 1.2 Синхронизация backend cache
 - Объединить `pipeline_cache.py` + `daily_stats_cache.py` → `unified_cache.py`
+- Примечание: PipelineCache (sync, OrderedDict+TTL+LRU) и DailyStatsCache (async, cachetools.TTLCache+stale_store) имеют фундаментально разные паттерны доступа — объединение требует осторожной архитектуры
 - Статус: NOT STARTED
 
-### 1.3 Prefetch при смене league/realm
-- `queryClient.prefetchQuery()` в `dashboard-page.tsx`
-- Статус: NOT STARTED
+### 1.3 Prefetch при смене league/realm ✅ (iter 38)
+- `usePrefetch()` в `src/hooks/use-prefetch.ts`
+- Prefetch 4 запроса: exchangePairs, referenceCurrencies, allItems, itemCategories
+- Интегрировано в dashboard-page.tsx
+- Статус: DONE
 
 ---
 
@@ -38,9 +41,6 @@
 ### 2.2 Общий currency price store ✅ (iter 37)
 - `useCurrencyItems()` + `useAllItems()` + `useItemCategories()` в `src/hooks/use-currency-items.ts`
 - `useUniqueItems()` в `src/hooks/use-unique-items.ts`
-- Все hooks: `placeholderData: keepPreviousData`, `realm`/`league` params + store fallback
-- 4 inline `useQuery+fetchApi` вызова в `dashboard-page.tsx` заменены на hooks
-- Убраны неиспользуемые типы `ItemCategory`, `PaginatedResponse` из импортов dashboard-page.tsx
 - Статус: DONE
 
 ### 2.3 Cross-rate калькулятор ✅ (iter 36)
@@ -74,9 +74,9 @@
 | 35 | Фаза 2.1: useExchangePairs() (заявлено, но файл не существовал) | CLAIMED DONE, ACTUALLY MISSING |
 | 36 | Фаза 2.1 (фактически) + Фаза 2.3: useCrossRates() + интеграция | DONE |
 | 37 | Фаза 2.2 + cleanup: useCurrencyItems/useUniqueItems + delete deprecated files + queryKeys normalization | DONE |
-| 38 | Фаза 1.2: Unified backend cache | — |
-| 39 | Фаза 3.1: Batch endpoint | — |
-| 40 | Фаза 1.3: Prefetch при смене лиги | — |
+| 38 | Фаза 1.3: Prefetch при смене league/realm | DONE |
+| 39 | Фаза 1.2: Unified backend cache | — |
+| 40 | Фаза 3.1: Batch endpoint | — |
 | 41 | Фаза 4.1: Lazy-loaded tabs | — |
 
 ---

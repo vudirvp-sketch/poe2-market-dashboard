@@ -100,6 +100,7 @@ import { useExchangePairs, useReferenceCurrencies } from "@/hooks/use-exchange-p
 import { useCrossRates } from "@/hooks/use-cross-rates";
 import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
 import { useUniqueItems } from "@/hooks/use-unique-items";
+import { usePrefetch } from "@/hooks/use-prefetch";
 import { QUERY_KEYS } from "@/components/providers";
 import type {
   Realm,
@@ -366,6 +367,11 @@ export function Dashboard() {
       }
     }
   }, [league, leagues]);
+
+  // Phase 1.3: Prefetch core queries on league/realm change — eliminates
+  // the "flash of loading" when switching leagues because React Query
+  // starts fetching the new data before the components re-render.
+  usePrefetch({ realm, league: effectiveLeague });
 
   // Reference currencies — uses shared hook (Phase 2.1)
   const { data: referenceCurrencies } = useReferenceCurrencies({
