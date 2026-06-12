@@ -1,59 +1,45 @@
 # Worklog
 
 ---
-Task ID: 40
+Task ID: 42
 Agent: main
-Task: Итерация 40 — Фаза 3.1 (Batch-запросы) + Фаза 4.1 (Lazy-loaded tabs)
+Task: Итерация 42 — Фаза 3.3: Compressed responses (gzip + brotli)
 
 Work Log:
-- Создан `backend/api/routes_batch.py` — POST /api/batch
-- Создан `src/app/api/flipper/batch/route.ts` — Next.js proxy
-- Создан `src/hooks/use-batch-query.ts` — useBatchQuery() + useInitialBatch()
-- Интегрировано в dashboard-page.tsx
-- 6 табов переведены на lazy loading via next/dynamic
-- TypeScript: 0 ошибок, Jest: 291/291, pytest: 339/344 (5 предсуществующих падений)
+- Создан `backend/api/middleware_compression.py`:
+  - `CompressionMiddleware` — ASGI middleware для gzip/brotli сжатия
+  - Проверяет Accept-Encoding, предпочитает brotli (лучше сжатие), fallback на gzip
+  - Сжимает только compressible типы (application/json, text/*, application/octet-stream)
+  - Минимальный размер: 500 байт (настраивается через COMPRESSION_MIN_SIZE)
+  - SSE streams (text/event-stream) — НЕ сжимаются
+  - Ошибки 4xx/5xx — НЕ сжимаются
+  - Добавляет Vary: Accept-Encoding для корректности кешей
+  - Настройка: COMPRESSION_MIN_SIZE, COMPRESSION_GZIP_LEVEL (0-9, default 6), COMPRESSION_BROTLI_LEVEL (0-11, default 4)
+- Зарегистрирован CompressionMiddleware в `backend/main.py` после CORSMiddleware
+- Обновлён `backend/api/routes_batch.py`:
+  - httpx клиент отправляет Accept-Encoding: identity для внутренних запросов
+  - Сжатие на localhost бессмысленно — только CPU overhead
+- Добавлен `brotli>=1.0` в requirements.txt
+- Обновлён `nginx.example.conf`:
+  - Добавлены gzip директивы для static assets
+  - Добавлены закомментированные brotli директивы (требует ngx_brotli module)
+  - gzip_proxied no — не двойное сжатие upstream ответов
+- Создан `tests/test_compression.py` — 13 тестов:
+  - Brotli compression для JSON ответов
+  - Gzip compression как fallback
+  - Нет сжатия без Accept-Encoding
+  - Нет сжатия для маленьких ответов
+  - Нет сжатия для ошибок (4xx)
+  - Vary: Accept-Encoding заголовок
+  - Batch internal requests skip compression
+  - Unit тесты: minimum_size, gzip_level, brotli_level, _check_brotli_available
+  - Unit тесты: compress с brotli, compress fallback на gzip
+- pytest: 357/357 (344 original + 13 new)
+- Jest: 291/291
+- Обновлена документация: REFACTOR_PLAN v9.0, AGENT_NAVIGATION v8.0
 
 Stage Summary:
-- **Phase 3.1 DONE**: Batch endpoint + hooks + интеграция
-- **Phase 4.1 DONE**: 6 табов на lazy loading
-- **Точка остановки:** Фаза 3.2 (SSE/WebSocket) или Фаза 3.3
-
----
-Task ID: 41
-Agent: main
-Task: Итерация 41 — Фаза 3.2 (SSE для price updates) + фикс 5 тестов
-
-Work Log:
-- Создан `backend/api/routes_sse.py`:
-  - GET /api/prices/stream — SSE endpoint для live price updates
-  - Фоновый монитор DataSnapshot: рассылает price_update события при изменении цен ≥0.5%
-  - Heartbeat каждые 30s, клиентский таймаут 5 мин, лимит 50 клиентов
-  - Circuit breaker для медленных клиентов (очередь 100 сообщений)
-- Зарегистрирован SSE router в `backend/main.py`
-- Добавлен запуск/останов SSE монитора в FastAPI lifespan
-- Создан `src/app/api/flipper/prices/stream/route.ts`:
-  - Next.js SSE прокси — стримит SSE от FastAPI к браузеру
-- Создан `src/hooks/use-price-stream.ts`:
-  - `usePriceStream()` hook — подключается к SSE, инвалидирует React Query кеш
-  - Circuit breaker: останавливает реконнект после 5 неудач за 60s
-  - Уважает backendOnline сигнал от health polling
-  - SSE — дополнение к polling, не замена
-- Интегрировано в dashboard-page.tsx:
-  - `usePriceStream({ enabled: flipperBackendOnline, backendOnline: flipperBackendOnline })`
-  - Инвалидирует: flipperPrices, flipperFlips, flipperTriangular, flipperOptimalCurrency, flipperTiers, flipperAnomalies, crossRates, flipperBatch, heatmap
-- Добавлен QUERY_KEYS.flipperPriceStream в providers.tsx
-- Исправлены 5 падающих тестов в test_optimal_currency.py:
-  - Причина: тесты ожидали camelCase ключи (effectiveAnchorPrice, premiumPct, buyCurrencyId, estimatedProfitPct)
-  - Backend возвращает snake_case (effective_anchor_price, premium_pct, buy_currency_id, estimated_profit_pct)
-  - Обновлены ключи в тестах на snake_case
-- TypeScript type-check: 0 ошибок
-- Jest: 291/291 тестов пройдено
-- pytest: 344/344 тестов пройдено (включая все 40 в test_optimal_currency.py)
-- Обновлена документация: REFACTOR_PLAN v8.0, AGENT_NAVIGATION v7.0
-
-Stage Summary:
-- **Phase 3.2 DONE**: SSE endpoint + usePriceStream hook + интеграция + Next.js прокси
-- **5 тестов FIXED**: test_optimal_currency.py — snake_case ключи
-- **Новые файлы**: backend/api/routes_sse.py, src/app/api/flipper/prices/stream/route.ts, src/hooks/use-price-stream.ts
-- **Изменённые файлы**: backend/main.py, src/components/dashboard/dashboard-page.tsx, src/components/providers.tsx, tests/test_optimal_currency.py
-- **Точка остановки:** Фаза 3.3 (Compressed responses) или Фаза 4.2 (API versioning)
+- **Phase 3.3 DONE**: Compression middleware (gzip + brotli) для API ответов
+- **Новые файлы**: backend/api/middleware_compression.py, tests/test_compression.py
+- **Изменённые файлы**: backend/main.py, backend/api/routes_batch.py, requirements.txt, nginx.example.conf
+- **Точка остановки:** Фаза 4.2 (Backend API versioning) или Фаза 4.3 (Typed API client)

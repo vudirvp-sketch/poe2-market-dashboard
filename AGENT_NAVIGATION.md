@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 7.0 | **Date:** 2026-06-12
+> **Version:** 8.0 | **Date:** 2026-06-12
 
 ---
 
@@ -10,6 +10,7 @@
 |-----------|---------|-------|
 | `backend/` | Python FastAPI analytics engine | Tests mandatory (pytest) |
 | `backend/api/` | Route handlers | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
+| `backend/api/middleware_compression.py` | Compression middleware (Phase 3.3) | gzip + brotli for API responses |
 | `backend/api/routes_batch.py` | Batch endpoint (Phase 3.1) | POST /api/batch — combines multiple GET requests |
 | `backend/api/routes_sse.py` | SSE price stream (Phase 3.2) | GET /api/prices/stream — live price updates via SSE |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
@@ -68,6 +69,7 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 22. **Heavy tabs MUST be lazy-loaded via `next/dynamic`** — FlipsTab, OptimizerTab, AnalystTab, LiquidChainTab, CurrencyGraphTab, WatchlistTab
 23. **SSE price stream MUST use `usePriceStream()` hook** — no manual EventSource in components
 24. **SSE is complement to polling, NOT replacement** — React Query refetchInterval continues working
+25. **Compression is transparent** — CompressionMiddleware handles gzip/brotli automatically; batch internal requests use `Accept-Encoding: identity`
 
 ## 4. Query Key Convention
 
@@ -143,7 +145,7 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | GET | `/api/prices/{pair}` | Price for specific pair |
 | GET | `/api/prices/tiers` | Currency tier classifications |
 | GET | `/api/prices/benchmarks/{currency}` | Historical benchmarks |
-| **GET** | **`/api/prices/stream`** | **SSE live price updates (Phase 3.2)** |
+| GET | `/api/prices/stream` | SSE live price updates (Phase 3.2) |
 | GET | `/api/arbitrage/flips` | Scored flip opportunities |
 | GET | `/api/arbitrage/triangular` | Triangular arbitrage cycles |
 | GET | `/api/arbitrage/optimal-currency` | Optimal payment currency |
@@ -159,6 +161,16 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | GET | `/api/portfolio/correlation` | Correlation matrix |
 | GET | `/api/scanner/scan` | Advanced flip scanner |
 | GET | `/api/liquid-chain` | Vendor reforge chain analysis |
+
+### Compression (Phase 3.3)
+
+All JSON endpoints support transparent gzip/brotli compression:
+- Client sends `Accept-Encoding: gzip, deflate, br`
+- Middleware responds with `Content-Encoding: br` (preferred) or `Content-Encoding: gzip`
+- SSE streams (`text/event-stream`) are NOT compressed
+- Responses <500 bytes are NOT compressed
+- `Vary: Accept-Encoding` header added for cache correctness
+- Config: `COMPRESSION_MIN_SIZE`, `COMPRESSION_GZIP_LEVEL`, `COMPRESSION_BROTLI_LEVEL` env vars
 
 ## 8. Architecture References
 

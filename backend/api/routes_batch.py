@@ -97,13 +97,21 @@ _internal_client: httpx.AsyncClient | None = None
 
 
 async def _get_internal_client() -> httpx.AsyncClient:
-    """Get or create the shared httpx client for internal batch requests."""
+    """Get or create the shared httpx client for internal batch requests.
+
+    Sends Accept-Encoding: identity to skip compression on internal
+    localhost requests — compression adds CPU overhead with no network
+    benefit for in-process communication.
+    """
     global _internal_client
     if _internal_client is None or _internal_client.is_closed:
         _internal_client = httpx.AsyncClient(
             base_url="http://localhost:8000",
             timeout=httpx.Timeout(SUB_REQUEST_TIMEOUT),
-            headers={"Accept": "application/json"},
+            headers={
+                "Accept": "application/json",
+                "Accept-Encoding": "identity",  # skip compression for internal requests
+            },
         )
     return _internal_client
 

@@ -34,6 +34,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
+from backend.api.middleware_compression import CompressionMiddleware
+
 from backend.api.routes_prices import router as prices_router
 from backend.api.routes_arbitrage import router as arbitrage_router
 from backend.api.routes_events import router as events_router
@@ -404,6 +406,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Phase 3.3: Response compression (gzip + brotli)
+# Registered AFTER CORS so that CORS headers are set on the original
+# response before compression middleware processes it.
+# Configurable via env vars: COMPRESSION_MIN_SIZE, COMPRESSION_GZIP_LEVEL,
+# COMPRESSION_BROTLI_LEVEL. Brotli is preferred over gzip (15-25% better
+# ratio) when the client accepts it. SSE streams (text/event-stream) are
+# excluded because compression adds latency to real-time data.
+app.add_middleware(CompressionMiddleware)
 
 # Register routers
 app.include_router(prices_router)
