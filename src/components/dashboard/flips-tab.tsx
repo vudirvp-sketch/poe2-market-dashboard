@@ -67,6 +67,7 @@ import {
   scoreColor,
 } from "./flips-helpers";
 import { isFlipDataSuspicious, isFlipsResponseSuspicious } from "@/lib/flipper-helpers";
+import type { CrossRatesResult } from "@/hooks/use-cross-rates";
 
 // ---------------------------------------------------------------------------
 // Component Props
@@ -83,13 +84,15 @@ interface FlipsTabProps {
   anchorId?: string;
   /** Current league name (for phase display) */
   league?: string;
+  /** Cross-rates data from useCrossRates hook (Phase 2.3) */
+  crossRates?: CrossRatesResult;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded, optimalPaymentByDisplayName, anchorId, league }: FlipsTabProps) {
+export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded, optimalPaymentByDisplayName, anchorId, league, crossRates }: FlipsTabProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
 
@@ -361,6 +364,23 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
                   {t("flipperAffectedCurrencies")}: {triData.crossRateWarning.affectedCurrencies.join(", ")}
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ---- Client-side cross-rate flip opportunities (Phase 2.3) ---- */}
+      {crossRates && crossRates.crossRateFlips.length > 0 && !triData?.crossRateWarning && (
+        <Card className="border-blue-500/30 bg-blue-500/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <TrendingUp className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="text-sm">
+              <p className="font-medium text-blue-600 dark:text-blue-400">
+                Cross-Rate Opportunities
+              </p>
+              <p className="text-muted-foreground mt-1">
+                {crossRates.crossRateFlips.length} pairs with cross-rate deviation ≥ 5%. Anchor: {crossRates.anchorId}
+              </p>
             </div>
           </CardContent>
         </Card>

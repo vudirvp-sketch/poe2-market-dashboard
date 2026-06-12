@@ -5,8 +5,10 @@
 // Divine Orbs, Exalted Orbs, Chaos Orbs, and the current base currency.
 // Also shows 24h volume for each pricing pair when available.
 //
-// Uses exchange pair data to compute cross-rates via the anchor currency.
-// If exchange pairs are not available, falls back to relativePrice conversion.
+// Phase 2.3: Now uses useCrossRates() hook for cross-rate computation,
+// eliminating duplicate buildRelativePriceMap/effectiveAnchorPrice functions.
+// The hook provides relativePriceMap, anchorId, and convertPrice() utility.
+// Falls back to direct exchangePairs prop when useCrossRates data is unavailable.
 // ============================================================================
 "use client";
 
@@ -16,6 +18,9 @@ import { TrendingDown, ArrowRight } from "lucide-react";
 import { fmt } from "@/lib/types";
 import { convertBaseCurrency } from "@/lib/utils";
 import type { ExchangePair } from "@/lib/types";
+import { effectiveAnchorPrice } from "@/lib/currency-optimal";
+import { useCrossRates } from "@/hooks/use-cross-rates";
+import type { CrossRatesResult } from "@/hooks/use-cross-rates";
 import { useI18n } from "@/lib/i18n";
 
 // ---------------------------------------------------------------------------
@@ -49,12 +54,14 @@ interface MultiCurrencyPriceProps {
   baseCurrencyId: string | null | undefined;
   /** Display name of the base currency */
   baseCurrencyName?: string | null;
-  /** Exchange pairs with relativePrice data */
+  /** Exchange pairs with relativePrice data — used as override for useCrossRates */
   exchangePairs?: ExchangePair[];
   /** Maximum number of currencies to show (default: 4) */
   maxCurrencies?: number;
   /** Compact mode: single line with pills */
   compact?: boolean;
+  /** Pre-computed crossRates result (avoids re-creating the hook) */
+  crossRates?: CrossRatesResult;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,31 +84,8 @@ const DISPLAY_CURRENCIES: CurrencyDisplay[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Core: Compute multi-currency prices
+// Helper: Find 24h volume for a specific currency pair from exchange data
 // ---------------------------------------------------------------------------
-
-/**
- * Build a map of currency apiId → relativePrice from exchange pairs.
- * Each pair contributes relativePrice for currency1 and
- * currency2RelativePrice for currency2.
- */
-function buildRelativePriceMap(pairs: ExchangePair[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const pair of pairs) {
-    if (pair.relativePrice != null && pair.relativePrice > 0) {
-      // currency1's relativePrice
-      if (!map.has(pair.currency1Id)) {
-        map.set(pair.currency1Id, pair.relativePrice);
-      }
-    }
-    if (pair.currency2RelativePrice != null && pair.currency2RelativePrice > 0) {
-      if (!map.has(pair.currency2Id)) {
-        map.set(pair.currency2Id, pair.currency2RelativePrice);
-      }
-    }
-  }
-  return map;
-}
 
 /**
  * Find 24h volume for a specific currency pair from exchange data.
@@ -116,22 +100,6 @@ function findPairVolume(pairs: ExchangePair[], currencyId: string): number | nul
   return null;
 }
 
-/**
- * Compute the effective anchor price for comparison across currencies.
- * This allows comparing "apples to apples" — e.g., is it cheaper to buy
- * an item for 2 Divine or 55 Exalted?
- *
- * effectivePrice = priceInCurrency * (currencyRelPrice / anchorRelPrice)
- */
-function effectiveAnchorPrice(
-  priceInCurrency: number,
-  currencyRelPrice: number,
-  anchorRelPrice: number,
-): number {
-  if (anchorRelPrice <= 0 || currencyRelPrice <= 0) return Infinity;
-  return priceInCurrency * (currencyRelPrice / anchorRelPrice);
-}
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -143,14 +111,25 @@ export const MultiCurrencyPrice = memo(function MultiCurrencyPrice({
   exchangePairs,
   maxCurrencies = 4,
   compact = false,
+  crossRates: crossRatesProp,
 }: MultiCurrencyPriceProps) {
   const { t } = useI18n();
 
+  // Use pre-computed crossRates if provided, otherwise compute from exchangePairs
+  const crossRates = useCrossRates({
+    enabled: !crossRatesProp && !!exchangePairs && exchangePairs.length > 0,
+    exchangePairsOverride: exchangePairs,
+  });
+
+  // Resolve effective crossRates: prop > hook > empty
+  const effectiveCrossRates = crossRatesProp ?? crossRates;
+
   const entries = useMemo((): CurrencyPriceEntry[] => {
     if (priceInBase == null || priceInBase <= 0) return [];
-    if (!exchangePairs || exchangePairs.length === 0) return [];
 
-    const relPriceMap = buildRelativePriceMap(exchangePairs);
+    const relPriceMap = effectiveCrossRates.relativePriceMap;
+    if (!relPriceMap || relPriceMap.size === 0) return [];
+
     const baseId = baseCurrencyId ?? "exalted";
     const baseRelPrice = relPriceMap.get(baseId) ?? 1.0;
 
@@ -180,10 +159,10 @@ export const MultiCurrencyPrice = memo(function MultiCurrencyPrice({
       // For Mirror, skip if price is absurdly small (< 0.00001)
       if (displayCur.id === "mirror" && convertedPrice < 0.00001) continue;
 
-      const volume = findPairVolume(exchangePairs, displayCur.id);
+      const volume = exchangePairs ? findPairVolume(exchangePairs, displayCur.id) : null;
 
-      const localizedName = t(displayCur.nameKey) !== displayCur.nameKey
-        ? t(displayCur.nameKey)
+      const localizedName = t(displayCur.nameKey as Parameters<typeof t>[0]) !== displayCur.nameKey
+        ? t(displayCur.nameKey as Parameters<typeof t>[0])
         : displayCur.defaultName;
 
       results.push({
@@ -201,7 +180,7 @@ export const MultiCurrencyPrice = memo(function MultiCurrencyPrice({
     // If base currency is NOT in the display list, add it
     const baseInList = results.some(r => r.currencyId === baseId);
     if (!baseInList && baseCurrencyName) {
-      const baseVol = findPairVolume(exchangePairs, baseId);
+      const baseVol = exchangePairs ? findPairVolume(exchangePairs, baseId) : null;
       results.unshift({
         currencyId: baseId,
         currencyName: baseCurrencyName,
@@ -250,7 +229,7 @@ export const MultiCurrencyPrice = memo(function MultiCurrencyPrice({
     });
 
     return results;
-  }, [priceInBase, baseCurrencyId, baseCurrencyName, exchangePairs, maxCurrencies, t]);
+  }, [priceInBase, baseCurrencyId, baseCurrencyName, effectiveCrossRates.relativePriceMap, exchangePairs, maxCurrencies, t]);
 
   if (entries.length === 0) return null;
 

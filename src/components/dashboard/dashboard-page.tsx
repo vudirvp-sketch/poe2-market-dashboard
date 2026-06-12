@@ -96,6 +96,8 @@ import {
   exportToCsv,
   exportToJson,
 } from "@/lib/types";
+import { useExchangePairs, useReferenceCurrencies } from "@/hooks/use-exchange-pairs";
+import { useCrossRates } from "@/hooks/use-cross-rates";
 import type {
   Realm,
   League,
@@ -113,9 +115,6 @@ import type {
 } from "@/lib/types";
 import {
   findOptimalPayment,
-  detectCrossRateFlips,
-  buildRelativePriceMap,
-  selectAnchor,
   isItemCategory,
 } from "@/lib/currency-optimal";
 import { useDashboardStore } from "@/lib/store";
@@ -367,17 +366,11 @@ export function Dashboard() {
     }
   }, [league, leagues]);
 
-  // Reference currencies — moved BEFORE the useEffect that depends on it
-  // to avoid the "used before declaration" TypeScript error.
-  const { data: referenceCurrencies } = useQuery({
-    queryKey: ["referenceCurrencies", realm, effectiveLeague],
-    queryFn: () =>
-      fetchApi<ReferenceCurrency[]>("/api/poe2/exchange", {
-        realm,
-        league: effectiveLeague,
-        action: "reference",
-      }),
+  // Reference currencies — uses shared hook (Phase 2.1)
+  const { data: referenceCurrencies } = useReferenceCurrencies({
     enabled: !!effectiveLeague,
+    realm,
+    league: effectiveLeague,
   });
 
   // Phase 0.2 + P0-2: Update base currency in store when league changes.
@@ -504,27 +497,19 @@ export function Dashboard() {
     retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
   });
 
-  // Exchange — Fix 4.15: Use snapshot=true for fast initial load; history loads on hover
+  // Exchange — uses shared hook (Phase 2.1) with snapshot=true for fast initial load
   const {
     data: exchangeData,
     isLoading: exchangeLoading,
     refetch: refetchExchange,
     error: exchangeError,
     dataUpdatedAt: exchangeFetchedAt,
-  } = useQuery({
-    queryKey: ["exchangePairs", realm, effectiveLeague],
-    queryFn: () =>
-      fetchApi<ExchangePair[]>("/api/poe2/exchange", {
-        realm,
-        league: effectiveLeague,
-        action: "pairs",
-        snapshot: "true", // Fix 4.15: skip server-side history enrichment
-      }),
+  } = useExchangePairs({
     enabled: tab === "exchange" && !!effectiveLeague,
+    snapshot: true,
     refetchInterval: autoRefresh ? 60_000 : false,
-    refetchIntervalInBackground: false,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
+    realm,
+    league: effectiveLeague,
   });
 
   // --- Derived data ---
@@ -570,6 +555,17 @@ export function Dashboard() {
   }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites, uiState.exchange.extendedFilters]);
 
   // ==========================================================================
+  // Phase 2.3: Cross-rates hook — derives relativePriceMap, anchor, flips
+  // ==========================================================================
+  // Uses exchangePairsOverride since exchangeData is already loaded above.
+  // This replaces the inline buildRelativePriceMap/selectAnchor/detectCrossRateFlips
+  // calls that were previously duplicated in clientOptimalResult.
+  const crossRates = useCrossRates({
+    enabled: !!exchangeData && exchangeData.length > 0,
+    exchangePairsOverride: exchangeData,
+  });
+
+  // ==========================================================================
   // §11: Cross-currency optimal payment — backend-first with client fallback
   // ==========================================================================
   // When the backend is online, fetch optimal-currency data from
@@ -587,16 +583,17 @@ export function Dashboard() {
   });
 
   // Client-side fallback: compute optimal payment from exchangeData when backend is offline
+  // Uses crossRates hook for relativePriceMap, anchorId, and crossRateFlips (Phase 2.3)
   const clientOptimalResult = useMemo(() => {
     const allPairs = exchangeData ?? [];
     if (allPairs.length === 0) {
       return { optimalPaymentByPair: new Map<string, OptimalPaymentResult>(), crossRateFlips: [] as CrossRateFlip[], anchorId: "exalted" as string };
     }
 
-    // Build relative price map and select anchor
-    const relPriceMap = buildRelativePriceMap(allPairs);
-    const anchor = selectAnchor(relPriceMap);
-    const anchorRelPrice = relPriceMap.get(anchor) ?? 1;
+    // Use crossRates hook results instead of recomputing buildRelativePriceMap/selectAnchor
+    const relPriceMap = crossRates.relativePriceMap;
+    const anchor = crossRates.anchorId;
+    const anchorRelPrice = crossRates.anchorRelPrice;
 
     // Group pairs by currency1Id — each group represents one "item" priced in multiple currencies
     const groups = new Map<string, ExchangePair[]>();
@@ -677,11 +674,9 @@ export function Dashboard() {
       }
     }
 
-    // Detect cross-rate flips across all pairs
-    const crossRateFlips = detectCrossRateFlips(allPairs, 5);
-
-    return { optimalPaymentByPair, crossRateFlips, anchorId: anchor };
-  }, [exchangeData]);
+    // Use crossRates for cross-rate flips (computed by useCrossRates hook)
+    return { optimalPaymentByPair, crossRateFlips: crossRates.crossRateFlips, anchorId: anchor };
+  }, [exchangeData, crossRates.relativePriceMap, crossRates.anchorId, crossRates.anchorRelPrice, crossRates.crossRateFlips]);
 
   // Merge: backend data takes priority when available and has data; client fallback otherwise
   const { optimalPaymentByPair, crossRateFlips, anchorId: selectedAnchorId } = useMemo(() => {
@@ -1574,7 +1569,7 @@ export function Dashboard() {
             {/* ============ FLIPS TAB (unified with old Arbitrage) ============ */}
             <TabsContent value="flips">
               <ErrorBoundary fallbackTitle={t("fallbackFlips")}>
-                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} optimalPaymentByDisplayName={optimalPaymentByDisplayName} anchorId={selectedAnchorId} league={effectiveLeague} />
+                <FlipsTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} optimalPaymentByDisplayName={optimalPaymentByDisplayName} anchorId={selectedAnchorId} league={effectiveLeague} crossRates={crossRates} />
               </ErrorBoundary>
               {/* P3-7: Tier Drift Tracker */}
               <ErrorBoundary fallbackTitle={t("fallbackTierDrift")}>

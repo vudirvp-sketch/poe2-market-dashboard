@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 2.0 | **Date:** 2026-06-12
+> **Version:** 3.0 | **Date:** 2026-06-12
 
 ---
 
@@ -13,7 +13,7 @@
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
-| `backend/data/` | Providers, cache, schemas, historical, pipeline_cache, daily_stats_cache, currency_names_ru | Import nothing from `api/` |
+| `backend/data/` | Providers, cache, schemas, historical, pipeline_cache, daily_stats_cache | Import nothing from `api/` |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
@@ -51,28 +51,29 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 12. **CI uses Python 3.12** — do NOT change to 3.13+
 13. **FLIPPER_WORKERS env var** — controls ProcessPoolExecutor workers (default: 1)
 14. **Ritual Omens: ratio=1** — cannot be reforged, price-comparison only
-15. **Query keys MUST use `QUERY_KEYS` from `providers.tsx`** — no ad-hoc string keys (see §4)
-16. **Exchange pair queries MUST use `useExchangePairs()` hook** — no direct `fetchApi("/api/poe2/exchange", ...)` in components (see §8)
+15. **Query keys MUST use `QUERY_KEYS` from `providers.tsx`** — no ad-hoc string keys
+16. **Exchange pair queries MUST use `useExchangePairs()` hook** — no inline fetchApi
+17. **Cross-rate computation MUST use `useCrossRates()` hook** — no inline buildRelativePriceMap/selectAnchor in components
 
-## 4. Query Key Convention (iteration 34+)
+## 4. Query Key Convention
 
-All React Query keys MUST use the centralized `QUERY_KEYS` constants from `src/components/providers.tsx`. This prevents cache fragmentation where the same data is fetched under different keys.
+All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 
 | Data | Key Pattern | staleTime |
 |------|-------------|-----------|
 | Exchange pairs | `["exchangePairs", realm, league]` | 5 min |
+| Reference currencies | `["referenceCurrencies", realm, league]` | 10 min |
+| Cross-rates | `["crossRates"]` | 5 min |
 | Heatmap | `["heatmap", realm, league]` | 5 min |
 | Item history | `["itemHistory", realm, league, id, ref]` | 2 min |
 | Flipper flips | `["flipper-flips"]` | 60s |
-| Flipper triangular | `["flipperTriangular"]` | 60s |
-| Flipper phase | `["flipperPhase"]` | 60s |
-| Flipper health | `["flipperHealth"]` | 30s |
+| Flipper triangular | `["flipper-triangular"]` | 60s |
+| Flipper phase | `["flipper-phase"]` | 60s |
+| Flipper health | `["flipper-health"]` | 30s |
 | Overview | `["overview", realm, league]` | 2 min |
 | Realms | `["realms"]` | 30 min |
 
-**Rule:** When adding a new query, add the key to `QUERY_KEYS` in `providers.tsx` and set its `staleTime` in `STALE_TIME_DEFAULTS`.
-
-## 5. Tab Structure (iteration 34+)
+## 5. Tab Structure
 
 | Tab | Component | Status |
 |-----|-----------|--------|
@@ -80,22 +81,27 @@ All React Query keys MUST use the centralized `QUERY_KEYS` constants from `src/c
 | Currencies | VirtualCurrencyGrid / CurrencyCard | Active |
 | Uniques | UniqueTable | Active |
 | Exchange | ExchangeTable / ExchangePairCard + VolumeLiquidityIndicators | Active |
-| Flips | FlipsTab (includes triangular section + TierDriftTracker) | Active — merged Arbitrage into this |
+| Flips | FlipsTab (includes triangular + TierDriftTracker + crossRateFlips banner) | Active |
 | Optimizer | OptimizerTab | Active |
 | Analyst | AnalystTab | Active |
 | Liquid Chain | LiquidChainTab | Active |
-| Currency Graph | CurrencyGraphTab | Active (lazy-loaded) |
+| Currency Graph | CurrencyGraphTab (lazy-loaded) | Active |
 | Watchlist | WatchlistTab | Active |
-| ~~Arbitrage~~ | ~~ArbitrageTab~~ | **DEPRECATED** — merged into FlipsTab |
 
-**Deprecated files** (kept for reference, safe to delete): `arbitrage-tab.tsx`, `market-heatmap.tsx`, `arbitrage-flipper-flips.tsx` (sub-component only used by old ArbitrageTab).
+**Deprecated files** (safe to delete): `arbitrage-tab.tsx`, `market-heatmap.tsx`, `arbitrage-flipper-flips.tsx`
 
-## 6. Known Gaps
+## 6. Shared Hooks
 
-1. **336 POE2Scout items need RU names** — 140 runes, 69 lineage support gems, 30 expedition, etc.
-2. **64 stale entries in name mapping** — not in POE2Scout API, decide keep/remove
-3. **No unified data layer** — see `REFACTOR_PLAN.md` Phase 2
-4. **No cross-rate calculator for flip analysis** — see `REFACTOR_PLAN.md` Phase 2.3
+All components MUST use shared hooks instead of inline `useQuery + fetchApi` for common data.
+
+| Hook | File | Returns | Used By |
+|------|------|---------|---------|
+| `useExchangePairs()` | `src/hooks/use-exchange-pairs.ts` | Exchange pairs + loading state | dashboard-page, watchlist, detail-dialog, volume-liquidity, useCrossRates |
+| `useReferenceCurrencies()` | `src/hooks/use-exchange-pairs.ts` | Reference currencies | dashboard-page |
+| `useCrossRates()` | `src/hooks/use-cross-rates.ts` | relativePriceMap, anchorId, crossRateFlips, convertPrice(), getCrossRate() | dashboard-page, MultiCurrencyPrice, FlipsTab |
+| `useFlipsQuery()` | `src/hooks/use-flips-query.ts` | Flip opportunities | FlipsTab |
+
+**Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.
 
 ## 7. Architecture References
 
@@ -107,15 +113,3 @@ All React Query keys MUST use the centralized `QUERY_KEYS` constants from `src/c
 | CORS proxy setup | `docs/CORS_PROXY_GUIDE.md` |
 | Canonical formulas | `PoE2_Flipper_Canonical_Formulas.md` |
 | Refactoring plan | `REFACTOR_PLAN.md` |
-
-## 8. Shared Hooks (iteration 35+)
-
-All components MUST use shared hooks instead of inline `useQuery` + `fetchApi` for common data. This ensures single-source-of-truth for query keys, consistent caching, and `placeholderData: keepPreviousData`.
-
-| Hook | File | Replaces |
-|------|------|----------|
-| `useExchangePairs()` | `src/hooks/use-exchange-pairs.ts` | All `fetchApi("/api/poe2/exchange", { action: "pairs" })` calls |
-| `useReferenceCurrencies()` | `src/hooks/use-exchange-pairs.ts` | All `fetchApi("/api/poe2/exchange", { action: "reference" })` calls |
-| `useFlipsQuery()` | `src/hooks/use-flips-query.ts` | All `/api/flipper/flips` calls |
-
-**Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.

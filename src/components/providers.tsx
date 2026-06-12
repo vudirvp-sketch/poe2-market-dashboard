@@ -80,6 +80,8 @@ export const QUERY_KEYS = {
   portfolioCorrelation: "portfolio-correlation",
   /** Pair hover history */
   pairHoverHistory: "pairHoverHistory",
+  /** Cross-rates derived data (relativePriceMap, anchor, flips) */
+  crossRates: "crossRates",
 } as const;
 
 /**
@@ -130,6 +132,8 @@ const STALE_TIME_DEFAULTS: Record<string, number> = {
   [QUERY_KEYS.analystFallback]: 5 * 60_000,
   /** Portfolio correlation: 5 minutes */
   [QUERY_KEYS.portfolioCorrelation]: 5 * 60_000,
+  /** Cross-rates: 5 minutes — derived from exchange pairs, same staleness */
+  [QUERY_KEYS.crossRates]: 5 * 60_000,
 };
 
 export function Providers({ children }: { children: ReactNode }) {
