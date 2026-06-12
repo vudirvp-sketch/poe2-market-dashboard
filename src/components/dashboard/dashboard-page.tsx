@@ -40,12 +40,12 @@ import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
 import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dialog";
 import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
-// ArbitrageTab removed (iteration 34): merged into FlipsTab
+// ArbitrageTab, ArbitrageFlipperFlips, ArbitrageHelpers — deleted (iter 37)
 import { FlipsTab } from "@/components/dashboard/flips-tab";
 import { OptimizerTab } from "@/components/dashboard/optimizer-tab";
 import { AnalystTab } from "@/components/dashboard/analyst-tab";
 import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
-// MarketHeatmap removed (iteration 34): consolidated into MarketOverview
+// MarketHeatmap — deleted (iter 37)
 import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
@@ -98,13 +98,14 @@ import {
 } from "@/lib/types";
 import { useExchangePairs, useReferenceCurrencies } from "@/hooks/use-exchange-pairs";
 import { useCrossRates } from "@/hooks/use-cross-rates";
+import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
+import { useUniqueItems } from "@/hooks/use-unique-items";
+import { QUERY_KEYS } from "@/components/providers";
 import type {
   Realm,
   League,
   PoeItem,
   ExchangePair,
-  ItemCategory,
-  PaginatedResponse,
   ReferenceCurrency,
   FlipperHealthResponse,
   FlipperPhaseResponse,
@@ -235,7 +236,7 @@ export function Dashboard() {
   // Flipper backend health check (dashboard-level, shared across components)
   // ============================================================================
   const { data: flipperHealthData, isError: flipperHealthError, isPending: flipperHealthPending } = useQuery<FlipperHealthResponse>({
-    queryKey: ["flipperHealth"],
+    queryKey: [QUERY_KEYS.flipperHealth],
     queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
     staleTime: 30_000,
     refetchInterval: 30_000,
@@ -258,7 +259,7 @@ export function Dashboard() {
   // Flipper phase info (for header phase badge)
   // ============================================================================
   const { data: flipperPhaseData } = useQuery<FlipperPhaseResponse>({
-    queryKey: ["flipperPhase"],
+    queryKey: [QUERY_KEYS.flipperPhase],
     queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
     enabled: flipperBackendOnline,
     staleTime: 60_000,
@@ -273,7 +274,7 @@ export function Dashboard() {
   // Flipper events count (for header events button indicator)
   // ============================================================================
   const { data: flipperEventsData } = useQuery<FlipperEventsSummary>({
-    queryKey: ["flipperEventsCount"],
+    queryKey: [QUERY_KEYS.flipperEventsCount],
     queryFn: () => fetchApi<FlipperEventsSummary>("/api/flipper/events", { active_only: "true" }),
     enabled: flipperBackendOnline,
     staleTime: 30_000,
@@ -303,12 +304,12 @@ export function Dashboard() {
 
   // --- Data queries ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
-    queryKey: ["realms"],
+    queryKey: [QUERY_KEYS.realms],
     queryFn: () => fetchApi<Realm[]>("/api/poe2/realms"),
   });
 
   const { data: leagues, isLoading: leaguesLoading } = useQuery({
-    queryKey: ["leagues", realm],
+    queryKey: [QUERY_KEYS.leagues, realm],
     queryFn: () => {
       // Fix 5.4: Pass defaultLeagueValue from realms data to avoid
       // a redundant /Realms request inside getLeagues()
@@ -406,95 +407,50 @@ export function Dashboard() {
     }
   }, [leagues, effectiveLeague, setBaseCurrency, referenceCurrencies, safeBaseCurrencyApiId]);
 
-  // All items (for comparison resolution + overview + alerts)
-  const { data: allItems } = useQuery({
-    queryKey: ["allItems", realm, effectiveLeague],
-    queryFn: () => fetchApi<PoeItem[]>("/api/poe2/items", { realm, league: effectiveLeague }),
-    enabled: !!effectiveLeague,
-  });
+  // All items (for comparison resolution + overview + alerts) — shared hook (Phase 2.2)
+  const { data: allItems } = useAllItems({ realm, league: effectiveLeague });
 
   // --- Price alerts hook (auto-checks in background) ---
   usePriceAlerts({ realm, league: effectiveLeague });
 
-  // Currencies
+  // Currencies — shared hook (Phase 2.2)
   const {
     data: currenciesData,
     isLoading: currenciesLoading,
     refetch: refetchCurrencies,
     error: currenciesError,
     dataUpdatedAt: currenciesFetchedAt,
-  } = useQuery({
-    queryKey: [
-      "currencies",
-      realm,
-      effectiveLeague,
-      categoryFilter,
-      currenciesPage,
-      currenciesPerPage,
-      referenceCurrency,
-    ],
-    queryFn: () =>
-      fetchApi<PaginatedResponse<PoeItem>>("/api/poe2/currencies", {
-        realm,
-        league: effectiveLeague,
-        action: "byCategory",
-        category: categoryFilter,
-        page: String(currenciesPage),
-        perPage: String(currenciesPerPage),
-        referenceCurrency: referenceCurrency || "",
-      }),
-    enabled: tab === "currencies" && !!effectiveLeague,
+  } = useCurrencyItems({
+    enabled: tab === "currencies",
+    category: categoryFilter,
+    page: currenciesPage,
+    perPage: currenciesPerPage,
+    referenceCurrency: referenceCurrency || "",
     refetchInterval: autoRefresh ? 60_000 : false,
-    refetchIntervalInBackground: false,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
+    realm,
+    league: effectiveLeague,
   });
 
-  // Item categories
-  const { data: uniqueCategories } = useQuery({
-    queryKey: ["itemCategories", realm, effectiveLeague],
-    queryFn: () =>
-      fetchApi<ItemCategory[]>("/api/poe2/items", {
-        realm,
-        league: effectiveLeague,
-        action: "categories",
-      }),
-    enabled: !!effectiveLeague,
-  });
+  // Item categories — shared hook (Phase 2.2)
+  const { data: uniqueCategories } = useItemCategories({ realm, league: effectiveLeague });
 
-  // Uniques
+  // Uniques — shared hook (Phase 2.2)
   const {
     data: uniquesData,
     isLoading: uniquesLoading,
     refetch: refetchUniques,
     error: uniquesError,
     dataUpdatedAt: uniquesFetchedAt,
-  } = useQuery({
-    queryKey: [
-      "uniques",
-      realm,
-      effectiveLeague,
-      categoryFilter,
-      uniquesPage,
-      uniquesPerPage,
-      search,
-      referenceCurrency,
-    ],
-    queryFn: () =>
-      fetchApi<PaginatedResponse<PoeItem>>("/api/poe2/uniques", {
-        realm,
-        league: effectiveLeague,
-        category: categoryFilter,
-        page: String(uniquesPage),
-        perPage: String(uniquesPerPage),
-        search,
-        referenceCurrency: referenceCurrency || "",
-      }),
-    enabled: tab === "uniques" && !!effectiveLeague,
+  } = useUniqueItems({
+    enabled: tab === "uniques",
+    category: categoryFilter,
+    page: uniquesPage,
+    perPage: uniquesPerPage,
+    search,
+    referenceCurrency: referenceCurrency || "",
     refetchInterval: autoRefresh ? 60_000 : false,
-    refetchIntervalInBackground: false,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(500 * Math.pow(2, attemptIndex), 10000),
+    realm,
+    league: effectiveLeague,
   });
 
   // Exchange — uses shared hook (Phase 2.1) with snapshot=true for fast initial load
@@ -574,7 +530,7 @@ export function Dashboard() {
   // using the same logic from currency-optimal.ts.
 
   const { data: optimalCurrencyData } = useQuery<OptimalCurrencyResponse>({
-    queryKey: ["flipperOptimalCurrency"],
+    queryKey: [QUERY_KEYS.flipperOptimalCurrency],
     queryFn: () => fetchApi<OptimalCurrencyResponse>("/api/flipper/optimal-currency"),
     enabled: flipperBackendOnline,
     staleTime: 60_000,

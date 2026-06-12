@@ -1,21 +1,22 @@
 # PoE2 Market Dashboard — План рефакторинга
 
-> Версия: 3.0 | Дата: 2026-06-12
+> Версия: 4.0 | Дата: 2026-06-12
 
 ## Диагноз (resolved)
 
 Исходные 4 проблемы:
-1. ~~Дублирование вкладок~~ → FIXED (iter 34: Arbitrage→Flips, Heatmap→Overview)
-2. **3 уровня кеша без координации** — ещё не начато (Phase 1.2)
-3. ~~Дублирование API-запросов~~ → FIXED (iter 34-35: queryKeys + useExchangePairs + useReferenceCurrencies)
-4. ~~Нет cross-rate калькулятора~~ → FIXED (iter 36: useCrossRates)
+1. ~~Дублирование вкладок~~ → FIXED (iter 34)
+2. **3 уровня кеша без координации** — Phase 1.2 (NOT STARTED)
+3. ~~Дублирование API-запросов~~ → FIXED (iter 34-37: queryKeys + все hooks)
+4. ~~Нет cross-rate калькулятора~~ → FIXED (iter 36)
 
 ---
 
 ## Фаза 1: Унификация кеша
 
-### 1.1 Стандартизация queryKeys + defaults ✅ (iter 34)
-- `QUERY_KEYS` (25+ констант) + `STALE_TIME_DEFAULTS` в `providers.tsx`
+### 1.1 Стандартизация queryKeys + defaults ✅ (iter 34, расширен iter 37)
+- `QUERY_KEYS` (30 констант) + `STALE_TIME_DEFAULTS` в `providers.tsx`
+- iter 37: все queryKey в dashboard-page.tsx и use-price-alerts.ts переведены на QUERY_KEYS
 - Статус: DONE
 
 ### 1.2 Синхронизация backend cache
@@ -30,27 +31,20 @@
 
 ## Фаза 2: Переиспользование данных
 
-### 2.1 Единый exchange pair store ✅ (iter 35, фактически iter 36)
+### 2.1 Единый exchange pair store ✅ (iter 36)
 - `useExchangePairs()` + `useReferenceCurrencies()` в `src/hooks/use-exchange-pairs.ts`
-- `placeholderData: keepPreviousData`, `realm`/`league` params + store fallback
-- 2 inline `useQuery+fetchApi` вызова в `dashboard-page.tsx` заменены на hooks
 - Статус: DONE
 
-### 2.2 Общий currency price store
-- `useCurrencyItems()` + `useUniqueItems()` hooks
-- Статус: NOT STARTED
+### 2.2 Общий currency price store ✅ (iter 37)
+- `useCurrencyItems()` + `useAllItems()` + `useItemCategories()` в `src/hooks/use-currency-items.ts`
+- `useUniqueItems()` в `src/hooks/use-unique-items.ts`
+- Все hooks: `placeholderData: keepPreviousData`, `realm`/`league` params + store fallback
+- 4 inline `useQuery+fetchApi` вызова в `dashboard-page.tsx` заменены на hooks
+- Убраны неиспользуемые типы `ItemCategory`, `PaginatedResponse` из импортов dashboard-page.tsx
+- Статус: DONE
 
 ### 2.3 Cross-rate калькулятор ✅ (iter 36)
 - `useCrossRates()` в `src/hooks/use-cross-rates.ts`
-- Делегирует вычисления `currency-optimal.ts` (buildRelativePriceMap, selectAnchor, detectCrossRateFlips)
-- Возвращает: relativePriceMap, anchorId, anchorRelPrice, crossRateFlips, convertPrice(), getCrossRate()
-- Принимает `exchangePairsOverride` — если данные уже загружены, не делает лишний запрос
-- Интегрирован в:
-  - `dashboard-page.tsx`: crossRates computed from exchangeData, передан в clientOptimalResult и FlipsTab
-  - `multi-currency-price.tsx`: убраны дублированные `buildRelativePriceMap` + `effectiveAnchorPrice`, использует effectiveAnchorPrice из currency-optimal.ts + useCrossRates
-  - `flips-tab.tsx`: принимает `crossRates` prop, показывает client-side cross-rate flips banner
-- Убраны неиспользуемые импорты из dashboard-page.tsx: `buildRelativePriceMap`, `selectAnchor`, `detectCrossRateFlips`
-- Добавлен `crossRates` query key + staleTime в `providers.tsx`
 - Статус: DONE
 
 ---
@@ -79,10 +73,11 @@
 | 34 | Фаза 1.1 (queryKeys) + merge Arbitrage→Flips + merge Heatmap→Overview | DONE |
 | 35 | Фаза 2.1: useExchangePairs() (заявлено, но файл не существовал) | CLAIMED DONE, ACTUALLY MISSING |
 | 36 | Фаза 2.1 (фактически) + Фаза 2.3: useCrossRates() + интеграция | DONE |
-| 37 | Фаза 1.2: Unified backend cache | — |
-| 38 | Фаза 3.1: Batch endpoint | — |
-| 39 | Фаза 1.3: Prefetch при смене лиги | — |
-| 40 | Фаза 4.1: Lazy-loaded tabs | — |
+| 37 | Фаза 2.2 + cleanup: useCurrencyItems/useUniqueItems + delete deprecated files + queryKeys normalization | DONE |
+| 38 | Фаза 1.2: Unified backend cache | — |
+| 39 | Фаза 3.1: Batch endpoint | — |
+| 40 | Фаза 1.3: Prefetch при смене лиги | — |
+| 41 | Фаза 4.1: Lazy-loaded tabs | — |
 
 ---
 

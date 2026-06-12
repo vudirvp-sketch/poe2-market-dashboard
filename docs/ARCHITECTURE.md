@@ -229,12 +229,11 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 | Tab | Backend Required | Key Components | Data Source |
 |-----|-----------------|----------------|-------------|
-| Overview | No | market-overview, market-heatmap | /api/poe2/overview |
+| Overview | No | market-overview | /api/poe2/overview |
 | Currencies | No | virtual-currency-grid | /api/poe2/currencies |
 | Uniques | No | unique-table, candlestick-chart | /api/poe2/uniques |
 | Exchange | No | exchange-table, exchange-pair-card | /api/poe2/exchange |
-| Arbitrage | Yes | arbitrage-tab, arbitrage-flipper-flips, triangular | /api/flipper/flips, /api/flipper/triangular |
-| Flips | Yes | flips-tab, flips-table, flips-detail-dialog | /api/flipper/flips |
+| Flips | Yes | flips-tab, flips-table, flips-detail-dialog, arbitrage-flipper-triangular | /api/flipper/flips, /api/flipper/triangular |
 | Optimizer | Yes | optimizer-tab | /api/flipper/optimizer/path, /api/flipper/optimizer/matrix |
 | Analyst | Yes | analyst-tab | /api/flipper/analyst/summary, /api/poe2/analyst-fallback (no backend) |
 | Graph | Yes | currency-graph-tab, comparative-chart | /api/flipper/* |

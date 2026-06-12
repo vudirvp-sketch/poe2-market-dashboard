@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 3.0 | **Date:** 2026-06-12
+> **Version:** 4.0 | **Date:** 2026-06-12
 
 ---
 
@@ -54,6 +54,8 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 15. **Query keys MUST use `QUERY_KEYS` from `providers.tsx`** — no ad-hoc string keys
 16. **Exchange pair queries MUST use `useExchangePairs()` hook** — no inline fetchApi
 17. **Cross-rate computation MUST use `useCrossRates()` hook** — no inline buildRelativePriceMap/selectAnchor in components
+18. **Currency item queries MUST use `useCurrencyItems()` / `useAllItems()` / `useItemCategories()`** — no inline fetchApi for `/api/poe2/currencies` or `/api/poe2/items`
+19. **Unique item queries MUST use `useUniqueItems()` hook** — no inline fetchApi for `/api/poe2/uniques`
 
 ## 4. Query Key Convention
 
@@ -72,6 +74,11 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | Flipper health | `["flipper-health"]` | 30s |
 | Overview | `["overview", realm, league]` | 2 min |
 | Realms | `["realms"]` | 30 min |
+| Leagues | `["leagues", realm]` | 30 min |
+| All items | `["allItems", realm, league]` | 2 min |
+| Item categories | `["itemCategories", realm, league]` | 10 min |
+| Currencies | `["currencies", realm, league, category, page, perPage, ref]` | 2 min |
+| Uniques | `["uniques", realm, league, category, page, perPage, search, ref]` | 2 min |
 
 ## 5. Tab Structure
 
@@ -88,7 +95,7 @@ All React Query keys MUST use `QUERY_KEYS` from `providers.tsx`.
 | Currency Graph | CurrencyGraphTab (lazy-loaded) | Active |
 | Watchlist | WatchlistTab | Active |
 
-**Deprecated files** (safe to delete): `arbitrage-tab.tsx`, `market-heatmap.tsx`, `arbitrage-flipper-flips.tsx`
+**Deleted files** (iter 37): `arbitrage-tab.tsx`, `arbitrage-flipper-flips.tsx`, `arbitrage-helpers.ts`, `market-heatmap.tsx`
 
 ## 6. Shared Hooks
 
@@ -100,6 +107,10 @@ All components MUST use shared hooks instead of inline `useQuery + fetchApi` for
 | `useReferenceCurrencies()` | `src/hooks/use-exchange-pairs.ts` | Reference currencies | dashboard-page |
 | `useCrossRates()` | `src/hooks/use-cross-rates.ts` | relativePriceMap, anchorId, crossRateFlips, convertPrice(), getCrossRate() | dashboard-page, MultiCurrencyPrice, FlipsTab |
 | `useFlipsQuery()` | `src/hooks/use-flips-query.ts` | Flip opportunities | FlipsTab |
+| `useCurrencyItems()` | `src/hooks/use-currency-items.ts` | Paginated currency items | dashboard-page |
+| `useAllItems()` | `src/hooks/use-currency-items.ts` | All items (for comparison, overview, alerts) | dashboard-page |
+| `useItemCategories()` | `src/hooks/use-currency-items.ts` | Item category list | dashboard-page |
+| `useUniqueItems()` | `src/hooks/use-unique-items.ts` | Paginated unique items | dashboard-page |
 
 **Rule:** When a new data type is fetched from more than 1 component, create a shared hook in `src/hooks/`.
 

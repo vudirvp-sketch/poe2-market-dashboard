@@ -14,6 +14,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDashboardStore } from "@/lib/store";
 import type { PoeItem } from "@/lib/types";
+import { QUERY_KEYS } from "@/components/providers";
 
 /** Debounce map: alert key → timestamp of last notification */
 const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
@@ -128,7 +129,7 @@ export function usePriceAlerts({ realm, league, pollInterval }: UsePriceAlertsOp
     timerRef.current = setInterval(() => {
       // Trigger a background refetch via React Query — this populates the
       // cache and deduplicates with any other consumer of the same key.
-      queryClient.refetchQueries({ queryKey: ["allItems", realm, league] }).then(() => {
+      queryClient.refetchQueries({ queryKey: [QUERY_KEYS.allItems, realm, league] }).then(() => {
         // After refetch completes, check alerts from the updated cache
         checkAlerts();
       }).catch(() => {
