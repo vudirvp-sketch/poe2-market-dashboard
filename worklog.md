@@ -1,45 +1,28 @@
 # Work Log
 
 ---
-Task ID: 43
+Task ID: 44
 Agent: Main Agent
-Task: Phase 4.2 Backend API versioning + Phase 4.3 Typed API client
+Task: Fix 503/500 cascade — response model mismatches, bridge health URL, SSE stream
 
 Work Log:
-- Added APIVersionMiddleware (X-API-Version: 1 header) to backend/main.py
-- Updated health endpoints from /api/health to /api/v1/health in main.py
-- Updated all 12 backend router prefixes to include /v1/:
-  - routes_prices.py: /api → /api/v1
-  - routes_arbitrage.py: /api/arbitrage → /api/v1/arbitrage
-  - routes_events.py: /api/events → /api/v1/events
-  - routes_anomalies.py: /api/anomalies → /api/v1/anomalies
-  - routes_storage_value.py: /api → /api/v1
-  - routes_optimizer.py: /api/optimizer → /api/v1/optimizer
-  - routes_scanner.py: /api/scanner → /api/v1/scanner
-  - routes_analyst.py: /api/analyst → /api/v1/analyst
-  - routes_portfolio.py: /api/portfolio → /api/v1/portfolio
-  - routes_ws.py: no prefix → /v1
-  - routes_liquid_chain.py: /api/liquid-chain → /api/v1/liquid-chain
-  - routes_batch.py: /api → /api/v1
-- Updated batch ALLOWED_PREFIXES and DENIED_PATHS to /api/v1/...
-- Updated all 22 Next.js proxy route paths from /api/... to /api/v1/...
-- Updated flipper-proxy.ts health probe URL to /api/v1/health/ping
-- Created backend/api/response_models.py with 28 Pydantic response models
-- Added response_model= to all endpoint decorators in all router files
-- Added response_model=HealthResponse to health endpoint in main.py
-- Created backend/api/middleware_compression.py stub (was missing from disk)
-- Generated OpenAPI schema (74612 bytes, 56 schemas, 26 paths)
-- Generated src/lib/api-types.ts (3286 lines) via openapi-typescript
-- Updated tests/e2e/test_api_e2e.py with /api/v1/ paths
-- Updated tests/e2e/test_degraded_mode.py with /api/v1/ paths
-- Updated src/hooks/use-batch-query.ts with /api/v1/ paths
-- Updated src/__tests__/flipper-proxy.test.ts with /api/v1/ paths
-- Updated AGENT_NAVIGATION.md (v9.0) and REFACTOR_PLAN.md (v10.0)
+- Diagnosed root causes of all 503/500 errors (6 interconnected issues)
+- Fix 1: PhaseResponse.max_hold_time int→str (lifecycle.py returns "2 hours", not int)
+- Fix 2: OptimalCurrencyResponse rewritten to match route return (league, anchor_id, optimal_payment_by_pair, cross_rate_flips, data_available, fetched_at)
+- Fix 3: Bridge HEALTH_ENDPOINT /api/health/ping → /api/v1/health/ping (Phase 4.2 updated backend but missed bridge)
+- Fix 4: SSE stream proxy URL /api/prices/stream → /api/v1/prices/stream + graceful 200-on-error instead of 503
+- Fix 5: Created routes_sse.py (was missing — ImportError silently swallowed in main.py)
+- Fix 6: PairData.stock_value int→float (ExchangeRate.stock_value is float)
+- Fix 7: FlipsResponse model updated: flips→opportunities list[dict], added event_status/data_freshness
+- Fix 8: TriangularResponse model updated: cycles→opportunities list[dict], added cross_rate_warning
+- Fix 9: TriangularPath model updated to match actual route return (cycle, net_profit_pct, total_volume, confidence, etc.)
+- Fix 10: FlipOpportunityData expanded with profit_per_unit_base, fair_rate, deviation_pct, price_from/to_in_base
+- Fix 11: AnomaliesResponse error path missing min_alert_score field
+- Fix 12: AnalystSummaryResponse early return used camelCase keys + missing required league field
 
 Stage Summary:
-- Phase 4.2 (Backend API versioning) — COMPLETE
-- Phase 4.3 (Typed API client) — COMPLETE
-- All 26 API endpoints now under /api/v1/ prefix
-- X-API-Version: 1 header on all responses
-- OpenAPI schema generates 56 schemas from Pydantic response models
-- TypeScript types auto-generated in src/lib/api-types.ts
+- All response_model= Pydantic validation errors fixed (PhaseResponse, OptimalCurrencyResponse, FlipsResponse, TriangularResponse, AnomaliesResponse, AnalystSummaryResponse)
+- Bridge health check now hits correct /api/v1/health/ping → stops killing backend
+- SSE module created (routes_sse.py) — endpoint /api/v1/prices/stream now available
+- SSE proxy returns graceful 200 + error event instead of 503 (prevents console spam)
+- Circuit breaker cascade resolved: backend stays up → proxy can reach it → no 503

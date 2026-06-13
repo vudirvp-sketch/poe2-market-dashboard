@@ -54,7 +54,7 @@ class PhaseResponse(BaseModel):
     reference_currency: str = Field(description="Reference currency for the phase")
     recommended_strategy: str = Field(description="Recommended trading strategy for this phase")
     min_spread_after_fees: float = Field(description="Minimum spread after fees for profitability")
-    max_hold_time: int = Field(description="Maximum recommended hold time in hours")
+    max_hold_time: str = Field(description="Maximum recommended hold time (human-readable, e.g. '2 hours')")
 
 
 # ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ class PairData(BaseModel):
     currency_to: str = Field(description="Target currency API ID")
     raw_rate: float = Field(description="Raw exchange rate")
     volume_traded: int = Field(description="24h traded volume")
-    stock_value: int = Field(description="Stock/listed value")
+    stock_value: float = Field(description="Stock/listed value")
     volatility: float = Field(description="Momentum-based volatility for currency_from")
     momentum: float = Field(description="Price momentum for currency_from")
     acceleration: float = Field(description="Price acceleration for currency_from")
@@ -214,10 +214,10 @@ class QuantizedAnalysisData(BaseModel):
 
 class FlipOpportunityData(BaseModel):
     """Single flip opportunity."""
-    currency: str = Field(description="Currency API identifier")
+    currency: str = Field(description="Currency API identifier / pair key")
     score: float = Field(description="Composite flip score (0-1)")
     spread: float = Field(description="Raw spread percentage")
-    spread_after_fees: float = Field(description="Spread after exchange fees")
+    spread_after_fees: float = Field(description="Spread after exchange fees (DEPRECATED alias for spread)")
     volume_24h: int = Field(description="24h traded volume")
     momentum: float = Field(description="Price momentum")
     volatility: float = Field(description="Price volatility")
@@ -227,52 +227,75 @@ class FlipOpportunityData(BaseModel):
     mid_price: float = Field(description="Mid price")
     quantized_analysis: QuantizedAnalysisData | None = Field(default=None)
     tier_distance: int = Field(default=0, description="Tier distance between pair")
+    profit_per_unit_base: float = Field(default=0.0, description="Profit per 1 unit of currency_from in base currency")
+    fair_rate: float = Field(default=0.0, description="Fair cross-rate based on prices_in_base")
+    deviation_pct: float = Field(default=0.0, description="Deviation from fair rate %")
+    price_from_in_base: float = Field(default=0.0, description="Price of currency_from in base currency")
+    price_to_in_base: float = Field(default=0.0, description="Price of currency_to in base currency")
 
 
 class FlipsResponse(BaseModel):
     """Response for GET /api/v1/arbitrage/flips."""
     league: str = Field(description="League name")
-    flips: list[FlipOpportunityData] = Field(default_factory=list)
+    opportunities: list[dict[str, Any]] = Field(default_factory=list, description="Flip opportunities (rich format with display names)")
     total: int = Field(description="Total number of flips found")
-    phase: str = Field(description="Current league phase")
-    base_currency: str = Field(description="Base currency")
-    stale: bool = Field(description="Whether data is from a stale snapshot")
+    event_status: dict[str, Any] = Field(default_factory=dict, description="Active event status")
+    data_freshness: dict[str, Any] = Field(default_factory=dict, description="Data freshness metadata")
     data_available: bool = Field(description="Whether data is available")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
 
 
 class TriangularPath(BaseModel):
     """Single triangular arbitrage path."""
-    path: list[str] = Field(description="Ordered list of currency API IDs")
-    expected_profit_pct: float = Field(description="Expected profit percentage")
+    cycle: list[str] = Field(description="Ordered list of currency API IDs forming the cycle")
+    net_profit_pct: float = Field(description="Net profit percentage after fees")
     step_rates: list[float] = Field(description="Exchange rates for each step")
-    volume_24h_min: int = Field(description="Minimum 24h volume across all pairs")
-    is_profitable: bool = Field(description="Whether the path is profitable after fees")
+    total_volume: float = Field(description="Minimum volume across all pairs (bottleneck)")
+    confidence: float = Field(description="Confidence score based on data freshness and volume")
+    min_starting_amount: int = Field(default=0, description="Minimum starting capital for profit")
+    quantized_profit_pct: float = Field(default=0.0, description="Profit validated via integer simulation")
+    continuous_profit_pct: float = Field(default=0.0, description="Original float profit (reference)")
+    integer_simulation: list[int] | None = Field(default=None, description="Amounts at each step for min_start")
 
 
 class TriangularResponse(BaseModel):
     """Response for GET /api/v1/arbitrage/triangular."""
     league: str = Field(description="League name")
-    cycles: list[TriangularPath] = Field(default_factory=list)
+    opportunities: list[dict[str, Any]] = Field(default_factory=list, description="Triangular arbitrage opportunities")
     total: int = Field(description="Total triangular cycles found")
+    cross_rate_warning: dict[str, Any] | None = Field(default=None, description="Warning about suspicious cross-rate triples")
     data_available: bool = Field(description="Whether data is available")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
 
 
-class OptimalCurrencyData(BaseModel):
-    """Optimal payment currency recommendation."""
-    currency: str = Field(description="Recommended currency API ID")
-    text: str = Field(description="Human-readable currency name")
-    savings_pct: float = Field(description="Savings percentage vs base currency")
-    volume_24h: int = Field(description="24h volume")
-    spread: float = Field(description="Spread percentage")
+class OptimalPaymentOption(BaseModel):
+    """Optimal payment option for a currency pair."""
+    best_currency_id: str = Field(description="Cheapest payment currency API ID")
+    best_currency_name: str = Field(default="", description="Cheapest payment currency display name")
+    price_in_best_currency: float = Field(description="Price in the best payment currency")
+    savings_pct_vs_base: float = Field(description="Savings % vs paying in base currency")
+    relative_price: float = Field(description="Relative price of the best currency")
+
+
+class CrossRateFlip(BaseModel):
+    """Cross-rate flip opportunity."""
+    pair: str = Field(description="Trading pair key")
+    fair_rate: float = Field(description="Fair cross-rate implied by prices_in_base")
+    market_rate: float = Field(description="Actual market rate")
+    deviation_pct: float = Field(description="Deviation percentage from fair rate")
+    direction: str = Field(description="Direction: overpriced or underpriced")
+    estimated_profit_pct: float = Field(description="Estimated profit percentage")
+    volume: int = Field(description="24h volume")
 
 
 class OptimalCurrencyResponse(BaseModel):
     """Response for GET /api/v1/arbitrage/optimal-currency."""
-    optimal: list[OptimalCurrencyData] = Field(default_factory=list)
-    base_currency: str = Field(description="Base currency for comparison")
+    league: str = Field(description="League name")
+    anchor_id: str = Field(description="Anchor currency used for price normalization")
+    optimal_payment_by_pair: dict[str, Any] = Field(default_factory=dict, description="Optimal payment per pair key")
+    cross_rate_flips: list[dict[str, Any]] = Field(default_factory=list, description="Cross-rate flip opportunities")
     data_available: bool = Field(description="Whether data is available")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
 
 
 # ---------------------------------------------------------------------------

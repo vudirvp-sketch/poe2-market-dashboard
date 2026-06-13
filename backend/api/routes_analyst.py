@@ -181,20 +181,20 @@ async def get_league_summary():
     snapshot_mgr = get_snapshot_manager()
     if snapshot_mgr.last_snapshot is None:
         return {
+            "league": config.league.league_name,
             "summary": {
-                "totalCurrencies": 0,
-                "totalPairs": 0,
-                "trendingUp": 0,
-                "trendingDown": 0,
+                "total_currencies": 0,
+                "total_pairs": 0,
+                "trending_up": 0,
+                "trending_down": 0,
                 "stable": 0,
-                "anomalyCount": 0,
+                "anomaly_count": 0,
             },
             "trends": [],
             "anomalies": [],
             "facts": [],
-            "dataAvailable": False,
-            "message": "Snapshot is being collected. Try again in a few seconds.",
-            "fetchedAt": datetime.now(timezone.utc).isoformat(),
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
 
     snapshot = await get_snapshot()

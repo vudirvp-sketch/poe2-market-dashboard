@@ -194,4 +194,4 @@ async def get_anomalies(
         return result
     except Exception as e:
         logger.error("Anomaly detection handler failed: %s", e)
-        return {"anomalies": [], "count": 0, "currencies_checked": 0, "data_available": False}
+        return {"anomalies": [], "count": 0, "currencies_checked": 0, "min_alert_score": 0.5, "data_available": False}

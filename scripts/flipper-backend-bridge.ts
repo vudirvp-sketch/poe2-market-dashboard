@@ -26,7 +26,7 @@ import { existsSync, writeFileSync, appendFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 
 const BACKEND_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
-const HEALTH_ENDPOINT = `${BACKEND_URL}/api/health/ping`; // Use /ping — ultra-lightweight, plain-text "ok", responds in <1ms even during heavy computation. Prevents false-positive "unhealthy" detections from GIL contention during Bellman-Ford.
+const HEALTH_ENDPOINT = `${BACKEND_URL}/api/v1/health/ping`; // Use /ping — ultra-lightweight, plain-text "ok", responds in <1ms even during heavy computation. Prevents false-positive "unhealthy" detections from GIL contention during Bellman-Ford. NOTE: Updated to /api/v1/ prefix (Phase 4.2 API versioning).
 const HEALTH_CHECK_INTERVAL = 45_000; // 45s — increased from 30s: the backend may be busy with O(n³) cross-rate validation or snapshot refresh, which can take 10-20s even with async offloading. 30s was too aggressive, causing false-positive kills during normal operation.
 const RESTART_DELAY = 5_000; // 5s
 const MAX_RESTARTS = 5;
