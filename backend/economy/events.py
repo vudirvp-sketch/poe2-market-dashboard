@@ -439,12 +439,14 @@ class EventManager:
         if not events:
             return None
 
-        # Priority: major_patch > minor_patch > streamer_hype > other
+        # Priority: major_patch > minor_patch > league_start > economy_shift > streamer_hype > other
         priority = {
             EventType.MAJOR_PATCH: 0,
             EventType.MINOR_PATCH: 1,
-            EventType.STREAMER_HYPE: 2,
-            EventType.OTHER: 3,
+            EventType.LEAGUE_START: 2,
+            EventType.ECONOMY_SHIFT: 3,
+            EventType.STREAMER_HYPE: 4,
+            EventType.OTHER: 5,
         }
 
         events.sort(key=lambda e: priority.get(e.event_type, 99))

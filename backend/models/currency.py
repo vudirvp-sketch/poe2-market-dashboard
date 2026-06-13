@@ -29,6 +29,8 @@ class EventType(str, Enum):
     """Manual event types that can affect market behaviour."""
     MAJOR_PATCH = "major_patch"
     MINOR_PATCH = "minor_patch"
+    LEAGUE_START = "league_start"
+    ECONOMY_SHIFT = "economy_shift"
     STREAMER_HYPE = "streamer_hype"
     OTHER = "other"
 

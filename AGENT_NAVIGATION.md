@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 12.0 | **Date:** 2026-06-13
+> **Version:** 13.0 | **Date:** 2026-06-13
 
 ---
 
@@ -14,16 +14,20 @@
 | `backend/api/routes_arbitrage.py` | Flip/triangular endpoints + FlipComputeBundle | Picklable data only in ProcessPoolExecutor args |
 | `backend/api/data_snapshot.py` | DataSnapshot with __getstate__/__setstate__ | Custom pickle for safety |
 | `backend/api/routes_sse.py` | SSE price stream | GET /api/v1/prices/stream |
-| `backend/economy/events.py` | EventManager + StoredEvent.to_dict() | Returns event_id (not id) |
+| `backend/economy/events.py` | EventManager + StoredEvent.to_dict() | Returns event_id, is_active, created_at |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
 | `backend/data/` | Providers, cache, schemas, historical, unified_cache | Import nothing from `api/` |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
+| `src/app/api/flipper/events/route.ts` | Events proxy — transforms camelCase→snake_case on POST | Body transform: eventType→event_type, expiryHours→expires_at |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
+| `src/components/dashboard/events-sidebar.tsx` | Events sidebar UI | Uses `isActive` (not `active`), camelCase fields |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
+| `src/lib/api-types.ts` | Auto-generated from OpenAPI schema | Regenerate: `npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts` |
+| `src/lib/case-transform.ts` | snake_case→camelCase key transformer | Used by flipper-proxy on GET responses |
 | `src/hooks/` | React hooks | Import from `@lib` |
 
 ## 2. Build & Run Commands
@@ -36,6 +40,10 @@ npx tsc --noEmit                  # TypeScript type check
 
 # Backend (start.sh creates .venv automatically)
 PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
+
+# Regenerate OpenAPI schema + TypeScript types
+python -c "import json; from backend.main import app; from fastapi.openapi.utils import get_open_api; s=get_open_api(title=app.title,version=app.version,routes=app.routes); open('openapi_schema.json','w').write(json.dumps(s,indent=2,ensure_ascii=False))"
+npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 ```
 
 ## 3. Critical Rules
@@ -50,7 +58,9 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 8. **FLIPPER_WORKERS env var** — controls ProcessPoolExecutor workers (default: 1)
 9. **SSE proxy: return 200 + error event** — not 503 (prevents console spam + retry storms)
 10. **Mock provider exchange_rates keys MUST be strings** — e.g. "exalted/chaos", NOT ("exalted", "chaos")
-11. **EventData uses event_id, not id** — matches StoredEvent.to_dict() output
+11. **EventData uses event_id (not id)**, is_active (not active), created_at — matches StoredEvent.to_dict()
+12. **EventType enum has 6 values**: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other
+13. **Events POST proxy transforms body**: eventType→event_type, affectedCurrencies→affected_currencies, expiryHours→expires_at (ISO string)
 
 ## 4. Known Bugs / Frequent Problems
 
@@ -79,6 +89,10 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 | POST | `/api/v1/batch` | Batch multiple GET requests |
 | POST | `/api/v1/events` | Create event |
 | GET | `/api/v1/events` | List events |
+| GET | `/api/v1/events/summary` | Event summary |
+| GET | `/api/v1/events/{event_id}` | Get event by ID |
+| DELETE | `/api/v1/events/{event_id}` | Delete event |
+| POST | `/api/v1/events/{event_id}/deactivate` | Deactivate event |
 | GET | `/api/v1/anomalies` | Anomaly detection |
 | GET | `/api/v1/storage-value/{currency}` | Hold/sell decision |
 | GET | `/api/v1/optimizer/path` | Optimal conversion path |

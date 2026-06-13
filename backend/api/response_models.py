@@ -305,7 +305,7 @@ class OptimalCurrencyResponse(BaseModel):
 class EventData(BaseModel):
     """Single market event."""
     event_id: str = Field(description="Unique event identifier")
-    event_type: str = Field(description="Event type: major_patch, minor_patch, streamer_hype, other")
+    event_type: str = Field(description="Event type: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other")
     description: str = Field(description="Human-readable event description")
     affected_currencies: list[str] = Field(default_factory=list)
     timestamp: str = Field(description="Event timestamp (ISO 8601)")

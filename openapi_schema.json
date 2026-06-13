@@ -1839,7 +1839,7 @@
         "properties": {
           "event_type": {
             "$ref": "#/components/schemas/EventType",
-            "description": "Type of event: major_patch, minor_patch, streamer_hype, other"
+            "description": "Type of event: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other"
           },
           "description": {
             "type": "string",
@@ -1986,7 +1986,7 @@
           "event_type": {
             "type": "string",
             "title": "Event Type",
-            "description": "Event type: major_patch, minor_patch, streamer_hype, other"
+            "description": "Event type: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other"
           },
           "description": {
             "type": "string",
@@ -2100,6 +2100,8 @@
         "enum": [
           "major_patch",
           "minor_patch",
+          "league_start",
+          "economy_shift",
           "streamer_hype",
           "other"
         ],

@@ -41,7 +41,7 @@ class CreateEventRequest(BaseModel):
     """Request body for creating a new event."""
     event_type: EventType = Field(
         ...,
-        description="Type of event: major_patch, minor_patch, streamer_hype, other",
+        description="Type of event: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other",
     )
     description: str = Field(
         ...,

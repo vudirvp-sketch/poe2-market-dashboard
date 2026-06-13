@@ -57,7 +57,7 @@ interface ActiveEvent {
   affectedCurrencies: string[];
   createdAt: string;
   expiresAt: string | null;
-  active: boolean;
+  isActive: boolean;
 }
 
 interface EventsListResponse {

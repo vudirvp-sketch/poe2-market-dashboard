@@ -3,7 +3,7 @@ import { proxyWithFallback } from "@/lib/flipper-proxy";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/flipper/events → proxies to FastAPI GET /api/events
+/** GET /api/flipper/events → proxies to FastAPI GET /api/v1/events
  *
  *  FIX: When the backend is offline, return empty events list instead of 503.
  */
@@ -22,15 +22,39 @@ export async function GET(req: NextRequest) {
   );
 }
 
-/** POST /api/flipper/events → proxies to FastAPI POST /api/events
+/** POST /api/flipper/events → proxies to FastAPI POST /api/v1/events
  *
- *  POST requests cannot return fallback data — they are actions (create event).
- *  If the backend is offline, we return a clear error so the frontend
- *  can show "backend offline" in the form.
+ *  Transforms the frontend camelCase payload to the backend snake_case format:
+ *    eventType        → event_type
+ *    affectedCurrencies → affected_currencies
+ *    expiryHours (number) → expires_at (ISO 8601 string, computed from now + hours)
+ *
+ *  The backend CreateEventRequest expects snake_case keys and ISO timestamps,
+ *  but the frontend sends camelCase with expiryHours (number) for UX.
+ *  This proxy route bridges the gap.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Transform frontend camelCase payload → backend snake_case payload
+    const backendBody: Record<string, unknown> = {};
+
+    if (body.eventType !== undefined) {
+      backendBody.event_type = body.eventType;
+    }
+    if (body.description !== undefined) {
+      backendBody.description = body.description;
+    }
+    if (body.affectedCurrencies !== undefined) {
+      backendBody.affected_currencies = body.affectedCurrencies;
+    }
+    // Convert expiryHours (number) → expires_at (ISO 8601 string)
+    if (typeof body.expiryHours === "number" && body.expiryHours > 0) {
+      const expiresAt = new Date(Date.now() + body.expiryHours * 3600_000);
+      backendBody.expires_at = expiresAt.toISOString();
+    }
+
     return proxyWithFallback(
       "/api/v1/events",
       {
@@ -42,7 +66,7 @@ export async function POST(req: NextRequest) {
       },
       undefined,
       "POST",
-      body,
+      backendBody,
     );
   } catch {
     return new Response(

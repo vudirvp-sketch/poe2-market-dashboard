@@ -1021,7 +1021,7 @@ export interface components {
          * @description Request body for creating a new event.
          */
         CreateEventRequest: {
-            /** @description Type of event: major_patch, minor_patch, streamer_hype, other */
+            /** @description Type of event: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other */
             event_type: components["schemas"]["EventType"];
             /**
              * Description
@@ -1113,7 +1113,7 @@ export interface components {
             event_id: string;
             /**
              * Event Type
-             * @description Event type: major_patch, minor_patch, streamer_hype, other
+             * @description Event type: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other
              */
             event_type: string;
             /**
@@ -1183,7 +1183,7 @@ export interface components {
          * @description Manual event types that can affect market behaviour.
          * @enum {string}
          */
-        EventType: "major_patch" | "minor_patch" | "streamer_hype" | "other";
+        EventType: "major_patch" | "minor_patch" | "league_start" | "economy_shift" | "streamer_hype" | "other";
         /**
          * EventsListResponse
          * @description Response for GET /api/v1/events.
