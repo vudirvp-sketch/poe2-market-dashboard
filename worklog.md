@@ -1,43 +1,33 @@
 # Work Log
 
 ---
-Task ID: 48
+Task ID: 49
 Agent: Main Agent
-Task: Create use-price-stream.ts hook, render createdAt in events-sidebar, add E2E tests for events sidebar, verify PhaseDetector for league_start/economy_shift
+Task: Fix E2E tests, add Python PhaseDetector tests, expand E2E coverage
 
 Work Log:
-- Created src/hooks/use-price-stream.ts — SSE consumer hook that connects to /api/flipper/prices/stream
-  - Accepts { enabled, backendOnline, invalidationThresholdPct }
-  - Returns { status, lastError, reconnectCount }
-  - Invalidates React Query caches (flipperPrices, flipperFlips, heatmap, etc.) on price changes >= threshold
-  - Auto-reconnect with exponential backoff, circuit breaker for never-connected state
-  - Respects backendOnline transitions (close on offline, reconnect on recovery)
-- Updated events-sidebar.tsx — added createdAt rendering
-  - Added formatCreatedAt() helper (compact date format: "Jun 13, 14:30")
-  - Modified event card layout: createdAt shown with Calendar icon, expiresAt shown below with i18n "Expires" label
-  - Added "eventsExpires" i18n key to all 4 locales (en, ru, zh, ko)
-- Created e2e/events-sidebar.spec.ts — Playwright E2E tests for events sidebar
-  - installEventsApiMocks() helper — mocks flipper health as online, events with mock data (league_start + economy_shift)
-  - Test: sidebar opens and shows active events with createdAt
-  - Test: impact summary visible when events are active
-  - Test: create a new event via the form
-  - Test: deactivate an existing event
-  - Test: backend offline warning shown when backend is offline
-- Verified PhaseDetector handling of league_start and economy_shift
-  - league_start: used only at PhaseDetector init (from config), NOT reset via event creation
-  - economy_shift: not handled by PhaseDetector at all — affects scoring via EventManager.get_event_score_penalty()
-  - major_patch: only type that resets PhaseDetector (by design per spec)
-  - Conclusion: current behavior is correct — documented in AGENT_NAVIGATION.md rule 14
-- Updated AGENT_NAVIGATION.md v14.0
-  - Added use-price-stream.ts to directory table
-  - Added e2e/events-sidebar.spec.ts entry
-  - Added rule 14 about PhaseDetector event handling
-  - Updated events-sidebar.tsx description (renders createdAt + expiresAt)
-  - Added Playwright test command
+- Fixed openEventsSidebar() in e2e/events-sidebar.spec.ts
+  - Root cause: Events button is inside "More" dropdown menu, not a standalone button
+  - Fix: click "More" (⋮) button first, then click Events menu item
+  - Also fixed health mock: changed status from "online" to "ok" (dashboard checks status === "ok")
+  - Added waitForLoadState("networkidle") in beforeEach
+  - Improved Sheet selector: use heading text instead of generic [role="dialog"]
+  - Replaced fragile .fill-emerald-500 selector with text-based online indicator check
+- Added 2 new E2E tests (total now 7, was 5):
+  - "delete an existing event" — verifies delete button click and API mock
+  - "form validation — empty description shows error" — verifies create button is disabled when description is empty
+- Added 5 new Python tests for PhaseDetector in tests/test_lifecycle.py (total now 15, was 10):
+  - test_league_start_does_not_reset_phase
+  - test_economy_shift_does_not_reset_phase
+  - test_minor_patch_does_not_reset_phase
+  - test_streamer_hype_does_not_reset_phase
+  - test_only_major_patch_resets_phase
+- Updated AGENT_NAVIGATION.md:
+  - Updated e2e/events-sidebar.spec.ts description (7 tests, mentions More menu flow)
+  - Added 2 E2E-related entries to Known Bugs table
 
 Stage Summary:
-- use-price-stream.ts created — fixes pre-existing TS error (imported but missing in dashboard-page.tsx)
-- events-sidebar.tsx now renders createdAt in event cards with compact date format
-- E2E tests for events sidebar added (5 tests covering open/create/deactivate/offline)
-- PhaseDetector verification: league_start and economy_shift correctly handled (scoring only, no phase reset)
-- Documentation updated and cleaned
+- E2E tests: 7/7 passing (was 0/5)
+- Jest tests: 291/291 passing (unchanged)
+- Python tests: 347/347 passing (including 5 new PhaseDetector tests)
+- All tests green

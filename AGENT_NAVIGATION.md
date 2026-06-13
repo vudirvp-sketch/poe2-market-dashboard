@@ -31,7 +31,7 @@
 | `src/lib/api-types.ts` | Auto-generated from OpenAPI schema | Regenerate: `npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts` |
 | `src/lib/case-transform.ts` | snake_case→camelCase key transformer | Used by flipper-proxy on GET responses |
 | `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
-| `e2e/events-sidebar.spec.ts` | E2E tests for events sidebar (create/deactivate with mock data) | Uses installEventsApiMocks() |
+| `e2e/events-sidebar.spec.ts` | E2E tests for events sidebar (7 tests: open/create/deactivate/delete/validation/offline) | Uses openEventsSidebar() → clicks More menu → Events item |
 
 ## 2. Build & Run Commands
 
@@ -73,6 +73,8 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 |---------|-------|-----|
 | Flips/triangular return empty | ProcessPoolExecutor pickle error (sqlite3 in args) | Pre-extract into FlipComputeBundle; DataSnapshot.__getstate__ filters extras |
 | Mock provider causes 500 on /prices | exchange_rates dict uses tuple keys | Use string keys like "exalted/chaos" |
+| E2E: flipper health mock shows backend offline | Mock returns `status: "online"` but dashboard checks `status === "ok"` | Use `status: "ok"` in health mock (not "online") |
+| E2E: events sidebar button not found | Events is inside "More" dropdown menu, not a standalone button | Click "More" (⋮) first, then click Events menu item |
 
 ## 5. API Endpoints (all under /api/v1/)
 

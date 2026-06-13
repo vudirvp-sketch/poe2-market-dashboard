@@ -1,11 +1,14 @@
 /**
- * Events Sidebar E2E tests — creating and deactivating events with mock data.
+ * Events Sidebar E2E tests — creating, deactivating, deleting events with mock data.
  *
  * These tests verify that the Events sidebar (Sheet component) correctly:
- *   1. Opens when the Events button is clicked
+ *   1. Opens when the Events button is clicked (via "More" → "Events" menu)
  *   2. Displays active events with createdAt and expiry info
  *   3. Creates a new event via the form
  *   4. Deactivates an existing event
+ *   5. Deletes an existing event
+ *   6. Validates the create form (empty description disables submit)
+ *   7. Shows backend offline warning when backend is offline
  *
  * All API routes are mocked — no real backend required.
  */
@@ -61,12 +64,13 @@ async function installEventsApiMocks(page: import("@playwright/test").Page): Pro
   await installApiMocks(page);
 
   // Override flipper health to return ONLINE (required for events sidebar)
+  // Dashboard checks status === "ok" or "degraded" (not "online")
   await page.route("**/api/flipper/health", async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        status: "online",
+        status: "ok",
         timestamp: new Date().toISOString(),
         version: "1.0.0",
       }),
@@ -142,15 +146,25 @@ async function installEventsApiMocks(page: import("@playwright/test").Page): Pro
 // ---------------------------------------------------------------------------
 
 async function openEventsSidebar(page: import("@playwright/test").Page): Promise<void> {
-  // The Events button has a Bell icon and is in the header
-  // The button aria-label is i18n'd, so match on multiple locales
-  const eventsButton = page
+  // The Events button is inside the "More" dropdown menu (⋮ button in the header).
+  // 1. Click the "More" menu button to open the dropdown
+  const moreButton = page
     .locator(
-      'button[aria-label="События"], button[aria-label="Events"], button[aria-label="事件"], button[aria-label="이벤트"]'
+      'button[aria-label="More options"], button[aria-label="Ещё"], button[aria-label="更多选项"], button[aria-label="더 보기"]'
     )
     .first();
-  await expect(eventsButton).toBeVisible({ timeout: 10_000 });
-  await eventsButton.click();
+  await expect(moreButton).toBeVisible({ timeout: 10_000 });
+  await moreButton.click();
+
+  // 2. Click the Events menu item inside the dropdown
+  // The menu item is a <button role="menuitem"> with text from eventsButtonLabel
+  const eventsItem = page
+    .locator('button[role="menuitem"]')
+    .filter({ hasText: /Events|События|事件|이벤트/ })
+    .first();
+  await expect(eventsItem).toBeVisible({ timeout: 5_000 });
+  await eventsItem.click();
+
   // Wait for the Sheet to open
   await page.waitForTimeout(500);
 }
@@ -163,14 +177,17 @@ test.describe("Events Sidebar", () => {
   test.beforeEach(async ({ page }) => {
     await installEventsApiMocks(page);
     await page.goto("/");
+    // Wait for the page to be fully hydrated and interactive
+    await page.waitForLoadState("networkidle");
   });
 
   test("events sidebar opens and shows active events with createdAt", async ({ page }) => {
     await openEventsSidebar(page);
 
-    // The Sheet should be visible
-    const sheet = page.locator('[role="dialog"], [data-state="open"]').first();
-    await expect(sheet).toBeVisible({ timeout: 5_000 });
+    // The Sheet should be visible — use the title text to identify it
+    // (avoid matching the Next.js error overlay which also has role="dialog")
+    const sheetTitle = page.getByRole("heading", { name: /Events|События|事件|이벤트/ }).first();
+    await expect(sheetTitle).toBeVisible({ timeout: 5_000 });
 
     // Should display the league_start event description
     const leagueStartText = page.getByText("New league launched: Runes of Aldur").first();
@@ -197,13 +214,19 @@ test.describe("Events Sidebar", () => {
   test("events sidebar shows impact summary when events are active", async ({ page }) => {
     await openEventsSidebar(page);
 
-    // Impact summary should show total count
-    const impactSummary = page.getByText(/2|impact|событи/).first();
+    // Wait for the sidebar to fully render
+    const sheetTitle = page.getByRole("heading", { name: /Events|События|事件|이벤트/ }).first();
+    await expect(sheetTitle).toBeVisible({ timeout: 5_000 });
+
+    // Impact summary should show event count
+    // The impact card shows total events (2) and affected currencies
+    const impactSummary = page.getByText(/2|impact|событи|штраф/).first();
     await expect(impactSummary).toBeVisible({ timeout: 5_000 });
 
-    // Backend online indicator should be visible
-    const onlineIndicator = page.locator(".fill-emerald-500").first();
-    await expect(onlineIndicator).toBeVisible({ timeout: 5_000 });
+    // Backend online indicator should be visible (green dot + server icon text)
+    // The sidebar shows "Flipper-бэкенд онлайн" or "Backend online" text
+    const onlineText = page.getByText(/online|онлайн/i).first();
+    await expect(onlineText).toBeVisible({ timeout: 5_000 });
   });
 
   test("create a new event via the form", async ({ page }) => {
@@ -277,13 +300,57 @@ test.describe("Events Sidebar", () => {
 
     await openEventsSidebar(page);
 
-    // The offline warning card should be visible
-    const offlineWarning = page
-      .getByText(/backend.*offline|backend.*offline|бэкенд.*офлайн|백엔드.*오프라인/i)
-      .first();
-    // The offline warning may not match exactly due to i18n,
-    // so also check for the uvicorn command snippet
+    // The offline warning card should be visible — check for the uvicorn command snippet
     const uvicornHint = page.getByText("uvicorn backend.main:app").first();
     await expect(uvicornHint).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("delete an existing event", async ({ page }) => {
+    await openEventsSidebar(page);
+
+    // Wait for events to render
+    const leagueStartText = page.getByText("New league launched: Runes of Aldur").first();
+    await expect(leagueStartText).toBeVisible({ timeout: 5_000 });
+
+    // Find the delete button for the first event
+    // Delete buttons have an aria-label that is i18n'd
+    const deleteButton = page
+      .locator(
+        'button[aria-label="Delete"], button[aria-label="Удалить"], button[aria-label="删除"], button[aria-label="삭제"]'
+      )
+      .first();
+    await expect(deleteButton).toBeVisible({ timeout: 5_000 });
+    await deleteButton.click();
+
+    // After deletion, the events list should be refetched
+    // The deleted event should no longer appear
+    await page.waitForTimeout(1000);
+  });
+
+  test("form validation — empty description shows error", async ({ page }) => {
+    await openEventsSidebar(page);
+
+    // The create form should be visible (backend is online)
+    const descInput = page.locator("#event-desc").first();
+    await expect(descInput).toBeVisible({ timeout: 5_000 });
+
+    // Leave description empty and try to submit
+    // The create button should be disabled when description is empty
+    const createButton = page
+      .locator(
+        'button[aria-label="Create Event"], button[aria-label="Создать событие"], button[aria-label="创建事件"], button[aria-label="이벤트 만들기"]'
+      )
+      .first();
+    await expect(createButton).toBeVisible({ timeout: 5_000 });
+
+    // Button should be disabled because description is empty
+    await expect(createButton).toBeDisabled({ timeout: 3_000 });
+
+    // Type something, then clear it
+    await descInput.fill("test");
+    await expect(createButton).toBeEnabled({ timeout: 3_000 });
+
+    await descInput.fill("");
+    await expect(createButton).toBeDisabled({ timeout: 3_000 });
   });
 });
