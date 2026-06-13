@@ -1107,10 +1107,10 @@ export interface components {
          */
         EventData: {
             /**
-             * Id
+             * Event Id
              * @description Unique event identifier
              */
-            id: string;
+            event_id: string;
             /**
              * Event Type
              * @description Event type: major_patch, minor_patch, streamer_hype, other
@@ -1138,6 +1138,11 @@ export interface components {
              * @description Whether the event is still active
              */
             is_active: boolean;
+            /**
+             * Created At
+             * @description Creation timestamp (ISO 8601)
+             */
+            created_at?: string | null;
         };
         /**
          * EventMessageResponse

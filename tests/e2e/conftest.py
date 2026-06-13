@@ -93,7 +93,7 @@ class FlakyPoe2ScoutProvider(BaseDataProvider):
         if self._broken:
             raise ConnectionError("upstream_unreachable: API down")
         return {
-            ("exalted", "chaos"): ExchangeRate(
+            "exalted/chaos": ExchangeRate(
                 currency_from="exalted",
                 currency_to="chaos",
                 raw_rate=10.0,
@@ -101,7 +101,7 @@ class FlakyPoe2ScoutProvider(BaseDataProvider):
                 stock_value=50000,
                 highest_stock=100,
             ),
-            ("divine", "exalted"): ExchangeRate(
+            "divine/exalted": ExchangeRate(
                 currency_from="divine",
                 currency_to="exalted",
                 raw_rate=220.0,

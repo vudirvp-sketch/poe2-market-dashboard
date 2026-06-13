@@ -55,7 +55,7 @@ class MockPoe2ScoutProvider(BaseDataProvider):
 
     async def get_exchange_rates(self, league: str) -> dict:
         return {
-            ("exalted", "chaos"): ExchangeRate(
+            "exalted/chaos": ExchangeRate(
                 currency_from="exalted",
                 currency_to="chaos",
                 raw_rate=10.0,
@@ -63,7 +63,7 @@ class MockPoe2ScoutProvider(BaseDataProvider):
                 stock_value=50000,
                 highest_stock=100,
             ),
-            ("divine", "exalted"): ExchangeRate(
+            "divine/exalted": ExchangeRate(
                 currency_from="divine",
                 currency_to="exalted",
                 raw_rate=220.0,
@@ -71,7 +71,7 @@ class MockPoe2ScoutProvider(BaseDataProvider):
                 stock_value=220000,
                 highest_stock=50,
             ),
-            ("divine", "chaos"): ExchangeRate(
+            "divine/chaos": ExchangeRate(
                 currency_from="divine",
                 currency_to="chaos",
                 raw_rate=2200.0,
@@ -79,7 +79,7 @@ class MockPoe2ScoutProvider(BaseDataProvider):
                 stock_value=1760000,
                 highest_stock=30,
             ),
-            ("chaos", "exalted"): ExchangeRate(
+            "chaos/exalted": ExchangeRate(
                 currency_from="chaos",
                 currency_to="exalted",
                 raw_rate=0.1,

@@ -304,13 +304,14 @@ class OptimalCurrencyResponse(BaseModel):
 
 class EventData(BaseModel):
     """Single market event."""
-    id: str = Field(description="Unique event identifier")
+    event_id: str = Field(description="Unique event identifier")
     event_type: str = Field(description="Event type: major_patch, minor_patch, streamer_hype, other")
     description: str = Field(description="Human-readable event description")
     affected_currencies: list[str] = Field(default_factory=list)
     timestamp: str = Field(description="Event timestamp (ISO 8601)")
     expires_at: str | None = Field(default=None, description="Expiry timestamp (ISO 8601)")
     is_active: bool = Field(description="Whether the event is still active")
+    created_at: str | None = Field(default=None, description="Creation timestamp (ISO 8601)")
 
 
 class EventCreateResponse(BaseModel):

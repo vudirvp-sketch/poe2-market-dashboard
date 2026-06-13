@@ -56,7 +56,7 @@
           "prices"
         ],
         "summary": "Get All Prices",
-        "description": "Return all current exchange rates for the configured league.\n\nThis is the primary endpoint for the dashboard \u2014 it returns all trading\npairs with their current rates, volumes, and derived metrics (momentum,\nvolatility, fee fractions).\n\nOPTIMIZATION: Uses DataSnapshot to avoid 30+ redundant API requests.\nThe snapshot provides exchange_rates + all_currencies in one pass.",
+        "description": "Return all current exchange rates for the configured league.\n\nThis is the primary endpoint for the dashboard — it returns all trading\npairs with their current rates, volumes, and derived metrics (momentum,\nvolatility, fee fractions).\n\nOPTIMIZATION: Uses DataSnapshot to avoid 30+ redundant API requests.\nThe snapshot provides exchange_rates + all_currencies in one pass.",
         "operationId": "get_all_prices_api_v1_prices_get",
         "responses": {
           "200": {
@@ -344,7 +344,7 @@
           "arbitrage"
         ],
         "summary": "Get Optimal Currency",
-        "description": "\u00a711: Cross-currency optimal payment analysis and cross-rate flip detection.\n\nComputes:\n- optimalPaymentByPair: For each currency with 2+ payment options,\n  which currency is cheapest and how much you save.\n- crossRateFlips: Pairs where market rate deviates from fair rate\n  (implied by prices_in_base) by more than threshold_pct.\n- anchorId: The selected anchor currency for price normalization.\n\nThis mirrors the client-side logic in currency-optimal.ts but runs\nserver-side for better performance with large datasets.",
+        "description": "§11: Cross-currency optimal payment analysis and cross-rate flip detection.\n\nComputes:\n- optimalPaymentByPair: For each currency with 2+ payment options,\n  which currency is cheapest and how much you save.\n- crossRateFlips: Pairs where market rate deviates from fair rate\n  (implied by prices_in_base) by more than threshold_pct.\n- anchorId: The selected anchor currency for price normalization.\n\nThis mirrors the client-side logic in currency-optimal.ts but runs\nserver-side for better performance with large datasets.",
         "operationId": "get_optimal_currency_api_v1_arbitrage_optimal_currency_get",
         "parameters": [
           {
@@ -858,7 +858,7 @@
           "optimizer"
         ],
         "summary": "Get Rate Matrix",
-        "description": "Return the full rate matrix for all currency pairs in the snapshot.\n\nBuilds an N\u00d7N matrix where matrix[i][j] = rate from currency_i to\ncurrency_j. Uses only currencies that appear in exchange_rates.\n\nFor pairs without a direct rate, the value is None (null in JSON).\nThe diagonal is always 1.0 (same currency).",
+        "description": "Return the full rate matrix for all currency pairs in the snapshot.\n\nBuilds an N×N matrix where matrix[i][j] = rate from currency_i to\ncurrency_j. Uses only currencies that appear in exchange_rates.\n\nFor pairs without a direct rate, the value is None (null in JSON).\nThe diagonal is always 1.0 (same currency).",
         "operationId": "get_rate_matrix_api_v1_optimizer_matrix_get",
         "responses": {
           "200": {
@@ -1091,7 +1091,7 @@
           "portfolio"
         ],
         "summary": "Get Correlation Matrix",
-        "description": "Return the pairwise Spearman rank correlation matrix for all eligible currencies.\n\nP2-2: Uses Spearman rank correlation on log-returns instead of Pearson on\nabsolute prices. Spearman is robust to outliers (PoE prices can swing 50%\nin a day) and returns a p-value for significance filtering.\n\nAdaptive overlap threshold: requires max(2, 30% of shorter series) data\npoints of overlap for a valid correlation. Insufficient overlap -> None\n(which is different from 0.0 \u2014 it means \"no data\").\n\nPERFORMANCE: The CPU-bound O(n^2) computation is offloaded to\nProcessPoolExecutor via loop.run_in_executor() with\nasyncio.wait_for(timeout=60s) to prevent indefinite blocking.\nThis ensures health check endpoints remain responsive during heavy\ncomputation, preventing circuit breaker cascade failures.",
+        "description": "Return the pairwise Spearman rank correlation matrix for all eligible currencies.\n\nP2-2: Uses Spearman rank correlation on log-returns instead of Pearson on\nabsolute prices. Spearman is robust to outliers (PoE prices can swing 50%\nin a day) and returns a p-value for significance filtering.\n\nAdaptive overlap threshold: requires max(2, 30% of shorter series) data\npoints of overlap for a valid correlation. Insufficient overlap -> None\n(which is different from 0.0 — it means \"no data\").\n\nPERFORMANCE: The CPU-bound O(n^2) computation is offloaded to\nProcessPoolExecutor via loop.run_in_executor() with\nasyncio.wait_for(timeout=60s) to prevent indefinite blocking.\nThis ensures health check endpoints remain responsive during heavy\ncomputation, preventing circuit breaker cascade failures.",
         "operationId": "get_correlation_matrix_api_v1_portfolio_correlation_get",
         "responses": {
           "200": {
@@ -1315,7 +1315,7 @@
     "/api/v1/health/ping": {
       "get": {
         "summary": "Health Ping",
-        "description": "Ultra-lightweight health probe \u2014 no JSON serialization, no imports.\n\nReturns a plain-text \"ok\" in under 1ms even during heavy computation.\nThis endpoint is designed for circuit breaker and bridge health probes\nthat only need to know \"is the process alive and the event loop running?\".\nIt avoids all overhead: no config lookup, no dict construction, no JSON\nserialization, no dependency injection.\n\nUse /api/v1/health for detailed diagnostics.",
+        "description": "Ultra-lightweight health probe — no JSON serialization, no imports.\n\nReturns a plain-text \"ok\" in under 1ms even during heavy computation.\nThis endpoint is designed for circuit breaker and bridge health probes\nthat only need to know \"is the process alive and the event loop running?\".\nIt avoids all overhead: no config lookup, no dict construction, no JSON\nserialization, no dependency injection.\n\nUse /api/v1/health for detailed diagnostics.",
         "operationId": "health_ping_api_v1_health_ping_get",
         "responses": {
           "200": {
@@ -1332,7 +1332,7 @@
     "/api/v1/health": {
       "get": {
         "summary": "Health Check",
-        "description": "Health check endpoint with provider status and cache info.\n\nFix 8 (POE2-FIX-SPEC): returns provider reachability status so the\nfrontend can distinguish \"backend offline\" from \"no data\".\n\nPERFORMANCE: Pre-imports modules at function definition time to avoid\nrepeated import overhead. Uses cached snapshot_manager reference.\nThe response is built from in-memory state only \u2014 no I/O or heavy\ncomputation. This ensures the endpoint responds within milliseconds\neven when the event loop is under GIL contention from executor threads.",
+        "description": "Health check endpoint with provider status and cache info.\n\nFix 8 (POE2-FIX-SPEC): returns provider reachability status so the\nfrontend can distinguish \"backend offline\" from \"no data\".\n\nPERFORMANCE: Pre-imports modules at function definition time to avoid\nrepeated import overhead. Uses cached snapshot_manager reference.\nThe response is built from in-memory state only — no I/O or heavy\ncomputation. This ensures the endpoint responds within milliseconds\neven when the event loop is under GIL contention from executor threads.",
         "operationId": "health_check_api_v1_health_get",
         "responses": {
           "200": {
@@ -1785,7 +1785,7 @@
             },
             "type": "array",
             "title": "Matrix",
-            "description": "N\u00d7N Spearman correlation matrix"
+            "description": "N×N Spearman correlation matrix"
           },
           "significant": {
             "items": {
@@ -1978,9 +1978,9 @@
       },
       "EventData": {
         "properties": {
-          "id": {
+          "event_id": {
             "type": "string",
-            "title": "Id",
+            "title": "Event Id",
             "description": "Unique event identifier"
           },
           "event_type": {
@@ -2021,11 +2021,23 @@
             "type": "boolean",
             "title": "Is Active",
             "description": "Whether the event is still active"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "Creation timestamp (ISO 8601)"
           }
         },
         "type": "object",
         "required": [
-          "id",
+          "event_id",
           "event_type",
           "description",
           "timestamp",
@@ -2843,7 +2855,7 @@
             },
             "type": "array",
             "title": "Matrix",
-            "description": "N\u00d7N rate matrix"
+            "description": "N×N rate matrix"
           },
           "size": {
             "type": "integer",

@@ -87,8 +87,9 @@ async def test_create_and_list_events(mock_client):
     assert resp.status_code in [200, 503]
     if resp.status_code == 200:
         data = resp.json()
-        assert "event_id" in data
-        event_id = data["event_id"]
+        assert "event" in data
+        assert "event_id" in data["event"]
+        event_id = data["event"]["event_id"]
 
         # List events
         resp = await mock_client.get("/api/v1/events?active_only=true")

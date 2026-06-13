@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 11.0 | **Date:** 2026-06-13
+> **Version:** 12.0 | **Date:** 2026-06-13
 
 ---
 
@@ -14,6 +14,7 @@
 | `backend/api/routes_arbitrage.py` | Flip/triangular endpoints + FlipComputeBundle | Picklable data only in ProcessPoolExecutor args |
 | `backend/api/data_snapshot.py` | DataSnapshot with __getstate__/__setstate__ | Custom pickle for safety |
 | `backend/api/routes_sse.py` | SSE price stream | GET /api/v1/prices/stream |
+| `backend/economy/events.py` | EventManager + StoredEvent.to_dict() | Returns event_id (not id) |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
@@ -48,14 +49,15 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 7. **Never hardcode league names or currency categories** — use `config.yaml`
 8. **FLIPPER_WORKERS env var** — controls ProcessPoolExecutor workers (default: 1)
 9. **SSE proxy: return 200 + error event** — not 503 (prevents console spam + retry storms)
+10. **Mock provider exchange_rates keys MUST be strings** — e.g. "exalted/chaos", NOT ("exalted", "chaos")
+11. **EventData uses event_id, not id** — matches StoredEvent.to_dict() output
 
 ## 4. Known Bugs / Frequent Problems
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
 | Flips/triangular return empty | ProcessPoolExecutor pickle error (sqlite3 in args) | Pre-extract into FlipComputeBundle; DataSnapshot.__getstate__ filters extras |
-| 500 on /api/v1/prices | PairData.pair is tuple, model expects string | Pre-existing — routes_prices returns tuple key, model wants string |
-| 500 on POST /api/v1/events | EventCreateResponse expects `id` but route returns `event_id` | Pre-existing — model mismatch |
+| Mock provider causes 500 on /prices | exchange_rates dict uses tuple keys | Use string keys like "exalted/chaos" |
 
 ## 5. API Endpoints (all under /api/v1/)
 

@@ -704,6 +704,7 @@ async def get_flip_opportunities(
             "stale_data_filtered": True,
             "min_spread_basis_points": 50,  # 0.5%
         },
+        "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
