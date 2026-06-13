@@ -419,6 +419,7 @@ const ko: Record<TranslationKeys, string> = {
   eventsCreating: "만드는 중...",
   eventsNever: "없음",
   eventsExpired: "만료됨",
+  eventsExpires: "만료",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "포트폴리오",

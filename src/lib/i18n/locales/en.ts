@@ -419,6 +419,7 @@ const en = {
   eventsCreating: "Creating...",
   eventsNever: "Never",
   eventsExpired: "Expired",
+  eventsExpires: "Expires",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "Portfolio",

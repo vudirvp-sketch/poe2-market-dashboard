@@ -386,6 +386,7 @@ const ru: Record<TranslationKeys, string> = {
   eventsCreating: "\u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435...",
   eventsNever: "\u041D\u0438\u043A\u043E\u0433\u0434\u0430",
   eventsExpired: "\u0418\u0441\u0442\u0435\u043A\u043B\u043E",
+  eventsExpires: "Истекает",
   // ---- Portfolio Tab ----
   tabPortfolio: "Портфель",
   tabGraph: "Граф валют",

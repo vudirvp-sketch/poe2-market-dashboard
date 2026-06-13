@@ -1,27 +1,43 @@
 # Work Log
 
 ---
-Task ID: 47
+Task ID: 48
 Agent: Main Agent
-Task: Frontend event.id→event_id migration, proxy route fixes, EventType enum sync, OpenAPI+TS type regeneration
+Task: Create use-price-stream.ts hook, render createdAt in events-sidebar, add E2E tests for events sidebar, verify PhaseDetector for league_start/economy_shift
 
 Work Log:
-- Analyzed all event.id / event_id / eventId usage across codebase — no event.id found, already using event_id/eventId
-- Fix 1: events-sidebar.tsx — ActiveEvent.active → ActiveEvent.isActive (backend returns is_active → transformKeys → isActive)
-- Fix 2: events/route.ts POST — transform camelCase payload to snake_case before forwarding to backend (eventType→event_type, affectedCurrencies→affected_currencies, expiryHours→expires_at as ISO string)
-- Fix 3: backend/models/currency.py — Added LEAGUE_START and ECONOMY_SHIFT to EventType enum (frontend had 6 types, backend only had 4)
-- Fix 4: backend/economy/events.py — Updated priority mapping in get_active_event_summary() to include new types
-- Fix 5: backend/api/response_models.py — Updated EventData.event_type description with all 6 types
-- Fix 6: backend/api/routes_events.py — Updated CreateEventRequest.event_type description with all 6 types
-- Regenerated openapi_schema.json from live FastAPI app (53 schemas, 27 paths)
-- Regenerated src/lib/api-types.ts via openapi-typescript — EventType now has 6 values
-- Verified proxy routes (GET/POST/DELETE/deactivate) correctly handle events response format
-- Verified E2E tests don't need updates (events mocked as 503 offline)
-- Verified EventData.created_at doesn't break frontend (typed in ActiveEvent but not rendered)
-- Updated AGENT_NAVIGATION.md v13.0 — added event proxy body transform rule, EventType 6-value rule, events API endpoints
+- Created src/hooks/use-price-stream.ts — SSE consumer hook that connects to /api/flipper/prices/stream
+  - Accepts { enabled, backendOnline, invalidationThresholdPct }
+  - Returns { status, lastError, reconnectCount }
+  - Invalidates React Query caches (flipperPrices, flipperFlips, heatmap, etc.) on price changes >= threshold
+  - Auto-reconnect with exponential backoff, circuit breaker for never-connected state
+  - Respects backendOnline transitions (close on offline, reconnect on recovery)
+- Updated events-sidebar.tsx — added createdAt rendering
+  - Added formatCreatedAt() helper (compact date format: "Jun 13, 14:30")
+  - Modified event card layout: createdAt shown with Calendar icon, expiresAt shown below with i18n "Expires" label
+  - Added "eventsExpires" i18n key to all 4 locales (en, ru, zh, ko)
+- Created e2e/events-sidebar.spec.ts — Playwright E2E tests for events sidebar
+  - installEventsApiMocks() helper — mocks flipper health as online, events with mock data (league_start + economy_shift)
+  - Test: sidebar opens and shows active events with createdAt
+  - Test: impact summary visible when events are active
+  - Test: create a new event via the form
+  - Test: deactivate an existing event
+  - Test: backend offline warning shown when backend is offline
+- Verified PhaseDetector handling of league_start and economy_shift
+  - league_start: used only at PhaseDetector init (from config), NOT reset via event creation
+  - economy_shift: not handled by PhaseDetector at all — affects scoring via EventManager.get_event_score_penalty()
+  - major_patch: only type that resets PhaseDetector (by design per spec)
+  - Conclusion: current behavior is correct — documented in AGENT_NAVIGATION.md rule 14
+- Updated AGENT_NAVIGATION.md v14.0
+  - Added use-price-stream.ts to directory table
+  - Added e2e/events-sidebar.spec.ts entry
+  - Added rule 14 about PhaseDetector event handling
+  - Updated events-sidebar.tsx description (renders createdAt + expiresAt)
+  - Added Playwright test command
 
 Stage Summary:
-- 4 bugs fixed: ActiveEvent.active→isActive, POST body camelCase→snake_case, EventType mismatch (4→6), priority mapping
-- OpenAPI schema + api-types.ts regenerated with EventType: major_patch|minor_patch|league_start|economy_shift|streamer_hype|other
-- No event.id usage found in frontend — migration not needed (already event_id/eventId)
-- All proxy routes verified correct for new events response format
+- use-price-stream.ts created — fixes pre-existing TS error (imported but missing in dashboard-page.tsx)
+- events-sidebar.tsx now renders createdAt in event cards with compact date format
+- E2E tests for events sidebar added (5 tests covering open/create/deactivate/offline)
+- PhaseDetector verification: league_start and economy_shift correctly handled (scoring only, no phase reset)
+- Documentation updated and cleaned

@@ -114,6 +114,18 @@ function formatExpiry(expiresAt: string | null, t: (key: TranslationKeys) => str
   return `${diffMins}m`;
 }
 
+/** Format createdAt as a compact date string (e.g. "Jun 13, 14:30"). */
+function formatCreatedAt(createdAt: string): string {
+  const d = new Date(createdAt);
+  if (isNaN(d.getTime())) return createdAt;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = months[d.getMonth()];
+  const day = d.getDate();
+  const hours = String(d.getHours()).padStart(2, "0");
+  const mins = String(d.getMinutes()).padStart(2, "0");
+  return `${month} ${day}, ${hours}:${mins}`;
+}
+
 // ---------------------------------------------------------------------------
 // Component Props
 // ---------------------------------------------------------------------------
@@ -346,10 +358,17 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
                           >
                             {display.label}
                           </Badge>
-                          <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
-                            <Calendar className="h-3 w-3" aria-hidden="true" />
-                            {formatExpiry(event.expiresAt, t)}
-                          </span>
+                          <div className="flex flex-col items-end gap-0.5">
+                            {event.createdAt && (
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                                <Calendar className="h-3 w-3" aria-hidden="true" />
+                                {formatCreatedAt(event.createdAt)}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                              {t("eventsExpires")}: {formatExpiry(event.expiresAt, t)}
+                            </span>
+                          </div>
                         </div>
                         <p className="text-sm leading-snug">
                           {event.description}

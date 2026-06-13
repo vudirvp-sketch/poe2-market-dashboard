@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 13.0 | **Date:** 2026-06-13
+> **Version:** 14.0 | **Date:** 2026-06-13
 
 ---
 
@@ -15,6 +15,7 @@
 | `backend/api/data_snapshot.py` | DataSnapshot with __getstate__/__setstate__ | Custom pickle for safety |
 | `backend/api/routes_sse.py` | SSE price stream | GET /api/v1/prices/stream |
 | `backend/economy/events.py` | EventManager + StoredEvent.to_dict() | Returns event_id, is_active, created_at |
+| `backend/economy/lifecycle.py` | PhaseDetector — only major_patch resets phase; league_start/economy_shift affect scoring only | |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
@@ -24,11 +25,13 @@
 | `src/app/api/flipper/events/route.ts` | Events proxy — transforms camelCase→snake_case on POST | Body transform: eventType→event_type, expiryHours→expires_at |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
-| `src/components/dashboard/events-sidebar.tsx` | Events sidebar UI | Uses `isActive` (not `active`), camelCase fields |
+| `src/components/dashboard/events-sidebar.tsx` | Events sidebar UI — renders createdAt + expiresAt | Uses `isActive` (not `active`), camelCase fields |
+| `src/hooks/use-price-stream.ts` | SSE price stream hook — connects to /api/flipper/prices/stream | Returns {status, lastError, reconnectCount}; invalidates RQ caches on price change |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/api-types.ts` | Auto-generated from OpenAPI schema | Regenerate: `npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts` |
 | `src/lib/case-transform.ts` | snake_case→camelCase key transformer | Used by flipper-proxy on GET responses |
-| `src/hooks/` | React hooks | Import from `@lib` |
+| `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
+| `e2e/events-sidebar.spec.ts` | E2E tests for events sidebar (create/deactivate with mock data) | Uses installEventsApiMocks() |
 
 ## 2. Build & Run Commands
 
@@ -37,6 +40,7 @@ npm install && npm run dev        # Frontend (port 3000)
 npm run build && npm run test     # Build + Jest
 pytest tests/ -v                  # Backend tests
 npx tsc --noEmit                  # TypeScript type check
+npx playwright test               # E2E tests
 
 # Backend (start.sh creates .venv automatically)
 PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
@@ -61,6 +65,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 11. **EventData uses event_id (not id)**, is_active (not active), created_at — matches StoredEvent.to_dict()
 12. **EventType enum has 6 values**: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other
 13. **Events POST proxy transforms body**: eventType→event_type, affectedCurrencies→affected_currencies, expiryHours→expires_at (ISO string)
+14. **PhaseDetector: only major_patch resets phase clock** — league_start and economy_shift affect scoring only, not phase detection
 
 ## 4. Known Bugs / Frequent Problems
 

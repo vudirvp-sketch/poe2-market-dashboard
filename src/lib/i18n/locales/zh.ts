@@ -419,6 +419,7 @@ const zh: Record<TranslationKeys, string> = {
   eventsCreating: "创建中...",
   eventsNever: "永不过期",
   eventsExpired: "已过期",
+  eventsExpires: "过期",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "投资组合",
