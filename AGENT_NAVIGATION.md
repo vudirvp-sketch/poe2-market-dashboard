@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 10.0 | **Date:** 2026-06-12
+> **Version:** 11.0 | **Date:** 2026-06-13
 
 ---
 
@@ -11,6 +11,8 @@
 | `backend/` | Python FastAPI analytics engine | Tests mandatory (pytest) |
 | `backend/api/` | Route handlers + response models + middleware | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
 | `backend/api/response_models.py` | Pydantic response models for all endpoints | Must match route return dicts exactly |
+| `backend/api/routes_arbitrage.py` | Flip/triangular endpoints + FlipComputeBundle | Picklable data only in ProcessPoolExecutor args |
+| `backend/api/data_snapshot.py` | DataSnapshot with __getstate__/__setstate__ | Custom pickle for safety |
 | `backend/api/routes_sse.py` | SSE price stream | GET /api/v1/prices/stream |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
@@ -41,22 +43,19 @@ PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 2. **All API routes use /api/v1/ prefix** — old /api/ paths are removed
 3. **Bridge health check MUST use /api/v1/health/ping** — NOT /api/health/ping
 4. **response_model= must match route return dict** — mismatch = 500 Internal Server Error
-5. **ProcessPoolExecutor: picklable args only** — no sqlite3.Connection, no EventManager
+5. **ProcessPoolExecutor: picklable args only** — no sqlite3.Connection, no EventManager, no DataSnapshot, no AppConfig
 6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop
 7. **Never hardcode league names or currency categories** — use `config.yaml`
 8. **FLIPPER_WORKERS env var** — controls ProcessPoolExecutor workers (default: 1)
-9. **SSE proxy: return 200 + error event** — never 503 (prevents console spam + retry storms)
+9. **SSE proxy: return 200 + error event** — not 503 (prevents console spam + retry storms)
 
 ## 4. Known Bugs / Frequent Problems
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
-| 500 on /api/v1/phase | PhaseResponse.max_hold_time: int but lifecycle returns str | Changed type to str |
-| 500 on /api/v1/arbitrage/optimal-currency | OptimalCurrencyResponse schema didn't match route return | Rewrote model to match |
-| Bridge kills backend (4/5 unhealthy) | HEALTH_ENDPOINT missing /v1/ prefix | Updated to /api/v1/health/ping |
-| 503 on /api/flipper/batch | Cascade: bridge kills backend → circuit breaker opens | Fix bridge health URL |
-| ERR_INCOMPLETE_CHUNKED_ENCODING on /prices/stream | routes_sse.py didn't exist (ImportError swallowed) | Created routes_sse.py |
-| Flips/triangular return empty | ProcessPoolExecutor pickle error (sqlite3 in snapshot) | Pre-extract picklable data |
+| Flips/triangular return empty | ProcessPoolExecutor pickle error (sqlite3 in args) | Pre-extract into FlipComputeBundle; DataSnapshot.__getstate__ filters extras |
+| 500 on /api/v1/prices | PairData.pair is tuple, model expects string | Pre-existing — routes_prices returns tuple key, model wants string |
+| 500 on POST /api/v1/events | EventCreateResponse expects `id` but route returns `event_id` | Pre-existing — model mismatch |
 
 ## 5. API Endpoints (all under /api/v1/)
 

@@ -1,0 +1,3911 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PoE2 Flipper API",
+    "description": "Backend API for PoE2 currency analysis and arbitrage detection",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/v1/phase": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get Phase",
+        "description": "Return current league phase information.",
+        "operationId": "get_phase_api_v1_phase_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhaseResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/currencies": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get Currencies",
+        "description": "Return currency metadata for the configured league.\n\nUses DataSnapshot instead of making independent ByCategory requests.",
+        "operationId": "get_currencies_api_v1_currencies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrenciesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prices": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get All Prices",
+        "description": "Return all current exchange rates for the configured league.\n\nThis is the primary endpoint for the dashboard \u2014 it returns all trading\npairs with their current rates, volumes, and derived metrics (momentum,\nvolatility, fee fractions).\n\nOPTIMIZATION: Uses DataSnapshot to avoid 30+ redundant API requests.\nThe snapshot provides exchange_rates + all_currencies in one pass.",
+        "operationId": "get_all_prices_api_v1_prices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prices/heatmap": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get Heatmap Data",
+        "description": "Return 24h price change percentages for all currencies.\n\nUses DataSnapshot instead of making independent ByCategory requests.",
+        "operationId": "get_heatmap_data_api_v1_prices_heatmap_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeatmapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prices/{pair}": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get Price For Pair",
+        "description": "Return current price for a specific currency pair (e.g. 'divine/exalted').\n\nOPTIMIZATION: Uses DataSnapshot to look up exchange rates instead\nof making a separate get_current_price() API call.",
+        "operationId": "get_price_for_pair_api_v1_prices__pair__get",
+        "parameters": [
+          {
+            "name": "pair",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pair"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceForPairResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tiers": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get Tiers",
+        "description": "Return currency tier classifications for the configured league.",
+        "operationId": "get_tiers_api_v1_tiers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TiersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/benchmarks/{currency_api_id}": {
+      "get": {
+        "tags": [
+          "prices"
+        ],
+        "summary": "Get Benchmarks",
+        "description": "Return historical price benchmarks for a specific currency.",
+        "operationId": "get_benchmarks_api_v1_benchmarks__currency_api_id__get",
+        "parameters": [
+          {
+            "name": "currency_api_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Currency Api Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 7,
+              "description": "Lookback days",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "Lookback days"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarksResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/arbitrage/flips": {
+      "get": {
+        "tags": [
+          "arbitrage"
+        ],
+        "summary": "Get Flip Opportunities",
+        "description": "Return scored flip opportunities for the configured league.",
+        "operationId": "get_flip_opportunities_api_v1_arbitrage_flips_get",
+        "parameters": [
+          {
+            "name": "min_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Minimum score filter",
+              "default": 0.0,
+              "title": "Min Score"
+            },
+            "description": "Minimum score filter"
+          },
+          {
+            "name": "min_volume",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Minimum 24h volume filter",
+              "default": 0,
+              "title": "Min Volume"
+            },
+            "description": "Minimum 24h volume filter"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "Max results",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlipsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/arbitrage/triangular": {
+      "get": {
+        "tags": [
+          "arbitrage"
+        ],
+        "summary": "Get Triangular Arbitrage",
+        "description": "Return detected triangular arbitrage cycles.\n\nUses DataSnapshot for exchange rates instead of independent API call.",
+        "operationId": "get_triangular_arbitrage_api_v1_arbitrage_triangular_get",
+        "parameters": [
+          {
+            "name": "min_profit_pct",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0.0,
+              "description": "Min profit % to report",
+              "default": 1.0,
+              "title": "Min Profit Pct"
+            },
+            "description": "Min profit % to report"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriangularResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/arbitrage/optimal-currency": {
+      "get": {
+        "tags": [
+          "arbitrage"
+        ],
+        "summary": "Get Optimal Currency",
+        "description": "\u00a711: Cross-currency optimal payment analysis and cross-rate flip detection.\n\nComputes:\n- optimalPaymentByPair: For each currency with 2+ payment options,\n  which currency is cheapest and how much you save.\n- crossRateFlips: Pairs where market rate deviates from fair rate\n  (implied by prices_in_base) by more than threshold_pct.\n- anchorId: The selected anchor currency for price normalization.\n\nThis mirrors the client-side logic in currency-optimal.ts but runs\nserver-side for better performance with large datasets.",
+        "operationId": "get_optimal_currency_api_v1_arbitrage_optimal_currency_get",
+        "parameters": [
+          {
+            "name": "threshold_pct",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 50.0,
+              "minimum": 0.1,
+              "description": "Cross-rate flip threshold %",
+              "default": 5.0,
+              "title": "Threshold Pct"
+            },
+            "description": "Cross-rate flip threshold %"
+          },
+          {
+            "name": "min_volume",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Min volume for cross-rate flip detection",
+              "default": 10,
+              "title": "Min Volume"
+            },
+            "description": "Min volume for cross-rate flip detection"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimalCurrencyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "post": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Create Event",
+        "description": "Create a new manual event flag.\n\nFrom spec section 6, events affect multiple subsystems:\n- SARIMA forecasts: labeled low_confidence=True\n- Holt-Winters: disabled entirely\n- Flip scoring: affected currencies get penalty or exclusion\n- Phase reset: major_patch events reset the PhaseDetector\n\nEvents auto-expire after a configurable duration (default: 48 hours).",
+        "operationId": "create_event_api_v1_events_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "List Events",
+        "description": "List all events, optionally filtering to active ones only.",
+        "operationId": "list_events_api_v1_events_get",
+        "parameters": [
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only return active events",
+              "default": true,
+              "title": "Active Only"
+            },
+            "description": "Only return active events"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/summary": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Get Event Summary",
+        "description": "Get a summary of the most important active event.\n\nReturns the highest-priority active event for UI display in the sticky bar.\nAlso returns whether any event is active at all.",
+        "operationId": "get_event_summary_api_v1_events_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{event_id}": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Get Event",
+        "description": "Get a specific event by ID.",
+        "operationId": "get_event_api_v1_events__event_id__get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Delete Event",
+        "description": "Delete an event by ID.",
+        "operationId": "delete_event_api_v1_events__event_id__delete",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventMessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{event_id}/deactivate": {
+      "post": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Deactivate Event",
+        "description": "Deactivate an event without deleting it.\n\nThe event will remain in the history but will no longer affect subsystems.",
+        "operationId": "deactivate_event_api_v1_events__event_id__deactivate_post",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventMessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/anomalies": {
+      "get": {
+        "tags": [
+          "anomalies"
+        ],
+        "summary": "Get Anomalies",
+        "description": "Detect anomalies across all currencies or a specific one.\n\nUses cached historical data from Poe2ScoutProvider and the existing\nAnomalyDetector ensemble (5 indicators: Z-score, MACD, RSI, STL, momentum).\n\nPERFORMANCE: The CPU-bound computation is offloaded to ProcessPoolExecutor\nvia loop.run_in_executor() with asyncio.wait_for(timeout=45s) to prevent\nindefinite blocking. This ensures health check endpoints remain responsive\nduring heavy computation, preventing circuit breaker cascade failures.\n\nArgs:\n    currency: Optional currency API ID to check. If None, checks all monitored currencies.\n    min_alert_score: Minimum alert score to include in results (default 0.4).",
+        "operationId": "get_anomalies_api_v1_anomalies_get",
+        "parameters": [
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specific currency API ID, or None for all",
+              "title": "Currency"
+            },
+            "description": "Specific currency API ID, or None for all"
+          },
+          {
+            "name": "min_alert_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Minimum alert score to include",
+              "default": 0.4,
+              "title": "Min Alert Score"
+            },
+            "description": "Minimum alert score to include"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnomaliesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage-value/{currency}": {
+      "get": {
+        "tags": [
+          "storage-value"
+        ],
+        "summary": "Get Storage Value",
+        "description": "Compute projected value and hold/sell decision for a currency.\n\nUses the canonical formulas from PoE2_Flipper_Canonical_Formulas.md Section 6:\n- Price projection: current_price * min(exp(momentum * horizon_hours), cap)\n- Risk discount: exp(-volatility * z * sqrt(horizon_hours))\n- Liquidity adjustment: (0.9 + liq_factor * 0.1)\n- Decision: BUY/HOLD, SELL/CONVERT, or NEUTRAL\n\nNote: The projection is capped at 1 + 0.10*sqrt(horizon_hours) to prevent\nunrealistic extrapolation from noisy momentum estimates.\n\nArgs:\n    currency: Currency API ID (e.g. \"divine\", \"chaos\")\n    horizon_hours: How far ahead to project (1-168 hours, default 24)",
+        "operationId": "get_storage_value_api_v1_storage_value__currency__get",
+        "parameters": [
+          {
+            "name": "currency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Currency"
+            }
+          },
+          {
+            "name": "horizon_hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 168,
+              "minimum": 1,
+              "description": "Projection horizon in hours",
+              "default": 24,
+              "title": "Horizon Hours"
+            },
+            "description": "Projection horizon in hours"
+          },
+          {
+            "name": "quantity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1000000,
+              "minimum": 0.001,
+              "description": "Number of units held",
+              "default": 1.0,
+              "title": "Quantity"
+            },
+            "description": "Number of units held"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageValueResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimizer/path": {
+      "get": {
+        "tags": [
+          "optimizer"
+        ],
+        "summary": "Get Optimal Path",
+        "description": "Find the optimal conversion path between two currencies.\n\nUses Bellman-Ford algorithm on the exchange rate graph where edge weights\nare -log(raw_rate), so the shortest path corresponds to the best\neffective conversion rate. Bellman-Ford correctly handles negative\nweights that arise when rate > 1.\n\nCompares the multi-hop path rate with the direct rate (if available)\nand reports the advantage percentage.",
+        "operationId": "get_optimal_path_api_v1_optimizer_path_get",
+        "parameters": [
+          {
+            "name": "from_currency",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Source currency api_id (e.g. 'chaos')",
+              "title": "From Currency"
+            },
+            "description": "Source currency api_id (e.g. 'chaos')"
+          },
+          {
+            "name": "to_currency",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Target currency api_id (e.g. 'divine')",
+              "title": "To Currency"
+            },
+            "description": "Target currency api_id (e.g. 'divine')"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0.001,
+              "description": "Amount of source currency to convert",
+              "default": 1.0,
+              "title": "Amount"
+            },
+            "description": "Amount of source currency to convert"
+          },
+          {
+            "name": "max_hops",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "description": "Maximum number of hops in the path",
+              "default": 5,
+              "title": "Max Hops"
+            },
+            "description": "Maximum number of hops in the path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimizerPathResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/optimizer/matrix": {
+      "get": {
+        "tags": [
+          "optimizer"
+        ],
+        "summary": "Get Rate Matrix",
+        "description": "Return the full rate matrix for all currency pairs in the snapshot.\n\nBuilds an N\u00d7N matrix where matrix[i][j] = rate from currency_i to\ncurrency_j. Uses only currencies that appear in exchange_rates.\n\nFor pairs without a direct rate, the value is None (null in JSON).\nThe diagonal is always 1.0 (same currency).",
+        "operationId": "get_rate_matrix_api_v1_optimizer_matrix_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimizerMatrixResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scanner/scan": {
+      "get": {
+        "tags": [
+          "scanner"
+        ],
+        "summary": "Scan Flips",
+        "description": "Advanced flip scanner with custom filters and sorting.\n\nUnlike /api/arbitrage/flips which returns pre-filtered opportunities,\nthis endpoint supports fine-grained filtering including spread ranges,\ncluster selection, currency substring matching, and custom sorting.",
+        "operationId": "scan_flips_api_v1_scanner_scan_get",
+        "parameters": [
+          {
+            "name": "min_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Minimum score filter",
+              "default": 0.0,
+              "title": "Min Score"
+            },
+            "description": "Minimum score filter"
+          },
+          {
+            "name": "max_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Maximum score filter",
+              "default": 1.0,
+              "title": "Max Score"
+            },
+            "description": "Maximum score filter"
+          },
+          {
+            "name": "min_volume",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Minimum 24h volume filter",
+              "default": 0,
+              "title": "Min Volume"
+            },
+            "description": "Minimum 24h volume filter"
+          },
+          {
+            "name": "max_spread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Maximum spread filter",
+              "default": 1.0,
+              "title": "Max Spread"
+            },
+            "description": "Maximum spread filter"
+          },
+          {
+            "name": "min_spread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Minimum spread filter",
+              "default": 0.0,
+              "title": "Min Spread"
+            },
+            "description": "Minimum spread filter"
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cluster filter: stable, moderate, volatile_illiquid",
+              "title": "Cluster"
+            },
+            "description": "Cluster filter: stable, moderate, volatile_illiquid"
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Currency contains filter (partial match)",
+              "title": "Currency"
+            },
+            "description": "Currency contains filter (partial match)"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort field: score, spread, volume_24h, momentum, volatility",
+              "default": "score",
+              "title": "Sort By"
+            },
+            "description": "Sort field: score, spread, volume_24h, momentum, volatility"
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort direction: asc, desc",
+              "default": "desc",
+              "title": "Sort Dir"
+            },
+            "description": "Sort direction: asc, desc"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "Max results",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max results"
+          },
+          {
+            "name": "include_stale",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include opportunities with stale data",
+              "default": false,
+              "title": "Include Stale"
+            },
+            "description": "Include opportunities with stale data"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScannerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyst/summary": {
+      "get": {
+        "tags": [
+          "analyst"
+        ],
+        "summary": "Get League Summary",
+        "description": "Comprehensive league analysis: trends, anomalies, and auto-generated facts.",
+        "operationId": "get_league_summary_api_v1_analyst_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalystSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portfolio/correlation": {
+      "get": {
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "Get Correlation Matrix",
+        "description": "Return the pairwise Spearman rank correlation matrix for all eligible currencies.\n\nP2-2: Uses Spearman rank correlation on log-returns instead of Pearson on\nabsolute prices. Spearman is robust to outliers (PoE prices can swing 50%\nin a day) and returns a p-value for significance filtering.\n\nAdaptive overlap threshold: requires max(2, 30% of shorter series) data\npoints of overlap for a valid correlation. Insufficient overlap -> None\n(which is different from 0.0 \u2014 it means \"no data\").\n\nPERFORMANCE: The CPU-bound O(n^2) computation is offloaded to\nProcessPoolExecutor via loop.run_in_executor() with\nasyncio.wait_for(timeout=60s) to prevent indefinite blocking.\nThis ensures health check endpoints remain responsive during heavy\ncomputation, preventing circuit breaker cascade failures.",
+        "operationId": "get_correlation_matrix_api_v1_portfolio_correlation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrelationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/liquid-chain/analysis": {
+      "get": {
+        "tags": [
+          "liquid-chain"
+        ],
+        "summary": "Get Liquid Chain Analysis",
+        "description": "Full analysis for all configured liquid chains.\n\nReturns per-step and cumulative profit/loss for each vendor reforge chain.\nOptionally filter by chain name.",
+        "operationId": "get_liquid_chain_analysis_api_v1_liquid_chain_analysis_get",
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Chain name filter (e.g. 'delirium_liquids')",
+              "title": "Chain"
+            },
+            "description": "Chain name filter (e.g. 'delirium_liquids')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidChainAnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/liquid-chain/opportunities": {
+      "get": {
+        "tags": [
+          "liquid-chain"
+        ],
+        "summary": "Get Liquid Chain Opportunities",
+        "description": "Only profitable steps and cumulative paths across all chains.\n\nFilters to show only steps and cumulative paths where profit_pct >= min_profit_pct.\nUseful for quick scanning of profitable reforging opportunities.",
+        "operationId": "get_liquid_chain_opportunities_api_v1_liquid_chain_opportunities_get",
+        "parameters": [
+          {
+            "name": "min_profit_pct",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": -100.0,
+              "description": "Minimum profit % threshold",
+              "default": 0.0,
+              "title": "Min Profit Pct"
+            },
+            "description": "Minimum profit % threshold"
+          },
+          {
+            "name": "chain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Chain name filter",
+              "title": "Chain"
+            },
+            "description": "Chain name filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidChainOpportunitiesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/batch": {
+      "post": {
+        "tags": [
+          "batch"
+        ],
+        "summary": "Batch Endpoint",
+        "description": "Execute multiple API requests in a single HTTP call.\n\nThis endpoint is designed for initial page load optimization.\nInstead of making 5-6 separate HTTP requests to fetch health,\nphase, events, currencies, and optimal-currency data, the\nfrontend sends a single POST /api/batch request.\n\nAll sub-requests are executed concurrently via asyncio.gather.\nFailed sub-requests are reported in the 'errors' dict without\naffecting successful ones.\n\nThe sub-requests are dispatched as internal HTTP calls to\nlocalhost:8000 (the same FastAPI app). This approach:\n- Reuses all existing route logic without code duplication\n- Respects all existing middleware, error handling, and caching\n- Is safe because it's internal-only (no external network access)",
+        "operationId": "batch_endpoint_api_v1_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/prices/stream": {
+      "get": {
+        "tags": [
+          "sse"
+        ],
+        "summary": "Sse Price Stream",
+        "description": "SSE endpoint for live price updates.\n\nReturns a text/event-stream that sends price_update events when\nthe DataSnapshot changes. Clients should reconnect on disconnect.",
+        "operationId": "sse_price_stream_api_v1_prices_stream_get",
+        "parameters": [
+          {
+            "name": "threshold_pct",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 50.0,
+              "minimum": 0.0,
+              "description": "Threshold % for change notifications",
+              "default": 0.5,
+              "title": "Threshold Pct"
+            },
+            "description": "Threshold % for change notifications"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ping": {
+      "get": {
+        "summary": "Health Ping",
+        "description": "Ultra-lightweight health probe \u2014 no JSON serialization, no imports.\n\nReturns a plain-text \"ok\" in under 1ms even during heavy computation.\nThis endpoint is designed for circuit breaker and bridge health probes\nthat only need to know \"is the process alive and the event loop running?\".\nIt avoids all overhead: no config lookup, no dict construction, no JSON\nserialization, no dependency injection.\n\nUse /api/v1/health for detailed diagnostics.",
+        "operationId": "health_ping_api_v1_health_ping_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint with provider status and cache info.\n\nFix 8 (POE2-FIX-SPEC): returns provider reachability status so the\nfrontend can distinguish \"backend offline\" from \"no data\".\n\nPERFORMANCE: Pre-imports modules at function definition time to avoid\nrepeated import overhead. Uses cached snapshot_manager reference.\nThe response is built from in-memory state only \u2014 no I/O or heavy\ncomputation. This ensures the endpoint responds within milliseconds\neven when the event loop is under GIL contention from executor threads.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalystSummaryResponse": {
+        "properties": {
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "League name"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AnalystSummaryStats",
+            "description": "Summary statistics"
+          },
+          "trends": {
+            "items": {
+              "$ref": "#/components/schemas/TrendData"
+            },
+            "type": "array",
+            "title": "Trends",
+            "description": "Top trends by volatility"
+          },
+          "anomalies": {
+            "items": {
+              "$ref": "#/components/schemas/AnomalySimpleData"
+            },
+            "type": "array",
+            "title": "Anomalies",
+            "description": "Detected anomalies"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/FactData"
+            },
+            "type": "array",
+            "title": "Facts",
+            "description": "Auto-generated facts"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "league",
+          "summary",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "AnalystSummaryResponse",
+        "description": "Response for GET /api/v1/analyst/summary."
+      },
+      "AnalystSummaryStats": {
+        "properties": {
+          "total_currencies": {
+            "type": "integer",
+            "title": "Total Currencies",
+            "description": "Total number of tracked currencies"
+          },
+          "total_pairs": {
+            "type": "integer",
+            "title": "Total Pairs",
+            "description": "Total number of trading pairs"
+          },
+          "trending_up": {
+            "type": "integer",
+            "title": "Trending Up",
+            "description": "Currencies trending up (>2% change)"
+          },
+          "trending_down": {
+            "type": "integer",
+            "title": "Trending Down",
+            "description": "Currencies trending down (>2% change)"
+          },
+          "stable": {
+            "type": "integer",
+            "title": "Stable",
+            "description": "Currencies holding stable"
+          },
+          "anomaly_count": {
+            "type": "integer",
+            "title": "Anomaly Count",
+            "description": "Number of detected anomalies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_currencies",
+          "total_pairs",
+          "trending_up",
+          "trending_down",
+          "stable",
+          "anomaly_count"
+        ],
+        "title": "AnalystSummaryStats",
+        "description": "Summary statistics for the league."
+      },
+      "AnomaliesResponse": {
+        "properties": {
+          "anomalies": {
+            "items": {
+              "$ref": "#/components/schemas/AnomalyAlertData"
+            },
+            "type": "array",
+            "title": "Anomalies"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Number of anomalies found"
+          },
+          "currencies_checked": {
+            "type": "integer",
+            "title": "Currencies Checked",
+            "description": "Number of currencies checked"
+          },
+          "min_alert_score": {
+            "type": "number",
+            "title": "Min Alert Score",
+            "description": "Minimum alert score filter applied"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "currencies_checked",
+          "min_alert_score",
+          "data_available"
+        ],
+        "title": "AnomaliesResponse",
+        "description": "Response for GET /api/v1/anomalies."
+      },
+      "AnomalyAlertData": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "description": "Currency API identifier"
+          },
+          "alert_score": {
+            "type": "number",
+            "title": "Alert Score",
+            "description": "Anomaly alert score (0-1)"
+          },
+          "triggered_indicators": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Triggered Indicators",
+            "description": "List of triggered indicator names"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "description": "Anomaly direction: spike_up, spike_down"
+          },
+          "is_confirmed": {
+            "type": "boolean",
+            "title": "Is Confirmed",
+            "description": "Whether the anomaly is confirmed by multiple indicators"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "Anomaly detection timestamp (ISO 8601)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "alert_score",
+          "triggered_indicators",
+          "direction",
+          "is_confirmed",
+          "timestamp"
+        ],
+        "title": "AnomalyAlertData",
+        "description": "Single anomaly alert."
+      },
+      "AnomalySimpleData": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id",
+            "description": "Currency API identifier"
+          },
+          "z_score": {
+            "type": "number",
+            "title": "Z Score",
+            "description": "Z-score of latest price change"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "description": "Direction: spike_up, spike_down"
+          },
+          "current_price": {
+            "type": "number",
+            "title": "Current Price",
+            "description": "Current price"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct",
+            "description": "Percentage change"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "z_score",
+          "direction",
+          "current_price"
+        ],
+        "title": "AnomalySimpleData",
+        "description": "Simple anomaly detection result."
+      },
+      "BatchRequest": {
+        "properties": {
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/BatchSubRequest"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Requests",
+            "description": "List of sub-requests to execute"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requests"
+        ],
+        "title": "BatchRequest",
+        "description": "Top-level batch request body."
+      },
+      "BatchResponse": {
+        "properties": {
+          "results": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Results"
+          },
+          "errors": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Errors"
+          },
+          "timing_ms": {
+            "type": "number",
+            "title": "Timing Ms",
+            "description": "Total batch execution time in ms",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "BatchResponse",
+        "description": "Batch response containing results and errors."
+      },
+      "BatchSubRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Id",
+            "description": "Client-defined identifier for this sub-request result lookup"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "API path, e.g. /api/v1/phase"
+          },
+          "params": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Params",
+            "description": "Optional query parameters for the sub-request"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "path"
+        ],
+        "title": "BatchSubRequest",
+        "description": "A single sub-request within a batch."
+      },
+      "BenchmarkData": {
+        "properties": {
+          "low_30d": {
+            "type": "number",
+            "title": "Low 30D",
+            "description": "30-day low price"
+          },
+          "high_30d": {
+            "type": "number",
+            "title": "High 30D",
+            "description": "30-day high price"
+          },
+          "range_position": {
+            "type": "number",
+            "title": "Range Position",
+            "description": "Current position in 30-day range (0-1)"
+          },
+          "percentile_30d": {
+            "type": "number",
+            "title": "Percentile 30D",
+            "description": "30-day percentile (0-100)"
+          },
+          "current_vs_avg": {
+            "type": "number",
+            "title": "Current Vs Avg",
+            "description": "Current price vs 30-day average ratio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "low_30d",
+          "high_30d",
+          "range_position",
+          "percentile_30d",
+          "current_vs_avg"
+        ],
+        "title": "BenchmarkData",
+        "description": "Historical benchmark data for a currency."
+      },
+      "BenchmarksResponse": {
+        "properties": {
+          "currency_api_id": {
+            "type": "string",
+            "title": "Currency Api Id",
+            "description": "Currency API identifier"
+          },
+          "current_price": {
+            "type": "number",
+            "title": "Current Price",
+            "description": "Current price in base currency"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Benchmark data (None if insufficient history)"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days",
+            "description": "Lookback days used"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether benchmark data is available"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Info message when data is unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency_api_id",
+          "current_price",
+          "days",
+          "data_available"
+        ],
+        "title": "BenchmarksResponse",
+        "description": "Response for GET /api/v1/benchmarks/{currency}."
+      },
+      "CorrelationResponse": {
+        "properties": {
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Currencies",
+            "description": "Currency API IDs (row/column labels)"
+          },
+          "matrix": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Matrix",
+            "description": "N\u00d7N Spearman correlation matrix"
+          },
+          "significant": {
+            "items": {
+              "items": {
+                "type": "boolean"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Significant",
+            "description": "Significance matrix (p <= 0.05)"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Info message when data is unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data_available"
+        ],
+        "title": "CorrelationResponse",
+        "description": "Response for GET /api/v1/portfolio/correlation."
+      },
+      "CreateEventRequest": {
+        "properties": {
+          "event_type": {
+            "$ref": "#/components/schemas/EventType",
+            "description": "Type of event: major_patch, minor_patch, streamer_hype, other"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Description",
+            "description": "Human-readable description of the event"
+          },
+          "affected_currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Affected Currencies",
+            "description": "Optional list of currency API IDs affected by this event. If empty, the event affects all currencies."
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp",
+            "description": "ISO 8601 timestamp of when the event occurred. Defaults to now."
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "description": "ISO 8601 timestamp of when the event expires. Defaults to now + config.events.default_expiry_hours."
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_type",
+          "description"
+        ],
+        "title": "CreateEventRequest",
+        "description": "Request body for creating a new event."
+      },
+      "CurrenciesResponse": {
+        "properties": {
+          "currencies": {
+            "items": {
+              "$ref": "#/components/schemas/CurrencyItem"
+            },
+            "type": "array",
+            "title": "Currencies"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "description": "Whether data is from a stale snapshot"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether any data is available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stale",
+          "data_available"
+        ],
+        "title": "CurrenciesResponse",
+        "description": "Response for GET /api/v1/currencies."
+      },
+      "CurrencyItem": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id",
+            "description": "Currency API identifier"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Human-readable currency name"
+          },
+          "category_api_id": {
+            "type": "string",
+            "title": "Category Api Id",
+            "description": "Parent category API identifier"
+          },
+          "icon_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Url",
+            "description": "Currency icon URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "text",
+          "category_api_id"
+        ],
+        "title": "CurrencyItem",
+        "description": "Single currency metadata item."
+      },
+      "EventCreateResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Success message"
+          },
+          "event": {
+            "$ref": "#/components/schemas/EventData",
+            "description": "Created event data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "event"
+        ],
+        "title": "EventCreateResponse",
+        "description": "Response for POST /api/v1/events."
+      },
+      "EventData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique event identifier"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type",
+            "description": "Event type: major_patch, minor_patch, streamer_hype, other"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Human-readable event description"
+          },
+          "affected_currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Affected Currencies"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "Event timestamp (ISO 8601)"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "description": "Expiry timestamp (ISO 8601)"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether the event is still active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "event_type",
+          "description",
+          "timestamp",
+          "is_active"
+        ],
+        "title": "EventData",
+        "description": "Single market event."
+      },
+      "EventMessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Success message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "EventMessageResponse",
+        "description": "Generic event action response."
+      },
+      "EventSummaryResponse": {
+        "properties": {
+          "any_event_active": {
+            "type": "boolean",
+            "title": "Any Event Active",
+            "description": "Whether any event is currently active"
+          },
+          "event": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event",
+            "description": "Summary of highest-priority active event"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "any_event_active",
+          "fetched_at"
+        ],
+        "title": "EventSummaryResponse",
+        "description": "Response for GET /api/v1/events/summary."
+      },
+      "EventType": {
+        "type": "string",
+        "enum": [
+          "major_patch",
+          "minor_patch",
+          "streamer_hype",
+          "other"
+        ],
+        "title": "EventType",
+        "description": "Manual event types that can affect market behaviour."
+      },
+      "EventsListResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of events"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventData"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "fetched_at"
+        ],
+        "title": "EventsListResponse",
+        "description": "Response for GET /api/v1/events."
+      },
+      "FactData": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Fact type: trend, anomaly, market"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon",
+            "description": "Fact icon: up, down, alert, chart, shield"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Human-readable fact text"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity",
+            "description": "Severity: info, warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "icon",
+          "text",
+          "severity"
+        ],
+        "title": "FactData",
+        "description": "Auto-generated fact about the league economy."
+      },
+      "FlipsResponse": {
+        "properties": {
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "League name"
+          },
+          "opportunities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Opportunities",
+            "description": "Flip opportunities (rich format with display names)"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of flips found"
+          },
+          "event_status": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Event Status",
+            "description": "Active event status"
+          },
+          "data_freshness": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data Freshness",
+            "description": "Data freshness metadata"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "league",
+          "total",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "FlipsResponse",
+        "description": "Response for GET /api/v1/arbitrage/flips."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Overall status: ok, degraded"
+          },
+          "snapshot_ready": {
+            "type": "boolean",
+            "title": "Snapshot Ready",
+            "description": "Whether the data snapshot is populated"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Upstream API status: reachable, unreachable"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO 8601 timestamp of this check"
+          },
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "Configured league name"
+          },
+          "base_currency": {
+            "type": "string",
+            "title": "Base Currency",
+            "description": "Configured base currency"
+          },
+          "active_events": {
+            "type": "integer",
+            "title": "Active Events",
+            "description": "Number of active market events"
+          },
+          "cache_entries": {
+            "type": "integer",
+            "title": "Cache Entries",
+            "description": "Number of pipeline cache entries"
+          },
+          "snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Snapshot",
+            "description": "Snapshot health info"
+          },
+          "daily_stats_cache": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Daily Stats Cache",
+            "description": "Daily stats cache info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "snapshot_ready",
+          "provider",
+          "timestamp",
+          "league",
+          "base_currency",
+          "active_events",
+          "cache_entries"
+        ],
+        "title": "HealthResponse",
+        "description": "Response for GET /api/v1/health."
+      },
+      "HeatmapCurrencyData": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id",
+            "description": "Currency API identifier"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Human-readable currency name"
+          },
+          "icon_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Url",
+            "description": "Currency icon URL"
+          },
+          "changes": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Changes",
+            "description": "Percentage changes between consecutive price points"
+          },
+          "time_labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Time Labels",
+            "description": "Time labels for each change point"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "text"
+        ],
+        "title": "HeatmapCurrencyData",
+        "description": "Heatmap data for a single currency."
+      },
+      "HeatmapResponse": {
+        "properties": {
+          "currencies": {
+            "items": {
+              "$ref": "#/components/schemas/HeatmapCurrencyData"
+            },
+            "type": "array",
+            "title": "Currencies"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fetched_at"
+        ],
+        "title": "HeatmapResponse",
+        "description": "Response for GET /api/v1/prices/heatmap."
+      },
+      "LiquidChainAnalysisResponse": {
+        "properties": {
+          "chains": {
+            "items": {
+              "$ref": "#/components/schemas/LiquidChainData"
+            },
+            "type": "array",
+            "title": "Chains"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Info message when data is unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "LiquidChainAnalysisResponse",
+        "description": "Response for GET /api/v1/liquid-chain/analysis."
+      },
+      "LiquidChainCumulativePathData": {
+        "properties": {
+          "from_index": {
+            "type": "integer",
+            "title": "From Index",
+            "description": "Start step index"
+          },
+          "to_index": {
+            "type": "integer",
+            "title": "To Index",
+            "description": "End step index"
+          },
+          "total_input_cost": {
+            "type": "number",
+            "title": "Total Input Cost",
+            "description": "Total input cost"
+          },
+          "total_output_value": {
+            "type": "number",
+            "title": "Total Output Value",
+            "description": "Total output value"
+          },
+          "cumulative_ratio": {
+            "type": "number",
+            "title": "Cumulative Ratio",
+            "description": "Cumulative ratio"
+          },
+          "profit": {
+            "type": "number",
+            "title": "Profit",
+            "description": "Cumulative profit"
+          },
+          "profit_pct": {
+            "type": "number",
+            "title": "Profit Pct",
+            "description": "Cumulative profit percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_index",
+          "to_index",
+          "total_input_cost",
+          "total_output_value",
+          "cumulative_ratio",
+          "profit",
+          "profit_pct"
+        ],
+        "title": "LiquidChainCumulativePathData",
+        "description": "Cumulative path in a liquid chain."
+      },
+      "LiquidChainData": {
+        "properties": {
+          "chain_name": {
+            "type": "string",
+            "title": "Chain Name",
+            "description": "Chain name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Chain category"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/LiquidChainStepData"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "cumulative_paths": {
+            "items": {
+              "$ref": "#/components/schemas/LiquidChainCumulativePathData"
+            },
+            "type": "array",
+            "title": "Cumulative Paths"
+          },
+          "best_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Step",
+            "description": "Index of best step"
+          },
+          "worst_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst Step",
+            "description": "Index of worst step"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "steps_with_data": {
+            "type": "integer",
+            "title": "Steps With Data",
+            "description": "Number of steps with price data"
+          },
+          "total_steps": {
+            "type": "integer",
+            "title": "Total Steps",
+            "description": "Total number of steps in the chain"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chain_name",
+          "category",
+          "data_available",
+          "steps_with_data",
+          "total_steps"
+        ],
+        "title": "LiquidChainData",
+        "description": "Full analysis for a single liquid chain."
+      },
+      "LiquidChainOpportunitiesResponse": {
+        "properties": {
+          "chains": {
+            "items": {
+              "$ref": "#/components/schemas/LiquidChainProfitableChainData"
+            },
+            "type": "array",
+            "title": "Chains"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Info message when data is unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "LiquidChainOpportunitiesResponse",
+        "description": "Response for GET /api/v1/liquid-chain/opportunities."
+      },
+      "LiquidChainProfitableChainData": {
+        "properties": {
+          "chain_name": {
+            "type": "string",
+            "title": "Chain Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "profitable_steps": {
+            "items": {
+              "$ref": "#/components/schemas/LiquidChainProfitableStepData"
+            },
+            "type": "array",
+            "title": "Profitable Steps"
+          },
+          "profitable_cumulative_paths": {
+            "items": {
+              "$ref": "#/components/schemas/LiquidChainCumulativePathData"
+            },
+            "type": "array",
+            "title": "Profitable Cumulative Paths"
+          },
+          "best_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Step"
+          },
+          "worst_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worst Step"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available"
+          },
+          "steps_with_data": {
+            "type": "integer",
+            "title": "Steps With Data"
+          },
+          "total_steps": {
+            "type": "integer",
+            "title": "Total Steps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chain_name",
+          "category",
+          "data_available",
+          "steps_with_data",
+          "total_steps"
+        ],
+        "title": "LiquidChainProfitableChainData",
+        "description": "Chain with only profitable steps and paths."
+      },
+      "LiquidChainProfitableStepData": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru"
+          },
+          "ratio": {
+            "type": "number",
+            "title": "Ratio"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          },
+          "input_cost": {
+            "type": "number",
+            "title": "Input Cost"
+          },
+          "output_value": {
+            "type": "number",
+            "title": "Output Value"
+          },
+          "profit": {
+            "type": "number",
+            "title": "Profit"
+          },
+          "profit_pct": {
+            "type": "number",
+            "title": "Profit Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "name_en",
+          "ratio",
+          "price",
+          "input_cost",
+          "output_value",
+          "profit",
+          "profit_pct"
+        ],
+        "title": "LiquidChainProfitableStepData",
+        "description": "Profitable step in a liquid chain."
+      },
+      "LiquidChainStepData": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id",
+            "description": "Currency API identifier"
+          },
+          "name_en": {
+            "type": "string",
+            "title": "Name En",
+            "description": "English name"
+          },
+          "name_ru": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Ru",
+            "description": "Russian name"
+          },
+          "ratio": {
+            "type": "number",
+            "title": "Ratio",
+            "description": "Vendor reforge ratio"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price",
+            "description": "Current price"
+          },
+          "input_cost": {
+            "type": "number",
+            "title": "Input Cost",
+            "description": "Input cost for this step"
+          },
+          "output_value": {
+            "type": "number",
+            "title": "Output Value",
+            "description": "Output value for this step"
+          },
+          "profit": {
+            "type": "number",
+            "title": "Profit",
+            "description": "Profit for this step"
+          },
+          "profit_pct": {
+            "type": "number",
+            "title": "Profit Pct",
+            "description": "Profit percentage for this step"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "name_en",
+          "ratio",
+          "price",
+          "input_cost",
+          "output_value",
+          "profit",
+          "profit_pct"
+        ],
+        "title": "LiquidChainStepData",
+        "description": "Single step in a liquid chain."
+      },
+      "OptimalCurrencyResponse": {
+        "properties": {
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "League name"
+          },
+          "anchor_id": {
+            "type": "string",
+            "title": "Anchor Id",
+            "description": "Anchor currency used for price normalization"
+          },
+          "optimal_payment_by_pair": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Optimal Payment By Pair",
+            "description": "Optimal payment per pair key"
+          },
+          "cross_rate_flips": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cross Rate Flips",
+            "description": "Cross-rate flip opportunities"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "league",
+          "anchor_id",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "OptimalCurrencyResponse",
+        "description": "Response for GET /api/v1/arbitrage/optimal-currency."
+      },
+      "OptimizerMatrixResponse": {
+        "properties": {
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Currencies",
+            "description": "Currency API IDs (row/column labels)"
+          },
+          "matrix": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Matrix",
+            "description": "N\u00d7N rate matrix"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size",
+            "description": "Matrix dimension (number of currencies)"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "size",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "OptimizerMatrixResponse",
+        "description": "Response for GET /api/v1/optimizer/matrix."
+      },
+      "OptimizerPathResponse": {
+        "properties": {
+          "from_currency": {
+            "type": "string",
+            "title": "From Currency",
+            "description": "Source currency API ID"
+          },
+          "to_currency": {
+            "type": "string",
+            "title": "To Currency",
+            "description": "Target currency API ID"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount",
+            "description": "Amount of source currency"
+          },
+          "path": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Path",
+            "description": "Optimal conversion path (currency API IDs)"
+          },
+          "step_rates": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Step Rates",
+            "description": "Exchange rate for each step"
+          },
+          "effective_rate": {
+            "type": "number",
+            "title": "Effective Rate",
+            "description": "Effective rate along the path"
+          },
+          "output_amount": {
+            "type": "number",
+            "title": "Output Amount",
+            "description": "Expected output amount"
+          },
+          "direct_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Rate",
+            "description": "Direct exchange rate (if available)"
+          },
+          "direct_output_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Output Amount",
+            "description": "Output amount via direct rate"
+          },
+          "path_advantage_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path Advantage Pct",
+            "description": "Path advantage over direct rate (%)"
+          },
+          "hops": {
+            "type": "integer",
+            "title": "Hops",
+            "description": "Number of hops in the path"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_currency",
+          "to_currency",
+          "amount",
+          "effective_rate",
+          "output_amount",
+          "hops",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "OptimizerPathResponse",
+        "description": "Response for GET /api/v1/optimizer/path."
+      },
+      "PairData": {
+        "properties": {
+          "pair": {
+            "type": "string",
+            "title": "Pair",
+            "description": "Trading pair key, e.g. 'divine/exalted'"
+          },
+          "currency_from": {
+            "type": "string",
+            "title": "Currency From",
+            "description": "Source currency API ID"
+          },
+          "currency_to": {
+            "type": "string",
+            "title": "Currency To",
+            "description": "Target currency API ID"
+          },
+          "raw_rate": {
+            "type": "number",
+            "title": "Raw Rate",
+            "description": "Raw exchange rate"
+          },
+          "volume_traded": {
+            "type": "integer",
+            "title": "Volume Traded",
+            "description": "24h traded volume"
+          },
+          "stock_value": {
+            "type": "number",
+            "title": "Stock Value",
+            "description": "Stock/listed value"
+          },
+          "volatility": {
+            "type": "number",
+            "title": "Volatility",
+            "description": "Momentum-based volatility for currency_from"
+          },
+          "momentum": {
+            "type": "number",
+            "title": "Momentum",
+            "description": "Price momentum for currency_from"
+          },
+          "acceleration": {
+            "type": "number",
+            "title": "Acceleration",
+            "description": "Price acceleration for currency_from"
+          },
+          "to_volatility": {
+            "type": "number",
+            "title": "To Volatility",
+            "description": "Momentum-based volatility for currency_to"
+          },
+          "to_momentum": {
+            "type": "number",
+            "title": "To Momentum",
+            "description": "Price momentum for currency_to"
+          },
+          "cluster_from": {
+            "type": "string",
+            "title": "Cluster From",
+            "description": "Cluster label for currency_from"
+          },
+          "cluster_to": {
+            "type": "string",
+            "title": "Cluster To",
+            "description": "Cluster label for currency_to"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp",
+            "description": "Rate timestamp (ISO 8601)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pair",
+          "currency_from",
+          "currency_to",
+          "raw_rate",
+          "volume_traded",
+          "stock_value",
+          "volatility",
+          "momentum",
+          "acceleration",
+          "to_volatility",
+          "to_momentum",
+          "cluster_from",
+          "cluster_to"
+        ],
+        "title": "PairData",
+        "description": "Single trading pair data with metrics."
+      },
+      "PhaseResponse": {
+        "properties": {
+          "phase": {
+            "type": "string",
+            "title": "Phase",
+            "description": "Current league phase: EARLY, MID, LATE, MATURE"
+          },
+          "days_since_reference": {
+            "type": "number",
+            "title": "Days Since Reference",
+            "description": "Days since league start or major patch"
+          },
+          "reference_currency": {
+            "type": "string",
+            "title": "Reference Currency",
+            "description": "Reference currency for the phase"
+          },
+          "recommended_strategy": {
+            "type": "string",
+            "title": "Recommended Strategy",
+            "description": "Recommended trading strategy for this phase"
+          },
+          "min_spread_after_fees": {
+            "type": "number",
+            "title": "Min Spread After Fees",
+            "description": "Minimum spread after fees for profitability"
+          },
+          "max_hold_time": {
+            "type": "string",
+            "title": "Max Hold Time",
+            "description": "Maximum recommended hold time (human-readable, e.g. '2 hours')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phase",
+          "days_since_reference",
+          "reference_currency",
+          "recommended_strategy",
+          "min_spread_after_fees",
+          "max_hold_time"
+        ],
+        "title": "PhaseResponse",
+        "description": "Response for GET /api/v1/phase."
+      },
+      "PriceForPairResponse": {
+        "properties": {
+          "pair": {
+            "type": "string",
+            "title": "Pair",
+            "description": "Trading pair"
+          },
+          "bid": {
+            "type": "number",
+            "title": "Bid",
+            "description": "Bid price"
+          },
+          "ask": {
+            "type": "number",
+            "title": "Ask",
+            "description": "Ask price"
+          },
+          "mid_price": {
+            "type": "number",
+            "title": "Mid Price",
+            "description": "Mid price"
+          },
+          "volume_24h": {
+            "type": "integer",
+            "title": "Volume 24H",
+            "description": "24h volume"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "Price timestamp (ISO 8601)"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "description": "Whether data is from a stale snapshot"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pair",
+          "bid",
+          "ask",
+          "mid_price",
+          "volume_24h",
+          "timestamp",
+          "stale",
+          "data_available"
+        ],
+        "title": "PriceForPairResponse",
+        "description": "Response for GET /api/v1/prices/{pair}."
+      },
+      "PricesResponse": {
+        "properties": {
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "League name"
+          },
+          "phase": {
+            "type": "string",
+            "title": "Phase",
+            "description": "Current league phase"
+          },
+          "rates": {
+            "items": {
+              "$ref": "#/components/schemas/PairData"
+            },
+            "type": "array",
+            "title": "Rates",
+            "description": "All trading pair data"
+          },
+          "base_currency": {
+            "type": "string",
+            "title": "Base Currency",
+            "description": "Base currency for rates"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "description": "Whether data is from a stale snapshot"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether any data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "league",
+          "phase",
+          "base_currency",
+          "stale",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "PricesResponse",
+        "description": "Response for GET /api/v1/prices."
+      },
+      "QuantizedAnalysisData": {
+        "properties": {
+          "q_spreads": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/QuantizedSpreadData"
+            },
+            "type": "object",
+            "title": "Q Spreads"
+          },
+          "min_profitable_lot": {
+            "type": "integer",
+            "title": "Min Profitable Lot",
+            "description": "Minimum lot size for profitability"
+          },
+          "optimal_lot_profit_pct": {
+            "type": "number",
+            "title": "Optimal Lot Profit Pct",
+            "description": "Profit % for optimal lot size"
+          },
+          "recommended_ratio": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Recommended Ratio",
+            "description": "Recommended buy/sell ratio"
+          },
+          "brick_resistance": {
+            "type": "number",
+            "title": "Brick Resistance",
+            "description": "Brick resistance score"
+          },
+          "theoretical_spread": {
+            "type": "number",
+            "title": "Theoretical Spread",
+            "description": "Theoretical spread without quantization"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_profitable_lot",
+          "optimal_lot_profit_pct",
+          "brick_resistance",
+          "theoretical_spread"
+        ],
+        "title": "QuantizedAnalysisData",
+        "description": "Full quantized analysis for a flip opportunity."
+      },
+      "QuantizedSpreadData": {
+        "properties": {
+          "lot_size": {
+            "type": "integer",
+            "title": "Lot Size",
+            "description": "Lot size in units"
+          },
+          "actual_cost": {
+            "type": "number",
+            "title": "Actual Cost",
+            "description": "Actual cost for this lot"
+          },
+          "actual_revenue": {
+            "type": "number",
+            "title": "Actual Revenue",
+            "description": "Actual revenue for this lot"
+          },
+          "net_profit": {
+            "type": "number",
+            "title": "Net Profit",
+            "description": "Net profit after fees"
+          },
+          "gross_profit_pct": {
+            "type": "number",
+            "title": "Gross Profit Pct",
+            "description": "Gross profit percentage"
+          },
+          "q_spread": {
+            "type": "number",
+            "title": "Q Spread",
+            "description": "Quantized spread"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lot_size",
+          "actual_cost",
+          "actual_revenue",
+          "net_profit",
+          "gross_profit_pct",
+          "q_spread"
+        ],
+        "title": "QuantizedSpreadData",
+        "description": "Quantized spread analysis for a specific lot size."
+      },
+      "ScannerOpportunityData": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "description": "Currency API identifier"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Composite flip score (0-1)"
+          },
+          "spread": {
+            "type": "number",
+            "title": "Spread",
+            "description": "Raw spread percentage"
+          },
+          "spread_after_fees": {
+            "type": "number",
+            "title": "Spread After Fees",
+            "description": "Spread after exchange fees"
+          },
+          "volume_24h": {
+            "type": "integer",
+            "title": "Volume 24H",
+            "description": "24h traded volume"
+          },
+          "momentum": {
+            "type": "number",
+            "title": "Momentum",
+            "description": "Price momentum"
+          },
+          "volatility": {
+            "type": "number",
+            "title": "Volatility",
+            "description": "Price volatility"
+          },
+          "cluster": {
+            "type": "string",
+            "title": "Cluster",
+            "description": "Cluster label"
+          },
+          "bid": {
+            "type": "number",
+            "title": "Bid",
+            "description": "Bid price"
+          },
+          "ask": {
+            "type": "number",
+            "title": "Ask",
+            "description": "Ask price"
+          },
+          "mid_price": {
+            "type": "number",
+            "title": "Mid Price",
+            "description": "Mid price"
+          },
+          "quantized_analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantizedAnalysisData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tier_distance": {
+            "type": "integer",
+            "title": "Tier Distance",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "score",
+          "spread",
+          "spread_after_fees",
+          "volume_24h",
+          "momentum",
+          "volatility",
+          "cluster",
+          "bid",
+          "ask",
+          "mid_price"
+        ],
+        "title": "ScannerOpportunityData",
+        "description": "Single scanner result with detailed metrics."
+      },
+      "ScannerParams": {
+        "properties": {
+          "min_score": {
+            "type": "number",
+            "title": "Min Score"
+          },
+          "max_score": {
+            "type": "number",
+            "title": "Max Score"
+          },
+          "min_volume": {
+            "type": "integer",
+            "title": "Min Volume"
+          },
+          "max_spread": {
+            "type": "number",
+            "title": "Max Spread"
+          },
+          "min_spread": {
+            "type": "number",
+            "title": "Min Spread"
+          },
+          "cluster": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cluster"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "sort_by": {
+            "type": "string",
+            "title": "Sort By"
+          },
+          "sort_dir": {
+            "type": "string",
+            "title": "Sort Dir"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_score",
+          "max_score",
+          "min_volume",
+          "max_spread",
+          "min_spread",
+          "cluster",
+          "currency",
+          "sort_by",
+          "sort_dir",
+          "limit"
+        ],
+        "title": "ScannerParams",
+        "description": "Parameters used for the scan."
+      },
+      "ScannerResponse": {
+        "properties": {
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "League name"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total results after filtering"
+          },
+          "opportunities": {
+            "items": {
+              "$ref": "#/components/schemas/ScannerOpportunityData"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          },
+          "scan_params": {
+            "$ref": "#/components/schemas/ScannerParams",
+            "description": "Parameters used for the scan"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "league",
+          "total",
+          "scan_params",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "ScannerResponse",
+        "description": "Response for GET /api/v1/scanner/scan."
+      },
+      "StorageValueInputs": {
+        "properties": {
+          "momentum": {
+            "type": "number",
+            "title": "Momentum",
+            "description": "Price momentum"
+          },
+          "volatility": {
+            "type": "number",
+            "title": "Volatility",
+            "description": "Price volatility"
+          },
+          "acceleration": {
+            "type": "number",
+            "title": "Acceleration",
+            "description": "Price acceleration"
+          },
+          "liquidity_score": {
+            "type": "number",
+            "title": "Liquidity Score",
+            "description": "Liquidity score"
+          },
+          "horizon_hours": {
+            "type": "integer",
+            "title": "Horizon Hours",
+            "description": "Projection horizon in hours"
+          },
+          "significance_level": {
+            "type": "number",
+            "title": "Significance Level",
+            "description": "Statistical significance level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "momentum",
+          "volatility",
+          "acceleration",
+          "liquidity_score",
+          "horizon_hours",
+          "significance_level"
+        ],
+        "title": "StorageValueInputs",
+        "description": "Inputs used for storage value computation."
+      },
+      "StorageValueResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "description": "Currency API identifier"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity",
+            "description": "Number of units",
+            "default": 1.0
+          },
+          "current_price": {
+            "type": "number",
+            "title": "Current Price",
+            "description": "Current price in base currency"
+          },
+          "projected_price": {
+            "type": "number",
+            "title": "Projected Price",
+            "description": "Projected price after horizon"
+          },
+          "risk_discount": {
+            "type": "number",
+            "title": "Risk Discount",
+            "description": "Risk discount factor (0-1)"
+          },
+          "adjusted_price": {
+            "type": "number",
+            "title": "Adjusted Price",
+            "description": "Risk-adjusted projected price"
+          },
+          "net_value": {
+            "type": "number",
+            "title": "Net Value",
+            "description": "Net value (adjusted - current)"
+          },
+          "ratio": {
+            "type": "number",
+            "title": "Ratio",
+            "description": "Net value / current price ratio"
+          },
+          "decision": {
+            "type": "string",
+            "title": "Decision",
+            "description": "Decision: BUY/HOLD, SELL/CONVERT, NEUTRAL"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "total_current_value": {
+            "type": "number",
+            "title": "Total Current Value",
+            "description": "Total current value (quantity * current_price)",
+            "default": 0.0
+          },
+          "total_projected_value": {
+            "type": "number",
+            "title": "Total Projected Value",
+            "description": "Total projected value",
+            "default": 0.0
+          },
+          "total_net_value": {
+            "type": "number",
+            "title": "Total Net Value",
+            "description": "Total net value",
+            "default": 0.0
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StorageValueInputs"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ],
+            "title": "Inputs",
+            "description": "Computation inputs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "current_price",
+          "projected_price",
+          "risk_discount",
+          "adjusted_price",
+          "net_value",
+          "ratio",
+          "decision",
+          "data_available"
+        ],
+        "title": "StorageValueResponse",
+        "description": "Response for GET /api/v1/storage-value/{currency}."
+      },
+      "TierBoundaries": {
+        "properties": {
+          "t0_min": {
+            "type": "number",
+            "title": "T0 Min"
+          },
+          "t1_min": {
+            "type": "number",
+            "title": "T1 Min"
+          },
+          "t2_min": {
+            "type": "number",
+            "title": "T2 Min"
+          },
+          "t3_min": {
+            "type": "number",
+            "title": "T3 Min"
+          },
+          "t4_min": {
+            "type": "number",
+            "title": "T4 Min"
+          }
+        },
+        "type": "object",
+        "required": [
+          "t0_min",
+          "t1_min",
+          "t2_min",
+          "t3_min",
+          "t4_min"
+        ],
+        "title": "TierBoundaries",
+        "description": "Tier boundary thresholds."
+      },
+      "TierItem": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id",
+            "description": "Currency API identifier"
+          },
+          "tier": {
+            "type": "integer",
+            "title": "Tier",
+            "description": "Tier number (0=highest value)"
+          },
+          "tier_label": {
+            "type": "string",
+            "title": "Tier Label",
+            "description": "Human-readable tier label"
+          },
+          "relative_price": {
+            "type": "number",
+            "title": "Relative Price",
+            "description": "Price relative to tier anchor"
+          },
+          "tier_anchor": {
+            "type": "string",
+            "title": "Tier Anchor",
+            "description": "Anchor currency for this tier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "tier",
+          "tier_label",
+          "relative_price",
+          "tier_anchor"
+        ],
+        "title": "TierItem",
+        "description": "Single currency tier classification."
+      },
+      "TiersResponse": {
+        "properties": {
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/TierItem"
+            },
+            "type": "array",
+            "title": "Tiers"
+          },
+          "boundaries": {
+            "$ref": "#/components/schemas/TierBoundaries",
+            "description": "Tier boundary thresholds"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "boundaries",
+          "data_available"
+        ],
+        "title": "TiersResponse",
+        "description": "Response for GET /api/v1/tiers."
+      },
+      "TrendData": {
+        "properties": {
+          "api_id": {
+            "type": "string",
+            "title": "Api Id",
+            "description": "Currency API identifier"
+          },
+          "current_price": {
+            "type": "number",
+            "title": "Current Price",
+            "description": "Current price"
+          },
+          "change_24h_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change 24H Pct",
+            "description": "24h price change percentage"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "description": "Trend direction: up, down, stable, unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_id",
+          "current_price",
+          "direction"
+        ],
+        "title": "TrendData",
+        "description": "Trend data for a single currency."
+      },
+      "TriangularResponse": {
+        "properties": {
+          "league": {
+            "type": "string",
+            "title": "League",
+            "description": "League name"
+          },
+          "opportunities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Opportunities",
+            "description": "Triangular arbitrage opportunities"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total triangular cycles found"
+          },
+          "cross_rate_warning": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Rate Warning",
+            "description": "Warning about suspicious cross-rate triples"
+          },
+          "data_available": {
+            "type": "boolean",
+            "title": "Data Available",
+            "description": "Whether data is available"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At",
+            "description": "ISO 8601 timestamp of data fetch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "league",
+          "total",
+          "data_available",
+          "fetched_at"
+        ],
+        "title": "TriangularResponse",
+        "description": "Response for GET /api/v1/arbitrage/triangular."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -86,6 +86,41 @@ class DataSnapshot:
     valid: bool = False
 
     # ------------------------------------------------------------------
+    # Pickle safety — guarantee DataSnapshot is always picklable
+    # ------------------------------------------------------------------
+
+    def __getstate__(self) -> dict:
+        """Custom pickle: strip any non-picklable attributes that might
+        have been attached at runtime (e.g. via monkey-patching or
+        accidental closure capture).  Only the known dataclass fields
+        are serialized.
+        """
+        state = {
+            'exchange_rates': self.exchange_rates,
+            'currencies': self.currencies,
+            'currency_metadata': self.currency_metadata,
+            'price_histories': self.price_histories,
+            'current_prices': self.current_prices,
+            'prices_in_base': self.prices_in_base,
+            'tiers': self.tiers,
+            'fetched_at': self.fetched_at,
+            'valid': self.valid,
+        }
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        """Restore from pickle — set all known fields from state dict."""
+        self.exchange_rates = state.get('exchange_rates', {})
+        self.currencies = state.get('currencies', {})
+        self.currency_metadata = state.get('currency_metadata', [])
+        self.price_histories = state.get('price_histories', {})
+        self.current_prices = state.get('current_prices', {})
+        self.prices_in_base = state.get('prices_in_base', {})
+        self.tiers = state.get('tiers', {})
+        self.fetched_at = state.get('fetched_at', datetime.now(timezone.utc))
+        self.valid = state.get('valid', False)
+
+    # ------------------------------------------------------------------
     # Convenience lookup methods
     # ------------------------------------------------------------------
 

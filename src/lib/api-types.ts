@@ -609,6 +609,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/prices/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sse Price Stream
+         * @description SSE endpoint for live price updates.
+         *
+         *     Returns a text/event-stream that sends price_update events when
+         *     the DataSnapshot changes. Clients should reconnect on disconnect.
+         */
+        get: operations["sse_price_stream_api_v1_prices_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/ping": {
         parameters: {
             query?: never;
@@ -1201,74 +1224,6 @@ export interface components {
             severity: string;
         };
         /**
-         * FlipOpportunityData
-         * @description Single flip opportunity.
-         */
-        FlipOpportunityData: {
-            /**
-             * Currency
-             * @description Currency API identifier
-             */
-            currency: string;
-            /**
-             * Score
-             * @description Composite flip score (0-1)
-             */
-            score: number;
-            /**
-             * Spread
-             * @description Raw spread percentage
-             */
-            spread: number;
-            /**
-             * Spread After Fees
-             * @description Spread after exchange fees
-             */
-            spread_after_fees: number;
-            /**
-             * Volume 24H
-             * @description 24h traded volume
-             */
-            volume_24h: number;
-            /**
-             * Momentum
-             * @description Price momentum
-             */
-            momentum: number;
-            /**
-             * Volatility
-             * @description Price volatility
-             */
-            volatility: number;
-            /**
-             * Cluster
-             * @description Cluster label: stable, moderate, volatile_illiquid
-             */
-            cluster: string;
-            /**
-             * Bid
-             * @description Bid price
-             */
-            bid: number;
-            /**
-             * Ask
-             * @description Ask price
-             */
-            ask: number;
-            /**
-             * Mid Price
-             * @description Mid price
-             */
-            mid_price: number;
-            quantized_analysis?: components["schemas"]["QuantizedAnalysisData"] | null;
-            /**
-             * Tier Distance
-             * @description Tier distance between pair
-             * @default 0
-             */
-            tier_distance: number;
-        };
-        /**
          * FlipsResponse
          * @description Response for GET /api/v1/arbitrage/flips.
          */
@@ -1278,28 +1233,32 @@ export interface components {
              * @description League name
              */
             league: string;
-            /** Flips */
-            flips?: components["schemas"]["FlipOpportunityData"][];
+            /**
+             * Opportunities
+             * @description Flip opportunities (rich format with display names)
+             */
+            opportunities?: {
+                [key: string]: unknown;
+            }[];
             /**
              * Total
              * @description Total number of flips found
              */
             total: number;
             /**
-             * Phase
-             * @description Current league phase
+             * Event Status
+             * @description Active event status
              */
-            phase: string;
+            event_status?: {
+                [key: string]: unknown;
+            };
             /**
-             * Base Currency
-             * @description Base currency
+             * Data Freshness
+             * @description Data freshness metadata
              */
-            base_currency: string;
-            /**
-             * Stale
-             * @description Whether data is from a stale snapshot
-             */
-            stale: boolean;
+            data_freshness?: {
+                [key: string]: unknown;
+            };
             /**
              * Data Available
              * @description Whether data is available
@@ -1652,53 +1611,44 @@ export interface components {
             profit_pct: number;
         };
         /**
-         * OptimalCurrencyData
-         * @description Optimal payment currency recommendation.
-         */
-        OptimalCurrencyData: {
-            /**
-             * Currency
-             * @description Recommended currency API ID
-             */
-            currency: string;
-            /**
-             * Text
-             * @description Human-readable currency name
-             */
-            text: string;
-            /**
-             * Savings Pct
-             * @description Savings percentage vs base currency
-             */
-            savings_pct: number;
-            /**
-             * Volume 24H
-             * @description 24h volume
-             */
-            volume_24h: number;
-            /**
-             * Spread
-             * @description Spread percentage
-             */
-            spread: number;
-        };
-        /**
          * OptimalCurrencyResponse
          * @description Response for GET /api/v1/arbitrage/optimal-currency.
          */
         OptimalCurrencyResponse: {
-            /** Optimal */
-            optimal?: components["schemas"]["OptimalCurrencyData"][];
             /**
-             * Base Currency
-             * @description Base currency for comparison
+             * League
+             * @description League name
              */
-            base_currency: string;
+            league: string;
+            /**
+             * Anchor Id
+             * @description Anchor currency used for price normalization
+             */
+            anchor_id: string;
+            /**
+             * Optimal Payment By Pair
+             * @description Optimal payment per pair key
+             */
+            optimal_payment_by_pair?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Cross Rate Flips
+             * @description Cross-rate flip opportunities
+             */
+            cross_rate_flips?: {
+                [key: string]: unknown;
+            }[];
             /**
              * Data Available
              * @description Whether data is available
              */
             data_available: boolean;
+            /**
+             * Fetched At
+             * @description ISO 8601 timestamp of data fetch
+             */
+            fetched_at: string;
         };
         /**
          * OptimizerMatrixResponse
@@ -1910,9 +1860,9 @@ export interface components {
             min_spread_after_fees: number;
             /**
              * Max Hold Time
-             * @description Maximum recommended hold time in hours
+             * @description Maximum recommended hold time (human-readable, e.g. '2 hours')
              */
-            max_hold_time: number;
+            max_hold_time: string;
         };
         /**
          * PriceForPairResponse
@@ -2402,37 +2352,6 @@ export interface components {
             direction: string;
         };
         /**
-         * TriangularPath
-         * @description Single triangular arbitrage path.
-         */
-        TriangularPath: {
-            /**
-             * Path
-             * @description Ordered list of currency API IDs
-             */
-            path: string[];
-            /**
-             * Expected Profit Pct
-             * @description Expected profit percentage
-             */
-            expected_profit_pct: number;
-            /**
-             * Step Rates
-             * @description Exchange rates for each step
-             */
-            step_rates: number[];
-            /**
-             * Volume 24H Min
-             * @description Minimum 24h volume across all pairs
-             */
-            volume_24h_min: number;
-            /**
-             * Is Profitable
-             * @description Whether the path is profitable after fees
-             */
-            is_profitable: boolean;
-        };
-        /**
          * TriangularResponse
          * @description Response for GET /api/v1/arbitrage/triangular.
          */
@@ -2442,13 +2361,25 @@ export interface components {
              * @description League name
              */
             league: string;
-            /** Cycles */
-            cycles?: components["schemas"]["TriangularPath"][];
+            /**
+             * Opportunities
+             * @description Triangular arbitrage opportunities
+             */
+            opportunities?: {
+                [key: string]: unknown;
+            }[];
             /**
              * Total
              * @description Total triangular cycles found
              */
             total: number;
+            /**
+             * Cross Rate Warning
+             * @description Warning about suspicious cross-rate triples
+             */
+            cross_rate_warning?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Data Available
              * @description Whether data is available
@@ -3229,6 +3160,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sse_price_stream_api_v1_prices_stream_get: {
+        parameters: {
+            query?: {
+                /** @description Threshold % for change notifications */
+                threshold_pct?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

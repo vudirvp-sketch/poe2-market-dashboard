@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math as _math
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -35,6 +36,8 @@ from backend.models.currency import (
     FlipOpportunity,
     LeaguePhase,
     ClusterLabel,
+    CurrencyTier,
+    PricePoint,
 )
 from backend.economy.tiers import tier_penalty, tier_distance
 from backend.economy.events import get_event_manager
@@ -49,6 +52,37 @@ router = APIRouter(prefix="/api/v1/arbitrage", tags=["arbitrage"])
 # With ProcessPoolExecutor, each concurrent request gets its own process,
 # so we limit to avoid spawning too many worker processes.
 _arbitrage_semaphore = asyncio.Semaphore(2)
+
+
+# ---------------------------------------------------------------------------
+# Picklable data bundle for ProcessPoolExecutor
+# ---------------------------------------------------------------------------
+
+@dataclass
+class FlipComputeBundle:
+    """Pre-extracted, picklable data bundle for flip computation.
+
+    ProcessPoolExecutor requires all arguments to be picklable.
+    DataSnapshot may hold unpicklable objects (e.g. indirectly through
+    HistoricalStore/sqlite3.Connection). This bundle contains ONLY the
+    data needed by _build_flip_opportunities_sync, extracted as plain
+    dicts and built-in types that are guaranteed picklable.
+
+    Created in the async wrapper (_build_flip_opportunities) and passed
+    to the sync function running in a subprocess.
+    """
+    exchange_rates: dict[str, ExchangeRate]
+    currencies: dict[str, dict]  # api_id_lower -> raw currency dict
+    price_histories_raw: dict[str, list[tuple[datetime, float]]]  # api_id -> [(timestamp, price)]
+    price_histories_prices: dict[str, list[float]]  # api_id -> [price]
+    prices_in_base: dict[str, float]
+    current_prices: dict[str, float]
+    tiers: dict[str, CurrencyTier]
+    base_currency: str
+    cache_ttl_seconds: float
+    fetched_at: datetime
+    quantization_lot_sizes: list[int]
+    quantization_max_lot_search: int
 
 
 # ---------------------------------------------------------------------------
@@ -98,22 +132,22 @@ def _find_price_24h_ago(
 # ---------------------------------------------------------------------------
 
 def _build_flip_opportunities_sync(
-    snapshot,
-    config: AppConfig,
+    bundle: FlipComputeBundle,
     phase_info,
     phase_multiplier: float,
     event_penalties: dict[str, float],
     cached_cluster_labels: dict[str, str] | None,
+    scoring_momentum_negative_threshold: float,
+    scoring_volatility_reference: float,
 ) -> list[FlipOpportunity]:
     """CPU-bound flip opportunity computation — runs in executor process.
 
     All data is pre-fetched by the async wrapper. This function receives only
-    picklable data (no sqlite3.Connection or PipelineCache references) so it
-    can safely run in ProcessPoolExecutor.
+    picklable data (no sqlite3.Connection, no PipelineCache, no DataSnapshot,
+    no AppConfig references) so it can safely run in ProcessPoolExecutor.
 
     Args:
-        snapshot: DataSnapshot with exchange rates and price histories.
-        config: Application configuration.
+        bundle: FlipComputeBundle with pre-extracted picklable data.
         phase_info: LeaguePhaseInfo from PhaseDetector.
         phase_multiplier: Float multiplier from PhaseDetector.
         event_penalties: Dict mapping currency_name → score_penalty (float).
@@ -122,22 +156,21 @@ def _build_flip_opportunities_sync(
             A penalty of 0.0 means "skip this currency entirely" (crisis event).
         cached_cluster_labels: Pre-fetched cluster labels from PipelineCache,
             or None if clustering needs to be computed fresh.
+        scoring_momentum_negative_threshold: Config value for scorer.
+        scoring_volatility_reference: Config value for scorer.
 
     Returns a sorted list of FlipOpportunity objects.
     """
-    rates = snapshot.exchange_rates
+    rates = bundle.exchange_rates
     if not rates:
         return []
 
-    # Build price history lookup from snapshot
-    currency_price_history: dict[str, list[float]] = {}
-    currency_price_history_timestamped: dict[str, list[tuple[datetime, float]]] = {}
-    for api_id_lower, points in snapshot.price_histories.items():
-        currency_price_history[api_id_lower] = [p.price for p in points]
-        currency_price_history_timestamped[api_id_lower] = [(p.timestamp, p.price) for p in points]
+    # Build price history lookup from pre-extracted data
+    currency_price_history = dict(bundle.price_histories_prices)
+    currency_price_history_timestamped = dict(bundle.price_histories_raw)
     # Also store by original-case api_id
-    for api_id_lower in list(snapshot.price_histories.keys()):
-        curr = snapshot.get_currency(api_id_lower)
+    for api_id_lower in list(bundle.price_histories_prices.keys()):
+        curr = bundle.currencies.get(api_id_lower)
         if curr:
             orig_id = curr.get("api_id", "")
             if orig_id and orig_id != api_id_lower and api_id_lower in currency_price_history:
@@ -152,10 +185,9 @@ def _build_flip_opportunities_sync(
 
     # Build price mapping — keep original prices_in_base (in base currency = exalted)
     # for profit calculation. The chaos-normalized copy is unused now.
-    prices_in_base = dict(snapshot.prices_in_base)  # prices in base currency (exalted)
+    prices_in_base = dict(bundle.prices_in_base)  # prices in base currency (exalted)
 
     # Currency clustering (cached)
-    clusterer = CurrencyClusterer(config)
     cluster_labels: dict[str, ClusterLabel] = {}
 
     try:
@@ -197,6 +229,7 @@ def _build_flip_opportunities_sync(
                     cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
 
             if len(cluster_price_histories) >= 3:
+                clusterer = CurrencyClusterer()  # Uses get_settings() defaults
                 cluster_labels_result = clusterer.fit(
                     cluster_price_histories, cluster_volumes,
                     cluster_prices_now, cluster_prices_24h_ago,
@@ -235,9 +268,9 @@ def _build_flip_opportunities_sync(
     # BFS detection
     _currencies_with_direct_base: set[str] = set()
     for _rk, _rv in rates.items():
-        if _rv.currency_to == config.league.base_currency:
+        if _rv.currency_to == bundle.base_currency:
             _currencies_with_direct_base.add(_rv.currency_from)
-        elif _rv.currency_from == config.league.base_currency:
+        elif _rv.currency_from == bundle.base_currency:
             _currencies_with_direct_base.add(_rv.currency_to)
 
     for key, rate in rates.items():
@@ -282,15 +315,15 @@ def _build_flip_opportunities_sync(
             (datetime.now(timezone.utc) - rate.timestamp).total_seconds()
             if rate.timestamp else None
         )
-        is_stale = data_age_seconds is not None and data_age_seconds > config.data.cache_ttl_prices_minutes * 60
+        is_stale = data_age_seconds is not None and data_age_seconds > bundle.cache_ttl_seconds
 
         score = compute_opportunity_score(
             bid=bid, ask=ask, mid_price=mid_price,
             volume_24h=float(rate.volume_traded), max_volume=float(max_volume),
             volatility=momentum_result.volatility, phase_multiplier=phase_multiplier,
             momentum=momentum_result.momentum,
-            momentum_neg_threshold=config.scoring.momentum_negative_threshold,
-            vol_reference=config.scoring.volatility_reference,
+            momentum_neg_threshold=scoring_momentum_negative_threshold,
+            vol_reference=scoring_volatility_reference,
             volatility_period="hourly",
         )
 
@@ -317,16 +350,16 @@ def _build_flip_opportunities_sync(
             R_buy=bid if mid_price > 0 else 0,
             R_sell=ask if mid_price > 0 else 0,
             mid_price=mid_price if mid_price > 0 else 1.0,
-            lot_sizes=config.quantization.default_lot_sizes,
-            max_lot_search=config.quantization.max_lot_search,
+            lot_sizes=bundle.quantization_lot_sizes,
+            max_lot_search=bundle.quantization_max_lot_search,
         )
 
         # Tier penalty
         t_penalty = 1.0
         t_distance = 0
-        if snapshot.tiers:
-            tier_a = snapshot.tiers.get(rate.currency_from)
-            tier_b = snapshot.tiers.get(rate.currency_to)
+        if bundle.tiers:
+            tier_a = bundle.tiers.get(rate.currency_from)
+            tier_b = bundle.tiers.get(rate.currency_to)
             if tier_a and tier_b:
                 t_penalty = tier_penalty(tier_a.tier, tier_b.tier)
                 t_distance = tier_distance(tier_a.tier, tier_b.tier)
@@ -396,7 +429,7 @@ def _build_flip_opportunities_sync(
         if net_profit_pct <= 0:
             continue
 
-        if quick_filter(opp, phase_info.phase, config=config):
+        if quick_filter(opp, phase_info.phase):
             opportunities.append(opp)
 
     opportunities.sort(key=lambda o: o.score, reverse=True)
@@ -420,6 +453,9 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     breaker cascade failures during heavy computation.
 
     PICKLE SAFETY: Only picklable data is passed to the executor.
+    The entire DataSnapshot is NOT passed — instead, we pre-extract
+    only the needed data into a FlipComputeBundle (plain dataclass
+    with only built-in types, dataclasses, and dicts).
     EventManager and PipelineCache hold sqlite3.Connection references
     that cannot be pickled — so we pre-extract the needed data
     (event_penalties dict, cached_cluster_labels dict) before calling
@@ -436,7 +472,32 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     phase_multiplier = detector.get_phase_multiplier()
     event_manager = get_event_manager(config)
 
-    # 3. Pre-extract picklable data from unpicklable objects.
+    # 3. Pre-extract picklable data into FlipComputeBundle.
+    # DataSnapshot is NOT passed to ProcessPoolExecutor because it may
+    # transitively hold unpicklable objects (e.g. sqlite3.Connection through
+    # HistoricalStore). We extract only the data needed by the sync function.
+    price_histories_raw: dict[str, list[tuple[datetime, float]]] = {}
+    price_histories_prices: dict[str, list[float]] = {}
+    for api_id_lower, points in snapshot.price_histories.items():
+        price_histories_prices[api_id_lower] = [p.price for p in points]
+        price_histories_raw[api_id_lower] = [(p.timestamp, p.price) for p in points]
+
+    bundle = FlipComputeBundle(
+        exchange_rates=dict(snapshot.exchange_rates),
+        currencies=dict(snapshot.currencies),
+        price_histories_raw=price_histories_raw,
+        price_histories_prices=price_histories_prices,
+        prices_in_base=dict(snapshot.prices_in_base),
+        current_prices=dict(snapshot.current_prices),
+        tiers=dict(snapshot.tiers),
+        base_currency=config.league.base_currency,
+        cache_ttl_seconds=config.data.cache_ttl_prices_minutes * 60.0,
+        fetched_at=snapshot.fetched_at,
+        quantization_lot_sizes=list(config.quantization.default_lot_sizes),
+        quantization_max_lot_search=config.quantization.max_lot_search,
+    )
+
+    # 4. Pre-extract picklable data from unpicklable objects.
     # EventManager holds sqlite3.Connection → can't be pickled for
     # ProcessPoolExecutor. Extract event penalties as a plain dict.
     event_penalties: dict[str, float] = {}
@@ -466,7 +527,11 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     except Exception as e:
         logger.warning("Failed to pre-extract cluster labels: %s", e)
 
-    # 4. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
+    # Pre-extract scoring config values as plain floats
+    scoring_momentum_negative_threshold = config.scoring.momentum_negative_threshold
+    scoring_volatility_reference = config.scoring.volatility_reference
+
+    # 5. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
     # Falls back to default ThreadPoolExecutor if process_pool is unavailable.
     loop = asyncio.get_running_loop()
     executor = None
@@ -484,8 +549,10 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
             loop.run_in_executor(
                 executor,
                 _build_flip_opportunities_sync,
-                snapshot, config, phase_info, phase_multiplier,
+                bundle, phase_info, phase_multiplier,
                 event_penalties, cached_cluster_labels,
+                scoring_momentum_negative_threshold,
+                scoring_volatility_reference,
             ),
             timeout=60.0,
         )
