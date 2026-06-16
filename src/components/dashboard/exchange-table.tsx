@@ -523,17 +523,17 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       />
                     </button>
                   </td>
-                  {/* Pair name with icons */}
+                  {/* Pair name with icons — P0: 16×16 icons for compact table rows */}
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       {pair.currency1IconUrl ? (
                         <img
                           src={pair.currency1IconUrl}
                           alt=""
-                          className="w-8 h-8 object-contain"  /* §1.6: 32x32px icons */
+                          className="w-4 h-4 object-contain shrink-0"  /* P0: 16×16px icons */
                         />
                       ) : (
-                        <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+                        <Coins className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
                       )}
                       <span className="font-medium text-sm truncate max-w-[120px]">
                         {pair.currency1Name}
@@ -543,10 +543,10 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                         <img
                           src={pair.currency2IconUrl}
                           alt=""
-                          className="w-8 h-8 object-contain"  /* §1.6: 32x32px icons */
+                          className="w-4 h-4 object-contain shrink-0"  /* P0: 16×16px icons */
                         />
                       ) : (
-                        <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+                        <Coins className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
                       )}
                       <span className="font-medium text-sm truncate max-w-[120px]">
                         {pair.currency2Name}
@@ -562,9 +562,9 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                             ? pair.relativePrice / pair.currency2RelativePrice
                             : pair.relativePrice ?? 0
                         }
-                        baseCurrencyApiId={uiState.baseCurrencyApiId ?? "exalted"}
+                        baseCurrencyApiId={uiState.baseCurrencyApiId === "_adaptive" ? "exalted" : (uiState.baseCurrencyApiId ?? "exalted")}
                         targetCurrencyApiId={uiState.baseCurrencyApiId ?? "exalted"}
-                        baseCurrencyText={uiState.baseCurrencyText ?? ""}
+                        baseCurrencyText={uiState.baseCurrencyApiId === "_adaptive" ? "Exalted Orb" : (uiState.baseCurrencyText ?? "")}
                         exchangePairsForConversion={exchangePairsForConversion}
                       />
                     </span>

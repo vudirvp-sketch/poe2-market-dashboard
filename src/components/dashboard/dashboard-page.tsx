@@ -995,7 +995,10 @@ export function Dashboard() {
           setReferenceCurrency(apiId);
           // P0-2: Sync base currency in store with the selected reference currency
           // so that formatPrice() shows the correct suffix (e.g. "Div" instead of "Exa")
-          if (apiId && referenceCurrencies) {
+          // P0: "_adaptive" mode — store the special value; useDisplayPrice handles per-row logic
+          if (apiId === "_adaptive") {
+            setBaseCurrency("_adaptive", "Adaptive");
+          } else if (apiId && referenceCurrencies) {
             const selected = referenceCurrencies.find((c) => c.apiId === apiId);
             if (selected) {
               setBaseCurrency(selected.apiId, selected.text);

@@ -67,10 +67,13 @@ const VirtualCurrencyCard = memo(function VirtualCurrencyCard({
     useDashboardStore();
 
   // P0-2 Step 2B: Client-side price conversion fallback
+  // P0: When adaptive mode is active, useDisplayPrice auto-selects the best unit per card
+  const effectiveBaseCurrencyId = uiState.baseCurrencyApiId === "_adaptive" ? "exalted" : uiState.baseCurrencyApiId;
+  const effectiveTargetCurrencyId = referenceCurrency || uiState.baseCurrencyApiId;
   const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
     priceInBase: item.relativePrice ?? item.chaosEquivalentRate,
-    baseCurrencyApiId: uiState.baseCurrencyApiId,
-    targetCurrencyApiId: referenceCurrency || uiState.baseCurrencyApiId,
+    baseCurrencyApiId: effectiveBaseCurrencyId,
+    targetCurrencyApiId: effectiveTargetCurrencyId,
     exchangePairs: exchangePairsForConversion,
   });
   const fav = isFavorite(item.id);

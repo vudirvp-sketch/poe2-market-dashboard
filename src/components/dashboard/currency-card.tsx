@@ -53,12 +53,15 @@ export const CurrencyCard = memo(function CurrencyCard({
   // P0-2 Step 2B: Client-side price conversion fallback.
   // When exchangePairs is provided and the user's reference currency differs
   // from the base, useDisplayPrice converts the price client-side.
+  // P0: When adaptive mode is active, useDisplayPrice auto-selects the best unit per card.
   // If exchangePairs is not provided (default), falls back to formatPrice()
   // which uses the API-recalculated price (Step 2A).
+  const effectiveBaseCurrencyId = uiState.baseCurrencyApiId === "_adaptive" ? "exalted" : uiState.baseCurrencyApiId;
+  const effectiveTargetCurrencyId = referenceCurrency || uiState.baseCurrencyApiId;
   const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
     priceInBase: item.relativePrice ?? item.chaosEquivalentRate,
-    baseCurrencyApiId: uiState.baseCurrencyApiId,
-    targetCurrencyApiId: referenceCurrency || uiState.baseCurrencyApiId,
+    baseCurrencyApiId: effectiveBaseCurrencyId,
+    targetCurrencyApiId: effectiveTargetCurrencyId,
     exchangePairs,
   });
   const fav = isFavorite(item.id);

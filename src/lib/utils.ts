@@ -18,6 +18,8 @@ export function getCurrencyShortName(
   text?: string | null,
   apiId?: string | null,
 ): string {
+  // P0: Adaptive mode — fallback label since actual unit is per-row
+  if (apiId === "_adaptive") return "Adaptive";
   if (apiId === "exalted") return "Exa";
   if (apiId === "divine") return "Div";
   if (apiId === "chaos") return "Chaos";

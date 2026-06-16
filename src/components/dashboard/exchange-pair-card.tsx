@@ -51,10 +51,13 @@ export const ExchangePairCard = memo(function ExchangePairCard({
     useDashboardStore();
 
   // P0-2 Step 2B: Client-side price conversion fallback
+  // P0: When adaptive mode is active, useDisplayPrice auto-selects the best unit
+  const effectiveBaseId = uiState.baseCurrencyApiId === "_adaptive" ? "exalted" : uiState.baseCurrencyApiId;
+  const effectiveTargetId = uiState.baseCurrencyApiId;
   const { displayPrice, currencyLabel, wasConverted } = useDisplayPrice({
     priceInBase: pair.relativePrice,
-    baseCurrencyApiId: uiState.baseCurrencyApiId,
-    targetCurrencyApiId: uiState.baseCurrencyApiId,
+    baseCurrencyApiId: effectiveBaseId,
+    targetCurrencyApiId: effectiveTargetId,
     exchangePairs: exchangePairsForConversion,
   });
   const isFav = uiState.exchange.favorites.includes(pair.id);

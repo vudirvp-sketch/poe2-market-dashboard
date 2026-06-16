@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 15.0 | **Date:** 2026-06-16
+> **Version:** 16.0 | **Date:** 2026-06-16
 
 ---
 
@@ -25,13 +25,13 @@
 | `src/app/api/flipper/events/route.ts` | Events proxy — transforms camelCase→snake_case on POST | Body: eventType→event_type, expiryHours→expires_at |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
-| `src/components/dashboard/header.tsx` | Header with Realm+League, Search, Base Currency, More menu | Phase badge, WS status, dense mode toggle |
-| `src/components/dashboard/sparkline.tsx` | Inline SVG sparkline — **needs bezier upgrade** | Currently polyline, should be cubic bezier |
-| `src/components/dashboard/exchange-table.tsx` | Sortable table for exchange pairs | Uses useDisplayPrice, BestPaymentBadge, PairHoverPreview |
+| `src/components/dashboard/header.tsx` | Header with Realm+League, Search, Base Currency, More menu | Phase badge, WS status, dense mode toggle, **Adaptive** option in currency selector |
+| `src/components/dashboard/sparkline.tsx` | Inline SVG sparkline — **cubic bezier <path> + trend fill** | Catmull-Rom→Bezier, green/red trend colors |
+| `src/components/dashboard/exchange-table.tsx` | Sortable table for exchange pairs | 16×16 icons, useDisplayPrice with adaptive, BestPaymentBadge |
 | `src/components/dashboard/multi-currency-price.tsx` | Multi-currency price display | Uses useCrossRates, shows best/cheapest option |
-| `src/hooks/use-display-price.ts` | Client-side price conversion hook | Fallback when API doesn't recalculate |
+| `src/hooks/use-display-price.ts` | Client-side price conversion + **Adaptive Value Display** | "_adaptive" → auto-selects Div/Exa/Chaos per row |
 | `src/hooks/use-cross-rates.ts` | Cross-rate computation hook | Builds relativePriceMap from exchange pairs |
-| `src/lib/store.ts` | Zustand store — favorites, comparison, alerts, persisted UI | baseCurrencyApiId, denseMode, watchlist |
+| `src/lib/store.ts` | Zustand store — favorites, comparison, alerts, persisted UI | baseCurrencyApiId (supports "_adaptive"), denseMode, watchlist |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
 
@@ -68,6 +68,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 12. **EventType enum has 6 values**: major_patch, minor_patch, league_start, economy_shift, streamer_hype, other
 13. **Events POST proxy transforms body**: eventType→event_type, affectedCurrencies→affected_currencies, expiryHours→expires_at (ISO string)
 14. **PhaseDetector: only major_patch resets phase clock** — league_start and economy_shift affect scoring only, not phase detection
+15. **Adaptive mode ("_adaptive")**: `baseCurrencyApiId` can be "_adaptive" — useDisplayPrice auto-selects Div/Exa/Chaos per row; `getCurrencyShortName()` returns "Adaptive" as fallback label
 
 ## 4. Known Bugs / Frequent Problems
 
@@ -77,7 +78,6 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 | Mock provider causes 500 on /prices | exchange_rates dict uses tuple keys | Use string keys like "exalted/chaos" |
 | E2E: flipper health mock shows backend offline | Mock returns `status: "online"` but dashboard checks `status === "ok"` | Use `status: "ok"` in health mock |
 | E2E: events sidebar button not found | Events is inside "More" dropdown menu | Click "More" (⋮) first, then Events item |
-| Sparkline looks jagged | Uses polyline (linear interpolation) | Replace with cubic bezier SVG path (see REFACTOR_PLAN P0) |
 
 ## 5. API Endpoints (all under /api/v1/)
 

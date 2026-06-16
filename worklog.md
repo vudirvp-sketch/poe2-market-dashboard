@@ -21,19 +21,38 @@ Agent: Main Agent
 Task: Analyze poe.ninja currency page and identify UI/logic patterns to adopt in dashboard
 
 Work Log:
-- Used agent-browser to render poe.ninja/poe2/economy/runesofaldur/currency (SPA, page_reader returns empty)
+- Used agent-browser to render poe.ninja/poe2/economy/runesofaldur/currency
 - Captured full accessibility tree snapshot of poe.ninja UI
-- Extracted HTML structure of: Value Display dropdown, League selector, sidebar nav, breadcrumb, sparkline SVG, table layout, Show more button
-- Extracted CSS: dropdown component (floating label, size variants), sparkline (area fill + line with colors), sidebar link styles, Cool Grey palette tokens
-- Read dashboard repo: header.tsx, sparkline.tsx, exchange-table.tsx, currency-card.tsx, multi-currency-price.tsx, use-display-price.ts, store.ts
+- Extracted HTML/CSS: dropdown component, sparkline, sidebar nav, table layout
 - Compared feature sets and identified 12 patterns, prioritized into P0-P3
+- Updated documentation only, no code changes
 
 Stage Summary:
 - 12 UI/logic patterns identified from poe.ninja
 - P0: Adaptive Value Display, bezier sparkline, currency icons in table
-- P1: info tooltips, league grouping, best payment column
-- P2: inline filter, show more, sidebar navigation
-- P3: breadcrumb, cool grey tokens
-- NOT adopting: floating-label dropdown (shadcn Select is better)
-- Updated REFACTOR_PLAN.md with priority matrix
-- Updated AGENT_NAVIGATION.md (v15.0) with new component docs + sparkline bug
+- Updated REFACTOR_PLAN.md, AGENT_NAVIGATION.md to v15.0
+
+---
+Task ID: 51
+Agent: Main Agent
+Task: Implement P0 features — Adaptive Value Display, bezier sparkline, 16×16 currency icons
+
+Work Log:
+- Cloned repo, explored full src/ structure and read all relevant files
+- P0-2 (Bezier Sparkline): Rewrote sparkline.tsx — Catmull-Rom→Bezier SVG <path> with trend-colored fill (green=up, red=down)
+- P0-3 (Icons): Changed exchange-table.tsx pair column icons from w-8 h-8 (32px) to w-4 h-4 (16px) with shrink-0
+- P0-1 (Adaptive Value Display):
+  - Added "_adaptive" option to reference currency selector in header.tsx (main bar + "More" menu)
+  - Implemented adaptive logic in use-display-price.ts: auto-selects Div (≥0.5), Chaos (<0.01 Exa), or Exa
+  - Updated dashboard-page.tsx onReferenceCurrencyChange to handle "_adaptive" → stores in Zustand
+  - Updated currency-card.tsx, virtual-currency-grid.tsx, exchange-pair-card.tsx, exchange-table.tsx to resolve "_adaptive" → "exalted" as effective baseCurrencyApiId
+  - Updated getCurrencyShortName() in utils.ts to handle "_adaptive" → "Adaptive"
+- TypeScript check: 0 errors
+- Build: successful
+- Jest: 291/291 passing
+- Updated docs: AGENT_NAVIGATION.md v16.0, REFACTOR_PLAN.md v16.0
+
+Stage Summary:
+- All 3 P0 features implemented and verified
+- Files modified: sparkline.tsx, exchange-table.tsx, header.tsx, use-display-price.ts, dashboard-page.tsx, currency-card.tsx, virtual-currency-grid.tsx, exchange-pair-card.tsx, utils.ts, AGENT_NAVIGATION.md, REFACTOR_PLAN.md
+- Next: P1 features (info tooltips, league grouping, best payment column)

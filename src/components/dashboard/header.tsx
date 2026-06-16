@@ -345,6 +345,8 @@ export function Header({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
+                {/* P0: Adaptive mode — auto-selects best currency unit per row */}
+                <SelectItem value="_adaptive">Adaptive</SelectItem>
                 {referenceCurrencies.map((c) => (
                   <SelectItem key={c.apiId} value={c.apiId}>
                     {c.text} ({(c.relativePrice ?? 0).toFixed(1)})
@@ -480,6 +482,7 @@ export function Header({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="_default">{t("defaultCurrency")}</SelectItem>
+                      <SelectItem value="_adaptive">Adaptive</SelectItem>
                       {referenceCurrencies.map((c) => (
                         <SelectItem key={c.apiId} value={c.apiId}>{c.text}</SelectItem>
                       ))}
