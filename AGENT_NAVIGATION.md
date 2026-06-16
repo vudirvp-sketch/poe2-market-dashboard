@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Version:** 14.0 | **Date:** 2026-06-13
+> **Version:** 15.0 | **Date:** 2026-06-16
 
 ---
 
@@ -15,23 +15,25 @@
 | `backend/api/data_snapshot.py` | DataSnapshot with __getstate__/__setstate__ | Custom pickle for safety |
 | `backend/api/routes_sse.py` | SSE price stream | GET /api/v1/prices/stream |
 | `backend/economy/events.py` | EventManager + StoredEvent.to_dict() | Returns event_id, is_active, created_at |
-| `backend/economy/lifecycle.py` | PhaseDetector — only major_patch resets phase; league_start/economy_shift affect scoring only | |
+| `backend/economy/lifecycle.py` | PhaseDetector — only major_patch resets phase | league_start/economy_shift affect scoring only |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, quick_filter, liquid_chain | No direct API imports |
 | `backend/economy/` | Events, lifecycle, momentum, benchmarks, tiers | Import from `data/` |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | Import from `data/` |
 | `backend/data/` | Providers, cache, schemas, historical, unified_cache | Import nothing from `api/` |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Only proxy, no business logic** |
-| `src/app/api/flipper/events/route.ts` | Events proxy — transforms camelCase→snake_case on POST | Body transform: eventType→event_type, expiryHours→expires_at |
+| `src/app/api/flipper/events/route.ts` | Events proxy — transforms camelCase→snake_case on POST | Body: eventType→event_type, expiryHours→expires_at |
 | `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar, sticky bar | Import from `@lib`, `@hooks` |
-| `src/components/dashboard/events-sidebar.tsx` | Events sidebar UI — renders createdAt + expiresAt | Uses `isActive` (not `active`), camelCase fields |
-| `src/hooks/use-price-stream.ts` | SSE price stream hook — connects to /api/flipper/prices/stream | Returns {status, lastError, reconnectCount}; invalidates RQ caches on price change |
+| `src/components/dashboard/header.tsx` | Header with Realm+League, Search, Base Currency, More menu | Phase badge, WS status, dense mode toggle |
+| `src/components/dashboard/sparkline.tsx` | Inline SVG sparkline — **needs bezier upgrade** | Currently polyline, should be cubic bezier |
+| `src/components/dashboard/exchange-table.tsx` | Sortable table for exchange pairs | Uses useDisplayPrice, BestPaymentBadge, PairHoverPreview |
+| `src/components/dashboard/multi-currency-price.tsx` | Multi-currency price display | Uses useCrossRates, shows best/cheapest option |
+| `src/hooks/use-display-price.ts` | Client-side price conversion hook | Fallback when API doesn't recalculate |
+| `src/hooks/use-cross-rates.ts` | Cross-rate computation hook | Builds relativePriceMap from exchange pairs |
+| `src/lib/store.ts` | Zustand store — favorites, comparison, alerts, persisted UI | baseCurrencyApiId, denseMode, watchlist |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
-| `src/lib/api-types.ts` | Auto-generated from OpenAPI schema | Regenerate: `npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts` |
-| `src/lib/case-transform.ts` | snake_case→camelCase key transformer | Used by flipper-proxy on GET responses |
 | `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
-| `e2e/events-sidebar.spec.ts` | E2E tests for events sidebar (7 tests: open/create/deactivate/delete/validation/offline) | Uses openEventsSidebar() → clicks More menu → Events item |
 
 ## 2. Build & Run Commands
 
@@ -73,8 +75,9 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 |---------|-------|-----|
 | Flips/triangular return empty | ProcessPoolExecutor pickle error (sqlite3 in args) | Pre-extract into FlipComputeBundle; DataSnapshot.__getstate__ filters extras |
 | Mock provider causes 500 on /prices | exchange_rates dict uses tuple keys | Use string keys like "exalted/chaos" |
-| E2E: flipper health mock shows backend offline | Mock returns `status: "online"` but dashboard checks `status === "ok"` | Use `status: "ok"` in health mock (not "online") |
-| E2E: events sidebar button not found | Events is inside "More" dropdown menu, not a standalone button | Click "More" (⋮) first, then click Events menu item |
+| E2E: flipper health mock shows backend offline | Mock returns `status: "online"` but dashboard checks `status === "ok"` | Use `status: "ok"` in health mock |
+| E2E: events sidebar button not found | Events is inside "More" dropdown menu | Click "More" (⋮) first, then Events item |
+| Sparkline looks jagged | Uses polyline (linear interpolation) | Replace with cubic bezier SVG path (see REFACTOR_PLAN P0) |
 
 ## 5. API Endpoints (all under /api/v1/)
 

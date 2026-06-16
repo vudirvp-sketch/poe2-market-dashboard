@@ -7,27 +7,33 @@ Task: Fix E2E tests, add Python PhaseDetector tests, expand E2E coverage
 
 Work Log:
 - Fixed openEventsSidebar() in e2e/events-sidebar.spec.ts
-  - Root cause: Events button is inside "More" dropdown menu, not a standalone button
-  - Fix: click "More" (⋮) button first, then click Events menu item
-  - Also fixed health mock: changed status from "online" to "ok" (dashboard checks status === "ok")
-  - Added waitForLoadState("networkidle") in beforeEach
-  - Improved Sheet selector: use heading text instead of generic [role="dialog"]
-  - Replaced fragile .fill-emerald-500 selector with text-based online indicator check
-- Added 2 new E2E tests (total now 7, was 5):
-  - "delete an existing event" — verifies delete button click and API mock
-  - "form validation — empty description shows error" — verifies create button is disabled when description is empty
-- Added 5 new Python tests for PhaseDetector in tests/test_lifecycle.py (total now 15, was 10):
-  - test_league_start_does_not_reset_phase
-  - test_economy_shift_does_not_reset_phase
-  - test_minor_patch_does_not_reset_phase
-  - test_streamer_hype_does_not_reset_phase
-  - test_only_major_patch_resets_phase
-- Updated AGENT_NAVIGATION.md:
-  - Updated e2e/events-sidebar.spec.ts description (7 tests, mentions More menu flow)
-  - Added 2 E2E-related entries to Known Bugs table
+- Added 2 new E2E tests (total now 7)
+- Added 5 new Python tests for PhaseDetector (total now 15)
 
 Stage Summary:
-- E2E tests: 7/7 passing (was 0/5)
-- Jest tests: 291/291 passing (unchanged)
-- Python tests: 347/347 passing (including 5 new PhaseDetector tests)
-- All tests green
+- E2E tests: 7/7 passing
+- Jest tests: 291/291 passing
+- Python tests: 347/347 passing
+
+---
+Task ID: 50
+Agent: Main Agent
+Task: Analyze poe.ninja currency page and identify UI/logic patterns to adopt in dashboard
+
+Work Log:
+- Used agent-browser to render poe.ninja/poe2/economy/runesofaldur/currency (SPA, page_reader returns empty)
+- Captured full accessibility tree snapshot of poe.ninja UI
+- Extracted HTML structure of: Value Display dropdown, League selector, sidebar nav, breadcrumb, sparkline SVG, table layout, Show more button
+- Extracted CSS: dropdown component (floating label, size variants), sparkline (area fill + line with colors), sidebar link styles, Cool Grey palette tokens
+- Read dashboard repo: header.tsx, sparkline.tsx, exchange-table.tsx, currency-card.tsx, multi-currency-price.tsx, use-display-price.ts, store.ts
+- Compared feature sets and identified 12 patterns, prioritized into P0-P3
+
+Stage Summary:
+- 12 UI/logic patterns identified from poe.ninja
+- P0: Adaptive Value Display, bezier sparkline, currency icons in table
+- P1: info tooltips, league grouping, best payment column
+- P2: inline filter, show more, sidebar navigation
+- P3: breadcrumb, cool grey tokens
+- NOT adopting: floating-label dropdown (shadcn Select is better)
+- Updated REFACTOR_PLAN.md with priority matrix
+- Updated AGENT_NAVIGATION.md (v15.0) with new component docs + sparkline bug
