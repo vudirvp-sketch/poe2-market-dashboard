@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 58 — WS removed).
+> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 62 — orphan file cleanup).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -17,9 +17,9 @@
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P1-9) | P0-6 fixed iter 56; P0-5 fixed iter 57 (no dead `prices` param); magic spread numbers |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
-| `backend/api/routes_events.py` | Event CRUD + cache invalidation (BUGGY — see P1-7, P1-11) | Fire-and-forget SQLite write; missing daily_stats invalidation |
+| `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 fixed iter 59, P1-7 fixed iter 61) | All 3 endpoints async-await EventManager; `pipeline_cache` + `daily_stats_cache` invalidated after mutation |
 | `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `routes_arbitrage.py`, `routes_analyst.py` |
-| `backend/economy/events.py` | EventManager + StoredEvent | `event_id`, `is_active`, `created_at`; uses deprecated `get_event_loop()` (P3-8) |
+| `backend/economy/events.py` | EventManager + StoredEvent (P1-7 fixed iter 61, P3-8 auto-closed) | `event_id`, `is_active`, `created_at`; 4 methods async (`create_event` / `delete_event` / `deactivate_event` / `clear_all`); `_prune_expired` left sync intentionally |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete needed (P1-6) |
 | `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | `pipeline_cache.invalidate()` clears only `pipeline` namespace |
@@ -35,10 +35,10 @@
 | `src/app/api/flipper/prices/stream/route.ts` | SSE proxy | 5min timeout, streams body |
 | `src/app/api/flipper/events/route.ts` | Events POST proxy with body transform | `eventType`→`event_type`, `expiryHours`→`expires_at` ISO |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
-| `src/hooks/` | React hooks (14 hooks — `use-websocket.ts` removed iter 58) | Import from `@lib` |
+| `src/hooks/` | React hooks (14 hooks — `use-websocket.ts` removed iter 58, file remnant deleted iter 62) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with circuit breaker + dedup | See STATUS.md P1-10, P2-8; global CB |
-| `src/hooks/use-price-stream.ts` | SSE hook (P0-1 fixed iter 55, P2-7 open) | Invalidates cache when `change_pct` ≥ threshold; P2-7 = make targeted by `pair` |
+| `src/hooks/use-price-stream.ts` | SSE hook (P0-1 fixed iter 55, P2-7 fixed iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation, no over-eager crossRates |
 | `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (see STATUS.md P2-1) | Needs splitting |
 
 ## 2. Build & Run Commands
@@ -81,7 +81,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 8 P1 / 9 P2 / 6 P3). 6 P0 issues fixed in iter 54-58 (see STATUS.md §Fixed).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 6 P1 / 8 P2 / 5 P3). 6 P0 issues fixed in iter 54-58; P1-7 + P3-8 closed iter 61; P2-12 closed iter 62 (see STATUS.md §Fixed).
 
 Quick reference for the most common symptoms:
 
@@ -90,8 +90,8 @@ Quick reference for the most common symptoms:
 | Backend "alive" but `/flips` hangs | Clustering cold-start | P1-4 |
 | SSE connected but UI stale | (Fixed in iter 55 — was P0-1) | — |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
-| Stale forecast after event creation | `daily_stats` namespace not invalidated | P1-11 |
-| Events lost on backend crash | `create_event` fire-and-forget SQLite | P1-7 |
+| Stale forecast after event creation | (Fixed in iter 59 — was P1-11) | — |
+| Events lost on backend crash | (Fixed in iter 61 — was P1-7) | — |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -111,7 +111,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (P0-6 fixed iter 56, P0-5 fixed iter 57) |
 | GET | `/api/v1/arbitrage/optimal-currency` | Optimal payment currency |
 | POST | `/api/v1/batch` | Batch multiple GET requests |
-| POST | `/api/v1/events` | Create event (BUGGY — P1-7, P1-11) |
+| POST | `/api/v1/events` | Create event (P1-7 fixed iter 61, P1-11 fixed iter 59) |
 | GET | `/api/v1/events` | List events |
 | GET | `/api/v1/events/summary` | Event summary |
 | GET | `/api/v1/events/{event_id}` | Get event by ID |
