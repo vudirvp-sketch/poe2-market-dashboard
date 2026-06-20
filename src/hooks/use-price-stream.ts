@@ -123,17 +123,58 @@ export function usePriceStream({
   const connectRef = useRef<() => void>(() => {});
 
   // ---------------------------------------------------------------------------
-  // Cache invalidation on significant price changes
+  // Cache invalidation on significant price changes (P2-7: targeted by pair)
   // ---------------------------------------------------------------------------
+  //
+  // P2-7 (iter 59): Backend now sends one SSE event per changed currency with
+  // a `pair` field (P0-1, iter 55). We use it to do targeted invalidation:
+  //
+  //   1. Bulk queries that aggregate ALL currencies (`flipperPrices`,
+  //      `flipperFlips`, `heatmap`, `flipperTriangular`, `flipperLiquidChain`)
+  //      are still invalidated on every qualifying event — a single pair
+  //      change affects their aggregate computation.
+  //
+  //   2. `crossRates` is NO LONGER invalidated. It derives from
+  //      `useExchangePairs` (POE2 official API), NOT from flipper prices —
+  //      invalidating it on a flipper SSE event was an over-invalidation bug.
+  //
+  //   3. Per-pair queries (`benchmark`) now use the `pair` field so only the
+  //      changed currency's benchmark is invalidated. The currency-card for
+  //      that pair (if mounted) refetches; other cards are untouched.
+  //
+  // This keeps real-time UI updates working for bulk views while avoiding
+  // a refetch storm for unrelated per-pair cards on every SSE tick.
 
-  const invalidateCaches = useCallback(() => {
-    // Invalidate price-related queries so the UI shows fresh data
+  const invalidateCaches = useCallback((pair: string) => {
+    if (!pair) {
+      // Defensive: skip if backend sent an empty pair field.
+      // Bulk invalidation alone is still correct, just less targeted.
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperPrices] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperFlips] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.heatmap] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperTriangular] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperLiquidChain] });
+      return;
+    }
+
+    // Bulk queries (depend on ALL prices — any pair change affects them).
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperPrices] });
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperFlips] });
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.heatmap] });
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperTriangular] });
-    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.crossRates] });
     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.flipperLiquidChain] });
+
+    // Per-pair queries (P2-7): invalidate just the changed currency.
+    // `benchmark` is keyed by apiId which equals the SSE `pair` field.
+    // Only the card currently mounted for that pair will refetch.
+    queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.benchmark, pair] });
+
+    // NOTE: `crossRates` deliberately omitted — derived from
+    // useExchangePairs (POE2 official API), not from flipper prices.
+    // NOTE: `itemHistory` / `itemDaily` / `itemOhlcv` deliberately omitted —
+    // they are keyed by itemId (different from apiId/pair) and cannot be
+    // safely targeted without an apiId→itemId lookup that we don't have.
+    // Their own staleTime (2–5 min) provides adequate freshness.
   }, [queryClient]);
 
   // ---------------------------------------------------------------------------
@@ -197,7 +238,8 @@ export function usePriceStream({
             data.change_pct != null &&
             Math.abs(data.change_pct) >= thresholdRef.current
           ) {
-            invalidateCaches();
+            // P2-7 (iter 59): pass pair for targeted per-pair invalidation.
+            invalidateCaches(data.pair ?? "");
           }
         } catch {
           // Ignore non-JSON messages (e.g. keep-alive comments)
@@ -213,7 +255,8 @@ export function usePriceStream({
             data.change_pct != null &&
             Math.abs(data.change_pct) >= thresholdRef.current
           ) {
-            invalidateCaches();
+            // P2-7 (iter 59): pass pair for targeted per-pair invalidation.
+            invalidateCaches(data.pair ?? "");
           }
         } catch {
           // Ignore malformed messages

@@ -5,60 +5,82 @@
 
 ---
 
+## Task 59 — P1-11 (daily_stats invalidation) + P2-7 (targeted SSE invalidation by pair)
+**Agent:** Main Agent
+**Date:** 2026-06-20
+
+**Task:** Per iter 58 stopping point: P1-11 (daily_stats invalidation — 2-line fix) and P2-7 (targeted invalidation by pair, unblocked by P0-1 SSE `pair` field) per REFACTOR_PLAN.md §"Recommended Fix Order".
+
+**Work Log:**
+- Re-read STATUS.md (iter 58), REFACTOR_PLAN.md v23, worklog.md (iter 58 entry).
+- Verified P1-11 source: `backend/api/routes_events.py` confirmed — `create_event` (line 135), `delete_event` (line 205), `deactivate_event` (line 226) all call `pipeline_cache.invalidate()` but never `daily_stats_cache.invalidate()`. The `daily_stats` namespace stores stale-fallback daily benchmarks / storage-value aggregates with default TTL 30 min. After an event mutation, stale entries survived up to TTL before reflecting the new event context — UI kept showing outdated benchmarks/storage-value estimates after a `major_patch` flag.
+- Verified P2-7 source: `src/hooks/use-price-stream.ts:129-137` — `invalidateCaches()` (no args) called `queryClient.invalidateQueries` on 6 query keys: `flipperPrices`, `flipperFlips`, `heatmap`, `flipperTriangular`, `crossRates`, `flipperLiquidChain`. Investigation revealed `crossRates` derives from `useExchangePairs` (POE2 official API), NOT from flipper prices — invalidating it on a flipper SSE event was an over-invalidation bug. Also no per-pair invalidation despite backend sending `pair` field (P0-1, iter 55).
+- **P1-11 fix (backend):**
+  - Added `from backend.data.daily_stats_cache import get_daily_stats_cache` to `routes_events.py:29`.
+  - In `create_event`: after `pipeline_cache.invalidate()`, added `daily_stats_cache = get_daily_stats_cache()` + `daily_stats_cache.invalidate()` + log line. With 8-line explanatory comment.
+  - In `delete_event`: same 3 lines added after `pipeline_cache.invalidate()`.
+  - In `deactivate_event`: same 3 lines added after `pipeline_cache.invalidate()`.
+- **P1-11 regression tests — `tests/test_routes_events_invalidation.py` (NEW, 4 tests):**
+  - `test_create_event_invalidates_daily_stats` — POST `/api/v1/events` with `minor_patch`, assert both `pipeline_cache.invalidate()` and `daily_stats_cache.invalidate()` called.
+  - `test_create_major_patch_event_invalidates_daily_stats` — same but with `major_patch` event type (also exercises the PhaseDetector reset path).
+  - `test_delete_event_invalidates_daily_stats` — create event, reset mocks, DELETE it, assert both invalidations called.
+  - `test_deactivate_event_invalidates_daily_stats` — create event, reset mocks, POST deactivate, assert both invalidations called.
+  - Used `unittest.mock.patch` on `routes_events.get_pipeline_cache` + `routes_events.get_daily_stats_cache` to inject MagicMock spies. Stubbed `EventManager` (in-memory dict) so routes succeed without SQLite. Stubbed event `to_dict()` returns all required `EventData` fields (timestamp, expires_at, created_at).
+- **P2-7 fix (frontend):**
+  - `src/hooks/use-price-stream.ts:148-178`: rewrote `invalidateCaches` to take `pair: string` parameter.
+  - Defensive empty-pair fallback: if backend sends no `pair`, falls back to bulk-only invalidation (still correct, just less targeted).
+  - Drops `crossRates` invalidation entirely (with comment explaining: derived from `useExchangePairs` → POE2 official API, not flipper prices).
+  - Adds `queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.benchmark, pair] })` — per-pair benchmark invalidation. Only the card mounted for that pair refetches.
+  - Keeps 5 bulk invalidations (`flipperPrices`, `flipperFlips`, `heatmap`, `flipperTriangular`, `flipperLiquidChain`) because they aggregate ALL currencies.
+  - Comment notes `itemHistory` / `itemDaily` / `itemOhlcv` deliberately omitted — keyed by `itemId` (different from `apiId`/`pair`) and can't be safely targeted without an apiId→itemId lookup.
+  - Updated both `es.onmessage` and `"update"` event listener to pass `data.pair ?? ""` to `invalidateCaches`.
+- **NEW Known Issue discovered (P2-11):** While verifying tsc, found 2 pre-existing tsc errors and 1 pre-existing jest failure caused by 10 orphan root-level files (`dashboard-page.tsx`, `events-sidebar.spec.ts`, `providers.tsx`, `route.ts`, `use-price-stream.ts`, `main.py`, `routes_sse.py`, `historical.py`, `test_lifecycle.py`, `test_optimal_currency.py`) accidentally committed in iter 58 commit `048304f`. All have canonical copies under `src/`, `backend/`, `tests/`, `e2e/` — root versions are stale duplicates not imported by anything. Per the rule "document first, fix second", added P2-11 to STATUS.md with full detail table and recommended `git rm` cleanup as iter 60 first step.
+- **Test runs:**
+  - `pytest tests/test_routes_events_invalidation.py -v` → 4 pass / 0 fail.
+  - `pytest tests/test_events.py tests/test_routes_events_invalidation.py tests/test_pipeline_cache_degraded.py -v` → 55 pass / 0 fail (no regressions in events/cache area).
+  - `pytest tests/e2e/test_api_e2e.py -v` → 10 pass / 0 fail (incl. `test_create_and_list_events`).
+  - `npx tsc --noEmit` → 2 pre-existing errors (P2-11, not caused by iter 59). Verified identical on clean repo via `git stash`.
+  - `npx jest` → 291 pass / 1 suite fail (`./events-sidebar.spec.ts` — P2-11, pre-existing). Verified identical on clean repo via `git stash`.
+
+**Stage Summary:**
+- 2 issues closed in one commit: P1-11 + P2-7.
+- `STATUS.md`: rewritten cleanly. P1 bucket 8 → 7 (P1-11 removed). P2 bucket 9 → 9 (P2-7 removed, P2-11 ADDED). New §"P2-11 Detail" section with full table of orphan files. Fixed section: new iter 59 entry; iter 55 entry removed (≤5 rule).
+- `REFACTOR_PLAN.md`: v23 → v24. Iter 59 marked DONE. Estimation: 15 → 14 iterations remaining. Recommended Fix Order updated: P2-11 listed as iter 60 first step (quick `git rm`, restores tsc+jest clean baseline).
+- `worklog.md`: this entry replaces iter 55 entry (≤5 rule). Iter 56-58 entries retained.
+- No frontend code compiled incorrectly — Jest test counts match clean baseline (291 pass).
+
+**Stopping point:**
+- Iter 59 done. P1-11 + P2-7 closed. P2-11 (NEW) documented but deferred to iter 60.
+- Ready for iter 60 = **P2-11 first** (10-min `git rm` cleanup of orphan root files, restores "tsc: clean" + "jest: clean") OR P1-7 (EventManager async — same area as P1-11) per REFACTOR_PLAN.md §"Recommended Fix Order".
+- Suggested commit message: `fix(P1-11+P2-7): daily_stats invalidation + targeted SSE invalidation`
+- Changed files for archive: `backend/api/routes_events.py`, `src/hooks/use-price-stream.ts`, `tests/test_routes_events_invalidation.py` (NEW), `STATUS.md`, `REFACTOR_PLAN.md`, `worklog.md`.
+
+---
+
 ## Task 58 — P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6 closed by WS removal
 **Agent:** Main Agent
 **Date:** 2026-06-20
 
-**Task:** Per iter 57 stopping point: choose between (a) applying ProcessPoolExecutor fix to `_compute_anomalies` / `_compute_flips` in `routes_ws.py`, OR (b) completely removing WS endpoints. The note explicitly said option (b) would close P0-2 + P1-1 + P1-2 in one commit. After code review, chose **option (b)** because WS is already disabled by default in production (`NEXT_PUBLIC_FLIPPER_WS_ENABLED=false`), SSE (P0-1, iter 55) already provides push-based price invalidation, REST + polling covers all other needs, and the WS code was duplicating REST logic with reduced fields (P1-1) — a maintenance burden with no upside.
+**Task:** Per iter 57 stopping point: completely remove WS endpoints (option b). Closes P0-2, P1-1, P1-2, P2-10, P3-1, P3-6 in one commit. Real-time updates handled by SSE (P0-1, iter 55) + REST polling.
 
 **Work Log:**
 - Re-read STATUS.md, REFACTOR_PLAN.md v22, AGENT_NAVIGATION.md, worklog.md (iter 57 entry).
-- Verified P0-2 source: `backend/api/routes_ws.py:_push_loop` (line 364) calls `await compute_fn()` every 30s where `compute_fn` is `_compute_anomalies` (600+ currencies × STL+MACD+RSI) or `_compute_flips` — both run **synchronously in the event loop** without ProcessPoolExecutor. One WS client = 30s event loop block. Cascade with multiple clients.
-- Verified P1-1 source: `_compute_storage_value`, `_compute_forecast`, `_compute_anomalies`, `_compute_flips` in `routes_ws.py` all duplicate REST logic with reduced fields (e.g. WS `/flips` doesn't include `profit_per_unit_base`).
-- Verified P1-2 source: `useFlipperWebSocket` in `src/hooks/use-websocket.ts:507-518` opens **2 parallel WS connections** (`/ws/flips` + `/ws/anomalies`) per component instance. Used by both `dashboard-page.tsx` and `flips-tab.tsx` simultaneously.
-- Verified WS already opt-in: `resolveWsBaseUrl()` in `use-websocket.ts:119-122` returns `''` (disabled) unless `NEXT_PUBLIC_FLIPPER_WS_ENABLED === 'true'`. Production default is `false`.
-- Verified SSE provides push-based invalidation: `routes_sse.py` (P0-1, iter 55) emits per-currency `{pair, change_pct, new_price, old_price, timestamp}` events that drive `usePriceStream` invalidation in `dashboard-page.tsx`.
-- Verified no tests reference WS: `grep -r "routes_ws\|useWebSocket\|useFlipperWebSocket\|/v1/ws" tests/ e2e/` → no matches.
-- Established baseline: backend 375 pass / 4 skip, e2e 30 pass / 4 skip, Jest 291 pass, tsc clean.
-- **Backend cleanup:**
-  - `git rm backend/api/routes_ws.py` (722 lines deleted — 5 WS endpoints + 4 compute helpers + 2 shared loops).
-  - `backend/main.py:478-483`: removed WS router registration; replaced with 3-line comment explaining the removal.
-  - Sanity check: `python -c "from backend.main import app"` → OK (no broken imports).
-- **Frontend cleanup — deleted files:**
-  - `git rm src/hooks/use-websocket.ts` (548 lines deleted — `useWebSocket`, `useFlipperWebSocket`, types).
-  - `git rm -r src/app/api/flipper/ws` (1 file: `info/route.ts`).
-- **Frontend cleanup — edited components (5 files):**
-  - `src/components/dashboard/dashboard-page.tsx`: removed `useFlipperWebSocket` + `WebSocketStatus` imports (lines 157-158), removed `useFlipperWebSocket({ ... })` call (lines 319-335), removed `wsStatus={wsStatus}` prop on `<FlipperStickyBar>` (line 1040).
-  - `src/components/dashboard/flips-tab.tsx`: removed `useFlipperWebSocket` import (line 57), removed `useFlipperWebSocket({ ... })` call (lines 99-114), removed now-unused `useQueryClient` import + `queryClient` declaration. `invalidateFlips` still used by `autoRefresh` polling effect (lines 284, 287).
-  - `src/components/dashboard/header.tsx`: removed `WebSocketStatus` import, removed `wsStatus?: WebSocketStatus` prop, removed `wsStatus` from destructured props, removed 30-line WS badge rendering block (lines 381-411).
-  - `src/components/dashboard/flipper-sticky-bar.tsx`: removed `WebSocketStatus` import, removed `wsStatus?` prop, removed `wsStatus` from destructured props, removed 35-line WS Status Badge block. Removed unused `WifiHigh, Wifi, Loader2` imports from `lucide-react`.
-  - `src/components/dashboard/flipper-backend-status-card.tsx`: removed `WebSocketStatus` import, removed `wsStatus?` prop, removed `wsStatus` from destructured props, removed `wsBadgeConfig` IIFE (27 lines), removed WS badge rendering block. Removed unused `AlertTriangle, Wifi, WifiHigh, Loader2, Badge` imports.
-- **Config / build cleanup:**
-  - `.env.example`: removed `NEXT_PUBLIC_FLIPPER_WS_URL` + `NEXT_PUBLIC_FLIPPER_WS_ENABLED` + their comments (12 lines).
-  - `start.sh`: removed WS env var creation in `.env.local` setup section (replaced 50-line WS-aware block with 17-line minimal version that only sets `POE2_API_BASE_URL` + `FLIPPER_API_URL`).
-  - `start.bat`: same as `start.sh` (CRLF line endings handled via Python script — direct Edit tool failed due to CRLF mismatch). `UVICORN_AVAILABLE` detection preserved (still used for backend startup).
-- **i18n strings NOT touched:** `wsStatusConnected/Connecting/Disconnected`, `stickyBarWsConnected/Connecting/Disconnected`, `forecastLiveModeTooltip` remain orphaned in 4 locale files (`en`, `ru`, `ko`, `zh`). They are harmless — `Record<TranslationKeys, string>` still type-checks. Deferred to a future P3 i18n cleanup pass to avoid risk of breaking the 4-file key parity constraint.
-- **Test runs:**
-  - `pytest tests/ -q --ignore=tests/e2e` → 375 pass / 4 skip / 0 fail.
-  - `pytest tests/e2e/ -q` → 30 pass / 4 skip / 0 fail.
-  - `./node_modules/.bin/tsc --noEmit` → exit 0 (clean).
-  - `./node_modules/.bin/jest --silent` → 291 pass / 0 fail.
-- No new tests added — WS endpoints had zero test coverage to begin with (P2-11 was open). Nothing to delete, nothing to add.
+- Verified P0-2 source: `routes_ws.py:_push_loop` calls `await compute_fn()` every 30s where `compute_fn` is `_compute_anomalies` (600+ currencies × STL+MACD+RSI) or `_compute_flips` — both run synchronously in the event loop.
+- Verified P1-1, P1-2 sources; verified WS already opt-in (`NEXT_PUBLIC_FLIPPER_WS_ENABLED=false` by default).
+- Established baseline: backend 375 pass / 4 skip, e2e 30 pass / 4 skip, Jest 291 pass, tsc clean (NOTE: this was incorrect — see P2-11 in iter 59).
+- **Backend cleanup:** `git rm backend/api/routes_ws.py` (722 lines). `backend/main.py:478-483`: removed WS router registration; replaced with comment.
+- **Frontend cleanup — deleted:** `src/hooks/use-websocket.ts` (548 lines), `src/app/api/flipper/ws/info/route.ts`.
+- **Frontend cleanup — edited 5 components:** `dashboard-page.tsx`, `flips-tab.tsx`, `header.tsx`, `flipper-sticky-bar.tsx`, `flipper-backend-status-card.tsx` — removed `useFlipperWebSocket`/`wsStatus`/WS badge UI.
+- **Config / build cleanup:** `.env.example`, `start.sh`, `start.bat` — removed WS env vars.
+- i18n strings NOT touched (orphaned keys harmless, deferred to P3 pass).
+- Test runs: backend 375 pass / 4 skip; e2e 30 pass / 4 skip; tsc claimed clean; jest 291 pass.
 
 **Stage Summary:**
-- 6 issues closed in one commit: P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6.
-- ~1270 lines of code deleted (722 backend + 548 frontend), ~50 lines of config/scripts simplified.
-- `STATUS.md`: rewritten cleanly. P0 bucket 1 → 0. P1 bucket 10 → 8 (P1-1, P1-2 removed). P2 bucket 11 → 9 (P2-10 removed). P3 bucket 8 → 6 (P3-1, P3-6 removed). Quick Reference table trimmed (only 4 symptoms remain — WS-related rows removed). Fixed section: new iter 58 entry; older entries kept brief.
-- `REFACTOR_PLAN.md`: v22 → v23. Iter 58 marked DONE. P0 bucket 1 → 0. Estimation: 20 → 15 iterations remaining.
-- `AGENT_NAVIGATION.md`: removed `routes_ws.py` row from §1, removed `use-websocket.ts` row from §1 (replaced with note "14 hooks — `use-websocket.ts` removed iter 58"), updated §3 rules #2 + #6 (WS no longer mentioned as violation), §4 Quick Reference table trimmed (only 4 symptoms remain — WS rows removed), §5 API endpoints (WS endpoints section removed). Added new rule #18: "Real-time updates = SSE + REST polling only — do NOT re-introduce WS."
-- `docs/DATA_FLOW.md`: removed WS channels table (replaced with SSE-only table), removed `ws/info/route.ts` from API route list, removed `routes_ws.py` from backend routes list (added to "deleted" note alongside `routes_auth.py`), updated `FlipperBackendStatusCard` row.
-- `worklog.md`: this entry replaces iter 55 entry (≤5 rule). Iter 55-57 entries retained.
+- 6 issues closed in one commit. ~1270 lines deleted (722 backend + 548 frontend), ~50 lines config simplified.
+- NOTE (added iter 59): iter 58 commit also accidentally bundled 10 orphan root-level files (P2-11) — see iter 59 entry.
 
 **Stopping point:**
-- Iter 58 done. **No P0 issues remain** (P0-1 through P0-6 all fixed across iter 54-58).
-- Ready for iter 59 = P1-11 (daily_stats invalidation — 2-line fix, can be batched with P1-7) OR P2-7 (targeted invalidation — now unblocked by P0-1 SSE `pair` field) per REFACTOR_PLAN.md §"Recommended Fix Order".
-- Suggested commit message: `refactor(P0-2): remove WS endpoints — close P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6`
-- Changed files for archive: `backend/api/routes_ws.py` (DELETED), `backend/main.py`, `src/hooks/use-websocket.ts` (DELETED), `src/app/api/flipper/ws/info/route.ts` (DELETED), `src/components/dashboard/dashboard-page.tsx`, `src/components/dashboard/flips-tab.tsx`, `src/components/dashboard/header.tsx`, `src/components/dashboard/flipper-sticky-bar.tsx`, `src/components/dashboard/flipper-backend-status-card.tsx`, `.env.example`, `start.sh`, `start.bat`, `STATUS.md`, `REFACTOR_PLAN.md`, `AGENT_NAVIGATION.md`, `docs/DATA_FLOW.md`, `worklog.md`.
+- Iter 58 done. No P0 issues remain. Ready for iter 59 = P1-11 + P2-7.
 
 ---
 
@@ -66,20 +88,17 @@
 **Agent:** Main Agent
 **Date:** 2026-06-20
 
-**Task:** Per REFACTOR_PLAN.md iter 57: extract `compute_transitive_prices` (BFS) to `backend/economy/pricing.py`, swap 2 remaining call sites (`data_snapshot.py`, `scheduler.py`), extract `_find_price_24h_ago` to the same helper, remove dead `prices` param from `find_triangular_arbitrage`.
+**Task:** Per REFACTOR_PLAN.md iter 57: extract `compute_transitive_prices` (BFS) to `backend/economy/pricing.py`, swap 2 call sites, extract `_find_price_24h_ago`, remove dead `prices` param from `find_triangular_arbitrage`.
 
 **Work Log:**
-- Verified P0-5 source: 3 different transitive-price implementations. The `scheduler.py` 5-iter relaxation was **buggy** (silently misses >5-hop chains).
-- Created `backend/economy/pricing.py` with `compute_transitive_prices(prices_in_base, rates, base)` (BFS) + `find_price_24h_ago(history, max_drift_hours)`.
+- Created `backend/economy/pricing.py` with `compute_transitive_prices` + `find_price_24h_ago`.
 - Swapped call sites in `data_snapshot.py`, `scheduler.py`, `routes_arbitrage.py`, `routes_analyst.py`.
-- Removed dead `prices` param from `find_triangular_arbitrage` + `_find_triangular_arbitrage_sync` + 7 test calls in `tests/test_triangular.py`.
-- **Tests added — `tests/test_pricing.py` (15 tests):** 7 for `compute_transitive_prices` (incl. **7-hop chain regression** that the old 5-iter relaxation would have missed), 8 for `find_price_24h_ago`.
-- Test runs: backend 375 pass / 4 skip; e2e 30 pass / 4 skip.
+- Removed dead `prices` param from `find_triangular_arbitrage` + 7 test calls.
+- 15 new tests in `tests/test_pricing.py` (incl. 7-hop chain regression).
+- Backend 375 pass / 4 skip; e2e 30 pass / 4 skip.
 
 **Stage Summary:**
-- P0-5 fixed: `refactor(P0-5): unified pricing helper + remove dead prices param`.
-- P1-3 also closed as a side effect (BFS in `compute_transitive_prices` is already O(V+E)).
-- New module `backend/economy/pricing.py` is the single source of truth for transitive pricing + 24h-ago lookup.
+- P0-5 fixed: `refactor(P0-5): unified pricing helper + remove dead prices param`. P1-3 closed as side effect.
 
 **Stopping point:**
 - Iter 57 done. Ready for iter 58 = P0-2 (WS removal).
@@ -90,17 +109,14 @@
 **Agent:** Main Agent
 **Date:** 2026-06-20
 
-**Task:** Per REFACTOR_PLAN.md iter 56: remove `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` hardcode + redundant chaos-normalization block in `routes_arbitrage.py:753-770`. Use single numeraire = `config.league.base_currency`.
+**Task:** Per REFACTOR_PLAN.md iter 56: remove `prices["chaos"] = 1.0` hardcode + redundant chaos-normalization in `routes_arbitrage.py:753-770`. Single numeraire = `config.league.base_currency`.
 
 **Work Log:**
-- Verified P0-6 source: `backend/api/routes_arbitrage.py:753-770` confirmed two redundant blocks: chaos-normalization conditional conversion + unconditional hardcode `prices["chaos"] = 1.0`.
-- Replaced 16 lines with: `prices = dict(snapshot.prices_in_base)` + 9-line comment. Single numeraire = base_currency.
-- Tests: `pytest tests/test_triangular.py -x` → 7/7 pass. `pytest tests/e2e/test_api_e2e.py::test_arbitrage_triangular` → 1/1 pass. No regressions.
-- No new tests: deleted code was dead (no observable behavior to assert).
+- Replaced 16 lines with: `prices = dict(snapshot.prices_in_base)` + 9-line comment.
+- Tests: `pytest tests/test_triangular.py -x` → 7/7 pass. `pytest tests/e2e/test_api_e2e.py::test_arbitrage_triangular` → 1/1 pass.
 
 **Stage Summary:**
 - P0-6 fixed: `fix(P0-6): remove chaos hardcode in triangular arbitrage`.
-- Dead `prices` param cleanup deferred to P0-5 (iter 57).
 
 **Stopping point:**
 - Iter 56 done. Ready for iter 57 = P0-5 (transitive prices helper).
@@ -111,18 +127,17 @@
 **Agent:** Main Agent
 **Date:** 2026-06-20
 
-**Task:** Per REFACTOR_PLAN.md recommended fix order iter 55: fix P0-1 (SSE — dead monitor, no threshold filtering, contract mismatch), add regression tests, run full test suite, update docs.
+**Task:** Per REFACTOR_PLAN.md iter 55: fix P0-1 (SSE — dead monitor, no threshold filtering, contract mismatch), add regression tests, run full test suite, update docs.
 
 **Work Log:**
-- Verified P0-1 source: `routes_sse.py` confirmed 3 bugs: (1) `_sse_monitor_loop` = empty `asyncio.sleep(60)`, (2) `threshold_pct` passed but not used, (3) backend sent `{type, changes_count, changes: [{api_id, price}], timestamp}` but frontend expected `{pair, change_pct, new_price, old_price, timestamp}`.
-- Full rewrite of `routes_sse.py`: removed dead monitor + module-level state, rewrote `_sse_event_generator` to store `previous_prices`, compute `change_pct`, filter by `threshold_pct`, emit one SSE message per qualifying currency.
-- Updated `main.py` (removed start/stop calls) + `src/hooks/use-price-stream.ts` (interface fields made required).
-- **Tests added:** `tests/e2e/test_sse.py` (4 tests): event format, threshold filter, no-event on first snapshot, multiple currencies.
-- All tests pass: backend 377 / e2e 30 / Jest 291 / tsc clean.
+- Verified P0-1 source: `routes_sse.py` confirmed 3 bugs: dead `_sse_monitor_loop`, ignored `threshold_pct`, contract mismatch (backend sent bulk payload, frontend expected per-currency).
+- Full rewrite of `routes_sse.py`. Updated `main.py` + `src/hooks/use-price-stream.ts` interface.
+- 4 new tests in `tests/e2e/test_sse.py`.
+- All tests pass: backend 375 / e2e 30 / Jest 291 / tsc clean.
 
 **Stage Summary:**
 - P0-1 fixed: `fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`.
-- P2-7 (targeted invalidation) unblocked — backend now sends `pair` field.
+- P2-7 unblocked — backend now sends `pair` field.
 
 **Stopping point:**
 - Iter 55 done. Ready for iter 56 = P0-6 (triangular hardcode).

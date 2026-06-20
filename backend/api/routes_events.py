@@ -26,6 +26,7 @@ from backend.economy.events import get_event_manager, EventManager
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.models.currency import EventType
 from backend.data.pipeline_cache import get_pipeline_cache
+from backend.data.daily_stats_cache import get_daily_stats_cache
 from backend.api.response_models import EventCreateResponse, EventsListResponse, EventSummaryResponse, EventMessageResponse
 
 logger = logging.getLogger(__name__)
@@ -135,6 +136,16 @@ async def create_event(request: CreateEventRequest):
     pipeline_cache.invalidate()
     logger.info("PipelineCache invalidated after event creation")
 
+    # P1-11: also invalidate the daily_stats namespace. Event creation
+    # affects forecast confidence and 24h trend interpretation, which
+    # feed the daily-stats aggregation. Without this, stale daily-stats
+    # entries survive up to their TTL (default 30 min) before reflecting
+    # the new event context — causing the UI to show outdated
+    # benchmarks/storage-value estimates after a major_patch flag.
+    daily_stats_cache = get_daily_stats_cache()
+    daily_stats_cache.invalidate()
+    logger.info("DailyStatsCache invalidated after event creation")
+
     return {
         "message": "Event created successfully",
         "event": event.to_dict(),
@@ -205,6 +216,11 @@ async def delete_event(event_id: str):
     pipeline_cache.invalidate()
     logger.info("PipelineCache invalidated after event deletion")
 
+    # P1-11: also invalidate daily_stats (same rationale as create_event).
+    daily_stats_cache = get_daily_stats_cache()
+    daily_stats_cache.invalidate()
+    logger.info("DailyStatsCache invalidated after event deletion")
+
     return {"message": f"Event {event_id} deleted successfully"}
 
 
@@ -225,5 +241,10 @@ async def deactivate_event(event_id: str):
     pipeline_cache = get_pipeline_cache()
     pipeline_cache.invalidate()
     logger.info("PipelineCache invalidated after event deactivation")
+
+    # P1-11: also invalidate daily_stats (same rationale as create_event).
+    daily_stats_cache = get_daily_stats_cache()
+    daily_stats_cache.invalidate()
+    logger.info("DailyStatsCache invalidated after event deactivation")
 
     return {"message": f"Event {event_id} deactivated successfully"}
