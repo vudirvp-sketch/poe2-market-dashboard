@@ -581,9 +581,9 @@ async def get_flip_opportunities(
 ):
     """Return scored flip opportunities for the configured league.
 
-    P2-4 (iter 67): Extended with optional filter/sort params previously only
-    available in the deprecated `/api/v1/scanner/scan` endpoint. All new params
-    have safe defaults so existing callers are unaffected.
+    P2-4 (iter 67): Extended with optional filter/sort params. All params have
+    safe defaults so existing callers are unaffected. The standalone scanner
+    endpoint that originally exposed these params was removed in iter 68.
     """
     config = get_settings()
 
@@ -631,8 +631,8 @@ async def get_flip_opportunities(
                 logger.error("No cache available for flip_opportunities, returning empty: %s", e)
                 opportunities = []
 
-    # P2-4 (iter 67): Apply extended filters (previously only in /scanner/scan).
-    # All new filters use safe defaults so callers that don't pass them get
+    # P2-4 (iter 67): Apply extended filters.
+    # All filters use safe defaults so callers that don't pass them get
     # the same result as before.
     currency_lower = currency.lower() if currency is not None else None
 
@@ -651,7 +651,7 @@ async def get_flip_opportunities(
 
     filtered = [o for o in opportunities if _matches(o)]
 
-    # P2-4 (iter 67): Apply sort (previously only in /scanner/scan).
+    # P2-4 (iter 67): Apply sort.
     # Default sort_by="score", sort_dir="desc" preserves the original
     # behavior (opportunities are already scored desc from _build_flip_opportunities).
     _sort_key_map = {

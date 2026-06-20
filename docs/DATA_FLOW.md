@@ -530,10 +530,9 @@ routes_events.py         # /api/events (GET/POST), /api/events/summary,
 routes_anomalies.py      # /api/anomalies
 routes_storage_value.py  # /api/storage-value/{currency}
 routes_portfolio.py      # /api/portfolio/correlation (ACTIVE)
-routes_scanner.py        # /api/scanner/scan — Advanced flip scanner with custom filters
 ```
 
-**Note:** `routes_auth.py` and `routes_ws.py` have been **deleted** — `routes_auth.py` was dead code (removed earlier); `routes_ws.py` was removed in iter 58 (P0-2 + P1-1 + P1-2 — see STATUS.md §Fixed).
+**Note:** `routes_auth.py`, `routes_ws.py`, and `routes_scanner.py` have been **deleted** — `routes_auth.py` was dead code (removed earlier); `routes_ws.py` was removed in iter 58 (P0-2 + P1-1 + P1-2); `routes_scanner.py` was deprecated in iter 67 and removed in iter 68 (P2-4 follow-up — its filter/sort params now live on `/api/v1/arbitrage/flips`). See STATUS.md §Fixed.
 
 ### 7.3 POE2Scout API Paths
 

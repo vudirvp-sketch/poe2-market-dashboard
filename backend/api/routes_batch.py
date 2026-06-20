@@ -83,7 +83,6 @@ ALLOWED_PREFIXES = (
     "/api/v1/optimizer",
     "/api/v1/analyst",
     "/api/v1/portfolio",
-    "/api/v1/scanner",
     "/api/v1/liquid-chain",
 )
 

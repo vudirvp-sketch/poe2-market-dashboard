@@ -168,6 +168,10 @@ export interface paths {
         /**
          * Get Flip Opportunities
          * @description Return scored flip opportunities for the configured league.
+         *
+         *     P2-4 (iter 67): Extended with optional filter/sort params. All params have
+         *     safe defaults so existing callers are unaffected. The standalone scanner
+         *     endpoint that originally exposed these params was removed in iter 68.
          */
         get: operations["get_flip_opportunities_api_v1_arbitrage_flips_get"];
         put?: never;
@@ -412,6 +416,14 @@ export interface paths {
          *     effective conversion rate. Bellman-Ford correctly handles negative
          *     weights that arise when rate > 1.
          *
+         *     P1-8 (iter 64): after the standard relaxation phase the algorithm
+         *     checks for a negative cycle (profitable arbitrage: product of rates
+         *     around a cycle > 1). When the requested `to_currency` lies on such
+         *     a cycle, the optimal path is unbounded — the endpoint returns an
+         *     empty `path` with `data_available: True`, and the caller can still
+         *     use the reported `direct_rate` to fall back to a single-hop
+         *     conversion.
+         *
          *     Compares the multi-hop path rate with the direct rate (if available)
          *     and reports the advantage percentage.
          */
@@ -442,30 +454,6 @@ export interface paths {
          *     The diagonal is always 1.0 (same currency).
          */
         get: operations["get_rate_matrix_api_v1_optimizer_matrix_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/scanner/scan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Scan Flips
-         * @description Advanced flip scanner with custom filters and sorting.
-         *
-         *     Unlike /api/arbitrage/flips which returns pre-filtered opportunities,
-         *     this endpoint supports fine-grained filtering including spread ranges,
-         *     cluster selection, currency substring matching, and custom sorting.
-         */
-        get: operations["scan_flips_api_v1_scanner_scan_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -621,7 +609,10 @@ export interface paths {
          * @description SSE endpoint for live price updates.
          *
          *     Returns a text/event-stream that sends price_update events when
-         *     the DataSnapshot changes. Clients should reconnect on disconnect.
+         *     the DataSnapshot changes.  Each event is a single currency change
+         *     in the format ``{pair, change_pct, new_price, old_price, timestamp}``.
+         *
+         *     Clients should reconnect on disconnect.
          */
         get: operations["sse_price_stream_api_v1_prices_stream_get"];
         put?: never;
@@ -1957,200 +1948,6 @@ export interface components {
             fetched_at: string;
         };
         /**
-         * QuantizedAnalysisData
-         * @description Full quantized analysis for a flip opportunity.
-         */
-        QuantizedAnalysisData: {
-            /** Q Spreads */
-            q_spreads?: {
-                [key: string]: components["schemas"]["QuantizedSpreadData"];
-            };
-            /**
-             * Min Profitable Lot
-             * @description Minimum lot size for profitability
-             */
-            min_profitable_lot: number;
-            /**
-             * Optimal Lot Profit Pct
-             * @description Profit % for optimal lot size
-             */
-            optimal_lot_profit_pct: number;
-            /**
-             * Recommended Ratio
-             * @description Recommended buy/sell ratio
-             */
-            recommended_ratio?: number[];
-            /**
-             * Brick Resistance
-             * @description Brick resistance score
-             */
-            brick_resistance: number;
-            /**
-             * Theoretical Spread
-             * @description Theoretical spread without quantization
-             */
-            theoretical_spread: number;
-        };
-        /**
-         * QuantizedSpreadData
-         * @description Quantized spread analysis for a specific lot size.
-         */
-        QuantizedSpreadData: {
-            /**
-             * Lot Size
-             * @description Lot size in units
-             */
-            lot_size: number;
-            /**
-             * Actual Cost
-             * @description Actual cost for this lot
-             */
-            actual_cost: number;
-            /**
-             * Actual Revenue
-             * @description Actual revenue for this lot
-             */
-            actual_revenue: number;
-            /**
-             * Net Profit
-             * @description Net profit after fees
-             */
-            net_profit: number;
-            /**
-             * Gross Profit Pct
-             * @description Gross profit percentage
-             */
-            gross_profit_pct: number;
-            /**
-             * Q Spread
-             * @description Quantized spread
-             */
-            q_spread: number;
-        };
-        /**
-         * ScannerOpportunityData
-         * @description Single scanner result with detailed metrics.
-         */
-        ScannerOpportunityData: {
-            /**
-             * Currency
-             * @description Currency API identifier
-             */
-            currency: string;
-            /**
-             * Score
-             * @description Composite flip score (0-1)
-             */
-            score: number;
-            /**
-             * Spread
-             * @description Raw spread percentage
-             */
-            spread: number;
-            /**
-             * Spread After Fees
-             * @description Spread after exchange fees
-             */
-            spread_after_fees: number;
-            /**
-             * Volume 24H
-             * @description 24h traded volume
-             */
-            volume_24h: number;
-            /**
-             * Momentum
-             * @description Price momentum
-             */
-            momentum: number;
-            /**
-             * Volatility
-             * @description Price volatility
-             */
-            volatility: number;
-            /**
-             * Cluster
-             * @description Cluster label
-             */
-            cluster: string;
-            /**
-             * Bid
-             * @description Bid price
-             */
-            bid: number;
-            /**
-             * Ask
-             * @description Ask price
-             */
-            ask: number;
-            /**
-             * Mid Price
-             * @description Mid price
-             */
-            mid_price: number;
-            quantized_analysis?: components["schemas"]["QuantizedAnalysisData"] | null;
-            /**
-             * Tier Distance
-             * @default 0
-             */
-            tier_distance: number;
-        };
-        /**
-         * ScannerParams
-         * @description Parameters used for the scan.
-         */
-        ScannerParams: {
-            /** Min Score */
-            min_score: number;
-            /** Max Score */
-            max_score: number;
-            /** Min Volume */
-            min_volume: number;
-            /** Max Spread */
-            max_spread: number;
-            /** Min Spread */
-            min_spread: number;
-            /** Cluster */
-            cluster: string | null;
-            /** Currency */
-            currency: string | null;
-            /** Sort By */
-            sort_by: string;
-            /** Sort Dir */
-            sort_dir: string;
-            /** Limit */
-            limit: number;
-        };
-        /**
-         * ScannerResponse
-         * @description Response for GET /api/v1/scanner/scan.
-         */
-        ScannerResponse: {
-            /**
-             * League
-             * @description League name
-             */
-            league: string;
-            /**
-             * Total
-             * @description Total results after filtering
-             */
-            total: number;
-            /** Opportunities */
-            opportunities?: components["schemas"]["ScannerOpportunityData"][];
-            /** @description Parameters used for the scan */
-            scan_params: components["schemas"]["ScannerParams"];
-            /**
-             * Data Available
-             * @description Whether data is available
-             */
-            data_available: boolean;
-            /**
-             * Fetched At
-             * @description ISO 8601 timestamp of data fetch
-             */
-            fetched_at: string;
-        };
-        /**
          * StorageValueInputs
          * @description Inputs used for storage value computation.
          */
@@ -2584,8 +2381,22 @@ export interface operations {
             query?: {
                 /** @description Minimum score filter */
                 min_score?: number;
+                /** @description Maximum score filter (P2-4 iter 67) */
+                max_score?: number;
                 /** @description Minimum 24h volume filter */
                 min_volume?: number;
+                /** @description Minimum spread filter (P2-4 iter 67) */
+                min_spread?: number;
+                /** @description Maximum spread filter (P2-4 iter 67) */
+                max_spread?: number;
+                /** @description Cluster filter (exact match): stable, moderate, volatile_illiquid (P2-4 iter 67) */
+                cluster?: string | null;
+                /** @description Currency substring filter (case-insensitive, matches either side of pair) (P2-4 iter 67) */
+                currency?: string | null;
+                /** @description Sort field: score, spread, volume_24h, momentum, volatility (P2-4 iter 67) */
+                sort_by?: string;
+                /** @description Sort direction: asc, desc (P2-4 iter 67) */
+                sort_dir?: string;
                 /** @description Max results */
                 limit?: number;
             };
@@ -2983,58 +2794,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OptimizerMatrixResponse"];
-                };
-            };
-        };
-    };
-    scan_flips_api_v1_scanner_scan_get: {
-        parameters: {
-            query?: {
-                /** @description Minimum score filter */
-                min_score?: number;
-                /** @description Maximum score filter */
-                max_score?: number;
-                /** @description Minimum 24h volume filter */
-                min_volume?: number;
-                /** @description Maximum spread filter */
-                max_spread?: number;
-                /** @description Minimum spread filter */
-                min_spread?: number;
-                /** @description Cluster filter: stable, moderate, volatile_illiquid */
-                cluster?: string | null;
-                /** @description Currency contains filter (partial match) */
-                currency?: string | null;
-                /** @description Sort field: score, spread, volume_24h, momentum, volatility */
-                sort_by?: string;
-                /** @description Sort direction: asc, desc */
-                sort_dir?: string;
-                /** @description Max results */
-                limit?: number;
-                /** @description Include opportunities with stale data */
-                include_stale?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScannerResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

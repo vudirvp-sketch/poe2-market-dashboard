@@ -303,33 +303,3 @@ class TestFlipsCombined:
         # Score asc → chaos (0.5) first, then divine (0.9)
         assert data["opportunities"][0]["currency"] == "chaos/exalted"
         assert data["opportunities"][1]["currency"] == "divine/exalted"
-
-
-# ===========================================================================
-# 5. Scanner endpoint deprecation signals (P2-4)
-# ===========================================================================
-
-class TestScannerDeprecation:
-    """P2-4 iter 67: /api/v1/scanner/scan emits deprecation headers."""
-
-    def test_scanner_returns_deprecation_header(self, flips_client):
-        resp = flips_client.get("/api/v1/scanner/scan")
-        # Scanner may return 200 (with mock data) or 503 if data unavailable —
-        # we only care about the deprecation header.
-        assert resp.headers.get("deprecation") == "true"
-        assert "Sunset" in resp.headers
-        # Link header points to the successor endpoint
-        link_header = resp.headers.get("link", "")
-        assert "/api/v1/arbitrage/flips" in link_header
-        assert "successor-version" in link_header
-
-    def test_scanner_still_returns_data(self, flips_client):
-        """Scanner must keep working until iter 68 removal."""
-        resp = flips_client.get("/api/v1/scanner/scan")
-        assert resp.status_code == 200
-        data = resp.json()
-        # Scanner response shape still present
-        assert "league" in data
-        assert "opportunities" in data
-        assert "scan_params" in data
-        assert "data_available" in data

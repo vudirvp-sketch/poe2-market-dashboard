@@ -312,11 +312,7 @@ Key models with PascalCase serialization:
 
 **Backend-only (no frontend proxy):**
 
-| Backend Endpoint | Route File | Response Type |
-|-----------------|------------|---------------|
-| `GET /api/scanner/scan` | `routes_scanner.py` | `FlipsResponse` (filtered) |
-
-Advanced flip scanner with custom filters (score/volume/spread range, cluster, currency substring, sort, limit). See [`BACKEND_GUIDE.md`](./BACKEND_GUIDE.md) §6.11.
+None — all backend endpoints are reachable via the frontend proxy. (The standalone `/api/v1/scanner/scan` endpoint was removed in iter 68 — its filter/sort params are now on `/api/v1/arbitrage/flips`.)
 
 ## 5. DataSnapshot Dataclass (Backend)
 

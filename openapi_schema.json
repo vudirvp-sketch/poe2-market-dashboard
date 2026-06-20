@@ -2,7 +2,6 @@
   "openapi": "3.1.0",
   "info": {
     "title": "PoE2 Flipper API",
-    "description": "Backend API for PoE2 currency analysis and arbitrage detection",
     "version": "0.2.0"
   },
   "paths": {
@@ -222,7 +221,7 @@
           "arbitrage"
         ],
         "summary": "Get Flip Opportunities",
-        "description": "Return scored flip opportunities for the configured league.",
+        "description": "Return scored flip opportunities for the configured league.\n\nP2-4 (iter 67): Extended with optional filter/sort params. All params have\nsafe defaults so existing callers are unaffected. The standalone scanner\nendpoint that originally exposed these params was removed in iter 68.",
         "operationId": "get_flip_opportunities_api_v1_arbitrage_flips_get",
         "parameters": [
           {
@@ -240,6 +239,20 @@
             "description": "Minimum score filter"
           },
           {
+            "name": "max_score",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Maximum score filter (P2-4 iter 67)",
+              "default": 1.0,
+              "title": "Max Score"
+            },
+            "description": "Maximum score filter (P2-4 iter 67)"
+          },
+          {
             "name": "min_volume",
             "in": "query",
             "required": false,
@@ -251,6 +264,94 @@
               "title": "Min Volume"
             },
             "description": "Minimum 24h volume filter"
+          },
+          {
+            "name": "min_spread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Minimum spread filter (P2-4 iter 67)",
+              "default": 0.0,
+              "title": "Min Spread"
+            },
+            "description": "Minimum spread filter (P2-4 iter 67)"
+          },
+          {
+            "name": "max_spread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "description": "Maximum spread filter (P2-4 iter 67)",
+              "default": 1.0,
+              "title": "Max Spread"
+            },
+            "description": "Maximum spread filter (P2-4 iter 67)"
+          },
+          {
+            "name": "cluster",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cluster filter (exact match): stable, moderate, volatile_illiquid (P2-4 iter 67)",
+              "title": "Cluster"
+            },
+            "description": "Cluster filter (exact match): stable, moderate, volatile_illiquid (P2-4 iter 67)"
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Currency substring filter (case-insensitive, matches either side of pair) (P2-4 iter 67)",
+              "title": "Currency"
+            },
+            "description": "Currency substring filter (case-insensitive, matches either side of pair) (P2-4 iter 67)"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort field: score, spread, volume_24h, momentum, volatility (P2-4 iter 67)",
+              "default": "score",
+              "title": "Sort By"
+            },
+            "description": "Sort field: score, spread, volume_24h, momentum, volatility (P2-4 iter 67)"
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort direction: asc, desc (P2-4 iter 67)",
+              "default": "desc",
+              "title": "Sort Dir"
+            },
+            "description": "Sort direction: asc, desc (P2-4 iter 67)"
           },
           {
             "name": "limit",
@@ -775,7 +876,7 @@
           "optimizer"
         ],
         "summary": "Get Optimal Path",
-        "description": "Find the optimal conversion path between two currencies.\n\nUses Bellman-Ford algorithm on the exchange rate graph where edge weights\nare -log(raw_rate), so the shortest path corresponds to the best\neffective conversion rate. Bellman-Ford correctly handles negative\nweights that arise when rate > 1.\n\nCompares the multi-hop path rate with the direct rate (if available)\nand reports the advantage percentage.",
+        "description": "Find the optimal conversion path between two currencies.\n\nUses Bellman-Ford algorithm on the exchange rate graph where edge weights\nare -log(raw_rate), so the shortest path corresponds to the best\neffective conversion rate. Bellman-Ford correctly handles negative\nweights that arise when rate > 1.\n\nP1-8 (iter 64): after the standard relaxation phase the algorithm\nchecks for a negative cycle (profitable arbitrage: product of rates\naround a cycle > 1). When the requested `to_currency` lies on such\na cycle, the optimal path is unbounded — the endpoint returns an\nempty `path` with `data_available: True`, and the caller can still\nuse the reported `direct_rate` to fall back to a single-hop\nconversion.\n\nCompares the multi-hop path rate with the direct rate (if available)\nand reports the advantage percentage.",
         "operationId": "get_optimal_path_api_v1_optimizer_path_get",
         "parameters": [
           {
@@ -867,195 +968,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OptimizerMatrixResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/scanner/scan": {
-      "get": {
-        "tags": [
-          "scanner"
-        ],
-        "summary": "Scan Flips",
-        "description": "Advanced flip scanner with custom filters and sorting.\n\nUnlike /api/arbitrage/flips which returns pre-filtered opportunities,\nthis endpoint supports fine-grained filtering including spread ranges,\ncluster selection, currency substring matching, and custom sorting.",
-        "operationId": "scan_flips_api_v1_scanner_scan_get",
-        "parameters": [
-          {
-            "name": "min_score",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "maximum": 1.0,
-              "minimum": 0.0,
-              "description": "Minimum score filter",
-              "default": 0.0,
-              "title": "Min Score"
-            },
-            "description": "Minimum score filter"
-          },
-          {
-            "name": "max_score",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "maximum": 1.0,
-              "minimum": 0.0,
-              "description": "Maximum score filter",
-              "default": 1.0,
-              "title": "Max Score"
-            },
-            "description": "Maximum score filter"
-          },
-          {
-            "name": "min_volume",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "description": "Minimum 24h volume filter",
-              "default": 0,
-              "title": "Min Volume"
-            },
-            "description": "Minimum 24h volume filter"
-          },
-          {
-            "name": "max_spread",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "maximum": 1.0,
-              "minimum": 0.0,
-              "description": "Maximum spread filter",
-              "default": 1.0,
-              "title": "Max Spread"
-            },
-            "description": "Maximum spread filter"
-          },
-          {
-            "name": "min_spread",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "number",
-              "maximum": 1.0,
-              "minimum": 0.0,
-              "description": "Minimum spread filter",
-              "default": 0.0,
-              "title": "Min Spread"
-            },
-            "description": "Minimum spread filter"
-          },
-          {
-            "name": "cluster",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Cluster filter: stable, moderate, volatile_illiquid",
-              "title": "Cluster"
-            },
-            "description": "Cluster filter: stable, moderate, volatile_illiquid"
-          },
-          {
-            "name": "currency",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Currency contains filter (partial match)",
-              "title": "Currency"
-            },
-            "description": "Currency contains filter (partial match)"
-          },
-          {
-            "name": "sort_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "Sort field: score, spread, volume_24h, momentum, volatility",
-              "default": "score",
-              "title": "Sort By"
-            },
-            "description": "Sort field: score, spread, volume_24h, momentum, volatility"
-          },
-          {
-            "name": "sort_dir",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "Sort direction: asc, desc",
-              "default": "desc",
-              "title": "Sort Dir"
-            },
-            "description": "Sort direction: asc, desc"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "description": "Max results",
-              "default": 50,
-              "title": "Limit"
-            },
-            "description": "Max results"
-          },
-          {
-            "name": "include_stale",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "description": "Include opportunities with stale data",
-              "default": false,
-              "title": "Include Stale"
-            },
-            "description": "Include opportunities with stale data"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScannerResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1272,7 +1184,7 @@
           "sse"
         ],
         "summary": "Sse Price Stream",
-        "description": "SSE endpoint for live price updates.\n\nReturns a text/event-stream that sends price_update events when\nthe DataSnapshot changes. Clients should reconnect on disconnect.",
+        "description": "SSE endpoint for live price updates.\n\nReturns a text/event-stream that sends price_update events when\nthe DataSnapshot changes.  Each event is a single currency change\nin the format ``{pair, change_pct, new_price, old_price, timestamp}``.\n\nClients should reconnect on disconnect.",
         "operationId": "sse_price_stream_api_v1_prices_stream_get",
         "parameters": [
           {
@@ -3246,307 +3158,6 @@
         ],
         "title": "PricesResponse",
         "description": "Response for GET /api/v1/prices."
-      },
-      "QuantizedAnalysisData": {
-        "properties": {
-          "q_spreads": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/QuantizedSpreadData"
-            },
-            "type": "object",
-            "title": "Q Spreads"
-          },
-          "min_profitable_lot": {
-            "type": "integer",
-            "title": "Min Profitable Lot",
-            "description": "Minimum lot size for profitability"
-          },
-          "optimal_lot_profit_pct": {
-            "type": "number",
-            "title": "Optimal Lot Profit Pct",
-            "description": "Profit % for optimal lot size"
-          },
-          "recommended_ratio": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Recommended Ratio",
-            "description": "Recommended buy/sell ratio"
-          },
-          "brick_resistance": {
-            "type": "number",
-            "title": "Brick Resistance",
-            "description": "Brick resistance score"
-          },
-          "theoretical_spread": {
-            "type": "number",
-            "title": "Theoretical Spread",
-            "description": "Theoretical spread without quantization"
-          }
-        },
-        "type": "object",
-        "required": [
-          "min_profitable_lot",
-          "optimal_lot_profit_pct",
-          "brick_resistance",
-          "theoretical_spread"
-        ],
-        "title": "QuantizedAnalysisData",
-        "description": "Full quantized analysis for a flip opportunity."
-      },
-      "QuantizedSpreadData": {
-        "properties": {
-          "lot_size": {
-            "type": "integer",
-            "title": "Lot Size",
-            "description": "Lot size in units"
-          },
-          "actual_cost": {
-            "type": "number",
-            "title": "Actual Cost",
-            "description": "Actual cost for this lot"
-          },
-          "actual_revenue": {
-            "type": "number",
-            "title": "Actual Revenue",
-            "description": "Actual revenue for this lot"
-          },
-          "net_profit": {
-            "type": "number",
-            "title": "Net Profit",
-            "description": "Net profit after fees"
-          },
-          "gross_profit_pct": {
-            "type": "number",
-            "title": "Gross Profit Pct",
-            "description": "Gross profit percentage"
-          },
-          "q_spread": {
-            "type": "number",
-            "title": "Q Spread",
-            "description": "Quantized spread"
-          }
-        },
-        "type": "object",
-        "required": [
-          "lot_size",
-          "actual_cost",
-          "actual_revenue",
-          "net_profit",
-          "gross_profit_pct",
-          "q_spread"
-        ],
-        "title": "QuantizedSpreadData",
-        "description": "Quantized spread analysis for a specific lot size."
-      },
-      "ScannerOpportunityData": {
-        "properties": {
-          "currency": {
-            "type": "string",
-            "title": "Currency",
-            "description": "Currency API identifier"
-          },
-          "score": {
-            "type": "number",
-            "title": "Score",
-            "description": "Composite flip score (0-1)"
-          },
-          "spread": {
-            "type": "number",
-            "title": "Spread",
-            "description": "Raw spread percentage"
-          },
-          "spread_after_fees": {
-            "type": "number",
-            "title": "Spread After Fees",
-            "description": "Spread after exchange fees"
-          },
-          "volume_24h": {
-            "type": "integer",
-            "title": "Volume 24H",
-            "description": "24h traded volume"
-          },
-          "momentum": {
-            "type": "number",
-            "title": "Momentum",
-            "description": "Price momentum"
-          },
-          "volatility": {
-            "type": "number",
-            "title": "Volatility",
-            "description": "Price volatility"
-          },
-          "cluster": {
-            "type": "string",
-            "title": "Cluster",
-            "description": "Cluster label"
-          },
-          "bid": {
-            "type": "number",
-            "title": "Bid",
-            "description": "Bid price"
-          },
-          "ask": {
-            "type": "number",
-            "title": "Ask",
-            "description": "Ask price"
-          },
-          "mid_price": {
-            "type": "number",
-            "title": "Mid Price",
-            "description": "Mid price"
-          },
-          "quantized_analysis": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QuantizedAnalysisData"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "tier_distance": {
-            "type": "integer",
-            "title": "Tier Distance",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "currency",
-          "score",
-          "spread",
-          "spread_after_fees",
-          "volume_24h",
-          "momentum",
-          "volatility",
-          "cluster",
-          "bid",
-          "ask",
-          "mid_price"
-        ],
-        "title": "ScannerOpportunityData",
-        "description": "Single scanner result with detailed metrics."
-      },
-      "ScannerParams": {
-        "properties": {
-          "min_score": {
-            "type": "number",
-            "title": "Min Score"
-          },
-          "max_score": {
-            "type": "number",
-            "title": "Max Score"
-          },
-          "min_volume": {
-            "type": "integer",
-            "title": "Min Volume"
-          },
-          "max_spread": {
-            "type": "number",
-            "title": "Max Spread"
-          },
-          "min_spread": {
-            "type": "number",
-            "title": "Min Spread"
-          },
-          "cluster": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cluster"
-          },
-          "currency": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Currency"
-          },
-          "sort_by": {
-            "type": "string",
-            "title": "Sort By"
-          },
-          "sort_dir": {
-            "type": "string",
-            "title": "Sort Dir"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit"
-          }
-        },
-        "type": "object",
-        "required": [
-          "min_score",
-          "max_score",
-          "min_volume",
-          "max_spread",
-          "min_spread",
-          "cluster",
-          "currency",
-          "sort_by",
-          "sort_dir",
-          "limit"
-        ],
-        "title": "ScannerParams",
-        "description": "Parameters used for the scan."
-      },
-      "ScannerResponse": {
-        "properties": {
-          "league": {
-            "type": "string",
-            "title": "League",
-            "description": "League name"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total",
-            "description": "Total results after filtering"
-          },
-          "opportunities": {
-            "items": {
-              "$ref": "#/components/schemas/ScannerOpportunityData"
-            },
-            "type": "array",
-            "title": "Opportunities"
-          },
-          "scan_params": {
-            "$ref": "#/components/schemas/ScannerParams",
-            "description": "Parameters used for the scan"
-          },
-          "data_available": {
-            "type": "boolean",
-            "title": "Data Available",
-            "description": "Whether data is available"
-          },
-          "fetched_at": {
-            "type": "string",
-            "title": "Fetched At",
-            "description": "ISO 8601 timestamp of data fetch"
-          }
-        },
-        "type": "object",
-        "required": [
-          "league",
-          "total",
-          "scan_params",
-          "data_available",
-          "fetched_at"
-        ],
-        "title": "ScannerResponse",
-        "description": "Response for GET /api/v1/scanner/scan."
       },
       "StorageValueInputs": {
         "properties": {

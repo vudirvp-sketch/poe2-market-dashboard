@@ -262,24 +262,7 @@ Pre-filters currency pairs by:
 - Maximum volatility (`max_volatility` from config)
 - Maximum spread (`max_spread` from config)
 
-### 6.11 Scanner
-
-**Location:** `backend/api/routes_scanner.py`
-
-Advanced flip opportunity scanner with custom filters and sorting:
-- Score range filter (`min_score`, `max_score`)
-- Volume filter (`min_volume`)
-- Spread range filter (`min_spread`, `max_spread`)
-- Cluster filter (`stable`, `moderate`, `volatile_illiquid`)
-- Currency substring filter (case-insensitive partial match)
-- Sort by: `score`, `spread`, `volume_24h`, `momentum`, `volatility`
-- Result limit (1-200)
-
-**Endpoint:** `GET /api/scanner/scan`
-
-Reuses `_build_flip_opportunities()` from `routes_arbitrage.py` with PipelineCache to avoid redundant computation.
-
-### 6.12 Optimizer
+### 6.11 Optimizer
 
 **Location:** `backend/api/routes_optimizer.py`
 
@@ -291,7 +274,7 @@ Dijkstra-based optimal currency conversion path finder. Given a source currency,
 
 **Algorithm:** Dijkstra shortest-path on `-log(rate)` weights. Note: when rates > 1, `-log(rate)` produces negative weights which violate Dijkstra's precondition — this can produce suboptimal paths in certain edge cases (known issue, tracked for future fix with Bellman-Ford).
 
-### 6.13 Analyst
+### 6.12 Analyst
 
 **Location:** `backend/api/routes_analyst.py`
 
@@ -304,19 +287,19 @@ League analyst summary endpoint that provides an overview of the current market 
 
 **Frontend fallback:** When the backend is offline, `/api/poe2/analyst-fallback` provides a lightweight version computed entirely in Next.js using cached POE2Scout data.
 
-### 6.14 Tier Classification
+### 6.13 Tier Classification
 
 **Location:** `backend/economy/tiers.py`
 
 Classifies currencies into tiers (T0–T5) based on configurable relative price boundaries. Tier anchors (Mirror, Divine, Exalted, Chaos) define the reference points. Used by the Flips tab for tier-distance scoring and the Tiers endpoint.
 
-### 6.15 Benchmarks
+### 6.14 Benchmarks
 
 **Location:** `backend/economy/benchmarks.py`
 
 Computes historical benchmark statistics for individual currencies: mean, median, percentiles, and deviation from current price. Uses data from HistoricalStore. Referenced by the Benchmarks endpoint.
 
-### 6.16 Momentum
+### 6.15 Momentum
 
 **Location:** `backend/economy/momentum.py`
 

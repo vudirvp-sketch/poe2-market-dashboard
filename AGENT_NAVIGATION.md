@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 67 — closed P2-9, P2-6, P2-4).
+> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 68 — closed P2-4 follow-up: scanner deleted).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -15,8 +15,7 @@
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
-| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 iter 63, P1-9 iter 66, **P2-4 iter 67**) | `/flips` now supports `max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir` (all optional with safe defaults) |
-| `backend/api/routes_scanner.py` | **DEPRECATED (P2-4 iter 67)** — duplicates `/flips` | Emits `Deprecation`/`Sunset`/`Link` headers + warning log. **Scheduled for deletion in iter 68.** |
+| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 iter 63, P1-9 iter 66, **P2-4 iter 67**) | `/flips` supports `max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir` (all optional with safe defaults). The standalone `/scanner/scan` endpoint was deleted in iter 68. |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (P1-8 fixed iter 64) | `_detect_negative_cycle_nodes()` flags profitable arbitrage cycles; `_bellman_ford` returns `None` when target is on a cycle |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 iter 59, P1-7 iter 61) | All 3 endpoints async-await EventManager; `unified_cache` invalidated after mutation |
 | `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` |
@@ -85,7 +84,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 19. **Optimizer negative cycles** (P1-8): a negative cycle in `-log(rate)` space = profitable arbitrage. When `_bellman_ford` detects one and `target` lies on it, returns empty `path` with `data_available: true` — callers fall back to `direct_rate`.
 20. **ProcessPoolExecutor is lazy** (P2-13): always call `get_process_pool()` at the call site — never cache the returned reference.
 21. **LightGBM adaptive fallback** (P2-9, iter 67): `train()` proceeds with minimal features (`price_lags=[1]`) when `floor (5) <= len(log_prices) < min_points (15)`. Below `floor`, skips. Configurable via `ForecastingConfig.lightgbm_min_data_points_floor`.
-22. **Scanner is deprecated** (P2-4, iter 67): `/api/v1/scanner/scan` emits deprecation headers. All its filter/sort params now exist on `/api/v1/arbitrage/flips`. **Scanner will be deleted in iter 68** — do not add new callers.
+22. **Scanner is deleted** (P2-4, iter 68): the standalone `/api/v1/scanner/scan` endpoint and `routes_scanner.py` were removed in iter 68. All its filter/sort params live on `/api/v1/arbitrage/flips` since iter 67 — use that.
 
 ## 4. Known Issues
 
@@ -98,6 +97,7 @@ Quick reference for the most common symptoms:
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | `dashboard-page.tsx` unmaintainable | 1705-line god-component | P2-1 |
 | `currency_names_ru.py` hard to edit | 966-line hardcoded dict | P2-3 |
+| `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |
 | `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`) | — |
 | Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` (P2-6 iter 67) | — |
 | LightGBM skips for new currency | (Fixed iter 67 — adaptive fallback from `floor=5`) | — |
@@ -133,7 +133,6 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/optimizer/matrix` | Conversion matrix |
 | GET | `/api/v1/analyst/summary` | League analyst summary |
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
-| GET | `/api/v1/scanner/scan` | **DEPRECATED (P2-4 iter 67)** — use `/flips` instead. Will be removed in iter 68. |
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
 

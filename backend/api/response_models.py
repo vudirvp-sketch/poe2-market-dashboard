@@ -489,51 +489,6 @@ class CorrelationResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Scanner
-# ---------------------------------------------------------------------------
-
-class ScannerOpportunityData(BaseModel):
-    """Single scanner result with detailed metrics."""
-    currency: str = Field(description="Currency API identifier")
-    score: float = Field(description="Composite flip score (0-1)")
-    spread: float = Field(description="Raw spread percentage")
-    spread_after_fees: float = Field(description="Spread after exchange fees")
-    volume_24h: int = Field(description="24h traded volume")
-    momentum: float = Field(description="Price momentum")
-    volatility: float = Field(description="Price volatility")
-    cluster: str = Field(description="Cluster label")
-    bid: float = Field(description="Bid price")
-    ask: float = Field(description="Ask price")
-    mid_price: float = Field(description="Mid price")
-    quantized_analysis: QuantizedAnalysisData | None = Field(default=None)
-    tier_distance: int = Field(default=0)
-
-
-class ScannerParams(BaseModel):
-    """Parameters used for the scan."""
-    min_score: float
-    max_score: float
-    min_volume: int
-    max_spread: float
-    min_spread: float
-    cluster: str | None
-    currency: str | None
-    sort_by: str
-    sort_dir: str
-    limit: int
-
-
-class ScannerResponse(BaseModel):
-    """Response for GET /api/v1/scanner/scan."""
-    league: str = Field(description="League name")
-    total: int = Field(description="Total results after filtering")
-    opportunities: list[ScannerOpportunityData] = Field(default_factory=list)
-    scan_params: ScannerParams = Field(description="Parameters used for the scan")
-    data_available: bool = Field(description="Whether data is available")
-    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
-
-
-# ---------------------------------------------------------------------------
 # Liquid Chain
 # ---------------------------------------------------------------------------
 
