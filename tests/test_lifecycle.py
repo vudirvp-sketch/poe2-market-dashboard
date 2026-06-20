@@ -97,19 +97,38 @@ class TestPatchReset:
         # Now: days since patch = 20 → MID (20 ≤ 35)
         assert detector.current_phase(now) == LeaguePhase.MID
 
-    def test_patch_date_before_league_start_ignored(self):
-        """Patch date before league start should be ignored (max keeps league start)."""
+    def test_major_patch_resets_even_if_before_league_start(self):
+        """A major_patch event BEFORE league_start must STILL reset the reference.
+
+        P0-4 regression: previously `_reference_date` did
+        `max(league_start, patch_reset_date)`, so a preview-patch shipped
+        a few days before league_start would lose the `max()` and the
+        phase would NOT reset — silently staying LATE instead of going
+        back to EARLY. Per PoE2_Flipper_Canonical_Formulas.md §6, an
+        explicit `reset_for_major_patch()` call must ALWAYS take
+        precedence, regardless of relative ordering.
+
+        Setup:
+            - league_start = 2025-01-15
+            - patch_date   = 2025-01-01 (BEFORE league_start)
+            - now          = 2025-01-20
+
+        OLD (buggy): reference = max(01-15, 01-01) = 01-15 → days_since=5 → EARLY
+                     (the patch was ignored; phase based on league_start)
+        NEW (fixed) : reference = 01-01 (patch wins) → days_since=19 → MID
+        """
         league_start = datetime(2025, 1, 15, 0, 0, 0, tzinfo=timezone.utc)
-        config = _make_config()
+        config = _make_config()  # phase_early_days=7, phase_mid_days=35
         detector = PhaseDetector(league_start, config)
 
         old_patch = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         detector.reset_for_major_patch(old_patch)
 
-        # Reference should still be league_start (the later one)
+        # Reference should now be the patch date (2025-01-01), NOT league_start.
         now = datetime(2025, 1, 20, 0, 0, 0, tzinfo=timezone.utc)
-        assert detector.days_since_reference(now) == 5
-        assert detector.current_phase(now) == LeaguePhase.EARLY
+        # Days since 2025-01-01 = 19 → MID (7 < 19 ≤ 35)
+        assert detector.days_since_reference(now) == 19
+        assert detector.current_phase(now) == LeaguePhase.MID
 
 
 class TestPhaseInfo:

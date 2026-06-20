@@ -1,10 +1,11 @@
 """
 League Phase Detection — PhaseDetector.
 
-From PoE2_Flipper_Canonical_Formulas.md §1:
+From PoE2_Flipper_Canonical_Formulas.md §1 + §6:
 
     days_since_reference = floor((current_utc_timestamp - reference_timestamp) / 86400)
-    reference_timestamp = max(league_start_timestamp, last_major_patch_timestamp)
+    reference_timestamp = last_major_patch_timestamp if a major_patch event
+                          has been registered, else league_start_timestamp
 
     if days_since_reference ≤ phase_early_days: → EARLY
     elif days_since_reference ≤ phase_mid_days: → MID
@@ -15,6 +16,11 @@ Defaults: phase_early_days=14, phase_mid_days=42
 Phase boundaries are not purely day-based. A major patch event can reset
 the phase clock. The system accepts an external event flag (set manually
 via API/UI) that reclassifies the current phase.
+
+P0-4 fix: previously the formula used `max(league_start, last_major_patch)`,
+which silently ignored major_patch events that shipped before league_start
+(the typical preview-patch scenario). Per §6, an explicit major_patch reset
+must ALWAYS take precedence — see `_reference_date`.
 """
 
 from __future__ import annotations
@@ -53,7 +59,9 @@ _PHASE_STRATEGIES = {
 class PhaseDetector:
     """Detects the current league phase based on time since reference date.
 
-    The reference date is the later of league start or last major patch.
+    The reference date is the last major patch timestamp if a major_patch
+    reset has been registered (via `reset_for_major_patch`), else the league
+    start timestamp. See `_reference_date` for the P0-4 fix rationale.
     """
 
     def __init__(
@@ -78,9 +86,19 @@ class PhaseDetector:
         self._patch_reset_date = value
 
     def _reference_date(self) -> datetime:
-        """The reference date is max(league_start, last_major_patch)."""
+        """The reference date — last major patch if set, else league start.
+
+        P0-4 fix: previously returned `max(league_start, patch_reset_date)`.
+        That broke the major_patch reset contract when a patch shipped BEFORE
+        league_start (typical preview-patch scenario): league_start won the
+        `max()`, the reset was silently ignored, and the phase stayed LATE
+        instead of resetting to EARLY. Per PoE2_Flipper_Canonical_Formulas.md
+        §6 ("Only major_patch events reset the PhaseDetector reference date"),
+        an explicit `reset_for_major_patch()` call must ALWAYS reset the
+        reference — even if the patch timestamp predates league_start.
+        """
         if self._patch_reset_date is not None:
-            return max(self._league_start, self._patch_reset_date)
+            return self._patch_reset_date
         return self._league_start
 
     def days_since_reference(self, now: datetime | None = None) -> int:
