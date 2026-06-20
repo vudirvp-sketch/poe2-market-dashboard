@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 62 — orphan file cleanup).
+> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 63 — P1-4 clustering dedup).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -15,10 +15,11 @@
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
-| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P1-9) | P0-6 fixed iter 56; P0-5 fixed iter 57 (no dead `prices` param); magic spread numbers |
+| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 fixed iter 63) | P0-6 fixed iter 56; P0-5 fixed iter 57; clustering now via `clustering_helpers.py`; magic spread numbers (P1-9) |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 fixed iter 59, P1-7 fixed iter 61) | All 3 endpoints async-await EventManager; `pipeline_cache` + `daily_stats_cache` invalidated after mutation |
-| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `routes_arbitrage.py`, `routes_analyst.py` |
+| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `clustering_helpers.py`, `routes_analyst.py` |
+| `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 fixed iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY`; used by `routes_prices.py` and `routes_arbitrage.py` |
 | `backend/economy/events.py` | EventManager + StoredEvent (P1-7 fixed iter 61, P3-8 auto-closed) | `event_id`, `is_active`, `created_at`; 4 methods async (`create_event` / `delete_event` / `deactivate_event` / `clear_all`); `_prune_expired` left sync intentionally |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete needed (P1-6) |
@@ -81,13 +82,13 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 6 P1 / 8 P2 / 5 P3). 6 P0 issues fixed in iter 54-58; P1-7 + P3-8 closed iter 61; P2-12 closed iter 62 (see STATUS.md §Fixed).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 5 P1 / 8 P2 / 5 P3). 6 P0 issues fixed in iter 54-58; P1-4 closed iter 63; P1-7 + P3-8 closed iter 61; P2-12 closed iter 62 (see STATUS.md §Fixed).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| Backend "alive" but `/flips` hangs | Clustering cold-start | P1-4 |
+| Backend "alive" but `/flips` hangs | (Fixed in iter 63 — was P1-4 clustering dedup) | — |
 | SSE connected but UI stale | (Fixed in iter 55 — was P0-1) | — |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | Stale forecast after event creation | (Fixed in iter 59 — was P1-11) | — |

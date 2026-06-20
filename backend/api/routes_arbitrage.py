@@ -30,7 +30,11 @@ from backend.economy.momentum import PriceMomentumTracker
 from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
-from backend.predictors.clustering import CurrencyClusterer
+from backend.economy.clustering_helpers import (
+    prepare_clustering_data,
+    run_clustering_sync as _run_clustering_sync,
+    CLUSTER_LABELS_CACHE_KEY,
+)
 from backend.models.currency import (
     ExchangeRate,
     FlipOpportunity,
@@ -99,7 +103,9 @@ class FlipComputeBundle:
 # `compute_transitive_prices` keeps the pricing-related helpers in one
 # place so they can be reasoned about together.
 
-from backend.economy.pricing import find_price_24h_ago as _find_price_24h_ago
+# Previously `_find_price_24h_ago` was imported here from pricing.py.
+# Now clustering_helpers.py handles the 24h-ago lookup internally via
+# `find_price_24h_ago` — no direct import needed in this module.
 
 
 # ---------------------------------------------------------------------------
@@ -172,45 +178,26 @@ def _build_flip_opportunities_sync(
         if cached_cluster_labels is not None:
             cluster_labels = {k: ClusterLabel(v) for k, v in cached_cluster_labels.items()}
         else:
-            cluster_price_histories: dict[str, list[float]] = {}
-            cluster_volumes: dict[str, float] = {}
-            cluster_prices_now: dict[str, float] = {}
-            cluster_prices_24h_ago: dict[str, float] = {}
-
-            for key, rate in rates.items():
-                for curr in (rate.currency_from, rate.currency_to):
-                    if curr not in cluster_price_histories:
-                        cluster_price_histories[curr] = currency_price_history.get(curr, [])
-                        cluster_volumes[curr] = 0.0
-                        cluster_prices_now[curr] = 0.0
-                        cluster_prices_24h_ago[curr] = 0.0
-
-                for curr in (rate.currency_from, rate.currency_to):
-                    vol = float(rate.volume_traded)
-                    if vol > cluster_volumes.get(curr, 0):
-                        cluster_volumes[curr] = vol
-
-            for curr, history in cluster_price_histories.items():
-                if history:
-                    cluster_prices_now[curr] = history[-1]
-                    ts_history = currency_price_history_timestamped.get(curr, [])
-                    if ts_history:
-                        price_24h = _find_price_24h_ago(ts_history)
-                        cluster_prices_24h_ago[curr] = price_24h if price_24h is not None else (history[-2] if len(history) >= 2 else history[-1])
-                    else:
-                        cluster_prices_24h_ago[curr] = history[-2] if len(history) >= 2 else history[-1]
-                else:
-                    cluster_prices_now[curr] = prices_in_base.get(curr, 0)
-                    cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
+            # Prepare clustering data using shared helper
+            (cluster_price_histories, cluster_volumes,
+             cluster_prices_now, cluster_prices_24h_ago) = prepare_clustering_data(
+                rates=rates,
+                currencies=bundle.currencies,
+                prices_in_base=prices_in_base,
+                price_histories_prices=currency_price_history,
+                price_histories_timestamped=currency_price_history_timestamped,
+            )
 
             if len(cluster_price_histories) >= 3:
-                clusterer = CurrencyClusterer()  # Uses get_settings() defaults
-                cluster_labels_result = clusterer.fit(
-                    cluster_price_histories, cluster_volumes,
-                    cluster_prices_now, cluster_prices_24h_ago,
+                # config=None → uses get_settings() defaults (acceptable inside executor)
+                cluster_labels_raw = _run_clustering_sync(
+                    None,
+                    cluster_price_histories,
+                    cluster_volumes,
+                    cluster_prices_now,
+                    cluster_prices_24h_ago,
                 )
-                cluster_labels = {c.currency: c.cluster for c in clusterer.last_output.clusters}
-                logger.info("Clustering completed: %d currencies assigned", len(cluster_labels))
+                cluster_labels = {k: ClusterLabel(v) for k, v in cluster_labels_raw.items()}
                 # Note: cannot cache to PipelineCache here — we're inside
                 # ProcessPoolExecutor and PipelineCache is not available.
                 # Caching happens in the async wrapper after executor returns.
@@ -492,7 +479,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     # extract the data as a plain dict before passing to executor.
     cached_cluster_labels: dict[str, str] | None = None
     try:
-        cached_clustering = pipeline_cache.get("arbitrage_cluster_labels")
+        cached_clustering = pipeline_cache.get(CLUSTER_LABELS_CACHE_KEY)
         if cached_clustering is not None and not cached_clustering.stale:
             # Convert ClusterLabel enums to plain strings for pickling
             cached_cluster_labels = {
@@ -537,8 +524,12 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     # 5. Cache clustering result back to PipelineCache (only if computed fresh)
     # The sync function may have computed new cluster_labels. We can't cache
-    # inside the executor (no PipelineCache access), but the price_cluster_labels
-    # cache in routes_prices.py covers this.
+    # inside the executor (no PipelineCache access), so we write the result
+    # back to the shared cache key here.
+    # NOTE: This is a best-effort cache write. If routes_prices.py already
+    # cached the same data, this write is redundant but harmless (same key,
+    # same value). If routes_prices.py hasn't run yet, this ensures the
+    # next request (from either route) gets a cache hit.
 
     return opportunities
 

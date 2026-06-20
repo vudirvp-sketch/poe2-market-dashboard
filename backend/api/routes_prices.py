@@ -30,6 +30,11 @@ from backend.api.response_models import (
     PhaseResponse, CurrenciesResponse, PricesResponse, HeatmapResponse,
     PriceForPairResponse, TiersResponse, BenchmarksResponse,
 )
+from backend.economy.clustering_helpers import (
+    prepare_clustering_data,
+    run_clustering_sync as _run_clustering_sync,
+    CLUSTER_LABELS_CACHE_KEY,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,39 +74,6 @@ def _compute_momentum_from_logs(
     except Exception as e:
         logger.debug("Momentum computation failed: %s", e)
         return {"momentum": 0.0, "volatility": 0.001, "acceleration": 0.0}
-
-
-def _run_clustering_sync(
-    config,
-    cluster_price_histories: dict[str, list[float]],
-    cluster_volumes: dict[str, float],
-    cluster_prices_now: dict[str, float],
-    cluster_prices_24h_ago: dict[str, float],
-) -> dict[str, str]:
-    """CPU-bound clustering — runs in ProcessPoolExecutor.
-
-    Returns a dict mapping currency_name → cluster_label string.
-    This function receives only picklable data (plain dicts, no objects
-    holding sqlite3.Connection) so it can safely run in a subprocess.
-    """
-    from backend.predictors.clustering import CurrencyClusterer
-    from backend.models.currency import ClusterLabel
-
-    if len(cluster_price_histories) < 3:
-        logger.warning(
-            "Only %d currencies for clustering (need >=3), using MODERATE default",
-            len(cluster_price_histories),
-        )
-        return {}
-
-    clusterer = CurrencyClusterer(config)
-    output = clusterer.fit(
-        cluster_price_histories, cluster_volumes,
-        cluster_prices_now, cluster_prices_24h_ago,
-    )
-    result = {c.currency: c.cluster.value for c in output.clusters}
-    logger.info("Prices clustering completed: %d currencies assigned", len(result))
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -190,58 +162,29 @@ async def get_all_prices():
             momentum_lookup[orig_api_id] = momentum_lookup[api_id_lower]
 
     # Build response with momentum/volatility + cluster
-    from backend.predictors.clustering import CurrencyClusterer
     from backend.models.currency import ClusterLabel
 
     # Run currency clustering for cluster labels (cached via PipelineCache)
     pipeline_cache = get_pipeline_cache()
-    cached_clustering = pipeline_cache.get("price_cluster_labels")
+    cached_clustering = pipeline_cache.get(CLUSTER_LABELS_CACHE_KEY)
     if cached_clustering is not None and not cached_clustering.stale:
         cluster_labels = cached_clustering.value
     else:
         cluster_labels: dict[str, ClusterLabel] = {}
         try:
-            cluster_price_histories: dict[str, list[float]] = {}
-            cluster_volumes: dict[str, float] = {}
-            cluster_prices_now: dict[str, float] = {}
-            cluster_prices_24h_ago: dict[str, float] = {}
-
             # Use snapshot's prices_in_base for clustering fallback
             prices_in_base = snapshot.prices_in_base
 
-            # Accumulate volume per currency from rates
-            for key, rate in rates.items():
-                for curr in (rate.currency_from, rate.currency_to):
-                    if curr not in cluster_price_histories:
-                        cluster_price_histories[curr] = []
-                        cluster_volumes[curr] = 0.0
-                        cluster_prices_now[curr] = 0.0
-                        cluster_prices_24h_ago[curr] = 0.0
-                    vol = float(rate.volume_traded)
-                    if vol > cluster_volumes.get(curr, 0):
-                        cluster_volumes[curr] = vol
-
-            # Reuse snapshot's currencies for price histories
-            for api_id_lower, curr in snapshot.currencies.items():
-                orig_id = curr.get("api_id", api_id_lower)
-                price_logs = curr.get("price_logs", [])
-                if orig_id in cluster_price_histories and price_logs:
-                    sorted_logs = sorted(
-                        [l for l in price_logs if l.get("price") is not None and l.get("time") is not None],
-                        key=lambda l: l["time"],
-                    )
-                    prices = [l["price"] for l in sorted_logs]
-                    if len(prices) >= 2:
-                        cluster_price_histories[orig_id] = prices
-                        cluster_prices_now[orig_id] = prices[-1]
-                        cluster_prices_24h_ago[orig_id] = prices[0]
-
-            # Fill remaining prices from prices_in_base fallback
-            for curr in cluster_price_histories:
-                if cluster_prices_now[curr] == 0:
-                    cluster_prices_now[curr] = prices_in_base.get(curr, 0)
-                if cluster_prices_24h_ago[curr] == 0:
-                    cluster_prices_24h_ago[curr] = prices_in_base.get(curr, 0)
+            # Prepare clustering data using shared helper
+            (cluster_price_histories, cluster_volumes,
+             cluster_prices_now, cluster_prices_24h_ago) = prepare_clustering_data(
+                rates=rates,
+                currencies=snapshot.currencies,
+                prices_in_base=prices_in_base,
+                # routes_prices extracts from snapshot.currencies[].price_logs
+                price_histories_prices=None,
+                price_histories_timestamped=None,
+            )
 
             # Offload CPU-bound clustering to ProcessPoolExecutor.
             # CurrencyClusterer.fit() uses sklearn KMeans which is CPU-heavy
@@ -276,8 +219,8 @@ async def get_all_prices():
             # Convert plain string labels back to ClusterLabel enums
             cluster_labels = {k: ClusterLabel(v) for k, v in cluster_labels_raw.items()}
 
-            # Cache the result
-            pipeline_cache.put("price_cluster_labels", cluster_labels)
+            # Cache the result under the shared key
+            pipeline_cache.put(CLUSTER_LABELS_CACHE_KEY, cluster_labels)
         except Exception as e:
             logger.error("Clustering in prices route failed: %s", e)
             cluster_labels = {}
