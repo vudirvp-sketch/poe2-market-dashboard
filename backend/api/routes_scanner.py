@@ -1,6 +1,18 @@
 """
 API routes for enhanced flip scanning with custom filters.
 
+DEPRECATED (P2-4, iter 67): This endpoint duplicates `/api/v1/arbitrage/flips`
+and returns a degraded response shape (missing `event_status`, `data_freshness`,
+`profit_per_unit_base`, `fair_rate`, `deviation_pct`, `currency_*_ru/en` fields).
+
+As of iter 67, all of this endpoint's filter/sort params (`max_score`,
+`min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir`)
+are available on `/api/v1/arbitrage/flips` with safe defaults, so callers
+should migrate.
+
+This file is scheduled for deletion in iter 68. Until then, requests receive
+a `Deprecation` header and a `warning` is logged on first hit per process.
+
 Endpoint:
     GET /api/v1/scanner/scan — Advanced flip opportunity scanner with custom filters
 """
@@ -11,7 +23,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request, Response
 
 from backend.config import get_settings, AppConfig
 from backend.data.unified_cache import get_pipeline_cache
@@ -25,6 +37,8 @@ router = APIRouter(prefix="/api/v1/scanner", tags=["scanner"])
 
 @router.get("/scan", response_model=ScannerResponse)
 async def scan_flips(
+    request: Request,
+    response: Response,
     min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum score filter"),
     max_score: float = Query(1.0, ge=0.0, le=1.0, description="Maximum score filter"),
     min_volume: int = Query(0, ge=0, description="Minimum 24h volume filter"),
@@ -38,14 +52,28 @@ async def scan_flips(
     include_stale: bool = Query(False, description="Include opportunities with stale data"),
 ):
     """Advanced flip scanner with custom filters and sorting.
-    
-    Unlike /api/arbitrage/flips which returns pre-filtered opportunities,
-    this endpoint supports fine-grained filtering including spread ranges,
-    cluster selection, currency substring matching, and custom sorting.
+
+    .. deprecated:: iter 67 (P2-4)
+        Use :http:get:`/api/v1/arbitrage/flips` instead — it now supports all
+        the same filter and sort query parameters with a richer response shape.
+        This endpoint will be removed in iter 68.
     """
+    # P2-4 (iter 67): Emit deprecation signals so callers can migrate.
+    # The Sunset header is the standard HTTP signal for "this resource will be
+    # removed"; the Deprecation header is the day-to-day signal (RFC 8594 draft).
+    response.headers["Deprecation"] = "true"
+    response.headers["Sunset"] = "Sun, 21 Jun 2026 00:00:00 GMT"
+    response.headers["Link"] = '</api/v1/arbitrage/flips>; rel="successor-version"'
+    logger.warning(
+        "Deprecated endpoint /api/v1/scanner/scan called from %s — "
+        "use /api/v1/arbitrage/flips with the same query params instead. "
+        "This endpoint will be removed in iter 68.",
+        request.client.host if request.client else "unknown",
+    )
+
     config = get_settings()
     pipeline_cache = get_pipeline_cache()
-    
+
     # Reuse the existing flip opportunities builder (cached)
     cached = pipeline_cache.get("flip_opportunities")
     if cached is not None and not cached.stale:
@@ -60,33 +88,33 @@ async def scan_flips(
                 opportunities = cached.value
             else:
                 opportunities = []
-    
+
     # Apply filters
     filtered = []
     for o in opportunities:
         # Score range filter
         if o.score < min_score or o.score > max_score:
             continue
-        
+
         # Volume filter
         if o.volume_24h < min_volume:
             continue
-        
+
         # Spread range filter
         if o.spread < min_spread or o.spread > max_spread:
             continue
-        
+
         # Cluster filter
         if cluster is not None and o.cluster.value != cluster:
             continue
-        
+
         # Currency substring filter (case-insensitive)
         if currency is not None:
             if currency.lower() not in o.currency.lower():
                 continue
-        
+
         filtered.append(o)
-    
+
     # Sort
     sort_key_map = {
         "score": lambda o: o.score,
@@ -98,10 +126,10 @@ async def scan_flips(
     sort_fn = sort_key_map.get(sort_by, sort_key_map["score"])
     reverse = sort_dir == "desc"
     filtered.sort(key=sort_fn, reverse=reverse)
-    
+
     # Apply limit
     filtered = filtered[:limit]
-    
+
     return {
         "league": config.league.league_name,
         "total": len(filtered),

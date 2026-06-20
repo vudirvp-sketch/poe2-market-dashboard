@@ -569,10 +569,22 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 @router.get("/flips", response_model=FlipsResponse)
 async def get_flip_opportunities(
     min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum score filter"),
+    max_score: float = Query(1.0, ge=0.0, le=1.0, description="Maximum score filter (P2-4 iter 67)"),
     min_volume: int = Query(0, ge=0, description="Minimum 24h volume filter"),
+    min_spread: float = Query(0.0, ge=0.0, le=1.0, description="Minimum spread filter (P2-4 iter 67)"),
+    max_spread: float = Query(1.0, ge=0.0, le=1.0, description="Maximum spread filter (P2-4 iter 67)"),
+    cluster: Optional[str] = Query(None, description="Cluster filter (exact match): stable, moderate, volatile_illiquid (P2-4 iter 67)"),
+    currency: Optional[str] = Query(None, description="Currency substring filter (case-insensitive, matches either side of pair) (P2-4 iter 67)"),
+    sort_by: str = Query("score", description="Sort field: score, spread, volume_24h, momentum, volatility (P2-4 iter 67)"),
+    sort_dir: str = Query("desc", description="Sort direction: asc, desc (P2-4 iter 67)"),
     limit: int = Query(50, ge=1, le=200, description="Max results"),
 ):
-    """Return scored flip opportunities for the configured league."""
+    """Return scored flip opportunities for the configured league.
+
+    P2-4 (iter 67): Extended with optional filter/sort params previously only
+    available in the deprecated `/api/v1/scanner/scan` endpoint. All new params
+    have safe defaults so existing callers are unaffected.
+    """
     config = get_settings()
 
     # P0-1: Check if snapshot data is available before processing.
@@ -619,10 +631,41 @@ async def get_flip_opportunities(
                 logger.error("No cache available for flip_opportunities, returning empty: %s", e)
                 opportunities = []
 
-    filtered = [
-        o for o in opportunities
-        if o.score >= min_score and o.volume_24h >= min_volume
-    ]
+    # P2-4 (iter 67): Apply extended filters (previously only in /scanner/scan).
+    # All new filters use safe defaults so callers that don't pass them get
+    # the same result as before.
+    currency_lower = currency.lower() if currency is not None else None
+
+    def _matches(o: FlipOpportunity) -> bool:
+        if o.score < min_score or o.score > max_score:
+            return False
+        if o.volume_24h < min_volume:
+            return False
+        if o.spread < min_spread or o.spread > max_spread:
+            return False
+        if cluster is not None and o.cluster.value != cluster:
+            return False
+        if currency_lower is not None and currency_lower not in o.currency.lower():
+            return False
+        return True
+
+    filtered = [o for o in opportunities if _matches(o)]
+
+    # P2-4 (iter 67): Apply sort (previously only in /scanner/scan).
+    # Default sort_by="score", sort_dir="desc" preserves the original
+    # behavior (opportunities are already scored desc from _build_flip_opportunities).
+    _sort_key_map = {
+        "score": lambda o: o.score,
+        "spread": lambda o: o.spread,
+        "volume_24h": lambda o: o.volume_24h,
+        "momentum": lambda o: o.momentum,
+        "volatility": lambda o: o.volatility,
+    }
+    _sort_fn = _sort_key_map.get(sort_by, _sort_key_map["score"])
+    _reverse = (sort_dir == "desc")
+    filtered.sort(key=_sort_fn, reverse=_reverse)
+
+    # Apply limit
     filtered = filtered[:limit]
 
     # Enrich with Russian/English names from currency_names_ru mapping
