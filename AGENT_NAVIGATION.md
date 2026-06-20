@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 63 — P1-4 clustering dedup).
+> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 64 — P1-8 Bellman-Ford negative cycle detection).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -16,7 +16,7 @@
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 fixed iter 63) | P0-6 fixed iter 56; P0-5 fixed iter 57; clustering now via `clustering_helpers.py`; magic spread numbers (P1-9) |
-| `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
+| `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (P1-8 fixed iter 64) | `_detect_negative_cycle_nodes()` flags profitable arbitrage cycles; `_bellman_ford` returns `None` when target is on a cycle |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 fixed iter 59, P1-7 fixed iter 61) | All 3 endpoints async-await EventManager; `pipeline_cache` + `daily_stats_cache` invalidated after mutation |
 | `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `clustering_helpers.py`, `routes_analyst.py` |
 | `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 fixed iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY`; used by `routes_prices.py` and `routes_arbitrage.py` |
@@ -28,7 +28,8 @@
 | `backend/data/daily_stats_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
 | `backend/data/currency_names_ru.py` | 966-line hardcoded dict (P2-3) | Move to JSON |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, liquid_chain | No direct API imports |
-| `backend/arbitrage/triangular.py` | Triangular arbitrage (P0-6 fixed iter 56, P0-5 fixed iter 57) | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — no `prices` param (was dead) |
+| `backend/arbitrage/triangular.py` | Triangular arbitrage (P0-6 fixed iter 56, P0-5 fixed iter 57) | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — no `prices` param (was dead); uses `backend.main.process_pool` — broken in full-suite test runs (P2-13) |
+| `backend/main.py` | FastAPI app + lifespan + global `process_pool` | `lifespan` shutdown calls `process_pool.shutdown()` — pollutes subsequent tests (P2-13) |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | CPU-heavy → ProcessPoolExecutor |
 | `backend/data/providers/` | Poe2Scout, official, base | Network IO only |
 | `backend/models/` | Core dataclass models | No framework imports |
@@ -79,10 +80,11 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate (see STATUS.md P1-11).
 17. **SSE payload contract** (P0-1 fixed iter 55): backend sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency — matches frontend `SSEPriceUpdate`. `threshold_pct` query param is respected.
 18. **Real-time updates = SSE + REST polling only** (iter 58+). WebSocket endpoints were removed in iter 58 — do NOT re-introduce them. If push-based invalidation is needed for non-price data, extend the SSE stream.
+19. **Optimizer negative cycles** (P1-8 fixed iter 64): a negative cycle in `-log(rate)` space = profitable arbitrage. When `_bellman_ford` detects one and `target` lies on it, the endpoint returns an empty `path` with `data_available: true` — callers fall back to the `direct_rate` field if available.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 5 P1 / 8 P2 / 5 P3). 6 P0 issues fixed in iter 54-58; P1-4 closed iter 63; P1-7 + P3-8 closed iter 61; P2-12 closed iter 62 (see STATUS.md §Fixed).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 4 P1 / 9 P2 / 5 P3). 6 P0 fixed in iter 54-58; P1-4 closed iter 63; P1-8 closed iter 64; P2-13 added iter 64 (process_pool test pollution).
 
 Quick reference for the most common symptoms:
 
@@ -93,6 +95,8 @@ Quick reference for the most common symptoms:
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | Stale forecast after event creation | (Fixed in iter 59 — was P1-11) | — |
 | Events lost on backend crash | (Fixed in iter 61 — was P1-7) | — |
+| `test_triangular.py` fails in full-suite mode | `process_pool` shut down by earlier `TestClient` lifespan | P2-13 |
+| `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle detected — fall back to `direct_rate` | — (fixed iter 64) |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -120,7 +124,7 @@ Quick reference for the most common symptoms:
 | POST | `/api/v1/events/{event_id}/deactivate` | Deactivate event |
 | GET | `/api/v1/anomalies` | Anomaly detection |
 | GET | `/api/v1/storage-value/{currency}` | Hold/sell decision |
-| GET | `/api/v1/optimizer/path` | Optimal conversion path (BUGGY — P1-8) |
+| GET | `/api/v1/optimizer/path` | Optimal conversion path (P1-8 fixed iter 64 — detects arbitrage cycles) |
 | GET | `/api/v1/optimizer/matrix` | Conversion matrix |
 | GET | `/api/v1/analyst/summary` | League analyst summary (P0-3 fixed iter 54 — 24h% now timestamp-aware) |
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
@@ -143,3 +147,4 @@ Quick reference for the most common symptoms:
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
 | `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas (NOTE: code diverges — see STATUS.md P1-9, P0-4) |
+

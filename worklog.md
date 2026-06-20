@@ -5,49 +5,62 @@
 
 ---
 
+## Task 64 — P1-8 (Bellman-Ford negative cycle detection in routes_optimizer)
+**Agent:** Main Agent
+**Date:** 2026-06-21
+
+**Task:** Per iter 63 stopping point: add negative cycle detection to `_bellman_ford` in `backend/api/routes_optimizer.py`. The algorithm previously ran `max_hops` relaxation passes and reconstructed the predecessor chain without checking for negative cycles — losing the arbitrage signal entirely when a profitable cycle (product of rates > 1) was reachable from source.
+
+**Work Log:**
+- Read `routes_optimizer.py` (402 lines). Identified that the existing defensive `visited` cycle guard in path reconstruction would return `None` for the wrong reason — it masked arbitrage instead of signalling it.
+- Read `STATUS.md` P1-8 spec: "After max_hops relaxations — check for negative cycle."
+- Read `tests/test_optimal_currency.py` to mirror its testing patterns (uses `ExchangeRate` model from `backend.models.currency`).
+- Designed the fix as a separate helper for testability:
+  - `_detect_negative_cycle_nodes(graph, dist, predecessor)` — runs one extra relaxation pass; nodes whose distance can still decrease are "affected"; walking predecessor chains from affected nodes identifies the actual cycle members.
+- Modified `_bellman_ford`:
+  - After the existing `max_hops` relaxation loop, calls the new helper.
+  - If cycle nodes are detected, logs a warning naming them.
+  - Returns `None` ONLY when `target` is on the cycle (optimal path is unbounded). Other targets still get their shortest path.
+  - The endpoint `/api/v1/optimizer/path` already had a `result is None` branch that returns an empty `path` with `direct_rate` populated — so callers transparently fall back to the direct edge.
+- Updated module + endpoint docstrings to document the new behaviour.
+- Created `tests/test_routes_optimizer.py` with 23 regression tests across 5 classes:
+  - `TestBuildGraph` (3): forward edge weight, reverse edge weight, non-positive rate filtering.
+  - `TestBellmanFordBasic` (7): direct edge, two-hop chain, three-node chain with shortcut (proves inconsistency ⇒ arbitrage), unreachable target, missing source, source==target, max_hops limit, negative weights on reverse edges.
+  - `TestDetectNegativeCycle` (4): no-cycle returns empty set, profitable cycle detected, cycle isolated from source not flagged, empty graph.
+  - `TestBellmanFordNegativeCycle` (4): target on cycle returns None, target off cycle still returns path, no-cycle path returned normally, three-node profitable cycle.
+  - `TestCollectCurrencies` (4): sorted unique, empty, single pair, duplicates.
+- Discovered an important property during testing: when both a direct edge `a→c` AND a two-hop path `a→b→c` exist, ANY inconsistency (direct better OR worse than two-hop) creates a profitable arbitrage cycle via the reverse edges. Tests adjusted to use chain graphs (no shortcut) for the no-arbitrage case.
+- Investigated pre-existing `test_triangular.py` full-suite failure (STATUS.md said "investigate during P1-8"). Root cause found: `RuntimeError: cannot schedule new futures after shutdown` — `backend/main.py:279` `process_pool.shutdown()` runs in `TestClient` lifespan teardown, breaking subsequent tests that call `loop.run_in_executor(process_pool, ...)`. Per task rules ("Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись"), documented as **P2-13** in STATUS.md. Did NOT fix in this iter — left for iter 65+.
+- Ran tests:
+  - `pytest tests/test_routes_optimizer.py -v` → 23/23 pass.
+  - `pytest tests/ --ignore=test_scheduler.py --ignore=test_compression.py --ignore=test_triangular.py` → 398 pass (baseline without new tests: 375 pass). +23 new tests, no regressions.
+  - Verified pre-existing pollution with `git stash -u` baseline run: 375 pass, 7 fail (test_triangular full-suite pollution — same as before my changes).
+- Updated `STATUS.md`: P1-8 → Fixed; P1 count 5→4; added P2-13; P2 count 8→9; updated Quick Reference table to point test_triangular pollution at P2-13 and to explain the new `/optimizer/path` empty-path-with-direct-rate behaviour.
+- Updated `REFACTOR_PLAN.md`: v27→v28, iter 64 marked DONE, recommended next iter = P2-13 (quick win, root cause already identified), estimation table refreshed.
+- Updated `AGENT_NAVIGATION.md`: removed "BUGGY" tag from `routes_optimizer.py` row, added `backend/main.py` row for process_pool pollution visibility, added rule 19 (optimizer negative cycle invariant), updated Known Issues summary.
+
+**Stage Summary:**
+- 1 issue closed: P1-8 (Bellman-Ford negative cycle detection).
+- 1 new issue documented: P2-13 (process_pool test pollution, root cause identified).
+- 1 file changed: `backend/api/routes_optimizer.py` (helper + cycle check + docstring updates).
+- 1 new test file: `tests/test_routes_optimizer.py` (23 tests).
+- 4 doc files updated: `STATUS.md`, `REFACTOR_PLAN.md`, `AGENT_NAVIGATION.md`, `worklog.md`.
+- P1=4, P2=9, P3=5. ~10-14 iterations remaining.
+- Baseline: pytest 398 pass (excl. 3 pre-existing broken files), tsc 0 errors, jest 291/291 (unchanged from iter 63).
+
+**Stopping point:**
+- Iter 64 done. P1-8 closed.
+- Ready for iter 65 = **P2-13** (process_pool test pollution) — quick win, root cause already identified in `backend/main.py:279`. Recommended next per `REFACTOR_PLAN.md` v28.
+- Suggested commit: `fix(P1-8): add negative cycle detection after Bellman-Ford relaxation`
+
+---
+
 ## Task 63 — P1-4 (clustering deduplication between routes_prices and routes_arbitrage)
 **Agent:** Main Agent
 **Date:** 2026-06-21
 
-**Task:** Per iter 62 stopping point: deduplicate ~80 lines of near-identical clustering data-preparation code between `routes_prices.py` and `routes_arbitrage.py`. Unify cache key. Fix `prices[0]` bug (24h-ago price used oldest instead of timestamp-aware lookup).
-
-**Work Log:**
-- Read routes_prices.py (609 lines) and routes_arbitrage.py (1137 lines) to understand both clustering paths.
-- Identified 3 layers of duplication: (1) data preparation (4 dicts), (2) clustering invocation (different config patterns), (3) caching (two different keys with cross-cache bug).
-- Found bug in routes_prices.py: `cluster_prices_24h_ago[orig_id] = prices[0]` uses oldest price, not `find_price_24h_ago()`.
-- Found cross-cache bug: routes_arbitrage reads `"arbitrage_cluster_labels"` but nobody writes to that key.
-- Created `backend/economy/clustering_helpers.py` with:
-  - `CLUSTER_LABELS_CACHE_KEY = "cluster_labels"` — single shared key
-  - `prepare_clustering_data()` — builds 4 dicts from rates + currencies, supports both paths (pre-extracted histories and price_logs)
-  - `run_clustering_sync()` — CPU-bound clustering for ProcessPoolExecutor, accepts config or None
-- Updated `routes_prices.py`: removed `_run_clustering_sync()` local definition (~30 lines), replaced inline clustering block with calls to shared helpers, changed cache key from `"price_cluster_labels"` to `CLUSTER_LABELS_CACHE_KEY`, fixed `prices[0]` bug.
-- Updated `routes_arbitrage.py`: replaced inline clustering block in `_build_flip_opportunities_sync()` with calls to shared helpers, changed cache key from `"arbitrage_cluster_labels"` to `CLUSTER_LABELS_CACHE_KEY`, removed `_find_price_24h_ago` import (now internal to clustering_helpers).
-- Created `tests/test_clustering_helpers.py` with 16 regression tests covering:
-  - Cache key constant
-  - Both code paths (arbitrage pre-extracted, prices price_logs)
-  - Volume aggregation, price-now, 24h-ago with timestamps and fallback
-  - Critical `prices[0]` bug test (48h-old price vs 24h-ago price)
-  - `run_clustering_sync` with sufficient/insufficient data, config=None
-- Ran all tests: tsc 0 errors, jest 291/291, pytest 136 pass (incl. 16 new).
-- Updated STATUS.md: P1-4 moved to Fixed, P1 count 6→5, Quick Reference updated.
-- Updated REFACTOR_PLAN.md: v26→v27, iter 63 marked DONE.
-- Updated AGENT_NAVIGATION.md: added clustering_helpers.py, updated routes_arbitrage.py description, fixed symptom table.
-- Cleaned up 4 stale dev artifacts: `ITER54_README.txt`, `MANIFEST.txt`, `iter56.diff`, `flipper-bridge.log` (1.2 MB).
-
 **Stage Summary:**
-- 1 issue closed: P1-4 (clustering deduplication).
-- 3 files changed: routes_prices.py, routes_arbitrage.py, plus 1 new shared module (clustering_helpers.py).
-- 1 new test file: tests/test_clustering_helpers.py (16 tests).
-- Bug fix: `prices[0]` → `find_price_24h_ago()` for correct 24h-ago lookup in routes_prices.
-- Cross-cache bug fix: single cache key `"cluster_labels"` replaces two mismatched keys.
-- 4 stale dev artifacts removed from repo root.
-- P1=5, P2=8, P3=5. ~11 iterations remaining.
-- Baseline: tsc 0 errors, jest 291/291, pytest 136/136 (relevant tests).
-
-**Stopping point:**
-- Iter 63 done. P1-4 closed.
-- Ready for iter 64 = **P1-8** (Bellman-Ford negative cycle detection in `routes_optimizer`) — recommended next per REFACTOR_PLAN.md v27.
-- Suggested commit: `refactor(P1-4): deduplicate clustering between routes_prices and routes_arbitrage`
+- Shared `backend/economy/clustering_helpers.py` with `prepare_clustering_data()` + `run_clustering_sync()`. Single cache key `"cluster_labels"`. Fixed `prices[0]` bug. 16 new tests.
 
 ---
 
@@ -56,8 +69,7 @@
 **Date:** 2026-06-20
 
 **Stage Summary:**
-- 16 orphan/remnant files removed via `git rm`. Zero code changes.
-- True clean baseline restored: tsc 0 errors, jest 291/291 pass.
+- 16 orphan/remnant files removed via `git rm`. Zero code changes. True clean baseline restored.
 
 ---
 
@@ -66,8 +78,7 @@
 **Date:** 2026-06-20
 
 **Stage Summary:**
-- 4 sync methods in events.py → async. P3-8 auto-closed.
-- 25+3+1 tests converted to async.
+- 4 sync methods in events.py → async. P3-8 auto-closed. 25+3+1 tests converted to async.
 
 ---
 

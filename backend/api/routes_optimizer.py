@@ -14,6 +14,13 @@ when rate > 1 (e.g. 1 Chaos = 0.1 Exalted → -log(0.1) > 0, but the
 reverse edge 1 Exalted = 10 Chaos → -log(10) < 0). Dijkstra requires
 non-negative weights, so it produced incorrect results for paths containing
 reverse edges where rate > 1. Bellman-Ford handles negative weights correctly.
+
+P1-8 (iter 64): after `max_hops` relaxation passes the algorithm now
+runs one additional pass to detect a negative cycle, which in -log(rate)
+space corresponds to a profitable arbitrage opportunity (product of rates
+around the cycle > 1). When the requested target lies on such a cycle,
+the optimal path is undefined (unbounded profit), so the endpoint
+returns an empty path and falls back to the direct edge if available.
 """
 
 from __future__ import annotations
@@ -38,6 +45,66 @@ router = APIRouter(prefix="/api/v1/optimizer", tags=["optimizer"])
 # Helper: Bellman-Ford shortest path on -log(rate) weighted graph
 # ---------------------------------------------------------------------------
 
+def _detect_negative_cycle_nodes(
+    graph: dict[str, list[tuple[str, float, float]]],
+    dist: dict[str, float],
+    predecessor: dict[str, tuple[str, float]],
+) -> set[str]:
+    """Identify nodes lying on a negative cycle reachable from source.
+
+    A negative cycle in the -log(rate) graph corresponds to a profitable
+    arbitrage cycle: the product of raw rates around the cycle is > 1
+    (i.e. sum of -log(rates) < 0). The standard Bellman-Ford signal is
+    that after V-1 relaxations at least one edge can still be relaxed.
+
+    This helper runs one extra relaxation pass over the current `dist`
+    map. Any node whose distance can still decrease is on or downstream
+    of a negative cycle. We then walk predecessor chains from those
+    nodes to mark the actual cycle members (so callers can decide
+    whether the target is affected).
+
+    Args:
+        graph: adjacency list — graph[u] = [(v, -log(rate), rate), ...]
+        dist: distance map after the main relaxation phase
+        predecessor: predecessor map after the main relaxation phase
+
+    Returns:
+        Set of node IDs that lie on a negative cycle. Empty set if no
+        negative cycle is reachable.
+    """
+    # Pass 1: collect nodes whose distance can still be relaxed.
+    # These are "affected" — on the cycle or downstream of it.
+    affected: set[str] = set()
+    for u in graph:
+        if u not in dist:
+            continue
+        for v, weight, _ in graph[u]:
+            new_dist = dist[u] + weight
+            if v not in dist or new_dist < dist[v] - 1e-15:
+                affected.add(v)
+
+    if not affected:
+        return set()
+
+    # Pass 2: walk predecessor chains from affected nodes to find the
+    # actual cycle members. A node is on a cycle iff it appears in its
+    # own predecessor ancestry.
+    cycle_nodes: set[str] = set()
+    for start in affected:
+        visited: list[str] = []
+        current: str | None = start
+        while current is not None and current not in visited:
+            visited.append(current)
+            pred = predecessor.get(current)
+            current = pred[0] if pred else None
+        if current is not None:
+            # The cycle starts at `current` in the visited list.
+            cycle_start_idx = visited.index(current)
+            cycle_nodes.update(visited[cycle_start_idx:])
+
+    return cycle_nodes
+
+
 def _bellman_ford(
     graph: dict[str, list[tuple[str, float, float]]],
     source: str,
@@ -49,6 +116,17 @@ def _bellman_ford(
     Uses Bellman-Ford which correctly handles negative edge weights
     (unlike Dijkstra). Negative weights arise when rate > 1 and the
     edge weight is -log(rate).
+
+    P1-8 (iter 64): after `max_hops` relaxation passes we run one
+    additional pass to detect a negative cycle (profitable arbitrage).
+    A negative cycle reachable from `source` means the shortest path
+    to any node on or downstream of that cycle is unbounded — the
+    product of rates around the cycle is > 1, so the trader could
+    loop indefinitely for profit. In that case the "optimal" path is
+    not well-defined; we log a warning and return None when the
+    target is on the cycle, so the caller can fall back to the
+    direct edge if any. When the target is *not* on the cycle we
+    still return the reconstructed path (it is unaffected).
 
     Args:
         graph: adjacency list — graph[u] = [(v, -log(rate), rate), ...]
@@ -86,6 +164,24 @@ def _bellman_ford(
         if not updated:
             break
 
+    # P1-8: detect negative cycle (profitable arbitrage opportunity).
+    # A negative cycle in -log(rate) space <=> product of raw rates
+    # around the cycle > 1. If one is reachable from source, paths
+    # through the cycle have unbounded profit, so the "optimal" path
+    # is not well-defined.
+    cycle_nodes = _detect_negative_cycle_nodes(graph, dist, predecessor)
+    if cycle_nodes:
+        logger.warning(
+            "Negative cycle (arbitrage opportunity) detected in "
+            "exchange rate graph. Cycle nodes: %s. Paths through "
+            "these nodes have unbounded profit.",
+            sorted(cycle_nodes),
+        )
+        if target in cycle_nodes:
+            # Optimal path is undefined — caller should fall back to
+            # direct edge if available (handled by endpoint below).
+            return None
+
     # Check if target is reachable
     if target not in dist:
         return None
@@ -98,8 +194,9 @@ def _bellman_ford(
 
     while current != source:
         if current in visited:
-            # Cycle detected — should not happen with positive rates
-            # but guard against it
+            # Defensive: path reconstruction cycle. With the explicit
+            # negative-cycle detection above this should not trigger,
+            # but if it ever does we refuse to return a broken path.
             return None
         visited.add(current)
 
@@ -190,6 +287,14 @@ async def get_optimal_path(
     are -log(raw_rate), so the shortest path corresponds to the best
     effective conversion rate. Bellman-Ford correctly handles negative
     weights that arise when rate > 1.
+
+    P1-8 (iter 64): after the standard relaxation phase the algorithm
+    checks for a negative cycle (profitable arbitrage: product of rates
+    around a cycle > 1). When the requested `to_currency` lies on such
+    a cycle, the optimal path is unbounded — the endpoint returns an
+    empty `path` with `data_available: True`, and the caller can still
+    use the reported `direct_rate` to fall back to a single-hop
+    conversion.
 
     Compares the multi-hop path rate with the direct rate (if available)
     and reports the advantage percentage.
