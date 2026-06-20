@@ -1,60 +1,70 @@
-# PoE2 Market Dashboard — Refactoring & Fixes
+# REFACTOR_PLAN.md — Roadmap
 
-> Version: 16.0 | Date: 2026-06-16
+> Version: 17.0 | Date: 2026-06-20
+> Source: Full codebase audit (iter 52). See `STATUS.md` for detailed issue descriptions.
 
-## Completed Iterations
+## Principles
 
-| Iter | Focus | Key Changes |
-|------|-------|-------------|
-| 44 | Response model mismatches | 6 bugs causing 503/500 cascade — all fixed |
-| 45 | Pickle safety | FlipComputeBundle, DataSnapshot.__getstate__, pickle safety tests |
-| 46 | E2E response model fixes | Mock provider tuple keys, EventData.event_id, flips data_available |
-| 47 | Event ID migration, EventType sync | ActiveEvent.isActive, POST body transform, EventType 6 values, OpenAPI regen |
-| 48 | use-price-stream hook, events sidebar E2E | SSE hook, createdAt in event cards, E2E for events sidebar |
-| 49 | E2E fixes + PhaseDetector tests | openEventsSidebar fix, health mock "ok", 5 new lifecycle tests |
-| 50 | poe.ninja UI analysis | 12 patterns identified, prioritized P0→P3, docs updated |
-| **51** | **P0 features implementation** | **Adaptive Value Display, bezier sparkline, 16×16 currency icons** |
+1. **One issue per commit.** Reference `STATUS.md` issue ID (e.g. `fix(P0-3): analyst 24h change`).
+2. **Document first, fix second.** Any new bug found → add to `STATUS.md` before fixing.
+3. **No big-bang refactors.** Each iteration = 1-3 issues from one priority bucket.
+4. **Test after every fix.** `pytest tests/ -v` + `npm run test` + `npx tsc --noEmit`.
+5. **Update docs in same commit.** `STATUS.md`, `AGENT_NAVIGATION.md`, `worklog.md` if needed.
 
-## Iteration 51 — P0 Features (Completed)
+## Priority Buckets
 
-### 1. Adaptive Value Display ✅
-- Added "Adaptive" option to reference currency selector (header.tsx, both main bar and "More" menu)
-- `use-display-price.ts`: when `targetCurrencyApiId === "_adaptive"`, auto-selects best unit per row
-  - ≥0.5 Divine → show in Divine
-  - <0.01 Exalted → show in Chaos
-  - Otherwise → show in Exalted
-- `dashboard-page.tsx`: handles `"_adaptive"` in `onReferenceCurrencyChange` → stores `"_adaptive"` as baseCurrencyApiId
-- `currency-card.tsx`, `virtual-currency-grid.tsx`, `exchange-pair-card.tsx`, `exchange-table.tsx`: pass effective base currency (resolve `"_adaptive"` → `"exalted"`) as baseCurrencyApiId
-- `utils.ts`: `getCurrencyShortName("_adaptive")` returns "Adaptive" as fallback label
+### P0 — Critical (correctness, stability) — do first
+- P0-1. SSE — remove dead monitor, implement real change_pct filtering
+- P0-2. WebSocket — offload `_compute_anomalies` to ProcessPoolExecutor
+- P0-3. Analyst `_compute_trends` — fix `price_24h_ago` (use `_find_price_24h_ago`)
+- P0-4. PhaseDetector — remove `max()` in `_reference_date`
+- P0-5. Transitive prices — extract to shared helper, use in all 3 places
+- P0-6. Triangular — remove `prices["chaos"] = 1.0` hardcode
 
-### 2. Bezier Sparkline ✅
-- Replaced `<polyline>` + `<polygon>` with cubic bezier `<path>` + fill `<path>`
-- Algorithm: Catmull-Rom to Bezier conversion (tension 1/6) — passes through all data points, no overshoot
-- Trend-colored fill: green (#22c55e) for uptrend, red (#ef4444) for downtrend, fallback to `color` prop for flat
-- Trend detection: compares last-third avg vs first-third avg
+### P1 — Serious (performance, maintainability)
+- P1-1. WS endpoints — extract computation to shared services
+- P1-2. `useFlipperWebSocket` — single connection or polling
+- P1-3. `_compute_transitive_prices` — adjacency list
+- P1-4. Clustering cache — single key + helper
+- P1-5. `compute_quantized_analysis` — binary search
+- P1-6. HistoricalStore — chunked delete
+- P1-7. EventManager — `await` SQLite write
+- P1-8. Bellman-Ford — proper negative cycle detection
+- P1-9. Spread model — extract constants to config.yaml
+- P1-10. Flipper-proxy — per-endpoint circuit breaker
 
-### 3. Currency Icons 16×16 ✅
-- Changed `w-8 h-8` (32px) → `w-4 h-4` (16px) in exchange-table.tsx pair column
-- Added `shrink-0` to prevent icon squishing
-- Tightened gap from `gap-1.5` → `gap-1` for compact layout
+### P2 — Medium (clean code)
+- P2-1. dashboard-page.tsx — split god-component
+- P2-2. Remove pipeline_cache.py / daily_stats_cache.py shims
+- P2-3. Move currency_names_ru to JSON
+- P2-4. Consolidate /scanner into /flips
+- P2-5. Clean up routes_auth.py comments
+- P2-6. Sync frontend/backend circuit breaker state
+- P2-7. usePriceStream — targeted invalidation
+- P2-8. proxyWithFallback — pass-through in dev
+- P2-9. Forecasting — adaptive fallback instead of hardcoded min_data_points
+- P2-10. Unify WS path prefix to /api/v1/ws/*
 
-## Next: P1 Features
+### P3 — Low priority (nice-to-have)
+- See STATUS.md §P3
 
-| # | Feature | Complexity | Impact | Priority |
-|---|---------|-----------|--------|----------|
-| 4 | Info tooltips on column headers | Low | Medium | P1 |
-| 5 | League selector grouping (Current/Previous) | Low | Medium | P1 |
-| 6 | "Best Payment" column in exchange table | Medium | Medium | P1 |
+## Estimation (rough)
 
-## Key Principles
+| Bucket | Issues | Estimated iterations | Risk |
+|--------|--------|---------------------|------|
+| P0 | 6 | 4-6 iterations | Low — small scope, well-defined |
+| P1 | 10 | 8-10 iterations | Medium — some touch core paths |
+| P2 | 10 | 6-8 iterations | Low — mostly mechanical |
+| P3 | 7 | 3-4 iterations | Low — non-blocking |
 
-1. **response_model= MUST match route return dict** — mismatch = 500
-2. **All paths use /api/v1/ prefix** — bridge, proxy, routes, tests
-3. **Bridge health = /api/v1/health/ping** — not /api/health/ping
-4. **SSE — complement to polling, not replacement**
-5. **SSE proxy: 200 + error event** — not 503 (prevents retry storms)
-6. **ProcessPoolExecutor: picklable args only** — FlipComputeBundle + plain values
-7. **Mock exchange_rates keys = strings** — "exalted/chaos", not tuples
-8. **EventData uses event_id** — matches StoredEvent.to_dict()
-9. **PhaseDetector: only major_patch resets phase** — league_start/economy_shift affect scoring only
-10. **Adaptive mode: "_adaptive" in baseCurrencyApiId** — useDisplayPrice resolves per-row; components must resolve base to "exalted" before passing as baseCurrencyApiId
+**Total:** ~25 iterations to clean state. Each iteration = 1 commit, 1 STATUS.md update.
+
+## Definition of Done (per issue)
+
+- [ ] Code changed
+- [ ] `pytest tests/ -v` passes (add regression test if applicable)
+- [ ] `npm run test` passes
+- [ ] `npx tsc --noEmit` passes
+- [ ] `STATUS.md` — move issue to "Fixed" section with commit hash
+- [ ] `worklog.md` — append entry with iteration number
+- [ ] Commit message format: `<type>(P<n>-<id>): <short description>`

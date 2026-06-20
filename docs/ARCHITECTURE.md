@@ -125,6 +125,8 @@ I13. poe2api.ts transforms PascalCase→camelCase (except /Realms: snake_case)
 I14. Defensive nullability: backend may omit numeric fields — UI must use ?? 0 / ?.
 ```
 
+> **NOTE:** Several invariants are currently violated — see [`STATUS.md`](../STATUS.md) for the full list of known issues and refactoring priorities.
+
 ## 4. Principles
 
 ```
@@ -180,7 +182,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | `PriceMomentumTracker` | `backend/economy/momentum.py` | Momentum/volatility/acceleration computation |
 | `AnomalyDetector` | `backend/predictors/anomaly.py` | 5-indicator ensemble anomaly detection |
 | `TimeSeriesForecaster` | `backend/predictors/time_series.py` | SARIMA + LightGBM forecasting |
-| `OptimizerRouter` | `backend/api/routes_optimizer.py` | Dijkstra-based optimal currency conversion path |
+| `OptimizerRouter` | `backend/api/routes_optimizer.py` | Bellman-Ford optimal currency conversion path (handles negative weights, see STATUS.md P1-8) |
 | `AnalystRouter` | `backend/api/routes_analyst.py` | League analyst summary endpoint |
 
 ## 6. Scheduler Jobs
