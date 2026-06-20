@@ -33,7 +33,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.api.data_snapshot import get_snapshot
 from backend.config import get_settings
-from backend.data.pipeline_cache import get_pipeline_cache
+from backend.data.unified_cache import get_pipeline_cache
 from backend.api.response_models import OptimizerPathResponse, OptimizerMatrixResponse
 
 logger = logging.getLogger(__name__)

@@ -24,6 +24,9 @@ import {
   ERROR_TYPE_TIMEOUT,
   BACKEND_OFFLINE_HINT,
   proxyWithFallback,
+  getEndpointCircuitBreakerState,
+  getAllEndpointCircuitBreakers,
+  _resetAllCircuitBreakers,
   type ProxyFallbackOptions,
 } from "@/lib/flipper-proxy";
 import type { FlipperErrorType } from "@/lib/types";
@@ -332,5 +335,84 @@ describe("flipper-proxy error type classification", () => {
       errorType = ERROR_TYPE_CONNECTION_RESET;
     }
     expect(errorType).toBe(ERROR_TYPE_TIMEOUT);
+  });
+});
+
+// ============================================================================
+// 6. Per-endpoint circuit breaker (P1-10, iter 66)
+// ============================================================================
+// The previous implementation used a single global breaker — any backend
+// failure tripped ALL endpoints. P1-10 introduces a Map<path, CircuitBreaker>
+// so a broken /api/v1/portfolio no longer blocks /api/v1/prices.
+
+describe("per-endpoint circuit breaker (P1-10)", () => {
+  beforeEach(() => {
+    _resetAllCircuitBreakers();
+  });
+
+  it("freshly created breaker has closed state and zero failures", () => {
+    const state = getEndpointCircuitBreakerState("/api/v1/prices");
+    expect(state.open).toBe(false);
+    expect(state.state).toBe("closed");
+    expect(state.consecutiveFailures).toBe(0);
+    expect(state.cooldownMs).toBe(FLIPPER_CB_INITIAL_COOLDOWN);
+  });
+
+  it("different endpoints have independent breaker state", () => {
+    // Touch two endpoints — they should each get their own breaker entry.
+    const pricesState = getEndpointCircuitBreakerState("/api/v1/prices");
+    const eventsState = getEndpointCircuitBreakerState("/api/v1/events");
+
+    expect(pricesState).not.toBe(eventsState); // different object references
+    expect(getAllEndpointCircuitBreakers().size).toBe(2);
+  });
+
+  it("breaker state snapshots are decoupled from internal state", () => {
+    const snapshot = getEndpointCircuitBreakerState("/api/v1/prices");
+    snapshot.consecutiveFailures = 999;
+    snapshot.state = "open";
+
+    // Mutating the snapshot must not affect the live breaker.
+    const fresh = getEndpointCircuitBreakerState("/api/v1/prices");
+    expect(fresh.consecutiveFailures).toBe(0);
+    expect(fresh.state).toBe("closed");
+  });
+
+  it("getAllEndpointCircuitBreakers returns a copy, not the live map", () => {
+    getEndpointCircuitBreakerState("/api/v1/prices"); // create one entry
+    const map1 = getAllEndpointCircuitBreakers();
+    map1.clear(); // mutate the returned map
+
+    // Internal map must be unaffected.
+    const map2 = getAllEndpointCircuitBreakers();
+    expect(map2.size).toBe(1);
+  });
+
+  it("normalizes path by stripping query strings", () => {
+    const s1 = getEndpointCircuitBreakerState("/api/v1/prices?league=runes");
+    const s2 = getEndpointCircuitBreakerState("/api/v1/prices?league=vaal");
+    // Both URLs should map to the same breaker (/api/v1/prices).
+    expect(getAllEndpointCircuitBreakers().size).toBe(1);
+    expect(s1).toEqual(s2);
+  });
+
+  it("normalizes path by stripping ID-like trailing segments", () => {
+    getEndpointCircuitBreakerState("/api/v1/storage_value/divine-orb");
+    getEndpointCircuitBreakerState("/api/v1/storage_value/chaos-orb");
+    // Both should map to /api/v1/storage_value (one entry).
+    expect(getAllEndpointCircuitBreakers().size).toBe(1);
+  });
+
+  it("keeps non-ID trailing segments (e.g. /deactivate)", () => {
+    getEndpointCircuitBreakerState("/api/v1/events/abc-12345/deactivate");
+    // "deactivate" is not an ID-like slug, so it stays.
+    const keys = Array.from(getAllEndpointCircuitBreakers().keys());
+    expect(keys[0]).toContain("deactivate");
+  });
+
+  it("strips trailing slash for consistency", () => {
+    getEndpointCircuitBreakerState("/api/v1/prices/");
+    getEndpointCircuitBreakerState("/api/v1/prices");
+    expect(getAllEndpointCircuitBreakers().size).toBe(1);
   });
 });

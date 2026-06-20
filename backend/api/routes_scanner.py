@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import APIRouter, Query
 
 from backend.config import get_settings, AppConfig
-from backend.data.pipeline_cache import get_pipeline_cache
+from backend.data.unified_cache import get_pipeline_cache
 from backend.api.routes_arbitrage import _build_flip_opportunities
 from backend.api.response_models import ScannerResponse
 

@@ -15,6 +15,10 @@
 //   we try through the Cloudflare Worker CORS proxy. The backend itself talks
 //   to poe2scout.com — this fallback helps when the backend's own connection
 //   to poe2scout.com is blocked.
+// - P1-10 (iter 66): Per-endpoint circuit breaker. Previously a single global
+//   breaker tripped on any backend failure, blocking ALL endpoints even when
+//   only one was broken. Now each API path has its own breaker — a broken
+//   /api/v1/portfolio no longer blocks /api/v1/prices.
 // ============================================================================
 
 import { NextResponse } from "next/server";
@@ -28,13 +32,9 @@ export const FLIPPER_API_URL = process.env.FLIPPER_API_URL || "http://localhost:
 // we track the fallback hint so the frontend can inform the user.
 export const FLIPPER_CORS_PROXY_URL = process.env.FLIPPER_CORS_PROXY_URL || "";
 
-// Circuit breaker for flipper-backend requests
-let flipperCircuitBreakerOpen = false;
-let flipperCircuitBreakerOpenSince = 0;
-let flipperCircuitBreakerCooldownMs = 15_000; // starts at 15s for faster cold-start recovery, grows exponentially
+// Circuit breaker constants (unchanged from pre-P1-10; still exported for tests)
 export const FLIPPER_CB_INITIAL_COOLDOWN = 15_000; // 15s — reduced from 60s for faster recovery during backend cold start
 export const FLIPPER_CB_MAX_COOLDOWN = 300_000; // P1-2: max 5 minutes
-let flipperConsecutiveFailures = 0;
 export const FLIPPER_CB_THRESHOLD = 5; // Open after 5 consecutive failures
 
 // --- Exported constants for testing & consumer alignment ---
@@ -53,8 +53,118 @@ export const ERROR_TYPE_TIMEOUT = "backend_timeout";
 /** Hint shown to users when the backend is offline */
 export const BACKEND_OFFLINE_HINT = "Start the FastAPI backend: uvicorn backend.main:app --reload --port 8000";
 
-// P1-2: Circuit breaker state for debugging
-let flipperCircuitBreakerState: "closed" | "open" | "half-open" = "closed";
+// ---------------------------------------------------------------------------
+// P1-10 (iter 66): Per-endpoint circuit breaker state
+// ---------------------------------------------------------------------------
+
+export type CircuitBreakerState = "closed" | "open" | "half-open";
+
+export interface EndpointCircuitBreaker {
+  open: boolean;
+  openSince: number;
+  cooldownMs: number;
+  consecutiveFailures: number;
+  state: CircuitBreakerState;
+}
+
+/**
+ * Normalize an API path for circuit-breaker keying.
+ *
+ * Groups by major endpoint so e.g. /api/v1/storage_value/divine-orb and
+ * /api/v1/storage_value/chaos-orb share the same breaker (they hit the same
+ * backend handler and fail together). Query strings are stripped. UUID-like
+ * path segments are stripped to their parent.
+ *
+ * Examples:
+ *   /api/v1/prices                  → /api/v1/prices
+ *   /api/v1/events/active_only=true → /api/v1/events
+ *   /api/v1/storage_value/divine    → /api/v1/storage_value
+ *   /api/v1/events/abc-123/deactivate → /api/v1/events/abc-123/deactivate
+ *     (last segment "deactivate" is not an ID, so it stays)
+ */
+function normalizePathForCircuitBreaker(fullUrl: string): string {
+  let pathname: string;
+  try {
+    pathname = new URL(fullUrl, FLIPPER_API_URL).pathname;
+  } catch {
+    // If URL parsing fails, fall back to the raw string with query stripped
+    pathname = fullUrl.split("?")[0];
+  }
+  // Strip trailing slash for consistency
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    pathname = pathname.slice(0, -1);
+  }
+  // If last segment looks like an ID or slug (UUID, hex hash, or hyphenated
+  // slug like "divine-orb"), drop it so /api/v1/storage_value/divine-orb
+  // groups with /api/v1/storage_value/chaos-orb.
+  //
+  // Heuristic: matches if the segment contains a hyphen surrounded by
+  // alphanumerics (e.g. "divine-orb", "abc-12345") OR is a pure hex/UUID
+  // hash of length ≥ 8 (e.g. "deadbeef1234"). Single-word verbs like
+  // "deactivate" or nouns like "prices" do NOT match.
+  const parts = pathname.split("/");
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    const looksLikeId = /^[a-f0-9-]{8,}$/i.test(last) || /^[a-z0-9]+-[a-z0-9-]+$/i.test(last);
+    if (looksLikeId) {
+      parts.pop();
+    }
+  }
+  return parts.join("/");
+}
+
+const endpointCircuitBreakers = new Map<string, EndpointCircuitBreaker>();
+
+/**
+ * Get (or lazily create) the circuit breaker for a given request URL.
+ * The key is derived from the URL via `normalizePathForCircuitBreaker`.
+ */
+function getEndpointCircuitBreaker(fullUrl: string): EndpointCircuitBreaker {
+  const key = normalizePathForCircuitBreaker(fullUrl);
+  let cb = endpointCircuitBreakers.get(key);
+  if (!cb) {
+    cb = {
+      open: false,
+      openSince: 0,
+      cooldownMs: FLIPPER_CB_INITIAL_COOLDOWN,
+      consecutiveFailures: 0,
+      state: "closed",
+    };
+    endpointCircuitBreakers.set(key, cb);
+  }
+  return cb;
+}
+
+/**
+ * Inspect a circuit breaker's state by URL. Exported for debugging and tests.
+ * Returns a snapshot copy — mutating the return value does NOT affect the
+ * live breaker.
+ */
+export function getEndpointCircuitBreakerState(fullUrl: string): EndpointCircuitBreaker {
+  const cb = getEndpointCircuitBreaker(fullUrl);
+  return { ...cb };
+}
+
+/**
+ * Inspect all per-endpoint circuit breakers. Exported for /health debugging.
+ * Returns a Map keyed by normalized path.
+ */
+export function getAllEndpointCircuitBreakers(): Map<string, EndpointCircuitBreaker> {
+  // Return a deep-ish copy so callers can't mutate internal state.
+  const snapshot = new Map<string, EndpointCircuitBreaker>();
+  for (const [k, v] of endpointCircuitBreakers.entries()) {
+    snapshot.set(k, { ...v });
+  }
+  return snapshot;
+}
+
+/**
+ * Reset all per-endpoint circuit breakers. Exported for tests and for a
+ * future /admin/reset-circuit-breakers endpoint.
+ */
+export function _resetAllCircuitBreakers(): void {
+  endpointCircuitBreakers.clear();
+}
 
 // --- Request deduplication ---
 // FIX: Store buffered JSON results instead of raw Response objects.
@@ -69,7 +179,7 @@ interface BufferedProxyResult {
 }
 const pendingRequests = new Map<string, Promise<BufferedProxyResult>>();
 
-// P1-2: Health probe with short timeout
+// Health probe with short timeout
 // Uses /api/health/ping (ultra-lightweight, plain-text "ok") instead of
 // /api/health (JSON with diagnostics). The ping endpoint responds in <1ms
 // even during heavy computation because it does zero work — no config
@@ -151,55 +261,57 @@ async function _doProxyWithRetry(
 ): Promise<BufferedProxyResult> {
   let lastError: Error | null = null;
 
-  // Circuit breaker: skip request if backend is known-down
-  if (flipperCircuitBreakerOpen) {
-    const elapsed = Date.now() - flipperCircuitBreakerOpenSince;
-    if (elapsed < flipperCircuitBreakerCooldownMs) {
-      const retryIn = Math.round((flipperCircuitBreakerCooldownMs - elapsed) / 1000);
+  // P1-10: Per-endpoint circuit breaker — each API path has its own state.
+  const cb = getEndpointCircuitBreaker(url);
+
+  // Circuit breaker: skip request if backend is known-down for this endpoint
+  if (cb.open) {
+    const elapsed = Date.now() - cb.openSince;
+    if (elapsed < cb.cooldownMs) {
+      const retryIn = Math.round((cb.cooldownMs - elapsed) / 1000);
       return {
         data: {
           error: "Flipper backend unavailable",
           error_type: ERROR_TYPE_OFFLINE,
-          detail: `Circuit breaker open — backend unreachable (retry in ${retryIn}s)`,
+          detail: `Circuit breaker open for this endpoint — backend unreachable (retry in ${retryIn}s)`,
           hint: BACKEND_OFFLINE_HINT,
           cors_proxy_hint: FLIPPER_CORS_PROXY_URL
             ? "Backend upstream (poe2scout.com) may be blocked. Configure POE2_CORS_PROXY_URL for the frontend."
             : undefined,
-          circuit_breaker_state: flipperCircuitBreakerState, // P1-2: debug info
+          circuit_breaker_state: cb.state,
+          circuit_breaker_endpoint: normalizePathForCircuitBreaker(url),
         },
         status: 503,
       };
     }
-    // P1-2: Cooldown expired — enter half-open state, send health probe
-    flipperCircuitBreakerState = "half-open";
+    // Cooldown expired — enter half-open state, send health probe
+    cb.state = "half-open";
     const isHealthy = await probeHealth();
     if (isHealthy) {
       // Backend is back! Close the breaker
-      flipperCircuitBreakerOpen = false;
-      flipperCircuitBreakerState = "closed";
-      flipperConsecutiveFailures = 0;
-      flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // P1-2: reset cooldown
+      cb.open = false;
+      cb.state = "closed";
+      cb.consecutiveFailures = 0;
+      cb.cooldownMs = FLIPPER_CB_INITIAL_COOLDOWN;
       console.info(
-        `[flipper-proxy] Circuit breaker CLOSED via health probe — backend is back. `
+        `[flipper-proxy] Circuit breaker CLOSED via health probe for ${normalizePathForCircuitBreaker(url)} — backend is back.`
       );
     } else {
       // Still down — keep breaker open, increase cooldown (exponential backoff)
-      flipperCircuitBreakerState = "open";
-      flipperCircuitBreakerOpenSince = Date.now(); // restart cooldown from now
-      flipperCircuitBreakerCooldownMs = Math.min(
-        flipperCircuitBreakerCooldownMs * 2,
-        FLIPPER_CB_MAX_COOLDOWN
-      );
+      cb.state = "open";
+      cb.openSince = Date.now(); // restart cooldown from now
+      cb.cooldownMs = Math.min(cb.cooldownMs * 2, FLIPPER_CB_MAX_COOLDOWN);
       console.warn(
-        `[flipper-proxy] Circuit breaker stays OPEN — health probe failed. `
-        + `Cooldown increased to ${flipperCircuitBreakerCooldownMs / 1000}s`
+        `[flipper-proxy] Circuit breaker stays OPEN for ${normalizePathForCircuitBreaker(url)} — health probe failed. `
+        + `Cooldown increased to ${cb.cooldownMs / 1000}s`
       );
       return {
         data: {
           error: "Flipper backend unavailable",
           error_type: ERROR_TYPE_OFFLINE,
-          detail: `Circuit breaker open — health probe failed (retry in ${Math.round(flipperCircuitBreakerCooldownMs / 1000)}s)`,
-          circuit_breaker_state: flipperCircuitBreakerState,
+          detail: `Circuit breaker open — health probe failed (retry in ${Math.round(cb.cooldownMs / 1000)}s)`,
+          circuit_breaker_state: cb.state,
+          circuit_breaker_endpoint: normalizePathForCircuitBreaker(url),
         },
         status: 503,
       };
@@ -232,13 +344,13 @@ async function _doProxyWithRetry(
       // which was wrong — a 503 means the backend is having issues and shouldn't
       // cause the breaker to close. Only 2xx means the backend is truly healthy.
       if (res.ok) {
-        flipperConsecutiveFailures = 0;
-        if (flipperCircuitBreakerOpen) {
-          flipperCircuitBreakerOpen = false;
-          flipperCircuitBreakerState = "closed";
-          flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // P1-2: reset cooldown
+        cb.consecutiveFailures = 0;
+        if (cb.open) {
+          cb.open = false;
+          cb.state = "closed";
+          cb.cooldownMs = FLIPPER_CB_INITIAL_COOLDOWN;
           console.info(
-            `[flipper-proxy] Circuit breaker CLOSED — backend responded OK (status ${res.status}).`
+            `[flipper-proxy] Circuit breaker CLOSED for ${normalizePathForCircuitBreaker(url)} — backend responded OK (status ${res.status}).`
           );
         }
       }
@@ -328,16 +440,19 @@ async function _doProxyWithRetry(
         msg.includes("timeout") ||
         msg.includes("aborted");
 
-      // Update circuit breaker on connection failures
-      flipperConsecutiveFailures++;
-      if (flipperConsecutiveFailures >= FLIPPER_CB_THRESHOLD) {
-        flipperCircuitBreakerOpen = true;
-        flipperCircuitBreakerOpenSince = Date.now();
-        flipperCircuitBreakerState = "open";
-        flipperCircuitBreakerCooldownMs = FLIPPER_CB_INITIAL_COOLDOWN; // start at 60s
+      // P1-10: Update per-endpoint circuit breaker on connection failures.
+      // Only network errors trip the breaker — 5xx responses do NOT, because
+      // a 5xx from one endpoint doesn't mean the backend is unreachable for
+      // other endpoints.
+      cb.consecutiveFailures++;
+      if (cb.consecutiveFailures >= FLIPPER_CB_THRESHOLD) {
+        cb.open = true;
+        cb.openSince = Date.now();
+        cb.state = "open";
+        cb.cooldownMs = FLIPPER_CB_INITIAL_COOLDOWN;
         console.warn(
-          `[flipper-proxy] Circuit breaker OPENED — backend appears unreachable. ` +
-          `Will probe health after ${FLIPPER_CB_INITIAL_COOLDOWN / 1000}s. Consecutive failures: ${flipperConsecutiveFailures}`
+          `[flipper-proxy] Circuit breaker OPENED for ${normalizePathForCircuitBreaker(url)} — backend appears unreachable for this endpoint. ` +
+          `Will probe health after ${FLIPPER_CB_INITIAL_COOLDOWN / 1000}s. Consecutive failures: ${cb.consecutiveFailures}`
         );
       }
 
@@ -347,7 +462,7 @@ async function _doProxyWithRetry(
         const jitter = Math.random() * 300;
         const delay = Math.min(baseDelay + jitter, 5000);
         console.warn(
-          `[flipper-proxy] Transient error on attempt ${attempt + 1}/${maxRetries + 1}: ` +
+          `[flipper-proxy] Transient error on attempt ${attempt + 1}/${maxRetries + 1} for ${normalizePathForCircuitBreaker(url)}: ` +
           `${msg}. Retrying in ${Math.round(delay)}ms...`
         );
         await new Promise((r) => setTimeout(r, delay));
@@ -377,6 +492,7 @@ async function _doProxyWithRetry(
     error_type: errorType,
     detail: message,
     hint: BACKEND_OFFLINE_HINT,
+    circuit_breaker_endpoint: normalizePathForCircuitBreaker(url),
   };
 
   // If the backend is offline AND a CORS proxy is configured, add a hint

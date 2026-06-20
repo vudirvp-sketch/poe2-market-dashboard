@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 65 — P2-13 lazy/re-creatable process_pool).
+> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 66 — closed P2-14, P2-5, P2-2, P1-5, P1-6, P1-9, P1-10, P3-2).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -15,19 +15,17 @@
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
-| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 fixed iter 63) | P0-6 fixed iter 56; P0-5 fixed iter 57; clustering now via `clustering_helpers.py`; magic spread numbers (P1-9) |
+| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 fixed iter 63, P1-9 fixed iter 66) | P0-6 fixed iter 56; P0-5 fixed iter 57; clustering now via `clustering_helpers.py`; spread-model params now in `config.yaml:scoring.spread_model` (no more magic numbers) |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (P1-8 fixed iter 64) | `_detect_negative_cycle_nodes()` flags profitable arbitrage cycles; `_bellman_ford` returns `None` when target is on a cycle |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 fixed iter 59, P1-7 fixed iter 61) | All 3 endpoints async-await EventManager; `pipeline_cache` + `daily_stats_cache` invalidated after mutation |
 | `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `clustering_helpers.py`, `routes_analyst.py` |
 | `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 fixed iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY`; used by `routes_prices.py` and `routes_arbitrage.py` |
 | `backend/economy/events.py` | EventManager + StoredEvent (P1-7 fixed iter 61, P3-8 auto-closed) | `event_id`, `is_active`, `created_at`; 4 methods async (`create_event` / `delete_event` / `deactivate_event` / `clear_all`); `_prune_expired` left sync intentionally |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
-| `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete needed (P1-6) |
-| `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | `pipeline_cache.invalidate()` clears only `pipeline` namespace |
-| `backend/data/pipeline_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
-| `backend/data/daily_stats_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
+| `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 fixed iter 66) — uses `rowid IN (SELECT ... LIMIT ?)` pattern |
+| `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | `pipeline_cache.invalidate()` clears only `pipeline` namespace. (Shim modules `pipeline_cache.py` / `daily_stats_cache.py` deleted in iter 66 — P2-2; import directly from `unified_cache`) |
 | `backend/data/currency_names_ru.py` | 966-line hardcoded dict (P2-3) | Move to JSON |
-| `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, liquid_chain | No direct API imports |
+| `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis (P1-5 fixed iter 66) | `compute_quantized_analysis` uses bounded linear scan `O(1/D)` instead of `O(max_lot_search)`; derived from `f(N) ≥ N*D - 2` |
 | `backend/arbitrage/triangular.py` | Triangular arbitrage (P0-6 fixed iter 56, P0-5 fixed iter 57) | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — no `prices` param (was dead); uses `get_process_pool()` from `backend.main` (P2-13 fixed iter 65 — pool is lazy/re-creatable, survives TestClient lifespan teardown) |
 | `backend/main.py` | FastAPI app + lifespan + lazy `process_pool` | `get_process_pool()` lazily creates/recreates the pool; `_shutdown_process_pool()` clears the cached ref on lifespan teardown so the next caller gets a fresh pool (P2-13 fixed iter 65). Backward-compat: `from backend.main import process_pool` still works via module `__getattr__` but emits `DeprecationWarning`. |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | CPU-heavy → ProcessPoolExecutor |
@@ -39,7 +37,7 @@
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
 | `src/hooks/` | React hooks (14 hooks — `use-websocket.ts` removed iter 58, file remnant deleted iter 62) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
-| `src/lib/flipper-proxy.ts` | Proxy with circuit breaker + dedup | See STATUS.md P1-10, P2-8; global CB |
+| `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup (P1-10 fixed iter 66) | See STATUS.md P2-8; `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `getEndpointCircuitBreakerState` / `getAllEndpointCircuitBreakers` exported for debugging |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 fixed iter 55, P2-7 fixed iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation, no over-eager crossRates |
 | `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (see STATUS.md P2-1) | Needs splitting |
 

@@ -24,7 +24,7 @@ from fastapi import APIRouter, HTTPException, Query
 from backend.config import get_settings
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
-from backend.data.pipeline_cache import get_pipeline_cache
+from backend.data.unified_cache import get_pipeline_cache
 from backend.models.currency import PhaseInfo, CurrencyTier
 from backend.api.response_models import (
     PhaseResponse, CurrenciesResponse, PricesResponse, HeatmapResponse,

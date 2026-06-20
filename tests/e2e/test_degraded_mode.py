@@ -128,7 +128,7 @@ class TestPipelineCacheStaleBehaviour:
     def test_pipeline_cache_returns_stale_on_expired(self):
         """When TTL expires, PipelineCache should return stale data
         with stale=True flag."""
-        from backend.data.pipeline_cache import PipelineCache
+        from backend.data.unified_cache import PipelineCache
 
         # Very short TTL for testing
         cache = PipelineCache()
@@ -152,7 +152,7 @@ class TestPipelineCacheStaleBehaviour:
 
     def test_pipeline_cache_recompute_clears_stale(self):
         """After putting a fresh value, stale flag should be cleared."""
-        from backend.data.pipeline_cache import PipelineCache
+        from backend.data.unified_cache import PipelineCache
 
         cache = PipelineCache()
         cache._ttl = 0.05

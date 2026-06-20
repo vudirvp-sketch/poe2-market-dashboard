@@ -16,8 +16,7 @@ import time
 
 import pytest
 
-from backend.data.daily_stats_cache import DailyStatsCache
-from backend.data.pipeline_cache import PipelineCache, get_pipeline_cache
+from backend.data.unified_cache import DailyStatsCache, PipelineCache, get_pipeline_cache
 from backend.config import AppConfig, DataConfig
 
 
@@ -64,7 +63,7 @@ class TestPipelineCacheDegraded:
         # Wait for TTL to expire
         time.sleep(0.1)
 
-        with caplog.at_level(logging.WARNING, logger="backend.data.pipeline_cache"):
+        with caplog.at_level(logging.WARNING, logger="backend.data.unified_cache"):
             result = cache.get("flip_opportunities")
 
         assert result is not None
@@ -166,7 +165,7 @@ class TestPipelineCacheDegraded:
 
         time.sleep(0.1)
 
-        with caplog.at_level(logging.WARNING, logger="backend.data.pipeline_cache"):
+        with caplog.at_level(logging.WARNING, logger="backend.data.unified_cache"):
             cache.get("my_important_pipeline")
 
         degraded_logs = [
@@ -183,7 +182,7 @@ class TestPipelineCacheDegraded:
 
         time.sleep(0.1)
 
-        with caplog.at_level(logging.WARNING, logger="backend.data.pipeline_cache"):
+        with caplog.at_level(logging.WARNING, logger="backend.data.unified_cache"):
             cache.get("test_key")
 
         degraded_logs = [

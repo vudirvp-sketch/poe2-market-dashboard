@@ -302,7 +302,7 @@ async def get_correlation_matrix():
     # Check pipeline cache for previously computed correlation matrix.
     # The TTL matches the snapshot TTL — results are refreshed when new
     # snapshot data arrives, preventing stale correlation data.
-    from backend.data.pipeline_cache import get_pipeline_cache
+    from backend.data.unified_cache import get_pipeline_cache
     pipeline_cache = get_pipeline_cache()
     cache_key = "portfolio_correlation"
     cached = pipeline_cache.get(cache_key)

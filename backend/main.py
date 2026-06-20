@@ -594,11 +594,6 @@ try:
 except ImportError:
     logger.debug("SSE router not available yet")
 
-# NOTE: routes_auth.py has been removed. OAuth2 authentication was a stub
-# that depended on GGG_CLIENT_ID/SECRET env vars (never configured).
-# If OAuth2 is needed in the future, create a new routes_auth.py and
-# re-register it here.
-
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

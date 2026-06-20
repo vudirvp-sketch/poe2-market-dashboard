@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 
 from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
-from backend.data.pipeline_cache import get_pipeline_cache
+from backend.data.unified_cache import get_pipeline_cache
 from backend.api.response_models import AnalystSummaryResponse
 # P0-3 fix (iter 54): use the timestamp-aware 24h-ago helper instead of
 # `prices[0]` (which is just the oldest point in the snapshot window —

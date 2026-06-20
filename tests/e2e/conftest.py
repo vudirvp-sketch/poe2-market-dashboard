@@ -280,7 +280,7 @@ def daily_stats_cache():
         result = await cache.get_or_fetch(my_fetch_fn, "runes", "divine", 30)
         assert result.stale is True
     """
-    from backend.data.daily_stats_cache import DailyStatsCache
+    from backend.data.unified_cache import DailyStatsCache
     from backend.config import AppConfig
 
     # Pass config to get an isolated UnifiedCache (not the global singleton)
@@ -305,7 +305,7 @@ def daily_stats_cache_with_flaky_provider(flaky_client):
 
     Only available when --flaky is passed.
     """
-    from backend.data.daily_stats_cache import DailyStatsCache
+    from backend.data.unified_cache import DailyStatsCache
     from backend.config import AppConfig
 
     client, provider = flaky_client

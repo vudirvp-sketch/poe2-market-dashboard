@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 
 from backend.config import AppConfig, DataConfig, ForecastingConfig, LeagueConfig
-from backend.data.daily_stats_cache import DailyStatsCache, DailyStatsResult, get_daily_stats_cache
+from backend.data.unified_cache import DailyStatsCache, DailyStatsResult, get_daily_stats_cache
 from backend.data.providers.base import BaseDataProvider
 from backend.models.currency import (
     CurrencyInfo,

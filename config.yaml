@@ -75,6 +75,33 @@ scoring:
   phase_multiplier_late: 0.9
   flashback_multiplier: 1.5
   event_multiplier: 2.0
+  # P1-9 (iter 66): Spread model parameters — moved out of routes_arbitrage.py
+  # magic numbers. These define how the synthetic bid/ask spread is constructed
+  # for currency pairs that don't have direct exchange-listed bid/ask prices.
+  # See backend/api/routes_arbitrage.py:_build_flip_opportunities for usage.
+  spread_model:
+    # Liquidity-spread base values (numerator of the liquidity spread formula).
+    # Lower base = tighter spread for liquid pairs; higher base = wider spread for illiquid pairs.
+    liquidity_base_spread_both: 0.04        # when both volume > 0 and highest_stock > 0
+    liquidity_base_spread_volume_only: 0.05 # when only volume > 0 (no highest_stock signal)
+    liquidity_base_spread_no_volume: 0.08   # fallback when no volume signal at all
+    # Liquidity-score scale factors (denominator in the liquidity spread formula).
+    # Larger scale = slower spread decay as liquidity grows (wider spreads for moderately-liquid pairs).
+    liquidity_score_scale: 40.0             # used when both volume + highest_stock are present
+    volume_log_scale: 8.0                   # used when only volume is present
+    # Volatility contribution to market spread: vol_spread = volatility * volatility_weight
+    volatility_weight: 0.5
+    # BFS (no-direct-base) pair widening: market_spread *= bfs_widening_factor
+    # for pairs where neither side has a direct exchange rate to the base currency.
+    bfs_widening_factor: 1.5
+    # Market-spread clamps — prevent absurd spreads from numerical edge cases.
+    min_market_spread: 0.005  # 0.5%
+    max_market_spread: 0.15   # 15%
+    # Momentum amplification: total_spread = market_spread * (1 + momentum_factor),
+    # where momentum_factor = min(momentum_24h_raw, max_momentum_factor).
+    max_momentum_factor: 0.5
+    # Final spread cap — total spread (with momentum amplification) cannot exceed this.
+    max_total_spread: 0.20    # 20%
 
 forecasting:
   sarima_seasonal_period: null  # auto-detect

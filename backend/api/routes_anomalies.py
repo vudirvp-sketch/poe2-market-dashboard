@@ -141,7 +141,7 @@ async def get_anomalies(
 
         # Check pipeline cache for previously computed anomalies.
         # Skip caching for single-currency queries (cache key includes currency).
-        from backend.data.pipeline_cache import get_pipeline_cache
+        from backend.data.unified_cache import get_pipeline_cache
         pipeline_cache = get_pipeline_cache()
         cache_key = f"anomalies_{currency or 'all'}_{min_alert_score}"
         cached = pipeline_cache.get(cache_key)

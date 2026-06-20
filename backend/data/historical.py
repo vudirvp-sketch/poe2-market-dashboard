@@ -154,7 +154,14 @@ class HistoricalStore:
         This method:
         1. Finds all distinct leagues in the price_snapshots table
         2. Deletes any that don't match the currently configured league
+           (chunked to avoid holding a long write lock on large tables)
         3. Also deletes events that don't belong to the current league
+
+        P1-6 (iter 66): Chunked delete with `await db.commit()` between
+        batches. Previously a single `DELETE FROM ... WHERE league = ?`
+        could lock the DB for seconds when an old league had hundreds of
+        thousands of snapshots. The chunk size is small (1000 rows) so
+        concurrent reads remain responsive during pruning.
         """
         db = self._db
         current_league = self._config.league.league_name
@@ -167,20 +174,30 @@ class HistoricalStore:
         old_leagues = [row[0] for row in rows if row[0] != current_league]
 
         if old_leagues:
+            chunk_size = 1000  # rows per DELETE batch
             for old_league in old_leagues:
-                cursor = await db.execute(
-                    "DELETE FROM price_snapshots WHERE league = ?",
-                    (old_league,),
-                )
-                deleted = cursor.rowcount
-                if deleted > 0:
+                total_deleted = 0
+                while True:
+                    # Use rowid subquery instead of `DELETE ... LIMIT ?` because
+                    # LIMIT in DELETE requires SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+                    # compile-time option, which many distros don't enable.
+                    cursor = await db.execute(
+                        "DELETE FROM price_snapshots WHERE rowid IN ("
+                        "  SELECT rowid FROM price_snapshots WHERE league = ? LIMIT ?"
+                        ")",
+                        (old_league, chunk_size),
+                    )
+                    deleted = cursor.rowcount
+                    total_deleted += max(deleted, 0)
+                    await db.commit()  # release write lock between batches
+                    if deleted < chunk_size:
+                        break  # no more rows for this league
+                if total_deleted > 0:
                     logger.info(
                         "Pruned %d price snapshots from old league '%s' "
-                        "(current league: '%s')",
-                        deleted, old_league, current_league,
+                        "(current league: '%s', chunk size: %d)",
+                        total_deleted, old_league, current_league, chunk_size,
                     )
-
-            await db.commit()
         else:
             logger.info(
                 "No old league data found in HistoricalStore (current: '%s')",
@@ -464,22 +481,38 @@ class HistoricalStore:
     # ------------------------------------------------------------------
 
     async def _prune_old_records(self) -> None:
-        """Delete records older than the configured retention period."""
+        """Delete records older than the configured retention period.
+
+        P3-2 (iter 66): Chunked delete — same pattern as `_prune_old_league_data`.
+        Old leagues can accumulate millions of snapshots over a 90-day retention
+        window; a single `DELETE FROM ... WHERE timestamp < ...` would lock the
+        table for seconds. Chunked delete with `commit()` between batches keeps
+        concurrent reads responsive.
+        """
         db = await self._ensure_db()
         days = self._retention_days
+        chunk_size = 1000
+        total_deleted = 0
 
-        cursor = await db.execute(
-            "DELETE FROM price_snapshots WHERE timestamp < datetime('now', ? || ' days')",
-            (f"-{days}",),
-        )
-        deleted_prices = cursor.rowcount
+        while True:
+            # Use rowid subquery instead of `DELETE ... LIMIT ?` (see P1-6 note above).
+            cursor = await db.execute(
+                "DELETE FROM price_snapshots WHERE rowid IN ("
+                "  SELECT rowid FROM price_snapshots "
+                "  WHERE timestamp < datetime('now', ? || ' days') LIMIT ?"
+                ")",
+                (f"-{days}", chunk_size),
+            )
+            deleted = cursor.rowcount
+            total_deleted += max(deleted, 0)
+            await db.commit()  # release write lock between batches
+            if deleted < chunk_size:
+                break  # no more old rows
 
-        await db.commit()
-
-        if deleted_prices > 0:
+        if total_deleted > 0:
             logger.info(
-                "Pruned %d price snapshots older than %d days",
-                deleted_prices, days,
+                "Pruned %d price snapshots older than %d days (chunk size: %d)",
+                total_deleted, days, chunk_size,
             )
 
 

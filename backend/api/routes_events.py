@@ -25,8 +25,7 @@ from backend.config import get_settings, AppConfig
 from backend.economy.events import get_event_manager, EventManager
 from backend.api.shared import get_phase_detector as _get_phase_detector
 from backend.models.currency import EventType
-from backend.data.pipeline_cache import get_pipeline_cache
-from backend.data.daily_stats_cache import get_daily_stats_cache
+from backend.data.unified_cache import get_pipeline_cache, get_daily_stats_cache
 from backend.api.response_models import EventCreateResponse, EventsListResponse, EventSummaryResponse, EventMessageResponse
 
 logger = logging.getLogger(__name__)

@@ -23,7 +23,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from backend.config import get_settings, AppConfig
-from backend.data.pipeline_cache import get_pipeline_cache
+from backend.data.unified_cache import get_pipeline_cache
 from backend.api.shared import get_provider as _get_provider, get_phase_detector as _get_phase_detector
 from backend.api.data_snapshot import get_snapshot
 from backend.economy.momentum import PriceMomentumTracker
@@ -120,6 +120,7 @@ def _build_flip_opportunities_sync(
     cached_cluster_labels: dict[str, str] | None,
     scoring_momentum_negative_threshold: float,
     scoring_volatility_reference: float,
+    spread_model: dict[str, float],
 ) -> list[FlipOpportunity]:
     """CPU-bound flip opportunity computation — runs in executor process.
 
@@ -241,34 +242,41 @@ def _build_flip_opportunities_sync(
         volume = float(rate.volume_traded)
         highest_stock = rate.highest_stock
 
-        # Spread model
+        # Spread model (P1-9: values from config.yaml scoring.spread_model)
         if volume > 0 and highest_stock > 0:
             liquidity_score = _math.log1p(volume) * _math.log1p(highest_stock)
-            liquidity_spread = 0.04 / (1.0 + liquidity_score / 40.0)
+            liquidity_spread = spread_model["liquidity_base_spread_both"] / (
+                1.0 + liquidity_score / spread_model["liquidity_score_scale"]
+            )
         elif volume > 0:
-            liquidity_spread = 0.05 / (1.0 + _math.log1p(volume) / 8.0)
+            liquidity_spread = spread_model["liquidity_base_spread_volume_only"] / (
+                1.0 + _math.log1p(volume) / spread_model["volume_log_scale"]
+            )
         else:
-            liquidity_spread = 0.08
+            liquidity_spread = spread_model["liquidity_base_spread_no_volume"]
 
-        vol_spread = momentum_result.volatility * 0.5
+        vol_spread = momentum_result.volatility * spread_model["volatility_weight"]
         market_spread = liquidity_spread + vol_spread
 
         is_bfs_pair = (
             rate.currency_from not in _currencies_with_direct_base
             and rate.currency_to not in _currencies_with_direct_base
         )
-        bfs_widening = 1.5 if is_bfs_pair else 1.0
+        bfs_widening = spread_model["bfs_widening_factor"] if is_bfs_pair else 1.0
         market_spread *= bfs_widening
-        market_spread = max(0.005, min(0.15, market_spread))
+        market_spread = max(
+            spread_model["min_market_spread"],
+            min(spread_model["max_market_spread"], market_spread),
+        )
 
         momentum_24h_raw = 0.0
         history = currency_price_history.get(rate.currency_from, [])
         if len(history) >= 2 and momentum_result.momentum != 0:
             momentum_24h_raw = abs(_math.exp(momentum_result.momentum * 24) - 1)
 
-        momentum_factor = min(momentum_24h_raw, 0.5)
+        momentum_factor = min(momentum_24h_raw, spread_model["max_momentum_factor"])
         total_spread = market_spread * (1.0 + momentum_factor)
-        total_spread = min(total_spread, 0.20)
+        total_spread = min(total_spread, spread_model["max_total_spread"])
 
         bid = mid_price * (1 - total_spread / 2)
         ask = mid_price * (1 + total_spread / 2)
@@ -493,6 +501,23 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
     scoring_momentum_negative_threshold = config.scoring.momentum_negative_threshold
     scoring_volatility_reference = config.scoring.volatility_reference
 
+    # P1-9 (iter 66): Pre-extract spread_model as plain dict (picklable for executor).
+    # Values come from config.yaml scoring.spread_model — no more magic numbers in code.
+    sm = config.scoring.spread_model
+    spread_model = {
+        "liquidity_base_spread_both": sm.liquidity_base_spread_both,
+        "liquidity_base_spread_volume_only": sm.liquidity_base_spread_volume_only,
+        "liquidity_base_spread_no_volume": sm.liquidity_base_spread_no_volume,
+        "liquidity_score_scale": sm.liquidity_score_scale,
+        "volume_log_scale": sm.volume_log_scale,
+        "volatility_weight": sm.volatility_weight,
+        "bfs_widening_factor": sm.bfs_widening_factor,
+        "min_market_spread": sm.min_market_spread,
+        "max_market_spread": sm.max_market_spread,
+        "max_momentum_factor": sm.max_momentum_factor,
+        "max_total_spread": sm.max_total_spread,
+    }
+
     # 5. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
     # Falls back to default ThreadPoolExecutor if process_pool is unavailable.
     # P2-13: use `get_process_pool()` so the pool is re-created if a prior
@@ -517,6 +542,7 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
                 event_penalties, cached_cluster_labels,
                 scoring_momentum_negative_threshold,
                 scoring_volatility_reference,
+                spread_model,
             ),
             timeout=60.0,
         )

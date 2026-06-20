@@ -20,7 +20,7 @@ score = 0.0818 * 1.0 * 0.735 * 1.0 ≈ 0.0601
 import math
 import pytest
 
-from backend.arbitrage.scorer import compute_opportunity_score, get_phase_multiplier
+from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis, _scale_factor, get_phase_multiplier
 from backend.models.currency import LeaguePhase
 
 
@@ -180,3 +180,119 @@ class TestHourlyVolatilityScaling:
         )
         # Hourly volatility is scaled up → higher effective vol → lower score
         assert score_daily > score_hourly
+
+
+# ---------------------------------------------------------------------------
+# P1-5 (iter 66): Bounded linear scan in compute_quantized_analysis
+# ---------------------------------------------------------------------------
+
+class TestQuantizedAnalysisP1_5:
+    """Regression tests for the bounded-search optimization.
+
+    The previous implementation scanned 1..max_lot_search (10000) to find the
+    first profitable lot. The new implementation derives a tight upper bound
+    N_upper = ceil(2/D) + 1 (where D = R_sell - R_buy) from the theoretical
+    guarantee f(N) ≥ N*D - 2, and scans only [1, N_upper].
+
+    These tests verify the new implementation returns the SAME answer as a
+    naive full scan, across a range of spreads.
+    """
+
+    def _naive_min_profitable_lot(self, R_buy: float, R_sell: float, mid_price: float, max_n: int = 10000) -> int:
+        """Reference implementation: full linear scan 1..max_n.
+
+        Applies the same per-pair scaling as compute_quantized_analysis
+        (P2-4 _scale_factor) so we're comparing apples to apples.
+        """
+        if mid_price > 0 and R_buy > 0:
+            scale = _scale_factor(mid_price)
+            R_buy *= scale
+            R_sell *= scale
+        for N in range(1, max_n + 1):
+            if math.floor(N * R_sell) > math.ceil(N * R_buy):
+                return N
+        return 0
+
+    def test_no_profit_when_R_sell_le_R_buy(self):
+        """When R_sell ≤ R_buy, no profitable lot exists — must return 0 (not loop forever)."""
+        result = compute_quantized_analysis(R_buy=1.0, R_sell=1.0, mid_price=1.0)
+        assert result.min_profitable_lot == 0
+
+        result = compute_quantized_analysis(R_buy=1.05, R_sell=1.0, mid_price=1.0)
+        assert result.min_profitable_lot == 0
+
+    def test_obvious_profitable_lot_at_N_1(self):
+        """Wide spread → profitable at N=1."""
+        # R_buy=1, R_sell=2 → cost=ceil(1)=1, rev=floor(2)=2, profit=1 > 0
+        result = compute_quantized_analysis(R_buy=1.0, R_sell=2.0, mid_price=1.5)
+        assert result.min_profitable_lot == 1
+
+    def test_tight_spread_matches_naive_scan(self):
+        """Tight spread (D=0.1): bounded scan must agree with naive scan."""
+        R_buy, R_sell, mid = 1.0, 1.1, 1.05
+        result = compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=mid)
+        expected = self._naive_min_profitable_lot(R_buy, R_sell, mid)
+        assert result.min_profitable_lot == expected
+        assert result.min_profitable_lot > 0  # sanity: there IS a profitable lot
+
+    def test_very_tight_spread_matches_naive_scan(self):
+        """Very tight spread (D=0.01): bounded scan must still agree with naive scan."""
+        R_buy, R_sell, mid = 1.0, 1.01, 1.005
+        result = compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=mid)
+        expected = self._naive_min_profitable_lot(R_buy, R_sell, mid)
+        assert result.min_profitable_lot == expected
+
+    def test_extremely_tight_spread_matches_naive_scan(self):
+        """Extremely tight spread (D=0.001): bounded scan must still agree with naive scan."""
+        R_buy, R_sell, mid = 1.0, 1.001, 1.0005
+        result = compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=mid)
+        expected = self._naive_min_profitable_lot(R_buy, R_sell, mid)
+        assert result.min_profitable_lot == expected
+
+    def test_cheap_currency_matches_naive_scan(self):
+        """Cheap currency (mid_price=0.001) with tight spread: scaling + bounded scan."""
+        R_buy, R_sell, mid = 0.001, 0.0011, 0.00105
+        result = compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=mid)
+        expected = self._naive_min_profitable_lot(R_buy, R_sell, mid)
+        assert result.min_profitable_lot == expected
+
+    def test_expensive_currency_matches_naive_scan(self):
+        """Expensive currency (mid_price=200) with tight spread."""
+        R_buy, R_sell, mid = 200.0, 200.5, 200.25
+        result = compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=mid)
+        expected = self._naive_min_profitable_lot(R_buy, R_sell, mid)
+        assert result.min_profitable_lot == expected
+
+    def test_random_spreads_match_naive_scan(self):
+        """Property test: many random spreads must give the same answer as naive scan."""
+        import random
+        random.seed(42)
+        for _ in range(50):
+            mid = random.uniform(0.01, 500.0)
+            spread_pct = random.uniform(0.001, 0.10)  # 0.1% to 10% spread
+            R_buy = mid * (1 - spread_pct / 2)
+            R_sell = mid * (1 + spread_pct / 2)
+            result = compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=mid)
+            expected = self._naive_min_profitable_lot(R_buy, R_sell, mid)
+            assert result.min_profitable_lot == expected, (
+                f"Mismatch for mid={mid}, spread={spread_pct}: "
+                f"got {result.min_profitable_lot}, expected {expected}"
+            )
+
+    def test_bounded_scan_performance(self):
+        """Sanity: bounded scan should iterate O(1/D) times, not O(max_lot_search).
+
+        For D=0.05, the bound is ceil(2/0.05)+1 = 41. Naive would scan up to 10000.
+        """
+        # We can't directly count iterations without instrumentation, but we can
+        # verify the answer is correct AND fast by timing.
+        import time
+        R_buy, R_sell = 1.0, 1.05  # D=0.05, N_upper=41
+        t0 = time.perf_counter()
+        for _ in range(1000):
+            compute_quantized_analysis(R_buy=R_buy, R_sell=R_sell, mid_price=1.025)
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        # 1000 calls should complete in well under 1s. If the scan were 10000
+        # iterations per call, this would take ~10s. With bounded scan (~41 iter),
+        # it should be < 100ms total. Use a generous threshold.
+        assert elapsed_ms < 1000, f"Bounded scan too slow: {elapsed_ms:.1f}ms for 1000 calls"

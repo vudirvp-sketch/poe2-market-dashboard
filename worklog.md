@@ -5,41 +5,48 @@
 
 ---
 
+## Task 66 — 8 issues closed (P2-14, P2-5, P2-2, P1-5, P1-6, P1-9, P1-10, P3-2)
+**Agent:** Main Agent
+**Date:** 2026-06-21
+
+**Task:** Per iter 65 stopping point — close as many issues as possible without losing quality. User pushed back on "1-3 issues per iter" pace; demonstrated that 8 independent issues can be safely closed when most are quick wins or test-only scope.
+
+**Work Log:**
+- **P2-14** (test-only): Rewrote `tests/test_compression.py` from scratch against current `CompressionMiddleware` API. Old test imported `_check_brotli_available` / `_CompressionResponder` symbols that were squashed away in an earlier refactor. New test (10 cases) verifies the actual contract: Vary header added to JSON responses, skipped for errors/SSE/non-JSON, regression guard prevents re-adding private symbols. 10/10 pass.
+- **P2-5** (trivial): Deleted 4-line dead `routes_auth.py` comment block from `backend/main.py:597-600`.
+- **P2-2** (import audit + deletion): Deleted `backend/data/pipeline_cache.py` and `backend/data/daily_stats_cache.py` shim modules (each was 23 lines re-exporting from `unified_cache.py`). Updated 8 backend files + 4 test files to import directly from `backend.data.unified_cache`. Also updated `caplog.at_level(logger="backend.data.pipeline_cache")` → `backend.data.unified_cache` in `test_pipeline_cache_degraded.py`.
+- **P1-5** (perf): Bounded linear scan in `compute_quantized_analysis`. Derived theoretical upper bound `N_upper = ceil(2/D) + 1` from the guarantee `f(N) = floor(N*R_sell) - ceil(N*R_buy) ≥ N*D - 2` (where D = R_sell - R_buy). Replaces 10000-iteration scan with O(1/D) — for typical D ∈ [0.01, 0.05] this is 50-250× faster. Binary search was rejected because `f(N)` is NOT monotonic (fractional parts cause f(N+1) < f(N)); documented this in the function docstring. 9 new regression tests in `test_scorer.py::TestQuantizedAnalysisP1_5`, including a property test against naive scan over 50 random spreads.
+- **P1-6 + P3-2** (same pattern): Chunked delete in `HistoricalStore._prune_old_league_data` and `_prune_old_records`. Each DELETE is now batched with chunk size 1000 rows, `await db.commit()` between batches. Used `DELETE ... WHERE rowid IN (SELECT rowid ... LIMIT ?)` pattern because SQLite's `DELETE ... LIMIT ?` requires `SQLITE_ENABLE_UPDATE_DELETE_LIMIT` compile-time option, which the test env doesn't have. Caught the LIMIT syntax error during testing and fixed it.
+- **P1-9** (config extraction): Moved 11 spread-model magic numbers from `routes_arbitrage.py:_build_flip_opportunities_sync` to `config.yaml:scoring.spread_model.*`. New `SpreadModelConfig` Pydantic model in `backend/config.py`. Values pre-extracted as plain dict in the async wrapper and passed to the executor (picklable). Zero behavior change — same defaults.
+- **P1-10** (reliability): Per-endpoint circuit breaker in `flipper-proxy.ts`. Replaced 4 module-level globals (`flipperCircuitBreakerOpen`, `flipperCircuitBreakerOpenSince`, `flipperCircuitBreakerCooldownMs`, `flipperConsecutiveFailures`) + `flipperCircuitBreakerState` with `Map<string, EndpointCircuitBreaker>`. Path normalization groups by major endpoint and strips ID-like trailing slugs (so `/api/v1/storage_value/divine-orb` and `/api/v1/storage_value/chaos-orb` share one breaker). Exported `getEndpointCircuitBreakerState`, `getAllEndpointCircuitBreakers`, `_resetAllCircuitBreakers` for debugging/tests. 8 new tests in `flipper-proxy.test.ts`. Also added `circuit_breaker_endpoint` field to 503 error responses for debugging.
+- Verified: pytest **437 pass** (was 418 → +19 new tests: 9 P1-5 + 10 P2-14). jest **299 pass** (was 291 → +8 P1-10). tsc **0 errors**.
+- Updated `STATUS.md` (P1=0 🎉, P2=5, P3=3; new Quick Reference rows for per-endpoint CB and SQLite LIMIT), `REFACTOR_PLAN.md` (v30.0 — estimation 4-7 iters remaining, iter 66 demonstration that 8 issues/iter is feasible when independent).
+
+**Stage Summary:**
+- 8 issues closed: P2-14, P2-5, P2-2, P1-5, P1-6, P1-9, P1-10, P3-2.
+- P1 bucket is now **EMPTY** (0 remaining) — all 11 P1 issues resolved.
+- ~17 files changed (8 backend, 4 test, 1 frontend lib, 1 frontend test, 2 docs, 1 config.yaml).
+- P1=0, P2=5, P3=3. ~4-7 iterations remaining.
+- Baseline: pytest **437 pass**, tsc 0 errors, jest **299 pass** (with `aiosqlite` installed).
+
+**Stopping point:**
+- Iter 66 done. P1 bucket emptied.
+- Next iter should focus on P2 cleanup (5 remaining). Recommended order:
+  - **P2-9** (`lightgbm_min_data_points` adaptive) — small, isolated.
+  - **P2-4** (`routes_scanner.py` duplicates `/flips`) — extend or delete.
+  - **P2-6** (expose CB status in `/health`) — small.
+  - **P2-8** (`proxyWithFallback` 5xx handling) — touches frontend error UX.
+  - **P2-3** (`currency_names_ru.py` → JSON) — medium, mechanical.
+- Suggested commit messages (one per issue): `fix(P2-14): rewrite test_compression.py against current CompressionMiddleware API`; then 7 more commits for the other issues. (User may prefer to squash related fixes — e.g., P1-5+P1-6+P1-9+P1-10 are independent but all touch backend perf/reliability.)
+
+---
+
 ## Task 65 — P2-13 (lazy/re-creatable process_pool)
 **Agent:** Main Agent
 **Date:** 2026-06-21
 
-**Task:** Per iter 64 stopping point: fix `process_pool` test pollution so `test_triangular.py` runs in full-suite mode. Root cause already identified — `backend/main.py:279` `process_pool.shutdown(wait=False, cancel_futures=True)` runs in `TestClient` lifespan teardown, breaking any later `loop.run_in_executor(process_pool, ...)` call.
-
-**Work Log:**
-- Reproduced pollution: `pytest tests/test_routes_events_invalidation.py tests/test_triangular.py` → 7 fail with `RuntimeError: cannot schedule new futures after shutdown`.
-- Designed fix: replace module-level singleton with lazy getter `get_process_pool()` that recreates the pool when `_process_pool` is `None` or has `_shutdown=True`. Thread-safe via `_process_pool_lock`. `lifespan` shutdown calls new `_shutdown_process_pool()` which closes the pool AND clears the cached reference.
-- Updated `backend/main.py`: added `threading`/`warnings` imports, replaced `process_pool = ProcessPoolExecutor(...)` with `_process_pool` + `_process_pool_lock` + 3 helpers (`_is_pool_broken`, `get_process_pool`, `_shutdown_process_pool`). Lifespan warmup now uses `get_process_pool()`. Lifespan shutdown delegates to `_shutdown_process_pool()`.
-- Added PEP 562 module `__getattr__` for backward compat: `from backend.main import process_pool` still works but emits `DeprecationWarning` and routes through `get_process_pool()`.
-- Updated 5 call sites (all `from backend.main import process_pool` → `from backend.main import get_process_pool` + `executor = get_process_pool()`): `backend/arbitrage/triangular.py`, `backend/api/routes_arbitrage.py`, `backend/api/routes_portfolio.py`, `backend/api/routes_prices.py`, `backend/api/routes_anomalies.py`.
-- Verified pollution fix: `pytest tests/test_routes_events_invalidation.py tests/test_triangular.py` → 11/11 pass.
-- Ran full pytest suite (excluding `test_compression.py`): **418 pass** with `aiosqlite` installed (was 398 + 13 from `test_scheduler.py` + 7 from `test_triangular.py`). In user's baseline env (no aiosqlite): **405 pass** (+7 vs iter 64 baseline of 398).
-- Verified tsc 0 errors, jest 291/291 (no JS/TS touched).
-- Discovered new bug while running `test_compression.py`: previously thought to be a `brotli` env issue, but with `brotli` installed all 11 tests STILL fail. Real cause: test imports `_check_brotli_available` and `_CompressionResponder` from `backend/api/middleware_compression.py`, but that module is only 65 lines with a single `CompressionMiddleware` class — the helpers were removed in an earlier refactor. Documented as **P2-14** in STATUS.md per task rules ("Если найден новый баг — сначала документируй, потом фиксий"). Did NOT fix in this iter.
-- Updated `STATUS.md`: P2-13 → Fixed; P2 count 9→9 (closed P2-13, added P2-14); updated Quick Reference (test_triangular pollution row → marked fixed; test_compression row → updated to reflect P2-14 not env issue; new row for `RuntimeError: cannot schedule new futures after shutdown` marked fixed in iter 65).
-- Trimmed STATUS.md `Fixed` section to only iter 64 + iter 65 entries; older entries collapsed into one-line "Earlier fixes" pointer to git log.
-
 **Stage Summary:**
-- 1 issue closed: P2-13 (process_pool test pollution).
-- 1 new issue documented: P2-14 (test_compression.py test/code mismatch).
-- 6 files changed: `backend/main.py`, `backend/arbitrage/triangular.py`, `backend/api/routes_arbitrage.py`, `backend/api/routes_portfolio.py`, `backend/api/routes_prices.py`, `backend/api/routes_anomalies.py`.
-- 2 doc files updated: `STATUS.md`, `worklog.md`.
-- P1=4, P2=9, P3=5. ~9-13 iterations remaining.
-- Baseline: pytest **405 pass** (excl. test_compression.py — see P2-14; test_scheduler.py needs `aiosqlite`), tsc 0 errors, jest 291/291.
-
-**Stopping point:**
-- Iter 65 done. P2-13 closed.
-- `test_triangular.py` now runs in full-suite mode (+7 tests unlocked).
-- Ready for iter 66. Suggested candidates (per REFACTOR_PLAN.md / STATUS.md):
-  - **P2-14** (test_compression.py rewrite) — quick win, similar test-only scope.
-  - **P2-5** (delete dead `routes_auth.py` comment in `main.py:516-519`) — trivial cleanup.
-  - **P2-2** (delete `pipeline_cache.py` / `daily_stats_cache.py` shim modules) — small but needs import audit.
-- Suggested commit: `fix(P2-13): lazy/re-creatable process_pool to survive TestClient lifespan teardown`
+- Pool is now lazy/re-creatable via `get_process_pool()`; lifespan teardown clears the cached reference so the next caller gets a fresh pool. 5 call sites migrated. `test_triangular.py` now runs in full-suite mode (+7 tests). Backward-compat: module `__getattr__` keeps `from backend.main import process_pool` working with `DeprecationWarning`.
 
 ---
 
@@ -48,15 +55,4 @@
 **Date:** 2026-06-21
 
 **Stage Summary:**
-- New helper `_detect_negative_cycle_nodes()` runs one extra relaxation pass. `_bellman_ford` returns `None` only when `target` is on the cycle; other targets still get shortest path. `/api/v1/optimizer/path` falls back to `direct_rate`.
-- 1 file changed: `backend/api/routes_optimizer.py`. 1 new test file: `tests/test_routes_optimizer.py` (23 tests).
-- Discovered P2-13 root cause during testing — documented, left for iter 65.
-
----
-
-## Task 63 — P1-4 (clustering deduplication)
-**Agent:** Main Agent
-**Date:** 2026-06-21
-
-**Stage Summary:**
-- Shared `backend/economy/clustering_helpers.py` with `prepare_clustering_data()` + `run_clustering_sync()`. Single cache key `"cluster_labels"`. Fixed `prices[0]` bug. 16 new tests.
+- New helper `_detect_negative_cycle_nodes()` runs one extra relaxation pass. `_bellman_ford` returns `None` only when `target` is on the cycle; other targets still get shortest path. `/api/v1/optimizer/path` falls back to `direct_rate`. 23 new tests.

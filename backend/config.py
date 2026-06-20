@@ -81,6 +81,28 @@ class FiltersConfig(BaseModel):
     exclude_volatile_illiquid: bool = False
 
 
+class SpreadModelConfig(BaseModel):
+    """Spread model parameters for synthetic bid/ask construction.
+
+    P1-9 (iter 66): Moved out of routes_arbitrage.py magic numbers.
+    These define how the synthetic bid/ask spread is built for currency
+    pairs that don't have direct exchange-listed bid/ask prices.
+
+    See backend/api/routes_arbitrage.py:_build_flip_opportunities for usage.
+    """
+    liquidity_base_spread_both: float = 0.04
+    liquidity_base_spread_volume_only: float = 0.05
+    liquidity_base_spread_no_volume: float = 0.08
+    liquidity_score_scale: float = 40.0
+    volume_log_scale: float = 8.0
+    volatility_weight: float = 0.5
+    bfs_widening_factor: float = 1.5
+    min_market_spread: float = 0.005
+    max_market_spread: float = 0.15
+    max_momentum_factor: float = 0.5
+    max_total_spread: float = 0.20
+
+
 class ScoringConfig(BaseModel):
     momentum_negative_threshold: float = -0.01
     volatility_reference: float = 0.05
@@ -90,6 +112,8 @@ class ScoringConfig(BaseModel):
     # FIX: Added flashback and event multipliers for league type support
     flashback_multiplier: float = 1.5
     event_multiplier: float = 2.0
+    # P1-9 (iter 66): Spread model parameters (see config.yaml scoring.spread_model)
+    spread_model: SpreadModelConfig = Field(default_factory=SpreadModelConfig)
 
 
 class ForecastingConfig(BaseModel):
