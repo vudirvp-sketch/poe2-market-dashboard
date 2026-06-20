@@ -28,7 +28,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import threading
 import time
+import warnings
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -247,39 +249,44 @@ async def lifespan(app: FastAPI):
     # (sklearn/numpy/scipy import time in each spawn process).
     try:
         loop = asyncio.get_running_loop()
-        warmup_futures = [
-            loop.run_in_executor(process_pool, _executor_warmup_task)
-            for _ in range(_process_workers)
-        ]
-        # Don't block startup — just fire and forget, but log when done
-        async def _log_warmup():
-            try:
-                results = await asyncio.wait_for(
-                    asyncio.gather(*warmup_futures, return_exceptions=True),
-                    timeout=30.0,
-                )
-                ok = sum(1 for r in results if r is True)
-                logger.info(
-                    "ProcessPoolExecutor warm-up complete: %d/%d workers ready",
-                    ok, _process_workers,
-                )
-            except asyncio.TimeoutError:
-                logger.warning("ProcessPoolExecutor warm-up timed out (30s)")
-            except Exception as e:
-                logger.warning("ProcessPoolExecutor warm-up error: %s", e)
-        asyncio.create_task(_log_warmup())
+        pool = get_process_pool()
+        if pool is None:
+            logger.warning(
+                "ProcessPoolExecutor unavailable — warm-up skipped, "
+                "CPU-bound work will use the default ThreadPoolExecutor"
+            )
+        else:
+            warmup_futures = [
+                loop.run_in_executor(pool, _executor_warmup_task)
+                for _ in range(_process_workers)
+            ]
+            # Don't block startup — just fire and forget, but log when done
+            async def _log_warmup():
+                try:
+                    results = await asyncio.wait_for(
+                        asyncio.gather(*warmup_futures, return_exceptions=True),
+                        timeout=30.0,
+                    )
+                    ok = sum(1 for r in results if r is True)
+                    logger.info(
+                        "ProcessPoolExecutor warm-up complete: %d/%d workers ready",
+                        ok, _process_workers,
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning("ProcessPoolExecutor warm-up timed out (30s)")
+                except Exception as e:
+                    logger.warning("ProcessPoolExecutor warm-up error: %s", e)
+            asyncio.create_task(_log_warmup())
     except Exception as e:
         logger.warning("ProcessPoolExecutor warm-up failed: %s", e)
 
     yield
 
     # --- Shutdown ProcessPoolExecutor ---
-    try:
-        logger.info("Shutting down ProcessPoolExecutor...")
-        process_pool.shutdown(wait=False, cancel_futures=True)
-        logger.info("ProcessPoolExecutor shut down")
-    except Exception as e:
-        logger.warning("ProcessPoolExecutor shutdown error: %s", e)
+    # P2-13: delegate to `_shutdown_process_pool()` which also clears the
+    # cached reference, so any subsequent `get_process_pool()` call (e.g.
+    # from a later test in the same pytest session) creates a fresh pool.
+    _shutdown_process_pool()
 
     # --- P0-1: Shutdown background tasks ---
     # Cancel snapshot refresh task
@@ -362,11 +369,98 @@ else:
 # child processes must be able to import the module without side effects
 # (no re-creating ProcessPoolExecutor on import).
 _mp_ctx = multiprocessing.get_context("spawn")
-process_pool = ProcessPoolExecutor(max_workers=_process_workers, mp_context=_mp_ctx)
-logger.info(
-    "ProcessPoolExecutor initialized: %d workers (cpu_count=%d, FLIPPER_WORKERS=%s, start_method=spawn)",
-    _process_workers, _cpu_count, _env_workers,
-)
+
+# P2-13 (iter 65): ProcessPoolExecutor is now lazy / re-creatable.
+# Previously it was a module-level singleton created at import time and
+# shut down inside `lifespan` teardown. In the test suite, every
+# `with TestClient(app)` or `AsyncClient(ASGITransport(app))` context
+# triggers lifespan shutdown → `process_pool.shutdown(...)` → the global
+# pool becomes permanently broken. Any later test that calls
+# `loop.run_in_executor(process_pool, ...)` then raises
+# `RuntimeError: cannot schedule new futures after shutdown`.
+# This polluted `test_triangular.py` and any other test that ran after a
+# TestClient-based test in the same pytest session.
+#
+# Fix: pool is stored in `_process_pool` and accessed only through
+# `get_process_pool()`, which lazily creates a fresh pool if the cached
+# one is None or has been shut down. `lifespan` shutdown calls
+# `_shutdown_process_pool()` which closes the pool AND clears the cached
+# reference, so the next caller gets a brand-new pool.
+
+_process_pool: ProcessPoolExecutor | None = None
+_process_pool_lock = threading.Lock()
+
+
+def _is_pool_broken(pool: ProcessPoolExecutor | None) -> bool:
+    """Return True if `pool` is None or has been shut down.
+
+    `ProcessPoolExecutor._shutdown` is a stable boolean flag set by
+    `.shutdown()`; we read it to detect pools that cannot accept new
+    futures. This is the same flag CPython's `submit()` checks.
+    """
+    if pool is None:
+        return True
+    return bool(getattr(pool, "_shutdown", False))
+
+
+def get_process_pool() -> ProcessPoolExecutor | None:
+    """Return a live ProcessPoolExecutor, creating one if necessary.
+
+    P2-13: Thread-safe lazy initializer. If the cached pool has been
+    shut down (e.g. by a previous `lifespan` teardown in a test), a
+    fresh pool is created transparently. Returns None only if pool
+    construction fails — callers must fall back to the default
+    ThreadPoolExecutor in that case.
+
+    Callers should NOT cache the returned reference for long: always
+    call this function at the call site, so re-creation works.
+    """
+    global _process_pool
+    # Fast path: cached and alive (no lock).
+    pool = _process_pool
+    if not _is_pool_broken(pool):
+        return pool
+
+    # Slow path: create under the lock so we never spawn two pools.
+    with _process_pool_lock:
+        pool = _process_pool
+        if not _is_pool_broken(pool):
+            return pool
+        try:
+            pool = ProcessPoolExecutor(
+                max_workers=_process_workers, mp_context=_mp_ctx
+            )
+            _process_pool = pool
+            logger.info(
+                "ProcessPoolExecutor (re)created: %d workers "
+                "(cpu_count=%d, FLIPPER_WORKERS=%s, start_method=spawn)",
+                _process_workers, _cpu_count, _env_workers,
+            )
+            return pool
+        except Exception as e:
+            logger.warning("ProcessPoolExecutor creation failed: %s", e)
+            return None
+
+
+def _shutdown_process_pool() -> None:
+    """Shut down the cached ProcessPoolExecutor and clear the reference.
+
+    P2-13: Called from `lifespan` teardown. Clearing `_process_pool` to
+    None ensures the next `get_process_pool()` call (e.g. from a later
+    test) creates a fresh pool instead of reusing the broken one.
+    """
+    global _process_pool
+    pool = _process_pool
+    if pool is None:
+        return
+    try:
+        logger.info("Shutting down ProcessPoolExecutor...")
+        pool.shutdown(wait=False, cancel_futures=True)
+        logger.info("ProcessPoolExecutor shut down")
+    except Exception as e:
+        logger.warning("ProcessPoolExecutor shutdown error: %s", e)
+    finally:
+        _process_pool = None
 
 
 def _executor_warmup_task() -> bool:
@@ -613,3 +707,28 @@ async def health_check():
         "snapshot": snapshot_health,
         "daily_stats_cache": daily_stats_cache_stats,
     }
+
+
+# ---------------------------------------------------------------------------
+# P2-13: Backward-compat module attribute access for `process_pool`.
+# ---------------------------------------------------------------------------
+# Old call sites did `from backend.main import process_pool` and then
+# `loop.run_in_executor(process_pool, ...)`. That pattern is broken under
+# the lazy/re-creatable model because the imported reference would be a
+# snapshot taken at import time and could go stale after a `lifespan`
+# teardown. We keep the attribute accessible (so external code/tests that
+# still import it keep working) but route it through `get_process_pool()`
+# and emit a DeprecationWarning pointing callers at the new API.
+def __getattr__(name: str):
+    if name == "process_pool":
+        warnings.warn(
+            "`backend.main.process_pool` is deprecated (P2-13): the pool "
+            "is now lazy and may be recreated after lifespan teardown. "
+            "Use `from backend.main import get_process_pool` and call it "
+            "at the call site instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return get_process_pool()
+    raise AttributeError(f"module 'backend.main' has no attribute {name!r}")
+

@@ -1,7 +1,7 @@
 # REFACTOR_PLAN.md — Roadmap
 
-> Version: 28.0 | Date: 2026-06-21 (iter 64 — P1-8 closed: Bellman-Ford negative cycle detection)
-> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-64 fixes. See `STATUS.md` for detailed issue descriptions.
+> Version: 29.0 | Date: 2026-06-21 (iter 65 — P2-13 closed: lazy/re-creatable process_pool)
+> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-65 fixes. See `STATUS.md` for detailed issue descriptions.
 
 ## Principles
 
@@ -20,26 +20,28 @@ All P0 issues resolved in iter 54-58.
 - See STATUS.md §P1 (P1-4 closed iter 63; P1-7 closed iter 61; P1-8 closed iter 64)
 
 ### P2 — Medium (clean code) — 9 items
-- See STATUS.md §P2 (P2-7 closed iter 59; P2-10 closed iter 58; P2-11 closed iter 60; P2-12 closed iter 62; P2-13 added iter 64 — process_pool test pollution)
+- See STATUS.md §P2 (P2-7 closed iter 59; P2-10 closed iter 58; P2-11 closed iter 60; P2-12 closed iter 62; P2-13 closed iter 65; P2-14 added iter 65 — test_compression.py test/code mismatch)
 
 ### P3 — Low priority (nice-to-have) — 5 items
 - See STATUS.md §P3 (P3-1, P3-6, P3-8 closed)
 
-## Recommended Fix Order (iter 65+)
+## Recommended Fix Order (iter 66+)
 
-Iter 64 (DONE):
-- **P1-8** (Bellman-Ford negative cycle detection) — DONE. New `_detect_negative_cycle_nodes()` helper in `routes_optimizer.py`. Detects profitable arbitrage cycles; logs warning and returns `None` when target is on the cycle so the endpoint falls back to the direct edge. 23 new tests in `tests/test_routes_optimizer.py`.
+Iter 65 (DONE):
+- **P2-13** (process_pool test pollution) — DONE. Pool is now lazy/re-creatable via `get_process_pool()`; lifespan teardown clears the cached reference so the next caller gets a fresh pool. 5 call sites migrated. `test_triangular.py` now runs in full-suite mode (+7 tests). Backward-compat: module `__getattr__` keeps `from backend.main import process_pool` working with `DeprecationWarning`.
 
-Iter 65+ (next, in recommended order):
-1. **P2-13** (process_pool test pollution) — Quick win: identified root cause in iter 64. Lazy/re-creatable pool OR fall back to ThreadPoolExecutor when broken. Unblocks `test_triangular.py` in full-suite runs.
-2. **P1-5** (`compute_quantized_analysis` O(lot_sizes × max_lot_search) → binary search).
-3. **P1-6** (`HistoricalStore._prune_old_league_data` chunked delete).
-4. **P1-9** (spread model magic numbers → `config.yaml`).
-5. **P1-10** (per-endpoint circuit breaker in `flipper-proxy.ts`).
-6. P2-1 through P2-9 — see STATUS.md for dependencies.
-7. P3-2 through P3-7 — non-blocking cleanup.
+Iter 66+ (next, in recommended order):
+1. **P2-14** (test_compression.py rewrite) — Quick win: test references `_check_brotli_available` / `_CompressionResponder` that no longer exist in `middleware_compression.py`. Rewrite test against current `CompressionMiddleware` API.
+2. **P2-5** (delete dead `routes_auth.py` comment in `main.py:516-519`) — Trivial cleanup.
+3. **P2-2** (delete `pipeline_cache.py` / `daily_stats_cache.py` shim modules) — Small but needs import audit.
+4. **P1-5** (`compute_quantized_analysis` O(lot_sizes × max_lot_search) → binary search).
+5. **P1-6** (`HistoricalStore._prune_old_league_data` chunked delete).
+6. **P1-9** (spread model magic numbers → `config.yaml`).
+7. **P1-10** (per-endpoint circuit breaker in `flipper-proxy.ts`).
+8. P2-1, P2-3, P2-4, P2-6, P2-8, P2-9 — see STATUS.md for dependencies.
+9. P3-2 through P3-7 — non-blocking cleanup.
 
-## Estimation (rough, updated iter 64)
+## Estimation (rough, updated iter 65)
 
 | Bucket | Issues remaining | Estimated iterations | Risk |
 |--------|------------------|---------------------|------|
@@ -48,7 +50,7 @@ Iter 65+ (next, in recommended order):
 | P2 | 9 | 5-7 iterations | Low — mostly mechanical |
 | P3 | 5 | 2-3 iterations | Low — non-blocking |
 
-**Total:** ~10-14 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
+**Total:** ~9-13 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
 
 ## Definition of Done (per issue)
 

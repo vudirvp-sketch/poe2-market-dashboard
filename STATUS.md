@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Refactoring Backlog
 
-> **Last updated:** 2026-06-21 (iter 64 — P1-8 closed: Bellman-Ford negative cycle detection)
+> **Last updated:** 2026-06-21 (iter 65 — P2-13 closed: lazy/re-creatable process_pool)
 > Single source of truth for known bugs and refactoring priorities.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -38,7 +38,7 @@ All P0 issues resolved in iter 54-58.
 - **P2-6.** Double circuit breaker not synchronized. Expose CB status in `/health`.
 - **P2-8.** `proxyWithFallback` swallows ALL 5xx → 200. Pass-through in dev, mark fallback in prod.
 - **P2-9.** `lightgbm_min_data_points: 15` — adaptive fallback instead of hardcode.
-- **P2-13.** `backend.main.process_pool` test pollution — `lifespan` shutdown closes the global pool, so any later test calling `find_triangular_arbitrage` (or any route using `loop.run_in_executor(process_pool, ...)`) fails with `RuntimeError: cannot schedule new futures after shutdown`. Root cause: `backend/main.py:279` `process_pool.shutdown(wait=False, cancel_futures=True)` runs in `TestClient` lifespan teardown. **Solution:** lazy/re-creatable pool, or fall back to `ThreadPoolExecutor` when the process pool is broken.
+- **P2-14.** `test_compression.py` references private symbols (`_check_brotli_available`, `_CompressionResponder`) that don't exist in `backend/api/middleware_compression.py` (only 65 lines, single `CompressionMiddleware` class). All 11 tests fail — 3 with `ImportError`, 8 with assertion mismatches. Previously mis-diagnosed as "brotli env issue". Real cause: test was written against an earlier middleware refactor that has since been deleted/squashed. **Solution:** rewrite `test_compression.py` against the current `CompressionMiddleware` API, or restore the missing helpers.
 
 ---
 
@@ -54,24 +54,18 @@ All P0 issues resolved in iter 54-58.
 
 ## Fixed (recent — older history in git log)
 
+### P2-13 (fixed in iter 65) — process_pool test pollution
+- **Was:** `process_pool` was a module-level singleton in `backend/main.py` created at import time. The FastAPI `lifespan` shutdown handler called `process_pool.shutdown(wait=False, cancel_futures=True)`, permanently breaking the global pool. Any later test in the same pytest session that called `loop.run_in_executor(process_pool, ...)` (e.g. every test in `test_triangular.py`, plus routes that offload to the pool) failed with `RuntimeError: cannot schedule new futures after shutdown`. This is why `test_triangular.py` was excluded from the full-suite baseline.
+- **Now:** Pool is stored in private `_process_pool` and accessed only through `get_process_pool()`, which lazily creates a fresh pool if the cached one is `None` or has `_shutdown=True`. Thread-safe via `_process_pool_lock`. `lifespan` shutdown calls `_shutdown_process_pool()` which closes the pool AND clears the cached reference, so the next caller gets a brand-new pool. Backward-compat: module `__getattr__` still exposes `process_pool` for old imports but routes through `get_process_pool()` with `DeprecationWarning`.
+- **Files changed:** `backend/main.py` (lazy pool + helpers + `__getattr__` shim), `backend/arbitrage/triangular.py`, `backend/api/routes_arbitrage.py`, `backend/api/routes_portfolio.py`, `backend/api/routes_prices.py`, `backend/api/routes_anomalies.py` (all 5 call sites switched from `from backend.main import process_pool` to `get_process_pool()`).
+- **Tests:** tsc 0 errors, jest 291/291, pytest **405 pass** (was 398 — `test_triangular.py` 7 tests now run in full-suite mode). With `aiosqlite` installed, pytest **418 pass** (`test_scheduler.py` 13 also works).
+
 ### P1-8 (fixed in iter 64) — Bellman-Ford negative cycle detection in routes_optimizer
-- **Was:** `_bellman_ford` ran `max_hops` relaxation passes and then reconstructed the predecessor chain without checking for negative cycles. In `-log(rate)` space a negative cycle = profitable arbitrage (product of rates around cycle > 1). When such a cycle was reachable from `source`, the algorithm silently returned a stale path or hit the defensive `visited` cycle guard and returned `None` for the wrong reason — losing the arbitrage signal entirely.
-- **Now:** New helper `_detect_negative_cycle_nodes(graph, dist, predecessor)` runs one extra relaxation pass and walks predecessor chains to identify the actual cycle members. `_bellman_ford` logs a warning and returns `None` only when the `target` is on the cycle (optimal path is unbounded); other targets still get their shortest path. Endpoint `/api/v1/optimizer/path` falls back to the direct edge if available.
-- **Files changed:** `backend/api/routes_optimizer.py` (added helper + cycle check + docstring updates), `tests/test_routes_optimizer.py` (new — 23 tests covering graph build, basic Bellman-Ford, cycle detection, and end-to-end arbitrage handling).
-- **Tests:** tsc 0 errors, jest 291/291, pytest 398 pass (incl. 23 new). test_triangular full-suite pollution is now P2-13 (separate, pre-existing).
+- **Was:** `_bellman_ford` ran `max_hops` relaxation passes and then reconstructed the predecessor chain without checking for negative cycles. In `-log(rate)` space a negative cycle = profitable arbitrage. When such a cycle was reachable from `source`, the algorithm silently returned a stale path or hit the defensive `visited` cycle guard and returned `None` for the wrong reason — losing the arbitrage signal entirely.
+- **Now:** New helper `_detect_negative_cycle_nodes(graph, dist, predecessor)` runs one extra relaxation pass and walks predecessor chains to identify the actual cycle members. `_bellman_ford` logs a warning and returns `None` only when the `target` is on the cycle (optimal path is unbounded); other targets still get their shortest path. Endpoint `/api/v1/optimizer/path` falls back to the direct edge if available. 23 new tests in `tests/test_routes_optimizer.py`.
 
-### P1-4 (fixed in iter 63) — Clustering deduplicated
-- **Was:** ~80 lines of near-identical clustering data-preparation code in both `routes_prices.py` and `routes_arbitrage.py`. Two separate cache keys (`price_cluster_labels`, `arbitrage_cluster_labels`) with a cross-cache bug: arbitrage read a key nobody wrote to. Bug in `routes_prices.py`: used `prices[0]` (oldest price) instead of `find_price_24h_ago()` for 24h-ago lookup.
-- **Now:** Shared module `backend/economy/clustering_helpers.py` with `prepare_clustering_data()` and `run_clustering_sync()`. Single cache key `"cluster_labels"` used by both routes. Both code paths now use `find_price_24h_ago()` for correct timestamp-aware 24h-ago price lookup. 16 regression tests in `tests/test_clustering_helpers.py`.
-
-### P2-12 (fixed in iter 62) — Orphan files actual cleanup
-- All 16 orphan/remnant files removed via `git rm`. Zero code changes.
-
-### P1-7 + P3-8 (fixed in iter 61) — EventManager async refactor
-- 4 sync methods in `events.py` → async. 3 endpoints updated. 25+3+1 tests converted.
-
-### Earlier P0/P1/P2/P3 fixes (iter 54-60)
-- P0-1/2/3/4/5/6 (iter 54-58), P1-1/2/11 (iter 58-59), P2-7/10/11 (iter 58-60).
+### Earlier fixes
+P0-1..P0-6, P1-1/2/4/7/8/11, P2-7/10/11/12, P3-8 (iter 54-63). See git log for details.
 
 ---
 
@@ -80,6 +74,7 @@ All P0 issues resolved in iter 54-58.
 | Symptom | Cause | Where to fix |
 |---------|-------|--------------|
 | 500 from backend becomes "no data" | `proxyWithFallback` swallows 5xx (P2-8) | `flipper-proxy.ts:480-485` |
-| `test_triangular.py` fails in full-suite mode | `process_pool` shut down by earlier `TestClient` lifespan teardown (P2-13) | `backend/main.py:279` |
-| `test_compression.py` fails | Pre-existing — `brotli` not installed in env | `pip install brotli` or skip |
+| `test_compression.py` fails (ImportError / assertion) | Test references symbols removed from middleware (P2-14) | `tests/test_compression.py` + `backend/api/middleware_compression.py` |
+| `test_scheduler.py` collection fails | `aiosqlite` not installed in env | `pip install aiosqlite` |
 | `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle detected — optimal path unbounded, fall back to `direct_rate` (P1-8, iter 64) | `backend/api/routes_optimizer.py:_bellman_ford` |
+| `RuntimeError: cannot schedule new futures after shutdown` | Used to happen after `TestClient` lifespan teardown killed the global pool (P2-13, **fixed in iter 65**) | `backend/main.py:get_process_pool()` |

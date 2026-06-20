@@ -532,10 +532,12 @@ async def find_triangular_arbitrage(
 
     # Use ProcessPoolExecutor from backend.main for GIL bypass.
     # Falls back to default ThreadPoolExecutor if not available (e.g. tests).
+    # P2-13: use `get_process_pool()` so the pool is re-created if a prior
+    # `lifespan` teardown (e.g. from a TestClient test) shut it down.
     executor = None
     try:
-        from backend.main import process_pool
-        executor = process_pool
+        from backend.main import get_process_pool
+        executor = get_process_pool()
     except (ImportError, AttributeError):
         pass
 

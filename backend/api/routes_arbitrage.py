@@ -495,11 +495,13 @@ async def _build_flip_opportunities(config: AppConfig) -> list[FlipOpportunity]:
 
     # 5. Offload CPU-bound computation to ProcessPoolExecutor for GIL bypass.
     # Falls back to default ThreadPoolExecutor if process_pool is unavailable.
+    # P2-13: use `get_process_pool()` so the pool is re-created if a prior
+    # `lifespan` teardown (e.g. from a TestClient test) shut it down.
     loop = asyncio.get_running_loop()
     executor = None
     try:
-        from backend.main import process_pool
-        executor = process_pool
+        from backend.main import get_process_pool
+        executor = get_process_pool()
     except (ImportError, AttributeError):
         pass
 

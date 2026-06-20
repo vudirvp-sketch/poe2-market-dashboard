@@ -189,11 +189,14 @@ async def get_all_prices():
             # Offload CPU-bound clustering to ProcessPoolExecutor.
             # CurrencyClusterer.fit() uses sklearn KMeans which is CPU-heavy
             # and would block the event loop if run synchronously.
+            # P2-13: use `get_process_pool()` so the pool is re-created if
+            # a prior `lifespan` teardown (e.g. from a TestClient test)
+            # shut it down.
             loop = asyncio.get_running_loop()
             executor = None
             try:
-                from backend.main import process_pool
-                executor = process_pool
+                from backend.main import get_process_pool
+                executor = get_process_pool()
             except (ImportError, AttributeError):
                 pass
 
