@@ -55,19 +55,24 @@ export interface UsePriceStreamReturn {
 
 // ---------------------------------------------------------------------------
 // SSE event data shape (from backend routes_sse.py)
+//
+// P0-1 fix (iter 55): Backend now sends one event per changed currency
+// with all fields populated.  Previously the backend sent a bulk
+// {type, changes_count, changes: [{api_id, price}], timestamp} payload
+// that never included change_pct, causing cache invalidation to never fire.
 // ---------------------------------------------------------------------------
 
 interface SSEPriceUpdate {
-  /** Currency pair that changed, e.g. "divine/chaos" */
-  pair?: string;
+  /** Currency api_id that changed, e.g. "divine" or "exalted" */
+  pair: string;
   /** Percentage change from previous price */
-  change_pct?: number;
+  change_pct: number;
   /** New price value */
-  new_price?: number;
+  new_price: number;
   /** Old price value */
-  old_price?: number;
-  /** Timestamp of the update */
-  timestamp?: string;
+  old_price: number;
+  /** Unix timestamp (seconds) of the update */
+  timestamp: number;
 }
 
 interface SSEErrorEvent {
@@ -183,8 +188,8 @@ export function usePriceStream({
 
       es.onmessage = (event) => {
         if (!mountedRef.current) return;
-        // SSE messages with no event type are default "message" events
-        // The backend may send price updates as default events
+        // P0-1 fix (iter 55): Backend now sends one message per changed currency
+        // with {pair, change_pct, new_price, old_price, timestamp}.
         try {
           const data: SSEPriceUpdate = JSON.parse(event.data);
           // Only invalidate if the change exceeds the threshold

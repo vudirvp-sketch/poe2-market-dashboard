@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 54 — P0-3, P0-4 fixed).
+> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 55 — P0-1 fixed).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -13,7 +13,7 @@
 | `backend/api/` | Route handlers + response models + middleware | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
 | `backend/api/response_models.py` | Pydantic response models | Must match route return dicts exactly |
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
-| `backend/api/routes_sse.py` | SSE price stream (BROKEN — see STATUS.md P0-1) | Don't rely on `change_pct` field; payload shape mismatched with frontend |
+| `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop; duplicates REST with reduced fields |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `_find_price_24h_ago` from `routes_arbitrage.py` |
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P0-5, P0-6, P1-9) | Hardcoded chaos=1.0; magic spread numbers |
@@ -31,14 +31,14 @@
 | `backend/data/providers/` | Poe2Scout, official, base | Network IO only |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Proxy only, no business logic** |
-| `src/app/api/flipper/prices/stream/route.ts` | SSE proxy (BROKEN — passes through P0-1 bug) | 5min timeout, streams body |
+| `src/app/api/flipper/prices/stream/route.ts` | SSE proxy | 5min timeout, streams body |
 | `src/app/api/flipper/events/route.ts` | Events POST proxy with body transform | `eventType`→`event_type`, `expiryHours`→`expires_at` ISO |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
 | `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with circuit breaker + dedup | See STATUS.md P1-10, P2-8; global CB |
 | `src/hooks/use-websocket.ts` | WS hook (BROKEN — see STATUS.md P1-2) | Opens 2 parallel WS |
-| `src/hooks/use-price-stream.ts` | SSE hook (BROKEN — see STATUS.md P0-1, P2-7) | Never invalidates cache (no `change_pct` in payload) |
+| `src/hooks/use-price-stream.ts` | SSE hook (P0-1 fixed iter 55, P2-7 open) | Invalidates cache when `change_pct` ≥ threshold; P2-7 = make targeted by `pair` |
 | `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (see STATUS.md P2-1) | Needs splitting |
 
 ## 2. Build & Run Commands
@@ -76,18 +76,18 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 14. **PhaseDetector: only `major_patch` resets phase clock** — `league_start` / `economy_shift` affect scoring only. `reset_for_major_patch()` always wins, even if the patch predates `league_start` (P0-4 fixed iter 54).
 15. **Adaptive mode (`"_adaptive"`)**: `baseCurrencyApiId` can be `"_adaptive"` — `useDisplayPrice` auto-selects Div/Exa/Chaos per row.
 16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate (see STATUS.md P1-11).
-17. **SSE payload contract**: backend sends `{type, changes_count, changes: [{api_id, price}], timestamp}` but frontend expects `{pair, change_pct, new_price, old_price, timestamp}` — see STATUS.md P0-1.
+17. **SSE payload contract** (P0-1 fixed iter 55): backend sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency — matches frontend `SSEPriceUpdate`. `threshold_pct` query param is respected.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (4 P0 / 11 P1 / 11 P2 / 8 P3). 2 P0 issues fixed in iter 54 (see STATUS.md §Fixed).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (3 P0 / 11 P1 / 11 P2 / 8 P3). 3 P0 issues fixed in iter 54-55 (see STATUS.md §Fixed).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
 | Backend "alive" but `/flips` hangs | Clustering cold-start | P1-4 |
-| SSE connected but UI stale | No `change_pct` + wrong payload shape | P0-1 |
+| SSE connected but UI stale | (Fixed in iter 55 — was P0-1) | — |
 | WS connected but REST slow | Event loop blocked by `_compute_anomalies` | P0-2 |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | Stale forecast after event creation | `daily_stats` namespace not invalidated | P1-11 |
@@ -104,7 +104,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/currencies` | Currency metadata |
 | GET | `/api/v1/prices` | All exchange rates + metrics |
 | GET | `/api/v1/prices/heatmap` | 24h price change heatmap |
-| GET | `/api/v1/prices/stream` | SSE live price updates (BROKEN — P0-1) |
+| GET | `/api/v1/prices/stream` | SSE live price updates (P0-1 fixed iter 55) |
 | GET | `/api/v1/prices/{pair}` | Price for specific pair |
 | GET | `/api/v1/tiers` | Currency tier classifications |
 | GET | `/api/v1/benchmarks/{currency}` | Historical benchmarks |

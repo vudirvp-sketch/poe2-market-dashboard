@@ -237,15 +237,10 @@ async def lifespan(app: FastAPI):
     # "optimistic" mode and updates to "unreachable" if the check fails.
     asyncio.create_task(check_provider_health())
 
-    # Phase 3.2: Start SSE monitor for live price updates
-    # The SSE monitor watches DataSnapshot for changes and broadcasts
-    # price_update events to connected SSE clients.
-    try:
-        from backend.api.routes_sse import start_sse_monitor
-        start_sse_monitor()
-        logger.info("SSE price monitor started")
-    except Exception as e:
-        logger.warning("SSE monitor failed to start: %s — continuing without SSE", e)
+    # P0-1 fix (iter 55): Removed dead SSE monitor (start_sse_monitor / _sse_monitor_loop).
+    # The SSE endpoint now works per-connection: each client's _sse_event_generator
+    # polls the snapshot independently and emits change_pct-filtered events.
+    # No background monitor task is needed.
 
     # ProcessPoolExecutor warm-up: submit trivial tasks to all workers
     # so the first real request doesn't suffer from ~5s cold-start latency
@@ -299,13 +294,8 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning("Snapshot refresh task cancellation error: %s", e)
 
-    # Phase 3.2: Stop SSE monitor
-    try:
-        from backend.api.routes_sse import stop_sse_monitor
-        stop_sse_monitor()
-        logger.info("SSE monitor stopped")
-    except Exception as e:
-        logger.warning("SSE monitor stop error: %s", e)
+    # P0-1 fix (iter 55): No SSE monitor to stop — removed dead _sse_monitor_loop.
+    # Active SSE connections are cancelled by StreamingResponse cleanup.
 
     # --- Phase 2: Shutdown Scheduler ---
     if scheduler is not None:
