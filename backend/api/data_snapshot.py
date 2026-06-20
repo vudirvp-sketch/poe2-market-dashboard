@@ -165,48 +165,17 @@ class DataSnapshot:
 
 
 # ---------------------------------------------------------------------------
-# Transitive price calculation (MEDIUM-1)
+# Transitive price calculation — delegated to backend.economy.pricing (P0-5)
 # ---------------------------------------------------------------------------
+# Previously a local BFS implementation lived here; an identical (correct)
+# implementation is now in `backend/economy/pricing.py:compute_transitive_prices`.
+# Both this module and `backend/scheduler.py` import the same helper so the
+# two pricing paths can never diverge again.
+#
+# See STATUS.md §P0-5 for the history of why three different implementations
+# of the same concept existed.
 
-def _compute_transitive_prices(prices_in_base: dict, rates: dict, base: str) -> None:
-    """BFS to find prices for currencies not directly paired with the base.
-
-    Uses intermediate currencies that already have a base price.
-    Transitive prices are less accurate than direct ones — the BFS uses the
-    first path found, not necessarily the best. This is acceptable for fee
-    estimation.
-    """
-    # NOTE: The BFS uses the first path found to compute transitive prices.
-    # This is not guaranteed to be the highest-volume or most accurate path.
-    # For currencies with many indirect paths, the transitive price may differ
-    # from the most accurate estimate. This is acceptable for tier classification
-    # and portfolio weighting, but should be noted for precision-critical uses.
-    from collections import deque
-
-    known = set(prices_in_base.keys()) | {base}
-    queue = deque(known)
-
-    while queue:
-        current = queue.popleft()
-        current_price = prices_in_base.get(current, 1.0)  # base currency has price 1.0
-
-        for key, rate in rates.items():
-            if rate.raw_rate <= 0:
-                continue
-
-            # Can we price a new currency through 'current'?
-            if rate.currency_from == current and rate.currency_to not in prices_in_base:
-                # 1 current = raw_rate units of currency_to
-                # 1 currency_to = (1/raw_rate) units of current
-                # price_of_currency_to_in_base = current_price / raw_rate
-                prices_in_base[rate.currency_to] = current_price / rate.raw_rate
-                queue.append(rate.currency_to)
-
-            elif rate.currency_to == current and rate.currency_from not in prices_in_base:
-                # 1 currency_from = raw_rate units of current
-                # price_of_currency_from_in_base = current_price * raw_rate
-                prices_in_base[rate.currency_from] = current_price * rate.raw_rate
-                queue.append(rate.currency_from)
+from backend.economy.pricing import compute_transitive_prices as _compute_transitive_prices
 
 
 # ---------------------------------------------------------------------------

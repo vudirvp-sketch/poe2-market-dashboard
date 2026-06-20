@@ -86,45 +86,20 @@ class FlipComputeBundle:
 
 
 # ---------------------------------------------------------------------------
-# Fix 2.2: Helper to find price closest to 24 hours ago
+# Helper to find price closest to 24 hours ago — extracted (P0-5 iter 57)
 # ---------------------------------------------------------------------------
+# Previously this was a local `_find_price_24h_ago` definition; both this
+# module (for flip clustering) and `routes_analyst.py` (for the analyst
+# 24h-change) need the same logic. The canonical implementation now lives
+# in `backend/economy/pricing.py:find_price_24h_ago` and is imported below.
+#
+# Why move it? `backend/economy/` is a lower layer than `backend/api/`;
+# the analyst route should not have to import from `routes_arbitrage.py`
+# just to get a timestamp-aware 24h-ago lookup. Co-locating with
+# `compute_transitive_prices` keeps the pricing-related helpers in one
+# place so they can be reasoned about together.
 
-def _find_price_24h_ago(
-    history_with_timestamps: list[tuple[datetime, float]],
-    max_drift_hours: float = 6.0,
-) -> float | None:
-    """Find the price point closest to 24 hours ago.
-
-    Args:
-        history_with_timestamps: list of (timestamp_utc, price) tuples, sorted ascending.
-        max_drift_hours: Maximum allowed time drift in hours (default 6h).
-
-    Returns:
-        The price ~24h ago, or None if no data within ±max_drift of target.
-    """
-    if not history_with_timestamps:
-        return None
-
-    from datetime import timedelta
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-    max_drift = timedelta(hours=max_drift_hours)
-
-    closest: float | None = None
-    closest_diff: timedelta | None = None
-
-    for ts, price in history_with_timestamps:
-        # Ensure timezone-aware comparison
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
-        diff = abs(ts - cutoff)
-        if closest_diff is None or diff < closest_diff:
-            closest = price
-            closest_diff = diff
-
-    if closest_diff and closest_diff > max_drift:
-        return None  # No point within ±max_drift of 24h ago
-
-    return closest
+from backend.economy.pricing import find_price_24h_ago as _find_price_24h_ago
 
 
 # ---------------------------------------------------------------------------
@@ -750,16 +725,19 @@ async def get_triangular_arbitrage(
     for key, rate in rates_dict.items():
         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
 
-    # P0-6 (fixed): Use a single numeraire = config.league.base_currency.
-    # `snapshot.prices_in_base` is already expressed in the base currency
-    # (the base currency itself has price 1.0). No chaos normalization
-    # is needed — the previous `prices["chaos"] = 1.0` hardcode broke
-    # correctness whenever base_currency != "chaos" (e.g. exalted) or
-    # when chaos was missing from the snapshot (e.g. new league).
-    # Note: `prices` is currently a dead parameter in find_triangular_arbitrage
-    # (the Bellman-Ford path uses `rates` only); cleanup belongs to P0-5.
-    prices = dict(snapshot.prices_in_base)  # shallow copy
-
+    # P0-6 (fixed iter 56) + P0-5 (fixed iter 57):
+    # - Single numeraire = `config.league.base_currency`.
+    #   `snapshot.prices_in_base` is already expressed in the base
+    #   currency (the base currency itself has price 1.0). No chaos
+    #   normalization is needed — the previous `prices["chaos"] = 1.0`
+    #   hardcode broke correctness whenever base_currency != "chaos"
+    #   (e.g. exalted) or when chaos was missing from the snapshot.
+    # - `find_triangular_arbitrage` no longer accepts a `prices`
+    #   parameter. The Bellman-Ford path uses `rates` only, so the
+    #   parameter was dead code; the local `prices = ...` line below
+    #   was therefore removed. If you need a currency's price in the
+    #   base currency, use `snapshot.prices_in_base` directly (it's
+    #   populated by `backend.economy.pricing.compute_transitive_prices`).
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():
         pair_volumes[(rate.currency_from, rate.currency_to)] = float(rate.volume_traded) if rate.volume_traded else 0.0
@@ -778,7 +756,6 @@ async def get_triangular_arbitrage(
         async with _arbitrage_semaphore:
             result = await find_triangular_arbitrage(
             rates=rates_for_bf,
-            prices=prices,
             min_profit_pct=min_profit_pct,
             pair_volumes=pair_volumes,
             snapshot_time=datetime.now(timezone.utc),

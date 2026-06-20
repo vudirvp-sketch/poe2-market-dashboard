@@ -19,14 +19,16 @@ from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
 from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.response_models import AnalystSummaryResponse
-# P0-3 fix: reuse the timestamp-aware 24h-ago helper from routes_arbitrage
-# instead of `prices[0]` (which is just the oldest point in the snapshot
-# window — often days old, not 24h). The helper finds the price point
-# closest to now-24h with a ±6h drift tolerance and returns None if no
-# point is close enough, so change_24h_pct is None rather than bogus.
-# TODO(P0-5): extract _find_price_24h_ago to backend/economy/pricing.py
-# alongside compute_transitive_prices, then import from there.
-from backend.api.routes_arbitrage import _find_price_24h_ago
+# P0-3 fix (iter 54): use the timestamp-aware 24h-ago helper instead of
+# `prices[0]` (which is just the oldest point in the snapshot window —
+# often days old, not 24h). The helper finds the price point closest to
+# now-24h with a ±6h drift tolerance and returns None if no point is
+# close enough, so change_24h_pct is None rather than bogus.
+# P0-5 fix (iter 57): the helper now lives in `backend/economy/pricing.py`
+# alongside `compute_transitive_prices` — both pricing helpers in one
+# place, and the analyst route no longer has to import from a sibling
+# `routes_arbitrage` module.
+from backend.economy.pricing import find_price_24h_ago as _find_price_24h_ago
 
 logger = logging.getLogger(__name__)
 

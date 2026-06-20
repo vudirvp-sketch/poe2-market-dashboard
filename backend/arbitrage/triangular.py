@@ -239,7 +239,6 @@ def _compute_cross_rate_divergence(
 
 def _find_triangular_arbitrage_sync(
     rates: dict[tuple[str, str], float],
-    prices: dict[str, float],
     min_profit_pct: float,
     pair_volumes: dict[tuple[str, str], float] | None,
     snapshot_time: datetime | None,
@@ -481,7 +480,6 @@ def _find_triangular_arbitrage_sync(
 
 async def find_triangular_arbitrage(
     rates: dict[tuple[str, str], float],
-    prices: dict[str, float],
     min_profit_pct: float = 1.0,
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
@@ -511,7 +509,6 @@ async def find_triangular_arbitrage(
 
     Args:
         rates: Dict mapping (currency_from, currency_to) to raw exchange rate
-        prices: Current price of each currency in the reference currency
         min_profit_pct: Minimum profit percentage to report (default 1.0%)
         pair_volumes: Optional volume data per edge
         snapshot_time: When the snapshot data was taken
@@ -521,6 +518,15 @@ async def find_triangular_arbitrage(
 
     Returns:
         TriangularResult with opportunities and suspicious_triples
+
+    Note:
+        The ``prices`` parameter that used to live here has been removed
+        (P0-5, iter 57). It was a dead parameter — the Bellman-Ford path
+        never read it — and the previous hardcode ``prices["chaos"] = 1.0``
+        (removed in iter 56, P0-6) only existed to keep the misleading
+        parameter "consistent". If you need a currency's price in the
+        base currency, use ``backend.economy.pricing.compute_transitive_prices``
+        or pull ``snapshot.prices_in_base`` directly.
     """
     loop = asyncio.get_running_loop()
 
@@ -542,7 +548,7 @@ async def find_triangular_arbitrage(
             loop.run_in_executor(
                 executor,
                 _find_triangular_arbitrage_sync,
-                rates, prices, min_profit_pct, pair_volumes, snapshot_time,
+                rates, min_profit_pct, pair_volumes, snapshot_time,
                 cross_rate_threshold_pct,
             ),
             timeout=90.0,

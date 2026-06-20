@@ -1,29 +1,19 @@
 # STATUS.md — Known Issues & Refactoring Backlog
 
-> **Last updated:** 2026-06-20 (iter 56 — P0-6 fixed)
+> **Last updated:** 2026-06-20 (iter 57 — P0-5 fixed)
 > This file is the **single source of truth** for known bugs and refactoring priorities.
 > Update it **before** fixing any issue. Cross-reference issue IDs in commits.
 >
-> **Iter 56 status:** P0-6 fixed and verified. Backend tests: `tests/test_triangular.py` 7/7 pass, `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` pass. Remaining P0: 2 (P0-2, P0-5).
+> **Iter 57 status:** P0-5 fixed and verified. `backend/economy/pricing.py` created (unified `compute_transitive_prices` + `find_price_24h_ago`). `data_snapshot.py` + `scheduler.py` now share the same BFS helper. Dead `prices` param removed from `find_triangular_arbitrage` + `_find_triangular_arbitrage_sync`. 15 new tests in `tests/test_pricing.py`. Backend: 375 pass / 4 skip. e2e: 30 pass / 4 skip. Remaining P0: 1 (P0-2).
 
 ---
 
-## P0 — Критичные проблемы (стабильность/корректность) — 2 active
+## P0 — Критичные проблемы (стабильность/корректность) — 1 active
 
 ### P0-2. WebSocket endpoints блокируют event loop
 - **Файл:** `backend/api/routes_ws.py:415-468` (`_compute_anomalies`), `routes_ws.py:478-522` (`_compute_flips`)
 - **Проблема:** `_push_loop` (строка 364) каждые 30с запускает `await compute_fn()` где compute_fn — `_compute_anomalies` (600+ валют, AnomalyDetector.detect = STL+MACD+RSI для каждой) **синхронно в event loop**, без ProcessPoolExecutor. Один WS-клиент = блокировка 30-секундным циклом. Каскад при нескольких клиентах.
 - **Решение:** Использовать `loop.run_in_executor(process_pool, _detect_anomalies_sync, ...)` как в `routes_anomalies.py:155-169`. Или полностью удалить WS (см. P1-1).
-
-### P0-5. Дублирование логики transitive prices — 3 разные реализации + correctness bug
-- **Файлы:**
-  - `backend/api/data_snapshot.py:171-210` `_compute_transitive_prices` (BFS, O(V+E))
-  - `backend/scheduler.py:91-110` `collect_price_snapshot` (5-итерационный relaxation, O(5×E))
-  - `backend/api/routes_arbitrage.py` `get_triangular_arbitrage` — chaos-normalization уже удалён (P0-6 iter 56), но `prices` параметр остаётся dead в `_find_triangular_arbitrage_sync` до unified helper.
-- **Проблема (2 части):**
-  1. **Maintainability:** Три разных алгоритма для одной концепции → несогласованные `prices_in_base`.
-  2. **Correctness bug:** 5-итерационный relaxation НЕ находит цены для цепочек глубже 5 хопов. BFS находит все цены за один проход.
-- **Решение:** Вынести в единый helper `backend/economy/pricing.py:compute_transitive_prices(prices_in_base, rates, base)` (BFS-версия). После этого убрать dead `prices` параметр из `find_triangular_arbitrage`.
 
 ---
 
@@ -38,8 +28,8 @@
 - **Файл:** `src/hooks/use-websocket.ts:507-518`
 - **Решение:** Один мультиплексный WS или polling + React Query.
 
-### P1-3. `_compute_transitive_prices` — O(V×E) вместо O(V+E)
-- **Решение:** Построить adjacency list один раз. (После P0-5 helper.)
+### P1-3. (Resolved by P0-5) `_compute_transitive_prices` — was O(V×E)
+- **Closed by iter 57** — the BFS in `backend/economy/pricing.py:compute_transitive_prices` already builds the queue from the seeded `prices_in_base` set, so each currency is enqueued at most once. Effective complexity is O(V+E). Leave this entry here as a historical note until the next doc cleanup.
 
 ### P1-4. Кластеризация дублируется между routes_prices и routes_arbitrage
 - **Решение:** Один cache key `cluster_labels`, единая helper-функция.
@@ -97,6 +87,20 @@
 ---
 
 ## Fixed
+
+### P0-5 (fixed in iter 57 — `refactor(P0-5): unified pricing helper + remove dead prices param`) — Transitive prices
+- **Was (3 parts):**
+  1. **Maintainability:** Three different algorithms for "price of every currency in the base currency" — `_compute_transitive_prices` in `data_snapshot.py` (BFS, correct), `collect_price_snapshot` in `scheduler.py` (5-iter relaxation, buggy), and the dead `prices` parameter in `find_triangular_arbitrage` (passed but never read).
+  2. **Correctness bug:** The 5-iteration relaxation in `scheduler.py` silently failed for currencies whose shortest path from the base currency exceeded 5 hops. With ~600 currencies and a sparse pair graph, 5-hop chains are real. The scheduler would then fall back to using `rate.raw_rate` as the price — a wrong value with no log warning.
+  3. **Dead parameter:** `find_triangular_arbitrage(rates, prices, ...)` accepted a `prices` dict but the Bellman-Ford path never read it. The hardcode `prices["chaos"] = 1.0` (removed in iter 56, P0-6) only existed to keep the misleading parameter "consistent".
+- **Now:**
+  - New `backend/economy/pricing.py` exposes `compute_transitive_prices(prices_in_base, rates, base)` (single BFS) and `find_price_24h_ago(history, max_drift_hours)` (extracted from `routes_arbitrage.py` so the analyst route no longer has to import from a sibling `routes_*` module).
+  - `data_snapshot.py` and `scheduler.py` both import `compute_transitive_prices` from the new module — the two pricing paths can no longer diverge.
+  - The 5-iter relaxation block in `scheduler.py` is deleted entirely.
+  - `find_triangular_arbitrage` and `_find_triangular_arbitrage_sync` no longer accept `prices`. The call site in `routes_arbitrage.py:get_triangular_arbitrage` no longer passes it.
+  - `routes_analyst.py` now imports `find_price_24h_ago` directly from `backend.economy.pricing` (TODO comment removed).
+- **Files changed:** `backend/economy/pricing.py` (NEW), `backend/api/data_snapshot.py`, `backend/scheduler.py`, `backend/api/routes_arbitrage.py`, `backend/api/routes_analyst.py`, `backend/arbitrage/triangular.py`, `tests/test_triangular.py`, `tests/test_pricing.py` (NEW).
+- **Tests:** 15 new tests in `tests/test_pricing.py` (7 for `compute_transitive_prices` — including a 7-hop chain regression that the old 5-iter relaxation would have failed — and 8 for `find_price_24h_ago`). Existing `tests/test_triangular.py` updated to drop `prices` param (7/7 pass). Full backend: 375 pass / 4 skip. e2e: 30 pass / 4 skip. No regressions.
 
 ### P0-6 (fixed in iter 56 — `fix(P0-6): remove chaos hardcode in triangular arbitrage`) — Triangular numeraire
 - **Was:** `backend/api/routes_arbitrage.py:755-770` contained two redundant blocks:

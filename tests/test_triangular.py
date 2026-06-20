@@ -21,6 +21,10 @@ MUST use `await` inside async test functions.
 find_triangular_arbitrage() applies MIN_EDGE_VOLUME=200 filtering.
 All tests MUST provide pair_volumes >= 200 for edges that should be
 considered, otherwise edges are filtered out and no cycles are detected.
+
+P0-5 (iter 57): the `prices` parameter has been removed entirely —
+it was dead code (the Bellman-Ford path uses `rates` only). Tests no
+longer pass it.
 """
 
 import asyncio
@@ -50,7 +54,6 @@ class TestTriangularArbitrageNoFees:
             ("B", "C"): 2.0,
             ("C", "A"): 2.0,
         }
-        prices = {"A": 1.0, "B": 1.0, "C": 1.0}
         volumes = {
             ("A", "B"): _HIGH_VOLUME,
             ("B", "C"): _HIGH_VOLUME,
@@ -58,7 +61,7 @@ class TestTriangularArbitrageNoFees:
         }
 
         results = await find_triangular_arbitrage(
-            rates, prices,
+            rates,
             min_profit_pct=0.1,
             pair_volumes=volumes,
         )
@@ -77,7 +80,6 @@ class TestTriangularArbitrageNoFees:
             ("B", "C"): 0.5,
             ("C", "A"): 0.5,
         }
-        prices = {"A": 1.0, "B": 1.0, "C": 1.0}
         volumes = {
             ("A", "B"): _HIGH_VOLUME,
             ("B", "C"): _HIGH_VOLUME,
@@ -85,7 +87,7 @@ class TestTriangularArbitrageNoFees:
         }
 
         results = await find_triangular_arbitrage(
-            rates, prices,
+            rates,
             min_profit_pct=0.1,
             pair_volumes=volumes,
         )
@@ -103,7 +105,6 @@ class TestTriangularArbitrageNoFees:
             ("B", "C"): 1.0,
             ("C", "A"): 1.0,
         }
-        prices = {"A": 1.0, "B": 1.0, "C": 1.0}
         volumes = {
             ("A", "B"): _HIGH_VOLUME,
             ("B", "C"): _HIGH_VOLUME,
@@ -111,7 +112,7 @@ class TestTriangularArbitrageNoFees:
         }
 
         results = await find_triangular_arbitrage(
-            rates, prices,
+            rates,
             min_profit_pct=0.1,
             pair_volumes=volumes,
         )
@@ -144,7 +145,9 @@ class TestTriangularArbitrageCanonical:
             ("divine", "exalted"): 12.0,
             ("exalted", "chaos"): 10.5,
         }
-        prices = {"chaos": 1.0, "divine": 100.0, "exalted": 10.5}
+        # P0-5: `prices` was a dead parameter — removed from find_triangular_arbitrage.
+        # Kept here only as documentation of the conceptual numeraire prices.
+        prices = {"chaos": 1.0, "divine": 100.0, "exalted": 10.5}  # noqa: F841 — kept for clarity
         volumes = {
             ("chaos", "divine"): _HIGH_VOLUME,
             ("divine", "exalted"): _HIGH_VOLUME,
@@ -155,10 +158,10 @@ class TestTriangularArbitrageCanonical:
     @pytest.mark.asyncio
     async def test_no_fee_profitable(self):
         """Without fees, the cycle is profitable after spread deduction."""
-        rates, prices, volumes = self._get_canonical_test_data()
+        rates, _prices, volumes = self._get_canonical_test_data()
 
         results = await find_triangular_arbitrage(
-            rates, prices,
+            rates,
             min_profit_pct=0.1,
             pair_volumes=volumes,
         )
@@ -170,9 +173,7 @@ class TestTriangularArbitrageCanonical:
     @pytest.mark.asyncio
     async def test_empty_rates_returns_empty(self):
         """No rates should return no opportunities."""
-        results = await find_triangular_arbitrage(
-            {}, {},
-        )
+        results = await find_triangular_arbitrage({})
         assert len(results.opportunities) == 0
 
     @pytest.mark.asyncio
@@ -182,14 +183,13 @@ class TestTriangularArbitrageCanonical:
             ("A", "B"): 2.0,
             ("B", "A"): 0.5,
         }
-        prices = {"A": 1.0, "B": 2.0}
         volumes = {
             ("A", "B"): _HIGH_VOLUME,
             ("B", "A"): _HIGH_VOLUME,
         }
 
         results = await find_triangular_arbitrage(
-            rates, prices,
+            rates,
             min_profit_pct=0.1,
             pair_volumes=volumes,
         )
@@ -218,7 +218,8 @@ class TestProductionDefaultThreshold:
             ("B", "C"): 1.015, ("C", "B"): 1 / 1.015,
             ("C", "A"): 1.015, ("A", "C"): 1 / 1.015,
         }
-        prices = {"A": 1.0, "B": 1.015, "C": 1.030}
+        # P0-5: `prices` was a dead parameter — removed from find_triangular_arbitrage.
+        prices = {"A": 1.0, "B": 1.015, "C": 1.030}  # noqa: F841 — kept for clarity
         # Provide volumes so edges pass the MIN_EDGE_VOLUME=200 filter
         volumes = {
             ("A", "B"): _HIGH_VOLUME, ("B", "A"): _HIGH_VOLUME,
@@ -227,7 +228,6 @@ class TestProductionDefaultThreshold:
         }
         result = await find_triangular_arbitrage(
             rates,
-            prices,
             min_profit_pct=1.0,  # production default
             pair_volumes=volumes,
         )

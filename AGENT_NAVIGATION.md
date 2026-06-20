@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 56 — P0-6 fixed).
+> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 57 — P0-5 fixed).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -15,10 +15,11 @@
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop; duplicates REST with reduced fields |
-| `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `_find_price_24h_ago` from `routes_arbitrage.py` |
-| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P0-5, P1-9) | P0-6 fixed iter 56 (no more chaos hardcode); dead `prices` param remains until P0-5; magic spread numbers |
+| `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
+| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P1-9) | P0-6 fixed iter 56; P0-5 fixed iter 57 (no dead `prices` param); magic spread numbers |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (BUGGY — see P1-7, P1-11) | Fire-and-forget SQLite write; missing daily_stats invalidation |
+| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `routes_arbitrage.py`, `routes_analyst.py` |
 | `backend/economy/events.py` | EventManager + StoredEvent | `event_id`, `is_active`, `created_at`; uses deprecated `get_event_loop()` (P3-8) |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete needed (P1-6) |
@@ -27,6 +28,7 @@
 | `backend/data/daily_stats_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
 | `backend/data/currency_names_ru.py` | 966-line hardcoded dict (P2-3) | Move to JSON |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, liquid_chain | No direct API imports |
+| `backend/arbitrage/triangular.py` | Triangular arbitrage (P0-6 fixed iter 56, P0-5 fixed iter 57) | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — no `prices` param (was dead) |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | CPU-heavy → ProcessPoolExecutor |
 | `backend/data/providers/` | Poe2Scout, official, base | Network IO only |
 | `backend/models/` | Core dataclass models | No framework imports |
@@ -80,7 +82,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (2 P0 / 11 P1 / 11 P2 / 8 P3). 4 P0 issues fixed in iter 54-56 (see STATUS.md §Fixed).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (1 P0 / 10 P1 / 11 P2 / 8 P3). 5 P0 issues fixed in iter 54-57 (see STATUS.md §Fixed).
 
 Quick reference for the most common symptoms:
 
@@ -109,7 +111,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/tiers` | Currency tier classifications |
 | GET | `/api/v1/benchmarks/{currency}` | Historical benchmarks |
 | GET | `/api/v1/arbitrage/flips` | Scored flip opportunities |
-| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (P0-6 fixed iter 56) |
+| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (P0-6 fixed iter 56, P0-5 fixed iter 57) |
 | GET | `/api/v1/arbitrage/optimal-currency` | Optimal payment currency |
 | POST | `/api/v1/batch` | Batch multiple GET requests |
 | POST | `/api/v1/events` | Create event (BUGGY — P1-7, P1-11) |

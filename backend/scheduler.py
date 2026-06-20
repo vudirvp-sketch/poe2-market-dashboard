@@ -22,6 +22,9 @@ from typing import Optional
 
 from backend.config import AppConfig, get_settings
 from backend.data.historical import HistoricalStore
+# P0-5 (iter 57): unified transitive-price BFS helper. Replaces the
+# 5-iteration relaxation that previously lived inline in this module.
+from backend.economy.pricing import compute_transitive_prices
 
 # Import get_snapshot at module level so tests can patch it via
 # "backend.scheduler._get_snapshot"
@@ -89,25 +92,15 @@ class DataScheduler:
                     prices_in_base[rate.currency_from] = rate.raw_rate         # price in base
 
             # Second pass: BFS to fill transitive prices for currencies
-            # without a direct base rate (e.g., derived through another currency)
-            changed = True
-            max_iterations = 5  # safety limit
-            while changed and max_iterations > 0:
-                changed = False
-                max_iterations -= 1
-                for key, rate in rates.items():
-                    c1 = rate.currency_from
-                    c2 = rate.currency_to
-                    if rate.raw_rate <= 0:
-                        continue
-                    # If c1 has a price but c2 doesn't
-                    if c1 in prices_in_base and c2 not in prices_in_base:
-                        prices_in_base[c2] = prices_in_base[c1] / rate.raw_rate
-                        changed = True
-                    # If c2 has a price but c1 doesn't
-                    if c2 in prices_in_base and c1 not in prices_in_base:
-                        prices_in_base[c1] = prices_in_base[c2] * rate.raw_rate
-                        changed = True
+            # without a direct base rate (e.g., derived through another currency).
+            # P0-5 (iter 57): previously this was a 5-iteration relaxation loop,
+            # which silently missed currencies whose shortest path from the base
+            # exceeded 5 hops. With ~600 currencies and a sparse pair graph,
+            # 5-hop chains are real. The unified `compute_transitive_prices`
+            # helper in `backend/economy/pricing.py` does a single BFS pass —
+            # O(V+E) and depth-agnostic. The same helper is used by
+            # `data_snapshot.py` so both pricing paths agree.
+            compute_transitive_prices(prices_in_base, rates, base)
 
             # Build snapshots
             snapshots = []
