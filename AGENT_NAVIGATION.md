@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20.
+> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 53 — audit verified).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -13,22 +13,32 @@
 | `backend/api/` | Route handlers + response models + middleware | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
 | `backend/api/response_models.py` | Pydantic response models | Must match route return dicts exactly |
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
-| `backend/api/routes_sse.py` | SSE price stream (BROKEN — see STATUS.md P0-1) | Don't rely on `change_pct` field |
-| `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop |
-| `backend/economy/events.py` | EventManager + StoredEvent | `event_id`, `is_active`, `created_at` |
-| `backend/economy/lifecycle.py` | PhaseDetector (BUGGY — see STATUS.md P0-4) | `reset_for_major_patch` semantics broken |
+| `backend/api/routes_sse.py` | SSE price stream (BROKEN — see STATUS.md P0-1) | Don't rely on `change_pct` field; payload shape mismatched with frontend |
+| `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop; duplicates REST with reduced fields |
+| `backend/api/routes_analyst.py` | League analyst summary (BUGGY — see STATUS.md P0-3) | `change_24h_pct` uses `prices[0]` instead of 24h-ago |
+| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P0-5, P0-6, P1-9) | Hardcoded chaos=1.0; magic spread numbers |
+| `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
+| `backend/api/routes_events.py` | Event CRUD + cache invalidation (BUGGY — see P1-7, P1-11) | Fire-and-forget SQLite write; missing daily_stats invalidation |
+| `backend/economy/events.py` | EventManager + StoredEvent | `event_id`, `is_active`, `created_at`; uses deprecated `get_event_loop()` (P3-8) |
+| `backend/economy/lifecycle.py` | PhaseDetector (BUGGY — see STATUS.md P0-4) | `_reference_date` uses `max()` — major_patch reset broken |
+| `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete needed (P1-6) |
+| `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | `pipeline_cache.invalidate()` clears only `pipeline` namespace |
+| `backend/data/pipeline_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
+| `backend/data/daily_stats_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
+| `backend/data/currency_names_ru.py` | 966-line hardcoded dict (P2-3) | Move to JSON |
 | `backend/arbitrage/` | Scorer, triangular, portfolio, recipe, liquid_chain | No direct API imports |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | CPU-heavy → ProcessPoolExecutor |
-| `backend/data/` | Providers, cache, schemas, historical, unified_cache | No imports from `api/` |
+| `backend/data/providers/` | Poe2Scout, official, base | Network IO only |
 | `backend/models/` | Core dataclass models | No framework imports |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Proxy only, no business logic** |
-| `src/app/api/poe2/` | Direct POE2Scout routes | Server-side fetch + cache |
+| `src/app/api/flipper/prices/stream/route.ts` | SSE proxy (BROKEN — passes through P0-1 bug) | 5min timeout, streams body |
+| `src/app/api/flipper/events/route.ts` | Events POST proxy with body transform | `eventType`→`event_type`, `expiryHours`→`expires_at` ISO |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
 | `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
-| `src/lib/flipper-proxy.ts` | Proxy with circuit breaker + dedup | See STATUS.md P1-10, P2-8 |
+| `src/lib/flipper-proxy.ts` | Proxy with circuit breaker + dedup | See STATUS.md P1-10, P2-8; global CB |
 | `src/hooks/use-websocket.ts` | WS hook (BROKEN — see STATUS.md P1-2) | Opens 2 parallel WS |
-| `src/hooks/use-price-stream.ts` | SSE hook (BROKEN — see STATUS.md P0-1, P2-7) | Never invalidates cache |
+| `src/hooks/use-price-stream.ts` | SSE hook (BROKEN — see STATUS.md P0-1, P2-7) | Never invalidates cache (no `change_pct` in payload) |
 | `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (see STATUS.md P2-1) | Needs splitting |
 
 ## 2. Build & Run Commands
@@ -43,7 +53,7 @@ npx playwright test               # E2E tests
 # Backend (start.sh creates .venv automatically)
 PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000
 
-# Regenerate OpenAPI schema + TypeScript types
+# Regenerate OpenAPI schema + TypeScript types (after API contract changes)
 python -c "import json; from backend.main import app; from fastapi.openapi.utils import get_open_api; s=get_open_api(title=app.title,version=app.version,routes=app.routes); open('openapi_schema.json','w').write(json.dumps(s,indent=2,ensure_ascii=False))"
 npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 ```
@@ -55,7 +65,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 3. **Bridge health check uses `/api/v1/health/ping`** (NOT `/api/health/ping`).
 4. **`response_model=` must match route return dict** — mismatch = 500.
 5. **ProcessPoolExecutor: picklable args only** — no `sqlite3.Connection`, no `EventManager`, no `DataSnapshot`, no `AppConfig`. Use `FlipComputeBundle` pattern.
-6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop. (See STATUS.md P0-2 — `routes_ws.py` violates this.)
+6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop. (Violated in `routes_ws.py` — see STATUS.md P0-2.)
 7. **Never hardcode league names or currency categories** — use `config.yaml`.
 8. **`FLIPPER_WORKERS` env var** — controls ProcessPoolExecutor workers (default: 1).
 9. **SSE proxy: return 200 + error event** — not 503 (prevents retry storms).
@@ -65,21 +75,26 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 13. **Events POST proxy transforms body**: `eventType`→`event_type`, `affectedCurrencies`→`affected_currencies`, `expiryHours`→`expires_at` (ISO string).
 14. **PhaseDetector: only `major_patch` resets phase clock** — `league_start` / `economy_shift` affect scoring only. (NOTE: current implementation is buggy — see STATUS.md P0-4.)
 15. **Adaptive mode (`"_adaptive"`)**: `baseCurrencyApiId` can be `"_adaptive"` — `useDisplayPrice` auto-selects Div/Exa/Chaos per row.
+16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate (see STATUS.md P1-11).
+17. **SSE payload contract**: backend sends `{type, changes_count, changes: [{api_id, price}], timestamp}` but frontend expects `{pair, change_pct, new_price, old_price, timestamp}` — see STATUS.md P0-1.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3.
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (6 P0 / 11 P1 / 11 P2 / 8 P3).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
 | Backend "alive" but `/flips` hangs | Clustering cold-start | P1-4 |
-| SSE connected but UI stale | No `change_pct` in payload | P0-1 |
+| SSE connected but UI stale | No `change_pct` + wrong payload shape | P0-1 |
 | WS connected but REST slow | Event loop blocked by `_compute_anomalies` | P0-2 |
 | `/analyst/summary` weird 24h% | `prices[0]` instead of 24h-ago | P0-3 |
 | Phase not reset after major_patch | `max()` in `_reference_date` | P0-4 |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
+| Stale forecast after event creation | `daily_stats` namespace not invalidated | P1-11 |
+| WS `/flips` missing `profit_per_unit_base` | WS returns reduced fields | P1-1 |
+| Events lost on backend crash | `create_event` fire-and-forget SQLite | P1-7 |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -96,10 +111,10 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/tiers` | Currency tier classifications |
 | GET | `/api/v1/benchmarks/{currency}` | Historical benchmarks |
 | GET | `/api/v1/arbitrage/flips` | Scored flip opportunities |
-| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles |
+| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (BROKEN — P0-6) |
 | GET | `/api/v1/arbitrage/optimal-currency` | Optimal payment currency |
 | POST | `/api/v1/batch` | Batch multiple GET requests |
-| POST | `/api/v1/events` | Create event |
+| POST | `/api/v1/events` | Create event (BUGGY — P1-7, P1-11) |
 | GET | `/api/v1/events` | List events |
 | GET | `/api/v1/events/summary` | Event summary |
 | GET | `/api/v1/events/{event_id}` | Get event by ID |
@@ -107,19 +122,19 @@ Quick reference for the most common symptoms:
 | POST | `/api/v1/events/{event_id}/deactivate` | Deactivate event |
 | GET | `/api/v1/anomalies` | Anomaly detection |
 | GET | `/api/v1/storage-value/{currency}` | Hold/sell decision |
-| GET | `/api/v1/optimizer/path` | Optimal conversion path |
+| GET | `/api/v1/optimizer/path` | Optimal conversion path (BUGGY — P1-8) |
 | GET | `/api/v1/optimizer/matrix` | Conversion matrix |
 | GET | `/api/v1/analyst/summary` | League analyst summary (BUGGY — P0-3) |
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
-| GET | `/api/v1/scanner/scan` | Advanced flip scanner |
+| GET | `/api/v1/scanner/scan` | Advanced flip scanner (P2-4 — duplicate) |
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
 
 WebSocket endpoints (different prefix — see STATUS.md P2-10):
 - `WS /v1/ws/storage-value/{currency}`
 - `WS /v1/ws/forecast/{currency}`
-- `WS /v1/ws/anomalies`
-- `WS /v1/ws/flips`
+- `WS /v1/ws/anomalies` (BROKEN — P0-2)
+- `WS /v1/ws/flips` (BROKEN — P0-2, P1-1)
 - `WS /v1/ws/events`
 
 ## 6. Documentation Map
@@ -127,11 +142,11 @@ WebSocket endpoints (different prefix — see STATUS.md P2-10):
 | File | Purpose |
 |------|---------|
 | `STATUS.md` | **Known issues & refactoring backlog** — read first |
-| `REFACTOR_PLAN.md` | Roadmap with priority buckets + DoD |
+| `REFACTOR_PLAN.md` | Roadmap with priority buckets + DoD + recommended fix order |
 | `worklog.md` | Recent task entries (≤5 latest) |
 | `docs/ARCHITECTURE.md` | Layers, data flow, invariants, principles |
 | `docs/DATA_CONTRACTS.md` | TypeScript types, API contracts |
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
-| `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas (NOTE: code diverges — see STATUS.md P1-9) |
+| `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas (NOTE: code diverges — see STATUS.md P1-9, P0-4) |
