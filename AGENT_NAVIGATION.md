@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 53 — audit verified).
+> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 54 — P0-3, P0-4 fixed).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -15,12 +15,12 @@
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (BROKEN — see STATUS.md P0-1) | Don't rely on `change_pct` field; payload shape mismatched with frontend |
 | `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop; duplicates REST with reduced fields |
-| `backend/api/routes_analyst.py` | League analyst summary (BUGGY — see STATUS.md P0-3) | `change_24h_pct` uses `prices[0]` instead of 24h-ago |
+| `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `_find_price_24h_ago` from `routes_arbitrage.py` |
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P0-5, P0-6, P1-9) | Hardcoded chaos=1.0; magic spread numbers |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (BUGGY — see P1-7, P1-11) | Fire-and-forget SQLite write; missing daily_stats invalidation |
 | `backend/economy/events.py` | EventManager + StoredEvent | `event_id`, `is_active`, `created_at`; uses deprecated `get_event_loop()` (P3-8) |
-| `backend/economy/lifecycle.py` | PhaseDetector (BUGGY — see STATUS.md P0-4) | `_reference_date` uses `max()` — major_patch reset broken |
+| `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete needed (P1-6) |
 | `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | `pipeline_cache.invalidate()` clears only `pipeline` namespace |
 | `backend/data/pipeline_cache.py` | Shim re-export (P2-2 — delete) | 23 lines, re-exports from `unified_cache.py` |
@@ -73,14 +73,14 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 11. **EventData uses `event_id`** (not `id`), `is_active` (not `active`), `created_at` — matches `StoredEvent.to_dict()`.
 12. **EventType enum has 6 values**: `major_patch`, `minor_patch`, `league_start`, `economy_shift`, `streamer_hype`, `other`.
 13. **Events POST proxy transforms body**: `eventType`→`event_type`, `affectedCurrencies`→`affected_currencies`, `expiryHours`→`expires_at` (ISO string).
-14. **PhaseDetector: only `major_patch` resets phase clock** — `league_start` / `economy_shift` affect scoring only. (NOTE: current implementation is buggy — see STATUS.md P0-4.)
+14. **PhaseDetector: only `major_patch` resets phase clock** — `league_start` / `economy_shift` affect scoring only. `reset_for_major_patch()` always wins, even if the patch predates `league_start` (P0-4 fixed iter 54).
 15. **Adaptive mode (`"_adaptive"`)**: `baseCurrencyApiId` can be `"_adaptive"` — `useDisplayPrice` auto-selects Div/Exa/Chaos per row.
 16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate (see STATUS.md P1-11).
 17. **SSE payload contract**: backend sends `{type, changes_count, changes: [{api_id, price}], timestamp}` but frontend expects `{pair, change_pct, new_price, old_price, timestamp}` — see STATUS.md P0-1.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (6 P0 / 11 P1 / 11 P2 / 8 P3).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (4 P0 / 11 P1 / 11 P2 / 8 P3). 2 P0 issues fixed in iter 54 (see STATUS.md §Fixed).
 
 Quick reference for the most common symptoms:
 
@@ -89,8 +89,6 @@ Quick reference for the most common symptoms:
 | Backend "alive" but `/flips` hangs | Clustering cold-start | P1-4 |
 | SSE connected but UI stale | No `change_pct` + wrong payload shape | P0-1 |
 | WS connected but REST slow | Event loop blocked by `_compute_anomalies` | P0-2 |
-| `/analyst/summary` weird 24h% | `prices[0]` instead of 24h-ago | P0-3 |
-| Phase not reset after major_patch | `max()` in `_reference_date` | P0-4 |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | Stale forecast after event creation | `daily_stats` namespace not invalidated | P1-11 |
 | WS `/flips` missing `profit_per_unit_base` | WS returns reduced fields | P1-1 |
@@ -124,7 +122,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/storage-value/{currency}` | Hold/sell decision |
 | GET | `/api/v1/optimizer/path` | Optimal conversion path (BUGGY — P1-8) |
 | GET | `/api/v1/optimizer/matrix` | Conversion matrix |
-| GET | `/api/v1/analyst/summary` | League analyst summary (BUGGY — P0-3) |
+| GET | `/api/v1/analyst/summary` | League analyst summary (P0-3 fixed iter 54 — 24h% now timestamp-aware) |
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
 | GET | `/api/v1/scanner/scan` | Advanced flip scanner (P2-4 — duplicate) |
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |

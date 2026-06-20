@@ -19,6 +19,14 @@ from backend.config import get_settings
 from backend.api.data_snapshot import get_snapshot
 from backend.data.pipeline_cache import get_pipeline_cache
 from backend.api.response_models import AnalystSummaryResponse
+# P0-3 fix: reuse the timestamp-aware 24h-ago helper from routes_arbitrage
+# instead of `prices[0]` (which is just the oldest point in the snapshot
+# window — often days old, not 24h). The helper finds the price point
+# closest to now-24h with a ±6h drift tolerance and returns None if no
+# point is close enough, so change_24h_pct is None rather than bogus.
+# TODO(P0-5): extract _find_price_24h_ago to backend/economy/pricing.py
+# alongside compute_transitive_prices, then import from there.
+from backend.api.routes_arbitrage import _find_price_24h_ago
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +40,17 @@ def _compute_trends(prices_in_base: dict[str, float],
     for api_id, history_points in price_histories.items():
         if len(history_points) < 2:
             continue
-        
+
         prices = [p.price for p in history_points]
         if len(prices) < 2:
             continue
-        
+
         current = prices[-1]
-        
-        # 24h change
-        price_24h_ago = prices[0] if len(prices) >= 2 else None
+
+        # 24h change — P0-3 fix: use timestamp-aware lookup instead of prices[0].
+        # history_points is list[PricePoint] with .timestamp and .price.
+        history_with_ts = [(p.timestamp, p.price) for p in history_points]
+        price_24h_ago = _find_price_24h_ago(history_with_ts)
         change_24h = None
         if price_24h_ago and price_24h_ago > 0:
             change_24h = ((current - price_24h_ago) / price_24h_ago) * 100

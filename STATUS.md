@@ -1,14 +1,14 @@
 # STATUS.md — Known Issues & Refactoring Backlog
 
-> **Last updated:** 2026-06-20 (iter 53 — audit verified against code)
+> **Last updated:** 2026-06-20 (iter 54 — P0-3 and P0-4 fixed)
 > This file is the **single source of truth** for known bugs and refactoring priorities.
 > Update it **before** fixing any issue. Cross-reference issue IDs in commits.
 >
-> **Verification status (iter 53):** All P0 issues re-checked against source code. P0-1 supplemented with SSE contract mismatch. P0-5 supplemented with correctness bug. New P1-11, P2-11, P3-8 added. One Quick-Reference row corrected.
+> **Iter 54 status:** P0-3 and P0-4 fixed and verified. Backend tests: 386 passed / 4 skipped. Frontend tests: 291 passed. `tsc --noEmit` clean. Remaining P0: 4 (P0-1, P0-2, P0-5, P0-6).
 
 ---
 
-## P0 — Критичные проблемы (стабильность/корректность)
+## P0 — Критичные проблемы (стабильность/корректность) — 4 active
 
 ### P0-1. SSE — мёртвый монитор, без пороговой фильтрации, contract mismatch
 - **Файл:** `backend/api/routes_sse.py` (+ frontend `src/hooks/use-price-stream.ts`)
@@ -26,22 +26,6 @@
 - **Файл:** `backend/api/routes_ws.py:415-468` (`_compute_anomalies`), `routes_ws.py:478-522` (`_compute_flips`)
 - **Проблема:** `_push_loop` (строка 364) каждые 30с запускает `await compute_fn()` где compute_fn — `_compute_anomalies` (600+ валют, AnomalyDetector.detect = STL+MACD+RSI для каждой) **синхронно в event loop**, без ProcessPoolExecutor. Один WS-клиент = блокировка 30-секундным циклом. Каскад при нескольких клиентах. Подтверждено: `rg "run_in_executor|process_pool|to_thread" routes_ws.py` — 0 совпадений.
 - **Решение:** Использовать `loop.run_in_executor(process_pool, _detect_anomalies_sync, ...)` как в `routes_anomalies.py:155-169`. Или полностью удалить WS (см. P1-1 — WS дублирует REST).
-
-### P0-3. `routes_analyst._compute_trends` — неверная метрика "24h change"
-- **Файл:** `backend/api/routes_analyst.py:43`
-- **Проблема:** `price_24h_ago = prices[0] if len(prices) >= 2 else None` — берётся первая точка истории (старейшая в окне snapshot, обычно несколько дней назад, не 24ч). Все `change_24h_pct` в `/analyst/summary` неверны.
-- **Решение:** Использовать `_find_price_24h_ago` из `routes_arbitrage.py:92-126` (принимает `list[(datetime, price)]`, ищет ближайшую точку к `now - 24h`, возвращает None если drift >6ч). Вынести в общий helper `backend/economy/pricing.py` или `backend/api/shared.py`.
-
-### P0-4. `PhaseDetector._reference_date` — некорректный reset при major_patch
-- **Файл:** `backend/economy/lifecycle.py:80-84`
-- **Проблема:** `_reference_date()` возвращает `max(self._league_start, self._patch_reset_date)`. Если патч вышел раньше старта лиги (типовой сценарий: патч-превью за неделю до old-league end), `league_start` позднее → reset игнорируется → phase остаётся LATE вместо сброса в EARLY. Спека (`PoE2_Flipper_Canonical_Formulas.md §1`) требует: major_patch **всегда** сбрасывает фазу.
-- **Решение:** Если есть `patch_reset_date` — вернуть его без `max()` с `league_start`:
-  ```python
-  def _reference_date(self) -> datetime:
-      if self._patch_reset_date is not None:
-          return self._patch_reset_date
-      return self._league_start
-  ```
 
 ### P0-5. Дублирование логики transitive prices — 3 разные реализации + correctness bug
 - **Файлы:**
@@ -184,6 +168,29 @@
 
 ---
 
+## Fixed
+
+### P0-3 (fixed in iter 54 — `fix(P0-3): use _find_price_24h_ago for analyst 24h change`) — `routes_analyst._compute_trends` 24h change
+- **Was:** `price_24h_ago = prices[0]` — oldest point in snapshot window, often days old.
+- **Now:** Uses `_find_price_24h_ago` from `routes_arbitrage.py` — finds price closest to `now-24h` (±6h drift), returns None if no point close enough.
+- **Files changed:** `backend/api/routes_analyst.py` (added import + 3 lines in `_compute_trends`).
+- **Tests added:** `tests/e2e/test_analyst.py` (4 tests):
+  - `test_analyst_24h_change_uses_timestamp` — pins 24h-ago lookup vs `prices[0]`.
+  - `test_analyst_24h_change_none_when_drift_too_large` — None when no point within ±6h.
+  - `test_analyst_24h_change_skips_far_future_point` — points after 24h-ago are not picked.
+  - `test_analyst_summary_endpoint` — e2e smoke test for `/api/v1/analyst/summary`.
+- **Follow-up:** P0-5 will extract `_find_price_24h_ago` to `backend/economy/pricing.py` (TODO comment in code).
+
+### P0-4 (fixed in iter 54 — `fix(P0-4): PhaseDetector respects major_patch unconditionally`) — `PhaseDetector._reference_date` reset
+- **Was:** `return max(self._league_start, self._patch_reset_date)` — preview-patch before league_start silently lost the reset.
+- **Now:** `return self._patch_reset_date if set else self._league_start` — explicit `reset_for_major_patch()` call always wins, per spec §6.
+- **Files changed:** `backend/economy/lifecycle.py` (3 lines in `_reference_date` + docstring + class docstring + module docstring).
+- **Tests changed:** `tests/test_lifecycle.py`:
+  - Replaced `test_patch_date_before_league_start_ignored` (tested buggy behavior) with `test_major_patch_resets_even_if_before_league_start` (regression for the fix).
+  - All other 14 lifecycle tests still pass unchanged.
+
+---
+
 ## Частые проблемы (Quick Reference)
 
 | Симптом | Причина | Где фиксить |
@@ -191,9 +198,7 @@
 | Backend "жив" но `/flips` висит 5-15с | Кластеризация cold-start (P1-4) | `routes_prices.py:259-274` |
 | SSE подключён но UI не обновляется | (1) backend не шлёт `change_pct`; (2) payload shape не совпадает с frontend-типом (P0-1) | `routes_sse.py:_sse_event_generator` + `use-price-stream.ts:SSEPriceUpdate` |
 | WS подключён но `/anomalies` в REST тормозит | `_push_loop` блокирует event loop (P0-2) | `routes_ws.py:_compute_anomalies` |
-| `/analyst/summary` показывает странные 24h% | `prices[0]` вместо 24h-ago (P0-3) | `routes_analyst.py:43` |
 | 500 от backend превращается в "no data" | `proxyWithFallback` глушит 5xx (P2-8) | `flipper-proxy.ts:480-485` |
-| После major_patch фаза не сбросилась | `max(league_start, patch)` (P0-4) | `lifecycle.py:80-84` |
 | Event создан но forecast показывает stale данные | `daily_stats` namespace не инвалидирован (P1-11) | `routes_events.py:135` |
 | WS `/flips` не содержит `profit_per_unit_base` | WS возвращает урезанные flips (P1-1) | `routes_ws.py:498-509` |
 | После перезапуска backend часть events пропала | `create_event` fire-and-forget SQLite write (P1-7) | `events.py:212` |

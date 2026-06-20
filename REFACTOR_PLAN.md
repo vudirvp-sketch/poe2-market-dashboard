@@ -1,7 +1,7 @@
 # REFACTOR_PLAN.md — Roadmap
 
-> Version: 18.0 | Date: 2026-06-20 (iter 53 — audit verified)
-> Source: Full codebase audit (iter 52) + verification (iter 53). See `STATUS.md` for detailed issue descriptions.
+> Version: 19.0 | Date: 2026-06-20 (iter 54 — P0-3, P0-4 fixed)
+> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54 fixes. See `STATUS.md` for detailed issue descriptions.
 
 ## Principles
 
@@ -13,11 +13,9 @@
 
 ## Priority Buckets
 
-### P0 — Critical (correctness, stability) — do first
+### P0 — Critical (correctness, stability) — 4 remaining (P0-1, P0-2, P0-5, P0-6)
 - P0-1. SSE — remove dead monitor, fix contract mismatch, implement real `change_pct` filtering
 - P0-2. WebSocket — offload `_compute_anomalies` / `_compute_flips` to ProcessPoolExecutor
-- P0-3. Analyst `_compute_trends` — fix `price_24h_ago` (use `_find_price_24h_ago` from routes_arbitrage)
-- P0-4. PhaseDetector — remove `max()` in `_reference_date`, return `patch_reset_date` directly
 - P0-5. Transitive prices — extract BFS to shared helper, use in `data_snapshot.py` + `scheduler.py` + `routes_arbitrage.py`
 - P0-6. Triangular — remove `prices["chaos"] = 1.0` and `Chaos Orb` hardcode, use `base` as numeraire
 
@@ -50,38 +48,38 @@
 ### P3 — Low priority (nice-to-have)
 - See STATUS.md §P3 (8 items: P3-1 through P3-8)
 
-## Recommended Fix Order (iter 53+)
+## Recommended Fix Order (iter 54+)
 
-Iter 53 (next):
-1. **P0-3** (analyst 24h change) — smallest scope, high user-visible impact, has ready helper `_find_price_24h_ago`. Add regression test (P2-11 partial).
-2. **P0-4** (PhaseDetector reset) — 1-line fix in lifecycle.py + existing test_lifecycle.py update.
+Iter 54 (DONE — see "Fixed" section below):
+1. **P0-3** (analyst 24h change) — DONE. Used `_find_price_24h_ago` from `routes_arbitrage.py`. Added `tests/e2e/test_analyst.py` (4 tests). Commit: `fix(P0-3): use _find_price_24h_ago for analyst 24h change`.
+2. **P0-4** (PhaseDetector reset) — DONE. Replaced `max()` with unconditional `patch_reset_date`. Replaced `test_patch_date_before_league_start_ignored` with `test_major_patch_resets_even_if_before_league_start`. Commit: `fix(P0-4): PhaseDetector respects major_patch unconditionally`.
 
-Iter 54:
+Iter 55 (next):
 3. **P0-1** (SSE) — bigger scope (delete dead monitor, redesign generator, fix frontend contract). Split into 2 commits if needed: (a) backend `change_pct` + threshold filtering, (b) frontend contract alignment.
 
-Iter 55:
+Iter 56:
 4. **P0-6** (triangular hardcode) — small, isolated to `routes_arbitrage.py:769-770`.
 
-Iter 56:
-5. **P0-5** (transitive prices helper) — extract `compute_transitive_prices` to `backend/economy/pricing.py`, swap 3 call sites. After this, P1-3 is a 1-commit follow-up.
-
 Iter 57:
+5. **P0-5** (transitive prices helper) — extract `compute_transitive_prices` to `backend/economy/pricing.py`, swap 3 call sites. After this, P1-3 is a 1-commit follow-up. **Also** extract `_find_price_24h_ago` to the same helper (P0-3 left a TODO).
+
+Iter 58:
 6. **P0-2** (WS executor offload) — depends on decision: keep WS (apply executor fix) or delete WS (depends on P1-1).
 
-Iter 58+:
+Iter 59+:
 7. P1-11 (daily_stats invalidation) — 2-line fix, can be batched with P1-7 (EventManager async).
 8. P1-1 through P1-10 — see STATUS.md for dependencies.
 
-## Estimation (rough, updated iter 53)
+## Estimation (rough, updated iter 54)
 
-| Bucket | Issues | Estimated iterations | Risk |
-|--------|--------|---------------------|------|
-| P0 | 6 | 5-7 iterations | Low — small scope, well-defined |
+| Bucket | Issues remaining | Estimated iterations | Risk |
+|--------|------------------|---------------------|------|
+| P0 | 4 (P0-1, P0-2, P0-5, P0-6) | 4-5 iterations | Low — small scope, well-defined |
 | P1 | 11 | 9-11 iterations | Medium — some touch core paths |
 | P2 | 11 | 7-9 iterations | Low — mostly mechanical |
 | P3 | 8 | 3-5 iterations | Low — non-blocking |
 
-**Total:** ~28 iterations to clean state. Each iteration = 1 commit, 1 STATUS.md update.
+**Total:** ~26 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
 
 ## Definition of Done (per issue)
 
@@ -94,10 +92,8 @@ Iter 58+:
 - [ ] Commit message format: `<type>(P<n>-<id>): <short description>`
 - [ ] If issue touches API contract — regenerate `openapi_schema.json` + `src/lib/api-types.ts`
 
-## Fixed (empty — iter 53 was verification-only)
+## Fixed
 
-<!-- When an issue is fixed, move it here with format:
-### P0-N (fixed in <commit-hash>) — <title>
-- What was changed
-- Test added: <test file>:<test name>
--->
+### iter 54 — 2 P0 issues fixed
+- **P0-3** (`fix(P0-3): use _find_price_24h_ago for analyst 24h change`) — `routes_analyst._compute_trends` now uses timestamp-aware 24h-ago lookup. 4 tests in `tests/e2e/test_analyst.py`. Backend: 386 pass / 4 skip. Frontend: 291 pass. tsc: clean.
+- **P0-4** (`fix(P0-4): PhaseDetector respects major_patch unconditionally`) — `lifecycle._reference_date` no longer uses `max()`. Regression test `test_major_patch_resets_even_if_before_league_start` replaces the buggy-behavior test. All 15 lifecycle tests pass.
