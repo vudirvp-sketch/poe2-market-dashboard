@@ -76,7 +76,7 @@ def app_with_mocked_caches():
             }
 
     class _StubManager:
-        def create_event(self, *, event_type, description, affected_currencies=None,
+        async def create_event(self, *, event_type, description, affected_currencies=None,
                          timestamp=None, expires_at=None):
             event_id = f"evt-{len(stub_events) + 1}"
             evt = _StubEvent(event_id, event_type, description)
@@ -84,10 +84,10 @@ def app_with_mocked_caches():
             stub_events[event_id] = evt
             return evt
 
-        def delete_event(self, event_id: str) -> bool:
+        async def delete_event(self, event_id: str) -> bool:
             return stub_events.pop(event_id, None) is not None
 
-        def deactivate_event(self, event_id: str) -> bool:
+        async def deactivate_event(self, event_id: str) -> bool:
             evt = stub_events.get(event_id)
             if evt is None:
                 return False

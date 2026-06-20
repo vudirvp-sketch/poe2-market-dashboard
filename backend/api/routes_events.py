@@ -111,7 +111,7 @@ async def create_event(request: CreateEventRequest):
             )
 
     # Create the event
-    event = manager.create_event(
+    event = await manager.create_event(
         event_type=request.event_type,
         description=request.description,
         affected_currencies=request.affected_currencies,
@@ -207,7 +207,7 @@ async def delete_event(event_id: str):
     config = get_settings()
     manager = get_event_manager(config)
 
-    deleted = manager.delete_event(event_id)
+    deleted = await manager.delete_event(event_id)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
 
@@ -233,7 +233,7 @@ async def deactivate_event(event_id: str):
     config = get_settings()
     manager = get_event_manager(config)
 
-    deactivated = manager.deactivate_event(event_id)
+    deactivated = await manager.deactivate_event(event_id)
     if not deactivated:
         raise HTTPException(status_code=404, detail=f"Event not found: {event_id}")
 

@@ -64,9 +64,9 @@ def manager(config):
 # ---------------------------------------------------------------------------
 
 class TestEventCreation:
-    def test_create_event_basic(self, manager):
+    async def test_create_event_basic(self, manager):
         """Test basic event creation."""
-        event = manager.create_event(
+        event = await manager.create_event(
             event_type=EventType.MINOR_PATCH,
             description="Patch 0.2.1 hotfix",
         )
@@ -77,9 +77,9 @@ class TestEventCreation:
         assert event.is_active is True
         assert event.expires_at is not None  # should have default expiry
 
-    def test_create_event_with_affected_currencies(self, manager):
+    async def test_create_event_with_affected_currencies(self, manager):
         """Test event creation with specific affected currencies."""
-        event = manager.create_event(
+        event = await manager.create_event(
             event_type=EventType.STREAMER_HYPE,
             description="Zizaran currency giveaway",
             affected_currencies=["divine", "exalted"],
@@ -87,19 +87,19 @@ class TestEventCreation:
 
         assert event.affected_currencies == ["divine", "exalted"]
 
-    def test_create_major_patch_event(self, manager):
+    async def test_create_major_patch_event(self, manager):
         """Test creating a major patch event."""
-        event = manager.create_event(
+        event = await manager.create_event(
             event_type=EventType.MAJOR_PATCH,
             description="Patch 0.3.0 released",
         )
 
         assert event.event_type == EventType.MAJOR_PATCH
 
-    def test_create_event_with_custom_expiry(self, manager):
+    async def test_create_event_with_custom_expiry(self, manager):
         """Test event creation with custom expiry time."""
         expires = datetime.now(timezone.utc) + timedelta(hours=24)
-        event = manager.create_event(
+        event = await manager.create_event(
             event_type=EventType.OTHER,
             description="Custom expiry event",
             expires_at=expires,
@@ -110,9 +110,9 @@ class TestEventCreation:
         diff = abs((event.expires_at - expires).total_seconds())
         assert diff < 5  # within 5 seconds
 
-    def test_get_event_by_id(self, manager):
+    async def test_get_event_by_id(self, manager):
         """Test retrieving an event by ID."""
-        event = manager.create_event(
+        event = await manager.create_event(
             event_type=EventType.MINOR_PATCH,
             description="Test event",
         )
@@ -133,20 +133,20 @@ class TestEventCreation:
 # ---------------------------------------------------------------------------
 
 class TestEventListing:
-    def test_list_active_events(self, manager):
+    async def test_list_active_events(self, manager):
         """Test listing only active events."""
-        manager.create_event(EventType.MINOR_PATCH, "Active event 1")
-        manager.create_event(EventType.OTHER, "Active event 2")
+        await manager.create_event(EventType.MINOR_PATCH, "Active event 1")
+        await manager.create_event(EventType.OTHER, "Active event 2")
 
         events = manager.list_events(active_only=True)
         assert len(events) == 2
 
-    def test_list_all_events_includes_inactive(self, manager):
+    async def test_list_all_events_includes_inactive(self, manager):
         """Test listing all events including inactive ones."""
-        event = manager.create_event(EventType.MINOR_PATCH, "Will deactivate")
-        manager.create_event(EventType.OTHER, "Stays active")
+        event = await manager.create_event(EventType.MINOR_PATCH, "Will deactivate")
+        await manager.create_event(EventType.OTHER, "Stays active")
 
-        manager.deactivate_event(event.event_id)
+        await manager.deactivate_event(event.event_id)
 
         active = manager.list_events(active_only=True)
         all_events = manager.list_events(active_only=False)
@@ -160,23 +160,23 @@ class TestEventListing:
 # ---------------------------------------------------------------------------
 
 class TestEventDeletion:
-    def test_delete_event(self, manager):
+    async def test_delete_event(self, manager):
         """Test deleting an event."""
-        event = manager.create_event(EventType.MINOR_PATCH, "To delete")
-        result = manager.delete_event(event.event_id)
+        event = await manager.create_event(EventType.MINOR_PATCH, "To delete")
+        result = await manager.delete_event(event.event_id)
 
         assert result is True
         assert manager.get_event(event.event_id) is None
 
-    def test_delete_nonexistent_event(self, manager):
+    async def test_delete_nonexistent_event(self, manager):
         """Test deleting a non-existent event returns False."""
-        result = manager.delete_event("nonexistent")
+        result = await manager.delete_event("nonexistent")
         assert result is False
 
-    def test_deactivate_event(self, manager):
+    async def test_deactivate_event(self, manager):
         """Test deactivating an event without deleting it."""
-        event = manager.create_event(EventType.MINOR_PATCH, "To deactivate")
-        result = manager.deactivate_event(event.event_id)
+        event = await manager.create_event(EventType.MINOR_PATCH, "To deactivate")
+        result = await manager.deactivate_event(event.event_id)
 
         assert result is True
         retrieved = manager.get_event(event.event_id)
@@ -189,30 +189,30 @@ class TestEventDeletion:
 # ---------------------------------------------------------------------------
 
 class TestEventExpiry:
-    def test_event_not_expired_initially(self, manager):
+    async def test_event_not_expired_initially(self, manager):
         """Test that a newly created event is not expired."""
-        event = manager.create_event(EventType.MINOR_PATCH, "Fresh event")
+        event = await manager.create_event(EventType.MINOR_PATCH, "Fresh event")
         assert not manager._is_expired(event)
 
-    def test_event_expired(self, manager):
+    async def test_event_expired(self, manager):
         """Test that an event with past expiry is detected as expired."""
-        event = manager.create_event(
+        event = await manager.create_event(
             EventType.MINOR_PATCH,
             "Expired event",
             expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
         )
         assert manager._is_expired(event)
 
-    def test_prune_expired_events(self, manager):
+    async def test_prune_expired_events(self, manager):
         """Test that expired events are pruned from storage."""
         # Create an event that expires immediately
-        manager.create_event(
+        await manager.create_event(
             EventType.MINOR_PATCH,
             "Already expired",
             expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
         )
         # Create a normal event
-        manager.create_event(EventType.OTHER, "Still active")
+        await manager.create_event(EventType.OTHER, "Still active")
 
         pruned = manager._prune_expired()
         assert pruned == 1
@@ -221,9 +221,9 @@ class TestEventExpiry:
         assert len(events) == 1
         assert events[0].description == "Still active"
 
-    def test_event_with_no_expiry_never_expires(self, manager):
+    async def test_event_with_no_expiry_never_expires(self, manager):
         """Test that an event with no expiry_at never expires."""
-        event = manager.create_event(
+        event = await manager.create_event(
             EventType.OTHER,
             "Permanent event",
             expires_at=None,
@@ -241,10 +241,10 @@ class TestScorePenalty:
         penalty = manager.get_event_score_penalty("divine")
         assert penalty == 1.0  # no penalty
 
-    def test_penalty_for_unspecified_currencies(self, manager):
+    async def test_penalty_for_unspecified_currencies(self, manager):
         """Test that all currencies get event_score_penalty when no specific
         currencies are listed in the event."""
-        manager.create_event(
+        await manager.create_event(
             EventType.STREAMER_HYPE,
             "Big stream event",
             # No affected_currencies → affects all
@@ -253,10 +253,10 @@ class TestScorePenalty:
         penalty = manager.get_event_score_penalty("divine")
         assert penalty == 0.5  # config default
 
-    def test_exclusion_for_specific_currencies(self, manager):
+    async def test_exclusion_for_specific_currencies(self, manager):
         """Test that currencies specifically listed in affected_currencies
         are excluded entirely (penalty = 0.0)."""
-        manager.create_event(
+        await manager.create_event(
             EventType.MINOR_PATCH,
             "Divine nerf",
             affected_currencies=["divine", "exalted"],
@@ -269,20 +269,20 @@ class TestScorePenalty:
         # Unaffected currency → no penalty
         assert manager.get_event_score_penalty("chaos") == 1.0
 
-    def test_multiple_events_penalty(self, manager):
+    async def test_multiple_events_penalty(self, manager):
         """Test penalty interaction with multiple events.
 
         If one event targets a currency specifically and another
         targets all currencies, the first one wins (exclusion).
         """
         # Event 1: specific currencies excluded
-        manager.create_event(
+        await manager.create_event(
             EventType.MINOR_PATCH,
             "Divine nerf",
             affected_currencies=["divine"],
         )
         # Event 2: all currencies get penalty
-        manager.create_event(
+        await manager.create_event(
             EventType.STREAMER_HYPE,
             "Big stream",
             # No specific currencies → all get 0.5
@@ -303,14 +303,14 @@ class TestEventActivity:
         """Test that no events means nothing is active."""
         assert manager.is_event_active() is False
 
-    def test_is_event_active_with_event(self, manager):
+    async def test_is_event_active_with_event(self, manager):
         """Test that an event makes is_event_active return True."""
-        manager.create_event(EventType.OTHER, "Test event")
+        await manager.create_event(EventType.OTHER, "Test event")
         assert manager.is_event_active() is True
 
-    def test_is_event_active_for_specific_currency(self, manager):
+    async def test_is_event_active_for_specific_currency(self, manager):
         """Test event activity check for a specific currency."""
-        manager.create_event(
+        await manager.create_event(
             EventType.MINOR_PATCH,
             "Divine event",
             affected_currencies=["divine"],
@@ -319,16 +319,16 @@ class TestEventActivity:
         assert manager.is_event_active("divine") is True
         assert manager.is_event_active("chaos") is False  # not in affected list
 
-    def test_is_event_active_for_currency_with_universal_event(self, manager):
+    async def test_is_event_active_for_currency_with_universal_event(self, manager):
         """Test that a universal event (no specific currencies) affects all."""
-        manager.create_event(EventType.OTHER, "Universal event")
+        await manager.create_event(EventType.OTHER, "Universal event")
         assert manager.is_event_active("divine") is True
         assert manager.is_event_active("chaos") is True
 
-    def test_is_event_active_after_deactivation(self, manager):
+    async def test_is_event_active_after_deactivation(self, manager):
         """Test that deactivated events don't count as active."""
-        event = manager.create_event(EventType.OTHER, "Will deactivate")
-        manager.deactivate_event(event.event_id)
+        event = await manager.create_event(EventType.OTHER, "Will deactivate")
+        await manager.deactivate_event(event.event_id)
 
         assert manager.is_event_active() is False
 
@@ -338,27 +338,27 @@ class TestEventActivity:
 # ---------------------------------------------------------------------------
 
 class TestMajorPatchPhaseReset:
-    def test_has_major_patch_event(self, manager):
+    async def test_has_major_patch_event(self, manager):
         """Test detecting a major_patch event."""
-        manager.create_event(EventType.MINOR_PATCH, "Minor")
+        await manager.create_event(EventType.MINOR_PATCH, "Minor")
         assert manager.has_major_patch_event() is False
 
-        manager.create_event(EventType.MAJOR_PATCH, "Major patch 0.3.0")
+        await manager.create_event(EventType.MAJOR_PATCH, "Major patch 0.3.0")
         assert manager.has_major_patch_event() is True
 
-    def test_get_latest_major_patch_timestamp(self, manager):
+    async def test_get_latest_major_patch_timestamp(self, manager):
         """Test getting the most recent major_patch timestamp."""
         # Use future expiry so events don't get pruned during the test
         far_future = datetime.now(timezone.utc) + timedelta(days=365)
         ts1 = datetime(2025, 3, 1, 12, 0, 0, tzinfo=timezone.utc)
         ts2 = datetime(2025, 4, 1, 12, 0, 0, tzinfo=timezone.utc)
 
-        manager.create_event(
+        await manager.create_event(
             EventType.MAJOR_PATCH, "Patch 0.2.0",
             timestamp=ts1,
             expires_at=far_future,
         )
-        manager.create_event(
+        await manager.create_event(
             EventType.MAJOR_PATCH, "Patch 0.3.0",
             timestamp=ts2,
             expires_at=far_future,
@@ -383,10 +383,10 @@ class TestEventSummary:
         """Test summary returns None when no events are active."""
         assert manager.get_active_event_summary() is None
 
-    def test_summary_with_events(self, manager):
+    async def test_summary_with_events(self, manager):
         """Test summary returns correct data when events are active."""
-        manager.create_event(EventType.MINOR_PATCH, "Minor patch event")
-        manager.create_event(EventType.MAJOR_PATCH, "Major patch event")
+        await manager.create_event(EventType.MINOR_PATCH, "Minor patch event")
+        await manager.create_event(EventType.MAJOR_PATCH, "Major patch event")
 
         summary = manager.get_active_event_summary()
 
@@ -395,14 +395,14 @@ class TestEventSummary:
         assert summary["event_type"] == "major_patch"
         assert summary["total_active_events"] == 2
 
-    def test_summary_priority_order(self, manager):
+    async def test_summary_priority_order(self, manager):
         """Test that summary prioritizes events correctly.
 
         Priority: major_patch > minor_patch > streamer_hype > other
         """
-        manager.create_event(EventType.OTHER, "Other event")
-        manager.create_event(EventType.STREAMER_HYPE, "Streamer event")
-        manager.create_event(EventType.MINOR_PATCH, "Minor event")
+        await manager.create_event(EventType.OTHER, "Other event")
+        await manager.create_event(EventType.STREAMER_HYPE, "Streamer event")
+        await manager.create_event(EventType.MINOR_PATCH, "Minor event")
 
         summary = manager.get_active_event_summary()
         assert summary["event_type"] == "minor_patch"
@@ -413,9 +413,9 @@ class TestEventSummary:
 # ---------------------------------------------------------------------------
 
 class TestStoredEventSerialization:
-    def test_to_dict(self, manager):
+    async def test_to_dict(self, manager):
         """Test that StoredEvent.to_dict produces valid output."""
-        event = manager.create_event(
+        event = await manager.create_event(
             EventType.MINOR_PATCH,
             "Serialization test",
             affected_currencies=["divine"],
@@ -430,9 +430,9 @@ class TestStoredEventSerialization:
         assert "expires_at" in d
         assert d["is_active"] is True
 
-    def test_to_market_event(self, manager):
+    async def test_to_market_event(self, manager):
         """Test conversion back to MarketEvent domain model."""
-        event = manager.create_event(
+        event = await manager.create_event(
             EventType.MAJOR_PATCH,
             "Domain model test",
         )
@@ -448,13 +448,13 @@ class TestStoredEventSerialization:
 # ---------------------------------------------------------------------------
 
 class TestClearAll:
-    def test_clear_all(self, manager):
+    async def test_clear_all(self, manager):
         """Test clearing all events."""
-        manager.create_event(EventType.OTHER, "Event 1")
-        manager.create_event(EventType.OTHER, "Event 2")
-        manager.create_event(EventType.OTHER, "Event 3")
+        await manager.create_event(EventType.OTHER, "Event 1")
+        await manager.create_event(EventType.OTHER, "Event 2")
+        await manager.create_event(EventType.OTHER, "Event 3")
 
-        count = manager.clear_all()
+        count = await manager.clear_all()
         assert count == 3
         assert manager.is_event_active() is False
 

@@ -238,7 +238,7 @@ class TestPruneEvents:
         self, scheduler, event_manager, historical_store
     ):
         """Pruning should NOT remove events that haven't expired."""
-        active_event = event_manager.create_event(
+        active_event = await event_manager.create_event(
             event_type=EventType.MINOR_PATCH,
             description="Still active",
             affected_currencies=["chaos"],

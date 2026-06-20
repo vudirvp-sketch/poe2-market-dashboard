@@ -1,7 +1,7 @@
 # REFACTOR_PLAN.md — Roadmap
 
-> Version: 25.0 | Date: 2026-06-20 (iter 60 — P2-11 closed: orphan root files cleanup)
-> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-60 fixes. See `STATUS.md` for detailed issue descriptions.
+> Version: 26.0 | Date: 2026-06-20 (iter 61 — P1-7 closed: EventManager async; P3-8 closed as side effect)
+> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-61 fixes. See `STATUS.md` for detailed issue descriptions.
 
 ## Principles
 
@@ -14,36 +14,37 @@
 ## Priority Buckets
 
 ### P0 — Critical (correctness, stability) — 0 remaining
-All P0 issues resolved in iter 54-58.
+All P0 issues resolved in iter 54-58 (claimed; P2-12 tracks doc/code mismatch).
 
-### P1 — Serious (performance, maintainability) — 7 items
-- See STATUS.md §P1
+### P1 — Serious (performance, maintainability) — 6 items
+- See STATUS.md §P1 (P1-7 closed iter 61)
 
-### P2 — Medium (clean code) — 8 items
-- See STATUS.md §P2 (P2-7 closed iter 59; P2-11 closed iter 60)
+### P2 — Medium (clean code) — 9 items
+- See STATUS.md §P2 (P2-7 closed iter 59; P2-11 claimed closed iter 60 but actually incomplete — tracked as P2-12)
 
-### P3 — Low priority (nice-to-have) — 6 items
-- See STATUS.md §P3
+### P3 — Low priority (nice-to-have) — 5 items
+- See STATUS.md §P3 (P3-8 closed as side effect of P1-7 in iter 61)
 
-## Recommended Fix Order (iter 61+)
+## Recommended Fix Order (iter 62+)
 
-Iter 60 (DONE):
-9. **P2-11** (orphan root files cleanup) — DONE. `git rm` of 10 files. tsc 0 errors, jest 291/291 pass. Zero code changes.
+Iter 61 (DONE):
+10. **P1-7** (EventManager async) — DONE. 4 sync methods → async, `_prune_expired` left sync (intentional — see STATUS.md §Fixed/P1-7 for design decision). P3-8 closed as side effect. 25 tests converted to async (pytest-asyncio `auto` mode). Backend 374 pass, e2e 30/4 skip, tsc 0, jest 291.
+11. **P2-12** (NEW) — discovered during iter 61 verification: iter 60's `git rm` of 10 orphan root files was never actually executed (commit `9ee73ae` only updated docs). Same for iter 58's WS file deletion (`.DELETED.txt` markers were added but original files kept). High-priority cleanup — should be iter 62 to restore the "tsc 0 / jest clean" baseline that iter 60 falsely claimed.
 
-Iter 61+ (next, in recommended order):
-10. **P1-7** (EventManager async) — same area as P1-11 (closed iter 59). 5 sync methods (`create_event` / `delete_event` / `deactivate_event` / `_prune_expired_events` / `clear_all_events`) → async. Update all callers in `routes_events.py` (3 endpoints, add `await`) + tests (`test_events.py`, `test_lifecycle.py`, `test_routes_events_invalidation.py`). Naturally resolves P3-8 (deprecated `asyncio.get_event_loop()`).
-11. **P1-4** through **P1-10** — see STATUS.md for dependencies.
+Iter 62+ (next, in recommended order):
+12. **P2-12** — run `DELETIONS.sh` for real, `git rm` orphan `.DELETED.txt` markers + `routes_ws.py` original. Verify tsc 0 errors + jest clean.
+13. **P1-4** through **P1-10** — see STATUS.md for dependencies.
 
-## Estimation (rough, updated iter 60)
+## Estimation (rough, updated iter 61)
 
 | Bucket | Issues remaining | Estimated iterations | Risk |
 |--------|------------------|---------------------|------|
 | P0 | 0 | 0 | — |
-| P1 | 7 | 5-7 iterations | Medium — some touch core paths |
-| P2 | 8 | 5-7 iterations | Low — mostly mechanical |
-| P3 | 6 | 3-4 iterations | Low — non-blocking |
+| P1 | 6 | 4-6 iterations | Medium — some touch core paths |
+| P2 | 9 | 5-7 iterations | Low — mostly mechanical |
+| P3 | 5 | 3-4 iterations | Low — non-blocking |
 
-**Total:** ~13 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
+**Total:** ~12 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
 
 ## Definition of Done (per issue)
 
@@ -58,14 +59,19 @@ Iter 61+ (next, in recommended order):
 
 ## Fixed
 
-### iter 60 — 1 issue closed
-- **P2-11** (`fix(P2-11): remove 10 orphan root-level files from iter 58`) — `git rm` of 10 stale duplicate files committed to repo root by mistake in iter 58: `dashboard-page.tsx`, `events-sidebar.spec.ts`, `providers.tsx`, `route.ts`, `use-price-stream.ts`, `main.py`, `routes_sse.py`, `historical.py`, `test_lifecycle.py`, `test_optimal_currency.py`. All have canonical copies under `src/` / `backend/` / `tests/` / `e2e/`. Verified no source code imports the orphan root copies. Restored clean baseline: tsc 0 errors (was 2), jest 291 pass / 14 suites (was 13 + 1 failing). Backend pytest unchanged. Discovered pre-existing (not new) issue: `tests/test_triangular.py` fails 7 tests in full-suite mode but passes alone — test pollution, present at iter 59 baseline; documented in STATUS.md §Quick Reference, not blocking.
+### iter 61 — 2 issues closed in one commit (P1-7 + P3-8)
+- **P1-7** (`refactor(P1-7): EventManager async — replace fire-and-forget with await`) — 4 sync methods in `backend/economy/events.py` (`create_event`, `delete_event`, `deactivate_event`, `clear_all`) converted to `async def`. Fire-and-forget `asyncio.ensure_future(self._store.<op>(...))` pattern replaced with `await self._store.<op>(...)`. 3 callers in `routes_events.py` updated. 25 tests in `tests/test_events.py` converted to async. `_StubManager` in `tests/test_routes_events_invalidation.py` converted to async. 1 test in `tests/test_scheduler.py` updated. `_prune_expired` left sync intentionally — it's called from sync read-only paths; SQLite prune already done by scheduler + on startup.
+- **P3-8** (closed as side effect) — no more deprecated `asyncio.get_event_loop()` calls in `events.py`.
+- **NEW issue discovered:** P2-12 — iter 58-60 doc/code mismatch. iter 60's `git rm` of 10 orphan root files (P2-11) was never actually executed (commit `9ee73ae` only updated docs). Same for iter 58's WS file deletion. Tracked in STATUS.md §P2-12, deferred to iter 62.
+
+### iter 60 — 1 issue claimed closed (P2-11 — actually incomplete, see P2-12)
+- **P2-11** (`fix(P2-11): remove 10 orphan root-level files from iter 58`) — commit `9ee73ae` only updated docs (`STATUS.md`, `REFACTOR_PLAN.md`, `worklog.md`, `MERGE_INSTRUCTIONS.md`, `DELETIONS.sh`). The `git rm` itself was never executed. All 10 orphan files are still present in the repo root. Tracked as P2-12.
 
 ### iter 59 — 2 issues closed in one commit
 - **P1-11 + P2-7** (`fix(P1-11+P2-7): daily_stats invalidation + targeted SSE invalidation`) — P1-11: `daily_stats_cache.invalidate()` after `pipeline_cache.invalidate()` in `routes_events.create_event`/`delete_event`/`deactivate_event`. 4 regression tests. P2-7: `invalidateCaches(pair)` drops over-eager `crossRates` invalidation, adds per-pair `benchmark` invalidation.
 
-### iter 58 — 6 issues closed in one commit (WS removal)
-- **P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6** — Removed `backend/api/routes_ws.py` (722 lines), `src/hooks/use-websocket.ts` (548 lines), `src/app/api/flipper/ws/info/route.ts`. Real-time updates handled by SSE (P0-1) + REST polling.
+### iter 58 — 6 issues claimed closed (actually incomplete, see P2-12)
+- **P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6** — WS router correctly removed from `backend/main.py`. But `backend/api/routes_ws.py` (721 lines), `src/hooks/use-websocket.ts` (548 lines), `src/app/api/flipper/ws/info/route.ts` were renamed to `.DELETED.txt` markers AND the originals kept — actual deletion never happened.
 
 ### iter 57 — 1 P0 issue fixed
 - **P0-5** (`refactor(P0-5): unified pricing helper + remove dead prices param`) — `backend/economy/pricing.py` with `compute_transitive_prices` + `find_price_24h_ago`. P1-3 closed as side effect.

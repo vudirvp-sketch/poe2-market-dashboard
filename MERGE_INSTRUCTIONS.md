@@ -1,70 +1,54 @@
-# Iter 60 — Merge Instructions
+# MERGE INSTRUCTIONS — iter 61 (P1-7 EventManager async)
 
-## Summary
+## Что в архиве
 
-Closes **P2-11** (orphan root-level files cleanup). Restores clean `tsc` + `jest` baseline broken in iter 58.
-
-- **0** code changes — only deletions
-- **3** documentation files updated (`STATUS.md`, `REFACTOR_PLAN.md`, `worklog.md`)
-- **10** orphan root-level files removed via `git rm`
-
-## What's in this archive
+8 файлов с сохранением структуры папок для слияния с локальной копией репо:
 
 ```
-iter60/
-├── MERGE_INSTRUCTIONS.md   ← this file
-├── DELETIONS.sh            ← script to git rm the 10 orphan files
-├── STATUS.md               ← updated (iter 60 — P2-11 closed)
-├── REFACTOR_PLAN.md        ← updated (v24 → v25)
-└── worklog.md              ← updated (iter 60 entry added; iter 55 entry removed)
+backend/economy/events.py              — 4 sync → async methods
+backend/api/routes_events.py           — 3 endpoints: await manager.<op>
+tests/test_events.py                   — 25 tests → async (pytest-asyncio auto)
+tests/test_routes_events_invalidation.py — _StubManager methods → async
+tests/test_scheduler.py                — 1 test: await create_event
+STATUS.md                              — P1-7 fixed, P3-8 fixed, P2-12 NEW
+REFACTOR_PLAN.md                       — v25 → v26, est 13→12
+worklog.md                             — iter 61 added, iter 55 dropped (≤5 rule)
 ```
 
-## How to apply
+## Применение
 
-Run from the root of your local `poe2-market-dashboard` checkout (must be on `main` branch, up-to-date with `origin/main`):
+1. Скачайте архив `iter61_p1_7_eventmanager_async.tar.gz`.
+2. Распакуйте поверх корня локального репо:
+   ```bash
+   cd /path/to/poe2-market-dashboard
+   tar -xzf /path/to/iter61_p1_7_eventmanager_async.tar.gz
+   ```
+   Файлы заменят существующие (структура папок сохранена).
+3. Проверьте diff: `git diff --stat` — должно быть 8 modified files.
+4. Запустите тесты для проверки:
+   ```bash
+   pytest tests/test_events.py tests/test_routes_events_invalidation.py tests/test_lifecycle.py -v
+   # ожидается: 56 passed
+   ```
+5. Закоммитьте и запушьте:
+   ```bash
+   git add -A
+   git commit -m "refactor(P1-7): EventManager async — replace fire-and-forget with await"
+   git push origin main
+   ```
 
-```bash
-# 1. Extract this archive into a temp location (or directly over the repo)
-#    Example (if iter60.zip is in ~/Downloads):
-unzip ~/Downloads/iter60.zip -d /tmp/iter60
+## Что закрывает
 
-# 2. Copy the 3 modified docs into the repo root
-cp /tmp/iter60/iter60/STATUS.md         ./STATUS.md
-cp /tmp/iter60/iter60/REFACTOR_PLAN.md  ./REFACTOR_PLAN.md
-cp /tmp/iter60/iter60/worklog.md        ./worklog.md
+- **P1-7** — EventManager.create_event fire-and-forget SQLite write → FIXED
+- **P3-8** — deprecated asyncio.get_event_loop() → FIXED (side effect)
 
-# 3. Run the deletion script to git rm the 10 orphan files
-bash /tmp/iter60/iter60/DELETIONS.sh
+## NEW Known Issue (P2-12)
 
-# 4. Verify
-npx tsc --noEmit        # should print nothing (0 errors)
-npx jest                # should report 291 pass / 14 suites
-git status              # should show 3 modified + 10 deleted files
+В ходе iter 61 обнаружено: iter 60 коммит `9ee73ae` ("fix(P2-11)") обновил только
+документацию, но `git rm` 10 orphan файлов не выполнил — они всё ещё в репо.
+То же самое с iter 58 commit `048304f` — `routes_ws.py` переименован в `.DELETED.txt`
+но оригинал (721 строка) оставлен. Зафиксировано в STATUS.md §P2-12, отложено на iter 62.
 
-# 5. Commit + push
-git add -A
-git commit -m "fix(P2-11): remove 10 orphan root-level files from iter 58"
-git push origin main
-```
+## Точка остановки
 
-## Verification (already done in agent environment)
-
-| Check | Before iter 60 | After iter 60 |
-|------|----------------|---------------|
-| `tsc --noEmit` | 2 errors (P2-11) | **0 errors** ✓ |
-| `jest` | 291 pass / 13 + 1 failing suite | **291 pass / 14 suites** ✓ |
-| `pytest tests/test_triangular.py` | 7/7 pass | 7/7 pass ✓ |
-| `pytest tests/` (full suite) | 7 fail (test_triangular) + 11 fail (test_compression/brotli) — pre-existing | same baseline (P2-11 didn't touch Python files; `pytest.ini: testpaths = tests` never collected root Python files) |
-
-Pre-existing `test_triangular` failures in full-suite mode (passes alone) and `test_compression` failures (missing `brotli` / function `_check_brotli_available` not exported) are documented in STATUS.md §Quick Reference — they were present BEFORE this iteration and are NOT caused by P2-11.
-
-## Stop point — next iteration (iter 61)
-
-**P1-7** (EventManager async) — recommended next per REFACTOR_PLAN.md v25 §"Recommended Fix Order":
-- Make 5 sync methods in `backend/economy/events.py` async: `create_event`, `delete_event`, `deactivate_event`, `_prune_expired_events` (or `prune_expired_events`), `clear_all_events`.
-- Replace `asyncio.get_event_loop()` + `ensure_future` / `run_until_complete` fire-and-forget pattern with direct `await self._store.write_event(event)` etc.
-- Update callers in `backend/api/routes_events.py` (3 endpoints — add `await`).
-- Update tests: `tests/test_events.py`, `tests/test_lifecycle.py`, `tests/test_routes_events_invalidation.py`.
-- Naturally closes **P3-8** (deprecated `asyncio.get_event_loop()` in `events.py:210`).
-
-Suggested commit message: `refactor(P1-7): EventManager async — replace fire-and-forget with await`
+Iter 61 готова. Готов начать iter 62 = P2-12 (orphan files actual cleanup).

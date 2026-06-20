@@ -157,7 +157,7 @@ class EventManager:
     # CRUD Operations (dual-write: memory + SQLite)
     # ---------------------------------------------------------------
 
-    def create_event(
+    async def create_event(
         self,
         event_type: EventType,
         description: str,
@@ -168,6 +168,12 @@ class EventManager:
         """Create a new event and store it.
 
         Dual-writes to in-memory dict AND SQLite (if store is available).
+
+        P1-7 (iter 61): Previously this method used the deprecated
+        `asyncio.get_event_loop()` + `ensure_future` fire-and-forget
+        pattern for the SQLite write. The in-memory write would succeed
+        but the SQLite write could be silently lost on event-loop teardown.
+        Now `await self._store.write_event(event)` — caller awaits both.
 
         Args:
             event_type: Type of event (major_patch, minor_patch, etc.)
@@ -203,15 +209,10 @@ class EventManager:
         # In-memory write (fast)
         self._events[event_id] = event
 
-        # SQLite write (async, fire-and-forget via task if possible)
+        # SQLite write — awaited (P1-7: was fire-and-forget via ensure_future)
         if self._store is not None:
-            import asyncio
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(self._store.write_event(event))
-                else:
-                    loop.run_until_complete(self._store.write_event(event))
+                await self._store.write_event(event)
             except Exception as e:
                 logger.error("Failed to persist event %s to SQLite: %s", event_id, e)
 
@@ -251,10 +252,13 @@ class EventManager:
         events.sort(key=lambda e: e.timestamp, reverse=True)
         return events
 
-    def delete_event(self, event_id: str) -> bool:
+    async def delete_event(self, event_id: str) -> bool:
         """Delete an event by ID.
 
         Removes from both in-memory and SQLite.
+
+        P1-7 (iter 61): Now async — awaits the SQLite delete instead of
+        fire-and-forget. Prevents silent loss of deletes on shutdown.
 
         Returns:
             True if the event was found and deleted, False otherwise.
@@ -262,15 +266,10 @@ class EventManager:
         if event_id in self._events:
             del self._events[event_id]
 
-            # Also delete from SQLite
+            # Also delete from SQLite — awaited (P1-7)
             if self._store is not None:
-                import asyncio
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        asyncio.ensure_future(self._store.delete_event(event_id))
-                    else:
-                        loop.run_until_complete(self._store.delete_event(event_id))
+                    await self._store.delete_event(event_id)
                 except Exception as e:
                     logger.error("Failed to delete event %s from SQLite: %s", event_id, e)
 
@@ -278,10 +277,13 @@ class EventManager:
             return True
         return False
 
-    def deactivate_event(self, event_id: str) -> bool:
+    async def deactivate_event(self, event_id: str) -> bool:
         """Mark an event as inactive without deleting it.
 
         Updates both in-memory and SQLite.
+
+        P1-7 (iter 61): Now async — awaits the SQLite deactivate instead of
+        fire-and-forget. Prevents silent loss of deactivations on shutdown.
 
         Returns:
             True if the event was found and deactivated, False otherwise.
@@ -290,15 +292,10 @@ class EventManager:
         if event is not None:
             event.is_active = False
 
-            # Also deactivate in SQLite
+            # Also deactivate in SQLite — awaited (P1-7)
             if self._store is not None:
-                import asyncio
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        asyncio.ensure_future(self._store.deactivate_event(event_id))
-                    else:
-                        loop.run_until_complete(self._store.deactivate_event(event_id))
+                    await self._store.deactivate_event(event_id)
                 except Exception as e:
                     logger.error("Failed to deactivate event %s in SQLite: %s", event_id, e)
 
@@ -476,9 +473,22 @@ class EventManager:
         return now >= expires
 
     def _prune_expired(self) -> int:
-        """Remove expired events from storage.
+        """Remove expired events from in-memory storage.
 
-        Also prunes from SQLite if the store is available.
+        P1-7 (iter 61): Previously this method ALSO triggered a fire-and-forget
+        SQLite prune via `asyncio.ensure_future(self._store.prune_expired_events())`.
+        That had two problems: (1) silent loss on event-loop teardown, same
+        as the other CRUD methods; (2) `_prune_expired` is called from
+        sync read-only methods (`list_events`, `get_event`, `is_event_active`,
+        ...), so making it async would force every read-only path to become
+        async — a much larger refactor with no caller-facing benefit.
+
+        Solution: keep `_prune_expired` sync and limit it to in-memory prune.
+        The SQLite prune is done by the scheduler (`DataScheduler.prune_events`,
+        `backend/scheduler.py:145`) which already awaits
+        `self._store.prune_expired_events()` on a periodic schedule, AND by
+        `backend/main.py:174` on startup. Both code paths already exist
+        and continue to keep SQLite in sync.
 
         Returns:
             Number of events pruned from memory
@@ -496,40 +506,28 @@ class EventManager:
         if expired_ids:
             logger.info("Pruned %d expired events from memory", len(expired_ids))
 
-            # Also prune from SQLite
-            if self._store is not None:
-                import asyncio
-                try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        asyncio.ensure_future(self._store.prune_expired_events())
-                    else:
-                        loop.run_until_complete(self._store.prune_expired_events())
-                except Exception as e:
-                    logger.error("Failed to prune expired events from SQLite: %s", e)
-
         return len(expired_ids)
 
-    def clear_all(self) -> int:
+    async def clear_all(self) -> int:
         """Clear all events from both in-memory and SQLite. Useful for testing.
 
         Fix 4.2: Also clears the persistent SQLite store so that old events
         don't reappear after a backend restart.
+
+        P1-7 (iter 61): Now async — awaits the SQLite clear_all_events
+        instead of fire-and-forget. Ensures test isolation: after a test
+        calls `await manager.clear_all()`, the next test session does NOT
+        see leftover events from the previous test's SQLite file.
 
         Returns:
             Number of events cleared
         """
         count = len(self._events)
         self._events.clear()
-        # Fix 4.2: Also clear persistent store
+        # Fix 4.2: Also clear persistent store — awaited (P1-7)
         if self._store is not None:
-            import asyncio
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.ensure_future(self._store.clear_all_events())
-                else:
-                    loop.run_until_complete(self._store.clear_all_events())
+                await self._store.clear_all_events()
             except Exception as e:
                 logger.error("Failed to clear persistent events: %s", e)
         return count
