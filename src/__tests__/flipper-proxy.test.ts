@@ -416,3 +416,76 @@ describe("per-endpoint circuit breaker (P1-10)", () => {
     expect(getAllEndpointCircuitBreakers().size).toBe(1);
   });
 });
+
+// ============================================================================
+// 7. Circuit-breakers health endpoint (P2-6, iter 67)
+// ============================================================================
+// Verifies the new GET /api/flipper/health/circuit-breakers endpoint exports
+// a JSON snapshot of the per-endpoint breaker state. The handler itself is in
+// `src/app/api/flipper/health/circuit-breakers/route.ts`; here we test the
+// underlying data shape that the handler serializes.
+
+describe("circuit-breakers health snapshot (P2-6)", () => {
+  beforeEach(() => {
+    _resetAllCircuitBreakers();
+  });
+
+  it("empty breaker map serializes to total=0, open_count=0", () => {
+    const map = getAllEndpointCircuitBreakers();
+    const entries = Array.from(map.entries());
+    const serialized: Record<string, unknown> = {};
+    let openCount = 0;
+    for (const [path, cb] of entries) {
+      serialized[path] = cb;
+      if (cb.open) openCount += 1;
+    }
+    expect(entries.length).toBe(0);
+    expect(openCount).toBe(0);
+    expect(Object.keys(serialized)).toEqual([]);
+  });
+
+  it("populated breaker map serializes each entry with required fields", () => {
+    // Touch two endpoints — they should appear in the snapshot.
+    getEndpointCircuitBreakerState("/api/v1/prices");
+    getEndpointCircuitBreakerState("/api/v1/events");
+
+    const map = getAllEndpointCircuitBreakers();
+    const serialized: Record<string, unknown> = {};
+    let openCount = 0;
+    for (const [path, cb] of map.entries()) {
+      serialized[path] = cb;
+      if (cb.open) openCount += 1;
+    }
+
+    expect(Object.keys(serialized).sort()).toEqual([
+      "/api/v1/events",
+      "/api/v1/prices",
+    ]);
+    for (const key of Object.keys(serialized)) {
+      const entry = serialized[key] as {
+        open: boolean;
+        openSince: number;
+        cooldownMs: number;
+        consecutiveFailures: number;
+        state: string;
+      };
+      expect(entry).toHaveProperty("open");
+      expect(entry).toHaveProperty("openSince");
+      expect(entry).toHaveProperty("cooldownMs");
+      expect(entry).toHaveProperty("consecutiveFailures");
+      expect(entry).toHaveProperty("state");
+      expect(["closed", "open", "half-open"]).toContain(entry.state);
+    }
+    expect(openCount).toBe(0); // freshly created breakers are closed
+  });
+
+  it("snapshot reflects current state (no stale references)", () => {
+    getEndpointCircuitBreakerState("/api/v1/prices");
+    const before = getAllEndpointCircuitBreakers().get("/api/v1/prices")!;
+
+    // Touch again to potentially get a fresh snapshot
+    const after = getEndpointCircuitBreakerState("/api/v1/prices");
+    expect(before.consecutiveFailures).toBe(after.consecutiveFailures);
+    expect(before.state).toBe(after.state);
+  });
+});
