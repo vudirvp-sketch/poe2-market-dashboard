@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 57 — P0-5 fixed).
+> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 58 — WS removed).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -14,7 +14,6 @@
 | `backend/api/response_models.py` | Pydantic response models | Must match route return dicts exactly |
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
-| `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop; duplicates REST with reduced fields |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P1-9) | P0-6 fixed iter 56; P0-5 fixed iter 57 (no dead `prices` param); magic spread numbers |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
@@ -36,10 +35,9 @@
 | `src/app/api/flipper/prices/stream/route.ts` | SSE proxy | 5min timeout, streams body |
 | `src/app/api/flipper/events/route.ts` | Events POST proxy with body transform | `eventType`→`event_type`, `expiryHours`→`expires_at` ISO |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
-| `src/hooks/` | React hooks (15 hooks) | Import from `@lib` |
+| `src/hooks/` | React hooks (14 hooks — `use-websocket.ts` removed iter 58) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with circuit breaker + dedup | See STATUS.md P1-10, P2-8; global CB |
-| `src/hooks/use-websocket.ts` | WS hook (BROKEN — see STATUS.md P1-2) | Opens 2 parallel WS |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 fixed iter 55, P2-7 open) | Invalidates cache when `change_pct` ≥ threshold; P2-7 = make targeted by `pair` |
 | `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (see STATUS.md P2-1) | Needs splitting |
 
@@ -63,11 +61,11 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 ## 3. Critical Rules (invariants)
 
 1. **Backend responses use snake_case** — `flipper-proxy.ts` `transformKeys()` converts to camelCase.
-2. **All REST paths use `/api/v1/` prefix.** (Note: WS paths use `/v1/ws/` — see STATUS.md P2-10.)
+2. **All REST paths use `/api/v1/` prefix.** (WS paths removed in iter 58 — see STATUS.md §Fixed.)
 3. **Bridge health check uses `/api/v1/health/ping`** (NOT `/api/health/ping`).
 4. **`response_model=` must match route return dict** — mismatch = 500.
 5. **ProcessPoolExecutor: picklable args only** — no `sqlite3.Connection`, no `EventManager`, no `DataSnapshot`, no `AppConfig`. Use `FlipComputeBundle` pattern.
-6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop. (Violated in `routes_ws.py` — see STATUS.md P0-2.)
+6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop. (WS endpoints removed iter 58 — was the last violation.)
 7. **Never hardcode league names or currency categories** — use `config.yaml`.
 8. **`FLIPPER_WORKERS` env var** — controls ProcessPoolExecutor workers (default: 1).
 9. **SSE proxy: return 200 + error event** — not 503 (prevents retry storms).
@@ -79,10 +77,11 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 15. **Adaptive mode (`"_adaptive"`)**: `baseCurrencyApiId` can be `"_adaptive"` — `useDisplayPrice` auto-selects Div/Exa/Chaos per row.
 16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate (see STATUS.md P1-11).
 17. **SSE payload contract** (P0-1 fixed iter 55): backend sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency — matches frontend `SSEPriceUpdate`. `threshold_pct` query param is respected.
+18. **Real-time updates = SSE + REST polling only** (iter 58+). WebSocket endpoints were removed in iter 58 — do NOT re-introduce them. If push-based invalidation is needed for non-price data, extend the SSE stream.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (1 P0 / 10 P1 / 11 P2 / 8 P3). 5 P0 issues fixed in iter 54-57 (see STATUS.md §Fixed).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 8 P1 / 9 P2 / 6 P3). 6 P0 issues fixed in iter 54-58 (see STATUS.md §Fixed).
 
 Quick reference for the most common symptoms:
 
@@ -90,10 +89,8 @@ Quick reference for the most common symptoms:
 |---------|-------|--------------|
 | Backend "alive" but `/flips` hangs | Clustering cold-start | P1-4 |
 | SSE connected but UI stale | (Fixed in iter 55 — was P0-1) | — |
-| WS connected but REST slow | Event loop blocked by `_compute_anomalies` | P0-2 |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | Stale forecast after event creation | `daily_stats` namespace not invalidated | P1-11 |
-| WS `/flips` missing `profit_per_unit_base` | WS returns reduced fields | P1-1 |
 | Events lost on backend crash | `create_event` fire-and-forget SQLite | P1-7 |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
@@ -130,12 +127,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
 
-WebSocket endpoints (different prefix — see STATUS.md P2-10):
-- `WS /v1/ws/storage-value/{currency}`
-- `WS /v1/ws/forecast/{currency}`
-- `WS /v1/ws/anomalies` (BROKEN — P0-2)
-- `WS /v1/ws/flips` (BROKEN — P0-2, P1-1)
-- `WS /v1/ws/events`
+(WebSocket endpoints removed in iter 58 — see STATUS.md §Fixed.)
 
 ## 6. Documentation Map
 

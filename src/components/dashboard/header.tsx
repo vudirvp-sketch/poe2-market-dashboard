@@ -36,7 +36,6 @@ import { FuzzySearch } from "@/components/dashboard/fuzzy-search";
 import type { Realm, League, ReferenceCurrency, ExchangePair, PoeItem } from "@/lib/types";
 import { useTheme } from "next-themes";
 import { useI18n, type Locale, type TranslationKeys } from "@/lib/i18n";
-import type { WebSocketStatus } from "@/hooks/use-websocket";
 
 // ---------------------------------------------------------------------------
 // Phase info type (from /api/flipper/phase)
@@ -91,9 +90,6 @@ interface HeaderProps {
   baseCurrencyApiId?: string | null;
   /** Base currency display text (e.g. "Exalted Orb") for currency labels */
   baseCurrencyText?: string | null;
-  /** WebSocket connection status from the dashboard-level WS hook.
-   *  Shows a small connection indicator next to the backend status. */
-  wsStatus?: WebSocketStatus;
 }
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -186,7 +182,6 @@ export function Header({
   onSearchResultSelect,
   denseMode,
   onDenseModeToggle,
-  wsStatus,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
@@ -379,38 +374,6 @@ export function Header({
             />
             <span className="hidden sm:inline">
               {flipperBackendOnline ? t("flipperBackendOnline") : t("flipperBackendOffline")}
-            </span>
-          </div>
-        )}
-
-        {/* WebSocket status indicator — small badge next to backend status */}
-        {wsStatus && flipperBackendOnline && (
-          <div
-            className="flex items-center gap-0.5 shrink-0 px-1 py-0 rounded-md text-[10px] font-medium"
-            title={
-              wsStatus === "connected"
-                ? t("wsStatusConnected")
-                : wsStatus === "connecting"
-                  ? t("wsStatusConnecting")
-                  : t("wsStatusDisconnected")
-            }
-          >
-            <Circle
-              className={`h-1.5 w-1.5 ${
-                wsStatus === "connected"
-                  ? "fill-emerald-500 text-emerald-500"
-                  : wsStatus === "connecting"
-                    ? "fill-amber-500 text-amber-500 animate-pulse"
-                    : "fill-muted-foreground text-muted-foreground"
-              }`}
-              aria-hidden="true"
-            />
-            <span className="hidden md:inline text-muted-foreground">
-              {wsStatus === "connected"
-                ? "WS"
-                : wsStatus === "connecting"
-                  ? "WS…"
-                  : "WS✗"}
             </span>
           </div>
         )}

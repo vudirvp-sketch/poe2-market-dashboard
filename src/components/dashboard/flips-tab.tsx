@@ -21,7 +21,7 @@
 "use client";
 
 import { useState, useMemo, memo, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useFlipsQuery, useInvalidateFlips } from "@/hooks/use-flips-query";
 import {
   TrendingUp,
@@ -54,7 +54,6 @@ import { useI18n } from "@/lib/i18n";
 import { fetchApi, getFlipperErrorType } from "@/lib/types";
 import type { TriangularResponse, OptimalPaymentResult, FlipperPhaseResponse } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
-import { useFlipperWebSocket } from "@/hooks/use-websocket";
 import { FlipsTable } from "./flips-table";
 import { FlipsDetailDialog } from "./flips-detail-dialog";
 import { ArbitrageFlipperTriangular } from "./arbitrage-flipper-triangular";
@@ -94,24 +93,11 @@ interface FlipsTabProps {
 
 export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded, optimalPaymentByDisplayName, anchorId, league, crossRates }: FlipsTabProps) {
   const { t } = useI18n();
-  const queryClient = useQueryClient();
 
-  // Fix 10 (POE2-FIX-SPEC): Wire WebSocket for live updates
+  // Live updates are handled by the SSE price stream (usePriceStream in
+  // dashboard-page) + React Query polling. WS endpoints were removed in
+  // iter 58 (P0-2 + P1-1 + P1-2) — see STATUS.md §Fixed.
   const invalidateFlips = useInvalidateFlips();
-
-  useFlipperWebSocket({
-    onFlipsUpdate: () => {
-      invalidateFlips();
-      // Bug 13 fix: Also invalidate triangular data when flips update via WS,
-      // since triangular arbitrage uses the same snapshot data.
-      queryClient.invalidateQueries({ queryKey: ["flipperTriangular"] });
-    },
-    onAnomaly: () => {
-      queryClient.invalidateQueries({ queryKey: ["flipperAnomalies"] });
-    },
-    enabled: backendOnline,
-    backendOnline,  // Graceful degradation: react to health-polling signal
-  });
 
   // Filter state
   const [minScore, setMinScore] = useState(0);

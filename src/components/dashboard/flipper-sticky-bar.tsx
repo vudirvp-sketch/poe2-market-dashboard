@@ -13,7 +13,7 @@
 import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useFlipsQuery, FLIPS_QUERY_KEY } from "@/hooks/use-flips-query";
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, WifiHigh, Wifi, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
@@ -23,7 +23,6 @@ import {
   TriangularResponse,
 } from "@/lib/types";
 import { computeSentiment, scoreColor, classifySentiment } from "@/lib/flipper-helpers";
-import type { WebSocketStatus } from "@/hooks/use-websocket";
 
 // ---------------------------------------------------------------------------
 // Types — imported from @/lib/types (Single Source of Truth)
@@ -42,9 +41,6 @@ interface FlipperStickyBarProps {
    *  Previously this component made its own ["flipper-portfolio"] query,
    *  which was redundant with PortfolioTab's query. Now passed as a prop. */
   correlationWarning?: boolean;
-  /** WebSocket connection status (from use-websocket.ts).
-   *  Shows a small badge indicating live connection state. */
-  wsStatus?: WebSocketStatus;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +56,6 @@ interface FlipperStickyBarProps {
 export const FlipperStickyBar = memo(function FlipperStickyBar({
   backendOnline,
   correlationWarning = false,
-  wsStatus,
 }: FlipperStickyBarProps) {
   const { t } = useI18n();
 
@@ -253,42 +248,6 @@ export const FlipperStickyBar = memo(function FlipperStickyBar({
               >
                 <AlertTriangle className="h-3 w-3 mr-0.5 inline" aria-hidden="true" />
                 {t("stickyBarCorrelationShock")}
-              </Badge>
-            </div>
-          )}
-
-          {/* WebSocket Status Badge */}
-          {wsStatus && (
-            <div className="flex items-center gap-1 shrink-0">
-              <Badge
-                variant="outline"
-                title={
-                  wsStatus === "connected"
-                    ? t("wsStatusConnected")
-                    : wsStatus === "connecting"
-                      ? t("wsStatusConnecting")
-                      : t("wsStatusDisconnected")
-                }
-                className={
-                  wsStatus === "connected"
-                    ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px] px-1.5 py-0 font-semibold"
-                    : wsStatus === "connecting"
-                      ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10 text-[10px] px-1.5 py-0 font-semibold"
-                      : "border-muted-foreground/30 text-muted-foreground bg-muted/10 text-[10px] px-1.5 py-0 font-semibold"
-                }
-              >
-                {wsStatus === "connected" ? (
-                  <WifiHigh className="h-3 w-3 mr-0.5 inline" aria-hidden="true" />
-                ) : wsStatus === "connecting" ? (
-                  <Loader2 className="h-3 w-3 mr-0.5 inline animate-spin" aria-hidden="true" />
-                ) : (
-                  <Wifi className="h-3 w-3 mr-0.5 inline" aria-hidden="true" />
-                )}
-                {wsStatus === "connected"
-                  ? t("stickyBarWsConnected")
-                  : wsStatus === "connecting"
-                    ? t("stickyBarWsConnecting")
-                    : t("stickyBarWsDisconnected")}
               </Badge>
             </div>
           )}

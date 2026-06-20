@@ -475,12 +475,9 @@ try:
 except ImportError:
     logger.debug("Portfolio router not available yet")
 
-# WebSocket routes for live updates
-try:
-    from backend.api.routes_ws import router as ws_router
-    app.include_router(ws_router)
-except ImportError:
-    logger.debug("WebSocket router not available yet")
+# WebSocket routes were removed in iter 58 (P0-2 + P1-1 + P1-2).
+# Real-time price updates are handled by SSE (routes_sse.py, P0-1 fixed iter 55);
+# other channels use REST + React Query polling. See STATUS.md §Fixed (iter 58).
 
 # Liquid Chain module — vendor reforge conversion chain analysis
 try:

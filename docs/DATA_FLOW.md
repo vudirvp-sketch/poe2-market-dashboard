@@ -220,15 +220,16 @@ Browser
   → flipper-proxy.ts → routes_events.py
 ```
 
-**WebSocket channels (real-time updates):**
+**Real-time updates (SSE only — WS removed iter 58):**
 
 | Route | Purpose |
 |-------|---------|
-| `/ws/storage-value/{currency}` | Live storage value updates |
-| `/ws/forecast/{currency}` | Live forecast updates |
-| `/ws/anomalies` | Live anomaly alerts |
-| `/ws/flips` | Live flip opportunity alerts |
-| `/ws/events` | Live event notifications |
+| `/api/v1/prices/stream` | SSE — per-currency price change events (P0-1 fixed iter 55) |
+
+All other channels (flips, anomalies, events, storage-value, forecast) use
+REST + React Query polling. The SSE stream carries `{pair, change_pct,
+new_price, old_price, timestamp}` per changed currency and is the sole
+push-based invalidation channel.
 
 ---
 
@@ -510,7 +511,6 @@ flipper/                            # FastAPI backend proxy
   events/route.ts                 → GET/POST /api/events
   events/[eventId]/route.ts       → GET/DELETE /api/events/{id}
   events/[eventId]/deactivate/route.ts → POST /api/events/{id}/deactivate
-  ws/info/route.ts                → WebSocket connection info
 ```
 
 ### 7.2 Backend Routes (FastAPI `backend/api/`)
@@ -531,11 +531,9 @@ routes_anomalies.py      # /api/anomalies
 routes_storage_value.py  # /api/storage-value/{currency}
 routes_portfolio.py      # /api/portfolio/correlation (ACTIVE)
 routes_scanner.py        # /api/scanner/scan — Advanced flip scanner with custom filters
-routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
-                         # /ws/anomalies, /ws/flips, /ws/events
 ```
 
-**Note:** `routes_auth.py` has been **deleted** — it was previously dead code and has been removed from the codebase.
+**Note:** `routes_auth.py` and `routes_ws.py` have been **deleted** — `routes_auth.py` was dead code (removed earlier); `routes_ws.py` was removed in iter 58 (P0-2 + P1-1 + P1-2 — see STATUS.md §Fixed).
 
 ### 7.3 POE2Scout API Paths
 
@@ -640,7 +638,7 @@ routes_ws.py             # WebSocket: /ws/storage-value/{c}, /ws/forecast/{c},
 | `Sparkline` | Inline mini chart from price history |
 | `CandlestickChart` | OHLCV with SMA/EMA/RSI/Bollinger overlays (`technical-indicators.ts`) |
 | `FlipperStickyBar` | Market sentiment + top flips |
-| `FlipperBackendStatusCard` | Backend health status + WS status |
+| `FlipperBackendStatusCard` | Backend health status + data freshness badge |
 | `EventsSidebar` | Event management CRUD |
 
 ---

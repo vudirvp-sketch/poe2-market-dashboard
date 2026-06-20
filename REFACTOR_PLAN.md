@@ -1,7 +1,7 @@
 # REFACTOR_PLAN.md — Roadmap
 
-> Version: 22.0 | Date: 2026-06-20 (iter 57 — P0-5 fixed)
-> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-57 fixes. See `STATUS.md` for detailed issue descriptions.
+> Version: 23.0 | Date: 2026-06-20 (iter 58 — WS removal closes P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6)
+> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-58 fixes. See `STATUS.md` for detailed issue descriptions.
 
 ## Principles
 
@@ -13,54 +13,43 @@
 
 ## Priority Buckets
 
-### P0 — Critical (correctness, stability) — 1 remaining (P0-2)
-- P0-2. WebSocket — offload `_compute_anomalies` / `_compute_flips` to ProcessPoolExecutor
+### P0 — Critical (correctness, stability) — 0 remaining
+All P0 issues resolved in iter 54-58.
 
-### P1 — Serious (performance, maintainability) — 10 items (P1-3 closed by P0-5)
+### P1 — Serious (performance, maintainability) — 8 items
 - See STATUS.md §P1
 
-### P2 — Medium (clean code) — 11 items
-- See STATUS.md §P2 (P2-7 now unblocked — P0-1 fixed, backend sends `pair`)
+### P2 — Medium (clean code) — 9 items
+- See STATUS.md §P2 (P2-7 unblocked — backend sends `pair`; P2-10 closed by WS removal)
 
-### P3 — Low priority (nice-to-have) — 8 items
+### P3 — Low priority (nice-to-have) — 6 items
 - See STATUS.md §P3
 
-## Recommended Fix Order (iter 55+)
+## Recommended Fix Order (iter 59+)
 
-Iter 54 (DONE): P0-3 + P0-4 fixed.
+Iter 58 (DONE):
+6. **P0-2** (WS removal) — DONE. Option (b) chosen: completely deleted WS endpoints + frontend hook. Closes P0-2, P1-1, P1-2, P2-10, P3-1, P3-6 in one commit. Real-time updates handled by SSE + REST polling. Backend: 375 pass / 4 skip. e2e: 30 pass / 4 skip. Jest: 291 pass. tsc: clean.
 
-Iter 55 (DONE):
-3. **P0-1** (SSE) — DONE. Removed dead monitor, added `change_pct` + threshold filtering, aligned frontend contract. 4 tests in `tests/e2e/test_sse.py`. Commit: `fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`.
+Iter 59+ (next):
+7. **P1-11** (daily_stats invalidation) — 2-line fix. Can be batched with P1-7 (EventManager async).
+8. **P2-7** (targeted invalidation) — unblocked by P0-1 (backend sends `pair`).
+9. **P1-4** through **P1-10** — see STATUS.md for dependencies.
 
-Iter 56 (DONE):
-4. **P0-6** (triangular hardcode) — DONE. Removed `prices["chaos"] = 1.0` hardcode + redundant chaos-normalization block. Single numeraire = `config.league.base_currency`. `tests/test_triangular.py` 7/7 pass. Commit: `fix(P0-6): remove chaos hardcode in triangular arbitrage`.
-
-Iter 57 (DONE):
-5. **P0-5** (transitive prices helper) — DONE. Created `backend/economy/pricing.py` with `compute_transitive_prices` (BFS) + `find_price_24h_ago`. Swapped call sites in `data_snapshot.py`, `scheduler.py`, `routes_arbitrage.py`, `routes_analyst.py`. Removed dead `prices` param from `find_triangular_arbitrage` + `_find_triangular_arbitrage_sync`. 15 tests in `tests/test_pricing.py` (incl. 7-hop chain regression). P1-3 also closed (BFS already O(V+E)). Backend: 375 pass / 4 skip. e2e: 30 pass / 4 skip. Commit: `refactor(P0-5): unified pricing helper + remove dead prices param`.
-
-Iter 58 (next):
-6. **P0-2** (WS executor offload) — depends on decision: keep WS (apply executor fix) or delete WS (depends on P1-1).
-
-Iter 59+:
-7. P1-11 (daily_stats invalidation) — 2-line fix, can be batched with P1-7 (EventManager async).
-8. P2-7 (targeted invalidation) — now unblocked by P0-1 fix (backend sends `pair` field).
-9. P1-1 through P1-10 — see STATUS.md for dependencies.
-
-## Estimation (rough, updated iter 57)
+## Estimation (rough, updated iter 58)
 
 | Bucket | Issues remaining | Estimated iterations | Risk |
 |--------|------------------|---------------------|------|
-| P0 | 1 (P0-2) | 1-2 iterations | Low — well-defined |
-| P1 | 10 (P1-3 closed) | 8-10 iterations | Medium — some touch core paths |
-| P2 | 11 | 7-9 iterations | Low — mostly mechanical |
-| P3 | 8 | 3-5 iterations | Low — non-blocking |
+| P0 | 0 | 0 | — |
+| P1 | 8 | 6-8 iterations | Medium — some touch core paths |
+| P2 | 9 | 6-8 iterations | Low — mostly mechanical |
+| P3 | 6 | 3-4 iterations | Low — non-blocking |
 
-**Total:** ~20 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
+**Total:** ~15 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
 
 ## Definition of Done (per issue)
 
 - [ ] Code changed
-- [ ] `pytest tests/ -v` passes (add regression test if applicable — see P2-11)
+- [ ] `pytest tests/ -v` passes (add regression test if applicable)
 - [ ] `npm run test` passes
 - [ ] `npx tsc --noEmit` passes
 - [ ] `STATUS.md` — move issue to "Fixed" section with commit hash
@@ -70,14 +59,17 @@ Iter 59+:
 
 ## Fixed
 
+### iter 58 — 6 issues closed in one commit (WS removal)
+- **P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6** (`refactor(P0-2): remove WS endpoints — close P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6`) — Deleted `backend/api/routes_ws.py` (722 lines, 5 WS endpoints), `src/hooks/use-websocket.ts` (548 lines), `src/app/api/flipper/ws/info/route.ts`. Removed WS router from `main.py`. Removed `wsStatus` prop + WS badge UI from 3 components. Removed WS env vars from `.env.example`, `start.sh`, `start.bat`. Real-time updates now handled exclusively by SSE (P0-1, iter 55) + REST polling. Backend: 375 pass / 4 skip. e2e: 30 pass / 4 skip. Jest: 291 pass. tsc: clean.
+
 ### iter 57 — 1 P0 issue fixed
-- **P0-5** (`refactor(P0-5): unified pricing helper + remove dead prices param`) — Created `backend/economy/pricing.py` with `compute_transitive_prices` (BFS) + `find_price_24h_ago` (extracted from `routes_arbitrage.py`). `data_snapshot.py` and `scheduler.py` now share the same BFS helper — the 5-iter relaxation that silently missed >5-hop chains is gone. Dead `prices` parameter removed from `find_triangular_arbitrage` + `_find_triangular_arbitrage_sync`. P1-3 also closed (BFS already O(V+E)). 15 new tests in `tests/test_pricing.py`. Backend: 375 pass / 4 skip. e2e: 30 pass / 4 skip.
+- **P0-5** (`refactor(P0-5): unified pricing helper + remove dead prices param`) — Created `backend/economy/pricing.py` with `compute_transitive_prices` (BFS) + `find_price_24h_ago`. `data_snapshot.py` and `scheduler.py` now share the same BFS helper — the 5-iter relaxation that silently missed >5-hop chains is gone. Dead `prices` parameter removed from `find_triangular_arbitrage`. P1-3 also closed (BFS already O(V+E)). 15 new tests in `tests/test_pricing.py`.
 
 ### iter 56 — 1 P0 issue fixed
-- **P0-6** (`fix(P0-6): remove chaos hardcode in triangular arbitrage`) — Removed 16-line chaos-normalization + hardcode block from `routes_arbitrage.py:753-770`. Now uses single numeraire = `config.league.base_currency`. `prices` parameter still passed to `find_triangular_arbitrage` (dead — cleanup deferred to P0-5). Tests: `tests/test_triangular.py` 7/7 pass, e2e `test_arbitrage_triangular` pass.
+- **P0-6** (`fix(P0-6): remove chaos hardcode in triangular arbitrage`) — Removed chaos-normalization + hardcode block from `routes_arbitrage.py`. Single numeraire = `config.league.base_currency`.
 
 ### iter 55 — 1 P0 issue fixed
-- **P0-1** (`fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`) — Removed dead `_sse_monitor_loop` / `start_sse_monitor` / `stop_sse_monitor`. Rewrote `_sse_event_generator` to store previous snapshot, compute `change_pct`, filter by `threshold_pct`, emit per-currency events matching frontend `SSEPriceUpdate`. Updated frontend interface to required fields. 4 tests in `tests/e2e/test_sse.py`. Backend: 377 pass / 4 skip. Frontend: 291 pass. tsc: clean.
+- **P0-1** (`fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`) — Removed dead `_sse_monitor_loop`. Rewrote `_sse_event_generator` to emit per-currency events matching frontend `SSEPriceUpdate`. 4 tests in `tests/e2e/test_sse.py`.
 
 ### iter 54 — 2 P0 issues fixed
 - **P0-3** (`fix(P0-3): use _find_price_24h_ago for analyst 24h change`) — timestamp-aware 24h-ago lookup. 4 tests in `tests/e2e/test_analyst.py`.

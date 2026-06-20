@@ -1,0 +1,37 @@
+# Iter 57 — P0-5 fix archive
+# Commit message: refactor(P0-5): unified pricing helper + remove dead prices param
+#
+# Merge strategy: copy/overwrite each file from this archive into the
+# corresponding path in your local clone of poe2-market-dashboard.
+# All paths are relative to the repo root.
+
+## New files (2)
+backend/economy/pricing.py            # NEW — unified compute_transitive_prices (BFS) + find_price_24h_ago
+tests/test_pricing.py                 # NEW — 15 regression tests (incl. 7-hop chain that old 5-iter relaxation would have missed)
+
+## Modified files (10)
+backend/api/data_snapshot.py          # Removed local _compute_transitive_prices; imports from backend.economy.pricing
+backend/scheduler.py                  # Replaced 5-iter relaxation block with single compute_transitive_prices() call
+backend/api/routes_arbitrage.py       # Removed local _find_price_24h_ago; imports from backend.economy.pricing; removed dead `prices` arg from find_triangular_arbitrage call
+backend/api/routes_analyst.py         # Changed import to backend.economy.pricing; removed TODO(P0-5) comment
+backend/arbitrage/triangular.py       # Removed dead `prices` parameter from find_triangular_arbitrage + _find_triangular_arbitrage_sync + run_in_executor call
+tests/test_triangular.py              # Dropped `prices` positional arg from all 7 test calls
+STATUS.md                             # P0-5 moved to Fixed; P1-3 marked resolved by P0-5; P0 count 2 → 1
+REFACTOR_PLAN.md                      # v21 → v22; iter 57 marked DONE; total iterations 23 → 20
+AGENT_NAVIGATION.md                   # §1 added pricing.py row; updated routes_analyst/arbitrage/triangular rows; §4 counts updated
+worklog.md                            # Task 57 entry added (replaces Task 55 per ≤5 rule)
+
+## Test results (after merge)
+- pytest tests/ -q           → 375 passed, 4 skipped, 0 failed
+- pytest tests/e2e/ -q        → 30 passed, 4 skipped, 0 failed
+
+## What was fixed (P0-5, three parts)
+1. **Maintainability:** Three different algorithms for "price of every currency in the base currency" — BFS in data_snapshot.py (correct), 5-iter relaxation in scheduler.py (buggy), dead `prices` parameter in find_triangular_arbitrage. Now all three paths share `backend.economy.pricing.compute_transitive_prices` (BFS).
+2. **Correctness bug:** The 5-iteration relaxation in scheduler.py silently failed for currencies whose shortest path from the base currency exceeded 5 hops. With ~600 currencies and a sparse pair graph, 5-hop chains are real. The scheduler would then fall back to `rate.raw_rate` as the price — a silently wrong value. Regression test: tests/test_pricing.py::TestComputeTransitivePricesBFS::test_seven_hop_chain_bfs_finds_it.
+3. **Dead parameter:** find_triangular_arbitrage(rates, prices, ...) accepted a `prices` dict but the Bellman-Ford path never read it. The hardcode `prices["chaos"] = 1.0` (removed in iter 56, P0-6) only existed to keep the misleading parameter "consistent". Now the parameter is gone entirely.
+
+## Bonus: _find_price_24h_ago extracted
+Per REFACTOR_PLAN.md iter 57 note: also extracted _find_price_24h_ago from routes_arbitrage.py to backend/economy/pricing.py:find_price_24h_ago. routes_analyst.py now imports directly from the new module (no longer depends on a sibling routes_* module). P0-3 TODO comment removed.
+
+## Side effect: P1-3 closed
+P1-3 ("_compute_transitive_prices — O(V×E) instead of O(V+E)") is now closed because the BFS in compute_transitive_prices already enqueues each currency at most once (effective O(V+E)). No separate commit needed.

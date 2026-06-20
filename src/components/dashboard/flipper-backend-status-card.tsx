@@ -13,27 +13,21 @@
 //   4. Offline                            → red "offline"
 //      (backend process not running)
 //
-// WebSocket status badge (added):
-//   When wsStatus is provided, a small badge next to the backend status
-//   shows the current WebSocket connection state: connected (green),
-//   connecting (yellow), or disconnected (gray). This gives the user
-//   instant feedback on whether live updates are flowing.
-//
-// Data freshness badge (added):
+// Data freshness badge:
 //   When fetchedAt is provided, a DataFreshnessBadge shows the age of
 //   the displayed data: Live (green), Stale data (yellow), Cached data (red).
 //   This completes the graceful degradation chain:
 //     flipper-proxy → proxyWithFallback() → cache-prepopulator → badge
+//
+// (WS status badge removed in iter 58 — see STATUS.md §Fixed.)
 // ============================================================================
 "use client";
 
 import { memo } from "react";
-import { AlertTriangle, Circle, Server, RefreshCw, Database, WifiOff, Wifi, WifiHigh, Loader2 } from "lucide-react";
+import { Circle, Server, RefreshCw, Database, WifiOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
-import type { WebSocketStatus } from "@/hooks/use-websocket";
 import { DataFreshnessBadge } from "./data-freshness-badge";
 
 // ---------------------------------------------------------------------------
@@ -45,8 +39,6 @@ interface FlipperBackendStatusCardProps {
   /** Backend is online but upstream API is unreachable (degraded mode) */
   upstreamDegraded?: boolean;
   insufficientData?: boolean;
-  /** WebSocket connection status (from use-websocket.ts) */
-  wsStatus?: WebSocketStatus;
   /** ISO timestamp when the data was last fetched from the backend */
   fetchedAt?: string | null;
   /** Whether the backend reports data as available */
@@ -62,7 +54,6 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
   backendOnline,
   upstreamDegraded,
   insufficientData,
-  wsStatus,
   fetchedAt,
   dataAvailable,
   onRefresh,
@@ -82,37 +73,9 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
       : t("flipperBackendOnline")
     : t("flipperBackendOffline");
 
-  // WebSocket status badge
-  const wsBadgeConfig = (() => {
-    if (!wsStatus) return null;
-    if (wsStatus === "connected") {
-      return {
-        label: t("wsStatusConnected"),
-        badgeText: t("stickyBarWsConnected"),
-        className: "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-        icon: <WifiHigh className="h-3 w-3" aria-hidden="true" />,
-      };
-    }
-    if (wsStatus === "connecting") {
-      return {
-        label: t("wsStatusConnecting"),
-        badgeText: t("stickyBarWsConnecting"),
-        className: "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10",
-        icon: <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />,
-      };
-    }
-    // disconnected
-    return {
-      label: t("wsStatusDisconnected"),
-      badgeText: t("stickyBarWsDisconnected"),
-      className: "border-muted-foreground/30 text-muted-foreground bg-muted/10",
-      icon: <Wifi className="h-3 w-3" aria-hidden="true" />,
-    };
-  })();
-
   return (
     <>
-      {/* ---- Backend status + Refresh + WS badge + Freshness badge ---- */}
+      {/* ---- Backend status + Refresh + Freshness badge ---- */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Circle
@@ -121,18 +84,6 @@ export const FlipperBackendStatusCard = memo(function FlipperBackendStatusCard({
           />
           <Server className="h-3 w-3" aria-hidden="true" />
           {statusText}
-
-          {/* WebSocket status badge */}
-          {wsBadgeConfig && (
-            <Badge
-              variant="outline"
-              title={wsBadgeConfig.label}
-              className={`ml-1.5 text-[10px] px-1.5 py-0 font-semibold ${wsBadgeConfig.className}`}
-            >
-              {wsBadgeConfig.icon}
-              <span className="ml-0.5">{wsBadgeConfig.badgeText}</span>
-            </Badge>
-          )}
 
           {/* Data freshness badge — shows Live/Stale/Cached */}
           {backendOnline && fetchedAt && (

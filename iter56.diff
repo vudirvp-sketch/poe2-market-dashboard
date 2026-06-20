@@ -1,0 +1,249 @@
+diff --git a/AGENT_NAVIGATION.md b/AGENT_NAVIGATION.md
+index 4a6c0f6..34a0e08 100644
+--- a/AGENT_NAVIGATION.md
++++ b/AGENT_NAVIGATION.md
+@@ -1,6 +1,6 @@
+ # PoE2 Market Dashboard — Agent Navigation Guide
+ 
+-> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 55 — P0-1 fixed).
++> **Single entry point** for codebase navigation. Updated 2026-06-20 (iter 56 — P0-6 fixed).
+ > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
+ 
+ ---
+@@ -16,7 +16,7 @@
+ | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
+ | `backend/api/routes_ws.py` | WebSocket endpoints (BROKEN — see STATUS.md P0-2, P1-1) | Blocks event loop; duplicates REST with reduced fields |
+ | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `_find_price_24h_ago` from `routes_arbitrage.py` |
+-| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P0-5, P0-6, P1-9) | Hardcoded chaos=1.0; magic spread numbers |
++| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (BUGGY — see P0-5, P1-9) | P0-6 fixed iter 56 (no more chaos hardcode); dead `prices` param remains until P0-5; magic spread numbers |
+ | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (BUGGY — see P1-8) | Loses profitable arbitrage on negative cycles |
+ | `backend/api/routes_events.py` | Event CRUD + cache invalidation (BUGGY — see P1-7, P1-11) | Fire-and-forget SQLite write; missing daily_stats invalidation |
+ | `backend/economy/events.py` | EventManager + StoredEvent | `event_id`, `is_active`, `created_at`; uses deprecated `get_event_loop()` (P3-8) |
+@@ -80,7 +80,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
+ 
+ ## 4. Known Issues
+ 
+-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (3 P0 / 11 P1 / 11 P2 / 8 P3). 3 P0 issues fixed in iter 54-55 (see STATUS.md §Fixed).
++**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (2 P0 / 11 P1 / 11 P2 / 8 P3). 4 P0 issues fixed in iter 54-56 (see STATUS.md §Fixed).
+ 
+ Quick reference for the most common symptoms:
+ 
+@@ -109,7 +109,7 @@ Quick reference for the most common symptoms:
+ | GET | `/api/v1/tiers` | Currency tier classifications |
+ | GET | `/api/v1/benchmarks/{currency}` | Historical benchmarks |
+ | GET | `/api/v1/arbitrage/flips` | Scored flip opportunities |
+-| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (BROKEN — P0-6) |
++| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (P0-6 fixed iter 56) |
+ | GET | `/api/v1/arbitrage/optimal-currency` | Optimal payment currency |
+ | POST | `/api/v1/batch` | Batch multiple GET requests |
+ | POST | `/api/v1/events` | Create event (BUGGY — P1-7, P1-11) |
+diff --git a/REFACTOR_PLAN.md b/REFACTOR_PLAN.md
+index f79180e..2c549f1 100644
+--- a/REFACTOR_PLAN.md
++++ b/REFACTOR_PLAN.md
+@@ -1,7 +1,7 @@
+ # REFACTOR_PLAN.md — Roadmap
+ 
+-> Version: 20.0 | Date: 2026-06-20 (iter 55 — P0-1 fixed)
+-> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-55 fixes. See `STATUS.md` for detailed issue descriptions.
++> Version: 21.0 | Date: 2026-06-20 (iter 56 — P0-6 fixed)
++> Source: Full codebase audit (iter 52) + verification (iter 53) + iter 54-56 fixes. See `STATUS.md` for detailed issue descriptions.
+ 
+ ## Principles
+ 
+@@ -13,10 +13,9 @@
+ 
+ ## Priority Buckets
+ 
+-### P0 — Critical (correctness, stability) — 3 remaining (P0-2, P0-5, P0-6)
++### P0 — Critical (correctness, stability) — 2 remaining (P0-2, P0-5)
+ - P0-2. WebSocket — offload `_compute_anomalies` / `_compute_flips` to ProcessPoolExecutor
+-- P0-5. Transitive prices — extract BFS to shared helper, use in `data_snapshot.py` + `scheduler.py` + `routes_arbitrage.py`
+-- P0-6. Triangular — remove `prices["chaos"] = 1.0` hardcode, use `base` as numeraire
++- P0-5. Transitive prices — extract BFS to shared helper, use in `data_snapshot.py` + `scheduler.py`; remove dead `prices` param from `find_triangular_arbitrage`
+ 
+ ### P1 — Serious (performance, maintainability) — 11 items
+ - See STATUS.md §P1
+@@ -34,11 +33,11 @@ Iter 54 (DONE): P0-3 + P0-4 fixed.
+ Iter 55 (DONE):
+ 3. **P0-1** (SSE) — DONE. Removed dead monitor, added `change_pct` + threshold filtering, aligned frontend contract. 4 tests in `tests/e2e/test_sse.py`. Commit: `fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`.
+ 
+-Iter 56 (next):
+-4. **P0-6** (triangular hardcode) — small, isolated to `routes_arbitrage.py:769-770`.
++Iter 56 (DONE):
++4. **P0-6** (triangular hardcode) — DONE. Removed `prices["chaos"] = 1.0` hardcode + redundant chaos-normalization block. Single numeraire = `config.league.base_currency`. `tests/test_triangular.py` 7/7 pass. Commit: `fix(P0-6): remove chaos hardcode in triangular arbitrage`.
+ 
+-Iter 57:
+-5. **P0-5** (transitive prices helper) — extract `compute_transitive_prices` to `backend/economy/pricing.py`, swap 3 call sites. After this, P1-3 is a 1-commit follow-up. **Also** extract `_find_price_24h_ago` to the same helper (P0-3 left a TODO).
++Iter 57 (next):
++5. **P0-5** (transitive prices helper) — extract `compute_transitive_prices` to `backend/economy/pricing.py`, swap 2 remaining call sites (`data_snapshot.py`, `scheduler.py`). After this: remove dead `prices` param from `find_triangular_arbitrage`, P1-3 is a 1-commit follow-up. **Also** extract `_find_price_24h_ago` to the same helper (P0-3 left a TODO).
+ 
+ Iter 58:
+ 6. **P0-2** (WS executor offload) — depends on decision: keep WS (apply executor fix) or delete WS (depends on P1-1).
+@@ -48,16 +47,16 @@ Iter 59+:
+ 8. P2-7 (targeted invalidation) — now unblocked by P0-1 fix (backend sends `pair` field).
+ 9. P1-1 through P1-10 — see STATUS.md for dependencies.
+ 
+-## Estimation (rough, updated iter 55)
++## Estimation (rough, updated iter 56)
+ 
+ | Bucket | Issues remaining | Estimated iterations | Risk |
+ |--------|------------------|---------------------|------|
+-| P0 | 3 (P0-2, P0-5, P0-6) | 3-4 iterations | Low — well-defined |
++| P0 | 2 (P0-2, P0-5) | 2-3 iterations | Low — well-defined |
+ | P1 | 11 | 9-11 iterations | Medium — some touch core paths |
+ | P2 | 11 | 7-9 iterations | Low — mostly mechanical |
+ | P3 | 8 | 3-5 iterations | Low — non-blocking |
+ 
+-**Total:** ~24 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
++**Total:** ~23 iterations remaining to clean state. Each iteration = 1 commit, 1 STATUS.md update.
+ 
+ ## Definition of Done (per issue)
+ 
+@@ -72,6 +71,9 @@ Iter 59+:
+ 
+ ## Fixed
+ 
++### iter 56 — 1 P0 issue fixed
++- **P0-6** (`fix(P0-6): remove chaos hardcode in triangular arbitrage`) — Removed 16-line chaos-normalization + hardcode block from `routes_arbitrage.py:753-770`. Now uses single numeraire = `config.league.base_currency`. `prices` parameter still passed to `find_triangular_arbitrage` (dead — cleanup deferred to P0-5). Tests: `tests/test_triangular.py` 7/7 pass, e2e `test_arbitrage_triangular` pass.
++
+ ### iter 55 — 1 P0 issue fixed
+ - **P0-1** (`fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`) — Removed dead `_sse_monitor_loop` / `start_sse_monitor` / `stop_sse_monitor`. Rewrote `_sse_event_generator` to store previous snapshot, compute `change_pct`, filter by `threshold_pct`, emit per-currency events matching frontend `SSEPriceUpdate`. Updated frontend interface to required fields. 4 tests in `tests/e2e/test_sse.py`. Backend: 377 pass / 4 skip. Frontend: 291 pass. tsc: clean.
+ 
+diff --git a/STATUS.md b/STATUS.md
+index c411d61..9923d6e 100644
+--- a/STATUS.md
++++ b/STATUS.md
+@@ -1,14 +1,14 @@
+ # STATUS.md — Known Issues & Refactoring Backlog
+ 
+-> **Last updated:** 2026-06-20 (iter 55 — P0-1 fixed)
++> **Last updated:** 2026-06-20 (iter 56 — P0-6 fixed)
+ > This file is the **single source of truth** for known bugs and refactoring priorities.
+ > Update it **before** fixing any issue. Cross-reference issue IDs in commits.
+ >
+-> **Iter 55 status:** P0-1 fixed and verified. Backend tests: 377 passed / 4 skipped. Frontend tests: 291 passed. `tsc --noEmit` clean. Remaining P0: 3 (P0-2, P0-5, P0-6).
++> **Iter 56 status:** P0-6 fixed and verified. Backend tests: `tests/test_triangular.py` 7/7 pass, `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` pass. Remaining P0: 2 (P0-2, P0-5).
+ 
+ ---
+ 
+-## P0 — Критичные проблемы (стабильность/корректность) — 3 active
++## P0 — Критичные проблемы (стабильность/корректность) — 2 active
+ 
+ ### P0-2. WebSocket endpoints блокируют event loop
+ - **Файл:** `backend/api/routes_ws.py:415-468` (`_compute_anomalies`), `routes_ws.py:478-522` (`_compute_flips`)
+@@ -19,16 +19,11 @@
+ - **Файлы:**
+   - `backend/api/data_snapshot.py:171-210` `_compute_transitive_prices` (BFS, O(V+E))
+   - `backend/scheduler.py:91-110` `collect_price_snapshot` (5-итерационный relaxation, O(5×E))
+-  - `backend/api/routes_arbitrage.py:755-770` `get_triangular_arbitrage` (chaos-normalization через `prices["chaos"] = 1.0`)
++  - `backend/api/routes_arbitrage.py` `get_triangular_arbitrage` — chaos-normalization уже удалён (P0-6 iter 56), но `prices` параметр остаётся dead в `_find_triangular_arbitrage_sync` до unified helper.
+ - **Проблема (2 части):**
+   1. **Maintainability:** Три разных алгоритма для одной концепции → несогласованные `prices_in_base`.
+   2. **Correctness bug:** 5-итерационный relaxation НЕ находит цены для цепочек глубже 5 хопов. BFS находит все цены за один проход.
+-- **Решение:** Вынести в единый helper `backend/economy/pricing.py:compute_transitive_prices(prices_in_base, rates, base)` (BFS-версия).
+-
+-### P0-6. `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` — хардкод в triangular arbitrage
+-- **Файл:** `backend/api/routes_arbitrage.py:769-770`
+-- **Проблема:** Жёстко переопределяет цену chaos для triangular arbitrage, даже если `base_currency=exalted`. Сломается при смене лиги или отсутствии chaos в данных.
+-- **Решение:** Использовать единый numeraire (`config.league.base_currency`), не нормализовать к chaos.
++- **Решение:** Вынести в единый helper `backend/economy/pricing.py:compute_transitive_prices(prices_in_base, rates, base)` (BFS-версия). После этого убрать dead `prices` параметр из `find_triangular_arbitrage`.
+ 
+ ---
+ 
+@@ -103,6 +98,15 @@
+ 
+ ## Fixed
+ 
++### P0-6 (fixed in iter 56 — `fix(P0-6): remove chaos hardcode in triangular arbitrage`) — Triangular numeraire
++- **Was:** `backend/api/routes_arbitrage.py:755-770` contained two redundant blocks:
++  1. A chaos-normalization block that converted `prices_in_base` from base currency to chaos-normalized when `base_currency != "chaos"`.
++  2. A hardcode `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` that ran unconditionally, even when `base_currency == "exalted"` or when `chaos` was missing from the snapshot.
++- **Why it broke:** Bellman-Ford path in `_find_triangular_arbitrage_sync` actually uses `rates` only — `prices` is a dead parameter — so the hardcode was misleading dead code, but it would silently corrupt any future logic that consults `prices`. The conditional normalization also created two inconsistent code paths (chaos vs base) for the same concept.
++- **Now:** Single numeraire = `config.league.base_currency`. `prices = dict(snapshot.prices_in_base)` is used directly. No chaos normalization, no hardcode. Cleanup of the dead `prices` parameter is deferred to P0-5 (unified pricing helper).
++- **Files changed:** `backend/api/routes_arbitrage.py` (16 lines removed, 9-line explanatory comment added).
++- **Tests:** Existing `tests/test_triangular.py` (7/7 pass) and `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` (pass) — no regression. No new tests added because the deleted code was dead (no observable behavior to assert).
++
+ ### P0-1 (fixed in iter 55 — `fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`) — SSE price stream
+ - **Was (3 части):**
+   1. Dead monitor: `start_sse_monitor()` / `_sse_monitor_loop()` — пустой `asyncio.sleep(60)` loop, wasting task slot.
+diff --git a/backend/api/routes_arbitrage.py b/backend/api/routes_arbitrage.py
+index 0b15dec..e802ee5 100644
+--- a/backend/api/routes_arbitrage.py
++++ b/backend/api/routes_arbitrage.py
+@@ -750,24 +750,15 @@ async def get_triangular_arbitrage(
+     for key, rate in rates_dict.items():
+         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
+ 
+-    # Build prices in a consistent reference currency.
++    # P0-6 (fixed): Use a single numeraire = config.league.base_currency.
++    # `snapshot.prices_in_base` is already expressed in the base currency
++    # (the base currency itself has price 1.0). No chaos normalization
++    # is needed — the previous `prices["chaos"] = 1.0` hardcode broke
++    # correctness whenever base_currency != "chaos" (e.g. exalted) or
++    # when chaos was missing from the snapshot (e.g. new league).
++    # Note: `prices` is currently a dead parameter in find_triangular_arbitrage
++    # (the Bellman-Ford path uses `rates` only); cleanup belongs to P0-5.
+     prices = dict(snapshot.prices_in_base)  # shallow copy
+-    if "chaos" in prices and config.league.base_currency != "chaos":
+-        # Convert all prices from base-currency (exalted) to chaos-normalized
+-        # for Bellman-Ford. Unlike _build_flip_opportunities which works in
+-        # base currency directly, triangular arbitrage uses BFS/relaxation
+-        # that requires a single consistent numeraire — chaos (price=1.0)
+-        # is simplest for detecting profit cycles.
+-        chaos_in_base = prices.get("chaos", 0)
+-        if chaos_in_base and chaos_in_base > 0:
+-            base_to_chaos = 1.0 / chaos_in_base
+-            for k in list(prices.keys()):
+-                if k != "chaos":
+-                    prices[k] = prices[k] * base_to_chaos
+-
+-    # Step 1.4: Fix chaos price
+-    prices["chaos"] = 1.0
+-    prices["Chaos Orb"] = 1.0
+ 
+     pair_volumes: dict[tuple[str, str], float] = {}
+     for key, rate in rates_dict.items():
+diff --git a/worklog.md b/worklog.md
+index 81ee24d..1cfa72f 100644
+--- a/worklog.md
++++ b/worklog.md
+@@ -5,6 +5,38 @@
+ 
+ ---
+ 
++## Task 56 — P0-6 triangular hardcode fix
++**Agent:** Main Agent
++**Date:** 2026-06-20
++
++**Task:** Per REFACTOR_PLAN.md iter 56: remove `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` hardcode + redundant chaos-normalization block in `routes_arbitrage.py:753-770`. Use single numeraire = `config.league.base_currency`.
++
++**Work Log:**
++- Re-read STATUS.md, REFACTOR_PLAN.md v20, AGENT_NAVIGATION.md, worklog.md (iter 55 entry).
++- Verified P0-6 source: `backend/api/routes_arbitrage.py:753-770` confirmed two redundant blocks: (1) chaos-normalization conditional conversion (lines 755-766), (2) unconditional hardcode `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` (lines 769-770).
++- Verified downstream: `_find_triangular_arbitrage_sync` in `backend/arbitrage/triangular.py` accepts `prices` parameter but **never reads it** — Bellman-Ford path uses `rates` only. `prices` is a dead parameter. So the hardcode was misleading dead code, but the fix is still warranted (per STATUS.md solution: single numeraire = base_currency).
++- Verified test coverage: `tests/test_triangular.py` (7 tests) + `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` (status code only).
++- **P0-6 fix:** Replaced lines 753-770 (16 lines of chaos normalization + hardcode) with:
++  - `prices = dict(snapshot.prices_in_base)` (unchanged — already in base currency).
++  - 9-line comment explaining: `prices_in_base` is already in `config.league.base_currency`, no chaos normalization needed, dead `prices` param cleanup deferred to P0-5.
++- Syntax check: `python -c "import ast; ast.parse(open('backend/api/routes_arbitrage.py').read())"` — OK.
++- Tests: `pytest tests/test_triangular.py -x` — 7/7 pass (5.71s). `pytest tests/e2e/test_api_e2e.py::test_arbitrage_triangular` — 1/1 pass (3.85s). No regressions.
++- No new tests added: deleted code was dead (no observable behavior to assert). Adding tests for the dead `prices` param would be premature — that cleanup belongs to P0-5.
++
++**Stage Summary:**
++- P0-6 fixed: `fix(P0-6): remove chaos hardcode in triangular arbitrage`.
++- `STATUS.md`: P0-6 moved from active P0 to Fixed section. Header updated to iter 56. P0 count: 3 → 2 active. P0-5 description updated (notes dead `prices` param cleanup is now bundled with P0-5).
++- `REFACTOR_PLAN.md`: v20 → v21. Iter 56 marked DONE. P0 bucket 3 → 2. Total iterations: 24 → 23.
++- `AGENT_NAVIGATION.md`: §1 routes_arbitrage.py marker updated (P0-6 fixed). §4 known issues count 3 → 2 P0. §5 API endpoint table updated (triangular no longer BROKEN).
++- `worklog.md`: this entry replaces iter 54 entry (≤5 rule).
++
++**Stopping point:**
++- Iter 56 done. Ready for iter 57 = P0-5 (transitive prices helper) per REFACTOR_PLAN.md §"Recommended Fix Order".
++- Suggested commit message: `fix(P0-6): remove chaos hardcode in triangular arbitrage`
++- Changed files for archive: `backend/api/routes_arbitrage.py`, `STATUS.md`, `REFACTOR_PLAN.md`, `AGENT_NAVIGATION.md`, `worklog.md`.
++
++---
++
+ ## Task 55 — P0-1 SSE fix (remove dead monitor, add change_pct, align contract)
+ **Agent:** Main Agent
+ **Date:** 2026-06-20

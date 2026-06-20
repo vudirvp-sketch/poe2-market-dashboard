@@ -157,10 +157,9 @@ if [ "$PYTHON_AVAILABLE" -eq 1 ]; then
 fi
 
 # ---- Check .env.local ----
-# WS env vars are only set when uvicorn is available, because
-# the browser cannot reach ws://localhost:8000 without a running
-# backend.  This prevents console errors from failed WebSocket
-# connections.  (Matches start.bat behavior.)
+# WS env vars were removed in iter 58 (P0-2 + P1-1 + P1-2) — the frontend
+# now uses SSE for real-time price updates and REST polling for everything
+# else. No NEXT_PUBLIC_FLIPPER_WS_* variables are needed anymore.
 if [ ! -f ".env.local" ]; then
     info "Creating .env.local with default settings..."
     {
@@ -168,14 +167,6 @@ if [ ! -f ".env.local" ]; then
         echo "POE2_API_BASE_URL=https://api.poe2scout.com/api"
         echo "# Flipper backend URL (server-side only, used by API proxy routes)"
         echo "FLIPPER_API_URL=http://localhost:8000"
-        if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
-            echo "# Flipper WebSocket - enabled because uvicorn is available"
-            echo "NEXT_PUBLIC_FLIPPER_WS_ENABLED=true"
-            echo "NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000"
-        else
-            echo "# Flipper WebSocket - disabled (uvicorn not found)"
-            echo "NEXT_PUBLIC_FLIPPER_WS_ENABLED=false"
-        fi
     } > .env.local
     info ".env.local created with api.poe2scout.com"
     echo ""
@@ -187,24 +178,6 @@ else
         warn "The URL should include the \"api.\" subdomain:"
         warn "POE2_API_BASE_URL=https://api.poe2scout.com/api"
         warn "Using the bare domain (poe2scout.com) causes ECONNRESET/502 errors."
-    fi
-    # Ensure NEXT_PUBLIC_FLIPPER_WS_ENABLED exists in .env.local
-    if ! grep -q "NEXT_PUBLIC_FLIPPER_WS_ENABLED" .env.local 2>/dev/null; then
-        info "Adding NEXT_PUBLIC_FLIPPER_WS_ENABLED to .env.local..."
-        if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
-            echo "NEXT_PUBLIC_FLIPPER_WS_ENABLED=true" >> .env.local
-        else
-            echo "NEXT_PUBLIC_FLIPPER_WS_ENABLED=false" >> .env.local
-        fi
-        info "NEXT_PUBLIC_FLIPPER_WS_ENABLED added."
-    fi
-    # Only add WS URL if uvicorn is available AND the var is missing
-    if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
-        if ! grep -q "NEXT_PUBLIC_FLIPPER_WS_URL" .env.local 2>/dev/null; then
-            info "Adding NEXT_PUBLIC_FLIPPER_WS_URL to .env.local..."
-            echo "NEXT_PUBLIC_FLIPPER_WS_URL=ws://localhost:8000" >> .env.local
-            info "NEXT_PUBLIC_FLIPPER_WS_URL added."
-        fi
     fi
     echo ""
 fi

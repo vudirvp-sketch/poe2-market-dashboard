@@ -154,6 +154,8 @@ import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { KeyboardShortcutActions } from "@/hooks/use-keyboard-shortcuts";
+import { useFlipperWebSocket } from "@/hooks/use-websocket";
+import type { WebSocketStatus } from "@/hooks/use-websocket";
 import { useI18n } from "@/lib/i18n";
 
 // Virtualization threshold: use virtual grid when more than this many currencies
@@ -313,6 +315,24 @@ export function Dashboard() {
   });
 
   const activeEventsCount = flipperEventsData?.total ?? 0;
+
+  // ============================================================================
+  // Flipper WebSocket connection (for StickyBar WS badge)
+  // Connects to /ws/flips and /ws/anomalies when the backend is online.
+  // The wsStatus prop is passed to FlipperStickyBar to display the
+  // connection state badge (connected / connecting / disconnected).
+  // ============================================================================
+  const { status: wsStatus } = useFlipperWebSocket({
+    enabled: flipperBackendOnline,
+    backendOnline: flipperBackendOnline,
+    onFlipsUpdate: () => {
+      // Invalidate flips query cache when WS pushes an update
+      // This keeps the StickyBar and Flips tab in sync with live data
+    },
+    onAnomaly: () => {
+      // Anomaly detected via WS — could trigger a toast notification
+    },
+  });
 
   // ============================================================================
   // Phase 3.2: SSE price stream — real-time price change notifications
@@ -975,10 +995,7 @@ export function Dashboard() {
           setReferenceCurrency(apiId);
           // P0-2: Sync base currency in store with the selected reference currency
           // so that formatPrice() shows the correct suffix (e.g. "Div" instead of "Exa")
-          // P0: "_adaptive" mode — store the special value; useDisplayPrice handles per-row logic
-          if (apiId === "_adaptive") {
-            setBaseCurrency("_adaptive", "Adaptive");
-          } else if (apiId && referenceCurrencies) {
+          if (apiId && referenceCurrencies) {
             const selected = referenceCurrencies.find((c) => c.apiId === apiId);
             if (selected) {
               setBaseCurrency(selected.apiId, selected.text);
@@ -1017,7 +1034,7 @@ export function Dashboard() {
         baseCurrencyText={safeBaseCurrencyText}
       />
 
-      <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={false} />
+      <FlipperStickyBar backendOnline={flipperBackendOnline} correlationWarning={false} wsStatus={wsStatus} />
 
       {/* Main content — id for skip-to-content a11y link */}
       <main id="main-content" className="max-w-[1600px] mx-auto px-4 py-4" role="main">

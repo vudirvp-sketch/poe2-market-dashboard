@@ -1,111 +1,64 @@
-# PoE2 Market Dashboard
+# Iter 58 — WS Endpoint Removal
 
-A unified Path of Exile 2 market intelligence dashboard combining real-time market data browsing with advanced flipper analytics — all in a single Next.js application.
+## Summary
+Completely removes WebSocket endpoints (Option (b) from iter 57 stopping point).
+Closes 6 issues in one commit:
+- P0-2 (event loop blocking by `_compute_anomalies` / `_compute_flips`)
+- P1-1 (WS duplicate REST logic with reduced fields)
+- P1-2 (`useFlipperWebSocket` opens 2 parallel WS connections)
+- P2-10 (WS path prefix `/v1/ws/*` vs REST `/api/v1/*`)
+- P3-1 (two anomaly detection paths — `routes_ws._compute_anomalies` and `routes_anomalies._detect_anomalies_sync`)
+- P3-6 (.env.example missing WS env)
 
-> **For developers & AI agents:** See [`AGENT_NAVIGATION.md`](./AGENT_NAVIGATION.md) — the single entry point for codebase navigation, build commands, invariants, and known issues.
+Real-time updates now handled exclusively by SSE (P0-1, iter 55) + REST polling.
 
-## Architecture
-
-```
-Browser → Next.js (port 3000)
-            ├── /api/poe2/*     → POE2Scout API (api.poe2scout.com)
-            └── /api/flipper/*  → FastAPI Backend (port 8000) → POE2Scout API + SQLite
-```
-
-| Process | Technology | Port | Purpose |
-|---------|-----------|------|---------|
-| **Next.js Frontend** | React 19 + Next.js 16 + TypeScript | 3000 | Unified dashboard — all market browsing and flipper analytics |
-| **FastAPI Backend** | Python 3.12+ + FastAPI + uvicorn | 8000 | Flipper analytics engine (scoring, triangular arb, optimizer, analyst, events, recipes) |
-
-**Data flow:** The Next.js app acts as a proxy layer. Market data requests (`/api/poe2/*`) are forwarded directly to the POE2Scout API, while flipper analytics requests (`/api/flipper/*`) are proxied to the FastAPI backend which enriches data with ML models, scoring, and historical analysis stored in SQLite.
-
-## Features
-
-### Market Data (works without backend)
-- **Overview** — Market volume trends, 24h price heatmap, top movers
-- **Currencies** — Browse and compare currency items with virtual scrolling
-- **Uniques** — Search unique items with price history and candlestick charts
-- **Exchange** — Currency pair exchange rates with relative price comparisons
-- **Watchlist** — Track favorite items with price alerts and browser notifications
-
-### Flipper Analytics (requires FastAPI backend)
-- **Flips** — Scored flip opportunities with cluster filtering, sorting, storage value integration, plus triangular arbitrage cycles and phase overview
-- **Optimizer** — Optimal currency conversion path (Dijkstra-based) and effective rate matrix
-- **Analyst** — League analysis summary: trends, anomalies, phase, tier distribution (fallback mode works without backend)
-- **Liquid Chain** — Vendor reforge chain profitability: per-step profit/loss and cumulative reforge paths for delirium liquids
-- **Currency Graph** — Force-directed network visualization of currency trade pairs with cycle highlighting and real-time cluster classification
-- **Events** — Flag market events (patches, league starts, economy shifts) that affect scoring, with auto-expiry and persistence in SQLite
-
-### Cross-cutting
-- **i18n**: English, Русский, 中文, 한국어
-- **Dark/light theme** with system preference detection
-- **PWA** with offline support and service worker
-- **Export** to CSV/JSON
-- **Accessibility**: WCAG 2.1 AA
-- **Graceful degradation**: all flipper tabs show clear offline messages when backend is down
-
-## Quick Start
-
-### Windows
-```batch
-start.bat
-```
-
-### Manual
-```bash
-# Terminal 1: Start FastAPI backend
-pip install -r requirements.txt
-uvicorn backend.main:app --reload --port 8000
-
-# Terminal 2: Start Next.js frontend
-npm install
-npm run dev
-```
-
-Open http://localhost:3000
-
-### Frontend-only (without flipper backend)
-```bash
-npm install
-npm run dev
-```
-Market data tabs (Overview, Currencies, Uniques, Exchange, Watchlist) work without the backend. Flipper tabs show a graceful "backend offline" message.
-
-## Tech Stack
-
-- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui (Radix), TanStack React Query 5, TanStack React Table 8, TanStack React Virtual 3, Recharts 2, Zustand 5, next-themes, Sonner
-- **Backend:** Python 3.12+, FastAPI, uvicorn, scikit-learn, LightGBM, statsmodels, pmdarima, scipy, pandas, numpy, networkx, SQLite (aiosqlite), APScheduler, Pydantic 2
-
-## Development
+## Merge instructions
+This archive preserves the original folder structure. To merge with your local clone:
 
 ```bash
-npm run dev       # Start Next.js dev server (port 3000)
-npm run build     # Production build
-npm run test      # Run Jest unit tests
-npm run test:e2e  # Run Playwright E2E tests
-pytest tests/ -v  # Run backend tests
+# from the repo root (after `git pull` to sync to iter 57)
+unzip -o iter58-ws-removal.zip
+# files marked .DELETED.txt correspond to git rm operations — delete them:
+rm -f backend/api/routes_ws.py
+rm -f src/hooks/use-websocket.ts
+rm -rf src/app/api/flipper/ws
+# then verify status
+git status
 ```
 
-## Bypassing Regional IP Blocking
+## Verification (run before commit)
+- `pytest tests/ -q --ignore=tests/e2e` → 375 pass / 4 skip / 0 fail
+- `pytest tests/e2e/ -q` → 30 pass / 4 skip / 0 fail
+- `npx tsc --noEmit` → exit 0 (clean)
+- `npx jest --silent` → 291 pass / 0 fail
 
-The POE2Scout API is blocked from Russian IPs. See [`docs/CORS_PROXY_GUIDE.md`](./docs/CORS_PROXY_GUIDE.md) for setup instructions for the Cloudflare Worker CORS proxy (5-minute deployment, free tier).
+## Files (17 total)
+### Deleted (3)
+- `backend/api/routes_ws.py` (722 lines — 5 WS endpoints + 4 compute helpers + 2 shared loops)
+- `src/hooks/use-websocket.ts` (548 lines — `useWebSocket` + `useFlipperWebSocket` + types)
+- `src/app/api/flipper/ws/info/route.ts` (1 file + parent dir)
 
-Quick setup:
-```bash
-cd cloudflare-worker && wrangler deploy
-# Then add to .env.local:
-# POE2_CORS_PROXY_URL=https://poe2scout-proxy.your-account.workers.dev/api
+### Modified (14)
+- `backend/main.py` — removed WS router registration
+- `src/components/dashboard/dashboard-page.tsx` — removed `useFlipperWebSocket` import + usage + `wsStatus` prop
+- `src/components/dashboard/flips-tab.tsx` — removed `useFlipperWebSocket` import + usage + unused `useQueryClient`
+- `src/components/dashboard/header.tsx` — removed `WebSocketStatus` import + `wsStatus` prop + WS badge UI
+- `src/components/dashboard/flipper-sticky-bar.tsx` — removed `WebSocketStatus` import + `wsStatus` prop + WS Status Badge block + unused lucide icons
+- `src/components/dashboard/flipper-backend-status-card.tsx` — removed `WebSocketStatus` import + `wsStatus` prop + `wsBadgeConfig` IIFE + unused imports
+- `.env.example` — removed `NEXT_PUBLIC_FLIPPER_WS_URL` + `NEXT_PUBLIC_FLIPPER_WS_ENABLED`
+- `start.sh` — removed WS env var creation in `.env.local` setup section
+- `start.bat` — same as `start.sh` (CRLF preserved)
+- `STATUS.md` — P0 bucket 1→0; P1 10→8; P2 11→9; P3 8→6; new Fixed entry; Quick Reference trimmed
+- `REFACTOR_PLAN.md` — v22→v23; iter 58 DONE; estimation 20→15 iterations
+- `AGENT_NAVIGATION.md` — removed `routes_ws.py` + `use-websocket.ts` rows; §3 rules #2/#6 updated; §4 symptoms trimmed; §5 WS endpoints section removed; new rule #18
+- `docs/DATA_FLOW.md` — removed WS channels table + `routes_ws.py` from route lists
+- `worklog.md` — iter 58 entry replaces iter 55 (≤5 rule); iter 55-57 retained
+
+## Suggested commit message
+```
+refactor(P0-2): remove WS endpoints — close P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6
 ```
 
-## Documentation
-
-| File | Content |
-|------|---------|
-| [`AGENT_NAVIGATION.md`](./AGENT_NAVIGATION.md) | Agent/developer entry point — structure, commands, invariants, known issues |
-| [`worklog.md`](./worklog.md) | Current state + frequent bugs + commands |
-| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Layers, data flow, invariants, principles |
-| [`docs/DATA_CONTRACTS.md`](./docs/DATA_CONTRACTS.md) | TypeScript types, API contracts, response shapes |
-| [`docs/DATA_FLOW.md`](./docs/DATA_FLOW.md) | Data flow traces, field transforms, API path reference |
-| [`docs/BACKEND_GUIDE.md`](./docs/BACKEND_GUIDE.md) | FastAPI backend: providers, stores, scheduler, analytics |
-| [`docs/CORS_PROXY_GUIDE.md`](./docs/CORS_PROXY_GUIDE.md) | CORS proxy setup + fallback mechanisms |
-| [`PoE2_Flipper_Canonical_Formulas.md`](./PoE2_Flipper_Canonical_Formulas.md) | All mathematical formulas and algorithms |
+## Stopping point
+- Iter 58 done. **No P0 issues remain.**
+- Next: iter 59 = P1-11 (daily_stats invalidation — 2-line fix) OR P2-7 (targeted invalidation by `pair` — unblocked by P0-1).
