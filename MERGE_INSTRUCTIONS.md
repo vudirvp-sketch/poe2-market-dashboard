@@ -1,141 +1,148 @@
-# Iter 68 — Merge Instructions
+# Iter 69 — Merge Instructions
 
 ## Summary
 
-Closes **1 follow-up** in one iteration (clean P2-4 follow-up — delete the deprecated scanner):
+Closes **1 P2 issue + 1 bug** in one iteration:
 
-- **P2-4 follow-up** — Deleted `backend/api/routes_scanner.py`. The scanner was deprecated in iter 67 (emitted `Deprecation`/`Sunset`/`Link` headers + warning log); iter 68 removes it entirely along with all supporting types, batch-allowed prefix, tests, and regenerated API contract files.
+- **P2-8 — `proxyWithFallback` 5xx mode-aware handling.** Non-503 5xx (500/502/504) now passes through unchanged in dev (`NODE_ENV === "development"`) so developers see the real backend error in the browser console. In prod, the same errors still become 200 + fallback data (no console spam, no React Query retry storms), but the response now carries an `X-Flipper-Fallback: <original-status>` header so the frontend can detect it. 503 (backend_offline / backend_insufficient_data) fallback behavior is unchanged in both modes — otherwise dev would be unusable whenever the backend isn't running. New exports: `FLIPPER_FALLBACK_HEADER`, `isFlipperFallbackResponse()`, `getFlipperFallbackOriginalStatus()`. +22 jest tests; `jest.setup.ts` gained `Response` / `fetch` / `Headers` / `AbortSignal.timeout` polyfills.
+- **Iter 68 scanner residual (bug).** `backend/api/routes_scanner.py` was supposed to be deleted in iter 68 (commit `cca86d7` message says "deleted backend/api/routes_scanner.py"), but the actual file was left in the repo because the iter 68 merge instructions asked the user to run `rm ./backend/api/routes_scanner.py` manually before `git add -A`, and that manual step was skipped. The file was already an orphan (zero runtime impact — pytest baseline was 459 pass with or without it). Iter 69 deletes the file for real. Going forward, file deletions are handled via `git add -A` after the user copies the archive; no manual `rm` step.
 
-After iter 68, **P2 remains at 3** (P2-1, P2-3, P2-8). P2-4 is fully closed (extended `/flips` in iter 67, deleted scanner in iter 68).
+After iter 69, **P2 drops to 2** (P2-1, P2-3). P0=0, P1=0, P2=2, P3=4.
 
-- **1** file deleted (`routes_scanner.py`)
-- **~9** files modified (3 backend, 1 test, 2 regenerated API contract files, 5 docs)
-- **0** new Known Issues — clean deletion, all tests pass
+- **1** file deleted (`routes_scanner.py` — handled via `git add -A` after copying the archive; no manual `rm` needed)
+- **4** files modified (1 src/lib, 1 src/__tests__, 1 jest.setup, 4 docs)
+- **0** new Known Issues — all tests pass
 
 ## What's in this archive
 
 ```
-iter68/
+iter69/
 ├── MERGE_INSTRUCTIONS.md                                          ← this file
-├── STATUS.md                                                      ← updated (iter 68 entry in Fixed; Quick Reference refreshed)
-├── REFACTOR_PLAN.md                                               ← updated (v31 → v32, iter 68 marked DONE)
-├── AGENT_NAVIGATION.md                                            ← updated (scanner row removed from §1/§5; invariant #22 updated)
-├── worklog.md                                                     ← updated (Task 68 entry; trimmed to ≤3 latest)
-├── openapi_schema.json                                            ← regenerated (118KB → 108KB; scanner path + schemas removed)
-├── backend/
-│   ├── main.py                                                    ← removed scanner router try/except import block
-│   └── api/
-│       ├── routes_arbitrage.py                                    ← cleaned up 3 inline comments (scanner now deleted, not just deprecated)
-│       ├── routes_batch.py                                        ← removed /api/v1/scanner from ALLOWED_PREFIXES
-│       └── response_models.py                                     ← removed ScannerOpportunityData/ScannerParams/ScannerResponse
-├── src/
-│   └── lib/
-│       └── api-types.ts                                           ← regenerated (scanner path + schemas removed)
-└── tests/
-    └── test_flips_filters.py                                      ← removed TestScannerDeprecation class (2 tests)
+├── STATUS.md                                                      ← updated (P2-8 → Fixed; iter 68 annotated with scanner-residual note; iter 69 entry added; Quick Reference refreshed)
+├── REFACTOR_PLAN.md                                               ← updated (v32 → v33, iter 69 marked DONE, principle #6 added about file deletions via git add -A)
+├── AGENT_NAVIGATION.md                                            ← updated (invariant #23 added for P2-8; §1 row for flipper-proxy.ts updated; §4 Quick Reference updated; §4 P2 count 3 → 2)
+├── worklog.md                                                     ← updated (Task 69 entry; trimmed to ≤3 latest — Task 66 dropped)
+├── package.json                                                   ← added undici ^8.5.0 to devDependencies (used by jest.setup.ts polyfill; minimal fallback exists if missing)
+├── package-lock.json                                              ← lockfile updated for undici
+├── jest.setup.ts                                                  ← added Response/fetch/Headers/Request + AbortSignal.timeout polyfills for jsdom
+└── src/
+    ├── lib/
+    │   └── flipper-proxy.ts                                       ← P2-8: mode-aware 5xx handling + X-Flipper-Fallback header + helper exports
+    └── __tests__/
+        └── flipper-proxy.test.ts                                  ← +22 jest tests for P2-8 (helpers, dev/prod 5xx, 503, 422, 200 OK)
 ```
 
-**Files DELETED (not present in archive — delete from your local checkout):**
-- `backend/api/routes_scanner.py`
+**Files DELETED (not present in archive — `git add -A` will track the deletion automatically):**
+- `backend/api/routes_scanner.py` ← iter 68 residual; if you still have this file in your local checkout, just leave it — `git add -A` after copying the archive will mark it as deleted. No manual `rm` needed.
 
 ## How to apply
 
-Run from the root of your local `poe2-market-dashboard` checkout (must be on `main` branch, up-to-date with `origin/main` after iter 67 was merged). **NOTE:** if you have local iter 67 changes uncommitted, commit them first before applying iter 68.
+Run from the root of your local `poe2-market-dashboard` checkout (must be on `main` branch, up-to-date with `origin/main` after iter 68 was merged).
 
 ```bash
 # 1. Extract this archive into a temp location
-#    Example (if iter68.zip is in ~/Downloads):
-unzip ~/Downloads/iter68.zip -d /tmp/iter68
+#    Example (if iter69.zip is in ~/Downloads):
+unzip ~/Downloads/iter69.zip -d /tmp/iter69
 
-# 2. DELETE the deprecated scanner file (no longer in archive)
-rm ./backend/api/routes_scanner.py
+# 2. Copy the modified docs into the repo root
+cp /tmp/iter69/iter69/STATUS.md             ./STATUS.md
+cp /tmp/iter69/iter69/REFACTOR_PLAN.md      ./REFACTOR_PLAN.md
+cp /tmp/iter69/iter69/AGENT_NAVIGATION.md   ./AGENT_NAVIGATION.md
+cp /tmp/iter69/iter69/worklog.md            ./worklog.md
+cp /tmp/iter69/iter69/MERGE_INSTRUCTIONS.md ./MERGE_INSTRUCTIONS.md
 
-# 3. Copy the modified docs into the repo root
-cp /tmp/iter68/iter68/STATUS.md             ./STATUS.md
-cp /tmp/iter68/iter68/REFACTOR_PLAN.md      ./REFACTOR_PLAN.md
-cp /tmp/iter68/iter68/AGENT_NAVIGATION.md   ./AGENT_NAVIGATION.md
-cp /tmp/iter68/iter68/worklog.md            ./worklog.md
-cp /tmp/iter68/iter68/MERGE_INSTRUCTIONS.md ./MERGE_INSTRUCTIONS.md
+# 3. Copy the modified package files (added undici devDep for jest polyfill)
+cp /tmp/iter69/iter69/package.json          ./package.json
+cp /tmp/iter69/iter69/package-lock.json     ./package-lock.json
 
-# 4. Copy the regenerated API contract files
-cp /tmp/iter68/iter68/openapi_schema.json   ./openapi_schema.json
+# 4. Copy the modified jest setup
+cp /tmp/iter69/iter69/jest.setup.ts         ./jest.setup.ts
 
-# 5. Copy the modified backend files (preserving folder structure)
-cp /tmp/iter68/iter68/backend/main.py                              ./backend/main.py
-cp /tmp/iter68/iter68/backend/api/routes_arbitrage.py              ./backend/api/routes_arbitrage.py
-cp /tmp/iter68/iter68/backend/api/routes_batch.py                  ./backend/api/routes_batch.py
-cp /tmp/iter68/iter68/backend/api/response_models.py               ./backend/api/response_models.py
+# 5. Copy the modified src files (preserving folder structure)
+cp /tmp/iter69/iter69/src/lib/flipper-proxy.ts          ./src/lib/flipper-proxy.ts
+cp /tmp/iter69/iter69/src/__tests__/flipper-proxy.test.ts  ./src/__tests__/flipper-proxy.test.ts
 
-# 6. Copy the regenerated TypeScript types
-cp /tmp/iter68/iter68/src/lib/api-types.ts                         ./src/lib/api-types.ts
+# 6. Delete the iter 68 residual file (if you still have it — `git add -A` will track the deletion)
+#    NOTE: NO manual `rm` required if you don't have the file — `git add -A` is enough.
+#    If you DO have the file, you can either delete it manually OR let `git add -A` handle it
+#    after you run `rm -f ./backend/api/routes_scanner.py`.
+rm -f ./backend/api/routes_scanner.py  # safe — -f means "don't fail if missing"
 
-# 7. Copy the modified test file
-cp /tmp/iter68/iter68/tests/test_flips_filters.py                  ./tests/test_flips_filters.py
-
-# 8. Verify (with aiosqlite + lightgbm installed)
+# 7. Verify (with aiosqlite + lightgbm installed)
 pip install aiosqlite lightgbm                                          # if not already installed
-npx tsc --noEmit                                                       # should print nothing (0 errors)
-npx jest                                                               # should report 302 pass / 14 suites
-pytest tests/ -q --ignore=tests/e2e                                    # should report 459 pass
-pytest tests/e2e/ -q -m "not flaky"                                    # should report 30 pass
-git status                                                             # should show ~9 modified + 1 deleted file
+npm install                                                             # picks up undici devDep (optional — polyfill falls back to minimal stubs if undici missing)
+npx tsc --noEmit                                                        # should print nothing (0 errors)
+npx jest                                                                # should report 324 pass / 14 suites
+pytest tests/ -q --ignore=tests/e2e                                     # should report 459 pass
+pytest tests/e2e/ -q -m "not flaky"                                     # should report 30 pass
+git status                                                              # should show ~8 modified + 1 deleted file
 
-# 9. Commit + push
+# 8. Commit + push (single commit)
 git add -A
-git commit -m "refactor(P2-4): delete deprecated routes_scanner.py"
+git commit -m "fix(P2-8): proxyWithFallback 5xx pass-through in dev + marked fallback in prod"
 git push origin main
 ```
 
 ## Verification (already done in agent environment)
 
-| Check | Before iter 68 | After iter 68 |
+| Check | Before iter 69 | After iter 69 |
 |------|----------------|---------------|
-| `pytest tests/test_flips_filters.py -q` | 21 pass | **19 pass** (−2: `TestScannerDeprecation` removed) ✓ |
-| `pytest tests/ -q --ignore=tests/e2e` | 461 pass | **459 pass** (−2 scanner tests) ✓ |
-| `pytest tests/e2e/ -q -m "not flaky"` | 30 pass | **30 pass** (no regressions) ✓ |
+| `pytest tests/ -q --ignore=tests/e2e` | 459 pass | **459 pass** (unchanged) ✓ |
+| `pytest tests/e2e/ -q -m "not flaky"` | 30 pass | **30 pass** (unchanged) ✓ |
 | `npx tsc --noEmit` | 0 errors | **0 errors** ✓ |
-| `npx jest` | 302 pass / 14 suites | **302 pass / 14 suites** (unchanged) ✓ |
-| `openapi_schema.json` size | 118532 bytes | **108328 bytes** (−10KB scanner schemas) ✓ |
-| `grep -c ScannerResponse openapi_schema.json` | 7 hits | **0 hits** ✓ |
-| `grep -c ScannerResponse src/lib/api-types.ts` | 5 hits | **0 hits** ✓ |
+| `npx jest` | 302 pass / 14 suites | **324 pass / 14 suites** (+22 P2-8 tests) ✓ |
+| `ls backend/api/routes_scanner.py` | file present (iter 68 residual) | **file deleted** ✓ |
+| `grep -c X-Flipper-Fallback src/lib/flipper-proxy.ts` | 0 hits | **5+ hits** (constant + helper + usage) ✓ |
+| `grep -c isFlipperFallbackResponse src/__tests__/flipper-proxy.test.ts` | 0 hits | **3 hits** (1 import + 2 tests) ✓ |
 
-## Stop point — next iteration (iter 69)
+## Stop point — next iteration (iter 70)
 
-After iter 68: **P0=0, P1=0, P2=3, P3=4.** ~2-4 iterations remaining.
+After iter 69: **P0=0, P1=0, P2=2, P3=4.** ~1-3 iterations remaining.
 
-Recommended candidates (per REFACTOR_PLAN.md v32):
+Recommended candidates (per REFACTOR_PLAN.md v33):
 
-1. **P2-8** (`proxyWithFallback` swallows ALL 5xx → 200) — touches frontend error UX.
-2. **P2-3** (`currency_names_ru.py` 966-line hardcoded dict → JSON) — medium, mechanical.
-3. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — large, multi-iter.
+1. **P2-3** (`currency_names_ru.py` 966-line hardcoded dict → JSON) — mechanical but long.
+2. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — large, multi-iter.
+3. P3-3, P3-4, P3-5 (full /flips integration test), P3-7 (delete REFACTOR_PLAN.md + worklog.md after all closed).
 
-Suggested commit for iter 69: `fix(P2-8): proxyWithFallback 5xx pass-through in dev`
+Suggested commit for iter 70: `refactor(P2-3): move currency_names_ru.py to JSON`
 
-**Issue counts after iter 68:** P0=0, P1=0, P2=3, P3=4. ~2-4 iterations remaining.
+**Issue counts after iter 69:** P0=0, P1=0, P2=2, P3=4. ~1-3 iterations remaining.
 
 ## Git commands (single commit)
 
 ```bash
-# After deleting routes_scanner.py and copying all files from the archive (steps 2-7 above):
+# After copying all files from the archive (steps 2-5 above):
 
 git add -A
-git commit -m "refactor(P2-4): delete deprecated routes_scanner.py
+git commit -m "fix(P2-8): proxyWithFallback 5xx pass-through in dev + marked fallback in prod
 
-The /api/v1/scanner/scan endpoint was deprecated in iter 67 (emitted
-Deprecation/Sunset/Link headers + warning log). Iter 68 removes it entirely:
-- deleted backend/api/routes_scanner.py
-- removed scanner router try/except import block from backend/main.py
-- removed ScannerOpportunityData/ScannerParams/ScannerResponse from
-  backend/api/response_models.py
-- removed /api/v1/scanner from routes_batch.py:ALLOWED_PREFIXES
-- removed TestScannerDeprecation class (2 tests) from tests/test_flips_filters.py
-- regenerated openapi_schema.json (118KB -> 108KB) and src/lib/api-types.ts
-- updated docs (STATUS, AGENT_NAVIGATION, REFACTOR_PLAN, worklog, BACKEND_GUIDE,
-  DATA_CONTRACTS, DATA_FLOW)
+P2-8: proxyWithFallback is now mode-aware for non-503 5xx responses.
+- Dev (NODE_ENV=development): 500/502/504 pass through unchanged so
+  developers see the real backend error in the browser console.
+- Prod: same errors still become 200 + fallback data (no console spam,
+  no React Query retry storms), but the response now carries the
+  X-Flipper-Fallback: <original-status> header so the frontend can
+  detect it via isFlipperFallbackResponse(res) / getFlipperFallbackOriginalStatus(res).
+- 503 (backend_offline / backend_insufficient_data) fallback behavior
+  is unchanged in both modes — otherwise dev would be unusable whenever
+  the backend isn't running.
 
-All its filter/sort params have lived on /api/v1/arbitrage/flips since iter 67.
+New exports: FLIPPER_FALLBACK_HEADER, isFlipperFallbackResponse,
+getFlipperFallbackOriginalStatus. +22 jest tests covering helpers,
+dev/prod 5xx, 503 offline/insufficient_data, 422, 200 OK.
 
-Baseline: pytest 459 pass (was 461, -2 scanner tests), jest 302 pass,
+jest.setup.ts gained Response/fetch/Headers/AbortSignal.timeout polyfills
+(undici first, minimal hand-rolled fallback) so the new tests can mock
+fetch in jsdom.
+
+Also closes the iter 68 scanner residual: backend/api/routes_scanner.py
+was supposed to be deleted in iter 68 but the manual `rm` step in the
+iter 68 MERGE_INSTRUCTIONS was skipped. The file was already an orphan
+(zero runtime impact). Iter 69 deletes it for real. Going forward, file
+deletions are handled via `git add -A` — no manual `rm` instructions.
+
+Baseline: pytest 459 pass (unchanged), jest 324 pass (+22 P2-8 tests),
 tsc 0 errors, e2e 30 pass."
 
 git push origin main

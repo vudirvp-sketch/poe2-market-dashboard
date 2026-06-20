@@ -5,38 +5,49 @@
 
 ---
 
+## Task 69 — P2-8 closed + iter 68 scanner residual cleaned
+**Agent:** Main Agent
+**Date:** 2026-06-21
+
+**Task:** Two goals for this iteration: (1) close P2-8 — make `proxyWithFallback` mode-aware so non-503 5xx responses pass through in dev (developers see real errors) and become marked fallback responses in prod (via `X-Flipper-Fallback` header). (2) Clean up an iter 68 residual: `backend/api/routes_scanner.py` was supposed to be deleted in iter 68 but the actual file was left in the repo because the iter 68 merge instructions required a manual `rm` step that the user skipped.
+
+**Work Log:**
+- Documented the iter 68 scanner residual as a bug in STATUS.md (per "document first, fix second" rule). The file was already an orphan — `backend/main.py` no longer imports it, `response_models.py` no longer defines `ScannerResponse`, `routes_batch.py` no longer allows `/api/v1/scanner` — so it had zero runtime impact (pytest baseline was 459 pass with or without it). Iter 69 deletes the file for real and changes the merge instructions so this can't recur (file deletions are now handled via `git add -A` after the user copies the archive; no manual `rm` step).
+- Implemented P2-8 in `src/lib/flipper-proxy.ts`:
+  - Added `FLIPPER_FALLBACK_HEADER` constant (`"X-Flipper-Fallback"`), `isFlipperFallbackResponse()`, and `getFlipperFallbackOriginalStatus()` exports for frontend use.
+  - Added `isDevMode()` helper (`process.env.NODE_ENV === "development"`).
+  - Added `jsonFallbackResponse(data, originalStatus)` helper that returns `Response.json(data, { status: 200, headers: { "X-Flipper-Fallback": String(originalStatus) } })`.
+  - Refactored `proxyWithFallback`: 503 branch unchanged (still returns 200 + offlineFallback/insufficientDataFallback, now with header). New non-503 5xx branch: in dev, passes the response through unchanged; in prod, returns 200 + fallback + `X-Flipper-Fallback: <status>` header. The final `catch` block (unexpected errors) also uses `jsonFallbackResponse` with status 503.
+  - Updated JSDoc with the new mode-aware behavior.
+- Added `AbortSignal.timeout` + minimal `Response`/`fetch`/`Headers`/`Request` polyfills to `jest.setup.ts`. jsdom doesn't expose these natively; undici is loaded first (full-featured) with a minimal hand-rolled fallback if undici fails to load (e.g. due to missing `TextDecoder`).
+- Added 22 new jest tests in `src/__tests__/flipper-proxy.test.ts` covering: pure helpers (`FLIPPER_FALLBACK_HEADER`, `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`), 200 OK pass-through (both modes), 422 pass-through (both modes), 503 backend_offline (both modes), 503 backend_insufficient_data (with and without `insufficientDataFallback`), 500/502/504 in dev (pass-through), 500/502/504 in prod (200 + header), 500 in prod without `insufficientDataFallback`, and unexpected thrown error (→ 200 + 503 header + offlineFallback).
+- Verified baselines: pytest **459 pass** (unchanged), jest **324 pass** (was 302 → +22 new P2-8 tests), tsc **0 errors** (unchanged), e2e **30 pass** (unchanged).
+- Updated docs: `STATUS.md` (P2-8 → Fixed; iter 68 entry annotated with the scanner-residual note; iter 69 entry added; Quick Reference row for "500 → no data silently" updated to point to the new header); `AGENT_NAVIGATION.md` (invariant #23 added for P2-8; §1 row for `flipper-proxy.ts` updated; §4 Quick Reference updated); `REFACTOR_PLAN.md` (v32 → v33; iter 69 marked DONE; estimation reduced 2-4 → 1-3 iterations remaining); `worklog.md` (Task 69 entry; trimmed to ≤3 latest — Task 66 dropped, see git log).
+
+**Stage Summary:**
+- P2-8 closed. Frontend can now detect fallback responses via `isFlipperFallbackResponse(res)` and optionally surface a non-blocking notice. Devs see real 5xx errors in dev mode.
+- Iter 68 scanner residual bug closed. `backend/api/routes_scanner.py` deleted for real; `git add -A` will track the deletion.
+- P0=0, P1=0, P2=2, P3=4. ~1-3 iterations remaining.
+- Baseline: pytest **459 pass**, jest **324 pass** (+22), tsc 0 errors, e2e 30 pass.
+
+**Stopping point:**
+- Iter 69 done. P2-8 closed + iter 68 scanner residual closed.
+- Next iter (iter 70) recommended order:
+  1. **P2-3** (`currency_names_ru.py` 966-line dict → JSON) — mechanical but long.
+  2. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — multi-iter.
+  3. P3-3 / P3-4 / P3-5 (full /flips integration test) / P3-7 (delete REFACTOR_PLAN.md + worklog.md after all closed).
+- Suggested commit message: `fix(P2-8): proxyWithFallback 5xx pass-through in dev + marked fallback in prod`.
+
+---
+
 ## Task 68 — P2-4 follow-up (scanner deleted)
 **Agent:** Main Agent
 **Date:** 2026-06-21
 
-**Task:** Delete the deprecated `routes_scanner.py` (P2-4 follow-up). The scanner was deprecated in iter 67 (emitted `Deprecation`/`Sunset`/`Link` headers + warning log); iter 68 removes it entirely along with all its supporting types and references.
-
-**Work Log:**
-- Deleted `backend/api/routes_scanner.py`.
-- Removed scanner router `try/except` block from `backend/main.py` (was lines 553-557).
-- Removed `ScannerOpportunityData`, `ScannerParams`, `ScannerResponse` from `backend/api/response_models.py` (was lines 491-534, ~44 lines).
-- Removed `/api/v1/scanner` from `routes_batch.py:ALLOWED_PREFIXES` (was line 86).
-- Removed `TestScannerDeprecation` class (2 tests: `test_scanner_returns_deprecation_header`, `test_scanner_still_returns_data`) from `tests/test_flips_filters.py`.
-- Cleaned up inline comments in `backend/api/routes_arbitrage.py` (3 spots) — removed "previously only in /scanner/scan" phrasing since scanner is now deleted, not just deprecated.
-- Regenerated `openapi_schema.json` via `python3 /home/z/my-project/scripts/regen_openapi.py` — file went from 118532 → 108328 bytes (~10KB of scanner schemas removed). Sanity assertions in the regen script confirmed `/api/v1/scanner/scan` path is gone, `/api/v1/arbitrage/flips` is preserved, and `ScannerResponse`/`ScannerOpportunityData`/`ScannerParams` schemas are gone.
-- Regenerated `src/lib/api-types.ts` via `npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts`. Verified only one residual "scanner" mention remains — a historical note in the `/flips` docstring.
-- Updated docs: `STATUS.md` (P2-4 marked fully done in iter 68; iter 68 entry added to Fixed section; Quick Reference row added for `/scanner/scan` 404); `AGENT_NAVIGATION.md` (header date → iter 68; removed `routes_scanner.py` row from §1 table; updated invariant #22 from "deprecated" to "deleted"; updated §4 Quick Reference; removed scanner row from §5 API table); `REFACTOR_PLAN.md` (v31 → v32, iter 68 marked DONE, estimation reduced 3-5 → 2-4 iterations remaining); `docs/BACKEND_GUIDE.md` (removed §6.11 Scanner section); `docs/DATA_CONTRACTS.md` (removed `/api/scanner/scan` row from backend-only table); `docs/DATA_FLOW.md` (removed `routes_scanner.py` line from file list).
-- Verified: pytest **459 pass** (was 461 → −2 removed scanner tests), jest **302 pass** (unchanged), tsc **0 errors** (unchanged), e2e **30 pass** (unchanged).
-
 **Stage Summary:**
-- P2-4 follow-up closed. Scanner endpoint, route file, response models, batch-allowed prefix, tests, openapi schema, and TS types all removed cleanly.
-- ~10 files changed (5 deleted/modified backend, 1 modified test, 2 regenerated API contract files, 5 docs).
-- P0=0, P1=0, P2=3, P3=4. ~2-4 iterations remaining.
-- Baseline: pytest **459 pass**, jest **302 pass**, tsc 0 errors, e2e 30 pass.
-
-**Stopping point:**
-- Iter 68 done. P2-4 fully closed (extended `/flips` in iter 67, deleted scanner in iter 68).
-- Next iter (iter 69) recommended order:
-  1. **P2-8** (`proxyWithFallback` 5xx handling) — touches frontend error UX, medium risk.
-  2. **P2-3** (`currency_names_ru.py` 966-line dict → JSON) — mechanical but long.
-  3. **P2-1** (`dashboard-page.tsx` split) — multi-iter.
-- Optional: P3-5 (full /flips integration test — partially covered by `test_flips_filters.py` now).
-- Suggested commit message: `refactor(P2-4): delete deprecated routes_scanner.py`.
+- P2-4 follow-up closed at the code level (main.py / response_models.py / routes_batch.py / tests / openapi / api-types all updated).
+- The actual `routes_scanner.py` file deletion was missed — see iter 69 entry above.
+- See git commit `cca86d7` for details.
 
 ---
 
@@ -50,13 +61,3 @@
 - P2-6: new route `GET /api/flipper/health/circuit-breakers` (JSON snapshot of per-endpoint CB state).
 - P2-4: `/flips` extended with 7 optional filter/sort params; scanner marked deprecated (deleted in iter 68).
 - See git commit `e88830c` for details.
-
----
-
-## Task 66 — 8 issues closed (P2-14, P2-5, P2-2, P1-5, P1-6, P1-9, P1-10, P3-2)
-**Agent:** Main Agent
-**Date:** 2026-06-21
-
-**Stage Summary:**
-- 8 issues closed. P1 bucket emptied (0 remaining).
-- See git commit `a9386d2` for details.

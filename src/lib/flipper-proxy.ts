@@ -521,7 +521,86 @@ async function _doProxyWithRetry(
 //
 // The health endpoint is an exception — it returns a structured response
 // with `status: "offline"` so the dashboard can set `backendOnline = false`.
+//
+// ── P2-8 (iter 69): 5xx handling is now mode-aware ──
+//
+// Previously this helper swallowed ALL 5xx (500, 502, 504) into a 200 with
+// fallback data, which silently hid real backend crashes behind "no data"
+// UI states. The new behavior:
+//
+//   - 503 with `backend_offline` / `backend_timeout` / `backend_connection_reset`
+//     / `backend_insufficient_data` error_type → still returns 200 with the
+//     appropriate fallback (unchanged). This is the documented contract: when
+//     the backend is offline, the dashboard shows the "backend offline" UI
+//     state instead of crashing. Both dev and prod behave the same here —
+//     otherwise dev mode would be unusable whenever the backend isn't running.
+//
+//   - Other 5xx (500, 502, 504 — backend running but crashing):
+//       • In dev (`NODE_ENV === "development"`): pass the response through
+//         unchanged so the developer sees the real status code, body, and
+//         stack trace in the browser console.
+//       • In prod: return 200 with fallback data (no console spam, no React
+//         Query retry storms) but mark the response with the
+//         `X-Flipper-Fallback: <original-status>` header so the frontend can
+//         detect that this is a fallback and surface a non-blocking notice
+//         if desired.
+//
+// All fallback responses (503 + non-503 5xx in prod) now carry the
+// `X-Flipper-Fallback` header. Frontend code can use `isFlipperFallbackResponse()`
+// to detect them.
 // ============================================================================
+
+/**
+ * HTTP response header set by `proxyWithFallback` whenever it substitutes
+ * fallback data for an error response. The value is the original HTTP
+ * status code (e.g. `"503"`, `"500"`, `"502"`).
+ *
+ * Frontend code can read this header to distinguish "real 200 with data"
+ * from "200 with fallback data" without inspecting the body.
+ */
+export const FLIPPER_FALLBACK_HEADER = "X-Flipper-Fallback";
+
+/**
+ * Returns true if the given Response was produced by `proxyWithFallback` as
+ * a fallback for an errored backend request. Frontend code can use this to
+ * surface a non-blocking "showing cached/fallback data" notice without
+ * breaking the existing `res.ok`-based data flow.
+ *
+ * Note: cross-origin fetches only expose this header if the Next.js proxy
+ * route is same-origin (which it is — it lives under `/api/flipper/...`).
+ */
+export function isFlipperFallbackResponse(res: Response): boolean {
+  return res.headers.has(FLIPPER_FALLBACK_HEADER);
+}
+
+/**
+ * Returns the original HTTP status code that `proxyWithFallback` swallowed
+ * to produce this fallback response, or `null` if this is not a fallback
+ * response.
+ */
+export function getFlipperFallbackOriginalStatus(res: Response): number | null {
+  const raw = res.headers.get(FLIPPER_FALLBACK_HEADER);
+  if (!raw) return null;
+  const code = Number.parseInt(raw, 10);
+  return Number.isNaN(code) ? null : code;
+}
+
+function isDevMode(): boolean {
+  return process.env.NODE_ENV === "development";
+}
+
+/**
+ * Build a 200 Response that carries fallback data and marks itself as a
+ * fallback via the `X-Flipper-Fallback` header. Used in prod mode (and for
+ * 503 in both modes) so the frontend can distinguish real 200s from
+ * fallback 200s without inspecting the body.
+ */
+function jsonFallbackResponse(data: unknown, originalStatus: number): Response {
+  return Response.json(data, {
+    status: 200,
+    headers: { [FLIPPER_FALLBACK_HEADER]: String(originalStatus) },
+  });
+}
 
 export interface ProxyFallbackOptions {
   /** Fallback data to return when the backend is offline (503 with backend_offline error_type) */
@@ -531,6 +610,10 @@ export interface ProxyFallbackOptions {
   /**
    * If true, inspect the proxy response for 503 status and return fallback
    * instead of passing the error through. Default: true.
+   *
+   * Note (P2-8, iter 69): this flag only governs 503 handling. Non-503 5xx
+   * responses follow the mode-aware rule (pass-through in dev, marked
+   * fallback in prod) regardless of this flag.
    */
   catch503?: boolean;
 }
@@ -544,7 +627,9 @@ export interface ProxyFallbackOptions {
  * @param searchParams  Optional query params to forward
  * @param method     HTTP method
  * @param body       Optional request body
- * @returns          Response with backend data or fallback data (always 200)
+ * @returns          Response with backend data, or fallback data marked
+ *                   with `X-Flipper-Fallback` header (status 200), or — in
+ *                   dev mode only — the original 5xx response passed through.
  */
 export async function proxyWithFallback(
   path: string,
@@ -562,48 +647,58 @@ export async function proxyWithFallback(
       return res;
     }
 
-    // If 503 with backend_offline error type, return fallback
+    // ── 503: backend unreachable OR insufficient data ──
+    // This branch runs in BOTH dev and prod. Without it, dev mode would be
+    // unusable whenever the backend isn't running — every page would throw
+    // a 503 instead of showing the "backend offline" UI state.
     if (res.status === 503) {
       try {
         const data = await res.json();
         const errorType = data?.error_type;
 
         if (errorType === "backend_offline" || errorType === "backend_timeout" || errorType === "backend_connection_reset") {
-          return Response.json(fallback.offlineFallback);
+          return jsonFallbackResponse(fallback.offlineFallback, 503);
         }
 
         if (errorType === "backend_insufficient_data" && fallback.insufficientDataFallback !== undefined) {
-          return Response.json(fallback.insufficientDataFallback);
+          return jsonFallbackResponse(fallback.insufficientDataFallback, 503);
         }
       } catch {
         // JSON parse failed — return offline fallback
-        return Response.json(fallback.offlineFallback);
+        return jsonFallbackResponse(fallback.offlineFallback, 503);
       }
 
       // Other 503 errors (e.g., backend running but insufficient data)
       // Return insufficient data fallback if provided, otherwise offline fallback
       if (fallback.insufficientDataFallback !== undefined) {
-        return Response.json(fallback.insufficientDataFallback);
+        return jsonFallbackResponse(fallback.insufficientDataFallback, 503);
       }
-      return Response.json(fallback.offlineFallback);
+      return jsonFallbackResponse(fallback.offlineFallback, 503);
     }
 
-    // For 5xx errors (500, 502, etc.), return fallback instead of propagating.
-    // The backend may be running but crashing (e.g., portfolio _build_portfolio
-    // throws). The frontend already checks data_available: false, so returning
-    // fallback is better than a 500 that causes console errors and React Query
-    // retry storms.
+    // ── P2-8 (iter 69): Non-503 5xx — mode-aware handling ──
+    //
+    // The backend is running but crashed on this request (500, 502, 504).
+    // - In dev: pass the response through unchanged so the developer sees
+    //   the real status code, body, and stack trace in the browser console.
+    // - In prod: return 200 with fallback data, marked with the
+    //   `X-Flipper-Fallback` header so the frontend can detect it.
     if (res.status >= 500) {
-      if (fallback.insufficientDataFallback !== undefined) {
-        return Response.json(fallback.insufficientDataFallback);
+      if (isDevMode()) {
+        return res;
       }
-      return Response.json(fallback.offlineFallback);
+
+      // Prod: return fallback with X-Flipper-Fallback header
+      if (fallback.insufficientDataFallback !== undefined) {
+        return jsonFallbackResponse(fallback.insufficientDataFallback, res.status);
+      }
+      return jsonFallbackResponse(fallback.offlineFallback, res.status);
     }
 
     // For other error statuses (422, 404, etc.), pass through as-is
     return res;
   } catch {
     // Unexpected error — return offline fallback
-    return Response.json(fallback.offlineFallback);
+    return jsonFallbackResponse(fallback.offlineFallback, 503);
   }
 }

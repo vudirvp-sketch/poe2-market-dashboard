@@ -27,6 +27,9 @@ import {
   getEndpointCircuitBreakerState,
   getAllEndpointCircuitBreakers,
   _resetAllCircuitBreakers,
+  FLIPPER_FALLBACK_HEADER,
+  isFlipperFallbackResponse,
+  getFlipperFallbackOriginalStatus,
   type ProxyFallbackOptions,
 } from "@/lib/flipper-proxy";
 import type { FlipperErrorType } from "@/lib/types";
@@ -487,5 +490,312 @@ describe("circuit-breakers health snapshot (P2-6)", () => {
     const after = getEndpointCircuitBreakerState("/api/v1/prices");
     expect(before.consecutiveFailures).toBe(after.consecutiveFailures);
     expect(before.state).toBe(after.state);
+  });
+});
+
+// ============================================================================
+// 8. P2-8 (iter 69): proxyWithFallback 5xx mode-aware handling
+// ============================================================================
+// Verifies the new dev/prod behavior for 5xx responses:
+//   - 503 backend_offline / backend_timeout / backend_connection_reset →
+//     200 with offlineFallback + X-Flipper-Fallback: 503 (both modes)
+//   - 503 backend_insufficient_data → 200 with insufficientDataFallback +
+//     X-Flipper-Fallback: 503
+//   - Other 5xx (500, 502, 504):
+//       • dev → pass-through (status preserved, no header)
+//       • prod → 200 with fallback + X-Flipper-Fallback: <original-status>
+//   - 422 → pass-through (both modes, unchanged)
+//   - 200 OK → pass-through (both modes, unchanged)
+//
+// Tests mock `global.fetch` to control the backend response. The mocked
+// NextResponse.json (set up at the top of this file) wraps data into a
+// real Response object that proxyWithFallback then re-examines.
+
+describe("P2-8: proxyWithFallback 5xx mode-aware handling", () => {
+  const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+  const ORIGINAL_FETCH = global.fetch;
+
+  beforeEach(() => {
+    _resetAllCircuitBreakers();
+  });
+
+  afterEach(() => {
+    (process.env as { NODE_ENV: string }).NODE_ENV = ORIGINAL_NODE_ENV ?? "";
+    global.fetch = ORIGINAL_FETCH;
+  });
+
+  function setEnv(mode: "development" | "production"): void {
+    // `process.env.NODE_ENV` is typed as readonly in @types/node, but it's
+    // perfectly writable at runtime. Cast to a mutable record to bypass TS.
+    (process.env as { NODE_ENV: string }).NODE_ENV = mode;
+  }
+
+  /** Mock global.fetch to resolve with a Response carrying the given status + JSON body. */
+  function mockFetchJson(status: number, body: unknown): void {
+    const res = new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
+    global.fetch = jest.fn().mockResolvedValue(res);
+  }
+
+  /** Mock global.fetch to reject with a network error (simulates ECONNREFUSED). */
+  function mockFetchReject(message: string): void {
+    global.fetch = jest.fn().mockRejectedValue(new Error(message));
+  }
+
+  // ----- Pure helpers exported for frontend use -----
+
+  it("FLIPPER_FALLBACK_HEADER constant is 'X-Flipper-Fallback'", () => {
+    expect(FLIPPER_FALLBACK_HEADER).toBe("X-Flipper-Fallback");
+  });
+
+  it("isFlipperFallbackResponse returns true when header is present", () => {
+    const res = new Response("{}", {
+      headers: { "X-Flipper-Fallback": "503" },
+    });
+    expect(isFlipperFallbackResponse(res)).toBe(true);
+  });
+
+  it("isFlipperFallbackResponse returns false when header is absent", () => {
+    const res = new Response("{}", { status: 200 });
+    expect(isFlipperFallbackResponse(res)).toBe(false);
+  });
+
+  it("getFlipperFallbackOriginalStatus returns the original status code", () => {
+    const res = new Response("{}", {
+      headers: { "X-Flipper-Fallback": "500" },
+    });
+    expect(getFlipperFallbackOriginalStatus(res)).toBe(500);
+  });
+
+  it("getFlipperFallbackOriginalStatus returns null when header is absent", () => {
+    const res = new Response("{}", { status: 200 });
+    expect(getFlipperFallbackOriginalStatus(res)).toBeNull();
+  });
+
+  it("getFlipperFallbackOriginalStatus returns null for malformed header value", () => {
+    const res = new Response("{}", {
+      headers: { "X-Flipper-Fallback": "not-a-number" },
+    });
+    expect(getFlipperFallbackOriginalStatus(res)).toBeNull();
+  });
+
+  // ----- 200 OK pass-through (both modes) -----
+
+  it("200 OK passes through unchanged in prod", async () => {
+    setEnv("production");
+    mockFetchJson(200, { prices: [], data_available: true });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+    expect(await res.json()).toEqual({ prices: [], data_available: true });
+  });
+
+  it("200 OK passes through unchanged in dev", async () => {
+    setEnv("development");
+    mockFetchJson(200, { prices: [], data_available: true });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+  });
+
+  // ----- 422 pass-through (both modes, unchanged) -----
+
+  it("422 passes through unchanged in prod (no fallback substitution)", async () => {
+    setEnv("production");
+    mockFetchJson(422, { detail: "Insufficient data for forecast" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(422);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+  });
+
+  it("422 passes through unchanged in dev", async () => {
+    setEnv("development");
+    mockFetchJson(422, { detail: "Insufficient data for forecast" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(422);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+  });
+
+  // ----- 503 backend_offline (network error → 503 + backend_offline) -----
+
+  it("503 backend_offline in prod → 200 + X-Flipper-Fallback: 503 + offlineFallback body", async () => {
+    setEnv("production");
+    // ECONNREFUSED → _doProxyWithRetry returns 503 + error_type: backend_offline
+    mockFetchReject("ECONNREFUSED: Connection refused");
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("503");
+    expect(await res.json()).toEqual([]);
+  });
+
+  it("503 backend_offline in dev → 200 + X-Flipper-Fallback: 503 (unchanged — dev still needs the offline UI state)", async () => {
+    setEnv("development");
+    mockFetchReject("ECONNREFUSED: Connection refused");
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("503");
+    expect(await res.json()).toEqual([]);
+  });
+
+  // ----- 503 backend_insufficient_data (HTTP 503 from backend) -----
+
+  it("503 backend_insufficient_data in prod → 200 + X-Flipper-Fallback: 503 + insufficientDataFallback body", async () => {
+    setEnv("production");
+    // HTTP 503 from backend → _doProxyWithRetry sets error_type: backend_insufficient_data
+    mockFetchJson(503, { detail: "Not enough data yet" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+      insufficientDataFallback: { data_available: false },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("503");
+    expect(await res.json()).toEqual({ data_available: false });
+  });
+
+  it("503 backend_insufficient_data without insufficientDataFallback → falls back to offlineFallback", async () => {
+    setEnv("production");
+    mockFetchJson(503, { detail: "Not enough data yet" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("503");
+    expect(await res.json()).toEqual([]);
+  });
+
+  // ----- Non-503 5xx: mode-aware (the core of P2-8) -----
+
+  it("500 in dev → pass-through (status preserved, no fallback header)", async () => {
+    setEnv("development");
+    mockFetchJson(500, { detail: "Internal Server Error" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+  });
+
+  it("500 in prod → 200 + X-Flipper-Fallback: 500 + insufficientDataFallback body", async () => {
+    setEnv("production");
+    mockFetchJson(500, { detail: "Internal Server Error" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+      insufficientDataFallback: { data_available: false },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("500");
+    expect(await res.json()).toEqual({ data_available: false });
+  });
+
+  it("500 in prod without insufficientDataFallback → 200 + X-Flipper-Fallback: 500 + offlineFallback body", async () => {
+    setEnv("production");
+    mockFetchJson(500, { detail: "Internal Server Error" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("500");
+    expect(await res.json()).toEqual([]);
+  });
+
+  it("502 in dev → pass-through", async () => {
+    setEnv("development");
+    mockFetchJson(502, { detail: "Bad Gateway" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(502);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+  });
+
+  it("502 in prod → 200 + X-Flipper-Fallback: 502", async () => {
+    setEnv("production");
+    mockFetchJson(502, { detail: "Bad Gateway" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("502");
+  });
+
+  it("504 in dev → pass-through", async () => {
+    setEnv("development");
+    mockFetchJson(504, { detail: "Gateway Timeout" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(504);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBeNull();
+  });
+
+  it("504 in prod → 200 + X-Flipper-Fallback: 504", async () => {
+    setEnv("production");
+    mockFetchJson(504, { detail: "Gateway Timeout" });
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("504");
+  });
+
+  // ----- Unexpected thrown error → offline fallback -----
+
+  it("unexpected error in proxyToFlipper → 200 + X-Flipper-Fallback: 503 + offlineFallback", async () => {
+    setEnv("production");
+    // Force a non-network error inside the proxy chain by mocking fetch
+    // to throw an unusual error that doesn't match any transient pattern.
+    mockFetchReject("Unexpected internal proxy failure");
+
+    const res = await proxyWithFallback("/api/v1/prices", {
+      offlineFallback: [],
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get(FLIPPER_FALLBACK_HEADER)).toBe("503");
+    expect(await res.json()).toEqual([]);
   });
 });

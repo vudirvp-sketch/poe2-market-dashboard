@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 68 — closed P2-4 follow-up: scanner deleted).
+> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 69 — closed P2-8 + cleaned up iter 68 scanner residual).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -40,7 +40,7 @@
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
 | `src/hooks/` | React hooks (14 hooks) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
-| `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup (P1-10 iter 66) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; exports `getEndpointCircuitBreakerState`, `getAllEndpointCircuitBreakers`, `_resetAllCircuitBreakers` |
+| `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup + mode-aware 5xx fallback (P1-10 iter 66, **P2-8 iter 69**) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `proxyWithFallback` passes non-503 5xx through in dev, returns 200+`X-Flipper-Fallback` header in prod. Exports `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`, `FLIPPER_FALLBACK_HEADER` |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 iter 55, P2-7 iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation |
 | `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (P2-1) | Needs splitting |
 
@@ -84,19 +84,20 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 19. **Optimizer negative cycles** (P1-8): a negative cycle in `-log(rate)` space = profitable arbitrage. When `_bellman_ford` detects one and `target` lies on it, returns empty `path` with `data_available: true` — callers fall back to `direct_rate`.
 20. **ProcessPoolExecutor is lazy** (P2-13): always call `get_process_pool()` at the call site — never cache the returned reference.
 21. **LightGBM adaptive fallback** (P2-9, iter 67): `train()` proceeds with minimal features (`price_lags=[1]`) when `floor (5) <= len(log_prices) < min_points (15)`. Below `floor`, skips. Configurable via `ForecastingConfig.lightgbm_min_data_points_floor`.
-22. **Scanner is deleted** (P2-4, iter 68): the standalone `/api/v1/scanner/scan` endpoint and `routes_scanner.py` were removed in iter 68. All its filter/sort params live on `/api/v1/arbitrage/flips` since iter 67 — use that.
+22. **Scanner is deleted** (P2-4, iter 68 + iter 69): the standalone `/api/v1/scanner/scan` endpoint and `routes_scanner.py` were removed. All its filter/sort params live on `/api/v1/arbitrage/flips` since iter 67 — use that.
+23. **`proxyWithFallback` 5xx handling is mode-aware** (P2-8, iter 69): non-503 5xx (500/502/504) passes through unchanged in dev (`NODE_ENV === "development"`) so devs see the real error; in prod it becomes 200 + fallback data + `X-Flipper-Fallback: <original-status>` header. 503 (backend_offline/insufficient_data) still returns 200 + fallback in both modes (otherwise dev is unusable when backend is down). Use `isFlipperFallbackResponse(res)` / `getFlipperFallbackOriginalStatus(res)` to detect fallback responses from the frontend.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 3 P2 / 4 P3).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 2 P2 / 4 P3).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
 | `dashboard-page.tsx` unmaintainable | 1705-line god-component | P2-1 |
 | `currency_names_ru.py` hard to edit | 966-line hardcoded dict | P2-3 |
+| Frontend shows fallback data without notice | (Fixed iter 69 — was P2-8) check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
 | `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |
 | `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`) | — |
 | Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` (P2-6 iter 67) | — |
