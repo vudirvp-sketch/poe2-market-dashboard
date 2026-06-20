@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 66 — closed P2-14, P2-5, P2-2, P1-5, P1-6, P1-9, P1-10, P3-2).
+> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 67 — closed P2-9, P2-6, P2-4).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 
 ---
@@ -15,38 +15,42 @@
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
 | `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
-| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 fixed iter 63, P1-9 fixed iter 66) | P0-6 fixed iter 56; P0-5 fixed iter 57; clustering now via `clustering_helpers.py`; spread-model params now in `config.yaml:scoring.spread_model` (no more magic numbers) |
+| `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 iter 63, P1-9 iter 66, **P2-4 iter 67**) | `/flips` now supports `max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir` (all optional with safe defaults) |
+| `backend/api/routes_scanner.py` | **DEPRECATED (P2-4 iter 67)** — duplicates `/flips` | Emits `Deprecation`/`Sunset`/`Link` headers + warning log. **Scheduled for deletion in iter 68.** |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (P1-8 fixed iter 64) | `_detect_negative_cycle_nodes()` flags profitable arbitrage cycles; `_bellman_ford` returns `None` when target is on a cycle |
-| `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 fixed iter 59, P1-7 fixed iter 61) | All 3 endpoints async-await EventManager; `pipeline_cache` + `daily_stats_cache` invalidated after mutation |
-| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` — used by `data_snapshot.py`, `scheduler.py`, `clustering_helpers.py`, `routes_analyst.py` |
-| `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 fixed iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY`; used by `routes_prices.py` and `routes_arbitrage.py` |
-| `backend/economy/events.py` | EventManager + StoredEvent (P1-7 fixed iter 61, P3-8 auto-closed) | `event_id`, `is_active`, `created_at`; 4 methods async (`create_event` / `delete_event` / `deactivate_event` / `clear_all`); `_prune_expired` left sync intentionally |
+| `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 iter 59, P1-7 iter 61) | All 3 endpoints async-await EventManager; `unified_cache` invalidated after mutation |
+| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` |
+| `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY` |
+| `backend/economy/events.py` | EventManager + StoredEvent (P1-7 iter 61) | `event_id`, `is_active`, `created_at`; 4 methods async; `_prune_expired` left sync intentionally |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
-| `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 fixed iter 66) — uses `rowid IN (SELECT ... LIMIT ?)` pattern |
-| `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | `pipeline_cache.invalidate()` clears only `pipeline` namespace. (Shim modules `pipeline_cache.py` / `daily_stats_cache.py` deleted in iter 66 — P2-2; import directly from `unified_cache`) |
+| `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 iter 66) — `rowid IN (SELECT ... LIMIT ?)` pattern |
+| `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | Shim modules deleted in iter 66 (P2-2) — import directly |
 | `backend/data/currency_names_ru.py` | 966-line hardcoded dict (P2-3) | Move to JSON |
-| `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis (P1-5 fixed iter 66) | `compute_quantized_analysis` uses bounded linear scan `O(1/D)` instead of `O(max_lot_search)`; derived from `f(N) ≥ N*D - 2` |
-| `backend/arbitrage/triangular.py` | Triangular arbitrage (P0-6 fixed iter 56, P0-5 fixed iter 57) | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — no `prices` param (was dead); uses `get_process_pool()` from `backend.main` (P2-13 fixed iter 65 — pool is lazy/re-creatable, survives TestClient lifespan teardown) |
-| `backend/main.py` | FastAPI app + lifespan + lazy `process_pool` | `get_process_pool()` lazily creates/recreates the pool; `_shutdown_process_pool()` clears the cached ref on lifespan teardown so the next caller gets a fresh pool (P2-13 fixed iter 65). Backward-compat: `from backend.main import process_pool` still works via module `__getattr__` but emits `DeprecationWarning`. |
+| `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis (P1-5 fixed iter 66) | `compute_quantized_analysis` uses bounded linear scan `O(1/D)` |
+| `backend/arbitrage/triangular.py` | Triangular arbitrage | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — uses `get_process_pool()` (P2-13 fixed iter 65) |
+| `backend/main.py` | FastAPI app + lifespan + lazy `process_pool` | `get_process_pool()` lazily creates/recreates the pool (P2-13). Backward-compat: `from backend.main import process_pool` still works via module `__getattr__` but emits `DeprecationWarning`. |
+| `backend/predictors/time_series.py` | LightGBM forecaster (**P2-9 iter 67**) | `train()` has adaptive fallback: when `floor (5) <= len(log_prices) < min_points (15)`, uses minimal features (`price_lags=[1]` only) + lowered clean-rows threshold (2 instead of 10). Below `floor`, skips. |
 | `backend/predictors/` | Time-series, anomaly, clustering, storage_value, model_store | CPU-heavy → ProcessPoolExecutor |
 | `backend/data/providers/` | Poe2Scout, official, base | Network IO only |
 | `backend/models/` | Core dataclass models | No framework imports |
+| `backend/config.py` | Pydantic config models | `ForecastingConfig.lightgbm_min_data_points_floor` added iter 67 (default 5) |
 | `src/app/api/flipper/` | Next.js proxy routes → FastAPI | **Proxy only, no business logic** |
+| `src/app/api/flipper/health/circuit-breakers/route.ts` | **P2-6 (iter 67)** — exposes per-endpoint CB state as JSON | Read-only; calls `getAllEndpointCircuitBreakers()` from flipper-proxy |
 | `src/app/api/flipper/prices/stream/route.ts` | SSE proxy | 5min timeout, streams body |
 | `src/app/api/flipper/events/route.ts` | Events POST proxy with body transform | `eventType`→`event_type`, `expiryHours`→`expires_at` ISO |
 | `src/components/dashboard/` | Tab components, dialogs, sidebar | Import from `@lib`, `@hooks` |
-| `src/hooks/` | React hooks (14 hooks — `use-websocket.ts` removed iter 58, file remnant deleted iter 62) | Import from `@lib` |
+| `src/hooks/` | React hooks (14 hooks) | Import from `@lib` |
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
-| `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup (P1-10 fixed iter 66) | See STATUS.md P2-8; `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `getEndpointCircuitBreakerState` / `getAllEndpointCircuitBreakers` exported for debugging |
-| `src/hooks/use-price-stream.ts` | SSE hook (P0-1 fixed iter 55, P2-7 fixed iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation, no over-eager crossRates |
-| `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (see STATUS.md P2-1) | Needs splitting |
+| `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup (P1-10 iter 66) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; exports `getEndpointCircuitBreakerState`, `getAllEndpointCircuitBreakers`, `_resetAllCircuitBreakers` |
+| `src/hooks/use-price-stream.ts` | SSE hook (P0-1 iter 55, P2-7 iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation |
+| `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (P2-1) | Needs splitting |
 
 ## 2. Build & Run Commands
 
 ```bash
 npm install && npm run dev        # Frontend (port 3000)
 npm run build && npm run test     # Build + Jest
-pytest tests/ -v                  # Backend tests
+pytest tests/ -v                  # Backend tests (skip e2e: --ignore=tests/e2e)
 npx tsc --noEmit                  # TypeScript type check
 npx playwright test               # E2E tests
 
@@ -61,11 +65,11 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 ## 3. Critical Rules (invariants)
 
 1. **Backend responses use snake_case** — `flipper-proxy.ts` `transformKeys()` converts to camelCase.
-2. **All REST paths use `/api/v1/` prefix.** (WS paths removed in iter 58 — see STATUS.md §Fixed.)
+2. **All REST paths use `/api/v1/` prefix.** (WS paths removed in iter 58.)
 3. **Bridge health check uses `/api/v1/health/ping`** (NOT `/api/health/ping`).
 4. **`response_model=` must match route return dict** — mismatch = 500.
 5. **ProcessPoolExecutor: picklable args only** — no `sqlite3.Connection`, no `EventManager`, no `DataSnapshot`, no `AppConfig`. Use `FlipComputeBundle` pattern.
-6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop. (WS endpoints removed iter 58 — was the last violation.)
+6. **CPU-bound Python → `run_in_executor()` with timeout** — never block event loop.
 7. **Never hardcode league names or currency categories** — use `config.yaml`.
 8. **`FLIPPER_WORKERS` env var** — controls ProcessPoolExecutor workers (default: 1).
 9. **SSE proxy: return 200 + error event** — not 503 (prevents retry storms).
@@ -73,30 +77,31 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 11. **EventData uses `event_id`** (not `id`), `is_active` (not `active`), `created_at` — matches `StoredEvent.to_dict()`.
 12. **EventType enum has 6 values**: `major_patch`, `minor_patch`, `league_start`, `economy_shift`, `streamer_hype`, `other`.
 13. **Events POST proxy transforms body**: `eventType`→`event_type`, `affectedCurrencies`→`affected_currencies`, `expiryHours`→`expires_at` (ISO string).
-14. **PhaseDetector: only `major_patch` resets phase clock** — `league_start` / `economy_shift` affect scoring only. `reset_for_major_patch()` always wins, even if the patch predates `league_start` (P0-4 fixed iter 54).
+14. **PhaseDetector: only `major_patch` resets phase clock** — `league_start` / `economy_shift` affect scoring only.
 15. **Adaptive mode (`"_adaptive"`)**: `baseCurrencyApiId` can be `"_adaptive"` — `useDisplayPrice` auto-selects Div/Exa/Chaos per row.
-16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate (see STATUS.md P1-11).
-17. **SSE payload contract** (P0-1 fixed iter 55): backend sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency — matches frontend `SSEPriceUpdate`. `threshold_pct` query param is respected.
-18. **Real-time updates = SSE + REST polling only** (iter 58+). WebSocket endpoints were removed in iter 58 — do NOT re-introduce them. If push-based invalidation is needed for non-price data, extend the SSE stream.
-19. **Optimizer negative cycles** (P1-8 fixed iter 64): a negative cycle in `-log(rate)` space = profitable arbitrage. When `_bellman_ford` detects one and `target` lies on it, the endpoint returns an empty `path` with `data_available: true` — callers fall back to the `direct_rate` field if available.
-20. **ProcessPoolExecutor is lazy** (P2-13 fixed iter 65): always call `get_process_pool()` at the call site — never cache the returned reference. The pool may be recreated after `lifespan` teardown (e.g. between tests). `from backend.main import process_pool` still works but is deprecated.
+16. **`pipeline_cache.invalidate()` clears only `pipeline` namespace** — `daily_stats` is separate.
+17. **SSE payload contract** (P0-1): `{pair, change_pct, new_price, old_price, timestamp}` per changed currency — matches `SSEPriceUpdate`. `threshold_pct` query param is respected.
+18. **Real-time updates = SSE + REST polling only** (iter 58+). WebSocket endpoints were removed in iter 58 — do NOT re-introduce them.
+19. **Optimizer negative cycles** (P1-8): a negative cycle in `-log(rate)` space = profitable arbitrage. When `_bellman_ford` detects one and `target` lies on it, returns empty `path` with `data_available: true` — callers fall back to `direct_rate`.
+20. **ProcessPoolExecutor is lazy** (P2-13): always call `get_process_pool()` at the call site — never cache the returned reference.
+21. **LightGBM adaptive fallback** (P2-9, iter 67): `train()` proceeds with minimal features (`price_lags=[1]`) when `floor (5) <= len(log_prices) < min_points (15)`. Below `floor`, skips. Configurable via `ForecastingConfig.lightgbm_min_data_points_floor`.
+22. **Scanner is deprecated** (P2-4, iter 67): `/api/v1/scanner/scan` emits deprecation headers. All its filter/sort params now exist on `/api/v1/arbitrage/flips`. **Scanner will be deleted in iter 68** — do not add new callers.
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 4 P1 / 9 P2 / 5 P3). 6 P0 fixed in iter 54-58; P1-4 closed iter 63; P1-8 closed iter 64; P2-13 closed iter 65 (process_pool test pollution); P2-14 added iter 65 (test_compression.py test/code mismatch).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 3 P2 / 4 P3).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| Backend "alive" but `/flips` hangs | (Fixed in iter 63 — was P1-4 clustering dedup) | — |
-| SSE connected but UI stale | (Fixed in iter 55 — was P0-1) | — |
 | 500 → "no data" silently | `proxyWithFallback` swallows 5xx | P2-8 |
-| Stale forecast after event creation | (Fixed in iter 59 — was P1-11) | — |
-| Events lost on backend crash | (Fixed in iter 61 — was P1-7) | — |
-| `test_triangular.py` fails in full-suite mode | (Fixed in iter 65 — was P2-13 process_pool pollution) | — |
-| `test_compression.py` ImportError / assertion fails | Test references `_check_brotli_available` / `_CompressionResponder` removed from middleware | P2-14 |
-| `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle detected — fall back to `direct_rate` | — (fixed iter 64) |
+| `dashboard-page.tsx` unmaintainable | 1705-line god-component | P2-1 |
+| `currency_names_ru.py` hard to edit | 966-line hardcoded dict | P2-3 |
+| `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`) | — |
+| Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` (P2-6 iter 67) | — |
+| LightGBM skips for new currency | (Fixed iter 67 — adaptive fallback from `floor=5`) | — |
+| `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle — fall back to `direct_rate` (P1-8 iter 64) | — |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -108,15 +113,15 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/currencies` | Currency metadata |
 | GET | `/api/v1/prices` | All exchange rates + metrics |
 | GET | `/api/v1/prices/heatmap` | 24h price change heatmap |
-| GET | `/api/v1/prices/stream` | SSE live price updates (P0-1 fixed iter 55) |
+| GET | `/api/v1/prices/stream` | SSE live price updates |
 | GET | `/api/v1/prices/{pair}` | Price for specific pair |
 | GET | `/api/v1/tiers` | Currency tier classifications |
 | GET | `/api/v1/benchmarks/{currency}` | Historical benchmarks |
-| GET | `/api/v1/arbitrage/flips` | Scored flip opportunities |
-| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles (P0-6 fixed iter 56, P0-5 fixed iter 57) |
+| GET | `/api/v1/arbitrage/flips` | Scored flip opportunities (**P2-4 iter 67**: +`max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir`) |
+| GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles |
 | GET | `/api/v1/arbitrage/optimal-currency` | Optimal payment currency |
 | POST | `/api/v1/batch` | Batch multiple GET requests |
-| POST | `/api/v1/events` | Create event (P1-7 fixed iter 61, P1-11 fixed iter 59) |
+| POST | `/api/v1/events` | Create event |
 | GET | `/api/v1/events` | List events |
 | GET | `/api/v1/events/summary` | Event summary |
 | GET | `/api/v1/events/{event_id}` | Get event by ID |
@@ -124,15 +129,23 @@ Quick reference for the most common symptoms:
 | POST | `/api/v1/events/{event_id}/deactivate` | Deactivate event |
 | GET | `/api/v1/anomalies` | Anomaly detection |
 | GET | `/api/v1/storage-value/{currency}` | Hold/sell decision |
-| GET | `/api/v1/optimizer/path` | Optimal conversion path (P1-8 fixed iter 64 — detects arbitrage cycles) |
+| GET | `/api/v1/optimizer/path` | Optimal conversion path (P1-8 iter 64) |
 | GET | `/api/v1/optimizer/matrix` | Conversion matrix |
-| GET | `/api/v1/analyst/summary` | League analyst summary (P0-3 fixed iter 54 — 24h% now timestamp-aware) |
+| GET | `/api/v1/analyst/summary` | League analyst summary |
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
-| GET | `/api/v1/scanner/scan` | Advanced flip scanner (P2-4 — duplicate) |
+| GET | `/api/v1/scanner/scan` | **DEPRECATED (P2-4 iter 67)** — use `/flips` instead. Will be removed in iter 68. |
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
 
-(WebSocket endpoints removed in iter 58 — see STATUS.md §Fixed.)
+**Frontend-only routes:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/flipper/health` | Proxies backend `/health` |
+| GET | `/api/flipper/health/circuit-breakers` | **P2-6 iter 67** — JSON snapshot of per-endpoint circuit breaker state |
+| GET | `/api/flipper/{resource}` | Proxies to FastAPI `{resource}` (currencies, prices, flips, etc.) |
+
+(WebSocket endpoints removed in iter 58.)
 
 ## 6. Documentation Map
 
@@ -140,11 +153,12 @@ Quick reference for the most common symptoms:
 |------|---------|
 | `STATUS.md` | **Known issues & refactoring backlog** — read first |
 | `REFACTOR_PLAN.md` | Roadmap with priority buckets + DoD + recommended fix order |
-| `worklog.md` | Recent task entries (≤5 latest) |
+| `worklog.md` | Recent task entries (≤3 latest) |
 | `docs/ARCHITECTURE.md` | Layers, data flow, invariants, principles |
 | `docs/DATA_CONTRACTS.md` | TypeScript types, API contracts |
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
-| `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas (NOTE: code diverges — see STATUS.md P1-9, P0-4) |
+| `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas |
+
 
