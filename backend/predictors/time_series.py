@@ -642,17 +642,45 @@ class LightGBMForecaster:
         # (e.g. 5-9 days for new currencies) can still produce a forecast
         # with simplified features.
         min_points = getattr(self._fc_cfg, 'lightgbm_min_data_points', 15)
-        if len(log_prices) < min_points:
+        # P2-9 (iter 67): Adaptive fallback floor — when data is between
+        # `floor` and `min_points`, training still proceeds but with the
+        # maximally simplified feature config (price_lags=[1] only). This
+        # supports brand-new currencies that have only 5-9 daily points.
+        floor = getattr(self._fc_cfg, 'lightgbm_min_data_points_floor', 5)
+
+        # Track whether we are in "very sparse" adaptive mode — used later
+        # to lower the post-dropna minimum-rows check (otherwise the lag=1
+        # dropna would leave too few rows to pass the default >=10 check).
+        very_sparse_mode = False
+
+        if len(log_prices) < floor:
             logger.warning(
-                "LightGBM: insufficient data for training (%d points, need >= %d).",
-                len(log_prices), min_points,
+                "LightGBM: insufficient data for training (%d points, need >= %d floor).",
+                len(log_prices), floor,
             )
             return
 
-        # When data is sparse (< 30 points), use a simplified feature config
-        # that only includes small lags to avoid dropping too many rows via NaN.
-        effective_config = self._feature_config
-        if len(log_prices) < 30:
+        if len(log_prices) < min_points:
+            # Adaptive fallback: use the absolute minimal feature set so the
+            # model can train on as few as `floor` points. With lag=1 and n
+            # points, dropna leaves n-1 clean rows — enough for LightGBM to
+            # fit a single tree (overfit, but better than no forecast).
+            very_sparse_mode = True
+            logger.warning(
+                "LightGBM: adaptive fallback — %d points below min_points=%d, "
+                "using minimal features (price_lags=[1] only).",
+                len(log_prices), min_points,
+            )
+            effective_config = LightGBMFeatureConfig(
+                price_lags=[1],
+                volume_lags=[],
+                rolling_windows=[],
+                use_calendar=self._feature_config.use_calendar,
+                use_event_indicator=self._feature_config.use_event_indicator,
+            )
+        elif len(log_prices) < 30:
+            # When data is sparse (< 30 points), use a simplified feature config
+            # that only includes small lags to avoid dropping too many rows via NaN.
             effective_config = LightGBMFeatureConfig(
                 price_lags=[lag for lag in self._feature_config.price_lags if lag < len(log_prices) // 2],
                 volume_lags=[lag for lag in self._feature_config.volume_lags if lag < len(log_prices) // 2],
@@ -666,6 +694,8 @@ class LightGBMForecaster:
                 effective_config.price_lags,
                 effective_config.rolling_windows,
             )
+        else:
+            effective_config = self._feature_config
 
         # Build features
         df = build_features(log_prices, volumes, timestamps, is_event_active, effective_config)
@@ -673,8 +703,15 @@ class LightGBMForecaster:
         # Drop rows with NaN (due to lagging)
         df = df.dropna()
 
-        if len(df) < 10:
-            logger.warning("LightGBM: insufficient clean data after feature building (%d rows).", len(df))
+        # P2-9: In very_sparse_mode the absolute minimum clean rows is 2
+        # (LightGBM requires at least 2 samples to fit). Outside very_sparse
+        # mode we keep the existing >=10 floor to avoid degenerate models.
+        min_clean_rows = 2 if very_sparse_mode else 10
+        if len(df) < min_clean_rows:
+            logger.warning(
+                "LightGBM: insufficient clean data after feature building (%d rows, need >= %d).",
+                len(df), min_clean_rows,
+            )
             return
 
         # Split features and target

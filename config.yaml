@@ -108,6 +108,7 @@ forecasting:
   lightgbm_retrain_interval_hours: 6
   lightgbm_mape_trigger: 0.15
   lightgbm_min_data_points: 15  # Lowered from 30 so LightGBM trains on reduced data (5-9 daily points)
+  lightgbm_min_data_points_floor: 5  # P2-9: adaptive fallback — train with minimal features (lag=1 only) when floor <= n < min_data_points
   forecast_horizon_hours: 24
   significance_level: 0.05  # alpha — confidence = 1 - alpha = 0.95
 

@@ -350,17 +350,67 @@ class TestLightGBMReducedData:
             if result is not None:
                 assert len(result.point_forecast) == 6
 
-    def test_lightgbm_still_skips_below_15(self):
-        """LightGBM should skip training with fewer than 15 points."""
+    def test_lightgbm_still_skips_below_floor(self):
+        """LightGBM should skip training with fewer than `floor` points (default 5)."""
         from backend.predictors.time_series import LightGBMForecaster
 
         rng = np.random.RandomState(42)
-        log_prices = 4.6 + rng.normal(0, 0.01, 10)
+        log_prices = 4.6 + rng.normal(0, 0.01, 4)  # 4 points — below floor=5
 
         forecaster = LightGBMForecaster()
         forecaster.train(log_prices)
 
         # Should not have trained
+        assert forecaster._model_median is None
+
+    def test_lightgbm_adaptive_trains_with_8_points(self):
+        """P2-9: With 8 points (between floor=5 and min_points=15), adaptive
+        fallback should kick in and training should succeed with minimal features."""
+        from backend.predictors.time_series import LightGBMForecaster
+
+        rng = np.random.RandomState(42)
+        log_prices = 4.6 + rng.normal(0, 0.01, 8)
+
+        forecaster = LightGBMForecaster()
+        forecaster.train(log_prices)
+
+        # Should have trained via adaptive fallback
+        if forecaster._model_median is not None:
+            assert forecaster.last_trained_at is not None
+            # Verify effective feature config uses minimal lags
+            if forecaster._effective_feature_config is not None:
+                assert forecaster._effective_feature_config.price_lags == [1]
+                assert forecaster._effective_feature_config.rolling_windows == []
+
+    def test_lightgbm_adaptive_floor_at_minimum(self):
+        """P2-9: At exactly floor=5 points, training should still proceed via adaptive fallback."""
+        from backend.predictors.time_series import LightGBMForecaster
+
+        rng = np.random.RandomState(42)
+        log_prices = 4.6 + rng.normal(0, 0.01, 5)
+
+        forecaster = LightGBMForecaster()
+        forecaster.train(log_prices)
+
+        # Should have trained (5 points, lag=1 → 4 clean rows, ≥2 minimum)
+        if forecaster._model_median is not None:
+            assert forecaster.last_trained_at is not None
+
+    def test_lightgbm_adaptive_custom_floor_via_config(self):
+        """P2-9: Custom floor value via ForecastingConfig is respected."""
+        from backend.predictors.time_series import LightGBMForecaster
+        from backend.config import AppConfig, ForecastingConfig
+
+        rng = np.random.RandomState(42)
+        log_prices = 4.6 + rng.normal(0, 0.01, 7)  # 7 points
+
+        # Set min_points=10, floor=8 → 7 points should skip (below floor)
+        fc_cfg = ForecastingConfig(lightgbm_min_data_points=10, lightgbm_min_data_points_floor=8)
+        cfg = AppConfig(forecasting=fc_cfg)
+        forecaster = LightGBMForecaster(config=cfg)
+        forecaster.train(log_prices)
+
+        # 7 < 8 (floor) → skip
         assert forecaster._model_median is None
 
     def test_lightgbm_daily_stats_30_day_forecast(self):

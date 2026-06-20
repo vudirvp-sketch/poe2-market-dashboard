@@ -121,6 +121,12 @@ class ForecastingConfig(BaseModel):
     lightgbm_retrain_interval_hours: int = 6
     lightgbm_mape_trigger: float = 0.15
     lightgbm_min_data_points: int = 15  # Minimum points for LightGBM training (lowered from 30 for reduced data)
+    # P2-9 (iter 67): Adaptive fallback floor — when data is between `floor`
+    # and `min_data_points`, training still proceeds but with the maximally
+    # simplified feature config (price_lags=[1], no volume/rolling/calendar).
+    # This supports brand-new currencies that have only 5-9 daily points.
+    # Below `floor`, training is skipped (too few rows even for lag=1).
+    lightgbm_min_data_points_floor: int = 5
     forecast_horizon_hours: int = 24
     significance_level: float = 0.05  # alpha — confidence = 1 - alpha = 0.95
 
