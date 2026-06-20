@@ -1,14 +1,14 @@
 # STATUS.md — Known Issues & Refactoring Backlog
 
-> **Last updated:** 2026-06-20 (iter 55 — P0-1 fixed)
+> **Last updated:** 2026-06-20 (iter 56 — P0-6 fixed)
 > This file is the **single source of truth** for known bugs and refactoring priorities.
 > Update it **before** fixing any issue. Cross-reference issue IDs in commits.
 >
-> **Iter 55 status:** P0-1 fixed and verified. Backend tests: 377 passed / 4 skipped. Frontend tests: 291 passed. `tsc --noEmit` clean. Remaining P0: 3 (P0-2, P0-5, P0-6).
+> **Iter 56 status:** P0-6 fixed and verified. Backend tests: `tests/test_triangular.py` 7/7 pass, `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` pass. Remaining P0: 2 (P0-2, P0-5).
 
 ---
 
-## P0 — Критичные проблемы (стабильность/корректность) — 3 active
+## P0 — Критичные проблемы (стабильность/корректность) — 2 active
 
 ### P0-2. WebSocket endpoints блокируют event loop
 - **Файл:** `backend/api/routes_ws.py:415-468` (`_compute_anomalies`), `routes_ws.py:478-522` (`_compute_flips`)
@@ -19,16 +19,11 @@
 - **Файлы:**
   - `backend/api/data_snapshot.py:171-210` `_compute_transitive_prices` (BFS, O(V+E))
   - `backend/scheduler.py:91-110` `collect_price_snapshot` (5-итерационный relaxation, O(5×E))
-  - `backend/api/routes_arbitrage.py:755-770` `get_triangular_arbitrage` (chaos-normalization через `prices["chaos"] = 1.0`)
+  - `backend/api/routes_arbitrage.py` `get_triangular_arbitrage` — chaos-normalization уже удалён (P0-6 iter 56), но `prices` параметр остаётся dead в `_find_triangular_arbitrage_sync` до unified helper.
 - **Проблема (2 части):**
   1. **Maintainability:** Три разных алгоритма для одной концепции → несогласованные `prices_in_base`.
   2. **Correctness bug:** 5-итерационный relaxation НЕ находит цены для цепочек глубже 5 хопов. BFS находит все цены за один проход.
-- **Решение:** Вынести в единый helper `backend/economy/pricing.py:compute_transitive_prices(prices_in_base, rates, base)` (BFS-версия).
-
-### P0-6. `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` — хардкод в triangular arbitrage
-- **Файл:** `backend/api/routes_arbitrage.py:769-770`
-- **Проблема:** Жёстко переопределяет цену chaos для triangular arbitrage, даже если `base_currency=exalted`. Сломается при смене лиги или отсутствии chaos в данных.
-- **Решение:** Использовать единый numeraire (`config.league.base_currency`), не нормализовать к chaos.
+- **Решение:** Вынести в единый helper `backend/economy/pricing.py:compute_transitive_prices(prices_in_base, rates, base)` (BFS-версия). После этого убрать dead `prices` параметр из `find_triangular_arbitrage`.
 
 ---
 
@@ -102,6 +97,15 @@
 ---
 
 ## Fixed
+
+### P0-6 (fixed in iter 56 — `fix(P0-6): remove chaos hardcode in triangular arbitrage`) — Triangular numeraire
+- **Was:** `backend/api/routes_arbitrage.py:755-770` contained two redundant blocks:
+  1. A chaos-normalization block that converted `prices_in_base` from base currency to chaos-normalized when `base_currency != "chaos"`.
+  2. A hardcode `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` that ran unconditionally, even when `base_currency == "exalted"` or when `chaos` was missing from the snapshot.
+- **Why it broke:** Bellman-Ford path in `_find_triangular_arbitrage_sync` actually uses `rates` only — `prices` is a dead parameter — so the hardcode was misleading dead code, but it would silently corrupt any future logic that consults `prices`. The conditional normalization also created two inconsistent code paths (chaos vs base) for the same concept.
+- **Now:** Single numeraire = `config.league.base_currency`. `prices = dict(snapshot.prices_in_base)` is used directly. No chaos normalization, no hardcode. Cleanup of the dead `prices` parameter is deferred to P0-5 (unified pricing helper).
+- **Files changed:** `backend/api/routes_arbitrage.py` (16 lines removed, 9-line explanatory comment added).
+- **Tests:** Existing `tests/test_triangular.py` (7/7 pass) and `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` (pass) — no regression. No new tests added because the deleted code was dead (no observable behavior to assert).
 
 ### P0-1 (fixed in iter 55 — `fix(P0-1): SSE contract fix — remove dead monitor, add change_pct, align payload`) — SSE price stream
 - **Was (3 части):**

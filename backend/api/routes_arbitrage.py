@@ -750,24 +750,15 @@ async def get_triangular_arbitrage(
     for key, rate in rates_dict.items():
         rates_for_bf[(rate.currency_from, rate.currency_to)] = rate.raw_rate
 
-    # Build prices in a consistent reference currency.
+    # P0-6 (fixed): Use a single numeraire = config.league.base_currency.
+    # `snapshot.prices_in_base` is already expressed in the base currency
+    # (the base currency itself has price 1.0). No chaos normalization
+    # is needed — the previous `prices["chaos"] = 1.0` hardcode broke
+    # correctness whenever base_currency != "chaos" (e.g. exalted) or
+    # when chaos was missing from the snapshot (e.g. new league).
+    # Note: `prices` is currently a dead parameter in find_triangular_arbitrage
+    # (the Bellman-Ford path uses `rates` only); cleanup belongs to P0-5.
     prices = dict(snapshot.prices_in_base)  # shallow copy
-    if "chaos" in prices and config.league.base_currency != "chaos":
-        # Convert all prices from base-currency (exalted) to chaos-normalized
-        # for Bellman-Ford. Unlike _build_flip_opportunities which works in
-        # base currency directly, triangular arbitrage uses BFS/relaxation
-        # that requires a single consistent numeraire — chaos (price=1.0)
-        # is simplest for detecting profit cycles.
-        chaos_in_base = prices.get("chaos", 0)
-        if chaos_in_base and chaos_in_base > 0:
-            base_to_chaos = 1.0 / chaos_in_base
-            for k in list(prices.keys()):
-                if k != "chaos":
-                    prices[k] = prices[k] * base_to_chaos
-
-    # Step 1.4: Fix chaos price
-    prices["chaos"] = 1.0
-    prices["Chaos Orb"] = 1.0
 
     pair_volumes: dict[tuple[str, str], float] = {}
     for key, rate in rates_dict.items():

@@ -5,6 +5,38 @@
 
 ---
 
+## Task 56 — P0-6 triangular hardcode fix
+**Agent:** Main Agent
+**Date:** 2026-06-20
+
+**Task:** Per REFACTOR_PLAN.md iter 56: remove `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` hardcode + redundant chaos-normalization block in `routes_arbitrage.py:753-770`. Use single numeraire = `config.league.base_currency`.
+
+**Work Log:**
+- Re-read STATUS.md, REFACTOR_PLAN.md v20, AGENT_NAVIGATION.md, worklog.md (iter 55 entry).
+- Verified P0-6 source: `backend/api/routes_arbitrage.py:753-770` confirmed two redundant blocks: (1) chaos-normalization conditional conversion (lines 755-766), (2) unconditional hardcode `prices["chaos"] = 1.0; prices["Chaos Orb"] = 1.0` (lines 769-770).
+- Verified downstream: `_find_triangular_arbitrage_sync` in `backend/arbitrage/triangular.py` accepts `prices` parameter but **never reads it** — Bellman-Ford path uses `rates` only. `prices` is a dead parameter. So the hardcode was misleading dead code, but the fix is still warranted (per STATUS.md solution: single numeraire = base_currency).
+- Verified test coverage: `tests/test_triangular.py` (7 tests) + `tests/e2e/test_api_e2e.py::test_arbitrage_triangular` (status code only).
+- **P0-6 fix:** Replaced lines 753-770 (16 lines of chaos normalization + hardcode) with:
+  - `prices = dict(snapshot.prices_in_base)` (unchanged — already in base currency).
+  - 9-line comment explaining: `prices_in_base` is already in `config.league.base_currency`, no chaos normalization needed, dead `prices` param cleanup deferred to P0-5.
+- Syntax check: `python -c "import ast; ast.parse(open('backend/api/routes_arbitrage.py').read())"` — OK.
+- Tests: `pytest tests/test_triangular.py -x` — 7/7 pass (5.71s). `pytest tests/e2e/test_api_e2e.py::test_arbitrage_triangular` — 1/1 pass (3.85s). No regressions.
+- No new tests added: deleted code was dead (no observable behavior to assert). Adding tests for the dead `prices` param would be premature — that cleanup belongs to P0-5.
+
+**Stage Summary:**
+- P0-6 fixed: `fix(P0-6): remove chaos hardcode in triangular arbitrage`.
+- `STATUS.md`: P0-6 moved from active P0 to Fixed section. Header updated to iter 56. P0 count: 3 → 2 active. P0-5 description updated (notes dead `prices` param cleanup is now bundled with P0-5).
+- `REFACTOR_PLAN.md`: v20 → v21. Iter 56 marked DONE. P0 bucket 3 → 2. Total iterations: 24 → 23.
+- `AGENT_NAVIGATION.md`: §1 routes_arbitrage.py marker updated (P0-6 fixed). §4 known issues count 3 → 2 P0. §5 API endpoint table updated (triangular no longer BROKEN).
+- `worklog.md`: this entry replaces iter 54 entry (≤5 rule).
+
+**Stopping point:**
+- Iter 56 done. Ready for iter 57 = P0-5 (transitive prices helper) per REFACTOR_PLAN.md §"Recommended Fix Order".
+- Suggested commit message: `fix(P0-6): remove chaos hardcode in triangular arbitrage`
+- Changed files for archive: `backend/api/routes_arbitrage.py`, `STATUS.md`, `REFACTOR_PLAN.md`, `AGENT_NAVIGATION.md`, `worklog.md`.
+
+---
+
 ## Task 55 — P0-1 SSE fix (remove dead monitor, add change_pct, align contract)
 **Agent:** Main Agent
 **Date:** 2026-06-20
