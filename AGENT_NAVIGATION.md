@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 72 — P2-1 steps 2+3 done).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 73 — P2-1 + P3-7 closed; backlog empty).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -44,8 +44,10 @@
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup + mode-aware 5xx fallback (P1-10 iter 66, **P2-8 iter 69**) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `proxyWithFallback` passes non-503 5xx through in dev, returns 200+`X-Flipper-Fallback` header in prod. Exports `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`, `FLIPPER_FALLBACK_HEADER` |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 iter 55, P2-7 iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation |
-| `src/components/dashboard/dashboard-page.tsx` | God-component, **1370 lines** (P2-1 steps 1-3 done iter 71-72: was 1685). | Multi-iter split. `ExchangeTabContent` extracted iter 71; `CurrenciesTabContent` / `UniquesTabContent` / `OverviewTabContent` extracted iter 72. Step 4 (iter 73+) — extract `DashboardToolbar` (TabsList + buttons row) + `DashboardDialogs` + `useDashboardData` hook to reach ≤700 lines. |
-| `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern reused by the iter 72 extractions. |
+| `src/components/dashboard/dashboard-page.tsx` | Parent wiring component, **1201 lines** (P2-1 closed iter 73: was 1685 in iter 70). | 6 extractions over iter 71-73: `ExchangeTabContent`, `CurrenciesTabContent`, `UniquesTabContent`, `OverviewTabContent`, `DashboardToolbar`, `DashboardDialogs`. Optional follow-up: `useDashboardData` hook for the ~250 lines of useQuery/memo wiring (deferred — high interdependency risk). |
+| `src/components/dashboard/dashboard-toolbar.tsx` | Toolbar (TabsList + action buttons + category chips) (**P2-1 iter 73, step 4a**) | Pure presentational. Owns the tab strip + keyboard-shortcuts/alerts/comparison/pair-comparison buttons + the currencies/uniques category-filter chip strip. Tab switching still goes through the parent `<Tabs onValueChange=...>` scope. |
+| `src/components/dashboard/dashboard-dialogs.tsx` | Dialog/sheet/banner wrappers (**P2-1 iter 73, step 4b**) | Pure presentational. Wraps DetailDialog, PairDetailDialog, ComparisonDialog, PairComparisonDialog, PriceAlertDialog, EventsSidebar, OfflineBanner, ShortcutsDialog — 8 primitives that sit at the bottom of the Dashboard render tree. Each open/close flag is a prop. |
+| `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern reused by the iter 72-73 extractions. |
 | `src/components/dashboard/currencies-tab-content.tsx` | Currencies tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, virtual-vs-static grid switch, pagination. |
 | `src/components/dashboard/uniques-tab-content.tsx` | Uniques tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, UniqueTable, pagination. |
 | `src/components/dashboard/overview-tab-content.tsx` | Overview tab content (**P2-1 iter 72**) | Pure presentational. Composes MarketOverview + ComparativeChart, each wrapped in its own ErrorBoundary. |
@@ -101,13 +103,12 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 1 P2 / 1 P3).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — backlog is currently empty (P0=0, P1=0, P2=0, P3=0, P4=0). Switch focus to product features in `PRODUCT_VISION.md` (F1-F6).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| `dashboard-page.tsx` unmaintainable | 1370-line god-component (down from 1685 in iter 71, 1466 in iter 72). `ExchangeTabContent` + `CurrenciesTabContent` + `UniquesTabContent` + `OverviewTabContent` extracted. Step 4 (toolbar + dialogs + data hook) deferred to iter 73. | P2-1 (in progress) |
 | Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py`. | — |
 | Frontend shows fallback data without notice | (Fixed iter 69 — was P2-8) check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
 | `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |
@@ -117,6 +118,7 @@ Quick reference for the most common symptoms:
 | `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle — fall back to `direct_rate` (P1-8 iter 64) | — |
 | Concurrent EventManager access raises `KeyError` / `dict changed size during iteration` | (Fixed iter 71 — was P3-3) `threading.RLock` guards all in-memory `_events` access | — |
 | `SnapshotManager.get_snapshot` returns stale snapshot paired with fresh ts | (Fixed iter 71 — was P3-4) `(snapshot, ts)` wrapped in immutable `_SnapshotState` swapped atomically | — |
+| `dashboard-page.tsx` still 1201 lines | (P2-1 closed iter 73) Optional follow-up: extract `useDashboardData` hook for ~250 lines of useQuery/memo wiring. Not blocking — file is now legitimate parent wiring. | — |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -167,13 +169,13 @@ Quick reference for the most common symptoms:
 |------|---------|
 | `STATUS.md` | **Known issues & refactoring backlog** — read first |
 | `PRODUCT_VISION.md` | **Product direction** — analytics helper, NOT a poe2scout/poe2ninja clone. Read before proposing features. |
-| `REFACTOR_PLAN.md` | Roadmap with priority buckets + DoD + recommended fix order |
-| `worklog.md` | Recent task entries (≤3 latest) |
 | `docs/ARCHITECTURE.md` | Layers, data flow, invariants, principles |
 | `docs/DATA_CONTRACTS.md` | TypeScript types, API contracts |
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
 | `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas |
+
+> **Note:** `REFACTOR_PLAN.md` and `worklog.md` were deleted in iter 73 (P3-7) after all P2/P3 issues were closed. For old task history see `git log`.
 
 

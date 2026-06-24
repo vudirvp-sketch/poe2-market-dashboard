@@ -175,7 +175,6 @@ Abyss, Incursion) показывать:
 ## 7. Связанные документы
 
 - `STATUS.md` — баги + технический рефакторинг (P0-P3).
-- `REFACTOR_PLAN.md` — порядок закрытия технических задач.
 - `AGENT_NAVIGATION.md` — где что лежит в коде.
 - `docs/ARCHITECTURE.md` — слои, инварианты.
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.

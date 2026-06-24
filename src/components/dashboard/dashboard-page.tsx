@@ -2,25 +2,8 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Coins,
-  Shield,
-  ArrowLeftRight,
-  Star,
-  BarChart3,
-  AlertTriangle,
-  GitCompare,
-  Bell,
-  TrendingUp,
-  Route,
-  Network,
-  Keyboard,
-  LineChart,
-  Droplets,
-} from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 
 import { Header } from "@/components/dashboard/header";
 // P2-1 (iter 71): ExchangeTabContent extracted from this file.
@@ -29,15 +12,13 @@ import { ExchangeTabContent } from "@/components/dashboard/exchange-tab-content"
 import { CurrenciesTabContent } from "@/components/dashboard/currencies-tab-content";
 import { UniquesTabContent } from "@/components/dashboard/uniques-tab-content";
 import { OverviewTabContent } from "@/components/dashboard/overview-tab-content";
-import { DetailDialog } from "@/components/dashboard/detail-dialog";
-import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
+// P2-1 (iter 73, step 4a): DashboardToolbar extracted (TabsList + action buttons + category chips).
+import { DashboardToolbar } from "@/components/dashboard/dashboard-toolbar";
+// P2-1 (iter 73, step 4b): DashboardDialogs extracted (8 dialog/sheet/banner wrappers).
+import { DashboardDialogs } from "@/components/dashboard/dashboard-dialogs";
 // WatchlistTab — lazy-loaded (Phase 4.1)
-import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
-import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dialog";
-import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 // ArbitrageTab, ArbitrageFlipperFlips, ArbitrageHelpers — deleted (iter 37)
 // FlipsTab, OptimizerTab, AnalystTab — lazy-loaded (Phase 4.1)
-import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
 // MarketHeatmap — deleted (iter 37)
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 // LiquidChainTab — lazy-loaded (Phase 4.1)
@@ -97,8 +78,6 @@ const WatchlistTab = dynamic(
   { loading: TabSkeleton },
 );
 
-import { EventsSidebar } from "@/components/dashboard/events-sidebar";
-import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
@@ -1018,130 +997,22 @@ export function Dashboard() {
               setCurrenciesPage(1);
             }}
           >
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <TabsList aria-label={t("ariaDashboardSections")}>
-                <TabsTrigger value="overview" className="gap-1.5" aria-label={t("tabOverview")}>
-                  <BarChart3 className="h-4 w-4" aria-hidden="true" /> {t("tabOverview")}
-                </TabsTrigger>
-                <TabsTrigger value="currencies" className="gap-1.5" aria-label={t("tabCurrencies")}>
-                  <Coins className="h-4 w-4" aria-hidden="true" /> {t("tabCurrencies")}
-                </TabsTrigger>
-                <TabsTrigger value="uniques" className="gap-1.5" aria-label={t("tabUniques")}>
-                  <Shield className="h-4 w-4" aria-hidden="true" /> {t("tabUniques")}
-                </TabsTrigger>
-                <TabsTrigger value="exchange" className="gap-1.5" aria-label={t("tabExchange")}>
-                  <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> {t("tabExchange")}
-                </TabsTrigger>
-                {/* Arbitrage tab removed (iter 34) — merged into Flips */}
-                <TabsTrigger value="flips" className="gap-1.5" aria-label={t("tabFlips")}>
-                  <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t("tabFlips")}
-                </TabsTrigger>
-                <TabsTrigger value="optimizer" className="gap-1.5" aria-label={t("tabOptimizer") || "Optimizer"}>
-                  <Route className="h-4 w-4" aria-hidden="true" /> {t("tabOptimizer") || "Optimizer"}
-                </TabsTrigger>
-                <TabsTrigger value="analyst" className="gap-1.5" aria-label={t("tabAnalyst") || "Analyst"}>
-                  <LineChart className="h-4 w-4" aria-hidden="true" /> {t("tabAnalyst") || "Analyst"}
-                </TabsTrigger>
-                <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
-                  <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}
-                </TabsTrigger>
-                <TabsTrigger value="graph" className="gap-1.5" aria-label={t("tabGraph")}>
-                  <Network className="h-4 w-4" aria-hidden="true" /> {t("tabGraph")}
-                </TabsTrigger>
-                <TabsTrigger value="watchlist" className="gap-1.5" aria-label={t("tabWatchlist")}>
-                  <Star className="h-4 w-4" aria-hidden="true" /> {t("tabWatchlist")}
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="flex items-center gap-2">
-                {/* §3.2: Keyboard Shortcuts help button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1.5"
-                  onClick={() => setShortcutsHelpOpen(true)}
-                  aria-label={t("keyboardShortcuts")}
-                  title={t("keyboardShortcuts")}
-                >
-                  <Keyboard className="h-3.5 w-3.5" aria-hidden="true" />
-                </Button>
-
-                {/* Price Alerts button — with pluralization */}
-                <Button
-                  variant={alerts.length > 0 ? "default" : "outline"}
-                  size="sm"
-                  className="h-8 gap-1.5"
-                  onClick={() => setAlertOpen(true)}
-                  aria-label={alerts.length > 0 ? t("alertsCount", { "0": alerts.length }) : t("alerts")}
-                >
-                  <Bell className="h-3.5 w-3.5" aria-hidden="true" />
-                  {alerts.length > 0
-                    ? tp(t("_pl_alertsCount"), alerts.length, { "0": alerts.length })
-                    : t("alerts")}
-                </Button>
-
-                {/* Item Comparison button — with pluralization */}
-                {comparisonIds.length > 0 && (
-                  <Button
-                    variant={comparisonIds.length >= 2 ? "default" : "outline"}
-                    size="sm"
-                    className="h-8 gap-1.5"
-                    onClick={() => setComparisonOpen(true)}
-                    disabled={comparisonIds.length < 2}
-                    aria-label={t("compare", { "0": comparisonIds.length })}
-                  >
-                    <GitCompare className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tp(t("_pl_compare"), comparisonIds.length, { "0": comparisonIds.length })}
-                  </Button>
-                )}
-
-                {/* Pair Comparison button */}
-                {pairComparisonIds.length > 0 && (
-                  <Button
-                    variant={pairComparisonIds.length >= 2 ? "default" : "outline"}
-                    size="sm"
-                    className="h-8 gap-1.5"
-                    onClick={() => setPairComparisonOpen(true)}
-                    disabled={pairComparisonIds.length < 2}
-                    aria-label={t("pairCompare", { "0": pairComparisonIds.length })}
-                  >
-                    <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    {tp(t("_pl_pairCompare"), pairComparisonIds.length, { "0": pairComparisonIds.length })}
-                  </Button>
-                )}
-
-                {/* Category filter buttons (only for currencies/uniques) */}
-                {(tab === "currencies" || tab === "uniques") && (
-                  <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("ariaCategoryFilter")}>
-                    <Badge
-                      variant={categoryFilter === "all" ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setCategoryFilter("all")}
-                      role="button"
-                      aria-pressed={categoryFilter === "all"}
-                      tabIndex={0}
-                    >
-                      {t("all")}
-                    </Badge>
-                    {currentCategories.map((cat) => (
-                      <Badge
-                        key={cat.name}
-                        variant={
-                          categoryFilter === cat.name ? "default" : "outline"
-                        }
-                        className="cursor-pointer"
-                        onClick={() => setCategoryFilter(cat.name)}
-                        role="button"
-                        aria-pressed={categoryFilter === cat.name}
-                        tabIndex={0}
-                      >
-                        {cat.displayName}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* P2-1 (iter 73, step 4a): toolbar JSX extracted to <DashboardToolbar /> */}
+            <DashboardToolbar
+              categoryFilter={categoryFilter}
+              currentCategories={currentCategories}
+              showCategoryFilter={tab === "currencies" || tab === "uniques"}
+              alertsCount={alerts.length}
+              comparisonCount={comparisonIds.length}
+              pairComparisonCount={pairComparisonIds.length}
+              onCategoryChange={setCategoryFilter}
+              onShortcutsClick={() => setShortcutsHelpOpen(true)}
+              onAlertsClick={() => setAlertOpen(true)}
+              onComparisonClick={() => setComparisonOpen(true)}
+              onPairComparisonClick={() => setPairComparisonOpen(true)}
+              t={t}
+              tp={tp}
+            />
 
             {/* ============ OVERVIEW TAB ============ */}
             {/* P2-1 (iter 72): inlined JSX extracted to <OverviewTabContent /> */}
@@ -1300,70 +1171,30 @@ export function Dashboard() {
         )}
       </main>
 
-      {/* ============ ITEM DETAIL DIALOG ============ */}
-      <ErrorBoundary fallbackTitle={t("fallbackItemDetails")}>
-        <DetailDialog
-          item={detailItem}
-          open={detailOpen}
-          onOpenChange={setDetailOpen}
-          realm={realm}
-          league={effectiveLeague}
-          referenceCurrency={referenceCurrency}
-        />
-      </ErrorBoundary>
-
-      {/* ============ PAIR DETAIL DIALOG ============ */}
-      <ErrorBoundary fallbackTitle={t("fallbackPairDetails")}>
-        <PairDetailDialog
-          pair={detailPair}
-          open={pairDetailOpen}
-          onOpenChange={setPairDetailOpen}
-          realm={realm}
-          league={effectiveLeague}
-        />
-      </ErrorBoundary>
-
-      {/* ============ ITEM COMPARISON DIALOG ============ */}
-      <ComparisonDialog
-        open={comparisonOpen}
-        onOpenChange={setComparisonOpen}
+      {/* P2-1 (iter 73, step 4b): 8 dialog/sheet/banner wrappers extracted to <DashboardDialogs /> */}
+      <DashboardDialogs
+        detailItem={detailItem}
+        detailOpen={detailOpen}
+        setDetailOpen={setDetailOpen}
+        detailPair={detailPair}
+        pairDetailOpen={pairDetailOpen}
+        setPairDetailOpen={setPairDetailOpen}
+        comparisonOpen={comparisonOpen}
+        setComparisonOpen={setComparisonOpen}
+        pairComparisonOpen={pairComparisonOpen}
+        setPairComparisonOpen={setPairComparisonOpen}
+        alertOpen={alertOpen}
+        setAlertOpen={setAlertOpen}
+        eventsSidebarOpen={eventsSidebarOpen}
+        setEventsSidebarOpen={setEventsSidebarOpen}
+        shortcutsHelpOpen={shortcutsHelpOpen}
+        setShortcutsHelpOpen={setShortcutsHelpOpen}
         realm={realm}
         league={effectiveLeague}
         referenceCurrency={referenceCurrency}
         allItems={allItems}
-      />
-
-      {/* ============ PAIR COMPARISON DIALOG ============ */}
-      <PairComparisonDialog
-        open={pairComparisonOpen}
-        onOpenChange={setPairComparisonOpen}
-        realm={realm}
-        league={effectiveLeague}
-      />
-
-      {/* ============ PRICE ALERT DIALOG ============ */}
-      <PriceAlertDialog
-        open={alertOpen}
-        onOpenChange={setAlertOpen}
-        realm={realm}
-        league={effectiveLeague}
-        allItems={allItems}
-      />
-
-      {/* ============ EVENTS SIDEBAR (Sheet) ============ */}
-      <EventsSidebar
-        open={eventsSidebarOpen}
-        onOpenChange={setEventsSidebarOpen}
         backendOnline={flipperBackendOnline}
-      />
-
-      {/* ============ OFFLINE BANNER (PWA) ============ */}
-      <OfflineBanner />
-
-      {/* ============ §3.2: KEYBOARD SHORTCUTS HELP DIALOG ============ */}
-      <ShortcutsDialog
-        open={shortcutsHelpOpen}
-        onOpenChange={setShortcutsHelpOpen}
+        t={t}
       />
     </div>
   );
