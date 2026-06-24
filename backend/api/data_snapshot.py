@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -182,18 +183,53 @@ from backend.economy.pricing import compute_transitive_prices as _compute_transi
 # Snapshot manager (singleton)
 # ---------------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class _SnapshotState:
+    """P3-4 (iter 71): immutable container holding a (snapshot, ts) pair.
+
+    Replacing ``SnapshotManager._state`` with a new ``_SnapshotState``
+    instance is a single atomic Python attribute assignment (guarded by
+    the GIL), so readers either see the old state or the new state —
+    never a stale snapshot paired with a fresh timestamp.
+    """
+    snapshot: "DataSnapshot"
+    ts: float
+
+
 class SnapshotManager:
     """Manages a shared, TTL-cached DataSnapshot.
 
     Thread-safe via asyncio.Lock — only one refresh at a time.
     Other callers await the in-progress refresh instead of starting
     their own.
+
+    P3-4 (iter 71) — atomic snapshot/ts swap:
+        Previously `self._snapshot` and `self._snapshot_ts` were stored as
+        two separate attributes. The fast-path read in ``get_snapshot()``
+        did two attribute reads without a lock — under concurrent access
+        another coroutine could refresh the snapshot between the two reads,
+        leaving the reader with a stale ``_snapshot`` paired with a fresh
+        ``_snapshot_ts`` (and therefore incorrectly concluding the snapshot
+        was fresh).
+
+        The fix wraps the two values in an immutable ``_SnapshotState``
+        dataclass and stores a single reference to it. The reference is
+        replaced atomically (a single Python attribute assignment under
+        the GIL), so a reader either sees the pre-refresh state or the
+        post-refresh state — never a mixed pair.
+
+        Iterators that grabbed ``last_snapshot`` and then iterated over its
+        ``exchange_rates`` dict were already safe (the OLD DataSnapshot
+        object is never mutated in place — ``_refresh`` builds a fresh
+        DataSnapshot), but the new tuple swap makes that guarantee
+        explicit and removes the time-of-check-to-time-of-use window for
+        the freshness check.
     """
 
     def __init__(self, config: AppConfig | None = None):
         self._config = config or get_settings()
-        self._snapshot: DataSnapshot | None = None
-        self._snapshot_ts: float = 0.0
+        # P3-4 (iter 71): atomic state — see class docstring.
+        self._state: _SnapshotState | None = None
         self._ttl: float = self._config.data.cache_ttl_prices_minutes * 60.0
         self._lock = asyncio.Lock()
         self._periodic_task: asyncio.Task | None = None
@@ -206,11 +242,22 @@ class SnapshotManager:
         self._history_cache_inactive_ttl = 30 * 60.0  # 30 minutes
         # Track which currencies are active (present in SnapshotPairs)
         self._active_currencies: set[str] = set()
+        # P3-4 (iter 71): guards _history_cache and _active_currencies
+        # (which are mutated during _refresh from background tasks).
+        # Not used to guard _state — that one is swapped atomically.
+        self._cache_lock = threading.Lock()
 
     @property
     def last_snapshot(self) -> DataSnapshot | None:
-        """Return the last snapshot, even if stale. None if never refreshed."""
-        return self._snapshot
+        """Return the last snapshot, even if stale. None if never refreshed.
+
+        P3-4 (iter 71): reads the atomic ``_state`` reference and returns
+        its ``snapshot`` field. A reader that grabs this reference and
+        then iterates over ``snapshot.exchange_rates`` is safe — the
+        underlying DataSnapshot object is never mutated in place.
+        """
+        state = self._state
+        return state.snapshot if state is not None else None
 
     async def start_periodic_refresh(self) -> None:
         """Start periodic snapshot refresh as a long-running background task.
@@ -229,8 +276,14 @@ class SnapshotManager:
                 try:
                     snapshot = await self._refresh()
                     if snapshot is not None and snapshot.valid:
-                        self._snapshot = snapshot
-                        self._snapshot_ts = time.monotonic()
+                        # P3-4 (iter 71): atomic swap — replace the entire
+                        # _state reference in one assignment so concurrent
+                        # readers see either the old or the new state, never
+                        # a mixed (stale snapshot, fresh ts) pair.
+                        self._state = _SnapshotState(
+                            snapshot=snapshot,
+                            ts=time.monotonic(),
+                        )
                         logger.info(
                             "SnapshotManager: snapshot refreshed — %d exchange rates, %d currencies",
                             len(snapshot.exchange_rates),
@@ -256,51 +309,66 @@ class SnapshotManager:
         """
         now = time.monotonic()
 
-        # Fast path: fresh snapshot
+        # P3-4 (iter 71): fast path reads the atomic _state reference ONCE.
+        # The snapshot and ts are guaranteed to be a coherent pair because
+        # they come from the same _SnapshotState instance.
+        state = self._state
         if (
-            self._snapshot is not None
-            and self._snapshot.valid
-            and now - self._snapshot_ts < self._ttl
+            state is not None
+            and state.snapshot is not None
+            and state.snapshot.valid
+            and now - state.ts < self._ttl
         ):
-            return self._snapshot
+            return state.snapshot
 
         # Slow path: need refresh
         async with self._lock:
             # Double-check after acquiring lock (another coroutine may have
-            # refreshed while we waited)
+            # refreshed while we waited). Re-read _state atomically.
             now = time.monotonic()
+            state = self._state
             if (
-                self._snapshot is not None
-                and self._snapshot.valid
-                and now - self._snapshot_ts < self._ttl
+                state is not None
+                and state.snapshot is not None
+                and state.snapshot.valid
+                and now - state.ts < self._ttl
             ):
-                return self._snapshot
+                return state.snapshot
 
             # Refresh
             try:
-                self._snapshot = await self._refresh()
-                self._snapshot_ts = time.monotonic()
+                snapshot = await self._refresh()
+                # P3-4 (iter 71): atomic swap.
+                self._state = _SnapshotState(
+                    snapshot=snapshot,
+                    ts=time.monotonic(),
+                )
                 logger.info(
                     "DataSnapshot refreshed: %d exchange rates, %d currencies",
-                    len(self._snapshot.exchange_rates),
-                    len(self._snapshot.currencies),
+                    len(snapshot.exchange_rates),
+                    len(snapshot.currencies),
                 )
             except Exception as e:
                 logger.error("DataSnapshot refresh failed: %s", e)
                 # Return stale snapshot if available, otherwise empty
-                if self._snapshot is not None:
-                    stale_age = now - self._snapshot_ts
+                state = self._state
+                if state is not None and state.snapshot is not None:
+                    stale_age = now - state.ts
                     logger.warning(
                         "DEGRADED: Returning stale DataSnapshot after refresh failure "
                         "(age=%.1fs, rates=%d, currencies=%d)",
                         stale_age,
-                        len(self._snapshot.exchange_rates),
-                        len(self._snapshot.currencies),
+                        len(state.snapshot.exchange_rates),
+                        len(state.snapshot.currencies),
                     )
-                    return self._snapshot
-                self._snapshot = DataSnapshot(valid=False)
+                    return state.snapshot
+                # Build a fresh empty snapshot and publish it atomically.
+                self._state = _SnapshotState(
+                    snapshot=DataSnapshot(valid=False),
+                    ts=time.monotonic(),
+                )
 
-            return self._snapshot
+            return self._state.snapshot
 
     async def _refresh(self) -> DataSnapshot:
         """Fetch all data from the Poe2Scout API in a coordinated pass.
@@ -429,7 +497,11 @@ class SnapshotManager:
         missing_currencies = snapshot_pair_currencies - set(price_histories.keys())
 
         # P2-3: Update active currencies set for TTL determination
-        self._active_currencies = snapshot_pair_currencies
+        # P3-4 (iter 71): under _cache_lock so concurrent readers of
+        # _history_cache see a consistent _active_currencies snapshot.
+        with self._cache_lock:
+            self._active_currencies = snapshot_pair_currencies
+            active_currencies_snapshot = set(snapshot_pair_currencies)
 
         if missing_currencies:
             logger.info(
@@ -442,10 +514,13 @@ class SnapshotManager:
             cache_misses = 0
             for api_id_lower in missing_currencies:
                 # P2-3: Check history cache first
-                cached = self._history_cache.get(api_id_lower)
+                # P3-4 (iter 71): read cache + active set under _cache_lock.
+                with self._cache_lock:
+                    cached = self._history_cache.get(api_id_lower)
+                    is_active = api_id_lower in active_currencies_snapshot
+
                 if cached is not None:
                     fetch_time, cached_points = cached
-                    is_active = api_id_lower in self._active_currencies
                     ttl = self._history_cache_active_ttl if is_active else self._history_cache_inactive_ttl
                     if time.monotonic() - fetch_time < ttl:
                         price_histories[api_id_lower] = cached_points
@@ -478,7 +553,9 @@ class SnapshotManager:
                     if points_ind:
                         price_histories[api_id_lower] = points_ind
                         # P2-3: Store in history cache
-                        self._history_cache[api_id_lower] = (time.monotonic(), points_ind)
+                        # P3-4 (iter 71): under _cache_lock.
+                        with self._cache_lock:
+                            self._history_cache[api_id_lower] = (time.monotonic(), points_ind)
                         logger.debug(
                             "Filled price history for %s: %d points (cached)",
                             api_id_lower, len(points_ind),
@@ -540,8 +617,17 @@ class SnapshotManager:
         return snapshot
 
     def invalidate(self) -> None:
-        """Force a refresh on the next get_snapshot() call."""
-        self._snapshot_ts = 0.0
+        """Force a refresh on the next get_snapshot() call.
+
+        P3-4 (iter 71): keep the snapshot reference (so stale readers can
+        still see something) but reset the timestamp on the atomic state.
+        We replace _state with a fresh _SnapshotState carrying the same
+        snapshot but ts=0 so the freshness check fails next time.
+        """
+        state = self._state
+        if state is None:
+            return
+        self._state = _SnapshotState(snapshot=state.snapshot, ts=0.0)
 
     def health_info(self) -> dict:
         """Return diagnostic information about the snapshot state.
@@ -550,18 +636,23 @@ class SnapshotManager:
         degraded-mode caching.
         """
         now = time.monotonic()
-        age = now - self._snapshot_ts if self._snapshot_ts > 0 else -1
+        # P3-4 (iter 71): read the atomic state reference once.
+        state = self._state
+        snapshot = state.snapshot if state is not None else None
+        ts = state.ts if state is not None else 0.0
+
+        age = now - ts if ts > 0 else -1
         is_stale = age > self._ttl if age >= 0 else True
 
         return {
-            "snapshot_valid": self._snapshot is not None and self._snapshot.valid,
+            "snapshot_valid": snapshot is not None and snapshot.valid,
             "snapshot_stale": is_stale,
             "snapshot_age_seconds": round(age, 1) if age >= 0 else None,
             "snapshot_ttl_seconds": self._ttl,
-            "exchange_rates_count": len(self._snapshot.exchange_rates) if self._snapshot else 0,
-            "currencies_count": len(self._snapshot.currencies) if self._snapshot else 0,
-            "price_histories_count": len(self._snapshot.price_histories) if self._snapshot else 0,
-            "fetched_at": self._snapshot.fetched_at.isoformat() if self._snapshot and self._snapshot.fetched_at else None,
+            "exchange_rates_count": len(snapshot.exchange_rates) if snapshot else 0,
+            "currencies_count": len(snapshot.currencies) if snapshot else 0,
+            "price_histories_count": len(snapshot.price_histories) if snapshot else 0,
+            "fetched_at": snapshot.fetched_at.isoformat() if snapshot and snapshot.fetched_at else None,
         }
 
 

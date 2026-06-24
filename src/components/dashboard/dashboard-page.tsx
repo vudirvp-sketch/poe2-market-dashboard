@@ -32,6 +32,8 @@ import { VirtualCurrencyGrid } from "@/components/dashboard/virtual-currency-gri
 import { UniqueTable } from "@/components/dashboard/unique-table";
 import { ExchangePairCard } from "@/components/dashboard/exchange-pair-card";
 import { ExchangeTable } from "@/components/dashboard/exchange-table";
+// P2-1 (iter 71): ExchangeTabContent extracted from this file.
+import { ExchangeTabContent } from "@/components/dashboard/exchange-tab-content";
 import { DetailDialog } from "@/components/dashboard/detail-dialog";
 import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
 import { MarketOverview } from "@/components/dashboard/market-overview";
@@ -1302,262 +1304,41 @@ export function Dashboard() {
             </TabsContent>
 
             {/* ============ EXCHANGE TAB ============ */}
+            {/* P2-1 (iter 71): inlined JSX extracted to <ExchangeTabContent /> */}
             <TabsContent value="exchange">
-              {/* Data freshness badge for POE2Scout API tab */}
-              {exchangeFetchedAt > 0 && (
-                <DataFreshnessBadge
-                  fetchedAt={new Date(exchangeFetchedAt).toISOString()}
-                  dataAvailable={!!exchangeData}
-                  compact={uiState.denseMode}
-                />
-              )}
-              {isLoading ? (
-                <ExchangeTableSkeleton rows={15} />
-              ) : activeError && !exchangeData ? (
-                <ApiErrorFallback
-                  error={activeError}
-                  onRetry={() => refetchExchange()}
-                  title={t("failedToLoadData")}
-                />
-              ) : exchangePairs.length === 0 && !exchangeData ? (
-                <EmptyState
-                  kind="noResults"
-                  message={t("noExchangePairs")}
-                  suggestion={search ? t("noResultsSuggestion") : undefined}
-                />
-              ) : (
-                <>
-                  {/* §1.1: View toggle + §1.2: Quick Filter Chips + §2.3: Extended Filters */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    {/* Quick Filter Chips (§1.2) */}
-                    <div className="flex items-center gap-1.5" role="group" aria-label={t("ariaExchangeFilters")}>
-                      <Badge
-                        variant={uiState.exchange.activeFilter === "all" ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setExchangeFilter("all")}
-                        role="button"
-                        aria-pressed={uiState.exchange.activeFilter === "all"}
-                        tabIndex={0}
-                      >
-                        {t("allPairs")}
-                      </Badge>
-                      <Badge
-                        variant={uiState.exchange.activeFilter === "topVolume" ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => setExchangeFilter("topVolume")}
-                        role="button"
-                        aria-pressed={uiState.exchange.activeFilter === "topVolume"}
-                        tabIndex={0}
-                      >
-                        {t("topVolume")}
-                      </Badge>
-                      <Badge
-                        variant={uiState.exchange.activeFilter === "favorites" ? "default" : "outline"}
-                        className={`cursor-pointer ${
-                          uiState.exchange.favorites.length === 0 ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                        onClick={() => {
-                          if (uiState.exchange.favorites.length > 0) {
-                            setExchangeFilter("favorites");
-                          }
-                        }}
-                        role="button"
-                        aria-pressed={uiState.exchange.activeFilter === "favorites"}
-                        aria-disabled={uiState.exchange.favorites.length === 0}
-                        tabIndex={0}
-                        title={uiState.exchange.favorites.length === 0 ? (t("favoritesEmptyTooltip")) : undefined}
-                      >
-                        <Star className="h-3 w-3 mr-1" aria-hidden="true" />
-                        {t("favorites")}
-                      </Badge>
-
-                      {/* §2.3: Extended Filters toggle button */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        onClick={() => setExtendedFiltersOpen(!extendedFiltersOpen)}
-                        aria-expanded={extendedFiltersOpen}
-                        aria-label={t("filters")}
-                      >
-                        <Filter className="h-3.5 w-3.5" aria-hidden="true" />
-                        {t("filters")}
-                        {activeExtFilterCount > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center rounded-full">
-                            {activeExtFilterCount}
-                          </Badge>
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* View toggle: Table / Cards (§1.1) */}
-                    <div className="flex items-center gap-1" role="group" aria-label={t("ariaViewMode")}>
-                      <Button
-                        variant={uiState.exchange.viewMode === "table" ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        onClick={() => setExchangeViewMode("table")}
-                        aria-pressed={uiState.exchange.viewMode === "table"}
-                        aria-label={t("ariaTableView")}
-                      >
-                        <List className="h-3.5 w-3.5" aria-hidden="true" />
-                        {t("tableView")}
-                      </Button>
-                      <Button
-                        variant={uiState.exchange.viewMode === "cards" ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 text-xs gap-1 px-2"
-                        onClick={() => setExchangeViewMode("cards")}
-                        aria-pressed={uiState.exchange.viewMode === "cards"}
-                        aria-label={t("ariaCardsView")}
-                      >
-                        <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
-                        {t("cardsView")}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* §2.3: Extended Filters collapsible panel */}
-                  {extendedFiltersOpen && (
-                    <div className="mb-3 p-3 border border-border rounded-lg bg-muted/30" role="region" aria-label={t("ariaExtendedFilters")}>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {/* Min Volume */}
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("minVolume")}</label>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            value={uiState.exchange.extendedFilters.minVolume ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setExchangeExtendedFilters({
-                                ...uiState.exchange.extendedFilters,
-                                minVolume: val === "" ? null : Number(val),
-                              });
-                            }}
-                            className="h-7 text-xs"
-                            min={0}
-                          />
-                        </div>
-                        {/* Max Volume */}
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxVolume")}</label>
-                          <Input
-                            type="number"
-                            placeholder="∞"
-                            value={uiState.exchange.extendedFilters.maxVolume ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setExchangeExtendedFilters({
-                                ...uiState.exchange.extendedFilters,
-                                maxVolume: val === "" ? null : Number(val),
-                              });
-                            }}
-                            className="h-7 text-xs"
-                            min={0}
-                          />
-                        </div>
-                        {/* Min Change % */}
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("minChange")}</label>
-                          <Input
-                            type="number"
-                            placeholder="-∞"
-                            value={uiState.exchange.extendedFilters.minChange ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setExchangeExtendedFilters({
-                                ...uiState.exchange.extendedFilters,
-                                minChange: val === "" ? null : Number(val),
-                              });
-                            }}
-                            className="h-7 text-xs"
-                          />
-                        </div>
-                        {/* Max Change % */}
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">{t("maxChange")}</label>
-                          <Input
-                            type="number"
-                            placeholder="∞"
-                            value={uiState.exchange.extendedFilters.maxChange ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setExchangeExtendedFilters({
-                                ...uiState.exchange.extendedFilters,
-                                maxChange: val === "" ? null : Number(val),
-                              });
-                            }}
-                            className="h-7 text-xs"
-                          />
-                        </div>
-                      </div>
-                      {/* Reset button */}
-                      {activeExtFilterCount > 0 && (
-                        <div className="mt-2 flex justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-xs"
-                            onClick={() => clearExchangeExtendedFilters()}
-                          >
-                            {t("resetFilters")}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* P2-4: Volume & Liquidity Indicators */}
-                  <ErrorBoundary fallbackTitle={t("fallbackVolumeLiquidity")}>
-                    <VolumeLiquidityIndicators
-                      realm={realm}
-                      league={effectiveLeague}
-                      backendOnline={flipperBackendOnline}
-                    />
-                  </ErrorBoundary>
-
-                  {/* Empty state for favorites filter */}
-                  {uiState.exchange.activeFilter === "favorites" && exchangePairs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground" role="status">
-                      <Star className="h-12 w-12 mb-4 opacity-30" aria-hidden="true" />
-                      <p className="text-lg mb-1">{t("noFavoritesYet")}</p>
-                      <p className="text-sm">{t("addFavoritesHint")}</p>
-                    </div>
-                  ) : uiState.exchange.viewMode === "table" ? (
-                    /* §1.1: Table-First Layout */
-                    <ExchangeTable
-                      pairs={exchangePairs}
-                      onPairClick={openPairDetail}
-                      realm={realm}
-                      league={effectiveLeague}
-                      highlightedRowIndex={tab === "exchange" ? highlightedRowIndex : null}
-                      highlightedItemId={highlightedItemId}
-                      exchangePairsForConversion={exchangeData ?? undefined}
-                      optimalPaymentByPair={optimalPaymentByPair}
-                      crossRateFlips={crossRateFlips}
-                      anchorId={selectedAnchorId}
-                    />
-                  ) : (
-                    /* Cards view (original) */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="list" aria-label={t("ariaExchangePairs")}>
-                      {exchangePairs.map((pair) => (
-                        <ExchangePairCard
-                          key={pair.id}
-                          pair={pair}
-                          onClick={openPairDetail}
-                          realm={realm}
-                          league={effectiveLeague}
-                          showHoverPreview={true}
-                          maxVolume={Math.max(...(exchangeData ?? []).map((p) => p.volume), 1)}
-                          exchangePairsForConversion={exchangeData ?? undefined}
-                          optimalPaymentResult={optimalPaymentByPair.get(pair.id) ?? undefined}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+              <ExchangeTabContent
+                exchangeFetchedAt={exchangeFetchedAt}
+                exchangeData={exchangeData}
+                exchangePairs={exchangePairs}
+                exchangeLoading={exchangeLoading}
+                exchangeError={exchangeError}
+                refetchExchange={refetchExchange}
+                isLoading={isLoading}
+                activeError={activeError}
+                viewMode={uiState.exchange.viewMode}
+                activeFilter={uiState.exchange.activeFilter}
+                favorites={uiState.exchange.favorites}
+                extendedFilters={uiState.exchange.extendedFilters}
+                extendedFiltersOpen={extendedFiltersOpen}
+                activeExtFilterCount={activeExtFilterCount}
+                denseMode={uiState.denseMode}
+                optimalPaymentByPair={optimalPaymentByPair}
+                crossRateFlips={crossRateFlips}
+                anchorId={selectedAnchorId}
+                highlightedRowIndex={highlightedRowIndex}
+                highlightedItemId={highlightedItemId}
+                realm={realm}
+                league={effectiveLeague}
+                backendOnline={flipperBackendOnline}
+                isExchangeTab={tab === "exchange"}
+                setExchangeViewMode={setExchangeViewMode}
+                setExchangeFilter={setExchangeFilter}
+                setExchangeExtendedFilters={setExchangeExtendedFilters}
+                clearExchangeExtendedFilters={clearExchangeExtendedFilters}
+                setExtendedFiltersOpen={setExtendedFiltersOpen}
+                t={t}
+                onPairClick={openPairDetail}
+              />
             </TabsContent>
 
             {/* ============ FLIPS TAB (unified with old Arbitrage) ============ */}

@@ -2123,6 +2123,18 @@
             "type": "string",
             "title": "Fetched At",
             "description": "ISO 8601 timestamp of data fetch"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Human-readable note when data_available=false"
           }
         },
         "type": "object",
@@ -3521,6 +3533,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",

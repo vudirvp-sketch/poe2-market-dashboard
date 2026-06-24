@@ -21,6 +21,7 @@ Phase 2 enhancement (Spec Section 1):
 from __future__ import annotations
 
 import logging
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
@@ -86,15 +87,30 @@ class EventManager:
     Phase 2 (Spec Section 1): Events are dual-written to both an in-memory
     dict (for fast reads) and SQLite (for persistence across restarts).
 
-    Thread safety note: This implementation is designed for single-process
-    use (FastAPI with uvicorn). For multi-worker deployments, replace the
-    in-memory storage with a shared store (Redis, DB, etc.).
+    Thread safety (P3-3, iter 71):
+        All in-memory reads and writes are guarded by a ``threading.RLock``.
+        This makes the manager safe to use from FastAPI route handlers AND
+        from background threads (scheduler, ProcessPoolExecutor callbacks)
+        running concurrently within the same uvicorn worker process.
+
+        The RLock is **never held across an ``await``** — SQLite writes are
+        performed outside the lock so that one slow DB write does not block
+        unrelated reads. The only state guarded by the lock is the in-memory
+        ``_events`` dict and the ``_store`` back-reference.
+
+        Multi-worker uvicorn deployments still need a shared external store
+        (Redis, DB) to coordinate across processes — the lock here only
+        protects in-process concurrency.
     """
 
     def __init__(self, config: AppConfig | None = None):
         self._config = config or get_settings()
         self._events: dict[str, StoredEvent] = {}
         self._store: HistoricalStore | None = None  # set via load_from_store
+        # P3-3 (iter 71): RLock guards all in-memory _events / _store access.
+        # RLock (not Lock) so that _prune_expired() can be called from within
+        # other locked methods without deadlocking.
+        self._lock = threading.RLock()
 
     # ---------------------------------------------------------------
     # Persistence: load from SQLite on startup
@@ -112,39 +128,47 @@ class EventManager:
         Returns:
             Number of events loaded from SQLite.
         """
-        self._store = store
+        # P3-3 (iter 71): store back-reference under the lock so that
+        # concurrent CRUD calls don't see a half-set _store. The actual
+        # SQLite read is awaited OUTSIDE the lock.
+        with self._lock:
+            self._store = store
+
         loaded = 0
         try:
             persisted = await store.read_active_events()
-            for event_dict in persisted:
-                event_id = event_dict["event_id"]
-                # Skip if already in memory (e.g. from an earlier init)
-                if event_id in self._events:
-                    continue
+            # P3-3: merge under the lock — protects against concurrent
+            # create_event() that might also be writing to _events.
+            with self._lock:
+                for event_dict in persisted:
+                    event_id = event_dict["event_id"]
+                    # Skip if already in memory (e.g. from an earlier init)
+                    if event_id in self._events:
+                        continue
 
-                # Reconstruct StoredEvent from persisted dict
-                event_type = EventType(event_dict["event_type"])
-                created_at = event_dict.get("created_at")
-                expires_at = event_dict.get("expires_at")
+                    # Reconstruct StoredEvent from persisted dict
+                    event_type = EventType(event_dict["event_type"])
+                    created_at = event_dict.get("created_at")
+                    expires_at = event_dict.get("expires_at")
 
-                # Parse ISO timestamps
-                if isinstance(created_at, str):
-                    created_at = datetime.fromisoformat(created_at)
-                if isinstance(expires_at, str):
-                    expires_at = datetime.fromisoformat(expires_at)
+                    # Parse ISO timestamps
+                    if isinstance(created_at, str):
+                        created_at = datetime.fromisoformat(created_at)
+                    if isinstance(expires_at, str):
+                        expires_at = datetime.fromisoformat(expires_at)
 
-                event = StoredEvent(
-                    event_id=event_id,
-                    event_type=event_type,
-                    description=event_dict.get("description", ""),
-                    affected_currencies=event_dict.get("affected_currencies", []),
-                    timestamp=created_at or datetime.now(timezone.utc),
-                    expires_at=expires_at,
-                    is_active=event_dict.get("is_active", True),
-                    created_at=created_at or datetime.now(timezone.utc),
-                )
-                self._events[event_id] = event
-                loaded += 1
+                    event = StoredEvent(
+                        event_id=event_id,
+                        event_type=event_type,
+                        description=event_dict.get("description", ""),
+                        affected_currencies=event_dict.get("affected_currencies", []),
+                        timestamp=created_at or datetime.now(timezone.utc),
+                        expires_at=expires_at,
+                        is_active=event_dict.get("is_active", True),
+                        created_at=created_at or datetime.now(timezone.utc),
+                    )
+                    self._events[event_id] = event
+                    loaded += 1
 
             if loaded > 0:
                 logger.info("Loaded %d persisted events from SQLite", loaded)
@@ -206,13 +230,18 @@ class EventManager:
             created_at=now,
         )
 
-        # In-memory write (fast)
-        self._events[event_id] = event
+        # P3-3 (iter 71): in-memory write under the lock; SQLite write
+        # is awaited OUTSIDE the lock so other readers aren't blocked
+        # by a slow DB call. If the SQLite write fails, the in-memory
+        # state is still consistent (event exists in memory only).
+        with self._lock:
+            self._events[event_id] = event
+            store = self._store
 
         # SQLite write — awaited (P1-7: was fire-and-forget via ensure_future)
-        if self._store is not None:
+        if store is not None:
             try:
-                await self._store.write_event(event)
+                await store.write_event(event)
             except Exception as e:
                 logger.error("Failed to persist event %s to SQLite: %s", event_id, e)
 
@@ -229,7 +258,8 @@ class EventManager:
     def get_event(self, event_id: str) -> StoredEvent | None:
         """Get a single event by ID."""
         self._prune_expired()
-        return self._events.get(event_id)
+        with self._lock:
+            return self._events.get(event_id)
 
     def list_events(
         self,
@@ -243,7 +273,12 @@ class EventManager:
         """
         self._prune_expired()
 
-        events = list(self._events.values())
+        # P3-3 (iter 71): snapshot the dict under the lock, then build the
+        # filtered/sorted list OUTSIDE the lock. Prevents "dict changed size
+        # during iteration" errors if another thread mutates _events while
+        # we're iterating.
+        with self._lock:
+            events = list(self._events.values())
 
         if active_only:
             events = [e for e in events if e.is_active and not self._is_expired(e)]
@@ -263,19 +298,23 @@ class EventManager:
         Returns:
             True if the event was found and deleted, False otherwise.
         """
-        if event_id in self._events:
+        # P3-3 (iter 71): in-memory delete under the lock; SQLite delete
+        # awaited outside the lock.
+        with self._lock:
+            if event_id not in self._events:
+                return False
             del self._events[event_id]
+            store = self._store
 
-            # Also delete from SQLite — awaited (P1-7)
-            if self._store is not None:
-                try:
-                    await self._store.delete_event(event_id)
-                except Exception as e:
-                    logger.error("Failed to delete event %s from SQLite: %s", event_id, e)
+        # Also delete from SQLite — awaited (P1-7)
+        if store is not None:
+            try:
+                await store.delete_event(event_id)
+            except Exception as e:
+                logger.error("Failed to delete event %s from SQLite: %s", event_id, e)
 
-            logger.info("Event deleted: %s", event_id)
-            return True
-        return False
+        logger.info("Event deleted: %s", event_id)
+        return True
 
     async def deactivate_event(self, event_id: str) -> bool:
         """Mark an event as inactive without deleting it.
@@ -288,20 +327,25 @@ class EventManager:
         Returns:
             True if the event was found and deactivated, False otherwise.
         """
-        event = self._events.get(event_id)
-        if event is not None:
+        # P3-3 (iter 71): mutate the StoredEvent under the lock — the
+        # is_active flag is read by other methods (is_event_active,
+        # get_event_score_penalty, etc.).
+        with self._lock:
+            event = self._events.get(event_id)
+            if event is None:
+                return False
             event.is_active = False
+            store = self._store
 
-            # Also deactivate in SQLite — awaited (P1-7)
-            if self._store is not None:
-                try:
-                    await self._store.deactivate_event(event_id)
-                except Exception as e:
-                    logger.error("Failed to deactivate event %s in SQLite: %s", event_id, e)
+        # Also deactivate in SQLite — awaited (P1-7)
+        if store is not None:
+            try:
+                await store.deactivate_event(event_id)
+            except Exception as e:
+                logger.error("Failed to deactivate event %s in SQLite: %s", event_id, e)
 
-            logger.info("Event deactivated: %s", event_id)
-            return True
-        return False
+        logger.info("Event deactivated: %s", event_id)
+        return True
 
     # ---------------------------------------------------------------
     # Query Interfaces for Subsystems
@@ -320,7 +364,11 @@ class EventManager:
         """
         self._prune_expired()
 
-        for event in self._events.values():
+        # P3-3 (iter 71): snapshot under the lock; iterate outside.
+        with self._lock:
+            events = list(self._events.values())
+
+        for event in events:
             if not event.is_active or self._is_expired(event):
                 continue
 
@@ -359,7 +407,11 @@ class EventManager:
 
         penalty = self._config.events.event_score_penalty
 
-        for event in self._events.values():
+        # P3-3 (iter 71): snapshot under the lock; iterate outside.
+        with self._lock:
+            events = list(self._events.values())
+
+        for event in events:
             if not event.is_active or self._is_expired(event):
                 continue
 
@@ -382,8 +434,12 @@ class EventManager:
         """
         self._prune_expired()
 
+        # P3-3 (iter 71): snapshot under the lock; iterate outside.
+        with self._lock:
+            events = list(self._events.values())
+
         affected: set[str] = set()
-        for event in self._events.values():
+        for event in events:
             if not event.is_active or self._is_expired(event):
                 continue
             if event.affected_currencies:
@@ -398,7 +454,11 @@ class EventManager:
         """
         self._prune_expired()
 
-        for event in self._events.values():
+        # P3-3 (iter 71): snapshot under the lock; iterate outside.
+        with self._lock:
+            events = list(self._events.values())
+
+        for event in events:
             if not event.is_active or self._is_expired(event):
                 continue
             if event.event_type == EventType.MAJOR_PATCH:
@@ -413,8 +473,12 @@ class EventManager:
         """
         self._prune_expired()
 
+        # P3-3 (iter 71): snapshot under the lock; iterate outside.
+        with self._lock:
+            events = list(self._events.values())
+
         latest: datetime | None = None
-        for event in self._events.values():
+        for event in events:
             if not event.is_active or self._is_expired(event):
                 continue
             if event.event_type == EventType.MAJOR_PATCH:
@@ -430,8 +494,7 @@ class EventManager:
             Dict with event_type, description, and affected_currencies,
             or None if no events are active.
         """
-        self._prune_expired()
-
+        # list_events() already snapshot-iterates under the lock (P3-3).
         events = self.list_events(active_only=True)
         if not events:
             return None
@@ -490,18 +553,25 @@ class EventManager:
         `backend/main.py:174` on startup. Both code paths already exist
         and continue to keep SQLite in sync.
 
+        P3-3 (iter 71): the in-memory prune is now performed under the
+        RLock so that two concurrent readers don't both try to delete the
+        same expired event ID (one of them would raise KeyError otherwise).
+
         Returns:
             Number of events pruned from memory
         """
         now = datetime.now(timezone.utc)
-        expired_ids = []
 
-        for eid, event in self._events.items():
-            if self._is_expired(event):
-                expired_ids.append(eid)
-
-        for eid in expired_ids:
-            del self._events[eid]
+        # P3-3 (iter 71): snapshot under the lock, then mutate under the
+        # same lock. RLock allows _prune_expired() to be called from within
+        # another locked method (e.g. list_events) without deadlocking.
+        with self._lock:
+            expired_ids = [
+                eid for eid, event in self._events.items()
+                if self._is_expired(event)
+            ]
+            for eid in expired_ids:
+                del self._events[eid]
 
         if expired_ids:
             logger.info("Pruned %d expired events from memory", len(expired_ids))
@@ -522,12 +592,17 @@ class EventManager:
         Returns:
             Number of events cleared
         """
-        count = len(self._events)
-        self._events.clear()
+        # P3-3 (iter 71): in-memory clear under the lock; SQLite clear
+        # awaited outside the lock.
+        with self._lock:
+            count = len(self._events)
+            self._events.clear()
+            store = self._store
+
         # Fix 4.2: Also clear persistent store — awaited (P1-7)
-        if self._store is not None:
+        if store is not None:
             try:
-                await self._store.clear_all_events()
+                await store.clear_all_events()
             except Exception as e:
                 logger.error("Failed to clear persistent events: %s", e)
         return count

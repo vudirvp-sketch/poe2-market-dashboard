@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 70 — closed P2-3, currency_names_ru → JSON).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 71 — closed P3-3, P3-4, P3-5, P4-1; P2-1 step 1).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -21,11 +21,12 @@
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 iter 59, P1-7 iter 61) | All 3 endpoints async-await EventManager; `unified_cache` invalidated after mutation |
 | `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` |
 | `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY` |
-| `backend/economy/events.py` | EventManager + StoredEvent (P1-7 iter 61) | `event_id`, `is_active`, `created_at`; 4 methods async; `_prune_expired` left sync intentionally |
+| `backend/economy/events.py` | EventManager + StoredEvent (P1-7 iter 61, **P3-3 iter 71**) | `event_id`, `is_active`, `created_at`; 4 methods async; `_prune_expired` left sync intentionally. **All in-memory `_events` access guarded by `threading.RLock`**; SQLite writes await OUTSIDE the lock. |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 iter 66) — `rowid IN (SELECT ... LIMIT ?)` pattern |
 | `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | Shim modules deleted in iter 66 (P2-2) — import directly |
 | `backend/data/currency_names_ru.py` | Thin loader (63 lines) for `currency_names.json` (P2-3 closed iter 70) | Edit `currency_names.json`, not the `.py` |
+| `backend/api/data_snapshot.py` | DataSnapshot + SnapshotManager (**P3-4 iter 71**) | Atomic `(snapshot, ts)` swap via immutable `_SnapshotState` dataclass. `_history_cache` + `_active_currencies` guarded by separate `_cache_lock`. `last_snapshot` reads `_state` once. |
 | `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis (P1-5 fixed iter 66) | `compute_quantized_analysis` uses bounded linear scan `O(1/D)` |
 | `backend/arbitrage/triangular.py` | Triangular arbitrage | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — uses `get_process_pool()` (P2-13 fixed iter 65) |
 | `backend/main.py` | FastAPI app + lifespan + lazy `process_pool` | `get_process_pool()` lazily creates/recreates the pool (P2-13). Backward-compat: `from backend.main import process_pool` still works via module `__getattr__` but emits `DeprecationWarning`. |
@@ -43,7 +44,8 @@
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup + mode-aware 5xx fallback (P1-10 iter 66, **P2-8 iter 69**) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `proxyWithFallback` passes non-503 5xx through in dev, returns 200+`X-Flipper-Fallback` header in prod. Exports `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`, `FLIPPER_FALLBACK_HEADER` |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 iter 55, P2-7 iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation |
-| `src/components/dashboard/dashboard-page.tsx` | God-component 1705 lines (P2-1) | Needs splitting |
+| `src/components/dashboard/dashboard-page.tsx` | God-component, **1466 lines** (P2-1 step 1 done iter 71: was 1685) | Multi-iter split. `ExchangeTabContent` extracted iter 71. Next: extract `CurrenciesTabContent` / `UniquesTabContent` / `OverviewTabContent` (iter 72+). |
+| `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern to reuse for the next tab extractions. |
 
 ## 2. Build & Run Commands
 
@@ -90,22 +92,28 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 24. **Localized currency/item names live in `backend/data/currency_names.json`** (P2-3, iter 70). `currency_names_ru.py` is a 63-line thin loader — do NOT add names there. Public API unchanged: `CATEGORY_NAMES_RU` / `CATEGORY_NAMES_EN` / `CURRENCY_NAMES_RU` / `CURRENCY_NAMES_EN` dicts + `get_ru_name` / `get_en_name` / `get_category_ru` / `get_category_en` helpers. TS-side mirror `src/lib/currency-names.ts` still exists as an offline fallback — keep both in sync. Regression tests in `tests/test_currency_names_ru.py` enforce RU/EN key parity (run them after every name edit).
 
+25. **EventManager is thread-safe via `threading.RLock`** (P3-3, iter 71). All in-memory `_events` dict access (CRUD + read-side query interfaces like `is_event_active`, `get_event_score_penalty`, `list_events`, `_prune_expired`) is guarded by `self._lock`. The lock is **never held across an `await`** — SQLite writes (`write_event`, `delete_event`, `deactivate_event`, `clear_all_events`) are awaited OUTSIDE the lock. Multi-worker uvicorn still needs a shared external store (Redis/DB) for cross-process coordination; the lock only protects in-process concurrency.
+
+26. **SnapshotManager atomic state swap** (P3-4, iter 71). `(snapshot, ts)` is wrapped in an immutable `@dataclass(frozen=True) _SnapshotState` and stored as a single `self._state` reference. Replacement is a single Python attribute assignment (atomic under the GIL), so a reader either sees the pre-refresh or post-refresh state — never a mixed (stale snapshot, fresh ts) pair. `_history_cache` and `_active_currencies` are guarded by a separate `_cache_lock` (NOT the asyncio lock — these are mutated from sync code paths inside `_refresh`).
+
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 1 P2 / 4 P3).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 1 P2 / 1 P3).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| `dashboard-page.tsx` unmaintainable | 1705-line god-component | P2-1 |
-| Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py` to verify key parity. | — |
+| `dashboard-page.tsx` unmaintainable | 1466-line god-component (down from 1685 in iter 71). `ExchangeTabContent` extracted. | P2-1 (in progress) |
+| Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py`. | — |
 | Frontend shows fallback data without notice | (Fixed iter 69 — was P2-8) check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
 | `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |
-| `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`) | — |
+| `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`). The `message` field is now exposed on `FlipsResponse` (P4-1, iter 71). | — |
 | Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` (P2-6 iter 67) | — |
 | LightGBM skips for new currency | (Fixed iter 67 — adaptive fallback from `floor=5`) | — |
 | `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle — fall back to `direct_rate` (P1-8 iter 64) | — |
+| Concurrent EventManager access raises `KeyError` / `dict changed size during iteration` | (Fixed iter 71 — was P3-3) `threading.RLock` guards all in-memory `_events` access | — |
+| `SnapshotManager.get_snapshot` returns stale snapshot paired with fresh ts | (Fixed iter 71 — was P3-4) `(snapshot, ts)` wrapped in immutable `_SnapshotState` swapped atomically | — |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 

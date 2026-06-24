@@ -243,6 +243,9 @@ class FlipsResponse(BaseModel):
     data_freshness: dict[str, Any] = Field(default_factory=dict, description="Data freshness metadata")
     data_available: bool = Field(description="Whether data is available")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+    # P4-1 (iter 71): present when data_available=false (snapshot not yet
+    # collected). Optional because the populated-state response omits it.
+    message: str | None = Field(default=None, description="Human-readable note when data_available=false")
 
 
 class TriangularPath(BaseModel):

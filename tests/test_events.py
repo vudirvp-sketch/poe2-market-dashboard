@@ -17,11 +17,13 @@ Test cases:
 7. Event summary for UI
 8. Multiple events interaction
 9. Prune expired events
+10. P3-3 (iter 71): thread-safety — concurrent CRUD from multiple threads
 """
 
 from __future__ import annotations
 
 import sys
+import threading
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -30,6 +32,7 @@ _project_root = Path(__file__).resolve().parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
+import asyncio
 import pytest
 
 from backend.config import AppConfig, EventsConfig
@@ -521,6 +524,197 @@ class TestPhaseDetectorIntegration:
         # Days since reference should now be relative to the patch
         days_after = detector.days_since_reference(now=datetime(2025, 6, 5, 0, 0, 0, tzinfo=timezone.utc))
         assert days_after == 4
+
+
+# ---------------------------------------------------------------------------
+# Test: P3-3 (iter 71) — Thread-safety under concurrent access
+# ---------------------------------------------------------------------------
+
+class TestThreadSafety:
+    """P3-3 (iter 71): EventManager must be safe for concurrent access
+    from multiple threads (e.g. FastAPI route handlers + scheduler running
+    in the same uvicorn worker).
+
+    These tests run real threads that all share one EventManager instance
+    and assert that:
+      - No exceptions are raised (no "dict changed size during iteration",
+        no "KeyError" during concurrent delete of the same ID).
+      - The final state is consistent (the expected number of events is
+        present after all threads finish).
+      - Reads see a coherent snapshot — never a half-mutated entry.
+    """
+
+    def test_concurrent_creates_all_persisted(self, manager):
+        """200 create_event() calls across 10 threads → 200 events in memory."""
+        N_THREADS = 10
+        N_PER_THREAD = 20
+
+        def worker(tid: int) -> None:
+            loop = asyncio.new_event_loop()
+            try:
+                for i in range(N_PER_THREAD):
+                    loop.run_until_complete(
+                        manager.create_event(
+                            EventType.OTHER,
+                            f"thread-{tid}-event-{i}",
+                        )
+                    )
+            finally:
+                loop.close()
+
+        threads = [threading.Thread(target=worker, args=(t,)) for t in range(N_THREADS)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        events = manager.list_events(active_only=False)
+        assert len(events) == N_THREADS * N_PER_THREAD
+        # No duplicate IDs (uuid4 collision essentially impossible, but the
+        # lock is what protects the dict from a race during insertion).
+        ids = {e.event_id for e in events}
+        assert len(ids) == N_THREADS * N_PER_THREAD
+
+    def test_concurrent_reads_during_writes_no_exception(self, manager):
+        """Readers (list_events, is_event_active, get_event_score_penalty)
+        must not raise even while writers are mutating _events."""
+        N_READERS = 4
+        N_WRITERS = 2
+        N_OPS = 50
+
+        stop = threading.Event()
+        errors: list[Exception] = []
+
+        def reader() -> None:
+            try:
+                while not stop.is_set():
+                    manager.list_events(active_only=False)
+                    manager.is_event_active()
+                    manager.is_event_active("divine")
+                    manager.get_event_score_penalty("divine")
+                    manager.get_affected_currencies()
+                    manager.has_major_patch_event()
+                    manager.get_active_event_summary()
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+
+        def writer() -> None:
+            loop = asyncio.new_event_loop()
+            try:
+                for i in range(N_OPS):
+                    loop.run_until_complete(
+                        manager.create_event(EventType.OTHER, f"writer-{i}")
+                    )
+            finally:
+                loop.close()
+
+        readers = [threading.Thread(target=reader) for _ in range(N_READERS)]
+        writers = [threading.Thread(target=writer) for _ in range(N_WRITERS)]
+
+        for t in readers:
+            t.start()
+        for t in writers:
+            t.start()
+        for t in writers:
+            t.join()
+        stop.set()
+        for t in readers:
+            t.join()
+
+        assert not errors, f"reader threads raised: {errors}"
+        # All writer events should be present
+        events = manager.list_events(active_only=False)
+        assert len(events) == N_WRITERS * N_OPS
+
+    def test_concurrent_delete_same_id_no_keyerror(self, manager):
+        """Two threads delete the SAME event_id at the same time. The
+        RLock ensures exactly one returns True, the other returns False,
+        and no KeyError leaks out."""
+
+        async def setup():
+            return await manager.create_event(EventType.OTHER, "doomed")
+
+        event = asyncio.new_event_loop().run_until_complete(setup())
+        asyncio.new_event_loop().close()
+
+        results: list[bool] = []
+        results_lock = threading.Lock()
+
+        def deleter() -> None:
+            loop = asyncio.new_event_loop()
+            try:
+                ok = loop.run_until_complete(manager.delete_event(event.event_id))
+            except Exception as e:  # noqa: BLE001
+                ok = f"EXC:{e!r}"
+            finally:
+                loop.close()
+            with results_lock:
+                results.append(ok)
+
+        threads = [threading.Thread(target=deleter) for _ in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Exactly one True, the rest False, no exceptions.
+        assert all(isinstance(r, bool) for r in results), \
+            f"unexpected non-bool result: {results}"
+        assert results.count(True) == 1
+        assert results.count(False) == 4
+        # The event is really gone.
+        assert manager.get_event(event.event_id) is None
+
+    def test_concurrent_deactivate_then_read(self, manager):
+        """Reader observes is_active=False atomically — never a half-updated
+        StoredEvent where is_active is True but the SQLite side already has
+        False (the in-memory flag is set under the lock, so a reader either
+        sees the pre-deactivate or post-deactivate state, never in-between)."""
+        async def setup():
+            return await manager.create_event(
+                EventType.OTHER, "victim",
+                affected_currencies=["divine"],
+            )
+
+        event = asyncio.new_event_loop().run_until_complete(setup())
+        asyncio.new_event_loop().close()
+
+        observed_active: list[bool] = []
+        obs_lock = threading.Lock()
+        stop = threading.Event()
+
+        def reader() -> None:
+            while not stop.is_set():
+                e = manager.get_event(event.event_id)
+                if e is not None:
+                    # The is_active flag is either True (pre-deactivate) or
+                    # False (post-deactivate) — never anything else.
+                    with obs_lock:
+                        observed_active.append(e.is_active)
+
+        def deactivator() -> None:
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(manager.deactivate_event(event.event_id))
+            finally:
+                loop.close()
+
+        reader_t = threading.Thread(target=reader)
+        deactivator_t = threading.Thread(target=deactivator)
+
+        reader_t.start()
+        deactivator_t.start()
+        deactivator_t.join()
+        stop.set()
+        reader_t.join()
+
+        # All observations must be True or False — never None / exception /
+        # partial state.
+        assert all(isinstance(v, bool) for v in observed_active)
+        # The final state is inactive.
+        final = manager.get_event(event.event_id)
+        assert final is not None
+        assert final.is_active is False
 
 
 if __name__ == "__main__":

@@ -1265,6 +1265,11 @@ export interface components {
              * @description ISO 8601 timestamp of data fetch
              */
             fetched_at: string;
+            /**
+             * Message
+             * @description Human-readable note when data_available=false
+             */
+            message?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2201,6 +2206,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
