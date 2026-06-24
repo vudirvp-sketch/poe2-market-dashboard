@@ -5,38 +5,45 @@
 
 ---
 
+## Task 70 — P2-3 closed (currency_names_ru → JSON)
+**Agent:** Main Agent
+**Date:** 2026-06-25
+
+**Task:** Close the last mechanical P2 issue (P2-3): `backend/data/currency_names_ru.py` was a 966-line hardcoded Python dict — move the data to JSON and leave a thin loader behind, without changing the public API. Also: capture the user's product vision (analytics dashboard, NOT a poe2scout/poe2ninja clone; full RU localization; speculation helper; storage-value vs Mirror/Hinekora; content-pulse analytics for "what to farm today") in a new `PRODUCT_VISION.md`.
+
+**Work Log:**
+- Wrote `scripts/extract_currency_names_to_json.py` (outside the repo) — imports the existing module, dumps the 4 dicts to `backend/data/currency_names.json`, rewrites `currency_names_ru.py` as a 63-line loader, then re-imports and verifies the data + helpers are bit-for-bit identical.
+- Ran the script: produced `currency_names.json` (742 lines, 45 KB — 349 RU + 349 EN entries + 17 category labels per language) and shrank `currency_names_ru.py` from 966 → 63 lines. Public API unchanged: `CATEGORY_NAMES_RU` / `CATEGORY_NAMES_EN` / `CURRENCY_NAMES_RU` / `CURRENCY_NAMES_EN` + `get_ru_name` / `get_en_name` / `get_category_ru` / `get_category_en`. The existing `routes_arbitrage.py` import (`from backend.data.currency_names_ru import get_ru_name, get_en_name`) works without changes.
+- Added 7 regression tests in `tests/test_currency_names_ru.py`: dict sizes (17/17/349/349 — locks the data shape), helper None-handling, spot-checks on `exalted`/`divine`/`mirror`/`hinekoras-lock`, RU↔EN key parity (so the Python and TS mirrors can't drift silently), category helpers.
+- Verified baselines: pytest **466 pass** (was 459 → +7 P2-3 regression tests), jest **324 pass** (unchanged — Python-only change), tsc **0 errors** (unchanged), e2e **30 pass** (unchanged).
+- Created `PRODUCT_VISION.md` at repo root: 7 sections covering (1) one-liner "not another poe2scout/ninja", (2) antipatterns we avoid, (3) the 6 core value pillars (RU localization, speculation helper, storage-value vs Mirror/Hinekora, phase-aware patterns like Temporalis mid/late league, content-pulse analytics, "what to farm today" widget), (4) architecture alignment table, (5) 6 product features (F1-F6) tracked SEPARATELY from this technical-debt backlog, (6) product DoD, (7) related docs.
+- Updated docs: `STATUS.md` (P2-3 → Fixed with iter 70 entry; Quick Reference gained "Adding a new Russian translation" row pointing to `currency_names.json`); `REFACTOR_PLAN.md` (v33 → v34; iter 70 marked DONE; new principle #7 about data files living next to their loader; DoD gained data-file regression-test rule; estimation 1-3 → 2-4 iterations because P2-1 alone is multi-iter); `AGENT_NAVIGATION.md` (header date updated to iter 70 + added PRODUCT_VISION.md link; §1 row for `currency_names_ru.py` updated to "thin loader"; §3 invariant #24 added for P2-3; §4 P2 count 2 → 1; §4 Quick Reference row for currency_names_ru.py replaced with "Adding a new Russian translation" row; §6 documentation map gained PRODUCT_VISION.md row); `worklog.md` (Task 70 entry; trimmed to ≤3 latest — Task 67 dropped, see git log).
+
+**Stage Summary:**
+- P2-3 closed. `currency_names_ru.py` 966 → 63 lines. Data now editable as JSON without touching Python.
+- Product vision captured in `PRODUCT_VISION.md` — future agents will read this before proposing features.
+- P0=0, P1=0, P2=1, P3=4. ~2-4 iterations remaining (P2-1 alone is multi-iter).
+- Baseline: pytest **466 pass** (+7), jest 324 pass, tsc 0 errors, e2e 30 pass.
+
+**Stopping point:**
+- Iter 70 done. P2-3 closed + PRODUCT_VISION.md added.
+- Next iter (iter 71) recommended:
+  1. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — large, multi-iter. Suggested approach: extract tab-specific subcomponents one at a time, keep tests green at each step.
+  2. P3-3 (EventManager thread-safety), P3-4 (SnapshotManager atomic swap), P3-5 (full /flips integration test), P3-7 (delete REFACTOR_PLAN.md + worklog.md after all closed).
+- After all P2/P3 closed → switch focus to product features (F1-F6 in PRODUCT_VISION.md), starting with F1 (translate remaining ~276 items) and F2 (Storage Value tab vs Mirror/Hinekora).
+- Suggested commit message: `refactor(P2-3): move currency_names_ru.py to JSON + add PRODUCT_VISION.md`.
+
+---
+
 ## Task 69 — P2-8 closed + iter 68 scanner residual cleaned
 **Agent:** Main Agent
 **Date:** 2026-06-21
 
-**Task:** Two goals for this iteration: (1) close P2-8 — make `proxyWithFallback` mode-aware so non-503 5xx responses pass through in dev (developers see real errors) and become marked fallback responses in prod (via `X-Flipper-Fallback` header). (2) Clean up an iter 68 residual: `backend/api/routes_scanner.py` was supposed to be deleted in iter 68 but the actual file was left in the repo because the iter 68 merge instructions required a manual `rm` step that the user skipped.
-
-**Work Log:**
-- Documented the iter 68 scanner residual as a bug in STATUS.md (per "document first, fix second" rule). The file was already an orphan — `backend/main.py` no longer imports it, `response_models.py` no longer defines `ScannerResponse`, `routes_batch.py` no longer allows `/api/v1/scanner` — so it had zero runtime impact (pytest baseline was 459 pass with or without it). Iter 69 deletes the file for real and changes the merge instructions so this can't recur (file deletions are now handled via `git add -A` after the user copies the archive; no manual `rm` step).
-- Implemented P2-8 in `src/lib/flipper-proxy.ts`:
-  - Added `FLIPPER_FALLBACK_HEADER` constant (`"X-Flipper-Fallback"`), `isFlipperFallbackResponse()`, and `getFlipperFallbackOriginalStatus()` exports for frontend use.
-  - Added `isDevMode()` helper (`process.env.NODE_ENV === "development"`).
-  - Added `jsonFallbackResponse(data, originalStatus)` helper that returns `Response.json(data, { status: 200, headers: { "X-Flipper-Fallback": String(originalStatus) } })`.
-  - Refactored `proxyWithFallback`: 503 branch unchanged (still returns 200 + offlineFallback/insufficientDataFallback, now with header). New non-503 5xx branch: in dev, passes the response through unchanged; in prod, returns 200 + fallback + `X-Flipper-Fallback: <status>` header. The final `catch` block (unexpected errors) also uses `jsonFallbackResponse` with status 503.
-  - Updated JSDoc with the new mode-aware behavior.
-- Added `AbortSignal.timeout` + minimal `Response`/`fetch`/`Headers`/`Request` polyfills to `jest.setup.ts`. jsdom doesn't expose these natively; undici is loaded first (full-featured) with a minimal hand-rolled fallback if undici fails to load (e.g. due to missing `TextDecoder`).
-- Added 22 new jest tests in `src/__tests__/flipper-proxy.test.ts` covering: pure helpers (`FLIPPER_FALLBACK_HEADER`, `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`), 200 OK pass-through (both modes), 422 pass-through (both modes), 503 backend_offline (both modes), 503 backend_insufficient_data (with and without `insufficientDataFallback`), 500/502/504 in dev (pass-through), 500/502/504 in prod (200 + header), 500 in prod without `insufficientDataFallback`, and unexpected thrown error (→ 200 + 503 header + offlineFallback).
-- Verified baselines: pytest **459 pass** (unchanged), jest **324 pass** (was 302 → +22 new P2-8 tests), tsc **0 errors** (unchanged), e2e **30 pass** (unchanged).
-- Updated docs: `STATUS.md` (P2-8 → Fixed; iter 68 entry annotated with the scanner-residual note; iter 69 entry added; Quick Reference row for "500 → no data silently" updated to point to the new header); `AGENT_NAVIGATION.md` (invariant #23 added for P2-8; §1 row for `flipper-proxy.ts` updated; §4 Quick Reference updated); `REFACTOR_PLAN.md` (v32 → v33; iter 69 marked DONE; estimation reduced 2-4 → 1-3 iterations remaining); `worklog.md` (Task 69 entry; trimmed to ≤3 latest — Task 66 dropped, see git log).
-
 **Stage Summary:**
-- P2-8 closed. Frontend can now detect fallback responses via `isFlipperFallbackResponse(res)` and optionally surface a non-blocking notice. Devs see real 5xx errors in dev mode.
-- Iter 68 scanner residual bug closed. `backend/api/routes_scanner.py` deleted for real; `git add -A` will track the deletion.
+- P2-8 closed. `proxyWithFallback` is now mode-aware: dev sees real 5xx, prod gets 200 + `X-Flipper-Fallback` header. +22 jest tests. `jest.setup.ts` gained `Response`/`fetch`/`Headers`/`AbortSignal.timeout` polyfills.
+- Iter 68 scanner residual bug closed. `backend/api/routes_scanner.py` deleted for real. Going forward, file deletions go through `git add -A` (no manual `rm` step in MERGE_INSTRUCTIONS.md).
 - P0=0, P1=0, P2=2, P3=4. ~1-3 iterations remaining.
-- Baseline: pytest **459 pass**, jest **324 pass** (+22), tsc 0 errors, e2e 30 pass.
-
-**Stopping point:**
-- Iter 69 done. P2-8 closed + iter 68 scanner residual closed.
-- Next iter (iter 70) recommended order:
-  1. **P2-3** (`currency_names_ru.py` 966-line dict → JSON) — mechanical but long.
-  2. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — multi-iter.
-  3. P3-3 / P3-4 / P3-5 (full /flips integration test) / P3-7 (delete REFACTOR_PLAN.md + worklog.md after all closed).
-- Suggested commit message: `fix(P2-8): proxyWithFallback 5xx pass-through in dev + marked fallback in prod`.
+- Baseline: pytest 459 pass, jest 324 pass (+22), tsc 0 errors, e2e 30 pass.
 
 ---
 
@@ -48,16 +55,3 @@
 - P2-4 follow-up closed at the code level (main.py / response_models.py / routes_batch.py / tests / openapi / api-types all updated).
 - The actual `routes_scanner.py` file deletion was missed — see iter 69 entry above.
 - See git commit `cca86d7` for details.
-
----
-
-## Task 67 — 3 issues closed (P2-9, P2-6, P2-4)
-**Agent:** Main Agent
-**Date:** 2026-06-21
-
-**Stage Summary:**
-- 3 issues closed. P2 reduced from 5 → 3.
-- P2-9: adaptive `lightgbm_min_data_points` fallback (floor=5, minimal features).
-- P2-6: new route `GET /api/flipper/health/circuit-breakers` (JSON snapshot of per-endpoint CB state).
-- P2-4: `/flips` extended with 7 optional filter/sort params; scanner marked deprecated (deleted in iter 68).
-- See git commit `e88830c` for details.

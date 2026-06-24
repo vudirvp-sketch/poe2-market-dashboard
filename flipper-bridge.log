@@ -294,3 +294,456 @@
 [2026-06-20T20:29:24.580Z] [flipper-backend] INFO:     127.0.0.1:57799 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
 [2026-06-20T20:30:09.589Z] [flipper-backend] INFO:     127.0.0.1:57818 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
 [2026-06-20T20:30:54.603Z] [flipper-backend] INFO:     127.0.0.1:49903 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:35:39.805Z] [flipper-bridge] Starting Flipper backend bridge...
+[2026-06-24T11:35:39.806Z] [flipper-bridge] Platform: win32 (Windows)
+[2026-06-24T11:35:39.806Z] [flipper-bridge] Project root: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard
+[2026-06-24T11:35:39.807Z] [flipper-bridge] Log file: C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\flipper-bridge.log
+[2026-06-24T11:35:39.807Z] [flipper-bridge] Using PYTHON_CMD from env: .venv\Scripts\python.exe
+[2026-06-24T11:35:39.808Z] [flipper-bridge] Starting backend: .venv\Scripts\python.exe -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+[2026-06-24T11:35:39.812Z] [flipper-bridge] Backend bridge active — Python process managed
+[2026-06-24T11:35:41.294Z] [flipper-backend] 2026-06-24 16:35:41,298 [INFO] backend.main: CORS origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+[2026-06-24T11:35:42.500Z] [flipper-backend] INFO:     Started server process [11236]
+[2026-06-24T11:35:42.501Z] [flipper-backend] INFO:     Waiting for application startup.
+[2026-06-24T11:35:42.501Z] [flipper-backend] 2026-06-24 16:35:42,505 [INFO] backend.main: PoE2 Flipper backend starting up...
+[2026-06-24T11:35:42.519Z] [flipper-backend] 2026-06-24 16:35:42,523 [INFO] backend.main: League: runes, Realm: poe2, Base currency: exalted
+[2026-06-24T11:35:42.556Z] [flipper-backend] 2026-06-24 16:35:42,560 [INFO] backend.data.historical: No old league data found in HistoricalStore (current: 'runes')
+[2026-06-24T11:35:42.556Z] [flipper-backend] 2026-06-24 16:35:42,560 [INFO] backend.main: HistoricalStore initialized
+[2026-06-24T11:35:42.557Z] [flipper-backend] 2026-06-24 16:35:42,561 [INFO] backend.main: Loaded 0 persisted events from SQLite
+[2026-06-24T11:35:42.595Z] [flipper-backend] 2026-06-24 16:35:42,599 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-24T11:35:42.596Z] [flipper-backend] 2026-06-24 16:35:42,599 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-24T11:35:42.596Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+[2026-06-24T11:35:42.596Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] apscheduler.scheduler: Added job "Collect price snapshots" to job store "default"
+[2026-06-24T11:35:42.597Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] apscheduler.scheduler: Added job "Prune expired events" to job store "default"
+[2026-06-24T11:35:42.597Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] apscheduler.scheduler: Added job "Persist LightGBM models" to job store "default"
+[2026-06-24T11:35:42.597Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] apscheduler.scheduler: Scheduler started
+[2026-06-24T11:35:42.597Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] backend.scheduler: Scheduler: started with 3 jobs (price=30m, prune=15m, model=30m)
+[2026-06-24T11:35:42.598Z] [flipper-backend] 2026-06-24 16:35:42,600 [INFO] backend.main: Snapshot periodic refresh started as background task
+[2026-06-24T11:35:42.598Z] [flipper-backend] 2026-06-24 16:35:42,602 [INFO] backend.main: ProcessPoolExecutor (re)created: 1 workers (cpu_count=16, FLIPPER_WORKERS=1, start_method=spawn)
+[2026-06-24T11:35:42.602Z] [flipper-backend] 2026-06-24 16:35:42,606 [INFO] backend.api.data_snapshot: SnapshotManager: starting periodic refresh (TTL=300s)
+[2026-06-24T11:35:42.812Z] [flipper-backend] INFO:     Application startup complete.
+[2026-06-24T11:35:42.814Z] [flipper-backend] INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[2026-06-24T11:35:43.346Z] [flipper-backend] 2026-06-24 16:35:43,350 [INFO] backend.main: CORS origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+[2026-06-24T11:35:43.364Z] [flipper-backend] 2026-06-24 16:35:43,368 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-24T11:35:43.873Z] [flipper-backend] 2026-06-24 16:35:43,877 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-24T11:35:43.996Z] [flipper-backend] 2026-06-24 16:35:44,000 [INFO] backend.main: ProcessPoolExecutor warm-up complete: 1/1 workers ready
+[2026-06-24T11:35:44.926Z] [flipper-backend] 2026-06-24 16:35:44,930 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-24T11:35:46.043Z] [flipper-backend] 2026-06-24 16:35:46,047 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:46.972Z] [flipper-backend] 2026-06-24 16:35:46,976 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:47.992Z] [flipper-backend] 2026-06-24 16:35:47,996 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:48.986Z] [flipper-backend] 2026-06-24 16:35:48,990 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:54.017Z] [flipper-backend] 2026-06-24 16:35:50,075 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:54.018Z] [flipper-backend] 2026-06-24 16:35:51,026 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:54.019Z] [flipper-backend] 2026-06-24 16:35:52,067 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:54.019Z] [flipper-backend] 2026-06-24 16:35:53,000 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:54.159Z] [flipper-backend] 2026-06-24 16:35:54,163 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:55.041Z] [flipper-backend] 2026-06-24 16:35:55,045 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:56.062Z] [flipper-backend] 2026-06-24 16:35:56,066 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:57.078Z] [flipper-backend] 2026-06-24 16:35:57,082 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:58.079Z] [flipper-backend] 2026-06-24 16:35:58,083 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:59.089Z] [flipper-backend] 2026-06-24 16:35:59,093 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:35:59.810Z] [flipper-backend] INFO:     127.0.0.1:63991 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:35:59.850Z] [flipper-backend] INFO:     127.0.0.1:63991 - "GET /api/v1/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-24T11:35:59.864Z] [flipper-backend] INFO:     127.0.0.1:63991 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:35:59.866Z] [flipper-backend] INFO:     127.0.0.1:57679 - "GET /api/v1/arbitrage/triangular HTTP/1.1" 200 OK
+[2026-06-24T11:35:59.867Z] [flipper-backend] INFO:     127.0.0.1:57681 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:35:59.867Z] [flipper-backend] INFO:     127.0.0.1:57680 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:35:59.879Z] [flipper-backend] INFO:     127.0.0.1:57679 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:36:00.097Z] [flipper-backend] INFO:     127.0.0.1:57680 - "GET /api/v1/portfolio/correlation HTTP/1.1" 200 OK
+[2026-06-24T11:36:00.279Z] [flipper-backend] 2026-06-24 16:36:00,283 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:00.539Z] [flipper-backend] INFO:     127.0.0.1:60798 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:36:00.539Z] [flipper-backend] INFO:     127.0.0.1:60799 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:36:00.539Z] [flipper-backend] INFO:     127.0.0.1:60800 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:36:00.540Z] [flipper-backend] INFO:     127.0.0.1:60801 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:36:00.540Z] [flipper-backend] 2026-06-24 16:36:00,544 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:36:00.540Z] [flipper-backend] 2026-06-24 16:36:00,544 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:36:00.540Z] [flipper-backend] 2026-06-24 16:36:00,544 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:36:00.541Z] [flipper-backend] 2026-06-24 16:36:00,545 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:36:00.543Z] [flipper-backend] INFO:     127.0.0.1:57680 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:36:01.004Z] [flipper-backend] 2026-06-24 16:36:01,008 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-24T11:36:02.090Z] [flipper-backend] 2026-06-24 16:36:02,094 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:03.021Z] [flipper-backend] 2026-06-24 16:36:03,026 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-24T11:36:04.022Z] [flipper-backend] 2026-06-24 16:36:04,027 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:04.031Z] [flipper-backend] 2026-06-24 16:36:04,035 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 612/612 currencies have price histories (ByCategory: 612, individual fetch: 0)
+[2026-06-24T11:36:04.036Z] [flipper-backend] 2026-06-24 16:36:04,040 [INFO] backend.api.data_snapshot: Tier classification: 612 currencies classified
+[2026-06-24T11:36:04.037Z] [flipper-backend] 2026-06-24 16:36:04,040 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3308 exchange rates, 638 currencies
+[2026-06-24T11:36:05.033Z] [flipper-backend] 2026-06-24 16:36:05,037 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:06.042Z] [flipper-backend] 2026-06-24 16:36:06,046 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:07.067Z] [flipper-backend] 2026-06-24 16:36:07,071 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:08.068Z] [flipper-backend] 2026-06-24 16:36:08,072 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:09.078Z] [flipper-backend] 2026-06-24 16:36:09,083 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:09.280Z] [flipper-backend] INFO:     127.0.0.1:59367 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:36:09.987Z] [flipper-backend] INFO:     127.0.0.1:59090 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:36:09.987Z] [flipper-backend] INFO:     127.0.0.1:59091 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:36:09.988Z] [flipper-backend] INFO:     127.0.0.1:59092 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:36:09.988Z] [flipper-backend] INFO:     127.0.0.1:59093 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:36:10.000Z] [flipper-backend] 2026-06-24 16:36:10,004 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:36:10.001Z] [flipper-backend] 2026-06-24 16:36:10,005 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:36:10.001Z] [flipper-backend] 2026-06-24 16:36:10,005 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:36:10.001Z] [flipper-backend] 2026-06-24 16:36:10,005 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:36:10.007Z] [flipper-backend] INFO:     127.0.0.1:59097 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:36:10.013Z] [flipper-backend] INFO:     127.0.0.1:59097 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:36:10.377Z] [flipper-backend] 2026-06-24 16:36:10,381 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:10.377Z] [flipper-backend] INFO:     127.0.0.1:59097 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:36:13.765Z] [flipper-backend] INFO:     127.0.0.1:52650 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:36:13.778Z] [flipper-backend] 2026-06-24 16:36:12,078 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:13.778Z] [flipper-backend] 2026-06-24 16:36:13,087 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:16.912Z] [flipper-backend] INFO:     127.0.0.1:59097 - "GET /api/v1/prices/stream?threshold_pct=1 HTTP/1.1" 400 Bad Request
+[2026-06-24T11:36:16.915Z] [flipper-backend] 2026-06-24 16:36:14,091 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:16.915Z] [flipper-backend] 2026-06-24 16:36:15,103 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:16.916Z] [flipper-backend] 2026-06-24 16:36:16,110 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:16.921Z] [flipper-backend] INFO:     127.0.0.1:52650 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:36:17.118Z] [flipper-backend] 2026-06-24 16:36:17,122 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:18.113Z] [flipper-backend] 2026-06-24 16:36:18,117 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:19.131Z] [flipper-backend] 2026-06-24 16:36:19,135 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:20.137Z] [flipper-backend] 2026-06-24 16:36:20,141 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:21.145Z] [flipper-backend] 2026-06-24 16:36:21,149 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:22.145Z] [flipper-backend] 2026-06-24 16:36:22,149 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:22.154Z] [flipper-backend] 2026-06-24 16:36:22,158 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 612/612 currencies have price histories (ByCategory: 612, individual fetch: 0)
+[2026-06-24T11:36:22.156Z] [flipper-backend] 2026-06-24 16:36:22,160 [INFO] backend.api.data_snapshot: Tier classification: 612 currencies classified
+[2026-06-24T11:36:22.156Z] [flipper-backend] 2026-06-24 16:36:22,160 [INFO] backend.api.data_snapshot: DataSnapshot refreshed: 3308 exchange rates, 638 currencies
+[2026-06-24T11:36:22.163Z] [flipper-backend] INFO:     127.0.0.1:63991 - "GET /api/v1/prices/stream?threshold_pct=1 HTTP/1.1" 400 Bad Request
+[2026-06-24T11:36:23.222Z] [flipper-backend] 2026-06-24 16:36:23,226 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/4661/DailyStatsHistory?DayCount=30 "HTTP/1.1 200 OK"
+[2026-06-24T11:36:23.226Z] [flipper-backend] INFO:     127.0.0.1:56308 - "GET /api/v1/benchmarks/atziris-allure HTTP/1.1" 500 Internal Server Error
+[2026-06-24T11:36:23.239Z] [ERROR] [flipper-backend] ERROR:    Exception in ASGI application
+[2026-06-24T11:36:23.240Z] [ERROR] [flipper-backend]   + Exception Group Traceback (most recent call last):
+[2026-06-24T11:36:23.240Z] [flipper-backend]   |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_utils.py", line 85, in create_collapsing_task_group
+[2026-06-24T11:36:23.240Z] [flipper-backend]   |     async with anyio.create_task_group() as tg:
+[2026-06-24T11:36:23.241Z] [flipper-backend]   |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+[2026-06-24T11:36:23.241Z] [flipper-backend]   |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 799, in __aexit__
+[2026-06-24T11:36:23.241Z] [flipper-backend]   |     raise BaseExceptionGroup(
+[2026-06-24T11:36:23.242Z] [flipper-backend]   |         "unhandled errors in a TaskGroup", self._exceptions
+[2026-06-24T11:36:23.242Z] [flipper-backend]   |     ) from None
+[2026-06-24T11:36:23.242Z] [flipper-backend]   | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+[2026-06-24T11:36:23.242Z] [flipper-backend]   +-+---------------- 1 ----------------
+[2026-06-24T11:36:23.243Z] [ERROR] [flipper-backend]     | Traceback (most recent call last):
+[2026-06-24T11:36:23.243Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 409, in run_asgi
+[2026-06-24T11:36:23.243Z] [flipper-backend]     |     result = await app(  # type: ignore[func-returns-value]
+[2026-06-24T11:36:23.243Z] [flipper-backend]     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.243Z] [flipper-backend]     |         self.scope, self.receive, self.send
+[2026-06-24T11:36:23.244Z] [flipper-backend]     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.244Z] [flipper-backend]     |     )
+[2026-06-24T11:36:23.244Z] [flipper-backend]     |     ^
+[2026-06-24T11:36:23.244Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+[2026-06-24T11:36:23.245Z] [flipper-backend]     |     return await self.app(scope, receive, send)
+[2026-06-24T11:36:23.245Z] [flipper-backend]     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.245Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\applications.py", line 1159, in __call__
+[2026-06-24T11:36:23.245Z] [flipper-backend]     |     await super().__call__(scope, receive, send)
+[2026-06-24T11:36:23.245Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\applications.py", line 90, in __call__
+[2026-06-24T11:36:23.246Z] [flipper-backend]     |     await self.middleware_stack(scope, receive, send)
+[2026-06-24T11:36:23.246Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+[2026-06-24T11:36:23.246Z] [flipper-backend]     |     raise exc
+[2026-06-24T11:36:23.246Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+[2026-06-24T11:36:23.247Z] [flipper-backend]     |     await self.app(scope, receive, _send)
+[2026-06-24T11:36:23.247Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+[2026-06-24T11:36:23.247Z] [flipper-backend]     |     response = await self.dispatch_func(request, call_next)
+[2026-06-24T11:36:23.247Z] [flipper-backend]     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.247Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 522, in dispatch
+[2026-06-24T11:36:23.248Z] [flipper-backend]     |     response = await call_next(request)
+[2026-06-24T11:36:23.248Z] [flipper-backend]     |                ^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.248Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+[2026-06-24T11:36:23.248Z] [flipper-backend]     |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+[2026-06-24T11:36:23.249Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+[2026-06-24T11:36:23.249Z] [flipper-backend]     |     await self.app(scope, receive_or_disconnect, send_no_error)
+[2026-06-24T11:36:23.249Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+[2026-06-24T11:36:23.249Z] [flipper-backend]     |     response = await self.dispatch_func(request, call_next)
+[2026-06-24T11:36:23.249Z] [flipper-backend]     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.250Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\middleware_compression.py", line 42, in dispatch
+[2026-06-24T11:36:23.250Z] [flipper-backend]     |     response = await call_next(request)
+[2026-06-24T11:36:23.250Z] [flipper-backend]     |                ^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.250Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+[2026-06-24T11:36:23.251Z] [flipper-backend]     |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+[2026-06-24T11:36:23.251Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+[2026-06-24T11:36:23.251Z] [flipper-backend]     |     await self.app(scope, receive_or_disconnect, send_no_error)
+[2026-06-24T11:36:23.251Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+[2026-06-24T11:36:23.252Z] [flipper-backend]     |     await self.app(scope, receive, send)
+[2026-06-24T11:36:23.252Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+[2026-06-24T11:36:23.252Z] [flipper-backend]     |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+[2026-06-24T11:36:23.252Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+[2026-06-24T11:36:23.253Z] [flipper-backend]     |     raise exc
+[2026-06-24T11:36:23.253Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+[2026-06-24T11:36:23.253Z] [flipper-backend]     |     await app(scope, receive, sender)
+[2026-06-24T11:36:23.253Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+[2026-06-24T11:36:23.253Z] [flipper-backend]     |     await self.app(scope, receive, send)
+[2026-06-24T11:36:23.254Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
+[2026-06-24T11:36:23.254Z] [flipper-backend]     |     await self.middleware_stack(scope, receive, send)
+[2026-06-24T11:36:23.254Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\routing.py", line 680, in app
+[2026-06-24T11:36:23.254Z] [flipper-backend]     |     await route.handle(scope, receive, send)
+[2026-06-24T11:36:23.255Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\routing.py", line 276, in handle
+[2026-06-24T11:36:23.255Z] [flipper-backend]     |     await self.app(scope, receive, send)
+[2026-06-24T11:36:23.255Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 134, in app
+[2026-06-24T11:36:23.255Z] [flipper-backend]     |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+[2026-06-24T11:36:23.255Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+[2026-06-24T11:36:23.256Z] [flipper-backend]     |     raise exc
+[2026-06-24T11:36:23.256Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+[2026-06-24T11:36:23.256Z] [flipper-backend]     |     await app(scope, receive, sender)
+[2026-06-24T11:36:23.256Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 120, in app
+[2026-06-24T11:36:23.257Z] [flipper-backend]     |     response = await f(request)
+[2026-06-24T11:36:23.257Z] [flipper-backend]     |                ^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.257Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 695, in app
+[2026-06-24T11:36:23.257Z] [flipper-backend]     |     content = await serialize_response(
+[2026-06-24T11:36:23.257Z] [flipper-backend]     |               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.258Z] [flipper-backend]     |     ...<11 lines>...
+[2026-06-24T11:36:23.258Z] [flipper-backend]     |     )
+[2026-06-24T11:36:23.258Z] [flipper-backend]     |     ^
+[2026-06-24T11:36:23.258Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 300, in serialize_response
+[2026-06-24T11:36:23.259Z] [flipper-backend]     |     raise ResponseValidationError(
+[2026-06-24T11:36:23.259Z] [flipper-backend]     |     ...<3 lines>...
+[2026-06-24T11:36:23.259Z] [flipper-backend]     |     )
+[2026-06-24T11:36:23.259Z] [ERROR] [flipper-backend]     | fastapi.exceptions.ResponseValidationError: 1 validation error:
+[2026-06-24T11:36:23.259Z] [flipper-backend]     |   {'type': 'missing', 'loc': ('response', 'days'), 'msg': 'Field required', 'input': {'currency_api_id': 'atziris-allure', 'current_price': 1599.4461850544208, 'benchmark': None, 'data_available': False, 'message': 'Insufficient historical data (need at least 7 days)'}}
+[2026-06-24T11:36:23.260Z] [flipper-backend]     | 
+[2026-06-24T11:36:23.260Z] [flipper-backend]     |   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_prices.py", line 446, in get_benchmarks
+[2026-06-24T11:36:23.260Z] [flipper-backend]     |     GET /api/v1/benchmarks/{currency_api_id}
+[2026-06-24T11:36:23.260Z] [flipper-backend]     +------------------------------------
+[2026-06-24T11:36:23.260Z] [flipper-backend] 
+[2026-06-24T11:36:23.261Z] [flipper-backend] The above exception was the direct cause of the following exception:
+[2026-06-24T11:36:23.261Z] [flipper-backend] 
+[2026-06-24T11:36:23.261Z] [ERROR] [flipper-backend] Traceback (most recent call last):
+[2026-06-24T11:36:23.261Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 409, in run_asgi
+[2026-06-24T11:36:23.262Z] [flipper-backend]     result = await app(  # type: ignore[func-returns-value]
+[2026-06-24T11:36:23.263Z] [flipper-backend]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.263Z] [flipper-backend]         self.scope, self.receive, self.send
+[2026-06-24T11:36:23.264Z] [flipper-backend]         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.264Z] [flipper-backend]     )
+[2026-06-24T11:36:23.264Z] [flipper-backend]     ^
+[2026-06-24T11:36:23.264Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+[2026-06-24T11:36:23.264Z] [flipper-backend]     return await self.app(scope, receive, send)
+[2026-06-24T11:36:23.265Z] [flipper-backend]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.265Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\applications.py", line 1159, in __call__
+[2026-06-24T11:36:23.265Z] [flipper-backend]     await super().__call__(scope, receive, send)
+[2026-06-24T11:36:23.265Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\applications.py", line 90, in __call__
+[2026-06-24T11:36:23.266Z] [flipper-backend]     await self.middleware_stack(scope, receive, send)
+[2026-06-24T11:36:23.266Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+[2026-06-24T11:36:23.266Z] [flipper-backend]     raise exc
+[2026-06-24T11:36:23.266Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+[2026-06-24T11:36:23.266Z] [flipper-backend]     await self.app(scope, receive, _send)
+[2026-06-24T11:36:23.267Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+[2026-06-24T11:36:23.267Z] [flipper-backend]     response = await self.dispatch_func(request, call_next)
+[2026-06-24T11:36:23.267Z] [flipper-backend]                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.267Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\main.py", line 522, in dispatch
+[2026-06-24T11:36:23.268Z] [flipper-backend]     response = await call_next(request)
+[2026-06-24T11:36:23.268Z] [flipper-backend]                ^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.268Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+[2026-06-24T11:36:23.268Z] [flipper-backend]     raise app_exc from app_exc.__cause__ or app_exc.__context__
+[2026-06-24T11:36:23.269Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+[2026-06-24T11:36:23.269Z] [flipper-backend]     await self.app(scope, receive_or_disconnect, send_no_error)
+[2026-06-24T11:36:23.269Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+[2026-06-24T11:36:23.269Z] [flipper-backend]     response = await self.dispatch_func(request, call_next)
+[2026-06-24T11:36:23.270Z] [flipper-backend]                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.270Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\middleware_compression.py", line 42, in dispatch
+[2026-06-24T11:36:23.270Z] [flipper-backend]     response = await call_next(request)
+[2026-06-24T11:36:23.270Z] [flipper-backend]                ^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.271Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+[2026-06-24T11:36:23.271Z] [flipper-backend]     raise app_exc from app_exc.__cause__ or app_exc.__context__
+[2026-06-24T11:36:23.271Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+[2026-06-24T11:36:23.271Z] [flipper-backend]     await self.app(scope, receive_or_disconnect, send_no_error)
+[2026-06-24T11:36:23.272Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\cors.py", line 88, in __call__
+[2026-06-24T11:36:23.272Z] [flipper-backend]     await self.app(scope, receive, send)
+[2026-06-24T11:36:23.272Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+[2026-06-24T11:36:23.272Z] [flipper-backend]     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+[2026-06-24T11:36:23.272Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+[2026-06-24T11:36:23.273Z] [flipper-backend]     raise exc
+[2026-06-24T11:36:23.273Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+[2026-06-24T11:36:23.273Z] [flipper-backend]     await app(scope, receive, sender)
+[2026-06-24T11:36:23.273Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+[2026-06-24T11:36:23.274Z] [flipper-backend]     await self.app(scope, receive, send)
+[2026-06-24T11:36:23.274Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
+[2026-06-24T11:36:23.274Z] [flipper-backend]     await self.middleware_stack(scope, receive, send)
+[2026-06-24T11:36:23.274Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\routing.py", line 680, in app
+[2026-06-24T11:36:23.274Z] [flipper-backend]     await route.handle(scope, receive, send)
+[2026-06-24T11:36:23.275Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\routing.py", line 276, in handle
+[2026-06-24T11:36:23.275Z] [flipper-backend]     await self.app(scope, receive, send)
+[2026-06-24T11:36:23.275Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 134, in app
+[2026-06-24T11:36:23.275Z] [flipper-backend]     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+[2026-06-24T11:36:23.275Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+[2026-06-24T11:36:23.276Z] [flipper-backend]     raise exc
+[2026-06-24T11:36:23.276Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+[2026-06-24T11:36:23.276Z] [flipper-backend]     await app(scope, receive, sender)
+[2026-06-24T11:36:23.276Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 120, in app
+[2026-06-24T11:36:23.277Z] [flipper-backend]     response = await f(request)
+[2026-06-24T11:36:23.277Z] [flipper-backend]                ^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.277Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 695, in app
+[2026-06-24T11:36:23.277Z] [flipper-backend]     content = await serialize_response(
+[2026-06-24T11:36:23.277Z] [flipper-backend]               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-06-24T11:36:23.278Z] [flipper-backend]     ...<11 lines>...
+[2026-06-24T11:36:23.278Z] [flipper-backend]     )
+[2026-06-24T11:36:23.278Z] [flipper-backend]     ^
+[2026-06-24T11:36:23.278Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\.venv\Lib\site-packages\fastapi\routing.py", line 300, in serialize_response
+[2026-06-24T11:36:23.278Z] [flipper-backend]     raise ResponseValidationError(
+[2026-06-24T11:36:23.279Z] [flipper-backend]     ...<3 lines>...
+[2026-06-24T11:36:23.279Z] [flipper-backend]     )
+[2026-06-24T11:36:23.279Z] [ERROR] [flipper-backend] fastapi.exceptions.ResponseValidationError: 1 validation error:
+[2026-06-24T11:36:23.279Z] [flipper-backend]   {'type': 'missing', 'loc': ('response', 'days'), 'msg': 'Field required', 'input': {'currency_api_id': 'atziris-allure', 'current_price': 1599.4461850544208, 'benchmark': None, 'data_available': False, 'message': 'Insufficient historical data (need at least 7 days)'}}
+[2026-06-24T11:36:23.280Z] [flipper-backend] 
+[2026-06-24T11:36:23.280Z] [flipper-backend]   File "C:\Users\fallo\OneDrive\Desktop\repo\poe2-market-dashboard\backend\api\routes_prices.py", line 446, in get_benchmarks
+[2026-06-24T11:36:23.280Z] [flipper-backend]     GET /api/v1/benchmarks/{currency_api_id}
+[2026-06-24T11:36:39.328Z] [flipper-backend] INFO:     127.0.0.1:59391 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:36:39.830Z] [flipper-backend] INFO:     127.0.0.1:59391 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:36:40.028Z] [flipper-backend] INFO:     127.0.0.1:59391 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:36:47.946Z] [flipper-backend] INFO:     127.0.0.1:64820 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:36:47.946Z] [flipper-backend] INFO:     127.0.0.1:64821 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:36:47.947Z] [flipper-backend] INFO:     127.0.0.1:64822 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:36:47.947Z] [flipper-backend] INFO:     127.0.0.1:64823 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:36:47.957Z] [flipper-backend] 2026-06-24 16:36:47,959 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:36:47.958Z] [flipper-backend] 2026-06-24 16:36:47,959 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:36:47.958Z] [flipper-backend] 2026-06-24 16:36:47,959 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:36:47.958Z] [flipper-backend] 2026-06-24 16:36:47,960 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:36:49.518Z] [flipper-backend] INFO:     127.0.0.1:64814 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:37:09.314Z] [ERROR] [flipper-backend] 2026-06-24 16:37:09,315 [ERROR] backend.api.routes_portfolio: Correlation matrix computation timed out after 60s � returning empty result. Consider reducing currency count or increasing timeout.
+[2026-06-24T11:37:09.336Z] [ERROR] [flipper-backend] 2026-06-24 16:37:09,338 [ERROR] backend.api.routes_arbitrage: Flip computation timed out after 60s � returning empty result
+[2026-06-24T11:37:09.339Z] [flipper-backend] INFO:     127.0.0.1:64381 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:37:10.040Z] [flipper-backend] INFO:     127.0.0.1:64381 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:37:14.524Z] [flipper-backend] INFO:     127.0.0.1:53699 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:37:17.800Z] [flipper-backend] INFO:     127.0.0.1:53699 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:37:23.923Z] [flipper-backend] INFO:     127.0.0.1:53615 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:37:23.924Z] [flipper-backend] INFO:     127.0.0.1:53616 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:37:23.924Z] [flipper-backend] INFO:     127.0.0.1:53617 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:37:23.924Z] [flipper-backend] INFO:     127.0.0.1:53618 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:37:23.935Z] [flipper-backend] 2026-06-24 16:37:23,936 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:37:23.935Z] [flipper-backend] 2026-06-24 16:37:23,936 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:37:23.936Z] [flipper-backend] 2026-06-24 16:37:23,937 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:37:23.936Z] [flipper-backend] 2026-06-24 16:37:23,937 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:37:25.464Z] [flipper-backend] INFO:     127.0.0.1:53609 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:37:25.501Z] [flipper-backend] INFO:     127.0.0.1:63278 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:37:30.777Z] [flipper-backend] 2026-06-24 16:37:30,778 [INFO] backend.economy.clustering_helpers: Clustering completed: 612 currencies assigned
+[2026-06-24T11:37:33.878Z] [flipper-backend] INFO:     127.0.0.1:59244 - "GET /api/v1/benchmarks/183 HTTP/1.1" 404 Not Found
+[2026-06-24T11:37:39.338Z] [flipper-backend] INFO:     127.0.0.1:53970 - "GET /api/v1/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-24T11:37:39.354Z] [flipper-backend] INFO:     127.0.0.1:53970 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:37:40.018Z] [ERROR] [flipper-backend] 2026-06-24 16:37:40,018 [ERROR] backend.arbitrage.triangular: Triangular arbitrage computation timed out after 90s � returning empty result. Consider reducing currency count.
+[2026-06-24T11:37:40.060Z] [flipper-backend] INFO:     127.0.0.1:53970 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:37:52.995Z] [flipper-backend] INFO:     127.0.0.1:55320 - "GET /api/v1/benchmarks/200 HTTP/1.1" 404 Not Found
+[2026-06-24T11:37:59.841Z] [flipper-backend] INFO:     127.0.0.1:52749 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:37:59.842Z] [flipper-backend] INFO:     127.0.0.1:52750 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:37:59.842Z] [flipper-backend] INFO:     127.0.0.1:52751 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:37:59.843Z] [flipper-backend] INFO:     127.0.0.1:52752 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:37:59.857Z] [flipper-backend] 2026-06-24 16:37:59,857 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:37:59.857Z] [flipper-backend] 2026-06-24 16:37:59,857 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:37:59.858Z] [flipper-backend] 2026-06-24 16:37:59,858 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:37:59.858Z] [flipper-backend] 2026-06-24 16:37:59,858 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:38:01.397Z] [flipper-backend] INFO:     127.0.0.1:52744 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:38:04.558Z] [flipper-backend] INFO:     127.0.0.1:52744 - "GET /api/v1/benchmarks/578 HTTP/1.1" 404 Not Found
+[2026-06-24T11:38:09.367Z] [flipper-backend] INFO:     127.0.0.1:59864 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:38:09.843Z] [flipper-backend] INFO:     127.0.0.1:59864 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:38:10.067Z] [flipper-backend] INFO:     127.0.0.1:59864 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:38:12.843Z] [flipper-backend] INFO:     127.0.0.1:59864 - "GET /api/v1/benchmarks/522 HTTP/1.1" 404 Not Found
+[2026-06-24T11:38:18.198Z] [flipper-backend] 2026-06-24 16:38:18,199 [INFO] backend.arbitrage.triangular: Cross-rate validation: 2035 suspicious triples detected (threshold=10.0%)
+[2026-06-24T11:38:18.199Z] [flipper-backend] 2026-06-24 16:38:18,199 [INFO] backend.arbitrage.triangular: Discarding cycle ['chaos', 'vaal-blacksmiths-infuser', 'exalted', 'verisium', 'chaos']: passes through cross-rate-inconsistent triple (profit=92710.34% likely false positive)
+[2026-06-24T11:38:18.690Z] [flipper-backend] INFO:     127.0.0.1:60768 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:38:18.724Z] [flipper-backend] INFO:     127.0.0.1:57366 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:38:54.844Z] [flipper-backend] INFO:     127.0.0.1:52786 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:39:39.844Z] [flipper-backend] INFO:     127.0.0.1:58295 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:40:06.490Z] [flipper-backend] INFO:     127.0.0.1:50438 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:40:06.490Z] [flipper-backend] INFO:     127.0.0.1:50439 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:40:06.491Z] [flipper-backend] INFO:     127.0.0.1:50440 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:40:06.491Z] [flipper-backend] INFO:     127.0.0.1:50441 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:40:06.502Z] [flipper-backend] 2026-06-24 16:40:06,503 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:40:06.502Z] [flipper-backend] 2026-06-24 16:40:06,503 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:40:06.503Z] [flipper-backend] 2026-06-24 16:40:06,504 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:40:06.503Z] [flipper-backend] 2026-06-24 16:40:06,504 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:40:08.061Z] [flipper-backend] INFO:     127.0.0.1:50433 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:40:11.180Z] [flipper-backend] INFO:     127.0.0.1:50433 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:40:11.617Z] [flipper-backend] INFO:     127.0.0.1:50433 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:40:18.745Z] [flipper-backend] INFO:     127.0.0.1:50747 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:40:22.777Z] [flipper-backend] INFO:     127.0.0.1:50747 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:40:25.831Z] [flipper-backend] INFO:     127.0.0.1:50747 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:40:39.362Z] [flipper-backend] INFO:     127.0.0.1:64480 - "GET /api/v1/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-24T11:40:42.112Z] [flipper-backend] INFO:     127.0.0.1:64480 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:40:43.015Z] [flipper-backend] INFO:     127.0.0.1:52485 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:40:43.015Z] [flipper-backend] INFO:     127.0.0.1:52486 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:40:43.015Z] [flipper-backend] INFO:     127.0.0.1:52487 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:40:43.016Z] [flipper-backend] INFO:     127.0.0.1:52488 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:40:43.028Z] [flipper-backend] 2026-06-24 16:40:43,029 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:40:43.028Z] [flipper-backend] 2026-06-24 16:40:43,029 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:40:43.029Z] [flipper-backend] 2026-06-24 16:40:43,030 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:40:43.029Z] [flipper-backend] 2026-06-24 16:40:43,030 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:40:43.036Z] [flipper-backend] INFO:     127.0.0.1:52490 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:40:44.572Z] [flipper-backend] INFO:     127.0.0.1:64480 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:41:04.275Z] [flipper-backend] 2026-06-24 16:41:04,280 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs "HTTP/1.1 200 OK"
+[2026-06-24T11:41:05.191Z] [flipper-backend] 2026-06-24 16:41:05,195 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories "HTTP/1.1 200 OK"
+[2026-06-24T11:41:06.232Z] [flipper-backend] 2026-06-24 16:41:06,237 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:07.204Z] [flipper-backend] 2026-06-24 16:41:07,209 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=fragments&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:08.237Z] [flipper-backend] 2026-06-24 16:41:08,241 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=runes&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:09.273Z] [flipper-backend] 2026-06-24 16:41:09,278 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=essences&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:10.261Z] [flipper-backend] 2026-06-24 16:41:10,266 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:10.820Z] [flipper-backend] INFO:     127.0.0.1:54449 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:41:11.257Z] [flipper-backend] 2026-06-24 16:41:11,262 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=expedition&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:12.116Z] [flipper-backend] INFO:     127.0.0.1:54449 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:41:12.301Z] [flipper-backend] 2026-06-24 16:41:12,306 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:13.071Z] [flipper-backend] INFO:     127.0.0.1:54449 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:41:13.274Z] [flipper-backend] 2026-06-24 16:41:13,278 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:14.294Z] [flipper-backend] 2026-06-24 16:41:14,299 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=breach&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:15.267Z] [flipper-backend] 2026-06-24 16:41:15,272 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=abyss&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:16.296Z] [flipper-backend] 2026-06-24 16:41:16,301 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=uncutgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:17.299Z] [flipper-backend] 2026-06-24 16:41:17,304 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=lineagesupportgems&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:18.274Z] [flipper-backend] 2026-06-24 16:41:18,279 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:18.945Z] [flipper-backend] INFO:     127.0.0.1:62551 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:41:18.946Z] [flipper-backend] INFO:     127.0.0.1:62552 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:41:18.946Z] [flipper-backend] INFO:     127.0.0.1:62553 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:41:18.947Z] [flipper-backend] INFO:     127.0.0.1:62554 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:41:18.962Z] [flipper-backend] 2026-06-24 16:41:18,966 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:41:18.962Z] [flipper-backend] 2026-06-24 16:41:18,967 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:41:18.962Z] [flipper-backend] 2026-06-24 16:41:18,967 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:41:18.963Z] [flipper-backend] 2026-06-24 16:41:18,967 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:41:18.971Z] [flipper-backend] INFO:     127.0.0.1:64112 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:41:20.531Z] [flipper-backend] 2026-06-24 16:41:20,536 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=incursion&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:20.534Z] [flipper-backend] INFO:     127.0.0.1:62546 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:41:23.600Z] [flipper-backend] 2026-06-24 16:41:20,687 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:23.602Z] [flipper-backend] 2026-06-24 16:41:21,688 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=verisium&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:23.602Z] [flipper-backend] 2026-06-24 16:41:22,713 [INFO] httpx: HTTP Request: GET https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaal&Page=1&PerPage=250 "HTTP/1.1 200 OK"
+[2026-06-24T11:41:23.602Z] [flipper-backend] 2026-06-24 16:41:22,723 [INFO] backend.api.data_snapshot: SnapshotPairs coverage: 612/612 currencies have price histories (ByCategory: 612, individual fetch: 0)
+[2026-06-24T11:41:23.603Z] [flipper-backend] 2026-06-24 16:41:22,726 [INFO] backend.api.data_snapshot: Tier classification: 612 currencies classified
+[2026-06-24T11:41:23.603Z] [flipper-backend] 2026-06-24 16:41:22,729 [INFO] backend.api.data_snapshot: SnapshotManager: snapshot refreshed � 3308 exchange rates, 638 currencies
+[2026-06-24T11:41:27.277Z] [flipper-backend] INFO:     127.0.0.1:50677 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:41:33.644Z] [flipper-backend] INFO:     127.0.0.1:56324 - "GET /api/v1/tiers HTTP/1.1" 200 OK
+[2026-06-24T11:41:33.913Z] [flipper-backend] INFO:     127.0.0.1:56324 - "GET /api/v1/arbitrage/triangular HTTP/1.1" 200 OK
+[2026-06-24T11:41:33.915Z] [flipper-backend] INFO:     127.0.0.1:54451 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:41:39.369Z] [flipper-backend] INFO:     127.0.0.1:63347 - "GET /api/v1/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-24T11:41:42.125Z] [flipper-backend] INFO:     127.0.0.1:63347 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:41:43.098Z] [flipper-backend] INFO:     127.0.0.1:63347 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:41:55.034Z] [flipper-backend] INFO:     127.0.0.1:51741 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:41:55.035Z] [flipper-backend] INFO:     127.0.0.1:51742 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:41:55.035Z] [flipper-backend] INFO:     127.0.0.1:51743 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:41:55.035Z] [flipper-backend] INFO:     127.0.0.1:51744 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:41:55.046Z] [flipper-backend] 2026-06-24 16:41:55,051 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:41:55.046Z] [flipper-backend] 2026-06-24 16:41:55,051 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:41:55.047Z] [flipper-backend] 2026-06-24 16:41:55,051 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:41:55.047Z] [flipper-backend] 2026-06-24 16:41:55,052 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:41:56.580Z] [flipper-backend] INFO:     127.0.0.1:51736 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:41:56.615Z] [flipper-backend] INFO:     127.0.0.1:51746 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:42:12.149Z] [flipper-backend] INFO:     127.0.0.1:58173 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:42:13.104Z] [flipper-backend] INFO:     127.0.0.1:58173 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:42:17.051Z] [flipper-backend] INFO:     127.0.0.1:58173 - "GET /api/v1/optimizer/matrix HTTP/1.1" 200 OK
+[2026-06-24T11:42:31.032Z] [flipper-backend] INFO:     127.0.0.1:64362 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:42:31.032Z] [flipper-backend] INFO:     127.0.0.1:64363 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:42:31.033Z] [flipper-backend] INFO:     127.0.0.1:64364 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:42:31.033Z] [flipper-backend] INFO:     127.0.0.1:64365 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:42:31.405Z] [flipper-backend] 2026-06-24 16:42:31,411 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:42:31.405Z] [flipper-backend] 2026-06-24 16:42:31,411 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:42:31.406Z] [flipper-backend] 2026-06-24 16:42:31,411 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:42:31.406Z] [flipper-backend] 2026-06-24 16:42:31,411 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:42:31.413Z] [flipper-backend] INFO:     127.0.0.1:61787 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:42:34.743Z] [flipper-backend] INFO:     127.0.0.1:64357 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:42:39.619Z] [flipper-backend] 2026-06-24 16:42:39,624 [WARNING] backend.data.unified_cache: DEGRADED: pipeline cache stale for key=flip_opportunities (age=330s > ttl=300s)
+[2026-06-24T11:42:39.696Z] [flipper-backend] 2026-06-24 16:42:39,702 [INFO] backend.economy.clustering_helpers: Clustering completed: 612 currencies assigned
+[2026-06-24T11:42:39.863Z] [flipper-backend] INFO:     127.0.0.1:59430 - "GET /api/v1/arbitrage/flips HTTP/1.1" 200 OK
+[2026-06-24T11:42:40.821Z] [flipper-backend] INFO:     127.0.0.1:59430 - "GET /api/v1/health/ping HTTP/1.1" 200 OK
+[2026-06-24T11:42:42.177Z] [flipper-backend] INFO:     127.0.0.1:59430 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:42:42.197Z] [flipper-backend] INFO:     127.0.0.1:59430 - "GET /api/v1/analyst/summary HTTP/1.1" 200 OK
+[2026-06-24T11:42:43.111Z] [flipper-backend] INFO:     127.0.0.1:59430 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:43:01.951Z] [flipper-backend] INFO:     127.0.0.1:53823 - "GET /api/v1/liquid-chain/analysis HTTP/1.1" 200 OK
+[2026-06-24T11:43:03.448Z] [ERROR] [flipper-backend] 2026-06-24 16:43:03,454 [ERROR] backend.api.routes_prices: Clustering in prices route failed: 'str' object has no attribute 'tzinfo'
+[2026-06-24T11:43:03.473Z] [flipper-backend] INFO:     127.0.0.1:53823 - "GET /api/v1/prices HTTP/1.1" 200 OK
+[2026-06-24T11:43:03.510Z] [flipper-backend] 2026-06-24 16:43:03,481 [WARNING] backend.data.unified_cache: DEGRADED: pipeline cache stale for key=triangular_arbitrage_1.0 (age=323s > ttl=300s)
+[2026-06-24T11:43:03.510Z] [flipper-backend] INFO:     127.0.0.1:57399 - "GET /api/v1/currencies HTTP/1.1" 200 OK
+[2026-06-24T11:43:09.291Z] [flipper-backend] INFO:     127.0.0.1:56758 - "GET /api/v1/arbitrage/optimal-currency HTTP/1.1" 200 OK
+[2026-06-24T11:43:09.292Z] [flipper-backend] INFO:     127.0.0.1:56759 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK
+[2026-06-24T11:43:09.292Z] [flipper-backend] INFO:     127.0.0.1:56760 - "GET /api/v1/phase HTTP/1.1" 200 OK
+[2026-06-24T11:43:09.292Z] [flipper-backend] INFO:     127.0.0.1:56761 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:43:09.302Z] [flipper-backend] 2026-06-24 16:43:09,308 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/arbitrage/optimal-currency "HTTP/1.1 200 OK"
+[2026-06-24T11:43:09.303Z] [flipper-backend] 2026-06-24 16:43:09,308 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/events?active_only=true "HTTP/1.1 200 OK"
+[2026-06-24T11:43:09.303Z] [flipper-backend] 2026-06-24 16:43:09,309 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/phase "HTTP/1.1 200 OK"
+[2026-06-24T11:43:09.303Z] [flipper-backend] 2026-06-24 16:43:09,309 [INFO] httpx: HTTP Request: GET http://localhost:8000/api/v1/health "HTTP/1.1 200 OK"
+[2026-06-24T11:43:10.858Z] [flipper-backend] INFO:     127.0.0.1:56753 - "POST /api/v1/batch HTTP/1.1" 200 OK
+[2026-06-24T11:43:13.991Z] [flipper-backend] INFO:     127.0.0.1:56753 - "GET /api/v1/health HTTP/1.1" 200 OK
+[2026-06-24T11:43:13.999Z] [flipper-backend] INFO:     127.0.0.1:65300 - "GET /api/v1/analyst/summary HTTP/1.1" 200 OK
+[2026-06-24T11:43:14.005Z] [flipper-backend] INFO:     127.0.0.1:65301 - "GET /api/v1/events?active_only=true HTTP/1.1" 200 OK

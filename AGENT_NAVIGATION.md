@@ -1,7 +1,8 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-21 (iter 69 — closed P2-8 + cleaned up iter 68 scanner residual).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 70 — closed P2-3, currency_names_ru → JSON).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
+> **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
 ---
 
@@ -24,7 +25,7 @@
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 iter 66) — `rowid IN (SELECT ... LIMIT ?)` pattern |
 | `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | Shim modules deleted in iter 66 (P2-2) — import directly |
-| `backend/data/currency_names_ru.py` | 966-line hardcoded dict (P2-3) | Move to JSON |
+| `backend/data/currency_names_ru.py` | Thin loader (63 lines) for `currency_names.json` (P2-3 closed iter 70) | Edit `currency_names.json`, not the `.py` |
 | `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis (P1-5 fixed iter 66) | `compute_quantized_analysis` uses bounded linear scan `O(1/D)` |
 | `backend/arbitrage/triangular.py` | Triangular arbitrage | `find_triangular_arbitrage(rates, min_profit_pct, ...)` — uses `get_process_pool()` (P2-13 fixed iter 65) |
 | `backend/main.py` | FastAPI app + lifespan + lazy `process_pool` | `get_process_pool()` lazily creates/recreates the pool (P2-13). Backward-compat: `from backend.main import process_pool` still works via module `__getattr__` but emits `DeprecationWarning`. |
@@ -87,16 +88,18 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 22. **Scanner is deleted** (P2-4, iter 68 + iter 69): the standalone `/api/v1/scanner/scan` endpoint and `routes_scanner.py` were removed. All its filter/sort params live on `/api/v1/arbitrage/flips` since iter 67 — use that.
 23. **`proxyWithFallback` 5xx handling is mode-aware** (P2-8, iter 69): non-503 5xx (500/502/504) passes through unchanged in dev (`NODE_ENV === "development"`) so devs see the real error; in prod it becomes 200 + fallback data + `X-Flipper-Fallback: <original-status>` header. 503 (backend_offline/insufficient_data) still returns 200 + fallback in both modes (otherwise dev is unusable when backend is down). Use `isFlipperFallbackResponse(res)` / `getFlipperFallbackOriginalStatus(res)` to detect fallback responses from the frontend.
 
+24. **Localized currency/item names live in `backend/data/currency_names.json`** (P2-3, iter 70). `currency_names_ru.py` is a 63-line thin loader — do NOT add names there. Public API unchanged: `CATEGORY_NAMES_RU` / `CATEGORY_NAMES_EN` / `CURRENCY_NAMES_RU` / `CURRENCY_NAMES_EN` dicts + `get_ru_name` / `get_en_name` / `get_category_ru` / `get_category_en` helpers. TS-side mirror `src/lib/currency-names.ts` still exists as an offline fallback — keep both in sync. Regression tests in `tests/test_currency_names_ru.py` enforce RU/EN key parity (run them after every name edit).
+
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 2 P2 / 4 P3).
+**All known issues are in [`STATUS.md`](./STATUS.md)** — categorized by priority P0-P3 (0 P0 / 0 P1 / 1 P2 / 4 P3).
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
 | `dashboard-page.tsx` unmaintainable | 1705-line god-component | P2-1 |
-| `currency_names_ru.py` hard to edit | 966-line hardcoded dict | P2-3 |
+| Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py` to verify key parity. | — |
 | Frontend shows fallback data without notice | (Fixed iter 69 — was P2-8) check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
 | `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |
 | `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`) | — |
@@ -152,6 +155,7 @@ Quick reference for the most common symptoms:
 | File | Purpose |
 |------|---------|
 | `STATUS.md` | **Known issues & refactoring backlog** — read first |
+| `PRODUCT_VISION.md` | **Product direction** — analytics helper, NOT a poe2scout/poe2ninja clone. Read before proposing features. |
 | `REFACTOR_PLAN.md` | Roadmap with priority buckets + DoD + recommended fix order |
 | `worklog.md` | Recent task entries (≤3 latest) |
 | `docs/ARCHITECTURE.md` | Layers, data flow, invariants, principles |

@@ -1,149 +1,157 @@
-# Iter 69 — Merge Instructions
+# Iter 70 — Merge Instructions
 
 ## Summary
 
-Closes **1 P2 issue + 1 bug** in one iteration:
+Closes **1 P2 issue** + adds **1 new product-direction document** in one iteration:
 
-- **P2-8 — `proxyWithFallback` 5xx mode-aware handling.** Non-503 5xx (500/502/504) now passes through unchanged in dev (`NODE_ENV === "development"`) so developers see the real backend error in the browser console. In prod, the same errors still become 200 + fallback data (no console spam, no React Query retry storms), but the response now carries an `X-Flipper-Fallback: <original-status>` header so the frontend can detect it. 503 (backend_offline / backend_insufficient_data) fallback behavior is unchanged in both modes — otherwise dev would be unusable whenever the backend isn't running. New exports: `FLIPPER_FALLBACK_HEADER`, `isFlipperFallbackResponse()`, `getFlipperFallbackOriginalStatus()`. +22 jest tests; `jest.setup.ts` gained `Response` / `fetch` / `Headers` / `AbortSignal.timeout` polyfills.
-- **Iter 68 scanner residual (bug).** `backend/api/routes_scanner.py` was supposed to be deleted in iter 68 (commit `cca86d7` message says "deleted backend/api/routes_scanner.py"), but the actual file was left in the repo because the iter 68 merge instructions asked the user to run `rm ./backend/api/routes_scanner.py` manually before `git add -A`, and that manual step was skipped. The file was already an orphan (zero runtime impact — pytest baseline was 459 pass with or without it). Iter 69 deletes the file for real. Going forward, file deletions are handled via `git add -A` after the user copies the archive; no manual `rm` step.
+- **P2-3 — `currency_names_ru.py` 966 → 63 lines (move hardcoded dict to JSON).** The four dicts (`CATEGORY_NAMES_RU`, `CATEGORY_NAMES_EN`, `CURRENCY_NAMES_RU`, `CURRENCY_NAMES_EN`) and the four helper functions (`get_ru_name`, `get_en_name`, `get_category_ru`, `get_category_en`) keep the same public API. The existing `routes_arbitrage.py` import (`from backend.data.currency_names_ru import get_ru_name, get_en_name`) is unchanged. Data now lives in `backend/data/currency_names.json` (742 lines, 45 KB — 349 RU + 349 EN entries + 17 category labels per language). +7 pytest regression tests in `tests/test_currency_names_ru.py` cover: dict sizes, helper None-handling, spot-checks on `exalted`/`divine`/`mirror`/`hinekoras-lock`, RU↔EN key parity (so the Python and TS mirrors can't drift silently), category helpers.
+- **New file `PRODUCT_VISION.md`** at repo root — captures the user's product vision: analytics helper (NOT a poe2scout / poe2ninja clone), full Russian localization, speculation helper (buy low / sell high), "investment" advice via storage-value vs Mirror of Kalandra / Hinekora's Lock, phase-aware historical patterns (Temporalis cheap at league start → expensive at end, skill stones mid/late league, Ritual omens / Breach catalysts when mechanic turnover drops), content-pulse analytics ("what to farm today" widget). Lists 6 product features (F1-F6) tracked SEPARATELY from the technical-debt backlog in STATUS.md.
+- **README.md refreshed** — was stale iter 58 content, now a real project README pointing at PRODUCT_VISION.md / STATUS.md / AGENT_NAVIGATION.md.
 
-After iter 69, **P2 drops to 2** (P2-1, P2-3). P0=0, P1=0, P2=2, P3=4.
+After iter 70, **P2 drops 2 → 1** (only P2-1 — `dashboard-page.tsx` god-component split — remains, multi-iter). P0=0, P1=0, P2=1, P3=4.
 
-- **1** file deleted (`routes_scanner.py` — handled via `git add -A` after copying the archive; no manual `rm` needed)
-- **4** files modified (1 src/lib, 1 src/__tests__, 1 jest.setup, 4 docs)
+- **0** files deleted
+- **1** new data file (`backend/data/currency_names.json`)
+- **1** new test file (`tests/test_currency_names_ru.py`)
+- **1** new product-direction doc (`PRODUCT_VISION.md`)
+- **6** files modified (`backend/data/currency_names_ru.py`, `STATUS.md`, `REFACTOR_PLAN.md`, `AGENT_NAVIGATION.md`, `worklog.md`, `README.md`)
 - **0** new Known Issues — all tests pass
 
 ## What's in this archive
 
 ```
-iter69/
+iter70/
 ├── MERGE_INSTRUCTIONS.md                                          ← this file
-├── STATUS.md                                                      ← updated (P2-8 → Fixed; iter 68 annotated with scanner-residual note; iter 69 entry added; Quick Reference refreshed)
-├── REFACTOR_PLAN.md                                               ← updated (v32 → v33, iter 69 marked DONE, principle #6 added about file deletions via git add -A)
-├── AGENT_NAVIGATION.md                                            ← updated (invariant #23 added for P2-8; §1 row for flipper-proxy.ts updated; §4 Quick Reference updated; §4 P2 count 3 → 2)
-├── worklog.md                                                     ← updated (Task 69 entry; trimmed to ≤3 latest — Task 66 dropped)
-├── package.json                                                   ← added undici ^8.5.0 to devDependencies (used by jest.setup.ts polyfill; minimal fallback exists if missing)
-├── package-lock.json                                              ← lockfile updated for undici
-├── jest.setup.ts                                                  ← added Response/fetch/Headers/Request + AbortSignal.timeout polyfills for jsdom
-└── src/
-    ├── lib/
-    │   └── flipper-proxy.ts                                       ← P2-8: mode-aware 5xx handling + X-Flipper-Fallback header + helper exports
-    └── __tests__/
-        └── flipper-proxy.test.ts                                  ← +22 jest tests for P2-8 (helpers, dev/prod 5xx, 503, 422, 200 OK)
+├── STATUS.md                                                      ← updated (P2-3 → Fixed with iter 70 entry; Quick Reference gained "Adding a new Russian translation" row)
+├── REFACTOR_PLAN.md                                               ← updated (v33 → v34; iter 70 marked DONE; new principle #7 about data files next to loader; DoD gained data-file regression rule; estimation 1-3 → 2-4 iterations)
+├── AGENT_NAVIGATION.md                                            ← updated (header date iter 70 + PRODUCT_VISION.md link; §1 row for currency_names_ru.py → "thin loader"; §3 invariant #24 added for P2-3; §4 P2 count 2 → 1; §4 Quick Reference row updated; §6 doc map gained PRODUCT_VISION.md row)
+├── worklog.md                                                     ← updated (Task 70 entry; trimmed to ≤3 latest — Task 67 dropped)
+├── README.md                                                      ← refreshed (was stale iter 58 content; now real project README in Russian pointing at PRODUCT_VISION.md / STATUS.md)
+├── PRODUCT_VISION.md                                              ← NEW — product direction: analytics helper, NOT a poe2scout/ninja clone; RU localization, speculation, storage-value vs Mirror/Hinekora, content-pulse; lists F1-F6 product features
+├── backend/
+│   └── data/
+│       ├── currency_names.json                                    ← NEW — 349 RU + 349 EN entries + 17 category labels per language (742 lines, 45 KB)
+│       └── currency_names_ru.py                                   ← REWRITTEN — 966 → 63 lines, thin loader for the JSON
+└── tests/
+    └── test_currency_names_ru.py                                  ← NEW — 7 pytest regression tests for P2-3
 ```
-
-**Files DELETED (not present in archive — `git add -A` will track the deletion automatically):**
-- `backend/api/routes_scanner.py` ← iter 68 residual; if you still have this file in your local checkout, just leave it — `git add -A` after copying the archive will mark it as deleted. No manual `rm` needed.
 
 ## How to apply
 
-Run from the root of your local `poe2-market-dashboard` checkout (must be on `main` branch, up-to-date with `origin/main` after iter 68 was merged).
+Run from the root of your local `poe2-market-dashboard` checkout (must be on `main` branch, up-to-date with `origin/main` after iter 69 was merged).
 
 ```bash
 # 1. Extract this archive into a temp location
-#    Example (if iter69.zip is in ~/Downloads):
-unzip ~/Downloads/iter69.zip -d /tmp/iter69
+#    Example (if iter70.zip is in ~/Downloads):
+unzip ~/Downloads/iter70.zip -d /tmp/iter70
 
 # 2. Copy the modified docs into the repo root
-cp /tmp/iter69/iter69/STATUS.md             ./STATUS.md
-cp /tmp/iter69/iter69/REFACTOR_PLAN.md      ./REFACTOR_PLAN.md
-cp /tmp/iter69/iter69/AGENT_NAVIGATION.md   ./AGENT_NAVIGATION.md
-cp /tmp/iter69/iter69/worklog.md            ./worklog.md
-cp /tmp/iter69/iter69/MERGE_INSTRUCTIONS.md ./MERGE_INSTRUCTIONS.md
+cp /tmp/iter70/iter70/STATUS.md             ./STATUS.md
+cp /tmp/iter70/iter70/REFACTOR_PLAN.md      ./REFACTOR_PLAN.md
+cp /tmp/iter70/iter70/AGENT_NAVIGATION.md   ./AGENT_NAVIGATION.md
+cp /tmp/iter70/iter70/worklog.md            ./worklog.md
+cp /tmp/iter70/iter70/MERGE_INSTRUCTIONS.md ./MERGE_INSTRUCTIONS.md
+cp /tmp/iter70/iter70/README.md             ./README.md
+cp /tmp/iter70/iter70/PRODUCT_VISION.md     ./PRODUCT_VISION.md
 
-# 3. Copy the modified package files (added undici devDep for jest polyfill)
-cp /tmp/iter69/iter69/package.json          ./package.json
-cp /tmp/iter69/iter69/package-lock.json     ./package-lock.json
+# 3. Copy the modified backend data files (preserving folder structure)
+cp /tmp/iter70/iter70/backend/data/currency_names.json   ./backend/data/currency_names.json
+cp /tmp/iter70/iter70/backend/data/currency_names_ru.py  ./backend/data/currency_names_ru.py
 
-# 4. Copy the modified jest setup
-cp /tmp/iter69/iter69/jest.setup.ts         ./jest.setup.ts
+# 4. Copy the new regression test file (preserving folder structure)
+cp /tmp/iter70/iter70/tests/test_currency_names_ru.py    ./tests/test_currency_names_ru.py
 
-# 5. Copy the modified src files (preserving folder structure)
-cp /tmp/iter69/iter69/src/lib/flipper-proxy.ts          ./src/lib/flipper-proxy.ts
-cp /tmp/iter69/iter69/src/__tests__/flipper-proxy.test.ts  ./src/__tests__/flipper-proxy.test.ts
-
-# 6. Delete the iter 68 residual file (if you still have it — `git add -A` will track the deletion)
-#    NOTE: NO manual `rm` required if you don't have the file — `git add -A` is enough.
-#    If you DO have the file, you can either delete it manually OR let `git add -A` handle it
-#    after you run `rm -f ./backend/api/routes_scanner.py`.
-rm -f ./backend/api/routes_scanner.py  # safe — -f means "don't fail if missing"
-
-# 7. Verify (with aiosqlite + lightgbm installed)
+# 5. Verify (with aiosqlite + lightgbm installed)
 pip install aiosqlite lightgbm                                          # if not already installed
-npm install                                                             # picks up undici devDep (optional — polyfill falls back to minimal stubs if undici missing)
 npx tsc --noEmit                                                        # should print nothing (0 errors)
-npx jest                                                                # should report 324 pass / 14 suites
-pytest tests/ -q --ignore=tests/e2e                                     # should report 459 pass
-pytest tests/e2e/ -q -m "not flaky"                                     # should report 30 pass
-git status                                                              # should show ~8 modified + 1 deleted file
+npx jest                                                                # should report 324 pass / 14 suites (unchanged — Python-only change)
+PYTHONPATH=. pytest tests/ -q --ignore=tests/e2e                       # should report 466 pass (+7 P2-3 regression tests)
+PYTHONPATH=. pytest tests/e2e/ -q -m "not flaky"                       # should report 30 pass
+git status                                                              # should show 8 modified + 3 new files
 
-# 8. Commit + push (single commit)
+# 6. Commit + push (single commit)
 git add -A
-git commit -m "fix(P2-8): proxyWithFallback 5xx pass-through in dev + marked fallback in prod"
+git commit -m "refactor(P2-3): move currency_names_ru.py to JSON + add PRODUCT_VISION.md"
 git push origin main
 ```
 
 ## Verification (already done in agent environment)
 
-| Check | Before iter 69 | After iter 69 |
+| Check | Before iter 70 | After iter 70 |
 |------|----------------|---------------|
-| `pytest tests/ -q --ignore=tests/e2e` | 459 pass | **459 pass** (unchanged) ✓ |
-| `pytest tests/e2e/ -q -m "not flaky"` | 30 pass | **30 pass** (unchanged) ✓ |
-| `npx tsc --noEmit` | 0 errors | **0 errors** ✓ |
-| `npx jest` | 302 pass / 14 suites | **324 pass / 14 suites** (+22 P2-8 tests) ✓ |
-| `ls backend/api/routes_scanner.py` | file present (iter 68 residual) | **file deleted** ✓ |
-| `grep -c X-Flipper-Fallback src/lib/flipper-proxy.ts` | 0 hits | **5+ hits** (constant + helper + usage) ✓ |
-| `grep -c isFlipperFallbackResponse src/__tests__/flipper-proxy.test.ts` | 0 hits | **3 hits** (1 import + 2 tests) ✓ |
+| `wc -l backend/data/currency_names_ru.py` | 966 lines | **63 lines** ✓ |
+| `ls backend/data/currency_names.json` | file missing | **742 lines, 45 KB** ✓ |
+| `PYTHONPATH=. pytest tests/ -q --ignore=tests/e2e` | 459 pass | **466 pass** (+7 P2-3 regression tests) ✓ |
+| `PYTHONPATH=. pytest tests/e2e/ -q -m "not flaky"` | 30 pass | **30 pass** (unchanged) ✓ |
+| `npx tsc --noEmit` | 0 errors | **0 errors** (unchanged — Python-only change) ✓ |
+| `npx jest` | 324 pass / 14 suites | **324 pass / 14 suites** (unchanged — Python-only change) ✓ |
+| `grep -c 'CURRENCY_NAMES_RU' backend/data/currency_names_ru.py` | 1 dict literal (442 lines) | **1 import reference** (loader reads from JSON) ✓ |
+| `ls PRODUCT_VISION.md` | file missing | **file present** (product direction doc) ✓ |
+| `python -c "from backend.data.currency_names_ru import get_ru_name; print(get_ru_name('exalted'))"` | `'Благородная сфера'` | **`'Благородная сфера'`** (unchanged) ✓ |
 
-## Stop point — next iteration (iter 70)
+## Stop point — next iteration (iter 71)
 
-After iter 69: **P0=0, P1=0, P2=2, P3=4.** ~1-3 iterations remaining.
+After iter 70: **P0=0, P1=0, P2=1, P3=4.** ~2-4 iterations remaining (P2-1 alone is multi-iter).
 
-Recommended candidates (per REFACTOR_PLAN.md v33):
+Recommended candidates (per REFACTOR_PLAN.md v34):
 
-1. **P2-3** (`currency_names_ru.py` 966-line hardcoded dict → JSON) — mechanical but long.
-2. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — large, multi-iter.
-3. P3-3, P3-4, P3-5 (full /flips integration test), P3-7 (delete REFACTOR_PLAN.md + worklog.md after all closed).
+1. **P2-1** (`dashboard-page.tsx` 1705-line god-component → split) — large, multi-iter. Suggested approach: extract tab-specific subcomponents one at a time, keep tests green at each step.
+2. P3-3 (`EventManager` thread-safety for multi-worker uvicorn)
+3. P3-4 (`SnapshotManager._snapshot` atomic swap)
+4. P3-5 (full `/flips` integration test — partially covered by `test_flips_filters.py`)
+5. P3-7 (delete `REFACTOR_PLAN.md` + `worklog.md` after all closed)
 
-Suggested commit for iter 70: `refactor(P2-3): move currency_names_ru.py to JSON`
+After all P2/P3 closed → switch focus to product features (F1-F6 in `PRODUCT_VISION.md`), starting with:
+- **F1** — translate remaining ~276 items (parse from `poe2db.tw/ru/`)
+- **F2** — Storage Value tab vs Mirror of Kalandra / Hinekora's Lock (endpoint already exists at `/api/v1/storage-value/{currency}` — needs UI)
+- **F3** — content-pulse analytics (per-mechanic turnover, 7d/30d rolling average, rising/falling signals)
+- **F4** — "What to farm today" widget on the main dashboard
+- **F5** — Speculation tab with z-score BUY/SELL/HOLD signals
+- **F6** — Phase-aware hints (Temporalis mid/late league etc.)
 
-**Issue counts after iter 69:** P0=0, P1=0, P2=2, P3=4. ~1-3 iterations remaining.
+Suggested commit for iter 71: `refactor(P2-1): extract <tab-name> from dashboard-page.tsx (step 1/N)`
+
+**Issue counts after iter 70:** P0=0, P1=0, P2=1, P3=4. ~2-4 iterations remaining.
 
 ## Git commands (single commit)
 
 ```bash
-# After copying all files from the archive (steps 2-5 above):
+# After copying all files from the archive (steps 2-4 above):
 
 git add -A
-git commit -m "fix(P2-8): proxyWithFallback 5xx pass-through in dev + marked fallback in prod
+git commit -m "refactor(P2-3): move currency_names_ru.py to JSON + add PRODUCT_VISION.md
 
-P2-8: proxyWithFallback is now mode-aware for non-503 5xx responses.
-- Dev (NODE_ENV=development): 500/502/504 pass through unchanged so
-  developers see the real backend error in the browser console.
-- Prod: same errors still become 200 + fallback data (no console spam,
-  no React Query retry storms), but the response now carries the
-  X-Flipper-Fallback: <original-status> header so the frontend can
-  detect it via isFlipperFallbackResponse(res) / getFlipperFallbackOriginalStatus(res).
-- 503 (backend_offline / backend_insufficient_data) fallback behavior
-  is unchanged in both modes — otherwise dev would be unusable whenever
-  the backend isn't running.
+P2-3: backend/data/currency_names_ru.py shrank from 966 → 63 lines.
+The four dicts (CATEGORY_NAMES_RU, CATEGORY_NAMES_EN, CURRENCY_NAMES_RU,
+CURRENCY_NAMES_EN) and the four helper functions (get_ru_name, get_en_name,
+get_category_ru, get_category_en) keep the same public API — the existing
+routes_arbitrage.py import is unchanged.
 
-New exports: FLIPPER_FALLBACK_HEADER, isFlipperFallbackResponse,
-getFlipperFallbackOriginalStatus. +22 jest tests covering helpers,
-dev/prod 5xx, 503 offline/insufficient_data, 422, 200 OK.
+Data now lives in backend/data/currency_names.json (742 lines, 45 KB —
+349 RU + 349 EN entries + 17 category labels per language).
 
-jest.setup.ts gained Response/fetch/Headers/AbortSignal.timeout polyfills
-(undici first, minimal hand-rolled fallback) so the new tests can mock
-fetch in jsdom.
++7 pytest regression tests in tests/test_currency_names_ru.py:
+  - dict sizes (locks the data shape)
+  - helper None-handling for unknown ids
+  - spot-checks on exalted / divine / mirror / hinekoras-lock
+  - RU<->EN key parity (so the Python and TS mirrors can't drift silently)
+  - category helpers
 
-Also closes the iter 68 scanner residual: backend/api/routes_scanner.py
-was supposed to be deleted in iter 68 but the manual `rm` step in the
-iter 68 MERGE_INSTRUCTIONS was skipped. The file was already an orphan
-(zero runtime impact). Iter 69 deletes it for real. Going forward, file
-deletions are handled via `git add -A` — no manual `rm` instructions.
+Also adds PRODUCT_VISION.md at the repo root — captures the user's product
+direction: analytics helper (NOT a poe2scout/poe2ninja clone), full Russian
+localization, speculation helper (buy low / sell high), 'investment' advice
+via storage-value vs Mirror of Kalandra / Hinekora's Lock, phase-aware
+historical patterns (Temporalis cheap at league start -> expensive at end,
+Ritual omens / Breach catalysts when mechanic turnover drops), content-pulse
+analytics ('what to farm today' widget). Lists 6 product features (F1-F6)
+tracked SEPARATELY from the technical-debt backlog in STATUS.md.
 
-Baseline: pytest 459 pass (unchanged), jest 324 pass (+22 P2-8 tests),
-tsc 0 errors, e2e 30 pass."
+README.md refreshed — was stale iter 58 content; now a real project README
+pointing at PRODUCT_VISION.md / STATUS.md / AGENT_NAVIGATION.md.
+
+Baseline: pytest 466 pass (+7 P2-3 regression tests), jest 324 pass
+(unchanged — Python-only change), tsc 0 errors (unchanged), e2e 30 pass
+(unchanged)."
 
 git push origin main
 ```

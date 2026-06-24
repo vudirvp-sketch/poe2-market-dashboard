@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Refactoring Backlog
 
-> **Last updated:** 2026-06-21 (iter 69 — closed P2-8 + cleaned up iter 68 scanner residual)
+> **Last updated:** 2026-06-25 (iter 70 — closed P2-3, currency_names_ru → JSON)
 > Single source of truth for known bugs and refactoring priorities.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -18,12 +18,13 @@ All P1 issues resolved in iter 54-66.
 
 ---
 
-## P2 — Medium (clean code, dev experience) — 2 items
+## P2 — Medium (clean code, dev experience) — 1 item
 
-- **P2-1.** `dashboard-page.tsx` — 1705 lines, god-component. Split into tab-specific subcomponents.
-- **P2-3.** `currency_names_ru.py` — 966-line hardcoded dict. Move to JSON.
+- **P2-1.** `dashboard-page.tsx` — 1705 lines, god-component. Split into tab-specific subcomponents. (Multi-iter; deferred from iter 70.)
 
-> **P2-8 (iter 69):** `proxyWithFallback` is now mode-aware. In dev, non-503 5xx pass through unchanged so devs see real errors. In prod, all 5xx (including 503) still return 200 with fallback data, but the response now carries an `X-Flipper-Fallback: <original-status>` header so the frontend can detect it. Use `isFlipperFallbackResponse(res)` / `getFlipperFallbackOriginalStatus(res)` from `flipper-proxy.ts` to inspect.
+> **P2-3 (closed iter 70):** `currency_names_ru.py` was a 966-line hardcoded Python dict. Now a 63-line thin loader reading from `currency_names.json`. +7 pytest regression tests in `tests/test_currency_names_ru.py` (sizes, helpers, RU/EN key parity, Hinekora spot-check).
+
+> **P2-8 (closed iter 69):** `proxyWithFallback` is mode-aware. In dev, non-503 5xx pass through unchanged so devs see real errors. In prod, all 5xx still return 200 with fallback data, but the response now carries `X-Flipper-Fallback: <original-status>` header. Use `isFlipperFallbackResponse(res)` / `getFlipperFallbackOriginalStatus(res)` from `flipper-proxy.ts` to inspect.
 
 ---
 
@@ -38,14 +39,20 @@ All P1 issues resolved in iter 54-66.
 
 ## Fixed (recent — older history in git log)
 
+### iter 70 — P2-3 closed (currency_names_ru → JSON)
+
+- **P2-3.** `backend/data/currency_names_ru.py` shrank from **966 lines → 63 lines**. The four dicts (`CATEGORY_NAMES_RU`, `CATEGORY_NAMES_EN`, `CURRENCY_NAMES_RU`, `CURRENCY_NAMES_EN`) and the four helper functions (`get_ru_name`, `get_en_name`, `get_category_ru`, `get_category_en`) keep the same public API — the existing `routes_arbitrage.py` import (`from backend.data.currency_names_ru import get_ru_name, get_en_name`) is unchanged. Data lives in a new `backend/data/currency_names.json` (742 lines, 45 KB, 349 RU + 349 EN entries + 17 category labels per language). +7 pytest regression tests in `tests/test_currency_names_ru.py` cover: dict sizes, helper None-handling, spot-checks on `exalted`/`divine`/`mirror`/`hinekoras-lock`, RU↔EN key parity (so the Python and TS mirrors can't drift silently).
+- **New file `PRODUCT_VISION.md`** at repo root — captures the project's product direction (analytics helper, NOT a poe2scout/poe2ninja clone). Documents the user's vision: full RU localization, speculation (buy low/sell high), storage-value vs Mirror/Hinekora, content-pulse analytics (which league mechanic to farm today), phase-aware hints (Temporalis mid/late league, etc.). Lists 6 product features (F1-F6) that are NOT technical-debt work and are tracked separately from this STATUS.md.
+- Baseline: pytest **466 pass** (+7 P2-3 regression tests), jest **324 pass** (unchanged), tsc **0 errors** (unchanged), e2e **30 pass** (unchanged).
+
 ### iter 69 — P2-8 closed + iter 68 scanner residual cleaned
 
-- **P2-8 — `proxyWithFallback` 5xx mode-aware.** Non-503 5xx (500/502/504) now pass through unchanged in dev (`NODE_ENV === "development"`) so developers see the real backend error in the browser console. In prod, the same errors still become 200 + fallback (no console spam, no React Query retry storms), but the response now carries the `X-Flipper-Fallback: <original-status>` header. 503 fallback behavior (offline/insufficient_data) is unchanged in both modes — otherwise dev would be unusable whenever the backend isn't running. New exports: `FLIPPER_FALLBACK_HEADER`, `isFlipperFallbackResponse()`, `getFlipperFallbackOriginalStatus()`. +22 jest tests; jest.setup.ts gained `Response`/`fetch`/`Headers`/`AbortSignal.timeout` polyfills (undici + minimal fallback) so the new tests can mock fetch in jsdom.
-- **Iter 68 scanner residual (bug).** `backend/api/routes_scanner.py` was supposed to be deleted in iter 68 (commit `cca86d7` message says "deleted backend/api/routes_scanner.py"), but the actual file was left in the repo. Root cause: the iter 68 archive asked the user to run `rm ./backend/api/routes_scanner.py` manually before `git add -A`, and that manual step was skipped. The file was already an orphan — `backend/main.py` no longer imports it, `response_models.py` no longer defines `ScannerResponse`, `routes_batch.py` no longer allows `/api/v1/scanner` — so it had zero runtime impact (pytest baseline was 459 pass with or without it). Iter 69 deletes the file for real and changes the merge instructions so this can't happen again (file deletions are now handled via `git add -A` after the user copies the archive; no manual `rm` step).
+- **P2-8 — `proxyWithFallback` 5xx mode-aware.** Non-503 5xx (500/502/504) now pass through unchanged in dev (`NODE_ENV === "development"`) so developers see the real backend error in the browser console. In prod, the same errors still become 200 + fallback (no console spam, no React Query retry storms), but the response now carries the `X-Flipper-Fallback: <original-status>` header. 503 fallback behavior (offline/insufficient_data) is unchanged in both modes.
+- **Iter 68 scanner residual (bug).** `backend/api/routes_scanner.py` was supposed to be deleted in iter 68 but the manual `rm` step was skipped. The file was already an orphan (zero runtime impact). Iter 69 deletes the file for real and changes the merge instructions so file deletions now go through `git add -A` — no manual `rm` step.
 
 ### iter 68 — P2-4 follow-up (scanner deletion)
 
-- **P2-4 follow-up** — Removed scanner router import/include from `backend/main.py`. Removed `ScannerOpportunityData` / `ScannerParams` / `ScannerResponse` from `backend/api/response_models.py`. Removed `/api/v1/scanner` from `routes_batch.py:ALLOWED_PREFIXES`. Removed `TestScannerDeprecation` class (2 tests) from `tests/test_flips_filters.py`. Regenerated `openapi_schema.json` (118KB → 108KB) and `src/lib/api-types.ts`. Updated inline comments in `routes_arbitrage.py`. Docs cleaned up. (Note: the actual `routes_scanner.py` file deletion was missed at this point — see iter 69 entry above.) Baseline: pytest **459 pass**, jest **302 pass**, tsc **0 errors**, e2e **30 pass**.
+- **P2-4 follow-up** — Removed scanner router import/include from `backend/main.py`. Removed `ScannerOpportunityData` / `ScannerParams` / `ScannerResponse` from `backend/api/response_models.py`. Removed `/api/v1/scanner` from `routes_batch.py:ALLOWED_PREFIXES`. Removed `TestScannerDeprecation` class (2 tests) from `tests/test_flips_filters.py`. Regenerated `openapi_schema.json` (118KB → 108KB) and `src/lib/api-types.ts`. The actual `routes_scanner.py` file deletion was missed at this point — see iter 69 entry above.
 
 ### iter 67 — 3 issues closed (P2-9, P2-6, P2-4)
 
@@ -72,3 +79,4 @@ P0-1..P0-6, P1-1/2/4/7/8/11, P2-7/10/11/12/13/14, P2-2/5, P3-8 (iter 54-67). See
 | LightGBM skips training for new currency | Below `lightgbm_min_data_points` (15) — adaptive fallback now trains from `floor` (5) with minimal features (P2-9, iter 67) | `backend/predictors/time_series.py:train` |
 | Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` returns JSON snapshot (P2-6, iter 67) | `src/app/api/flipper/health/circuit-breakers/route.ts` |
 | Want advanced `/flips` filters | All scanner params (`max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir`) are on `/api/v1/arbitrage/flips` (P2-4, iter 67) | `backend/api/routes_arbitrage.py:get_flip_opportunities` |
+| Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` file — it's now a thin loader). Add matching RU+EN entries. Run `pytest tests/test_currency_names_ru.py` to verify key parity. | `backend/data/currency_names.json` |

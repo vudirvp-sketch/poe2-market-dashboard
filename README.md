@@ -1,64 +1,65 @@
-# Iter 58 — WS Endpoint Removal
+# PoE2 Market Dashboard
 
-## Summary
-Completely removes WebSocket endpoints (Option (b) from iter 57 stopping point).
-Closes 6 issues in one commit:
-- P0-2 (event loop blocking by `_compute_anomalies` / `_compute_flips`)
-- P1-1 (WS duplicate REST logic with reduced fields)
-- P1-2 (`useFlipperWebSocket` opens 2 parallel WS connections)
-- P2-10 (WS path prefix `/v1/ws/*` vs REST `/api/v1/*`)
-- P3-1 (two anomaly detection paths — `routes_ws._compute_anomalies` and `routes_anomalies._detect_anomalies_sync`)
-- P3-6 (.env.example missing WS env)
+> **Аналитический помощник для рынка Path of Exile 2.** Не очередной poe2scout / poe2ninja —
+> инструмент для систематизации рынка, спекулятивных подсказок (buy low / sell high),
+> «инвестиционных» советов по сохранению ценности относительно Зеркала Каландры / Пряди Хинекоры,
+> и аналитики популярности контента (что фармить сегодня и почему).
+> Полная русская локализация предметов и валюты.
 
-Real-time updates now handled exclusively by SSE (P0-1, iter 55) + REST polling.
+Подробное продуктовое направление — в [`PRODUCT_VISION.md`](./PRODUCT_VISION.md).
+Технический статус и баги — в [`STATUS.md`](./STATUS.md).
 
-## Merge instructions
-This archive preserves the original folder structure. To merge with your local clone:
+---
+
+## Что внутри
+
+- **Backend** (`backend/`): FastAPI + SQLite + LightGBM. Прогнозы, аномалии,
+  скоринг арбитража, детекция фазы лиги, storage-value относительно Mirror/Hinekora.
+- **Frontend** (`src/`): Next.js 16 + React 19 + shadcn/ui + Tailwind 4.
+  Табы: overview / flips / liquid-chain / optimizer / analyst / currency-graph / watchlist.
+- **CORS proxy** (`cloudflare-worker/`): обход CORS при прямых запросах к POE2Scout API.
+- **Localized names**: `backend/data/currency_names.json` (349 RU + 349 EN).
+  Тонкий загрузчик — `backend/data/currency_names_ru.py`.
+
+## Быстрый старт
 
 ```bash
-# from the repo root (after `git pull` to sync to iter 57)
-unzip -o iter58-ws-removal.zip
-# files marked .DELETED.txt correspond to git rm operations — delete them:
-rm -f backend/api/routes_ws.py
-rm -f src/hooks/use-websocket.ts
-rm -rf src/app/api/flipper/ws
-# then verify status
-git status
+# Backend (создаст .venv автоматически)
+./start.sh
+# → uvicorn backend.main:app --reload --port 8000
+
+# Frontend (отдельный терминал)
+npm install && npm run dev   # → http://localhost:3000
+
+# Тесты
+pytest tests/ -q --ignore=tests/e2e    # backend unit (466 pass на iter 70)
+pytest tests/e2e/ -q -m "not flaky"    # backend e2e (30 pass)
+npx jest                                # frontend unit (324 pass на iter 70)
+npx tsc --noEmit                        # type check (0 errors)
+npx playwright test                     # E2E (30 pass)
 ```
 
-## Verification (run before commit)
-- `pytest tests/ -q --ignore=tests/e2e` → 375 pass / 4 skip / 0 fail
-- `pytest tests/e2e/ -q` → 30 pass / 4 skip / 0 fail
-- `npx tsc --noEmit` → exit 0 (clean)
-- `npx jest --silent` → 291 pass / 0 fail
+## Структура документации
 
-## Files (17 total)
-### Deleted (3)
-- `backend/api/routes_ws.py` (722 lines — 5 WS endpoints + 4 compute helpers + 2 shared loops)
-- `src/hooks/use-websocket.ts` (548 lines — `useWebSocket` + `useFlipperWebSocket` + types)
-- `src/app/api/flipper/ws/info/route.ts` (1 file + parent dir)
+| Файл | Назначение |
+|------|-----------|
+| `PRODUCT_VISION.md` | **Продуктовое направление** — читать перед предложением фич |
+| `STATUS.md` | **Баги и технический рефакторинг** — читать перед фиксом |
+| `AGENT_NAVIGATION.md` | Где что лежит в коде — для агентов |
+| `REFACTOR_PLAN.md` | Дорожная карта рефакторинга (P0-P3) |
+| `worklog.md` | Последние задачи (≤3) |
+| `docs/ARCHITECTURE.md` | Слои, инварианты, принципы |
+| `docs/DATA_CONTRACTS.md` | Контракты API, TS-типы |
+| `docs/DATA_FLOW.md` | Потоки данных, трансформации полей |
+| `docs/BACKEND_GUIDE.md` | Внутренности FastAPI |
+| `PoE2_Flipper_Canonical_Formulas.md` | Математика скоринга |
 
-### Modified (14)
-- `backend/main.py` — removed WS router registration
-- `src/components/dashboard/dashboard-page.tsx` — removed `useFlipperWebSocket` import + usage + `wsStatus` prop
-- `src/components/dashboard/flips-tab.tsx` — removed `useFlipperWebSocket` import + usage + unused `useQueryClient`
-- `src/components/dashboard/header.tsx` — removed `WebSocketStatus` import + `wsStatus` prop + WS badge UI
-- `src/components/dashboard/flipper-sticky-bar.tsx` — removed `WebSocketStatus` import + `wsStatus` prop + WS Status Badge block + unused lucide icons
-- `src/components/dashboard/flipper-backend-status-card.tsx` — removed `WebSocketStatus` import + `wsStatus` prop + `wsBadgeConfig` IIFE + unused imports
-- `.env.example` — removed `NEXT_PUBLIC_FLIPPER_WS_URL` + `NEXT_PUBLIC_FLIPPER_WS_ENABLED`
-- `start.sh` — removed WS env var creation in `.env.local` setup section
-- `start.bat` — same as `start.sh` (CRLF preserved)
-- `STATUS.md` — P0 bucket 1→0; P1 10→8; P2 11→9; P3 8→6; new Fixed entry; Quick Reference trimmed
-- `REFACTOR_PLAN.md` — v22→v23; iter 58 DONE; estimation 20→15 iterations
-- `AGENT_NAVIGATION.md` — removed `routes_ws.py` + `use-websocket.ts` rows; §3 rules #2/#6 updated; §4 symptoms trimmed; §5 WS endpoints section removed; new rule #18
-- `docs/DATA_FLOW.md` — removed WS channels table + `routes_ws.py` from route lists
-- `worklog.md` — iter 58 entry replaces iter 55 (≤5 rule); iter 55-57 retained
+## Текущее состояние (iter 70)
 
-## Suggested commit message
-```
-refactor(P0-2): remove WS endpoints — close P0-2 + P1-1 + P1-2 + P2-10 + P3-1 + P3-6
-```
+- **P0 = 0** (закрыты в iter 54-58)
+- **P1 = 0** (закрыты в iter 54-66)
+- **P2 = 1** (P2-1 — `dashboard-page.tsx` 1705 строк → split, multi-iter)
+- **P3 = 4** (nice-to-have)
+- Baseline: pytest 466 pass, jest 324 pass, tsc 0 errors, e2e 30 pass.
 
-## Stopping point
-- Iter 58 done. **No P0 issues remain.**
-- Next: iter 59 = P1-11 (daily_stats invalidation — 2-line fix) OR P2-7 (targeted invalidation by `pair` — unblocked by P0-1).
+Следующая итерация (iter 71): P2-1 — split `dashboard-page.tsx` god-component.
