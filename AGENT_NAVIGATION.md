@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 71 — closed P3-3, P3-4, P3-5, P4-1; P2-1 step 1).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 72 — P2-1 steps 2+3 done).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -44,8 +44,11 @@
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup + mode-aware 5xx fallback (P1-10 iter 66, **P2-8 iter 69**) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `proxyWithFallback` passes non-503 5xx through in dev, returns 200+`X-Flipper-Fallback` header in prod. Exports `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`, `FLIPPER_FALLBACK_HEADER` |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 iter 55, P2-7 iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation |
-| `src/components/dashboard/dashboard-page.tsx` | God-component, **1466 lines** (P2-1 step 1 done iter 71: was 1685) | Multi-iter split. `ExchangeTabContent` extracted iter 71. Next: extract `CurrenciesTabContent` / `UniquesTabContent` / `OverviewTabContent` (iter 72+). |
-| `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern to reuse for the next tab extractions. |
+| `src/components/dashboard/dashboard-page.tsx` | God-component, **1370 lines** (P2-1 steps 1-3 done iter 71-72: was 1685). | Multi-iter split. `ExchangeTabContent` extracted iter 71; `CurrenciesTabContent` / `UniquesTabContent` / `OverviewTabContent` extracted iter 72. Step 4 (iter 73+) — extract `DashboardToolbar` (TabsList + buttons row) + `DashboardDialogs` + `useDashboardData` hook to reach ≤700 lines. |
+| `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern reused by the iter 72 extractions. |
+| `src/components/dashboard/currencies-tab-content.tsx` | Currencies tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, virtual-vs-static grid switch, pagination. |
+| `src/components/dashboard/uniques-tab-content.tsx` | Uniques tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, UniqueTable, pagination. |
+| `src/components/dashboard/overview-tab-content.tsx` | Overview tab content (**P2-1 iter 72**) | Pure presentational. Composes MarketOverview + ComparativeChart, each wrapped in its own ErrorBoundary. |
 
 ## 2. Build & Run Commands
 
@@ -104,7 +107,7 @@ Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| `dashboard-page.tsx` unmaintainable | 1466-line god-component (down from 1685 in iter 71). `ExchangeTabContent` extracted. | P2-1 (in progress) |
+| `dashboard-page.tsx` unmaintainable | 1370-line god-component (down from 1685 in iter 71, 1466 in iter 72). `ExchangeTabContent` + `CurrenciesTabContent` + `UniquesTabContent` + `OverviewTabContent` extracted. Step 4 (toolbar + dialogs + data hook) deferred to iter 73. | P2-1 (in progress) |
 | Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py`. | — |
 | Frontend shows fallback data without notice | (Fixed iter 69 — was P2-8) check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
 | `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |

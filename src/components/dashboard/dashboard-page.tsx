@@ -16,39 +16,30 @@ import {
   Network,
   Keyboard,
   LineChart,
-  Filter,
-  List,
-  LayoutGrid,
   Droplets,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 import { Header } from "@/components/dashboard/header";
-import { CurrencyCard } from "@/components/dashboard/currency-card";
-import { VirtualCurrencyGrid } from "@/components/dashboard/virtual-currency-grid";
-import { UniqueTable } from "@/components/dashboard/unique-table";
-import { ExchangePairCard } from "@/components/dashboard/exchange-pair-card";
-import { ExchangeTable } from "@/components/dashboard/exchange-table";
 // P2-1 (iter 71): ExchangeTabContent extracted from this file.
 import { ExchangeTabContent } from "@/components/dashboard/exchange-tab-content";
+// P2-1 (iter 72): CurrenciesTabContent / UniquesTabContent / OverviewTabContent extracted.
+import { CurrenciesTabContent } from "@/components/dashboard/currencies-tab-content";
+import { UniquesTabContent } from "@/components/dashboard/uniques-tab-content";
+import { OverviewTabContent } from "@/components/dashboard/overview-tab-content";
 import { DetailDialog } from "@/components/dashboard/detail-dialog";
 import { PairDetailDialog } from "@/components/dashboard/pair-detail-dialog";
-import { MarketOverview } from "@/components/dashboard/market-overview";
 // WatchlistTab — lazy-loaded (Phase 4.1)
 import { ComparisonDialog } from "@/components/dashboard/comparison-dialog";
 import { PairComparisonDialog } from "@/components/dashboard/pair-comparison-dialog";
-import { Pagination } from "@/components/dashboard/pagination";
 import { PriceAlertDialog } from "@/components/dashboard/price-alert-dialog";
 // ArbitrageTab, ArbitrageFlipperFlips, ArbitrageHelpers — deleted (iter 37)
 // FlipsTab, OptimizerTab, AnalystTab — lazy-loaded (Phase 4.1)
 import { ShortcutsDialog } from "@/components/dashboard/shortcuts-dialog";
 // MarketHeatmap — deleted (iter 37)
-import { VolumeLiquidityIndicators } from "@/components/dashboard/volume-liquidity-indicators";
 import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
-import { ComparativeChart } from "@/components/dashboard/comparative-chart";
 // LiquidChainTab — lazy-loaded (Phase 4.1)
 
 // Phase 4.1: Lazy-loaded tab components via next/dynamic.
@@ -110,17 +101,6 @@ import { EventsSidebar } from "@/components/dashboard/events-sidebar";
 import { OfflineBanner } from "@/components/dashboard/offline-banner";
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
-import { ApiErrorFallback } from "@/components/dashboard/api-error-fallback";
-
-// Skeleton loaders (replace Loader2 spinners)
-import {
-  CurrencyGridSkeleton,
-  UniqueTableSkeleton,
-  ExchangeGridSkeleton,
-  ExchangeTableSkeleton,
-} from "@/components/dashboard/skeletons";
-import { EmptyState } from "@/components/dashboard/empty-state";
-import { DataFreshnessBadge } from "@/components/dashboard/data-freshness-badge";
 
 import {
   fetchApi,
@@ -1164,143 +1144,67 @@ export function Dashboard() {
             </div>
 
             {/* ============ OVERVIEW TAB ============ */}
+            {/* P2-1 (iter 72): inlined JSX extracted to <OverviewTabContent /> */}
             <TabsContent value="overview">
-              <ErrorBoundary fallbackTitle={t("fallbackMarketOverview")}>
-                <MarketOverview
-                  realm={realm}
-                  league={effectiveLeague}
-                  onItemClick={openDetail}
-                  backendOnline={flipperBackendOnline}
-                />
-              </ErrorBoundary>
-              {/* Market Heatmap removed (iter 34) — consolidated into MarketOverview internally */}
-
-              {/* P3-3: Comparative Analytics — integrated into Overview tab */}
-              <ErrorBoundary fallbackTitle={t("fallbackComparativeAnalytics")}>
-                <ComparativeChart
-                  realm={realm}
-                  league={effectiveLeague}
-                  referenceCurrency={referenceCurrency}
-                  allItems={allItems ?? []}
-                />
-              </ErrorBoundary>
+              <OverviewTabContent
+                realm={realm}
+                league={effectiveLeague}
+                referenceCurrency={referenceCurrency}
+                allItems={allItems ?? []}
+                backendOnline={flipperBackendOnline}
+                t={t}
+                onItemClick={openDetail}
+              />
             </TabsContent>
 
             {/* ============ CURRENCIES TAB ============ */}
+            {/* P2-1 (iter 72): inlined JSX extracted to <CurrenciesTabContent /> */}
             <TabsContent value="currencies">
-              {/* Data freshness badge for POE2Scout API tab */}
-              {currenciesFetchedAt > 0 && (
-                <DataFreshnessBadge
-                  fetchedAt={new Date(currenciesFetchedAt).toISOString()}
-                  dataAvailable={!!currenciesData}
-                  compact={uiState.denseMode}
-                />
-              )}
-              {isLoading ? (
-                <CurrencyGridSkeleton count={currenciesPerPage} />
-              ) : activeError && !currenciesData ? (
-                <ApiErrorFallback
-                  error={activeError}
-                  onRetry={() => refetchCurrencies()}
-                  title={t("failedToLoadData")}
-                />
-              ) : !currenciesData?.items?.length ? (
-                <EmptyState
-                  kind="noResults"
-                  message={t("noCurrencies")}
-                  suggestion={search ? t("noResultsSuggestion") : undefined}
-                />
-              ) : (
-                <>
-                  {useVirtualCurrencies ? (
-                    <VirtualCurrencyGrid
-                      items={currenciesData.items}
-                      onItemClick={openDetail}
-                      realm={realm}
-                      league={effectiveLeague}
-                      referenceCurrency={referenceCurrency}
-                      exchangePairs={exchangeData ?? undefined}
-                    />
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2" role="list" aria-label={t("ariaCurrencyItems")}>
-                      {currenciesData.items.map((item) => (
-                        <CurrencyCard
-                          key={item.id}
-                          item={item}
-                          onClick={openDetail}
-                          realm={realm}
-                          league={effectiveLeague}
-                          referenceCurrency={referenceCurrency}
-                          highlighted={highlightedItemId === item.id}
-                          exchangePairs={exchangeData ?? undefined}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  <Pagination
-                    page={currenciesPage}
-                    totalPages={currenciesData.totalPages}
-                    totalItems={currenciesData.totalItems}
-                    perPage={currenciesPerPage}
-                    onPageChange={setCurrenciesPage}
-                    onPerPageChange={(v) => {
-                      setCurrenciesPerPage(v);
-                      setCurrenciesPage(1);
-                    }}
-                    perPageOptions={[25, 50, 100]}
-                  />
-                </>
-              )}
+              <CurrenciesTabContent
+                currenciesFetchedAt={currenciesFetchedAt}
+                currenciesData={currenciesData}
+                refetchCurrencies={refetchCurrencies}
+                currenciesPage={currenciesPage}
+                currenciesPerPage={currenciesPerPage}
+                setCurrenciesPage={setCurrenciesPage}
+                setCurrenciesPerPage={setCurrenciesPerPage}
+                isLoading={isLoading}
+                activeError={activeError}
+                search={search}
+                useVirtualCurrencies={useVirtualCurrencies}
+                denseMode={uiState.denseMode}
+                highlightedItemId={highlightedItemId}
+                realm={realm}
+                league={effectiveLeague}
+                referenceCurrency={referenceCurrency}
+                exchangeData={exchangeData}
+                t={t}
+                onItemClick={openDetail}
+              />
             </TabsContent>
 
             {/* ============ UNIQUES TAB ============ */}
+            {/* P2-1 (iter 72): inlined JSX extracted to <UniquesTabContent /> */}
             <TabsContent value="uniques">
-              {/* Data freshness badge for POE2Scout API tab */}
-              {uniquesFetchedAt > 0 && (
-                <DataFreshnessBadge
-                  fetchedAt={new Date(uniquesFetchedAt).toISOString()}
-                  dataAvailable={!!uniquesData}
-                  compact={uiState.denseMode}
-                />
-              )}
-              {isLoading ? (
-                <UniqueTableSkeleton rows={15} />
-              ) : activeError && !uniquesData ? (
-                <ApiErrorFallback
-                  error={activeError}
-                  onRetry={() => refetchUniques()}
-                  title={t("failedToLoadData")}
-                />
-              ) : !uniquesData?.items?.length ? (
-                <EmptyState
-                  kind="noResults"
-                  message={t("noUniques")}
-                  suggestion={search ? t("noResultsSuggestion") : undefined}
-                />
-              ) : (
-                <>
-                  <UniqueTable
-                    items={uniquesData.items}
-                    onItemClick={openDetail}
-                    realm={realm}
-                    league={effectiveLeague}
-                    referenceCurrency={referenceCurrency}
-                    highlightedItemId={highlightedItemId}
-                  />
-                  <Pagination
-                    page={uniquesPage}
-                    totalPages={uniquesData.totalPages}
-                    totalItems={uniquesData.totalItems}
-                    perPage={uniquesPerPage}
-                    onPageChange={setUniquesPage}
-                    onPerPageChange={(v) => {
-                      setUniquesPerPage(v);
-                      setUniquesPage(1);
-                    }}
-                    perPageOptions={[25, 50, 100]}
-                  />
-                </>
-              )}
+              <UniquesTabContent
+                uniquesFetchedAt={uniquesFetchedAt}
+                uniquesData={uniquesData}
+                refetchUniques={refetchUniques}
+                uniquesPage={uniquesPage}
+                uniquesPerPage={uniquesPerPage}
+                setUniquesPage={setUniquesPage}
+                setUniquesPerPage={setUniquesPerPage}
+                isLoading={isLoading}
+                activeError={activeError}
+                search={search}
+                denseMode={uiState.denseMode}
+                highlightedItemId={highlightedItemId}
+                realm={realm}
+                league={effectiveLeague}
+                referenceCurrency={referenceCurrency}
+                t={t}
+                onItemClick={openDetail}
+              />
             </TabsContent>
 
             {/* ============ EXCHANGE TAB ============ */}
