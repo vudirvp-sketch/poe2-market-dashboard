@@ -39,6 +39,7 @@ import {
   LineChart,
   Droplets,
   Gem,
+  Sparkles,
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -127,6 +128,10 @@ export function DashboardToolbar(props: DashboardToolbarProps) {
         {/* F2 (iter 74): Storage Value tab — Hold/Sell decision per currency. */}
         <TabsTrigger value="storage-value" className="gap-1.5" aria-label={t("tabStorageValue")}>
           <Gem className="h-4 w-4" aria-hidden="true" /> {t("tabStorageValue")}
+        </TabsTrigger>
+        {/* F5 (iter 77): Speculation tab — BUY/SELL/HOLD signals per currency. */}
+        <TabsTrigger value="speculation" className="gap-1.5" aria-label={t("tabSpeculation")}>
+          <Sparkles className="h-4 w-4" aria-hidden="true" /> {t("tabSpeculation")}
         </TabsTrigger>
         <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
           <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}

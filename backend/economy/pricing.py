@@ -28,6 +28,17 @@ This module exposes:
     dependency that broke layering (`economy/` should not depend on
     `api/`).
 
+  - `compute_zscore(prices, current)` — F5 (iter 77). Returns the
+    z-score of `current` relative to the mean / std of `prices`. Used by
+    `backend/economy/speculation.py:compute_speculation_signals` to power
+    BUY/SELL/HOLD signals on the Speculation tab.
+
+  - `compute_percentile(prices, current)` — F5 (iter 77). Returns the
+    percentile (0..100) of `current` within `prices` using linear
+    interpolation. Companion to `compute_zscore`: percentile is more
+    robust to non-normal distributions (typical for game-economy prices,
+    which are heavy-tailed).
+
 The BFS here matches the previously-existing implementation in
 `data_snapshot.py` byte-for-byte (the correct one). The 5-iteration
 relaxation in `scheduler.py` is removed entirely.
@@ -35,9 +46,10 @@ relaxation in `scheduler.py` is removed entirely.
 
 from __future__ import annotations
 
+import math
 from collections import deque
 from datetime import datetime, timedelta, timezone
-from typing import Mapping, MutableMapping
+from typing import Mapping, MutableMapping, Sequence
 
 
 # ---------------------------------------------------------------------------
@@ -160,3 +172,136 @@ def find_price_24h_ago(
         return None  # No point within ±max_drift of 24h ago
 
     return closest
+
+
+# ---------------------------------------------------------------------------
+# Z-score + percentile (F5, iter 77) — Speculation signals
+# ---------------------------------------------------------------------------
+#
+# These helpers power the Speculation tab (PRODUCT_VISION §3.2). The idea:
+#   - For each item, take the last N days of price_logs.
+#   - Compute mean / std of those prices.
+#   - z-score = (current_price - mean) / std
+#   - If z < -1.5  → BUY signal (price is unusually low; expected to revert up)
+#   - If z > +1.5  → SELL signal (price is unusually high; expected to revert down)
+#   - Else         → HOLD
+#
+# Companion: percentile — more robust to heavy-tailed distributions, which
+# game-economy prices often are. We expose both because the Speculation tab
+# renders z-score (the cleaner statistical signal) AND percentile (the more
+# intuitive "this item is cheaper than 95% of its 30-day range").
+#
+# Why population std (ddof=0), not sample std (ddof=1)?
+#   The N-day price series is treated as the full population of interest
+#   (the "normal range" we're comparing the current price against), not a
+#   sample drawn from a larger distribution. Using population std also
+#   gives a non-zero denominator with as few as 2 points (sample std with
+#   ddof=1 needs ≥3 points to avoid div-by-zero). For N=30+ this choice
+#   doesn't materially change the z-score.
+
+def compute_zscore(
+    prices: Sequence[float],
+    current: float,
+) -> float | None:
+    """Return the z-score of `current` relative to `prices`.
+
+    Args:
+        prices: Sequence of historical price observations. Negative / NaN /
+            None entries are skipped. At least 2 valid points are required
+            (1 point → std=0 → undefined z-score).
+        current: The current price to score.
+
+    Returns:
+        z = (current - mean) / std, or None when:
+          - fewer than 2 valid prices are provided
+          - std is 0 (all prices identical)
+          - mean or current is non-finite
+
+    Examples:
+        >>> compute_zscore([1.0, 2.0, 3.0, 4.0, 5.0], 5.0)
+        1.4142135...   # (5 - 3) / sqrt(2.0)
+        >>> compute_zscore([1.0, 1.0, 1.0], 1.0) is None
+        True            # std=0
+        >>> compute_zscore([], 1.0) is None
+        True            # empty
+    """
+    if not math.isfinite(current):
+        return None
+
+    valid = [p for p in prices if p is not None and isinstance(p, (int, float)) and math.isfinite(float(p))]
+    if len(valid) < 2:
+        return None
+
+    n = len(valid)
+    mean = sum(valid) / n
+    variance = sum((p - mean) ** 2 for p in valid) / n  # population variance
+    if variance <= 0:
+        return None
+    std = math.sqrt(variance)
+    if std <= 0:
+        return None
+
+    return (current - mean) / std
+
+
+def compute_percentile(
+    prices: Sequence[float],
+    current: float,
+) -> float | None:
+    """Return the percentile (0..100) of `current` within `prices`.
+
+    Uses linear interpolation between adjacent ranks (matches numpy's
+    default `linear` method, also the default in pandas and R).
+
+    Args:
+        prices: Historical price observations.
+        current: The value whose percentile to compute.
+
+    Returns:
+        A float in [0, 100], or None when:
+          - `prices` is empty
+          - `current` is non-finite
+    """
+    if not math.isfinite(current):
+        return None
+
+    valid = [p for p in prices if p is not None and isinstance(p, (int, float)) and math.isfinite(float(p))]
+    if not valid:
+        return None
+
+    sorted_prices = sorted(valid)
+    n = len(sorted_prices)
+
+    # Linear interpolation: find rank r in [0, n-1] where current would slot in
+    if current <= sorted_prices[0]:
+        return 0.0
+    if current >= sorted_prices[-1]:
+        return 100.0
+
+    # Find insertion point — current is strictly between two known prices
+    lo = 0
+    hi = n - 1
+    # Binary search for the largest index i such that sorted_prices[i] <= current
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if sorted_prices[mid] <= current:
+            lo = mid
+        else:
+            hi = mid - 1
+
+    # sorted_prices[lo] <= current < sorted_prices[lo+1]
+    lower = sorted_prices[lo]
+    upper = sorted_prices[lo + 1]
+    if upper == lower:
+        # Tie — use lo's rank directly
+        rank = float(lo)
+    else:
+        frac = (current - lower) / (upper - lower)
+        rank = lo + frac
+
+    # Map rank [0, n-1] → percentile [0, 100] using the "lower" convention
+    # (matches numpy default 'linear': pct = rank / (n-1) * 100 for n>1,
+    # 0 for n==1).
+    if n == 1:
+        return 0.0
+    return (rank / (n - 1)) * 100.0

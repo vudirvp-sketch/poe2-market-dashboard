@@ -431,6 +431,68 @@ export interface ContentPulseResponse {
   fetchedAt: string;
 }
 
+// ============================================================================
+// Speculation (F5, iter 77)
+// ============================================================================
+
+/** A single (date, price) point in the mini-sparkline rendered per signal.
+ *  Backend (Pydantic) shape: SpeculationPriceHistoryPoint. */
+export interface SpeculationPriceHistoryPoint {
+  /** ISO 8601 timestamp of the price observation. */
+  date: string;
+  /** Price in base currency at this timestamp. */
+  price: number;
+}
+
+/** Signal type — BUY (z < -1.5), SELL (z > +1.5), HOLD (|z| ≤ 1.5). */
+export type SpeculationSignalType = "BUY" | "SELL" | "HOLD";
+
+/** Horizon hint — expected mean-reversion window.
+ *  Mapped to localized strings in the frontend. */
+export type SpeculationHorizonHint = "short" | "medium" | "long" | "unknown";
+
+/** A single BUY/SELL/HOLD signal for one currency.
+ *  Backend (Pydantic) shape: SpeculationSignalData. */
+export interface SpeculationSignal {
+  /** Item API identifier (e.g. "circle-coin", "breachstone"). */
+  apiId: string;
+  /** Display name (EN) — backend returns `text` field, proxy camelCases. */
+  text: string;
+  /** League mechanic category (e.g. "ritual", "breach"). Empty if unknown. */
+  category: string;
+  /** Current price in base currency. */
+  currentPrice: number;
+  /** Mean of historical prices in the lookback window. */
+  mean: number;
+  /** Population std-dev of historical prices in the lookback window. */
+  std: number;
+  /** Z-score of currentPrice relative to the historical distribution. */
+  zScore: number;
+  /** Percentile (0..100) of currentPrice within the historical range. Null when not computable. */
+  percentile: number | null;
+  /** "BUY" | "SELL" | "HOLD". */
+  signal: SpeculationSignalType;
+  /** Expected mean-reversion horizon code (mapped to localized string in UI). */
+  horizonHint: SpeculationHorizonHint;
+  /** Number of valid price points used for stats. */
+  sampleSize: number;
+  /** Up to 14 most-recent price points (oldest-first) for a mini-sparkline. */
+  priceHistoryShort: SpeculationPriceHistoryPoint[];
+}
+
+/** Response for GET /api/flipper/speculation (F5, iter 77). */
+export interface SpeculationResponse {
+  league: string;
+  /** Per-item signals, sorted by |zScore| desc. */
+  signals: SpeculationSignal[];
+  /** Whether any item had enough price history to compute a signal. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+  /** Lookback window in days used for the z-score / percentile baseline. */
+  days: number;
+}
+
 // Types previously in poe2api.ts — now consolidated here
 
 export interface ExchangeSnapshot {

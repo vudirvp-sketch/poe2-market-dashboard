@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 76 — F4 widget shipped).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 77 — F5 Speculation tab shipped).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -19,13 +19,15 @@
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 iter 63, P1-9 iter 66, **P2-4 iter 67**) | `/flips` supports `max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir` (all optional with safe defaults). The standalone `/scanner/scan` endpoint was deleted in iter 68. |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (P1-8 fixed iter 64) | `_detect_negative_cycle_nodes()` flags profitable arbitrage cycles; `_bellman_ford` returns `None` when target is on a cycle |
 | `backend/api/routes_events.py` | Event CRUD + cache invalidation (P1-11 iter 59, P1-7 iter 61) | All 3 endpoints async-await EventManager; `unified_cache` invalidated after mutation |
-| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` |
+| `backend/economy/pricing.py` | Unified pricing helpers (P0-5 fixed iter 57, F5 extended iter 77) | `compute_transitive_prices` (BFS) + `find_price_24h_ago` + `compute_zscore` (F5) + `compute_percentile` (F5) |
 | `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY` |
 | `backend/economy/events.py` | EventManager + StoredEvent (P1-7 iter 61, **P3-3 iter 71**) | `event_id`, `is_active`, `created_at`; 4 methods async; `_prune_expired` left sync intentionally. **All in-memory `_events` access guarded by `threading.RLock`**; SQLite writes await OUTSIDE the lock. |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
 | `backend/economy/content_pulse.py` | **F3 (iter 75)** — daily turnover per category + 7d/30d rolling + signal | Pure function `compute_content_pulse(snapshot, config)`. No side effects. Tunable thresholds at module top (`SIGNAL_RISING_THRESHOLD_PCT=10.0`, `SIGNAL_FALLING_THRESHOLD_PCT=-10.0`, `TOP_N_PER_CATEGORY=3`). |
+| `backend/economy/speculation.py` | **F5 (iter 77)** — per-item z-score + BUY/SELL/HOLD signals | Pure function `compute_speculation_signals(snapshot, config, days=30, limit=50, signal_filter="ALL")`. No side effects. Tunable thresholds at module top (`Z_BUY_THRESHOLD=-1.5`, `Z_SELL_THRESHOLD=1.5`, `MAX_HISTORY_POINTS=14`, `MIN_SAMPLE_SIZE=2`, `DEFAULT_DAYS=30`, `DEFAULT_LIMIT=50`). |
 | `backend/economy/storage_value_history.py` | **F2 follow-up (iter 75)** — time-series of currency/mirror + currency/hinekora ratios | Pure function `compute_storage_value_history(snapshot, currency, days=30)`. Uses 24h nearest-neighbor tolerance for matching timestamps across the three histories. |
 | `backend/api/routes_content_pulse.py` | **F3 (iter 75)** — route handler `GET /api/v1/content-pulse` | Thin wrapper: fetch snapshot → call `compute_content_pulse` → shape response. Returns `data_available=false` + empty `categories` list when snapshot is not loaded. |
+| `backend/api/routes_speculation.py` | **F5 (iter 77)** — route handler `GET /api/v1/speculation?days=30&limit=50&signal=ALL` | Thin wrapper: fetch snapshot → call `compute_speculation_signals` → shape response. Query params validated by FastAPI (`ge=1, le=90` for days, `ge=1, le=500` for limit, `pattern=^(ALL\|BUY\|SELL\|HOLD)$` for signal). Returns `data_available=false` + empty `signals` list when snapshot is not loaded. |
 | `backend/api/routes_storage_value.py` | Storage value routes (existing `/storage-value/{currency}` + new `/storage-value/{currency}/history` iter 75) | Both routes return `data_available=false` with empty payload when snapshot not loaded — no 503. |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 iter 66) — `rowid IN (SELECT ... LIMIT ?)` pattern |
 | `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | Shim modules deleted in iter 66 (P2-2) — import directly |
@@ -58,6 +60,7 @@
 | `src/components/dashboard/storage-value-tab.tsx` | Storage Value tab (**F2 iter 74 + iter 75**) | Wraps the existing `/api/v1/storage-value/{currency}` endpoint. Lazy-loaded, ErrorBoundary-wrapped. Currency picker (default list of 14 canonical currencies) + horizon picker (1/6/24/48/168h) + quantity input + Compute button. Renders: decision card (BUY_HOLD / SELL_CONVERT / NEUTRAL with hint), projection breakdown (current/projected/risk-discount/adjusted/net/ratio), holdings totals (×quantity), inputs panel (momentum/volatility/acceleration/liquidity/α/horizon), historical chart (iter 75). Full i18n (en/ru/zh/ko). Backend offline → offline card with start-backend hint. data_available=false → "no price history" notice. 12 jest tests in `src/__tests__/storage-value-tab.test.tsx`. |
 | `src/components/dashboard/storage-value-history-chart.tsx` | Storage Value history chart (**F2 follow-up iter 75**) | Dependency-free SVG line chart (~290 lines) rendering two ratios: `currency/mirror` (blue) and `currency/hinekora` (emerald). Fetches via `useQuery` bound to `/api/flipper/storage-value/[currency]/history?days=30`. Graceful degradation: <2 points → "no history" notice; all-null ratios → "no reference data" notice; loading → spinner text. 11 jest tests in `src/__tests__/storage-value-history-chart.test.tsx`. |
 | `src/components/dashboard/content-pulse-widget.tsx` | Content Pulse widget — «Что фармить сегодня» (**F4 iter 76**) | Two-column card showing top rising (emerald) + falling (red) league mechanic categories with per-category `delta_7d_pct` badge + top-3 movers (`trend_pct` per item). Fetches via `useQuery` (60s staleTime) bound to `/api/flipper/content-pulse`. Mounted FIRST in `overview-tab-content.tsx` (above MarketOverview) so it's visible on first dashboard load — wrapped in its own `<ErrorBoundary>`. Graceful degradation: backendOffline → compact amber notice (no full-card takeover); loading → spinner text; error → error card + refresh button; data_available=false → "no data yet"; all categories stable → "no signals today"; empty top_rising/top_falling → "no movers" per category. `maxPerSide` prop (default 2) caps category count per column. 16 jest tests in `src/__tests__/content-pulse-widget.test.tsx`. |
+| `src/components/dashboard/speculation-tab.tsx` | Speculation tab — BUY/SELL/HOLD per item (**F5 iter 77**) | Renders a sortable list of currencies with per-item z-score (vs N-day rolling mean/std) + percentile + BUY/SELL/HOLD signal badge + horizon hint + dependency-free SVG mini-sparkline (last 14 price points). Filter chips (ALL/BUY/SELL/HOLD), days selector (7/14/30/90). Fetches via `useQuery` (30s staleTime) bound to `/api/flipper/speculation?days={days}&limit=50&signal={filter}`. Lazy-loaded via `next/dynamic`, wrapped in `<ErrorBoundary>`. Tab is in `TAB_MAP` at index 9 (between `storage-value` and `liquid-chain`) for keyboard-shortcut navigation. Tab trigger in `dashboard-toolbar.tsx` (Sparkles icon). Graceful degradation: backendOffline → offline card + hint; loading → spinner text; error → error card + refresh; data_available=false → "no data yet" notice; empty signals → "no actionable signals" notice. 18 jest tests in `src/__tests__/speculation-tab.test.tsx`. |
 
 ## 2. Build & Run Commands
 
@@ -116,6 +119,8 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 30. **Content Pulse widget wiring** (F4, iter 76). The widget at `src/components/dashboard/content-pulse-widget.tsx` is mounted FIRST inside `overview-tab-content.tsx` — ABOVE MarketOverview — so users see actionable farming signals on first dashboard load. The widget is wrapped in its own `<ErrorBoundary fallbackTitle={t("fallbackContentPulse")}>` so a render failure in the widget doesn't blank out MarketOverview or ComparativeChart. The widget consumes `/api/flipper/content-pulse` (Next.js proxy → `/api/v1/content-pulse`) via `useQuery` with 60s staleTime (rolling 7d average changes slowly). `maxPerSide` prop (default 2) caps how many rising + falling categories are shown — keep this small to preserve the 1-glance UX per PRODUCT_VISION §3.6. The widget only surfaces categories with `signal="rising"` or `signal="falling"` (|delta_7d_pct| ≥ 10%); stable categories are filtered out as noise.
 
+31. **Speculation tab wiring** (F5, iter 77). The tab at `src/components/dashboard/speculation-tab.tsx` is lazy-loaded via `next/dynamic` (chunk only loads when user navigates to it) and wrapped in `<ErrorBoundary fallbackTitle={t("fallbackSpeculation")}>` so a render error doesn't crash the whole dashboard. The tab is in `TAB_MAP` at index 9 (between `storage-value` at 8 and `liquid-chain` at 10) for keyboard-shortcut navigation. Tab trigger in `dashboard-toolbar.tsx` (Sparkles icon, between Gem and Droplets). The tab consumes `/api/flipper/speculation` (Next.js proxy → `/api/v1/speculation`) via `useQuery` with 30s staleTime. Query params: `days` (7/14/30/90, default 30), `limit=50`, `signal` (ALL/BUY/SELL/HOLD, default ALL). The proxy forwards all query params to the backend and returns empty `signals: []` + `dataAvailable: false` when the backend is offline (no 503). Z-score thresholds: BUY when z < -1.5, SELL when z > +1.5, HOLD when |z| ≤ 1.5 (inclusive boundaries → HOLD). Population std (ddof=0) used — minimum 2 valid price points required for non-null z-score. Items with std=0 (all prices identical) are excluded from the result list (no actionable signal).
+
 ## 4. Known Issues
 
 **All technical-debt issues are closed** (P0=0, P1=0, P2=0, P3=0, P4=0). Switch focus to product features in `PRODUCT_VISION.md` (F1–F6). See `STATUS.md` for the current product-feature status table.
@@ -139,6 +144,9 @@ Quick reference for the most common symptoms:
 | Content Pulse `delta_7d_pct` is `null` | No historical price_logs for any item in that category — only today's volume is known. Not a bug. | F3 (done) |
 | Content Pulse widget shows "no signals today" | All categories have `signal="stable"` (|delta_7d_pct| < 10%). Correct behavior — widget only surfaces strong signals. | F4 (done) |
 | Content Pulse widget shows "no movers" for a category | Category has signal but its items lack ≥2 price points to compute per-item trend. Will populate as scheduler collects more data. | F4 (done) |
+| `/api/v1/speculation` returns `data_available: false` | Snapshot not loaded, OR no item has ≥2 valid price points in the requested `days` window. | F5 (done) |
+| Speculation tab shows "no actionable signals" | All items have `|z_score| < 1.5` — prices are within ±1.5σ of their recent mean. Try widening days (90 instead of 30). | F5 (done) |
+| Speculation z-score is null for an item | Item has <2 valid price points, OR all prices are identical (std=0). Both → excluded from the result list. | F5 (done) |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -174,6 +182,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
 | GET | `/api/v1/content-pulse` | **F3 (iter 75)** — per-category turnover + 7d/30d rolling + top movers |
+| GET | `/api/v1/speculation` | **F5 (iter 77)** — per-item z-score + BUY/SELL/HOLD signals. Query: `days` (1-90, default 30), `limit` (1-500, default 50), `signal` (ALL/BUY/SELL/HOLD, default ALL). |
 
 **Frontend-only routes:**
 
@@ -182,6 +191,7 @@ Quick reference for the most common symptoms:
 | GET | `/api/flipper/health` | Proxies backend `/health` |
 | GET | `/api/flipper/health/circuit-breakers` | **P2-6 iter 67** — JSON snapshot of per-endpoint circuit breaker state |
 | GET | `/api/flipper/content-pulse` | **F4 (iter 76)** — Next.js proxy to `/api/v1/content-pulse`. Returns empty `categories: []` + `dataAvailable: false` when backend is offline. |
+| GET | `/api/flipper/speculation` | **F5 (iter 77)** — Next.js proxy to `/api/v1/speculation`. Forwards `days`/`limit`/`signal` query params. Returns empty `signals: []` + `dataAvailable: false` when backend is offline. |
 | GET | `/api/flipper/{resource}` | Proxies to FastAPI `{resource}` (currencies, prices, flips, etc.) |
 
 (WebSocket endpoints removed in iter 58.)

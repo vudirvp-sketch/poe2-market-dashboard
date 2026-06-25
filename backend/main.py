@@ -595,6 +595,13 @@ try:
 except ImportError:
     logger.debug("Content Pulse router not available yet")
 
+# F5 (iter 77): Speculation — per-item z-score + BUY/SELL/HOLD signals.
+try:
+    from backend.api.routes_speculation import router as speculation_router
+    app.include_router(speculation_router)
+except ImportError:
+    logger.debug("Speculation router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

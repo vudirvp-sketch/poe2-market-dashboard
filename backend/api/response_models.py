@@ -630,3 +630,41 @@ class ContentPulseResponse(BaseModel):
     categories: list[ContentPulseCategoryData] = Field(default_factory=list, description="Per-category pulse data, sorted by |delta_7d_pct| desc")
     data_available: bool = Field(description="Whether any category had items in the snapshot")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+
+
+# ---------------------------------------------------------------------------
+# Speculation (F5, iter 77)
+# ---------------------------------------------------------------------------
+
+class SpeculationPriceHistoryPoint(BaseModel):
+    """A single (date, price) point used for the mini-sparkline in the UI."""
+    date: str = Field(description="ISO 8601 timestamp of the price observation")
+    price: float = Field(description="Price in base currency at this timestamp")
+
+
+class SpeculationSignalData(BaseModel):
+    """A single BUY / SELL / HOLD signal for one currency."""
+    api_id: str = Field(description="Item API identifier")
+    text: str = Field(description="Display name (EN)")
+    category: str = Field(description="League mechanic category (e.g. 'ritual', 'breach'). Empty if unknown.")
+    current_price: float = Field(description="Current price in base currency")
+    mean: float = Field(description="Mean of the historical prices in the lookback window")
+    std: float = Field(description="Population std-dev of the historical prices in the lookback window")
+    z_score: float = Field(description="Z-score of current_price relative to the historical distribution")
+    percentile: float | None = Field(default=None, description="Percentile (0..100) of current_price within the historical range. None when not computable.")
+    signal: str = Field(description="Signal: 'BUY' (z < -1.5) | 'SELL' (z > +1.5) | 'HOLD' (|z| <= 1.5)")
+    horizon_hint: str = Field(description="Expected mean-reversion horizon code: 'short' (1-3d, |z|>=2.5) | 'medium' (3-7d, |z|>=1.5) | 'long' (>1w) | 'unknown'")
+    sample_size: int = Field(description="Number of valid price points used to compute mean / std / z_score")
+    price_history_short: list[SpeculationPriceHistoryPoint] = Field(
+        default_factory=list,
+        description="Up to 14 most-recent price points (oldest-first) for a mini-sparkline in the UI",
+    )
+
+
+class SpeculationResponse(BaseModel):
+    """Response for GET /api/v1/speculation."""
+    league: str = Field(description="League name")
+    signals: list[SpeculationSignalData] = Field(default_factory=list, description="Per-item signals, sorted by |z_score| desc")
+    data_available: bool = Field(description="Whether any item in the snapshot had enough price history to compute a signal")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+    days: int = Field(description="Lookback window in days used for the z-score / percentile baseline")

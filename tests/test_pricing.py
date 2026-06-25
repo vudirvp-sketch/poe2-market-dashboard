@@ -31,7 +31,12 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from backend.economy.pricing import compute_transitive_prices, find_price_24h_ago
+from backend.economy.pricing import (
+    compute_percentile,
+    compute_transitive_prices,
+    compute_zscore,
+    find_price_24h_ago,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -261,3 +266,117 @@ class TestFindPrice24hAgo:
             (_ts(28), 130.0),
         ]
         assert find_price_24h_ago(history) == 90.0
+
+
+# ===========================================================================
+# F5 (iter 77) — compute_zscore + compute_percentile
+# ===========================================================================
+
+class TestComputeZscore:
+    """Verify z-score computation for the Speculation tab (F5)."""
+
+    def test_empty_prices_returns_none(self):
+        assert compute_zscore([], 1.0) is None
+
+    def test_single_point_returns_none(self):
+        """One point → std=0 → undefined z-score."""
+        assert compute_zscore([1.0], 1.0) is None
+
+    def test_all_identical_prices_returns_none(self):
+        """All prices identical → std=0 → undefined z-score."""
+        assert compute_zscore([5.0, 5.0, 5.0, 5.0], 5.0) is None
+
+    def test_current_at_mean_returns_zero(self):
+        """Current price exactly at mean → z=0."""
+        # mean of [1,2,3,4,5] = 3
+        assert compute_zscore([1.0, 2.0, 3.0, 4.0, 5.0], 3.0) == pytest.approx(0.0, abs=1e-9)
+
+    def test_current_above_mean_positive_z(self):
+        """Current price above mean → positive z-score."""
+        # mean=3, std=sqrt(2) ≈ 1.4142
+        # z = (5 - 3) / sqrt(2) = 2 / 1.4142 ≈ 1.4142
+        assert compute_zscore([1.0, 2.0, 3.0, 4.0, 5.0], 5.0) == pytest.approx(1.41421356, abs=1e-6)
+
+    def test_current_below_mean_negative_z(self):
+        """Current price below mean → negative z-score."""
+        assert compute_zscore([1.0, 2.0, 3.0, 4.0, 5.0], 1.0) == pytest.approx(-1.41421356, abs=1e-6)
+
+    def test_filters_none_and_nan(self):
+        """None / NaN entries are skipped."""
+        # Effective prices = [1, 2, 3, 4, 5] (same as test_current_above_mean_positive_z)
+        result = compute_zscore([1.0, None, float("nan"), 2.0, 3.0, 4.0, 5.0], 5.0)
+        assert result == pytest.approx(1.41421356, abs=1e-6)
+
+    def test_non_finite_current_returns_none(self):
+        assert compute_zscore([1.0, 2.0, 3.0], float("inf")) is None
+        assert compute_zscore([1.0, 2.0, 3.0], float("nan")) is None
+
+    def test_two_points_sufficient(self):
+        """Two valid points is the minimum — std is non-zero when they differ."""
+        # mean=1.5, std=sqrt(0.25)=0.5, z = (2 - 1.5) / 0.5 = 1.0
+        assert compute_zscore([1.0, 2.0], 2.0) == pytest.approx(1.0)
+
+    def test_extreme_z_far_above(self):
+        """Current price far above the distribution → very high z."""
+        # mean ≈ 2, std ≈ 1.41 (population), z = (10 - 2) / 1.41 ≈ 5.66
+        result = compute_zscore([1.0, 2.0, 3.0], 10.0)
+        assert result is not None
+        assert result > 5.0
+
+
+class TestComputePercentile:
+    """Verify percentile computation for the Speculation tab (F5)."""
+
+    def test_empty_prices_returns_none(self):
+        assert compute_percentile([], 1.0) is None
+
+    def test_current_below_min_returns_zero(self):
+        assert compute_percentile([10.0, 20.0, 30.0], 5.0) == 0.0
+
+    def test_current_above_max_returns_100(self):
+        assert compute_percentile([10.0, 20.0, 30.0], 50.0) == 100.0
+
+    def test_current_equals_min_returns_zero(self):
+        assert compute_percentile([10.0, 20.0, 30.0], 10.0) == 0.0
+
+    def test_current_equals_max_returns_100(self):
+        assert compute_percentile([10.0, 20.0, 30.0], 30.0) == 100.0
+
+    def test_current_at_median_returns_50(self):
+        """Median of an odd-length sorted list → 50th percentile."""
+        # [1, 2, 3] → rank of 2 is 1; pct = 1/(3-1) * 100 = 50
+        assert compute_percentile([1.0, 2.0, 3.0], 2.0) == pytest.approx(50.0)
+
+    def test_linear_interpolation_midpoint(self):
+        """Value between two known prices uses linear interpolation.
+
+        prices = [1, 2, 3, 4, 5]
+        For current = 4.5: lower=4 (rank 3), upper=5 (rank 4)
+        frac = (4.5 - 4) / (5 - 4) = 0.5
+        rank = 3 + 0.5 = 3.5
+        pct = 3.5 / (5-1) * 100 = 87.5
+        """
+        assert compute_percentile([1.0, 2.0, 3.0, 4.0, 5.0], 4.5) == pytest.approx(87.5)
+
+    def test_filters_none_and_nan(self):
+        """None / NaN entries are skipped before computing percentile."""
+        assert compute_percentile([1.0, None, float("nan"), 2.0, 3.0], 2.0) == pytest.approx(50.0)
+
+    def test_non_finite_current_returns_none(self):
+        assert compute_percentile([1.0, 2.0, 3.0], float("inf")) is None
+        assert compute_percentile([1.0, 2.0, 3.0], float("nan")) is None
+
+    def test_single_point_returns_zero(self):
+        """Single-point distribution → any value at or below returns 0, above returns 100."""
+        assert compute_percentile([5.0], 5.0) == 0.0
+        assert compute_percentile([5.0], 10.0) == 100.0
+
+    def test_unsorted_input_sorted_internally(self):
+        """Caller may pass unsorted prices — function sorts internally."""
+        # Same as test_current_at_median_returns_50 but with shuffled input
+        assert compute_percentile([3.0, 1.0, 2.0], 2.0) == pytest.approx(50.0)
+
+    def test_duplicate_prices(self):
+        """Duplicate prices handle ties correctly (no division by zero)."""
+        # All same price — current equals that price → 0 (lower edge)
+        assert compute_percentile([5.0, 5.0, 5.0, 5.0], 5.0) == 0.0

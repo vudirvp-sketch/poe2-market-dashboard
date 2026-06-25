@@ -208,3 +208,144 @@ NOT done in iter 76 (intentionally deferred):
 - e2e tests not run (frontend changes are unit-tested via jest; e2e would require a running backend + browser)
 - useDashboardData hook extraction (optional, deferred)
 - Visual verification with real backend data (jest tests use mocked data; visual polish — colors, spacing, responsive layout on narrow screens — needs manual review against real /api/v1/content-pulse response)
+
+---
+Task ID: iter-77
+Agent: main (Sonnet 4.5)
+Task: iter 77 — Implement F5 (Speculation tab with z-score BUY/SELL/HOLD signals) per PRODUCT_VISION §3.2 + §4 architecture table "Z-score / percentile TODO".
+
+Work Log:
+- Read STATUS.md / PRODUCT_VISION.md / AGENT_NAVIGATION.md / worklog.md (iter 74/75/76 records) to understand state.
+- Confirmed F1 still BLOCKED on live API access — skipped per the iter 76 recommendation.
+- F5 was the recommended priority for iter 77 — implemented end-to-end (backend pure function + route handler + Pydantic models + tests + Next.js proxy + UI tab + i18n + jest tests).
+- Verified baseline before changes: pytest 564 pass (after installing missing aiosqlite into the venv), jest 363 pass, tsc 0 errors.
+
+- **Backend — `backend/economy/pricing.py`** (extended, F5 foundation):
+  - Added two new pure helpers at the bottom of the module:
+    - `compute_zscore(prices, current)` — population std (ddof=0) z-score. Skips None/NaN/non-finite entries. Returns None when <2 valid points OR std=0 (all prices identical) OR current is non-finite. Minimum 2 valid points for non-None result.
+    - `compute_percentile(prices, current)` — linear-interpolation percentile (numpy default). Returns float in [0, 100]. Handles single-point distribution, duplicate prices, unsorted input.
+  - Updated module docstring to document the new helpers.
+  - Added `import math` and `Sequence` from typing.
+
+- **Backend — `backend/economy/speculation.py`** (NEW, ~280 lines):
+  - Pure function `compute_speculation_signals(snapshot, config, *, days=30, limit=50, signal_filter="ALL", now=None)`.
+  - Module-level tunable constants (NOT in config.yaml — same convention as content_pulse.py):
+    - `Z_BUY_THRESHOLD = -1.5`, `Z_SELL_THRESHOLD = 1.5`
+    - `MAX_HISTORY_POINTS = 14` (mini-sparkline slice)
+    - `MIN_SAMPLE_SIZE = 2`, `DEFAULT_DAYS = 30`, `DEFAULT_LIMIT = 50`
+  - Internal helpers: `_extract_prices(price_logs, now, days)` (filters by time window, parses ISO strings + datetime objects, accepts both PascalCase and snake_case keys), `_signal_from_zscore(z)`, `_horizon_hint(z)` (short/medium/long/unknown based on |z|), `_build_signal_entry(...)` (assembles per-item signal dict).
+  - Returns dict shape: `{league, signals: [...], data_available, fetched_at, days}`. Signals sorted by |z_score| desc. Items with std=0 or <2 valid points are excluded (no actionable signal).
+
+- **Backend — `backend/api/routes_speculation.py`** (NEW, ~95 lines):
+  - Route handler `GET /api/v1/speculation?days=30&limit=50&signal=ALL`.
+  - FastAPI Query validation: `days: int = Query(30, ge=1, le=90)`, `limit: int = Query(50, ge=1, le=500)`, `signal: str = Query("ALL", pattern="^(ALL|BUY|SELL|HOLD)$")`.
+  - Returns `data_available=false` + empty signals list when snapshot not loaded (same pattern as content_pulse route).
+  - Try/except wraps `compute_speculation_signals` — on exception logs error + returns empty response (no 500).
+
+- **Backend — `backend/api/response_models.py`** (extended):
+  - Added 3 new Pydantic models: `SpeculationPriceHistoryPoint`, `SpeculationSignalData`, `SpeculationResponse`. All fields documented with `Field(description=...)` for OpenAPI generation.
+
+- **Backend — `backend/main.py`** (extended):
+  - Registered `routes_speculation.router` after `routes_content_pulse.router` (inside try/except for graceful degradation).
+
+- **Backend — `tests/test_pricing.py`** (extended):
+  - Added 22 new tests in 2 classes: `TestComputeZscore` (10 tests) + `TestComputePercentile` (12 tests). Coverage: empty input, single point, identical prices (std=0), current at mean/above/below, None/NaN filtering, non-finite current, two-point minimum, extreme z, percentile at min/max/median/interpolated, single-point distribution, unsorted input, duplicate prices.
+
+- **Backend — `tests/test_speculation.py`** (NEW, ~580 lines, 43 tests):
+  - 6 test classes: `TestExtractPrices` (6), `TestSignalFromZscore` (5), `TestHorizonHint` (4), `TestBuildSignalEntry` (8), `TestComputeSpeculationSignals` (16), `TestRouteHandler` (4 async smoke tests).
+  - Tests use the same `SimpleNamespace`-based mock pattern as `tests/test_content_pulse.py` — no real DataSnapshot needed.
+  - Coverage: empty snapshot, single currency BUY/SELL/HOLD, multi-currency sort by |z|, days window filtering, limit cap, signal filter (BUY/SELL/ALL/invalid), std=0 exclusion, insufficient history exclusion, snake_case key fallback, days/limit clamping, route handler smoke (no snapshot / with snapshot / query param forwarding / exception).
+  - One test fix during dev: route handler tests needed explicit `days=30, limit=50, signal="ALL"` args because FastAPI `Query()` default values are Query objects (not the wrapped values) when the handler is called directly without going through FastAPI's dependency injection.
+
+- **Frontend — `src/lib/types.ts`** (extended):
+  - Added 5 new types: `SpeculationPriceHistoryPoint`, `SpeculationSignalType` (union "BUY"|"SELL"|"HOLD"), `SpeculationHorizonHint` (union "short"|"medium"|"long"|"unknown"), `SpeculationSignal`, `SpeculationResponse`. Mirror the Pydantic models after snake_case → camelCase transform by `flipper-proxy.ts:transformKeys`.
+
+- **Frontend — `src/app/api/flipper/speculation/route.ts`** (NEW, ~45 lines):
+  - Next.js proxy with `proxyWithFallback`. Forwards all query params (`days`, `limit`, `signal`) to `/api/v1/speculation`. Empty `signals: []` + `dataAvailable: false` + `days: <requested>` offline/insufficient-data fallback.
+
+- **Frontend — `src/components/dashboard/speculation-tab.tsx`** (NEW, ~490 lines):
+  - UI tab with:
+    - Filter chips (ALL / BUY / SELL / HOLD) — click to re-fetch with new `signal` param.
+    - Days selector (Select with 7 / 14 / 30 / 90 presets).
+    - Refresh button.
+    - Signal list — each row shows: signal badge (BUY/SELL/HOLD with icon + color), item text + category (title-cased), z-score (signed, colored by signal), percentile, sample size + mean ± std + current price + horizon hint, mini-sparkline (dependency-free SVG, last 14 price points, color-coded by signal).
+    - Footer with `fetchedAt` timestamp + signal count.
+  - `useQuery` bound to `["speculation", days, signalFilter]`, 30s staleTime, retry: 1.
+  - Lazy-loaded via `next/dynamic` in `dashboard-page.tsx`.
+  - Wrapped in `<ErrorBoundary fallbackTitle={t("fallbackSpeculation")}>` so a render error doesn't crash the whole dashboard.
+  - Graceful degradation (5 branches): backendOffline → offline card + start-backend hint; loading → spinner text; error → error card + refresh; data_available=false → "no data yet" notice; empty signals → "no actionable signals" notice.
+  - `Sparkline` is a dependency-free internal subcomponent — renders SVG `<path>` from price points. Empty-sparkline fallback (dashed horizontal line) when <2 points.
+
+- **Frontend — `src/components/dashboard/dashboard-page.tsx`** (modified):
+  - Added `SpeculationTab` lazy-load via `next/dynamic` (line 88-93, after `StorageValueTab`).
+  - Added `<TabsContent value="speculation">` after the storage-value tab (line 1168-1173), wrapped in `<ErrorBoundary>`.
+  - Added `"speculation"` to `TAB_MAP` at index 9 (between `storage-value` and `liquid-chain`) — keeps the analytics cluster together (storage-value → speculation).
+
+- **Frontend — `src/components/dashboard/dashboard-toolbar.tsx`** (modified):
+  - Imported `Sparkles` from lucide-react.
+  - Added `<TabsTrigger value="speculation">` between the Storage Value and Liquid Chain triggers.
+
+- **Frontend — i18n** (4 locales updated, +29 keys each):
+  - Added `fallbackSpeculation` to the ErrorBoundary fallback titles block.
+  - Added 28 new keys for the speculation tab: `tabSpeculation`, `speculationTitle`, `speculationSubtitle`, `speculationOffline`, `speculationOfflineHint`, `speculationLoading`, `speculationError`, `speculationNoData`, `speculationNoSignals`, `speculationRefresh`, `speculationFetchedAt`, `speculationSignalCount`, `speculationFilterLabel`, `speculationFilterAll`, `speculationFilterBuy`, `speculationFilterSell`, `speculationFilterHold`, `speculationDaysLabel`, `speculationDaysValue`, `speculationZScoreTitle`, `speculationPercentileTitle`, `speculationSampleSize`, `speculationMean`, `speculationStd`, `speculationCurrent`, `speculationHorizonShort`, `speculationHorizonMedium`, `speculationHorizonLong`, `speculationHorizonUnknown`.
+  - Verified parity via ripgrep: 28/28/28/28 speculation keys per locale + 1 fallbackSpeculation = 29 in each of en/ru/zh/ko.
+
+- **Frontend — `src/__tests__/speculation-tab.test.tsx`** (NEW, ~340 lines, 18 tests):
+  - Coverage: backend offline / loading / error + refresh / no-data / mixed (BUY+SELL+HOLD) signals / BUY/SELL/HOLD badges / z-score + percentile values / filter chips / days selector / sparkline SVG / empty-sparkline fallback / signal count + fetched-at footer / proxy path / no-signals notice / BUY filter click → fetchApi with signal=BUY / category title-case / sample-size + mean + std + current stats / horizon hint localized.
+  - Used `getAllByText` instead of `getByText` for tests where multiple signals share the same value (e.g. all three signals in `mixedResponse` have `category: "ritual"`, `sampleSize: 14`, etc.) — initial 5 test failures during dev were all of this kind.
+
+- Verification:
+  - `node node_modules/typescript/bin/tsc --noEmit` → 0 errors.
+  - `node node_modules/jest/bin/jest.js` → 381 pass (363 baseline + 18 new speculation-tab tests). 0 fail.
+  - `PYTHONPATH=. python -m pytest tests/ --ignore=tests/e2e` → 629 pass (564 baseline + 22 new pricing tests + 43 new speculation tests). 0 fail.
+  - Confirmed new route registered: `GET /api/v1/speculation`.
+
+- Documentation updates:
+  - `STATUS.md`: bumped "Last updated" to iter 77. F5 row marked ✅ Done with iter 77 implementation details. Added 3 new Quick Reference entries (speculation endpoint "data_available=false", "no actionable signals", "z-score is null").
+  - `PRODUCT_VISION.md`: bumped "Last updated" to iter 77. Updated §4 architecture table (Z-score / percentile row marked ✅ with `compute_zscore` + `compute_percentile` helpers; added `/api/v1/speculation` row; Speculation UI tab row marked ✅). Rewrote F5 section with iter 77 implementation details. Updated §6 Product DoD — point 4 (Speculation tab) marked ✅.
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 77. Updated `pricing.py` row (added `compute_zscore` + `compute_percentile`). Added 2 new rows to §1 (speculation.py + routes_speculation.py). Added speculation-tab.tsx row. Added invariant #31 (Speculation tab wiring). Added 3 new Quick Reference entries. Added `/api/v1/speculation` row to API table. Added `/api/flipper/speculation` row to frontend-only routes table.
+  - `worklog.md`: appended this iter 77 record.
+
+Stage Summary:
+- **F5 (Speculation tab with z-score BUY/SELL/HOLD signals) — DONE.** Full backend + frontend implementation. New endpoint `GET /api/v1/speculation?days=30&limit=50&signal=ALL`. New UI tab at `src/components/dashboard/speculation-tab.tsx`. 43 pytest + 22 pricing + 18 jest tests. tsc 0 errors.
+- **F1 (additional RU translations) — STILL BLOCKED.** No change from iter 76 — needs live poe2scout.com + poe2db.tw/ru/ access.
+- **Baseline:** pytest 629 pass (+65), jest 381 pass (+18), tsc 0 errors.
+- **Files changed/created (16 total):**
+  - `backend/economy/pricing.py` (modified: +130 lines — `compute_zscore` + `compute_percentile` + docstring + `import math, Sequence`)
+  - `backend/economy/speculation.py` (NEW, ~280 lines)
+  - `backend/api/routes_speculation.py` (NEW, ~95 lines)
+  - `backend/api/response_models.py` (modified: +40 lines — 3 Speculation models)
+  - `backend/main.py` (modified: +6 lines — register speculation router)
+  - `tests/test_pricing.py` (modified: +120 lines — 22 new tests in 2 classes)
+  - `tests/test_speculation.py` (NEW, ~580 lines, 43 tests)
+  - `src/app/api/flipper/speculation/route.ts` (NEW, ~45 lines)
+  - `src/components/dashboard/speculation-tab.tsx` (NEW, ~490 lines)
+  - `src/components/dashboard/dashboard-page.tsx` (modified: +12 lines — lazy-load + TabsContent + TAB_MAP)
+  - `src/components/dashboard/dashboard-toolbar.tsx` (modified: +6 lines — Sparkles icon + tab trigger)
+  - `src/lib/types.ts` (modified: +60 lines — 5 new Speculation types)
+  - `src/lib/i18n/locales/en.ts` (modified: +30 lines — 28 speculation keys + fallbackSpeculation)
+  - `src/lib/i18n/locales/ru.ts` (modified: +30 lines)
+  - `src/lib/i18n/locales/zh.ts` (modified: +30 lines)
+  - `src/lib/i18n/locales/ko.ts` (modified: +30 lines)
+  - `src/__tests__/speculation-tab.test.tsx` (NEW, ~340 lines, 18 tests)
+  - `next-env.d.ts` (NEW — Next.js auto-generated TypeScript reference file, normally created by `next dev`/`next build`; created manually here because the dev environment didn't have one yet. NOT a code change — this file is in `.gitignore` for many Next.js projects but is checked-in here per the existing repo state.)
+  - `STATUS.md` (updated — F5 marked Done + 3 Quick Reference entries)
+  - `PRODUCT_VISION.md` (updated — F5 marked Done + §4 architecture table + §6 DoD point 4)
+  - `AGENT_NAVIGATION.md` (updated — iter 77 wiring + invariant #31 + 3 Quick Reference entries + 2 API rows)
+  - `worklog.md` (this record)
+
+Next iteration (iter 78) — recommended priorities:
+1. **F6** — Phase-aware hints (Temporalis mid/late league, skill gems 18-20 lvl). Uses `PhaseDetector` from `backend/economy/lifecycle.py`. Could be a small widget below the Content Pulse widget on the Overview tab, or a banner inside the Speculation tab that highlights phase-relevant items (e.g. when phase=LATE, surface Temporalis-like items in the BUY list). Smallest viable scope: a static info banner that shows current phase + a bulleted list of phase-aware farming hints from a hardcoded table in `backend/economy/lifecycle.py` or a new `backend/economy/phase_hints.py` module.
+2. **F1** — Still blocked on live API access. When available: write `scripts/sync_currency_names_from_poe2db.py` to enumerate all 625 POE2Scout api_ids + fetch RU names from poe2db.tw/ru/ for the ~276 missing. Update `currency_names.json` + bump assertion counts in `tests/test_currency_names_ru.py`.
+3. **F5 backtest** — PRODUCT_VISION §3.2 mentions backtesting z-score signals on previous-league data to measure profitability. Could be a separate `/api/v1/speculation/backtest` endpoint or a CLI script. Not blocking — F5 ship is already useful without it.
+4. **Full Content Pulse tab** — The F4 widget is the 1-glance MVP per §3.6. A full tab (all categories, sortable, filterable, with per-category drill-down) could be added if the widget proves useful.
+5. **Optional tech debt** — `useDashboardData` hook extraction (~250 lines of useQuery/memo wiring from `dashboard-page.tsx`). Staged approach: (1) flipperBackend queries, (2) realms/leagues queries, (3) derived memos. Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+
+NOT done in iter 77 (intentionally deferred):
+- F1 (blocked on live API access)
+- F6 (next logical step — uses PhaseDetector)
+- F5 backtest (optional, deferred)
+- Full Content Pulse tab (the F4 widget is the MVP; full tab deferred until product feedback)
+- e2e tests not run (frontend changes are unit-tested via jest; e2e would require a running backend + browser)
+- useDashboardData hook extraction (optional, deferred)
+- Visual verification with real backend data (jest tests use mocked data; visual polish — colors, spacing, responsive layout on narrow screens — needs manual review against real /api/v1/speculation response)

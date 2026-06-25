@@ -85,6 +85,13 @@ const StorageValueTab = dynamic(
   { loading: TabSkeleton },
 );
 
+// F5 (iter 77): Speculation tab — lazy-loaded. Wraps the new
+// /api/v1/speculation endpoint with a BUY/SELL/HOLD list driven by z-score.
+const SpeculationTab = dynamic(
+  () => import("@/components/dashboard/speculation-tab").then((m) => ({ default: m.SpeculationTab })),
+  { loading: TabSkeleton },
+);
+
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
@@ -764,7 +771,9 @@ export function Dashboard() {
   // Tab index mapping for shortcuts 1–9 (matching visible tab order)
   // "forecast" and "portfolio" removed from TAB_MAP
   // "storage-value" added iter 74 (F2).
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "storage-value", "liquid-chain", "graph", "watchlist"];
+  // "speculation" added iter 77 (F5) — placed after storage-value so the
+  // analytics-cluster (storage-value → speculation) sits together.
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "storage-value", "speculation", "liquid-chain", "graph", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -1153,6 +1162,13 @@ export function Dashboard() {
             <TabsContent value="storage-value">
               <ErrorBoundary fallbackTitle={t("fallbackStorageValue")}>
                 <StorageValueTab backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ SPECULATION TAB (F5, iter 77) ============ */}
+            <TabsContent value="speculation">
+              <ErrorBoundary fallbackTitle={t("fallbackSpeculation")}>
+                <SpeculationTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
