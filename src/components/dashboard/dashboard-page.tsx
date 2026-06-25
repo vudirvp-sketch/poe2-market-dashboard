@@ -101,6 +101,9 @@ import {
   exportToJson,
 } from "@/lib/types";
 import { useExchangePairs, useReferenceCurrencies } from "@/hooks/use-exchange-pairs";
+// iter 81 (useDashboardData Stage 1): flipper backend health/phase/events
+// queries extracted into a dedicated hook to keep dashboard-page.tsx lean.
+import { useFlipperBackend } from "@/hooks/use-flipper-backend";
 import { useCrossRates } from "@/hooks/use-cross-rates";
 import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
 import { useUniqueItems } from "@/hooks/use-unique-items";
@@ -114,9 +117,6 @@ import type {
   PoeItem,
   ExchangePair,
   ReferenceCurrency,
-  FlipperHealthResponse,
-  FlipperPhaseResponse,
-  FlipperEventsSummary,
   OptimalPaymentResult,
   OptimalCurrencyResponse,
   CrossRateFlip,
@@ -238,56 +238,21 @@ export function Dashboard() {
   const { t, tp } = useI18n();
 
   // ============================================================================
-  // Flipper backend health check (dashboard-level, shared across components)
+  // Flipper backend health / phase / events (dashboard-level, shared)
   // ============================================================================
-  const { data: flipperHealthData, isError: flipperHealthError, isPending: flipperHealthPending } = useQuery<FlipperHealthResponse>({
-    queryKey: [QUERY_KEYS.flipperHealth],
-    queryFn: () => fetchApi<FlipperHealthResponse>("/api/flipper/health"),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: 2, // P1-2: retry health checks (was retry: false)
-    retryDelay: 3000, // P1-2: 3s between retries
-  });
-
-  // Backend is "online" when it responds with "ok" OR "degraded".
-  // "degraded" means the backend is running but upstream API (poe2scout.com)
-  // is unreachable — the backend can still serve cached/stale data.
-  // Only truly "offline" when we can't reach the backend at all (ECONNREFUSED).
-  const flipperBackendOnline =
-    !flipperHealthError &&
-    (flipperHealthData?.status === "ok" || flipperHealthData?.status === "degraded");
-
-  // Additional flag: is upstream API reachable? (for degraded status card)
-  const flipperUpstreamReachable = flipperHealthData?.provider === "reachable";
-
-  // ============================================================================
-  // Flipper phase info (for header phase badge)
-  // ============================================================================
-  const { data: flipperPhaseData } = useQuery<FlipperPhaseResponse>({
-    queryKey: [QUERY_KEYS.flipperPhase],
-    queryFn: () => fetchApi<FlipperPhaseResponse>("/api/flipper/phase"),
-    enabled: flipperBackendOnline,
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    retry: 1,
-  });
+  // iter 81 (useDashboardData Stage 1): extracted into useFlipperBackend()
+  // to keep dashboard-page.tsx focused on parent wiring. The hook returns
+  // flipperBackendOnline, flipperUpstreamReachable, flipperPhaseData, and
+  // activeEventsCount — exactly what this component consumes below.
+  const {
+    flipperBackendOnline,
+    flipperUpstreamReachable,
+    flipperPhaseData,
+    activeEventsCount,
+  } = useFlipperBackend();
 
   // Portfolio data query removed — the Portfolio tab used a mock correlation matrix.
   // FlipperStickyBar now defaults to correlationWarning=false.
-
-  // ============================================================================
-  // Flipper events count (for header events button indicator)
-  // ============================================================================
-  const { data: flipperEventsData } = useQuery<FlipperEventsSummary>({
-    queryKey: [QUERY_KEYS.flipperEventsCount],
-    queryFn: () => fetchApi<FlipperEventsSummary>("/api/flipper/events", { active_only: "true" }),
-    enabled: flipperBackendOnline,
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    retry: 1,
-  });
-
-  const activeEventsCount = flipperEventsData?.total ?? 0;
 
   // ============================================================================
   // Phase 3.2: SSE price stream — real-time price change notifications

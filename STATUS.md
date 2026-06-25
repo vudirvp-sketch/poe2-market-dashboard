@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-25 (iter 80 — F5 backtest frontend UI shipped)
+> **Last updated:** 2026-06-25 (iter 81 — useDashboardData Stage 1: `useFlipperBackend` hook extracted)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -12,7 +12,7 @@ All P0/P1/P2/P3/P4 issues closed in iter 54–73. See `git log` for older histor
 
 The single remaining **optional** technical follow-up:
 
-> **`useDashboardData` hook extraction** (deferred from P2-1). `dashboard-page.tsx` is 1217 lines (was 1685 in iter 70). ~250 lines of `useQuery`/memo wiring could move into a hook. Approach in stages: (1) flipperBackend queries, (2) realms/leagues queries, (3) derived memos. Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+> **`useDashboardData` hook extraction** (deferred from P2-1, staged approach). `dashboard-page.tsx` is 1197 lines (was 1232 in iter 80, was 1685 in iter 70). Stage 1 shipped iter 81: flipper backend health/phase/events queries extracted into `src/hooks/use-flipper-backend.ts`. Remaining stages: (2) realms/leagues queries, (3) derived memos (exchangePairs filter, optimalPayment merge, currencyCategories). Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
 
 ---
 
@@ -55,3 +55,4 @@ The single remaining **optional** technical follow-up:
 | Speculation backtest `trades` list is shorter than `overall_stats.count` | The `limit` query param caps the per-trade list (default 50, max 500), but `*_stats` blocks are computed over ALL trades. If you need the full list, raise `limit`. | `backend/economy/speculation_backtest.py:backtest_speculation_signals` |
 | Speculation tab shows no "Run backtest" button | The Backtest panel is collapsed by default — it only renders the toggle button after the live signals list loads successfully. If the parent tab is in `offline` / `loading` / `error` / `no-data` state, the panel is not rendered at all. | `src/components/dashboard/speculation-tab.tsx:BacktestPanel` |
 | Backtest panel "Run backtest" click does nothing | The query is gated on `enabled: showBacktest && backendOnline`. If the parent received `backendOnline=false`, the toggle expands the panel UI but `useQuery` never fires. Check the dashboard-level backend health check. | `src/components/dashboard/speculation-tab.tsx:BacktestPanel` |
+| Need to inspect dashboard-level backend status | `useFlipperBackend()` (iter 81) is the single source of truth for `flipperBackendOnline`, `flipperUpstreamReachable`, `flipperPhaseData`, `activeEventsCount`. Inline `useQuery` for these endpoints is forbidden — use the hook. | `src/hooks/use-flipper-backend.ts` |
