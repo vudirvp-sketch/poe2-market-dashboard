@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-26 (iter 85 — F1 sync script `scripts/sync_currency_names_from_poe2db.py` shipped; awaiting maintainer to run --fetch-ids + --fetch-ru against live APIs)
+> Last updated: 2026-06-26 (iter 86 — F1 CLOSED: live sync run completed, `against-the-darkness` EN-name conflict resolved inline by aligning to poe2scout's canonical full name)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -146,11 +146,10 @@ Abyss, Incursion) показывать:
   - `src/components/dashboard/storage-value-history-chart.tsx` — dependency-free SVG chart (~290 lines), 11 jest tests.
   - 24 pytest tests в `tests/test_storage_value_history.py`.
 
-### F1. Доперевод оставшихся ~276 предметов — SCRIPT SHIPPED (iter 85), AWAITING MAINTAINER RUN
-- Парсинг `poe2db.tw/ru/` по категориям (runes, lineage support gems, uncategorized fragments).
+### F1. Доперевод оставшихся ~276 предметов — ✅ DONE (iter 85 script + iter 86 live run + conflict resolved)
 - Скрипт `scripts/sync_currency_names_from_poe2db.py` (iter 85) — одноразовый/периодический импорт в `currency_names.json`. 4-stage pipeline: `--fetch-ids` → `--fetch-ru` → `--diff` → `--apply --confirm`. Fallback `--from-cache-snapshot` для мейнтейнеров без live poe2scout доступа. 32 pytest tests в `tests/test_sync_currency_names.py`.
-- Запуск регрессионных тестов из `tests/test_currency_names_ru.py`.
-- **Статус iter 85:** Скрипт полностью готов и протестирован локально (32 теста pass, существующие 763 pytest pass). Ждёт, когда мейнтейнер с live-доступом к `poe2scout.com` + `poe2db.tw/ru/` (non-RU IP) запустит stages 1+2, ревьюнет патч, и запустит `--apply --confirm`. После apply нужно bump count assertions в `tests/test_currency_names_ru.py` (lines 30-33). Сам скрипт больше не blocked — blocked только запуск pipeline с live API access.
+- **Статус iter 86 (F1 CLOSED):** Мейнтейнер запустил pipeline с non-RU IP. Результаты: 639 items enumerated из poe2scout, 186 EN→RU pairs scraped из poe2db.tw (8 из 17 категорий вернули данные; остальные либо 0 пар, либо 404), 297 уже переведены, **0 новых** (poe2db.tw не имеет страниц для отсутствующих items), 1 conflict, 342 no-match. **Конфликт `against-the-darkness` разрешён inline:** EN-имя в JSON было коротким ("Against the Darkness"), а RU-имя — полным ("Ключ от Реликвария Зарока: Противление тьме"). EN выровнено на каноническое полное имя "Zarokh's Reliquary Key: Against the Darkness" (совпадает с соседней записью `temporalis`). Counts unchanged: ru=349, en=349. `pytest tests/test_currency_names_ru.py` 7/7 pass. 342 no-match остаются непереведёнными — poe2db.tw просто не имеет для них страниц. Скрипт можно повторно запустить в будущем, чтобы подхватить новые переводы, которые poe2db добавит.
+- Запуск регрессионных тестов из `tests/test_currency_names_ru.py` — проходят 7/7.
 
 ### F3. Module `content_pulse` — оборот механик — ✅ DONE iter 75
 - Ежедневный снапшот оборота (sum of trades) по category. ✅ `today_volume` = sum of `CurrentQuantity` всех предметов категории.
@@ -242,7 +241,7 @@ Abyss, Incursion) показывать:
 4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 live tab готов; iter 79 — F5 backtest backend готов; iter 80 — F5 backtest UI готов, toggle-driven panel под списком сигналов)**
 5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.). **(iter 78 — F6 Phase-aware hints widget готов, wired в Overview tab)**
 
-**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 sync script shipped iter 85 — awaiting maintainer to run --fetch-ids + --fetch-ru against live APIs; полная Content Pulse tab; config-driven phase hints — useDashboardData hook extraction COMPLETE: Stage 1 в iter 81, Stage 2 в iter 82, Stage 3a в iter 83, Stage 3b в iter 84; `dashboard-page.tsx` теперь 995 строк, было 1685 в iter 70) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
+**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 sync script shipped iter 85 + live-run verified iter 86 — F1 CLOSED; полная Content Pulse tab; config-driven phase hints — useDashboardData hook extraction COMPLETE: Stage 1 в iter 81, Stage 2 в iter 82, Stage 3a в iter 83, Stage 3b в iter 84; `dashboard-page.tsx` теперь 995 строк, было 1685 в iter 70) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
 
 ---
 

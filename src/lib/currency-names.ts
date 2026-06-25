@@ -617,7 +617,7 @@ const CURRENCY_NAMES_EN: Record<string, string> = {
   "ritualistic-reliquary-key": "Ritualistic Reliquary Key",
   "olroths-reliquary-key": "Olroth\'s Reliquary Key",
   "the-trialmasters-reliquary-key": "The Trialmaster\'s Reliquary Key",
-  "against-the-darkness": "Against the Darkness",
+  "against-the-darkness": "Zarokh\'s Reliquary Key: Against the Darkness",
   "tangmazus-reliquary-key": "Tangmazu\'s Reliquary Key",
   "temporalis": "Zarokh\'s Reliquary Key: Temporalis",
   "uul-netols-embrace": "Uul-Netol\'s Embrace",
