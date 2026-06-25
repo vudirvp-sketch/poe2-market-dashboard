@@ -104,6 +104,10 @@ import { useExchangePairs, useReferenceCurrencies } from "@/hooks/use-exchange-p
 // iter 81 (useDashboardData Stage 1): flipper backend health/phase/events
 // queries extracted into a dedicated hook to keep dashboard-page.tsx lean.
 import { useFlipperBackend } from "@/hooks/use-flipper-backend";
+// iter 82 (useDashboardData Stage 2): realm/league selection + realms/leagues
+// queries extracted into a dedicated hook. The hook owns the realm+league
+// state so the auto-select useEffect can fire when leagues arrive.
+import { useRealmsAndLeagues } from "@/hooks/use-realms-and-leagues";
 import { useCrossRates } from "@/hooks/use-cross-rates";
 import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
 import { useUniqueItems } from "@/hooks/use-unique-items";
@@ -111,9 +115,9 @@ import { usePrefetch } from "@/hooks/use-prefetch";
 import { useInitialBatch } from "@/hooks/use-batch-query";
 import { usePriceStream } from "@/hooks/use-price-stream";
 import { QUERY_KEYS } from "@/components/providers";
+// iter 82: Realm + League type imports removed — they are now consumed
+// inside useRealmsAndLeagues() (see src/hooks/use-realms-and-leagues.ts).
 import type {
-  Realm,
-  League,
   PoeItem,
   ExchangePair,
   ReferenceCurrency,
@@ -141,9 +145,19 @@ const CURRENCY_VIRTUAL_THRESHOLD = 30;
 // ============================================================================
 export function Dashboard() {
   // --- Selection state ---
-  // Default realm is "poe2" to match API URL path segment
-  const [realm, setRealm] = useState("poe2");
-  const [league, setLeagueLocal] = useState("");
+  // iter 82: realm + league state + realms/leagues queries + effectiveLeague
+  // + auto-select useEffect extracted into useRealmsAndLeagues().
+  const {
+    realm,
+    setRealm,
+    league,
+    setLeague,
+    realms,
+    realmsLoading,
+    leagues,
+    leaguesLoading,
+    effectiveLeague,
+  } = useRealmsAndLeagues();
   const [tab, setTabLocal] = useState("overview");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -198,7 +212,6 @@ export function Dashboard() {
     alerts,
     uiState,
     setActiveTab,
-    setLeague: persistLeague,
     setExchangeViewMode,
     setExchangeFilter,
     setExchangeExtendedFilters,
@@ -207,6 +220,8 @@ export function Dashboard() {
     setBaseCurrency,
     _hydrated: storeHydrated,
   } = useDashboardStore();
+  // NOTE: `persistLeague` (formerly `setLeague: persistLeague`) is now consumed
+  // inside useRealmsAndLeagues() — see src/hooks/use-realms-and-leagues.ts.
 
   // SSR/hydration safety: baseCurrencyApiId may differ between server and client.
   // With ssr: false this is already mitigated, but we add an explicit guard:
@@ -267,34 +282,9 @@ export function Dashboard() {
     invalidationThresholdPct: 1.0, // Invalidate caches on ≥1% price changes
   });
 
-  // --- Data queries ---
-  const { data: realms, isLoading: realmsLoading } = useQuery({
-    queryKey: [QUERY_KEYS.realms],
-    queryFn: () => fetchApi<Realm[]>("/api/poe2/realms"),
-  });
-
-  const { data: leagues, isLoading: leaguesLoading } = useQuery({
-    queryKey: [QUERY_KEYS.leagues, realm],
-    queryFn: () => {
-      // Fix 5.4: Pass defaultLeagueValue from realms data to avoid
-      // a redundant /Realms request inside getLeagues()
-      const defaultLeague = realms?.find(
-        (r) => r.name === realm || (realm === "poe2" && r.name === "poe2")
-      )?.defaultLeague;
-      return fetchApi<League[]>("/api/poe2/leagues", {
-        realm,
-        ...(defaultLeague ? { defaultLeagueValue: defaultLeague } : {}),
-      });
-    },
-    enabled: !!realm,
-  });
-
-  // Compute the effective league: user selection > active league > first league
-  const effectiveLeague = useMemo(() => {
-    if (league && leagues?.some((l) => l.name === league)) return league;
-    const active = leagues?.find((l) => l.active);
-    return active?.name || leagues?.[0]?.name || "";
-  }, [league, leagues]);
+  // --- Realms / leagues queries + effectiveLeague + auto-select useEffect
+  // moved to useRealmsAndLeagues() in iter 82 (Stage 2 of useDashboardData
+  // hook extraction). See src/hooks/use-realms-and-leagues.ts.
 
   // Sync tab with persisted state on mount (or when store hydrates)
   // FIX: Added `tab` to deps — without it the closure captured the initial
@@ -312,25 +302,9 @@ export function Dashboard() {
     setActiveTab(newTab);
   };
 
-  // Wrapper for league changes that also persists
-  const setLeague = (newLeague: string) => {
-    setLeagueLocal(newLeague);
-    persistLeague(newLeague);
-  };
-
-  // FIX: Auto-select the first league when leagues load and no league is
-  // explicitly selected.  Without this the Radix Select stays empty because
-  // `value=""` is invalid, and the "Select a realm and league" placeholder
-  // never goes away even though effectiveLeague resolves to a name.
-  useEffect(() => {
-    if (!league && leagues && leagues.length > 0) {
-      const autoLeague =
-        leagues.find((l) => l.active)?.name || leagues[0].name;
-      if (autoLeague) {
-        setLeague(autoLeague);
-      }
-    }
-  }, [league, leagues]);
+  // Wrapper for league changes moved to useRealmsAndLeagues() in iter 82.
+  // The hook also owns the auto-select useEffect that fires when `leagues`
+  // first arrives (was inline in dashboard-page.tsx before iter 82).
 
   // Phase 1.3: Prefetch core queries on league/realm change — eliminates
   // the "flash of loading" when switching leagues because React Query
@@ -902,10 +876,8 @@ export function Dashboard() {
         league={league}
         effectiveLeague={effectiveLeague}
         search={search}
-        onRealmChange={(v) => {
-          setRealm(v);
-          setLeague("");
-        }}
+        // iter 82: setRealm already clears the league inside the hook.
+        onRealmChange={setRealm}
         onLeagueChange={setLeague}
         onSearchChange={setSearch}
         onRefresh={handleRefresh}

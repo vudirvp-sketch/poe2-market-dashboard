@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 81 — useDashboardData Stage 1: `useFlipperBackend` hook extracted)
+> Last updated: 2026-06-26 (iter 82 — useDashboardData Stage 2: `useRealmsAndLeagues` hook extracted)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -242,7 +242,7 @@ Abyss, Incursion) показывать:
 4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 live tab готов; iter 79 — F5 backtest backend готов; iter 80 — F5 backtest UI готов, toggle-driven panel под списком сигналов)**
 5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.). **(iter 78 — F6 Phase-aware hints widget готов, wired в Overview tab)**
 
-**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 live translations, полная Content Pulse tab, config-driven phase hints, useDashboardData hook extraction — Stage 1 выполнен в iter 81, осталось 2 stage) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
+**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 live translations, полная Content Pulse tab, config-driven phase hints, useDashboardData hook extraction — Stage 1 выполнен в iter 81, Stage 2 выполнен в iter 82, остался 1 stage) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
 
 ---
 

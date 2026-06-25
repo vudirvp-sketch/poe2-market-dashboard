@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-25 (iter 81 — useDashboardData Stage 1: `useFlipperBackend` hook extracted)
+> **Last updated:** 2026-06-26 (iter 82 — useDashboardData Stage 2: `useRealmsAndLeagues` hook extracted)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -12,7 +12,7 @@ All P0/P1/P2/P3/P4 issues closed in iter 54–73. See `git log` for older histor
 
 The single remaining **optional** technical follow-up:
 
-> **`useDashboardData` hook extraction** (deferred from P2-1, staged approach). `dashboard-page.tsx` is 1197 lines (was 1232 in iter 80, was 1685 in iter 70). Stage 1 shipped iter 81: flipper backend health/phase/events queries extracted into `src/hooks/use-flipper-backend.ts`. Remaining stages: (2) realms/leagues queries, (3) derived memos (exchangePairs filter, optimalPayment merge, currencyCategories). Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+> **`useDashboardData` hook extraction** (deferred from P2-1, staged approach). `dashboard-page.tsx` is 1169 lines (was 1197 in iter 81, was 1232 in iter 80, was 1685 in iter 70). Stage 1 shipped iter 81: flipper backend health/phase/events queries extracted into `src/hooks/use-flipper-backend.ts`. Stage 2 shipped iter 82: realm/league selection + realms/leagues queries + `effectiveLeague` memo + auto-select useEffect extracted into `src/hooks/use-realms-and-leagues.ts`. Remaining: (3) derived memos (exchangePairs filter, optimalPayment merge, optimalPaymentByDisplayName, currencyCategories, uniqueCategoriesList). Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
 
 ---
 
@@ -56,3 +56,4 @@ The single remaining **optional** technical follow-up:
 | Speculation tab shows no "Run backtest" button | The Backtest panel is collapsed by default — it only renders the toggle button after the live signals list loads successfully. If the parent tab is in `offline` / `loading` / `error` / `no-data` state, the panel is not rendered at all. | `src/components/dashboard/speculation-tab.tsx:BacktestPanel` |
 | Backtest panel "Run backtest" click does nothing | The query is gated on `enabled: showBacktest && backendOnline`. If the parent received `backendOnline=false`, the toggle expands the panel UI but `useQuery` never fires. Check the dashboard-level backend health check. | `src/components/dashboard/speculation-tab.tsx:BacktestPanel` |
 | Need to inspect dashboard-level backend status | `useFlipperBackend()` (iter 81) is the single source of truth for `flipperBackendOnline`, `flipperUpstreamReachable`, `flipperPhaseData`, `activeEventsCount`. Inline `useQuery` for these endpoints is forbidden — use the hook. | `src/hooks/use-flipper-backend.ts` |
+| Need realm/league data or selection in a new component | `useRealmsAndLeagues()` (iter 82) is the single source of truth for `realm`, `league`, `effectiveLeague`, `realms`, `leagues`, and the `setRealm`/`setLeague` wrappers. Inline `useQuery` for `/api/poe2/realms` or `/api/poe2/leagues` is forbidden — use the hook. The hook also owns the auto-select useEffect (auto-pick first active league when none selected). | `src/hooks/use-realms-and-leagues.ts` |
