@@ -199,6 +199,143 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
 
 
 # ---------------------------------------------------------------------------
+# Russian parallel table (iter 87 — i18n leakage fix).
+# Same `id`/`category` keys so the frontend can swap tables by locale without
+# losing the stable slugs used for tests + future metric linkage.
+# ---------------------------------------------------------------------------
+
+_PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
+    LeaguePhase.EARLY: [
+        {
+            "id": "early-quick-flips",
+            "title": "Быстрые флипы на Хаосе / Благородных",
+            "detail": (
+                "Базовая валюта максимально волатильна в первые 2 недели — "
+                "спреды широкие, арбитражные окна закрываются за часы, не дни."
+            ),
+            "action": "Фокусируйтесь на высокообъёмных парах; время удержания ≤ 2 часа.",
+            "category": "currency",
+        },
+        {
+            "id": "early-skill-gems-low-demand",
+            "title": "Камни умений 1-17 ур. — низкий спрос",
+            "detail": (
+                "Игроки ещё прокачиваются; спрос на эндгейм-камни ещё не вырос. "
+                "Цены на камни 18-20 ур. поднимутся в MID-фазе."
+            ),
+            "action": "Скупайте камни 18-20 ур., если нашли дёшево.",
+            "category": "uncutgems",
+        },
+        {
+            "id": "early-vault-keys-cheap",
+            "title": "Ключи реликвария дешёвые",
+            "detail": (
+                "Большинство игроков ещё не дошли до эндгейм-контента — ключей "
+                "много и они недооценены. Цены обычно растут в MID, падают в LATE."
+            ),
+            "action": "Покупайте ключи для личного использования; не копите на перепродажу.",
+            "category": "vaultkeys",
+        },
+        {
+            "id": "early-temporalis-floor",
+            "title": "Temporalis у ценового дна",
+            "detail": (
+                "Цены на Temporalis (чейс-уник) обычно на минимуме в первые "
+                "2 недели, пока ранние находчики демпингуют друг друга."
+            ),
+            "action": "Если есть ликвидная валюта — следите за листами ниже 200с.",
+            "category": "",
+        },
+    ],
+    LeaguePhase.MID: [
+        {
+            "id": "mid-skill-gems-18-20",
+            "title": "Камни умений 18-20 ур. — спрос растёт",
+            "detail": (
+                "Билды стабилизируются, игроки занимаются мин-максом — спрос "
+                "на высокоуровневые камни обычно пиковый в MID-фазе."
+            ),
+            "action": "Выставляйте камни 18-20 ур. по рынку; проверьте z-score во вкладке Спекуляции.",
+            "category": "uncutgems",
+        },
+        {
+            "id": "mid-temporalis-rising",
+            "title": "Цена Temporalis растёт",
+            "detail": (
+                "Первая волна целенаправленных фармилок доходит до эндгейма — "
+                "цена Temporalis обычно растёт через MID-фазу по мере ужесточения предложения."
+            ),
+            "action": "Держите Temporalis если он у вас есть; пока не продавайте на слабости.",
+            "category": "",
+        },
+        {
+            "id": "mid-triangular-arb",
+            "title": "Окно треугольного арбитража",
+            "detail": (
+                "В середине лиги самая глубокая ликвидность по всем тирам валют — "
+                "спреды достаточно узкие, чтобы треугольный арбитраж был прибыльным после комиссий."
+            ),
+            "action": "Проверьте вкладку Арбитраж → Треугольный для 3-хоп циклов.",
+            "category": "currency",
+        },
+        {
+            "id": "mid-breach-ritual-equilibrium",
+            "title": "Катализаторы Разлома / Ритуала в равновесии",
+            "detail": (
+                "Популярность механик сбалансирована — ни катализаторы Разлома, "
+                "ни Ритуала не в дефиците. Цены следуют за общей инфляцией."
+            ),
+            "action": "Следите за Content Pulse для первого признака расхождения объёмов.",
+            "category": "breach",
+        },
+    ],
+    LeaguePhase.LATE: [
+        {
+            "id": "late-temporalis-peak",
+            "title": "Temporalis у пика — продавайте на силе",
+            "detail": (
+                "Конец лиги — когда цена Temporalis обычно достигает пика, "
+                "т.к. выходят коллекционеры. Продавайте, если держали."
+            ),
+            "action": "Выставляйте Temporalis по рынку или чуть выше; не держите до следующей лиги.",
+            "category": "",
+        },
+        {
+            "id": "late-catalyst-scarcity",
+            "title": "Катализаторы Ритуала / Разлома могут быть в дефиците",
+            "detail": (
+                "Если Content Pulse показывает падение объёмов в Ритуале / Разломе, "
+                "катализаторы (Ксофа, Omni Rune и т.д.) вероятно в дефиците — "
+                "цены растут по мере сокращения предложения."
+            ),
+            "action": "Проверьте Content Pulse + Спекуляции для SELL-сигналов по катализаторам.",
+            "category": "breach",
+        },
+        {
+            "id": "late-vault-keys-saturated",
+            "title": "Ключи реликвария — рынок насыщен",
+            "detail": (
+                "К концу лиги большинство игроков уже открыли ключи; рынок "
+                "затоварен и цены обычно сползают к вендинговому минимуму."
+            ),
+            "action": "Не копите ключи на перепродажу. Используйте или конвертируйте сейчас.",
+            "category": "vaultkeys",
+        },
+        {
+            "id": "late-portfolio-hold",
+            "title": "Удержание портфеля (parity рисков)",
+            "detail": (
+                "Спреды на быстрые флипы в конце лиги сужаются до убыточности. "
+                "Переходите к удержанию портфеля: храните ценность в Divine / Mirror / Hinekora."
+            ),
+            "action": "Используйте вкладку Ценность хранения для выбора лучшей валюты.",
+            "category": "",
+        },
+    ],
+}
+
+
+# ---------------------------------------------------------------------------
 # Phase metadata — for the banner header
 # ---------------------------------------------------------------------------
 
@@ -226,6 +363,31 @@ _PHASE_META: dict[LeaguePhase, dict[str, str]] = {
     },
 }
 
+# Russian parallel metadata (iter 87).
+_PHASE_META_RU: dict[LeaguePhase, dict[str, str]] = {
+    LeaguePhase.EARLY: {
+        "label": "Ранняя лига",
+        "summary": (
+            "Первые 2 недели с момента старта лиги или крупного патча. "
+            "Высокая волатильность, широкие спреды, много возможностей для быстрых флипов."
+        ),
+    },
+    LeaguePhase.MID: {
+        "label": "Середина лиги",
+        "summary": (
+            "Недели 3-6. Ликвидность углубляется, спреды сужаются. Лучшее окно "
+            "для треугольного арбитража и накопления высокоуровневых камней умений."
+        ),
+    },
+    LeaguePhase.LATE: {
+        "label": "Конец лиги",
+        "summary": (
+            "Неделя 7+. Спреды сужаются, быстрые флипы становятся убыточными. "
+            "Переходите к удержанию портфеля и следите за сигналами на продажу чейс-уников."
+        ),
+    },
+}
+
 
 # ---------------------------------------------------------------------------
 # Main entry point
@@ -238,6 +400,7 @@ def get_phase_hints(
     reference_currency: str = "",
     league_name: str = "",
     now: datetime | None = None,
+    lang: str = "en",
 ) -> dict[str, Any]:
     """Build the phase-aware hints response.
 
@@ -248,6 +411,10 @@ def get_phase_hints(
             for EARLY, "divine" for MID/LATE). Empty string if unknown.
         league_name: League name from config (for display only).
         now: Optional override for "today" (for tests). Defaults to UTC now.
+        lang: Locale code — "ru" returns the parallel Russian hint table
+            (iter 87), anything else returns the default English table.
+            The hint `id` / `category` slugs are identical across locales,
+            so the frontend can safely switch tables by locale.
 
     Returns:
         Dict with shape:
@@ -273,11 +440,16 @@ def get_phase_hints(
             }
     """
     today = now or datetime.now(timezone.utc)
-    meta = _PHASE_META.get(phase, {
-        "label": "Unknown Phase",
-        "summary": "League phase could not be determined.",
-    })
-    hints = list(_PHASE_HINTS.get(phase, []))
+    if lang == "ru":
+        hints_table = _PHASE_HINTS_RU
+        meta_table = _PHASE_META_RU
+        fallback_meta = {"label": "Неизвестная фаза", "summary": "Фаза лиги не определена."}
+    else:
+        hints_table = _PHASE_HINTS
+        meta_table = _PHASE_META
+        fallback_meta = {"label": "Unknown Phase", "summary": "League phase could not be determined."}
+    meta = meta_table.get(phase, fallback_meta)
+    hints = list(hints_table.get(phase, []))
 
     return {
         "league": league_name,

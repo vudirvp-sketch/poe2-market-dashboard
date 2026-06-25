@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi, exportToCsv, exportToJson } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
 import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
+import { getCurrencyDisplayName } from "@/lib/currency-names";
 import { useState, useMemo } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { MarketOverviewSkeleton } from "./skeletons";
@@ -73,7 +74,7 @@ const PIE_COLORS = [
 ];
 
 export function MarketOverview({ realm, league, onItemClick, backendOnline }: MarketOverviewProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [topTimeframe, setTopTimeframe] = useState<"24h" | "7d">("24h");
   const [trendTimeframe, setTrendTimeframe] = useState<"24h" | "7d">("7d");
   const reducedMotion = useReducedMotion();
@@ -129,6 +130,18 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
     // Ensure minimum range of ±5% so small movements are still visible
     const range = Math.max(p95Value, 5);
     return { min: -range, max: range };
+  }, [heatmapData]);
+
+  // iter 87: Sort heatmap by absolute % change descending so the most volatile
+  // currencies appear first (previously the heatmap rendered in dict-insertion
+  // order, which the user described as "хаотично"). Cap at 30 tiles so the
+  // grid stays scannable.
+  const sortedHeatmap = useMemo(() => {
+    if (!heatmapData || heatmapData.length === 0) return [];
+    return [...heatmapData]
+      .filter((item) => item.change24h != null && isFinite(item.change24h))
+      .sort((a, b) => Math.abs(b.change24h) - Math.abs(a.change24h))
+      .slice(0, 30);
   }, [heatmapData]);
 
   // Top movers from overview response
@@ -194,18 +207,18 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
   const topMoversBarData = useMemo(() => {
     const movers = [
       ...topGainers.slice(0, 5).map((i) => ({
-        name: i.name,
+        name: getCurrencyDisplayName(i.apiId || i.id, locale) || i.name,
         change: topTimeframe === "24h" ? (i.changePercent ?? 0) : (i.sevenDayPriceChangePercent ?? 0),
         type: "gainer" as const,
       })),
       ...topLosers.slice(0, 5).map((i) => ({
-        name: i.name,
+        name: getCurrencyDisplayName(i.apiId || i.id, locale) || i.name,
         change: topTimeframe === "24h" ? (i.changePercent ?? 0) : (i.sevenDayPriceChangePercent ?? 0),
         type: "loser" as const,
       })),
     ];
     return movers.sort((a, b) => b.change - a.change);
-  }, [topGainers, topLosers, topTimeframe]);
+  }, [topGainers, topLosers, topTimeframe, locale]);
 
   if (isLoading) {
     return <MarketOverviewSkeleton />;
@@ -376,20 +389,23 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
       )}
 
       {/* Price Heatmap — now works even when flipper backend is offline */}
-      {heatmapData && heatmapData.length > 0 && (
+      {sortedHeatmap.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{t("overviewHeatmap")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
-              {heatmapData.map((item) => (
+              {sortedHeatmap.map((item) => (
                 <div
                   key={item.currency}
                   className="flex flex-col items-center justify-center rounded px-2 py-1 min-w-[60px]"
                   style={heatmapCellStyle(item.change24h)}
+                  title={`${getCurrencyDisplayName(item.currency, locale) ?? item.currency} (${item.currency})`}
                 >
-                  <span className="text-[10px] font-semibold">{item.currency}</span>
+                  <span className="text-[10px] font-semibold">
+                    {getCurrencyDisplayName(item.currency, locale) ?? item.currency}
+                  </span>
                   <span
                     className={`text-[10px] font-mono ${
                       item.change24h != null && item.change24h >= 0
@@ -566,7 +582,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                           />
                         ) : null}
                         <span className="text-xs font-medium truncate max-w-[150px]">
-                          {item.name}
+                          {getCurrencyDisplayName(item.apiId || item.id, locale) || item.name}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -616,7 +632,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                           />
                         ) : null}
                         <span className="text-xs font-medium truncate max-w-[150px]">
-                          {item.name}
+                          {getCurrencyDisplayName(item.apiId || item.id, locale) || item.name}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">

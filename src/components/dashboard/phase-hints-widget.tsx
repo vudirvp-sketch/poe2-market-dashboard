@@ -116,16 +116,21 @@ function phaseLabelKey(phase: string): TranslationKeys {
 // ---------------------------------------------------------------------------
 
 export function PhaseHintsWidget({ backendOnline }: PhaseHintsWidgetProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // ---- Query ----
   // 5min staleTime — phase only changes once per day at most (when
   // days_since_reference crosses the early/mid or mid/late boundary).
   // No need to refetch on every dashboard focus. Retry once for transient
   // network blips.
+  //
+  // iter 87: Forward `lang` to the backend so it returns the parallel
+  // Russian hint table for ru locale. The queryKey includes `locale` so
+  // switching language triggers a refetch with the right locale.
+  const lang = locale === "ru" ? "ru" : "en";
   const { data, isLoading, isError, refetch } = useQuery<PhaseHintsResponse>({
-    queryKey: ["phaseHints"],
-    queryFn: () => fetchApi<PhaseHintsResponse>("/api/flipper/phase-hints"),
+    queryKey: ["phaseHints", lang],
+    queryFn: () => fetchApi<PhaseHintsResponse>("/api/flipper/phase-hints", { lang }),
     enabled: backendOnline,
     staleTime: 300_000,
     retry: 1,

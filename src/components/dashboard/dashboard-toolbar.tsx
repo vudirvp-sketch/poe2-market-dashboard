@@ -32,7 +32,6 @@ import {
   BarChart3,
   TrendingUp,
   Route,
-  Network,
   Keyboard,
   Bell,
   GitCompare,
@@ -135,9 +134,6 @@ export function DashboardToolbar(props: DashboardToolbarProps) {
         </TabsTrigger>
         <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
           <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}
-        </TabsTrigger>
-        <TabsTrigger value="graph" className="gap-1.5" aria-label={t("tabGraph")}>
-          <Network className="h-4 w-4" aria-hidden="true" /> {t("tabGraph")}
         </TabsTrigger>
         <TabsTrigger value="watchlist" className="gap-1.5" aria-label={t("tabWatchlist")}>
           <Star className="h-4 w-4" aria-hidden="true" /> {t("tabWatchlist")}

@@ -98,7 +98,10 @@ function eventTypeDisplay(type: string, t: (key: TranslationKeys) => string): { 
   }
 }
 
-function formatExpiry(expiresAt: string | null, t: (key: TranslationKeys) => string): string {
+function formatExpiry(
+  expiresAt: string | null,
+  t: (key: TranslationKeys, params?: Record<string, string | number>) => string,
+): string {
   if (!expiresAt) return t("eventsNever");
   const expiry = new Date(expiresAt);
   const now = new Date();
@@ -108,22 +111,29 @@ function formatExpiry(expiresAt: string | null, t: (key: TranslationKeys) => str
   const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   if (diffHours > 24) {
     const days = Math.floor(diffHours / 24);
-    return `${days}d ${diffHours % 24}h`;
+    return t("eventsDaysHours", { 0: days, 1: diffHours % 24 });
   }
-  if (diffHours > 0) return `${diffHours}h ${diffMins}m`;
-  return `${diffMins}m`;
+  if (diffHours > 0) return t("eventsHoursMinutes", { 0: diffHours, 1: diffMins });
+  return t("eventsMinutes", { 0: diffMins });
 }
 
-/** Format createdAt as a compact date string (e.g. "Jun 13, 14:30"). */
-function formatCreatedAt(createdAt: string): string {
+/**
+ * Format createdAt as a compact date string using the active locale.
+ * iter 87: Replaced the hardcoded English `["Jan", "Feb", ...]` array
+ * with `toLocaleDateString(locale, ...)` + `toLocaleTimeString(locale, ...)`
+ * so the date adapts to the active locale (e.g. "13 июн, 14:30" for ru).
+ */
+function formatCreatedAt(createdAt: string, locale: string): string {
   const d = new Date(createdAt);
   if (isNaN(d.getTime())) return createdAt;
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const month = months[d.getMonth()];
-  const day = d.getDate();
-  const hours = String(d.getHours()).padStart(2, "0");
-  const mins = String(d.getMinutes()).padStart(2, "0");
-  return `${month} ${day}, ${hours}:${mins}`;
+  // Map our 4-letter locale codes to BCP-47 tags accepted by Intl.
+  const bcp47 = locale === "ru" ? "ru-RU"
+    : locale === "zh" ? "zh-CN"
+    : locale === "ko" ? "ko-KR"
+    : "en-US";
+  const datePart = d.toLocaleDateString(bcp47, { month: "short", day: "numeric" });
+  const timePart = d.toLocaleTimeString(bcp47, { hour: "2-digit", minute: "2-digit" });
+  return `${datePart}, ${timePart}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,7 +152,7 @@ interface EventsSidebarProps {
 // ---------------------------------------------------------------------------
 
 export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, backendOnline }: EventsSidebarProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const queryClient = useQueryClient();
 
   // Create event form state
@@ -362,7 +372,7 @@ export const EventsSidebar = memo(function EventsSidebar({ open, onOpenChange, b
                             {event.createdAt && (
                               <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
                                 <Calendar className="h-3 w-3" aria-hidden="true" />
-                                {formatCreatedAt(event.createdAt)}
+                                {formatCreatedAt(event.createdAt, locale)}
                               </span>
                             )}
                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">

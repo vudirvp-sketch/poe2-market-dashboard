@@ -83,7 +83,6 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
             <span><kbd className="font-mono font-semibold">6</kbd> {t("tabFlips")}</span>
             <span><kbd className="font-mono font-semibold">7</kbd> {t("tabForecast")}</span>
             <span><kbd className="font-mono font-semibold">8</kbd> {t("tabPortfolio")}</span>
-            <span><kbd className="font-mono font-semibold">9</kbd> {t("tabGraph")}</span>
             <span><kbd className="font-mono font-semibold">0</kbd> {t("tabWatchlist")}</span>
           </div>
         </div>

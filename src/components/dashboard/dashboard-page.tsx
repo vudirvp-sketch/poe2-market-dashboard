@@ -23,7 +23,7 @@ import { TierDriftTracker } from "@/components/dashboard/tier-drift-tracker";
 // LiquidChainTab — lazy-loaded (Phase 4.1)
 
 // Phase 4.1: Lazy-loaded tab components via next/dynamic.
-// Heavy tabs (Flips, Optimizer, Analyst, LiquidChain, CurrencyGraph, Watchlist)
+// Heavy tabs (Flips, Optimizer, Analyst, LiquidChain, Watchlist)
 // are only loaded when the user actually navigates to them, reducing the
 // initial JavaScript bundle size significantly.
 //
@@ -64,11 +64,6 @@ const AnalystTab = dynamic(
 
 const LiquidChainTab = dynamic(
   () => import("@/components/dashboard/liquid-chain-tab").then((m) => ({ default: m.LiquidChainTab })),
-  { loading: TabSkeleton },
-);
-
-const CurrencyGraphTab = dynamic(
-  () => import("@/components/dashboard/currency-graph-tab").then((m) => ({ default: m.CurrencyGraphTab })),
   { loading: TabSkeleton },
 );
 
@@ -909,14 +904,14 @@ export function Dashboard() {
 
             {/* ============ OPTIMIZER TAB ============ */}
             <TabsContent value="optimizer">
-              <ErrorBoundary fallbackTitle="Optimizer Error">
+              <ErrorBoundary fallbackTitle={t("fallbackOptimizer")}>
                 <OptimizerTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
             {/* ============ ANALYST TAB ============ */}
             <TabsContent value="analyst">
-              <ErrorBoundary fallbackTitle="Analyst Error">
+              <ErrorBoundary fallbackTitle={t("fallbackAnalyst")}>
                 <AnalystTab backendOnline={flipperBackendOnline} realm={realm} league={effectiveLeague} />
               </ErrorBoundary>
             </TabsContent>
@@ -943,13 +938,6 @@ export function Dashboard() {
             </TabsContent>
 
             {/* ============ FORECAST TAB (removed) ============ */}
-
-            {/* ============ CURRENCY GRAPH TAB ============ */}
-            <TabsContent value="graph">
-              <ErrorBoundary fallbackTitle={t("fallbackCurrencyGraph")}>
-                <CurrencyGraphTab backendOnline={flipperBackendOnline} upstreamDegraded={flipperBackendOnline && !flipperUpstreamReachable} />
-              </ErrorBoundary>
-            </TabsContent>
 
             {/* ============ WATCHLIST TAB ============ */}
             <TabsContent value="watchlist">

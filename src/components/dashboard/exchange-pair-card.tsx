@@ -16,6 +16,7 @@ import { useI18n } from "@/lib/i18n";
 import { PairHoverPreview } from "./pair-hover-preview";
 import { BestPaymentBadge } from "./best-payment-badge";
 import type { OptimalPaymentResult } from "@/lib/types";
+import { getCurrencyDisplayName } from "@/lib/currency-names";
 
 interface ExchangePairCardProps {
   pair: ExchangePair;
@@ -44,7 +45,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
   exchangePairsForConversion,
   optimalPaymentResult,
 }: ExchangePairCardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const chg = fmtChange(pair.changePercent);
   const chg7d = fmtChange(pair.sevenDayChangePercent);
   const { pairComparisonIds, addPairToComparison, removePairFromComparison, uiState, toggleExchangeFavorite } =
@@ -77,11 +78,11 @@ export const ExchangePairCard = memo(function ExchangePairCard({
           currency2Id: pair.currency2Id,
           currency1ItemId: pair.currency1ItemId,
           currency2ItemId: pair.currency2ItemId,
-          label: `${pair.currency1Name} / ${pair.currency2Name}`,
+          label: `${getCurrencyDisplayName(pair.currency1Id, locale) || pair.currency1Name} / ${getCurrencyDisplayName(pair.currency2Id, locale) || pair.currency2Name}`,
         });
       }
     },
-    [inComparison, addPairToComparison, removePairFromComparison, pairKey, pair]
+    [inComparison, addPairToComparison, removePairFromComparison, pairKey, pair, locale]
   );
 
   // §2.4: Compute volume opacity for card border indication
@@ -153,11 +154,15 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             ) : (
               <Coins className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
             )}
-            <span className="font-medium text-sm">{pair.currency1Name}</span>
+            <span className="font-medium text-sm">
+              {getCurrencyDisplayName(pair.currency1Id, locale) || pair.currency1Name}
+            </span>
           </div>
           <ArrowLeftRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">{pair.currency2Name}</span>
+            <span className="font-medium text-sm">
+              {getCurrencyDisplayName(pair.currency2Id, locale) || pair.currency2Name}
+            </span>
             {pair.currency2IconUrl ? (
               <img
                 src={pair.currency2IconUrl}
@@ -183,7 +188,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
             {/* 7d change indicator */}
             {pair.sevenDayChangePercent !== null && (
               <span className={`ml-1.5 text-[10px] font-medium ${chg7d.color}`}>
-                7d {chg7d.text}
+                {t("sevenDay")} {chg7d.text}
               </span>
             )}
           </div>

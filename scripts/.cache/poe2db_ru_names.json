@@ -1,0 +1,1147 @@
+{
+  "generated_at": "2026-06-26T00:01:05+0500",
+  "source": "https://poe2db.tw",
+  "total_pairs": 186,
+  "categories": {
+    "currency": [],
+    "fragments": [],
+    "runes": [],
+    "essences": [
+      {
+        "en_name": "of Whispering",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Weeping",
+        "ru_name": "45",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Screaming",
+        "ru_name": "75",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Deafening",
+        "ru_name": "83",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "50",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "70",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "Veiled",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of the Veil",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Collective Stasis",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Crystal Prisons",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of the Essence",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "Crystallised",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      },
+      {
+        "en_name": "of Crystals",
+        "ru_name": "1",
+        "category": "essences",
+        "href": ""
+      }
+    ],
+    "ultimatum": [],
+    "expedition": [
+      {
+        "en_name": "1",
+        "ru_name": "Suffix",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "1",
+        "ru_name": "Prefix",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "Expedition",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of Verisium",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of the Detonator",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of the Writings",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of the Demolition",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of Knowledge",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of Ancient Fiends",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "of Relics",
+        "ru_name": "1",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "Dannig",
+        "ru_name": "Knights of the Sun",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "Gwennen",
+        "ru_name": "Druids of the Broken Circle",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "Rog",
+        "ru_name": "Order of the Chalice",
+        "category": "expedition",
+        "href": ""
+      },
+      {
+        "en_name": "Tujen",
+        "ru_name": "Black Scythe Mercenaries",
+        "category": "expedition",
+        "href": ""
+      }
+    ],
+    "ritual": [
+      {
+        "en_name": "Ritual",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of Sacrifice",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of the Dogma",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of Devotion",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of the Appeal",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of Prayers",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of the Occult",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of the Foundling",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of the Cult",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "of Omens",
+        "ru_name": "1",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Contaminated",
+        "ru_name": "Waves of Blood pass through the Ritual Site",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Prowling",
+        "ru_name": "Crimson Wolves strike from the Darkness",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Fractured",
+        "ru_name": "Exploding Corpses rise into the Ritual Site",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Plagued",
+        "ru_name": "Swarms of Locusts fill the Ritual Site",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Infested",
+        "ru_name": "Tornadoes of Rats traverse the Ritual Site",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Tainted",
+        "ru_name": "Chaotic Boils grow and explode when Touched",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Smothered",
+        "ru_name": "Chaotic Plants release explosive Pods",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Sapping",
+        "ru_name": "Clouds of Elemental Disturbance slow you, lower your Elemental Resistances and enhance Monster Resistances",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Croaking",
+        "ru_name": "Giant plaguebringing Toads emerge from the Darkness",
+        "category": "ritual",
+        "href": ""
+      },
+      {
+        "en_name": "Queen's",
+        "ru_name": "The Queen in the Mists guards this Ritual",
+        "category": "ritual",
+        "href": ""
+      }
+    ],
+    "vaultkeys": [],
+    "breach": [
+      {
+        "en_name": "of the Tear",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Hand",
+        "ru_name": "45",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Breach",
+        "ru_name": "75",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Domain",
+        "ru_name": "83",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "40",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "50",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "70",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "Breach",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Demonic Onslaught",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Grasping Hands",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Horde",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Commander",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Invasion",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Flash",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Domain",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Rupturing",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of Fissuring",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Form",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Flesh",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      },
+      {
+        "en_name": "of the Hand",
+        "ru_name": "1",
+        "category": "breach",
+        "href": ""
+      }
+    ],
+    "abyss": [],
+    "uncutgems": [],
+    "lineagesupportgems": [],
+    "delirium": [
+      {
+        "en_name": "of Confusion",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Uncertainty",
+        "ru_name": "45",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Voices",
+        "ru_name": "75",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Insanity",
+        "ru_name": "83",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "60",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Superstition",
+        "ru_name": "80",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Delirium",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Eternity",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of the Unending",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Madness",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Persecution",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Mirrors",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Freeze Time",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Phobia",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "of Shattering",
+        "ru_name": "1",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Spatial Distortion",
+        "ru_name": "corpse cannot be destroyed [1]",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Wasting Touch",
+        "ru_name": "affliction monster debuff energy shield recovery rate +% on hit [-9] affliction monster debuff life recovery rate +% on hit [-9] Life Energy Shield",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Paralysing Touch",
+        "ru_name": "affliction monster debuff action speed +% on hit [-6] Speed",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Eroding Touch",
+        "ru_name": "affliction monster debuff damage taken +% on hit [6] Damage",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Diluting Touch",
+        "ru_name": "affliction monster debuff flask charges gained +% on hit [-9] affliction monster debuff flask effect +% on hit [-9]",
+        "category": "delirium",
+        "href": ""
+      },
+      {
+        "en_name": "Vengeful Stalker",
+        "ru_name": "base monster will be deleted on death [1] cannot die [1] delete on death [1]",
+        "category": "delirium",
+        "href": ""
+      }
+    ],
+    "incursion": [],
+    "idol": [],
+    "verisium": [
+      {
+        "en_name": "Currency Exchange",
+        "ru_name": "10 Gold",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "NoteCode",
+        "ru_name": "verisium",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "DropLevel",
+        "ru_name": "13",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "BaseType",
+        "ru_name": "Verisium",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Class",
+        "ru_name": "Stackable Currency",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Flags",
+        "ru_name": "AlwaysAllocate",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Type",
+        "ru_name": "Metadata/Items/Currency/CurrencyVerisiumMetal1",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Tags",
+        "ru_name": "currency",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Icon",
+        "ru_name": "Art/2DItems/Currency/Expedition2/RefinedVerisium",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "MTX Tab Stacks",
+        "ru_name": "50000",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Base.base_level",
+        "ru_name": "1",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Base.tag",
+        "ru_name": "default, currency",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Base.x_size",
+        "ru_name": "1",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "Base.y_size",
+        "ru_name": "1",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Divine Orb 4297 Verisium",
+        "ru_name": "334,517,513",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Exalted Orb 18.7 Verisium",
+        "ru_name": "146,078,037",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Chaos Orb 559 Verisium",
+        "ru_name": "50,301,540",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 liquid-verisium 756 Verisium",
+        "ru_name": "8,593,627",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Exceptional Verisium 199 Verisium",
+        "ru_name": "266,544",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Vaal Orb 684 Verisium",
+        "ru_name": "196,873",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Orb of Annulment 722 Verisium",
+        "ru_name": "196,253",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Orb of Alchemy 91.6 Verisium",
+        "ru_name": "111,445",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Regal Orb 26.6 Verisium",
+        "ru_name": "94,759",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Orb of Augmentation 19.7 Verisium",
+        "ru_name": "92,701",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Orb of Transmutation 6.97 Verisium",
+        "ru_name": "85,676",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Fracturing Orb 50000 Verisium",
+        "ru_name": "50,000",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Orb of Chance 324 Verisium",
+        "ru_name": "37,315",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Runic Alloy 301 Verisium",
+        "ru_name": "26,488",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Scroll of Wisdom 4.82 Verisium",
+        "ru_name": "25,449",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Perfect Jeweller's Orb 1323 Verisium",
+        "ru_name": "25,138",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Concentrated Liquid Isolation 12200 Verisium",
+        "ru_name": "12,200",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Chaos Orb 1600 Verisium",
+        "ru_name": "8,001",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Armourer's Scrap 55.4 Verisium",
+        "ru_name": "7,818",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Uhtred's Crest of the Chalice 400 Verisium",
+        "ru_name": "3,600",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Jeweller's Orb 34.9 Verisium",
+        "ru_name": "3,522",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Chance Shard 41.2 Verisium",
+        "ru_name": "2,800",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Regal Orb 50 Verisium",
+        "ru_name": "1,700",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Exalted Orb 1522 Verisium",
+        "ru_name": "1,522",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Uncut Support Gem (Level 5) 66.6 Verisium",
+        "ru_name": "1,332",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Arcanist's Etcher 58.8 Verisium",
+        "ru_name": "1,000",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Glassblower's Bauble 100 Verisium",
+        "ru_name": "1,000",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Omen of Putrefaction 200 Verisium",
+        "ru_name": "1,000",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Ancient Rune of the Horde 1000 Verisium",
+        "ru_name": "1,000",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Artificer's Orb 21.9 Verisium",
+        "ru_name": "942",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Gemcutter's Prism 16.4 Verisium",
+        "ru_name": "377",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Perfect Exalted Orb 355 Verisium",
+        "ru_name": "355",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Farrul's Rune of the Hunt 300 Verisium",
+        "ru_name": "300",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Blacksmith's Whetstone 4.05 Verisium",
+        "ru_name": "255",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Essence of Enhancement 250 Verisium",
+        "ru_name": "250",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Rune of the Hunt 150 Verisium",
+        "ru_name": "150",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Gnawed Jawbone 50 Verisium",
+        "ru_name": "100",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Uncut Skill Gem (Level 10) 65 Verisium",
+        "ru_name": "65",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Medved's Crest of the Circle 1 Verisium",
+        "ru_name": "39",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Preserved Jawbone 11 Verisium",
+        "ru_name": "11",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Orb of Augmentation 1 Verisium",
+        "ru_name": "3",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Vorana's Crest of the Scythe 1 Verisium",
+        "ru_name": "2",
+        "category": "verisium",
+        "href": ""
+      },
+      {
+        "en_name": "1 Greater Essence of Sorcery 1 Verisium",
+        "ru_name": "1",
+        "category": "verisium",
+        "href": ""
+      }
+    ],
+    "vaal": [
+      {
+        "en_name": "Vaal Cultist's Grip",
+        "ru_name": "1",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Hallowed",
+        "ru_name": "1",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Fecund",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Smothering",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Splitting",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Giant",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Deadly",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Armoured",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Savage",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Burning",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Freezing",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Shocking",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Fleet",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Overlord's",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Venom",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Unwavering",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Hexproof",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Ceremonial",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Exposure",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Resistant",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Twinned",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Balance",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Bloodlines",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Antagonist's",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Conflagrating",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Elemental Weakness",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Vulnerability",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Enfeeblement",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Temporal Chains",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Corruption",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "Packed",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Desecration",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Sacrifice",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Thaumaturgy",
+        "ru_name": "74",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of the Locus",
+        "ru_name": "74",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Dark Blessings",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Excavation",
+        "ru_name": "74",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Divination",
+        "ru_name": "74",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Atzoatl",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      },
+      {
+        "en_name": "of Experimentation",
+        "ru_name": "69",
+        "category": "vaal",
+        "href": ""
+      }
+    ]
+  }
+}

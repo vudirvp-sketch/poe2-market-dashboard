@@ -174,7 +174,6 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | `Scorer` | `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis |
 | `TriangularArb` | `backend/arbitrage/triangular.py` | Bellman-Ford negative cycle detection |
 | `PortfolioOptimizer` | `backend/arbitrage/portfolio.py` | Risk parity, min-variance, efficient frontier |
-| `RecipeArb` | `backend/arbitrage/recipe.py` | Vendor recipe arbitrage |
 | `EventManager` | `backend/economy/events.py` | In-memory + SQLite dual-write event management |
 | `PhaseDetector` | `backend/economy/lifecycle.py` | EARLY/MID/LATE league phase detection |
 | `TierClassifier` | `backend/economy/tiers.py` | Currency tier classification (configurable boundaries) |

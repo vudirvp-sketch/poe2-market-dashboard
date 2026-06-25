@@ -178,6 +178,17 @@ benchmarks:
 # Each chain step defines an item that can be reforged into the next item
 # at the vendor. The module computes per-step and cumulative profit/loss
 # to help users decide whether reforging is worthwhile.
+#
+# iter 87 cleanup:
+#   - Removed the 3 `concentrated-liquid-*` steps from delirium_liquids.
+#     Concentrated liquids are DROP-ONLY items in PoE2 — they cannot be
+#     obtained by reforging at the vendor, so including them in the reforge
+#     chain produced bogus "profit" numbers. The chain now ends at
+#     `liquid-despair` with ratio=1 (last reforgeable tier).
+#   - Removed the entire `ritual_omens` chain. Omens are DROP-ONLY items in
+#     PoE2 — there is no omen reforge recipe at the vendor. The chain was a
+#     fabricated "price tier" comparison that the user correctly identified
+#     as "ценовые уровни вообще бред собаки".
 liquid_chain:
   chains:
     - name: "delirium_liquids"
@@ -210,143 +221,6 @@ liquid_chain:
         - api_id: "liquid-despair"
           name_en: "Liquid Despair"
           name_ru: "Жидкое отчаяние"
-          ratio: 3
-        - api_id: "concentrated-liquid-fear"
-          name_en: "Concentrated Liquid Fear"
-          name_ru: "Концентрированный жидкий страх"
-          ratio: 3
-        - api_id: "concentrated-liquid-suffering"
-          name_en: "Concentrated Liquid Suffering"
-          name_ru: "Концентрированное жидкое страдание"
-          ratio: 3
-        - api_id: "concentrated-liquid-isolation"
-          name_en: "Concentrated Liquid Isolation"
-          name_ru: "Концентрированное жидкое отчуждение"
-          ratio: 1  # Last step — no further reforge
-
-    # Ritual Omens — price tier monitoring chain.
-    # NOTE: Ritual Omens CANNOT be reforged at the vendor (unlike Delirium
-    # liquids). This chain exists purely for price comparison: it shows the
-    # relative cost of omens sorted from cheapest to most expensive tier.
-    # The "profit" column shows the price difference between tiers, which
-    # helps identify when a higher-tier omen is cheaper than expected.
-    # Ratio=1 for all steps since no reforge applies.
-    - name: "ritual_omens"
-      category: "ritual"
-      steps:
-        - api_id: "omen-of-whittling"
-          name_en: "Omen of Whittling"
-          name_ru: "Омен вырезывания"
-          ratio: 1
-        - api_id: "omen-of-chance"
-          name_en: "Omen of Chance"
-          name_ru: "Омен шанса"
-          ratio: 1
-        - api_id: "omen-of-light"
-          name_en: "Omen of Light"
-          name_ru: "Омен света"
-          ratio: 1
-        - api_id: "omen-of-abyssal-echoes"
-          name_en: "Omen of Abyssal Echoes"
-          name_ru: "Омен бездных отголосков"
-          ratio: 1
-        - api_id: "omen-of-amelioration"
-          name_en: "Omen of Amelioration"
-          name_ru: "Омен улучшения"
-          ratio: 1
-        - api_id: "omen-of-sinistral-erasure"
-          name_en: "Omen of Sinistral Erasure"
-          name_ru: "Омен левого стирания"
-          ratio: 1
-        - api_id: "omen-of-sinistral-annulment"
-          name_en: "Omen of Sinistral Annulment"
-          name_ru: "Омен левого аннулирования"
-          ratio: 1
-        - api_id: "omen-of-dextral-annulment"
-          name_en: "Omen of Dextral Annulment"
-          name_ru: "Омен правого аннулирования"
-          ratio: 1
-        - api_id: "omen-of-dextral-erasure"
-          name_en: "Omen of Dextral Erasure"
-          name_ru: "Омен правого стирания"
-          ratio: 1
-        - api_id: "omen-of-sinistral-crystallisation"
-          name_en: "Omen of Sinistral Crystallisation"
-          name_ru: "Омен левой кристаллизации"
-          ratio: 1
-        - api_id: "omen-of-dextral-crystallisation"
-          name_en: "Omen of Dextral Crystallisation"
-          name_ru: "Омен правой кристаллизации"
-          ratio: 1
-        - api_id: "omen-of-sinistral-exaltation"
-          name_en: "Omen of Sinistral Exaltation"
-          name_ru: "Омен левого возвышения"
-          ratio: 1
-        - api_id: "omen-of-greater-exaltation"
-          name_en: "Omen of Greater Exaltation"
-          name_ru: "Омен великого возвышения"
-          ratio: 1
-        - api_id: "omen-of-sanctification"
-          name_en: "Omen of Sanctification"
-          name_ru: "Омен освящения"
-          ratio: 1
-        - api_id: "omen-of-the-blessed"
-          name_en: "Omen of the Blessed"
-          name_ru: "Омен благословенных"
-          ratio: 1
-        - api_id: "omen-of-catalysing-exaltation"
-          name_en: "Omen of Catalysing Exaltation"
-          name_ru: "Омен катализирующего возвышения"
-          ratio: 1
-        - api_id: "omen-of-the-hunt"
-          name_en: "Omen of the Hunt"
-          name_ru: "Омен охоты"
-          ratio: 1
-        - api_id: "omen-of-secret-compartments"
-          name_en: "Omen of Secret Compartments"
-          name_ru: "Омен тайных отделений"
-          ratio: 1
-        - api_id: "omen-of-reinforcements"
-          name_en: "Omen of Reinforcements"
-          name_ru: "Омен подкрепления"
-          ratio: 1
-        - api_id: "omen-of-answered-prayers"
-          name_en: "Omen of Answered Prayers"
-          name_ru: "Омен отвеченных молитв"
-          ratio: 1
-        - api_id: "omen-of-the-ancients"
-          name_en: "Omen of the Ancients"
-          name_ru: "Омен древних"
-          ratio: 1
-        - api_id: "omen-of-chaotic-quantity"
-          name_en: "Omen of Chaotic Quantity"
-          name_ru: "Омен хаотичного количества"
-          ratio: 1
-        - api_id: "omen-of-chaotic-monsters"
-          name_en: "Omen of Chaotic Monsters"
-          name_ru: "Омен хаотичных монстров"
-          ratio: 1
-        - api_id: "omen-of-chaotic-rarity"
-          name_en: "Omen of Chaotic Rarity"
-          name_ru: "Омен хаотичной редкости"
-          ratio: 1
-        - api_id: "omen-of-chaotic-effectiveness"
-          name_en: "Omen of Chaotic Effectiveness"
-          name_ru: "Омен хаотичной эффективности"
-          ratio: 1
-        - api_id: "omen-of-sinistral-necromancy"
-          name_en: "Omen of Sinistral Necromancy"
-          name_ru: "Омен левой некромантии"
-          ratio: 1
-        - api_id: "omen-of-the-blackblooded"
-          name_en: "Omen of the Blackblooded"
-          name_ru: "Омен чернокровных"
-          ratio: 1
-        - api_id: "omen-of-putrefaction"
-          name_en: "Omen of Putrefaction"
-          name_ru: "Омен гниения"
-          ratio: 1
-        - api_id: "omen-of-bartering"
-          name_en: "Omen of Bartering"
-          name_ru: "Омен обмена"
-          ratio: 1
+          ratio: 1  # Last step — no further reforge (was ratio: 3 before iter 87
+                    # cleanup, but the next tier (concentrated-liquid-*) is
+                    # drop-only and cannot be obtained by reforging).

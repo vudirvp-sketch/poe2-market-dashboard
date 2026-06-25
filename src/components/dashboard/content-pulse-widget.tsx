@@ -58,6 +58,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import type { TranslationKeys } from "@/lib/i18n/locales/en";
+import { getCategoryDisplayName, getCurrencyDisplayName } from "@/lib/currency-names";
 import {
   fetchApi,
   fmt,
@@ -106,7 +107,7 @@ export function ContentPulseWidget({
   backendOnline,
   maxPerSide = DEFAULT_MAX_PER_SIDE,
 }: ContentPulseWidgetProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // ---- Query ----
   // 60s staleTime — content pulse changes slowly (rolling 7d average), no
@@ -287,6 +288,7 @@ export function ContentPulseWidget({
                   category={cat}
                   side="rising"
                   t={t}
+                  locale={locale}
                 />
               ))
             )}
@@ -309,6 +311,7 @@ export function ContentPulseWidget({
                   category={cat}
                   side="falling"
                   t={t}
+                  locale={locale}
                 />
               ))
             )}
@@ -335,9 +338,10 @@ interface CategoryBlockProps {
   category: ContentPulseCategory;
   side: "rising" | "falling";
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+  locale: string;
 }
 
-function CategoryBlock({ category, side, t }: CategoryBlockProps) {
+function CategoryBlock({ category, side, t, locale }: CategoryBlockProps) {
   const isRising = side === "rising";
   const movers = isRising ? category.topRising : category.topFalling;
   const deltaLabel = fmtSignedPct(category.delta7dPct);
@@ -355,7 +359,7 @@ function CategoryBlock({ category, side, t }: CategoryBlockProps) {
       {/* Header: category name + 7d delta badge */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">
-          {titleCase(category.category)}
+          {getCategoryDisplayName(category.category, locale) || titleCase(category.category)}
         </span>
         <Badge variant="outline" className={`text-xs ${badgeClass}`}>
           {deltaLabel} ({t("contentPulse7d")})
@@ -374,8 +378,8 @@ function CategoryBlock({ category, side, t }: CategoryBlockProps) {
               key={`${m.apiId}-${m.trendPct}`}
               className="flex items-center justify-between gap-2 text-xs"
             >
-              <span className="truncate text-foreground/80" title={m.text}>
-                {m.text}
+              <span className="truncate text-foreground/80" title={getCurrencyDisplayName(m.apiId, locale) || m.text}>
+                {getCurrencyDisplayName(m.apiId, locale) || m.text}
               </span>
               <span
                 className={

@@ -1,0 +1,39 @@
+iter 87 — Files DELETED (run these git rm commands before applying the patch)
+================================================================================
+
+The following files were DELETED in iter 87. After extracting this archive
+into your local repo, run the following commands to remove these files
+(they will conflict with the patch if not removed first):
+
+    git rm backend/arbitrage/recipe.py
+    git rm tests/test_recipe.py
+    git rm src/components/dashboard/currency-graph-tab.tsx
+    git rm src/__tests__/currency-graph-tab.test.tsx
+
+Reasoning
+---------
+
+1. `backend/arbitrage/recipe.py` + `tests/test_recipe.py` — DEAD CODE.
+   The module had zero production callers (verified via grep). No `recipes:`
+   key was ever defined in `config.yaml`. The associated `RecipeOpportunity`
+   dataclass in `backend/models/currency.py` was also removed (lines 261-274).
+
+2. `src/components/dashboard/currency-graph-tab.tsx` +
+   `src/__tests__/currency-graph-tab.test.tsx` — USER REQUEST.
+   The user said "вкладку 'граф валют' можно вообще вырезать". The Currency
+   Graph tab visualized exchange rates as a network graph — useful for
+   debugging but not for trading decisions. Removed entirely:
+     - dashboard-page.tsx: removed CurrencyGraphTab dynamic import + tab content
+     - dashboard-toolbar.tsx: removed <TabsTrigger value="graph"> + Network icon import
+     - shortcuts-dialog.tsx: removed "9 → tabGraph" row
+     - skeletons.tsx: removed CurrencyGraphSkeleton
+     - integration.test.tsx: rewrote — was 8 tests using <CurrencyGraphTab>,
+       now 3 pure-logic FlipperApiError classification tests
+
+Notes
+-----
+
+- The 4 locale files (en/ru/zh/ko) still contain unused `graphXxx` i18n keys
+  (harmless — kept for backward compatibility; ~30 keys, ~2KB total).
+- The `RecipeOpportunity` dataclass removal is in `backend/models/currency.py`
+  (a MODIFIED file, included in this archive).

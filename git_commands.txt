@@ -1,0 +1,48 @@
+# Git commands for iter 86 — F1 closure
+
+# After merging the patched files into your local repo:
+
+# 1. Verify tests pass
+pytest tests/test_currency_names_ru.py tests/test_sync_currency_names.py -v
+# Expected: 39 passed
+
+# 2. (Optional) Run the broader test suite
+pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py -q
+# Expected: 763 passed
+
+# 3. Stage the 6 changed files
+git add AGENT_NAVIGATION.md PRODUCT_VISION.md STATUS.md \
+        backend/data/currency_names.json \
+        src/lib/currency-names.ts \
+        worklog.md
+
+# 4. Commit
+git commit -m "iter 86: F1 closure — live sync run completed, against-the-darkness EN-name conflict resolved inline
+
+Maintainer ran the F1 sync pipeline (iter 85 script) from a non-RU IP:
+  --fetch-ids  → 639 poe2scout items enumerated
+  --fetch-ru   → 186 EN→RU pairs scraped from poe2db.tw/ru/
+                 (8/17 categories returned data; 6 returned 0 pairs;
+                  4 returned 404 — URL slugs need updating, not blocking)
+  --diff       → 297 already translated, 0 new candidates matched,
+                 1 conflict (against-the-darkness), 342 no-match
+  --apply      → 0 added (poe2db.tw doesn't cover the missing items),
+                 1 conflict skipped, 342 no-op. Counts unchanged: ru=349, en=349.
+
+Conflict resolution (against-the-darkness):
+  Pre-existing data inconsistency — EN field held the short name
+  'Against the Darkness' while RU held the full descriptive name
+  'Ключ от Реликвария Зарока: Противление тьме'. Aligned EN to poe2scout's
+  canonical 'Zarokh's Reliquary Key: Against the Darkness' (matches the
+  sibling temporalis entry pattern + the existing RU translation).
+  Both backend/data/currency_names.json + src/lib/currency-names.ts (TS mirror)
+  updated.
+
+F1 CLOSED. 342 items remain untranslated — poe2db.tw has no pages for them.
+Re-running the script in the future will pick up any new translations poe2db adds.
+
+Tests: pytest 763 pass (incl. 39 currency_names + sync script tests).
+No frontend code changes — only JSON data + TS mirror string value + docs."
+
+# 5. Push to remote
+git push origin main

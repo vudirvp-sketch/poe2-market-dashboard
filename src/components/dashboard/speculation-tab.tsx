@@ -87,6 +87,7 @@ import {
 } from "@/components/ui/select";
 import { useI18n } from "@/lib/i18n";
 import type { TranslationKeys } from "@/lib/i18n/locales/en";
+import { getCurrencyDisplayName, getCategoryDisplayName } from "@/lib/currency-names";
 import {
   fetchApi,
   fmt,
@@ -266,7 +267,7 @@ function Sparkline({ points, width = 120, color = "currentColor" }: SparklinePro
 // ---------------------------------------------------------------------------
 
 export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // ---- Local input state ----
   const [days, setDays] = useState<number>(DEFAULT_DAYS);
@@ -460,7 +461,7 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
         ) : (
           <div className="space-y-2" data-testid="speculation-signals-list">
             {signals.map((sig) => (
-              <SignalRow key={`${sig.apiId}-${sig.zScore}`} signal={sig} t={t} />
+              <SignalRow key={`${sig.apiId}-${sig.zScore}`} signal={sig} t={t} locale={locale} />
             ))}
           </div>
         )}
@@ -497,15 +498,41 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
 interface SignalRowProps {
   signal: SpeculationSignal;
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+  locale: string;
 }
 
-function SignalRow({ signal, t }: SignalRowProps) {
+function SignalRow({ signal, t, locale }: SignalRowProps) {
   const lineColor =
     signal.signal === "BUY"
       ? "text-emerald-500"
       : signal.signal === "SELL"
         ? "text-red-500"
         : "text-amber-500";
+
+  // iter 87: Compute potential profit % from mean-reversion assumption.
+  // BUY  → price expected to revert UP toward mean   → profit = (mean - current) / current
+  // SELL → price expected to revert DOWN toward mean → profit = (current - mean) / current
+  // HOLD → no actionable signal                      → profit = 0
+  const potentialProfitPct = useMemo(() => {
+    if (signal.currentPrice == null || signal.currentPrice <= 0 || signal.mean == null) return null;
+    if (signal.signal === "BUY")  return ((signal.mean - signal.currentPrice) / signal.currentPrice) * 100;
+    if (signal.signal === "SELL") return ((signal.currentPrice - signal.mean) / signal.currentPrice) * 100;
+    return 0;
+  }, [signal.signal, signal.currentPrice, signal.mean]);
+
+  // Localize the signal enum for display
+  const signalLabel =
+    signal.signal === "BUY"  ? t("speculationFilterBuy")
+    : signal.signal === "SELL" ? t("speculationFilterSell")
+    : t("speculationFilterHold");
+
+  // Localize the category slug
+  const categoryLabel = signal.category
+    ? (getCategoryDisplayName(signal.category, locale) || titleCase(signal.category))
+    : "";
+
+  // Localize the item name
+  const itemLabel = getCurrencyDisplayName(signal.apiId, locale) || signal.text;
 
   return (
     <div
@@ -517,14 +544,14 @@ function SignalRow({ signal, t }: SignalRowProps) {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Badge variant="outline" className={`text-xs ${signalBadgeClass(signal.signal)}`}>
             {signalIcon(signal.signal)}
-            <span className="ml-1">{signal.signal}</span>
+            <span className="ml-1">{signalLabel}</span>
           </Badge>
-          <span className="text-sm font-medium truncate" title={signal.text}>
-            {signal.text}
+          <span className="text-sm font-medium truncate" title={itemLabel}>
+            {itemLabel}
           </span>
-          {signal.category && (
+          {categoryLabel && (
             <span className="text-[11px] text-muted-foreground/80">
-              · {titleCase(signal.category)}
+              · {categoryLabel}
             </span>
           )}
         </div>
@@ -535,6 +562,14 @@ function SignalRow({ signal, t }: SignalRowProps) {
           <span title={t("speculationPercentileTitle")}>
             p = <span className={lineColor}>{fmtPct(signal.percentile)}</span>
           </span>
+          {potentialProfitPct != null && (
+            <span title={t("speculationPotentialProfitTitle")}>
+              {t("speculationPotentialProfit")}:{" "}
+              <span className={lineColor}>
+                {potentialProfitPct > 0 ? "+" : ""}{potentialProfitPct.toFixed(1)}%
+              </span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -586,7 +621,7 @@ interface BacktestPanelProps {
 }
 
 function BacktestPanel({ backendOnline, signalFilter }: BacktestPanelProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // ---- Local input state ----
   const [showBacktest, setShowBacktest] = useState(false);
@@ -781,9 +816,9 @@ function BacktestPanel({ backendOnline, signalFilter }: BacktestPanelProps) {
             data-testid="speculation-backtest-breakdown"
           >
             <span className="font-sans text-muted-foreground">{t("speculationBacktestBreakdownTitle")}:</span>
-            <span className="text-emerald-600 dark:text-emerald-400">BUY {signalBreakdown.BUY ?? 0}</span>
-            <span className="text-red-600 dark:text-red-400">SELL {signalBreakdown.SELL ?? 0}</span>
-            <span className="text-amber-600 dark:text-amber-400">HOLD {signalBreakdown.HOLD ?? 0}</span>
+            <span className="text-emerald-600 dark:text-emerald-400">{t("speculationFilterBuy")} {signalBreakdown.BUY ?? 0}</span>
+            <span className="text-red-600 dark:text-red-400">{t("speculationFilterSell")} {signalBreakdown.SELL ?? 0}</span>
+            <span className="text-amber-600 dark:text-amber-400">{t("speculationFilterHold")} {signalBreakdown.HOLD ?? 0}</span>
             <span className="text-muted-foreground/70">·</span>
             <span>{t("speculationBacktestEvaluated", { 0: evaluatedCount })}</span>
             <span>{t("speculationBacktestUnevaluated", { 0: unevaluatedCount })}</span>
@@ -794,7 +829,7 @@ function BacktestPanel({ backendOnline, signalFilter }: BacktestPanelProps) {
             <p className="text-xs font-medium mb-1.5">{t("speculationBacktestTradesTitle")}</p>
             <div className="space-y-1">
               {trades.map((tr) => (
-                <TradeRow key={`${tr.apiId}-${tr.entryDate}`} trade={tr} t={t} />
+                <TradeRow key={`${tr.apiId}-${tr.entryDate}`} trade={tr} t={t} locale={locale} />
               ))}
             </div>
           </div>
@@ -925,9 +960,10 @@ function StatsBlock({ title, stats, accent, testId, t }: StatsBlockProps) {
 interface TradeRowProps {
   trade: SpeculationBacktestTrade;
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+  locale: string;
 }
 
-function TradeRow({ trade, t }: TradeRowProps) {
+function TradeRow({ trade, t, locale }: TradeRowProps) {
   const isProfit = trade.returnPct > 0;
   const isLoss = trade.returnPct < 0;
   const returnClass = isProfit
@@ -945,14 +981,14 @@ function TradeRow({ trade, t }: TradeRowProps) {
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Badge variant="outline" className={`text-[10px] px-1 py-0 ${signalBadgeClass(trade.signal)}`}>
           {signalIcon(trade.signal)}
-          <span className="ml-0.5">{trade.signal}</span>
+          <span className="ml-0.5">{trade.signal === "BUY" ? t("speculationFilterBuy") : trade.signal === "SELL" ? t("speculationFilterSell") : t("speculationFilterHold")}</span>
         </Badge>
-        <span className="text-sm font-medium truncate font-sans" title={trade.text}>
-          {trade.text}
+        <span className="text-sm font-medium truncate font-sans" title={getCurrencyDisplayName(trade.apiId, locale) || trade.text}>
+          {getCurrencyDisplayName(trade.apiId, locale) || trade.text}
         </span>
         {trade.category && (
           <span className="text-[10px] text-muted-foreground/80">
-            · {titleCase(trade.category)}
+            · {getCategoryDisplayName(trade.category, locale) || titleCase(trade.category)}
           </span>
         )}
       </div>

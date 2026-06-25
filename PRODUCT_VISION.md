@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-26 (iter 86 — F1 CLOSED: live sync run completed, `against-the-darkness` EN-name conflict resolved inline by aligning to poe2scout's canonical full name)
+> Last updated: 2026-06-26 (iter 87 — i18n leakage cleanup across 7 components + phase_hints ?lang=ru + Speculation potentialProfitPct + Currency Graph tab removed + Liquid Chain cleanup + dead recipe.py deleted)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -241,7 +241,26 @@ Abyss, Incursion) показывать:
 4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 live tab готов; iter 79 — F5 backtest backend готов; iter 80 — F5 backtest UI готов, toggle-driven panel под списком сигналов)**
 5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.). **(iter 78 — F6 Phase-aware hints widget готов, wired в Overview tab)**
 
-**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 sync script shipped iter 85 + live-run verified iter 86 — F1 CLOSED; полная Content Pulse tab; config-driven phase hints — useDashboardData hook extraction COMPLETE: Stage 1 в iter 81, Stage 2 в iter 82, Stage 3a в iter 83, Stage 3b в iter 84; `dashboard-page.tsx` теперь 995 строк, было 1685 в iter 70) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
+**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 sync script shipped iter 85 + live-run verified iter 86 — F1 CLOSED; iter 87 — i18n leakage cleanup across 7 components + phase_hints ?lang=ru + Speculation potentialProfitPct + Currency Graph tab removed + Liquid Chain cleanup + dead recipe.py deleted; useDashboardData hook extraction COMPLETE: Stage 1 в iter 81, Stage 2 в iter 82, Stage 3a в iter 83, Stage 3b в iter 84; `dashboard-page.tsx` теперь 995 строк, было 1685 в iter 70) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
+
+### iter 87 — i18n leakage cleanup + dead code removal
+
+User feedback batch addressed: heatmap was unsorted and English-only, Currencies/Exchange/Speculation/Analyst tabs leaked English, Phase hints widget showed hardcoded English content, Liquid Chain ("Craft") tab had fabricated reforge chains for items that aren't reforgeable in PoE2, Currency Graph tab was low-value.
+
+**Shipped:**
+- Heatmap: sort by `|change24h|` desc (cap 30 tiles) + RU currency names via `getCurrencyDisplayName(apiId, locale)`.
+- Currencies/Exchange/Speculation/Analyst/Content Pulse tabs: wired `getCurrencyDisplayName()` + `getCategoryDisplayName()` from `src/lib/currency-names.ts`.
+- Phase hints backend: added `_PHASE_HINTS_RU` + `_PHASE_META_RU` parallel tables, `?lang=ru` query param. Widget forwards `lang` from `useI18n().locale`.
+- Speculation tab: added `potentialProfitPct` (mean-reversion based — partial fix for user's buy-low/sell-high request; full redesign deferred to iter 88 as KI-1).
+- take-profit-calculator.tsx: 14 hardcoded EN strings → `t()` calls.
+- events-sidebar.tsx: English month array → locale-aware `toLocaleDateString()`.
+- Currency Graph tab: COMPLETELY REMOVED (component + tests + dashboard wiring).
+- Liquid Chain: removed fabricated `concentrated-liquid-*` (drop-only) + entire `ritual_omens` chain (no omen reforge in PoE2). `config.yaml` 353 → 226 lines.
+- Deleted dead `backend/arbitrage/recipe.py` + `tests/test_recipe.py` + `RecipeOpportunity` dataclass.
+
+**Tests:** 757 pytest + 405 jest pass (was 763 + 415 in iter 86 — delta is deleted test_recipe.py + currency-graph-tab.test.tsx + rewritten integration.test.tsx).
+
+**5 Known Issues deferred to iter 88** — see STATUS.md §"Known Issues — Deferred to iter 88": (KI-1) Speculation tab full redesign, (KI-2) Exchanges 7d changes not loading, (KI-3) "Premium" column meaning unclear, (KI-4) Flips tab applicability to PoE2, (KI-5) analyst-tab fact.text English from backend.
 
 ---
 

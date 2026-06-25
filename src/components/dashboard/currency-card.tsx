@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatPrice, computeLiquidityScore } from "@/lib/utils";
 import { useDisplayPrice } from "@/hooks/use-display-price";
 import type { ExchangePair } from "@/lib/types";
+import { getCurrencyDisplayName } from "@/lib/currency-names";
 
 interface CurrencyCardProps {
   item: PoeItem;
@@ -43,7 +44,7 @@ export const CurrencyCard = memo(function CurrencyCard({
   highlighted,
   exchangePairs,
 }: CurrencyCardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const chg = fmtChange(item.changePercent);
   const sparkData =
     item.history?.map((h) => h.relativePrice ?? h.chaosEquivalentRate ?? 0) || [];
@@ -180,7 +181,7 @@ export const CurrencyCard = memo(function CurrencyCard({
           )}
           <div className="flex-1 min-w-0">
             <CardTitle className="text-sm font-semibold truncate">
-              {item.name}
+              {getCurrencyDisplayName(item.apiId || item.id, locale) || item.name}
             </CardTitle>
             <p className="text-xs text-muted-foreground truncate">
               {item.type}

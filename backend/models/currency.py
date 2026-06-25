@@ -259,22 +259,6 @@ class ForecastResult:
 
 
 # ---------------------------------------------------------------------------
-# Recipe
-# ---------------------------------------------------------------------------
-
-@dataclass
-class RecipeOpportunity:
-    """A vendor recipe evaluated for profitability."""
-    name: str
-    inputs: list[dict]          # [{"item": str, "quantity": int}, ...]
-    output: dict                # {"item": str, "quantity": int}
-    input_cost_chaos: float     # sum of input prices × quantities (no gold fee)
-    output_value_chaos: float   # output price × quantity (no gold fee)
-    profit_chaos: float         # output_value - input_cost
-    profit_pct: float           # profit / input_cost × 100
-
-
-# ---------------------------------------------------------------------------
 # Storage Value
 # ---------------------------------------------------------------------------
 

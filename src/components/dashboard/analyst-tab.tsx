@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { getCurrencyDisplayName } from "@/lib/currency-names";
 import {
   fetchApi,
   fmt,
@@ -100,7 +101,7 @@ interface SummaryCardDef {
 // ---------------------------------------------------------------------------
 
 export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Primary query: FastAPI backend analyst summary
   const {
@@ -343,7 +344,7 @@ export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
                             {trend.direction === "stable" && <Minus className="h-3 w-3" aria-hidden="true" />}
                             {trend.direction === "unknown" && <Activity className="h-3 w-3" aria-hidden="true" />}
                           </Badge>
-                          <span className="font-medium text-sm truncate">{trend.apiId}</span>
+                          <span className="font-medium text-sm truncate">{getCurrencyDisplayName(trend.apiId, locale) || trend.apiId}</span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-xs text-muted-foreground font-mono">
@@ -393,7 +394,7 @@ export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
                               : <TrendingDown className="h-3 w-3" aria-hidden="true" />
                             }
                           </Badge>
-                          <span className="font-medium text-sm truncate">{anomaly.apiId}</span>
+                          <span className="font-medium text-sm truncate">{getCurrencyDisplayName(anomaly.apiId, locale) || anomaly.apiId}</span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <Badge

@@ -489,26 +489,3 @@ export function PortfolioSkeleton() {
     </div>
   );
 }
-
-// ============================================================================
-// Currency Graph Tab Skeleton — §1.5
-// ============================================================================
-export function CurrencyGraphSkeleton() {
-  return (
-    <div className="space-y-4">
-      {/* Controls row */}
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-9 w-28" />
-        <Skeleton className="h-9 w-24" />
-      </div>
-
-      {/* Graph area */}
-      <Card>
-        <CardContent className="py-4">
-          <Skeleton className="h-[500px] w-full rounded-lg" />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}

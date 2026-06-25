@@ -245,13 +245,12 @@ score = raw_spread × fill_probability × momentum_penalty × vol_penalty × pha
 - Major patch event detection with PhaseDetector reset
 - Load from SQLite on startup, prune expired
 
-### 6.9 Recipe Arbitrage
+### 6.9 Recipe Arbitrage (REMOVED in iter 87)
 
-**Location:** `backend/arbitrage/recipe.py`
-
-- Vendor recipe definitions from `config.yaml`
-- Profit calculation: recipe output value minus input costs
-- Gold fees permanently excluded (gold code removed)
+The `backend/arbitrage/recipe.py` module and the `RecipeOpportunity` dataclass
+in `backend/models/currency.py` were deleted in iter 87 — the code had zero
+production callers and no recipes were ever defined in `config.yaml`. The
+associated `tests/test_recipe.py` was also removed.
 
 ### 6.10 Quick Filter
 
@@ -323,7 +322,6 @@ tests/
 ├── test_momentum.py           — Price momentum calculations
 ├── test_new_params.py         — New config parameters
 ├── test_pipeline_cache_degraded.py — Pipeline cache in degraded mode
-├── test_recipe.py             — Vendor recipe arbitrage
 ├── test_scheduler.py          — APScheduler job execution
 ├── test_scorer.py             — Opportunity scoring
 ├── test_storage_value.py      — Hold/sell decisions

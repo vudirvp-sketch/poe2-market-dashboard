@@ -24,6 +24,7 @@ import { useDashboardStore } from "@/lib/store";
 import { formatPrice, getCurrencyShortName } from "@/lib/utils";
 import { useDisplayPrice } from "@/hooks/use-display-price";
 import { useI18n } from "@/lib/i18n";
+import { getCurrencyDisplayName } from "@/lib/currency-names";
 import { Sparkline } from "./sparkline";
 import { PairHoverPreview } from "./pair-hover-preview";
 import { BestPaymentBadge } from "./best-payment-badge";
@@ -128,8 +129,8 @@ function PaymentOptionRow({ option, isBest, anchorName }: { option: PaymentOptio
 }
 
 function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, anchorId }: CrossCurrencyPremiumCellProps) {
-  const { t } = useI18n();
-  const anchorName = ANCHOR_DISPLAY[anchorId ?? ""] ?? anchorId ?? "Exa";
+  const { t, locale } = useI18n();
+  const anchorName = getCurrencyDisplayName(anchorId ?? "", locale) || anchorId || "Exa";
 
   // Priority 1: Optimal payment savings (direct price comparison across currencies)
   if (optimalPaymentResult && optimalPaymentResult.savingsPct >= 1) {
@@ -230,7 +231,7 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, a
 // ============================================================================
 
 export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRowIndex, highlightedItemId, exchangePairsForConversion, optimalPaymentByPair, crossRateFlips, anchorId }: ExchangeTableProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const {
     uiState,
     setExchangeSort,
@@ -281,7 +282,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
     sorted.sort((a, b) => {
       switch (sortField) {
         case "pair":
-          return dir * a.currency1Name.localeCompare(b.currency1Name);
+          return dir * (getCurrencyDisplayName(a.currency1Id, locale) || a.currency1Name).localeCompare(getCurrencyDisplayName(b.currency1Id, locale) || b.currency1Name);
         case "rate":
           return dir * ((a.relativePrice ?? 0) - (b.relativePrice ?? 0));
         case "change": {
@@ -536,7 +537,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                         <Coins className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
                       )}
                       <span className="font-medium text-sm truncate max-w-[120px]">
-                        {pair.currency1Name}
+                        {getCurrencyDisplayName(pair.currency1Id, locale) || pair.currency1Name}
                       </span>
                       <span className="text-muted-foreground text-xs">/</span>
                       {pair.currency2IconUrl ? (
@@ -549,7 +550,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                         <Coins className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
                       )}
                       <span className="font-medium text-sm truncate max-w-[120px]">
-                        {pair.currency2Name}
+                        {getCurrencyDisplayName(pair.currency2Id, locale) || pair.currency2Name}
                       </span>
                     </div>
                   </td>
@@ -618,7 +619,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                             currency2Id: pair.currency2Id,
                             currency1ItemId: pair.currency1ItemId,
                             currency2ItemId: pair.currency2ItemId,
-                            label: `${pair.currency1Name} / ${pair.currency2Name}`,
+                            label: `${getCurrencyDisplayName(pair.currency1Id, locale) || pair.currency1Name} / ${getCurrencyDisplayName(pair.currency2Id, locale) || pair.currency2Name}`,
                           });
                         }
                       }}

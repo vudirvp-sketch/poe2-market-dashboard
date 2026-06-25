@@ -420,6 +420,9 @@ const en = {
   eventsNever: "Never",
   eventsExpired: "Expired",
   eventsExpires: "Expires",
+  eventsDaysHours: "{0}d {1}h",
+  eventsHoursMinutes: "{0}h {1}m",
+  eventsMinutes: "{0}m",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "Portfolio",
@@ -694,6 +697,14 @@ const en = {
   takeProfitOptimistic: "Optimistic",
   takeProfitAggressive: "Aggressive",
   takeProfitPessimistic: "Pessimistic",
+  takeProfitTP1: "TP1 ({0})",
+  takeProfitTP2: "TP2 ({0})",
+  takeProfitTP3: "TP3 ({0})",
+  takeProfitSL1: "SL1 ({0})",
+  takeProfitSL2: "SL2 ({0})",
+  takeProfitSL3: "SL3 ({0})",
+  fallbackOptimizer: "Optimizer Error",
+  fallbackAnalyst: "Analyst Error",
 
   // ---- P2-4: Volume & Liquidity ----
   volumeLiquidityTitle: "Volume & Liquidity",
@@ -927,7 +938,7 @@ const en = {
   liquidChainTitle: "Delirium Liquid Reforge Chain",
   liquidChainNoData: "No liquid chain data available",
   liquidChainNoReforge: "No reforge",
-  liquidChainNoReforgeNotice: "Ancient and Concentrated liquids (last 3 steps) cannot be reforged further. They are end products of the chain.",
+  liquidChainNoReforgeNotice: "Liquid Despair is the last reforgeable tier. Concentrated liquids were removed from the chain in iter 87 (drop-only, cannot be obtained via vendor reforge). Ritual Omens chain was also removed — PoE2 has no omen reforge recipe.",
   liquidChainBestStep: "Best",
   liquidChainProfitable: "profit",
   liquidChainUnprofitable: "loss",
@@ -1039,6 +1050,8 @@ const en = {
   speculationDaysValue: "{0} days",
   speculationZScoreTitle: "Z-score of current price vs the lookback window mean / std",
   speculationPercentileTitle: "Percentile of current price within the lookback window range",
+  speculationPotentialProfit: "Pot. profit",
+  speculationPotentialProfitTitle: "Potential profit % if price reverts to the lookback window mean (BUY: expected to rise, SELL: expected to fall)",
   speculationSampleSize: "{0} pts",
   speculationMean: "mean {0}",
   speculationStd: "std {0}",

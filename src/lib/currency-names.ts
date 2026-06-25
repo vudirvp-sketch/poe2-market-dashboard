@@ -739,6 +739,53 @@ const CURRENCY_NAMES_EN: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Category slugs → localized names (mirror of backend/data/currency_names.json
+// `category_names_ru` / `category_names_en`). Used by the Content Pulse and
+// Speculation widgets to localize raw POE2Scout category slugs like "ritual"
+// or "breach" — see iter 87 i18n-leakage cleanup.
+// ---------------------------------------------------------------------------
+
+const CATEGORY_NAMES_RU: Record<string, string> = {
+  currency: "Валюта",
+  fragments: "Фрагменты",
+  runes: "Руны",
+  essences: "Сущности",
+  ultimatum: "Ядра душ",
+  expedition: "Экспедиция",
+  ritual: "Омены ритуала",
+  vaultkeys: "Ключи реликвария",
+  breach: "Разлом",
+  abyss: "Бездна",
+  uncutgems: "Неогранённые камни",
+  lineagesupportgems: "Династические камни поддержки",
+  delirium: "Делирий",
+  incursion: "Вторжение",
+  idol: "Идолы",
+  verisium: "Веризий",
+  vaal: "Ваал",
+};
+
+const CATEGORY_NAMES_EN: Record<string, string> = {
+  currency: "Currency",
+  fragments: "Fragments",
+  runes: "Runes",
+  essences: "Essences",
+  ultimatum: "Soul Cores",
+  expedition: "Expedition",
+  ritual: "Ritual Omens",
+  vaultkeys: "Reliquary Keys",
+  breach: "Breach",
+  abyss: "Abyss",
+  uncutgems: "Uncut Gems",
+  lineagesupportgems: "Lineage Support Gems",
+  delirium: "Delirium",
+  incursion: "Incursion",
+  idol: "Idols",
+  verisium: "Verisium",
+  vaal: "Vaal",
+};
+
+// ---------------------------------------------------------------------------
 // Lookup functions
 // ---------------------------------------------------------------------------
 
@@ -756,6 +803,56 @@ export function getCurrencyRuName(apiId: string): string | null {
  */
 export function getCurrencyEnName(apiId: string): string | null {
   return CURRENCY_NAMES_EN[apiId] ?? CURRENCY_NAMES_EN[apiId.toLowerCase()] ?? null;
+}
+
+/**
+ * Get the Russian display name for a POE2Scout category slug.
+ * Falls back to the slug itself (title-cased) if no mapping exists.
+ *
+ * Example: "ritual" → "Омены ритуала"
+ */
+export function getCategoryRuName(slug: string): string | null {
+  if (!slug) return null;
+  return CATEGORY_NAMES_RU[slug] ?? CATEGORY_NAMES_RU[slug.toLowerCase()] ?? null;
+}
+
+/**
+ * Get the English display name for a POE2Scout category slug.
+ * Falls back to the slug itself (title-cased) if no mapping exists.
+ */
+export function getCategoryEnName(slug: string): string | null {
+  if (!slug) return null;
+  return CATEGORY_NAMES_EN[slug] ?? CATEGORY_NAMES_EN[slug.toLowerCase()] ?? null;
+}
+
+/**
+ * Localize a currency name based on the active locale.
+ * Returns `null` when no mapping exists — callers should provide their own
+ * fallback (typically the upstream `text` field from POE2Scout or the raw
+ * api_id). This keeps the helper composable with `||` fallbacks.
+ *
+ * Accepts any locale string but only RU has a full translation map;
+ * other locales fall back to English names.
+ */
+export function getCurrencyDisplayName(
+  apiId: string,
+  locale: string = "ru",
+): string | null {
+  const lookup = locale === "ru" ? getCurrencyRuName : getCurrencyEnName;
+  return lookup(apiId);
+}
+
+/**
+ * Localize a category slug based on the active locale.
+ * Returns the slug as-is when no mapping exists (categories are a small
+ * fixed set, so fallback is safe).
+ */
+export function getCategoryDisplayName(
+  slug: string,
+  locale: string = "ru",
+): string {
+  const lookup = locale === "ru" ? getCategoryRuName : getCategoryEnName;
+  return lookup(slug) ?? slug;
 }
 
 /**

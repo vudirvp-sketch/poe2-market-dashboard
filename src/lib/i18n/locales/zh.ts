@@ -420,6 +420,9 @@ const zh: Record<TranslationKeys, string> = {
   eventsNever: "永不过期",
   eventsExpired: "已过期",
   eventsExpires: "过期",
+  eventsDaysHours: "{0}天 {1}小时",
+  eventsHoursMinutes: "{0}小时 {1}分",
+  eventsMinutes: "{0}分",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "投资组合",
@@ -690,6 +693,14 @@ const zh: Record<TranslationKeys, string> = {
   takeProfitOptimistic: "乐观",
   takeProfitAggressive: "激进",
   takeProfitPessimistic: "悲观",
+  takeProfitTP1: "止盈1 ({0})",
+  takeProfitTP2: "止盈2 ({0})",
+  takeProfitTP3: "止盈3 ({0})",
+  takeProfitSL1: "止损1 ({0})",
+  takeProfitSL2: "止损2 ({0})",
+  takeProfitSL3: "止损3 ({0})",
+  fallbackOptimizer: "优化器错误",
+  fallbackAnalyst: "分析师错误",
 
   // P2-4: Volume & Liquidity
   volumeLiquidityTitle: "成交量与流动性",
@@ -1034,6 +1045,8 @@ const zh: Record<TranslationKeys, string> = {
   speculationDaysValue: "{0} 天",
   speculationZScoreTitle: "当前价格相对于回溯窗口均值 / std 的 z 分数",
   speculationPercentileTitle: "当前价格在回溯窗口范围内的百分位",
+  speculationPotentialProfit: "潜在利润",
+  speculationPotentialProfitTitle: "如果价格回归到回溯窗口均值的潜在利润百分比（买入：预期上涨，卖出：预期下跌）",
   speculationSampleSize: "{0} 个点",
   speculationMean: "均值 {0}",
   speculationStd: "标准差 {0}",

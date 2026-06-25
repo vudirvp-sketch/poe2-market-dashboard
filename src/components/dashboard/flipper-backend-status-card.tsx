@@ -1,7 +1,7 @@
 // ============================================================================
 // FlipperBackendStatusCard — Shared backend status indicator + offline,
 // degraded, upstream-unreachable, and insufficient-data cards.
-// Extracted from flips-tab and currency-graph-tab to
+// Extracted from flips-tab (and the now-removed currency-graph-tab) to
 // eliminate duplication.
 //
 // Four visual states:

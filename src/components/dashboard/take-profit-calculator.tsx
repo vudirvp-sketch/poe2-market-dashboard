@@ -24,6 +24,7 @@ import {
   Coins,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import type { TranslationKeys } from "@/lib/i18n/locales/en";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
 
@@ -185,6 +186,38 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
     [currentPrice, models, positionSize],
   );
 
+  // iter 87: i18n — map the internal confidence enum ("High"/"Medium"/"Low")
+  // to the active locale via existing i18n keys.
+  const confidenceLabel = (c: string): string => {
+    if (c === "High") return t("confidenceHigh");
+    if (c === "Low") return t("confidenceLow");
+    return t("confidenceMedium");
+  };
+
+  // iter 87: i18n — compose TP/SL labels from i18n keys + the level tier name.
+  const levelLabel = (level: TakeProfitLevel): string => {
+    const tierKey: Record<string, TranslationKeys> = {
+      Conservative: "takeProfitConservative",
+      Optimistic: "takeProfitOptimistic",
+      Aggressive: "takeProfitAggressive",
+      Pessimistic: "takeProfitPessimistic",
+    };
+    // level.label is the raw internal slug like "TP1 (Conservative)" —
+    // we re-derive the tier label from the confidence field instead so we
+    // don't depend on parsing the English string.
+    const tier = level.label.includes("Conservative") ? "Conservative"
+      : level.label.includes("Optimistic") ? "Optimistic"
+      : level.label.includes("Pessimistic") ? "Pessimistic"
+      : "Aggressive";
+    const tierName = t(tierKey[tier]);
+    const tpl: Record<string, TranslationKeys> = {
+      TP1: "takeProfitTP1", TP2: "takeProfitTP2", TP3: "takeProfitTP3",
+      SL1: "takeProfitSL1", SL2: "takeProfitSL2", SL3: "takeProfitSL3",
+    };
+    const prefix = level.label.split(" ")[0]; // "TP1" | "TP2" | ...
+    return t(tpl[prefix] ?? "takeProfitTP1", { 0: tierName });
+  };
+
   // Compute P&L for each level based on position size and direction
   const computePnl = (price: number) => {
     if (currentPrice <= 0) return 0;
@@ -199,10 +232,10 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
       <CardHeader className="pb-2 pt-4 px-4">
         <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
           <Target className="h-4 w-4" aria-hidden="true" />
-          Take-Profit & Stop-Loss Calculator
+          {t("takeProfitTitle")}
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
-          Based on forecast confidence intervals for {currencyId}
+          {t("takeProfitBasedOnCI", { 0: currencyId })}
         </p>
       </CardHeader>
       <CardContent className="px-4 pb-4 pt-0 space-y-4">
@@ -210,7 +243,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="tp-position-size">
-              Position Size
+              {t("takeProfitPositionSize")}
             </label>
             <Input
               id="tp-position-size"
@@ -248,7 +281,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
             <div className="rounded-lg border p-3">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Scale className="h-3 w-3" aria-hidden="true" />
-                Risk/Reward
+                {t("takeProfitRiskReward")}
               </p>
               <p className={`text-lg font-bold font-mono ${
                 riskRewardRatio >= 2
@@ -263,7 +296,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
             <div className="rounded-lg border p-3">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Coins className="h-3 w-3" aria-hidden="true" />
-                Entry Price
+                {t("takeProfitEntryPrice")}
               </p>
               <p className="text-lg font-bold font-mono">
                 {formatPrice(currentPrice, baseCurrencyText, baseCurrencyApiId, { digits: 4 })}
@@ -272,7 +305,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
             <div className="rounded-lg border p-3">
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Percent className="h-3 w-3" aria-hidden="true" />
-                Position Value
+                {t("takeProfitPositionValue")}
               </p>
               <p className="text-lg font-bold font-mono">
                 {formatPrice(currentPrice * positionSize, baseCurrencyText, baseCurrencyApiId, { digits: 2 })}
@@ -285,7 +318,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
         <div>
           <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
             <TrendingUp className="h-3 w-3 text-emerald-500" aria-hidden="true" />
-            Take-Profit Levels
+            {t("takeProfitLevels")}
           </h4>
           <div className="space-y-1">
             {takeProfitLevels.map((level) => {
@@ -296,7 +329,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
                   className="flex items-center justify-between py-1.5 px-3 rounded border border-emerald-500/20 bg-emerald-500/5"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium">{level.label}</span>
+                    <span className="text-xs font-medium">{levelLabel(level)}</span>
                     <Badge
                       variant="outline"
                       className={`text-[9px] px-1 py-0 ${
@@ -307,7 +340,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
                           : "border-red-500/50 text-red-600 dark:text-red-400"
                       }`}
                     >
-                      {level.confidence}
+                      {confidenceLabel(level.confidence)}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3">
@@ -331,7 +364,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
         <div>
           <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
             <ShieldAlert className="h-3 w-3 text-red-500" aria-hidden="true" />
-            Stop-Loss Levels
+            {t("takeProfitStopLoss")}
           </h4>
           <div className="space-y-1">
             {stopLossLevels.map((level) => {
@@ -342,7 +375,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
                   className="flex items-center justify-between py-1.5 px-3 rounded border border-red-500/20 bg-red-500/5"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium">{level.label}</span>
+                    <span className="text-xs font-medium">{levelLabel(level)}</span>
                     <Badge
                       variant="outline"
                       className={`text-[9px] px-1 py-0 ${
@@ -353,7 +386,7 @@ export const TakeProfitCalculator = memo(function TakeProfitCalculator({
                           : "border-red-500/50 text-red-600 dark:text-red-400"
                       }`}
                     >
-                      {level.confidence}
+                      {confidenceLabel(level.confidence)}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3">

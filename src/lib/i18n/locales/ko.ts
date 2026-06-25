@@ -420,6 +420,9 @@ const ko: Record<TranslationKeys, string> = {
   eventsNever: "없음",
   eventsExpired: "만료됨",
   eventsExpires: "만료",
+  eventsDaysHours: "{0}일 {1}시간",
+  eventsHoursMinutes: "{0}시간 {1}분",
+  eventsMinutes: "{0}분",
 
   // ---- Portfolio Tab ----
   tabPortfolio: "포트폴리오",
@@ -690,6 +693,14 @@ const ko: Record<TranslationKeys, string> = {
   takeProfitOptimistic: "낙관적",
   takeProfitAggressive: "공격적",
   takeProfitPessimistic: "비관적",
+  takeProfitTP1: "익절1 ({0})",
+  takeProfitTP2: "익절2 ({0})",
+  takeProfitTP3: "익절3 ({0})",
+  takeProfitSL1: "손절1 ({0})",
+  takeProfitSL2: "손절2 ({0})",
+  takeProfitSL3: "손절3 ({0})",
+  fallbackOptimizer: "옵티마이저 오류",
+  fallbackAnalyst: "애널리스트 오류",
 
   // P2-4: Volume & Liquidity
   volumeLiquidityTitle: "거래량 및 유동성",
@@ -1034,6 +1045,8 @@ const ko: Record<TranslationKeys, string> = {
   speculationDaysValue: "{0}일",
   speculationZScoreTitle: "룩백 창 평균 / std 대비 현재 가격의 z-점수",
   speculationPercentileTitle: "룩백 창 범위 내 현재 가격의 백분위수",
+  speculationPotentialProfit: "잠재 수익",
+  speculationPotentialProfitTitle: "가격이 룩백 창 평균으로 회귀할 경우 잠재 수익 % (매수: 상승 예상, 매도: 하락 예상)",
   speculationSampleSize: "{0}개 포인트",
   speculationMean: "평균 {0}",
   speculationStd: "표준편차 {0}",
