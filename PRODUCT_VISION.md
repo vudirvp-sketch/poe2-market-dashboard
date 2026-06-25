@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 70)
+> Last updated: 2026-06-25 (iter 74 — F2 shipped)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -109,7 +109,7 @@ Abyss, Incursion) показывать:
 | API | `/api/v1/storage-value/{currency}` | `routes_storage_value.py` (существует) |
 | API | `/api/v1/analyst/summary` | `routes_analyst.py` (существует, расширить) |
 | API | `/api/v1/content-pulse` (TODO) | новый маршрут — top farming suggestions |
-| UI | Tab «Storage Value» (historical chart vs Mirror/Hinekora) | TODO — новый компонент |
+| UI | Tab «Storage Value» (decision card + projection breakdown) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74). Исторический график vs Mirror/Hinekora — TODO. |
 | UI | Tab «Content Pulse» (что фармить сегодня) | TODO — главный экран после входа |
 | UI | Tab «Speculation» (z-score list, buy/sell suggestions) | TODO — расширить существующий flips-tab |
 
@@ -121,17 +121,16 @@ Abyss, Incursion) показывать:
 Они — продуктовый бэклог, который берётся в работу **после** закрытия P2/P3
 или параллельно с ними, по решению владельца.
 
-### F1. Доперевод оставшихся ~276 предметов
-- Парсинг `poe2db.tw/ru/` по категориям (runes, lineage support gems,
-  uncategorized fragments).
-- Скрипт `scripts/sync_currency_names_from_poe2db.py` — одноразовый/периодический
-  импорт в `currency_names.json`.
-- Запуск регрессионных тестов из `tests/test_currency_names_ru.py`.
+### F2. Tab «Storage Value» (ценность относительно Mirror/Hinekora) — ✅ DONE iter 74
+- Вывести исторический график `currency/mirror` для топ-N валют. *(График — следующий шаг; пока реализована карточка решения Hold/Sell с проекцией цены.)*
+- Подсветка валют с трендом «дорожает к зеркалу» (хранить ценность выгодно) и «дешевеет» (лучше избавиться). *(Реализовано через decision BUY_HOLD / SELL_CONVERT / NEUTRAL.)*
+- **Реализовано в iter 74:** `src/components/dashboard/storage-value-tab.tsx` — отдельный UI-таб, обёртка над готовым endpoint `/api/v1/storage-value/{currency}`. Lazy-loaded, ErrorBoundary-wrapped, full i18n (en/ru/zh/ko), 12 jest tests. Решение (BUY/HOLD | NEUTRAL | SELL/CONVERT) + декомпозиция прогноза (current/projected/risk-discount/adjusted/net/ratio) + holdings totals (×quantity) + inputs panel (momentum/volatility/acceleration/liquidity/α/horizon).
 
-### F2. Tab «Storage Value» (ценность относительно Mirror/Hinekora)
-- Вывести исторический график `currency/mirror` для топ-N валют.
-- Подсветка валют с трендом «дорожает к зеркалу» (хранить ценность выгодно)
-  и «дешевеет» (лучше избавиться).
+### F1. Доперевод оставшихся ~276 предметов — BLOCKED
+- Парсинг `poe2db.tw/ru/` по категориям (runes, lineage support gems, uncategorized fragments).
+- Скрипт `scripts/sync_currency_names_from_poe2db.py` — одноразовый/периодический импорт в `currency_names.json`.
+- Запуск регрессионных тестов из `tests/test_currency_names_ru.py`.
+- **Статус iter 74:** Все 138 api_ids в текущем cache-snapshot уже переведены. "276 оставшихся" — из baseline iter 32 (625 предметов в API), но без live-доступа к `poe2scout.com` (для полного списка api_id+EN_name) и `poe2db.tw/ru/` (для RU-переводов) расширение ненадёжно. Отложено до появления live-доступа.
 
 ### F3. Module `content_pulse` — оборот механик
 - Ежедневный снапшот оборота (sum of trades) по category.
@@ -161,12 +160,10 @@ Abyss, Incursion) показывать:
 когда одновременно:
 
 1. ✅ Все предметы в UI — на русском (или явно отмечены «нет перевода»).
-2. ✅ Есть отдельный экран «Storage Value» с историческим графиком
-   относительно Mirror/Hinekora.
-3. ✅ На главной — карточка «Что фармить сегодня» с конкретными механиками
-   и обоснованием (обороты + цены).
-4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом.
-5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.).
+2. ✅ Есть отдельный экран «Storage Value» с историческим графиком относительно Mirror/Hinekora. **(iter 74 — карточка решения Hold/Sell готова; исторический график — следующий шаг)**
+3. ⬜ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены).
+4. ⬜ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом.
+5. ⬜ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.).
 
 До выполнения этих 5 пунктов продукт находится в стадии «аналитический MVP».
 

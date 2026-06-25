@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 73 — P2-1 + P3-7 closed; backlog empty).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 74 — F2 Storage Value UI tab shipped).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -44,13 +44,14 @@
 | `src/lib/` | Shared utilities, types, store, i18n, proxy, poe2api | **Types in `types.ts` ONLY** |
 | `src/lib/flipper-proxy.ts` | Proxy with per-endpoint circuit breaker + dedup + mode-aware 5xx fallback (P1-10 iter 66, **P2-8 iter 69**) | `Map<path, EndpointCircuitBreaker>` keyed by normalized path; `proxyWithFallback` passes non-503 5xx through in dev, returns 200+`X-Flipper-Fallback` header in prod. Exports `isFlipperFallbackResponse`, `getFlipperFallbackOriginalStatus`, `FLIPPER_FALLBACK_HEADER` |
 | `src/hooks/use-price-stream.ts` | SSE hook (P0-1 iter 55, P2-7 iter 59) | `invalidateCaches(pair)` — per-pair benchmark invalidation |
-| `src/components/dashboard/dashboard-page.tsx` | Parent wiring component, **1201 lines** (P2-1 closed iter 73: was 1685 in iter 70). | 6 extractions over iter 71-73: `ExchangeTabContent`, `CurrenciesTabContent`, `UniquesTabContent`, `OverviewTabContent`, `DashboardToolbar`, `DashboardDialogs`. Optional follow-up: `useDashboardData` hook for the ~250 lines of useQuery/memo wiring (deferred — high interdependency risk). |
+| `src/components/dashboard/dashboard-page.tsx` | Parent wiring component, **1216 lines** (iter 74: +15 lines for Storage Value tab wiring). 6 presentational subcomponents extracted in iter 71-73. | Optional follow-up: `useDashboardData` hook for the ~250 lines of useQuery/memo wiring (deferred — high interdependency risk). |
 | `src/components/dashboard/dashboard-toolbar.tsx` | Toolbar (TabsList + action buttons + category chips) (**P2-1 iter 73, step 4a**) | Pure presentational. Owns the tab strip + keyboard-shortcuts/alerts/comparison/pair-comparison buttons + the currencies/uniques category-filter chip strip. Tab switching still goes through the parent `<Tabs onValueChange=...>` scope. |
 | `src/components/dashboard/dashboard-dialogs.tsx` | Dialog/sheet/banner wrappers (**P2-1 iter 73, step 4b**) | Pure presentational. Wraps DetailDialog, PairDetailDialog, ComparisonDialog, PairComparisonDialog, PriceAlertDialog, EventsSidebar, OfflineBanner, ShortcutsDialog — 8 primitives that sit at the bottom of the Dashboard render tree. Each open/close flag is a prop. |
 | `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern reused by the iter 72-73 extractions. |
 | `src/components/dashboard/currencies-tab-content.tsx` | Currencies tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, virtual-vs-static grid switch, pagination. |
 | `src/components/dashboard/uniques-tab-content.tsx` | Uniques tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, UniqueTable, pagination. |
 | `src/components/dashboard/overview-tab-content.tsx` | Overview tab content (**P2-1 iter 72**) | Pure presentational. Composes MarketOverview + ComparativeChart, each wrapped in its own ErrorBoundary. |
+| `src/components/dashboard/storage-value-tab.tsx` | Storage Value tab (**F2 iter 74**) | Wraps the existing `/api/v1/storage-value/{currency}` endpoint. Lazy-loaded, ErrorBoundary-wrapped. Currency picker (default list of 14 canonical currencies) + horizon picker (1/6/24/48/168h) + quantity input + Compute button. Renders: decision card (BUY_HOLD / SELL_CONVERT / NEUTRAL with hint), projection breakdown (current/projected/risk-discount/adjusted/net/ratio), holdings totals (×quantity), inputs panel (momentum/volatility/acceleration/liquidity/α/horizon). Full i18n (en/ru/zh/ko). Backend offline → offline card with start-backend hint. data_available=false → "no price history" notice. 12 jest tests in `src/__tests__/storage-value-tab.test.tsx`. |
 
 ## 2. Build & Run Commands
 
@@ -101,24 +102,26 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 26. **SnapshotManager atomic state swap** (P3-4, iter 71). `(snapshot, ts)` is wrapped in an immutable `@dataclass(frozen=True) _SnapshotState` and stored as a single `self._state` reference. Replacement is a single Python attribute assignment (atomic under the GIL), so a reader either sees the pre-refresh or post-refresh state — never a mixed (stale snapshot, fresh ts) pair. `_history_cache` and `_active_currencies` are guarded by a separate `_cache_lock` (NOT the asyncio lock — these are mutated from sync code paths inside `_refresh`).
 
+27. **Storage Value tab** (F2, iter 74). The new tab at `src/components/dashboard/storage-value-tab.tsx` is a UI-only wrapper — it does NOT add any new backend route. It calls the existing `GET /api/v1/storage-value/{currency}` endpoint (via the existing `/api/flipper/storage-value/[currency]` proxy). The tab is lazy-loaded via `next/dynamic` (chunk only loads when user navigates to it) and wrapped in `<ErrorBoundary>` so a render error in the tab doesn't crash the whole dashboard. The tab is in `TAB_MAP` at index 9 (between `analyst` and `liquid-chain`) for keyboard-shortcut navigation. The tab trigger is in `dashboard-toolbar.tsx` (Gem icon). StorageValueResponse type extended with optional `totalCurrentValue` / `totalProjectedValue` / `totalNetValue` fields — these are returned by the backend (see `routes_storage_value.py` lines 134-137) but were missing from the TS type.
+
 ## 4. Known Issues
 
-**All known issues are in [`STATUS.md`](./STATUS.md)** — backlog is currently empty (P0=0, P1=0, P2=0, P3=0, P4=0). Switch focus to product features in `PRODUCT_VISION.md` (F1-F6).
+**All technical-debt issues are closed** (P0=0, P1=0, P2=0, P3=0, P4=0). Switch focus to product features in `PRODUCT_VISION.md` (F1–F6). See `STATUS.md` for the current product-feature status table.
 
 Quick reference for the most common symptoms:
 
 | Symptom | Cause | STATUS.md ID |
 |---------|-------|--------------|
-| Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py`. | — |
-| Frontend shows fallback data without notice | (Fixed iter 69 — was P2-8) check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
-| `/scanner/scan` 404 | Endpoint deleted in iter 68 (P2-4 follow-up) — use `/api/v1/arbitrage/flips` with the same params | — |
-| `/flips` lacks filter X | (Fixed iter 67 — all scanner params now on `/flips`). The `message` field is now exposed on `FlipsResponse` (P4-1, iter 71). | — |
-| Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` (P2-6 iter 67) | — |
+| Adding a new Russian translation | Edit `backend/data/currency_names.json` (NOT the `.py` loader). Run `pytest tests/test_currency_names_ru.py`. | F1 (blocked) |
+| Frontend shows fallback data without notice | check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` | — |
+| `/scanner/scan` 404 | Endpoint deleted in iter 68 — use `/api/v1/arbitrage/flips` with the same params | — |
+| Need to inspect circuit breaker state | `GET /api/flipper/health/circuit-breakers` | — |
 | LightGBM skips for new currency | (Fixed iter 67 — adaptive fallback from `floor=5`) | — |
-| `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle — fall back to `direct_rate` (P1-8 iter 64) | — |
-| Concurrent EventManager access raises `KeyError` / `dict changed size during iteration` | (Fixed iter 71 — was P3-3) `threading.RLock` guards all in-memory `_events` access | — |
-| `SnapshotManager.get_snapshot` returns stale snapshot paired with fresh ts | (Fixed iter 71 — was P3-4) `(snapshot, ts)` wrapped in immutable `_SnapshotState` swapped atomically | — |
-| `dashboard-page.tsx` still 1201 lines | (P2-1 closed iter 73) Optional follow-up: extract `useDashboardData` hook for ~250 lines of useQuery/memo wiring. Not blocking — file is now legitimate parent wiring. | — |
+| `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle — fall back to `direct_rate` | — |
+| Concurrent EventManager access raises `KeyError` / `dict changed size during iteration` | (Fixed iter 71) `threading.RLock` guards all in-memory `_events` access | — |
+| `SnapshotManager.get_snapshot` returns stale snapshot paired with fresh ts | (Fixed iter 71) `(snapshot, ts)` wrapped in immutable `_SnapshotState` swapped atomically | — |
+| `dashboard-page.tsx` still 1216 lines | Optional follow-up: extract `useDashboardData` hook for ~250 lines of useQuery/memo wiring. Not blocking. | — |
+| Storage Value tab shows "no price history" | Backend reachable but `price_histories[currency]` is empty. Try `divine` / `exalted` / `chaos` first. | F2 (done) |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 

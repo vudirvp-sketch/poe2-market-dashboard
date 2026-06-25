@@ -341,6 +341,12 @@ export interface StorageValueResponse {
   ratio: number;
   decision: string;
   dataAvailable: boolean;
+  /** Total current value for the requested quantity (iter 74 — added by backend in routes_storage_value.py). */
+  totalCurrentValue?: number;
+  /** Total projected value (projectedPrice × quantity). */
+  totalProjectedValue?: number;
+  /** Total net value (netValue × quantity). */
+  totalNetValue?: number;
   inputs?: StorageValueInputs;
 }
 
