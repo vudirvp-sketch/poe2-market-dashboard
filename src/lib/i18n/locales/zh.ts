@@ -982,6 +982,15 @@ const zh: Record<TranslationKeys, string> = {
   storageValueLoading: "正在计算价值存储...",
   storageValueMirrorCompare: "vs 卡兰德之镜",
   storageValueHinekoraCompare: "vs 希内科拉之锁",
+  // F2 follow-up (iter 75) — historical chart
+  storageValueHistoryTitle: "价值存储历史",
+  storageValueHistorySubtitle: "{0} 相对 镜 / 希内科拉 最近 30 天",
+  storageValueHistoryEmpty: "尚无 {0} 的价格历史。调度器收集更多数据后图表会自动填充。",
+  storageValueHistoryNoRatios: "{0} 有价格历史，但同一时间窗口内没有镜或希内科拉的交易记录 — 暂时无法计算存储价值比率。",
+  storageValueHistoryLoading: "加载价格历史中...",
+  storageValueHistoryMirrorLine: "货币 / 镜 比率",
+  storageValueHistoryHinekoraLine: "货币 / 希内科拉 比率",
+  storageValueHistoryPointCount: "{0} 个数据点",
 };
 
 export default zh;

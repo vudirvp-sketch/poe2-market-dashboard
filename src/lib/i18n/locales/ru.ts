@@ -915,6 +915,15 @@ const ru: Record<TranslationKeys, string> = {
   storageValueLoading: "Расчёт ценности хранения...",
   storageValueMirrorCompare: "против Зеркала Каландры",
   storageValueHinekoraCompare: "против Пряди Хинекоры",
+  // F2 follow-up (iter 75) — historical chart
+  storageValueHistoryTitle: "История ценности хранения",
+  storageValueHistorySubtitle: "{0} относительно Зеркала / Хинекоры за последние 30 дней",
+  storageValueHistoryEmpty: "Для {0} ещё нет истории цен. График заполнится, когда планировщик соберёт больше точек данных.",
+  storageValueHistoryNoRatios: "История цен для {0} есть, но в том же окне нет сделок с Зеркалом или Хинекорой — рассчитать соотношения пока нельзя.",
+  storageValueHistoryLoading: "Загрузка истории цен...",
+  storageValueHistoryMirrorLine: "валюта / Зеркало",
+  storageValueHistoryHinekoraLine: "валюта / Хинекора",
+  storageValueHistoryPointCount: "{0} точек",
 };
 
 export default ru;

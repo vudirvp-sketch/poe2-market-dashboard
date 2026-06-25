@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 74 — F2 Storage Value UI tab shipped).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 75 — F2 follow-up + F3 shipped).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -23,6 +23,10 @@
 | `backend/economy/clustering_helpers.py` | Shared clustering data prep + executor function (P1-4 iter 63) | `prepare_clustering_data()` + `run_clustering_sync()` + `CLUSTER_LABELS_CACHE_KEY` |
 | `backend/economy/events.py` | EventManager + StoredEvent (P1-7 iter 61, **P3-3 iter 71**) | `event_id`, `is_active`, `created_at`; 4 methods async; `_prune_expired` left sync intentionally. **All in-memory `_events` access guarded by `threading.RLock`**; SQLite writes await OUTSIDE the lock. |
 | `backend/economy/lifecycle.py` | PhaseDetector (P0-4 fixed iter 54) | `_reference_date` returns `patch_reset_date` unconditionally when set |
+| `backend/economy/content_pulse.py` | **F3 (iter 75)** — daily turnover per category + 7d/30d rolling + signal | Pure function `compute_content_pulse(snapshot, config)`. No side effects. Tunable thresholds at module top (`SIGNAL_RISING_THRESHOLD_PCT=10.0`, `SIGNAL_FALLING_THRESHOLD_PCT=-10.0`, `TOP_N_PER_CATEGORY=3`). |
+| `backend/economy/storage_value_history.py` | **F2 follow-up (iter 75)** — time-series of currency/mirror + currency/hinekora ratios | Pure function `compute_storage_value_history(snapshot, currency, days=30)`. Uses 24h nearest-neighbor tolerance for matching timestamps across the three histories. |
+| `backend/api/routes_content_pulse.py` | **F3 (iter 75)** — route handler `GET /api/v1/content-pulse` | Thin wrapper: fetch snapshot → call `compute_content_pulse` → shape response. Returns `data_available=false` + empty `categories` list when snapshot is not loaded. |
+| `backend/api/routes_storage_value.py` | Storage value routes (existing `/storage-value/{currency}` + new `/storage-value/{currency}/history` iter 75) | Both routes return `data_available=false` with empty payload when snapshot not loaded — no 503. |
 | `backend/data/historical.py` | SQLite store for price snapshots + events | Chunked delete (P1-6 + P3-2 iter 66) — `rowid IN (SELECT ... LIMIT ?)` pattern |
 | `backend/data/unified_cache.py` | UnifiedCache with namespaces: `pipeline`, `daily_stats` | Shim modules deleted in iter 66 (P2-2) — import directly |
 | `backend/data/currency_names_ru.py` | Thin loader (63 lines) for `currency_names.json` (P2-3 closed iter 70) | Edit `currency_names.json`, not the `.py` |
@@ -51,7 +55,8 @@
 | `src/components/dashboard/currencies-tab-content.tsx` | Currencies tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, virtual-vs-static grid switch, pagination. |
 | `src/components/dashboard/uniques-tab-content.tsx` | Uniques tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, UniqueTable, pagination. |
 | `src/components/dashboard/overview-tab-content.tsx` | Overview tab content (**P2-1 iter 72**) | Pure presentational. Composes MarketOverview + ComparativeChart, each wrapped in its own ErrorBoundary. |
-| `src/components/dashboard/storage-value-tab.tsx` | Storage Value tab (**F2 iter 74**) | Wraps the existing `/api/v1/storage-value/{currency}` endpoint. Lazy-loaded, ErrorBoundary-wrapped. Currency picker (default list of 14 canonical currencies) + horizon picker (1/6/24/48/168h) + quantity input + Compute button. Renders: decision card (BUY_HOLD / SELL_CONVERT / NEUTRAL with hint), projection breakdown (current/projected/risk-discount/adjusted/net/ratio), holdings totals (×quantity), inputs panel (momentum/volatility/acceleration/liquidity/α/horizon). Full i18n (en/ru/zh/ko). Backend offline → offline card with start-backend hint. data_available=false → "no price history" notice. 12 jest tests in `src/__tests__/storage-value-tab.test.tsx`. |
+| `src/components/dashboard/storage-value-tab.tsx` | Storage Value tab (**F2 iter 74 + iter 75**) | Wraps the existing `/api/v1/storage-value/{currency}` endpoint. Lazy-loaded, ErrorBoundary-wrapped. Currency picker (default list of 14 canonical currencies) + horizon picker (1/6/24/48/168h) + quantity input + Compute button. Renders: decision card (BUY_HOLD / SELL_CONVERT / NEUTRAL with hint), projection breakdown (current/projected/risk-discount/adjusted/net/ratio), holdings totals (×quantity), inputs panel (momentum/volatility/acceleration/liquidity/α/horizon), historical chart (iter 75). Full i18n (en/ru/zh/ko). Backend offline → offline card with start-backend hint. data_available=false → "no price history" notice. 12 jest tests in `src/__tests__/storage-value-tab.test.tsx`. |
+| `src/components/dashboard/storage-value-history-chart.tsx` | Storage Value history chart (**F2 follow-up iter 75**) | Dependency-free SVG line chart (~290 lines) rendering two ratios: `currency/mirror` (blue) and `currency/hinekora` (emerald). Fetches via `useQuery` bound to `/api/flipper/storage-value/[currency]/history?days=30`. Graceful degradation: <2 points → "no history" notice; all-null ratios → "no reference data" notice; loading → spinner text. 11 jest tests in `src/__tests__/storage-value-history-chart.test.tsx`. |
 
 ## 2. Build & Run Commands
 
@@ -104,6 +109,10 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 27. **Storage Value tab** (F2, iter 74). The new tab at `src/components/dashboard/storage-value-tab.tsx` is a UI-only wrapper — it does NOT add any new backend route. It calls the existing `GET /api/v1/storage-value/{currency}` endpoint (via the existing `/api/flipper/storage-value/[currency]` proxy). The tab is lazy-loaded via `next/dynamic` (chunk only loads when user navigates to it) and wrapped in `<ErrorBoundary>` so a render error in the tab doesn't crash the whole dashboard. The tab is in `TAB_MAP` at index 9 (between `analyst` and `liquid-chain`) for keyboard-shortcut navigation. The tab trigger is in `dashboard-toolbar.tsx` (Gem icon). StorageValueResponse type extended with optional `totalCurrentValue` / `totalProjectedValue` / `totalNetValue` fields — these are returned by the backend (see `routes_storage_value.py` lines 134-137) but were missing from the TS type.
 
+28. **Storage Value History endpoint** (F2 follow-up, iter 75). `GET /api/v1/storage-value/{currency}/history?days=30` returns a time-series of `price(currency) / price(mirror)` and `price(currency) / price(hinekora)` ratios. For each timestamp in the currency's price history, the backend finds the nearest mirror/hinekora price point within a **24h tolerance** (see `backend/economy/storage_value_history.py:_find_nearest_price`). Points beyond tolerance emit `mirror_price=None` / `hinekora_price=None` and corresponding `ratio_*=None` — the frontend chart renders gaps in the line for these points (using `M` instead of `L` in the SVG path). When ALL ratios are null (e.g. mirror/hinekora not traded in the current league), the chart shows a "no reference data" notice instead of an empty chart. The Next.js proxy lives at `src/app/api/flipper/storage-value/[currency]/history/route.ts` and returns an empty `points` array with `dataAvailable: false` when the backend is offline (no 503).
+
+29. **Content Pulse endpoint** (F3, iter 75). `GET /api/v1/content-pulse` returns per-category trade volume + 7d/30d rolling deltas + top movers. The heavy lifting is in `backend/economy/content_pulse.py:compute_content_pulse()` — a **pure function** (no side effects, no I/O) that takes a `DataSnapshot` + `AppConfig` and returns a dict. The route handler in `routes_content_pulse.py` is a thin wrapper that fetches the snapshot and calls the function. This separation makes the logic testable without spinning up FastAPI. Signal thresholds are module-level constants (NOT in config.yaml): `SIGNAL_RISING_THRESHOLD_PCT=10.0`, `SIGNAL_FALLING_THRESHOLD_PCT=-10.0`. `delta_7d_pct` is `null` (not 0) when there's no historical data — the frontend should treat `null` as "no signal yet" rather than "stable". Categories with no items in the snapshot still emit a row (with `item_count: 0`) so the UI can render "0 items / no data" rather than hiding the category entirely.
+
 ## 4. Known Issues
 
 **All technical-debt issues are closed** (P0=0, P1=0, P2=0, P3=0, P4=0). Switch focus to product features in `PRODUCT_VISION.md` (F1–F6). See `STATUS.md` for the current product-feature status table.
@@ -122,6 +131,9 @@ Quick reference for the most common symptoms:
 | `SnapshotManager.get_snapshot` returns stale snapshot paired with fresh ts | (Fixed iter 71) `(snapshot, ts)` wrapped in immutable `_SnapshotState` swapped atomically | — |
 | `dashboard-page.tsx` still 1216 lines | Optional follow-up: extract `useDashboardData` hook for ~250 lines of useQuery/memo wiring. Not blocking. | — |
 | Storage Value tab shows "no price history" | Backend reachable but `price_histories[currency]` is empty. Try `divine` / `exalted` / `chaos` first. | F2 (done) |
+| Storage Value history chart shows "no history" | Currency has <2 price points in last 30 days, OR all mirror/hinekora ratios are null. | F2 (done) |
+| `/api/v1/content-pulse` returns `data_available: false` | Snapshot not loaded yet, OR no items in any configured category. | F3 (done) |
+| Content Pulse `delta_7d_pct` is `null` | No historical price_logs for any item in that category — only today's volume is known. Not a bug. | F3 (done) |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -149,12 +161,14 @@ Quick reference for the most common symptoms:
 | POST | `/api/v1/events/{event_id}/deactivate` | Deactivate event |
 | GET | `/api/v1/anomalies` | Anomaly detection |
 | GET | `/api/v1/storage-value/{currency}` | Hold/sell decision |
+| GET | `/api/v1/storage-value/{currency}/history` | **F2 follow-up (iter 75)** — time-series of currency/mirror + currency/hinekora ratios |
 | GET | `/api/v1/optimizer/path` | Optimal conversion path (P1-8 iter 64) |
 | GET | `/api/v1/optimizer/matrix` | Conversion matrix |
 | GET | `/api/v1/analyst/summary` | League analyst summary |
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
+| GET | `/api/v1/content-pulse` | **F3 (iter 75)** — per-category turnover + 7d/30d rolling + top movers |
 
 **Frontend-only routes:**
 

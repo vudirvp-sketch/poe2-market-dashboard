@@ -65,8 +65,10 @@ import {
   fmt,
   getFlipperErrorType,
   type StorageValueResponse,
+  type StorageValueHistoryResponse,
 } from "@/lib/types";
 import { FlipperBackendStatusCard } from "./flipper-backend-status-card";
+import { StorageValueHistoryChart } from "./storage-value-history-chart";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -185,6 +187,25 @@ export function StorageValueTab({ backendOnline, currencies }: StorageValueTabPr
     staleTime: 30_000,
     retry: 1,
   });
+
+  // ---- History query (F2 follow-up, iter 75) ----
+  // Fetches the time-series of currency/mirror and currency/hinekora ratios
+  // for the historical chart. Bound to `currencyInput` (not `computeNonce`) so
+  // the chart updates immediately when the user switches currency, without
+  // waiting for a "Compute" click. `days` is fixed at 30 for now — can be
+  // promoted to a picker if we later want a 7d / 30d / 90d toggle.
+  const { data: historyData, isLoading: historyLoading } =
+    useQuery<StorageValueHistoryResponse>({
+      queryKey: ["storageValueHistory", currencyInput],
+      queryFn: () =>
+        fetchApi<StorageValueHistoryResponse>(
+          `/api/flipper/storage-value/${encodeURIComponent(currencyInput)}/history`,
+          { days: "30" },
+        ),
+      enabled: backendOnline && currencyInput.length > 0,
+      staleTime: 60_000, // history changes slowly — 1 min stale time
+      retry: 1,
+    });
 
   const insufficientData =
     isError && getFlipperErrorType(error) === "backend_insufficient_data";
@@ -575,6 +596,16 @@ export function StorageValueTab({ backendOnline, currencies }: StorageValueTabPr
               {t("storageValueSubtitle", { 0: currencyInput, 1: horizon })}
             </CardContent>
           </Card>
+
+          {/* ========================================================== */}
+          {/* Historical chart — currency/mirror + currency/hinekora   */}
+          {/* (F2 follow-up, iter 75)                                   */}
+          {/* ========================================================== */}
+          <StorageValueHistoryChart
+            points={historyData?.points ?? []}
+            currency={currencyInput}
+            loading={historyLoading}
+          />
         </>
       )}
     </div>

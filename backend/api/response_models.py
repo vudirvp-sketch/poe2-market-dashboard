@@ -398,6 +398,30 @@ class StorageValueResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Storage Value History (F2 follow-up, iter 75)
+# ---------------------------------------------------------------------------
+
+class StorageValueHistoryPoint(BaseModel):
+    """A single point in the storage-value history time-series."""
+    timestamp: str = Field(description="ISO 8601 timestamp of the price observation")
+    price: float = Field(description="Price of the currency at this timestamp (in base currency)")
+    mirror_price: float | None = Field(default=None, description="Nearest mirror price within 24h tolerance. None if no mirror trade near this time.")
+    hinekora_price: float | None = Field(default=None, description="Nearest Hinekora's Lock price within 24h tolerance. None if no hinekora trade near this time.")
+    ratio_mirror: float | None = Field(default=None, description="price / mirror_price. None when mirror_price is None or zero.")
+    ratio_hinekora: float | None = Field(default=None, description="price / hinekora_price. None when hinekora_price is None or zero.")
+
+
+class StorageValueHistoryResponse(BaseModel):
+    """Response for GET /api/v1/storage-value/{currency}/history."""
+    currency: str = Field(description="Currency API identifier")
+    mirror_currency: str = Field(description="Reference currency for store-of-value comparison (default: 'mirror')")
+    hinekora_currency: str = Field(description="Second reference currency (default: 'hinekoras-lock')")
+    points: list[StorageValueHistoryPoint] = Field(default_factory=list, description="Time-series of price + ratio_mirror + ratio_hinekora, sorted ascending by timestamp")
+    data_available: bool = Field(description="Whether at least one point was returned")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+
+
+# ---------------------------------------------------------------------------
 # Optimizer
 # ---------------------------------------------------------------------------
 
@@ -572,3 +596,37 @@ class LiquidChainOpportunitiesResponse(BaseModel):
     data_available: bool = Field(description="Whether data is available")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
     message: str | None = Field(default=None, description="Info message when data is unavailable")
+
+
+# ---------------------------------------------------------------------------
+# Content Pulse (F3, iter 75)
+# ---------------------------------------------------------------------------
+
+class ContentPulseMoverData(BaseModel):
+    """A single rising/falling item within a category."""
+    api_id: str = Field(description="Item API identifier")
+    text: str = Field(description="Display name (EN)")
+    trend_pct: float = Field(description="Price % change over the available price_logs window")
+    current_price: float = Field(description="Current price in base currency")
+
+
+class ContentPulseCategoryData(BaseModel):
+    """Per-category turnover snapshot + rolling deltas + top movers."""
+    category: str = Field(description="League mechanic category (e.g. 'ritual', 'breach')")
+    today_volume: float = Field(description="Sum of CurrentQuantity across all items in the category today")
+    rolling_7d: float = Field(description="Mean daily volume over the last 7 days")
+    rolling_30d: float = Field(description="Mean daily volume over the last 30 days")
+    delta_7d_pct: float | None = Field(default=None, description="(today / rolling_7d - 1) * 100. None when no historical data.")
+    delta_30d_pct: float | None = Field(default=None, description="(today / rolling_30d - 1) * 100. None when no historical data.")
+    signal: str = Field(description="Signal: 'rising' | 'falling' | 'stable' (based on delta_7d_pct ±10%)")
+    item_count: int = Field(description="Number of items in this category")
+    top_rising: list[ContentPulseMoverData] = Field(default_factory=list, description="Top-3 items with positive % price change")
+    top_falling: list[ContentPulseMoverData] = Field(default_factory=list, description="Top-3 items with negative % price change")
+
+
+class ContentPulseResponse(BaseModel):
+    """Response for GET /api/v1/content-pulse."""
+    league: str = Field(description="League name")
+    categories: list[ContentPulseCategoryData] = Field(default_factory=list, description="Per-category pulse data, sorted by |delta_7d_pct| desc")
+    data_available: bool = Field(description="Whether any category had items in the snapshot")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")

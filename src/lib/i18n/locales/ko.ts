@@ -982,6 +982,15 @@ const ko: Record<TranslationKeys, string> = {
   storageValueLoading: "저장 가치 계산 중...",
   storageValueMirrorCompare: "vs 칼란드라의 거울",
   storageValueHinekoraCompare: "vs 히네코라의 자물쇠",
+  // F2 follow-up (iter 75) — historical chart
+  storageValueHistoryTitle: "저장 가치 이력",
+  storageValueHistorySubtitle: "최근 30일간 거울 / 히네코라 대비 {0}",
+  storageValueHistoryEmpty: "{0}에 대한 가격 이력이 아직 없습니다. 스케줄러가 더 많은 데이터를 수집하면 차트가 채워집니다.",
+  storageValueHistoryNoRatios: "{0}의 가격 이력은 있지만 같은 기간에 거울 또는 히네코라 거래가 기록되지 않아 — 저장 가치 비율을 계산할 수 없습니다.",
+  storageValueHistoryLoading: "가격 이력 로딩 중...",
+  storageValueHistoryMirrorLine: "통화 / 거울 비율",
+  storageValueHistoryHinekoraLine: "통화 / 히네코라 비율",
+  storageValueHistoryPointCount: "{0}개 포인트",
 };
 
 export default ko;

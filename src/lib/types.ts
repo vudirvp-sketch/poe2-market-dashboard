@@ -350,6 +350,33 @@ export interface StorageValueResponse {
   inputs?: StorageValueInputs;
 }
 
+/** A single point in the storage-value history time-series (iter 75, F2 follow-up). */
+export interface StorageValueHistoryPoint {
+  /** ISO 8601 timestamp of the price observation. */
+  timestamp: string;
+  /** Price of the currency at this timestamp (in base currency). */
+  price: number;
+  /** Nearest mirror price within 24h tolerance. Null when no mirror trade near this time. */
+  mirrorPrice: number | null;
+  /** Nearest Hinekora's Lock price within 24h tolerance. Null when no hinekora trade near this time. */
+  hinekoraPrice: number | null;
+  /** price / mirrorPrice. Null when mirrorPrice is null or zero. */
+  ratioMirror: number | null;
+  /** price / hinekoraPrice. Null when hinekoraPrice is null or zero. */
+  ratioHinekora: number | null;
+}
+
+/** Storage value history response from GET /api/flipper/storage-value/[currency]/history (iter 75). */
+export interface StorageValueHistoryResponse {
+  currency: string;
+  mirrorCurrency: string;
+  hinekoraCurrency: string;
+  /** Time-series of price + ratio_mirror + ratio_hinekora, sorted ascending by timestamp. */
+  points: StorageValueHistoryPoint[];
+  dataAvailable: boolean;
+  fetchedAt: string;
+}
+
 // Types previously in poe2api.ts — now consolidated here
 
 export interface ExchangeSnapshot {

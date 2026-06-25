@@ -7,6 +7,8 @@ PoE2_Flipper_Canonical_Formulas.md Section 6.
 
 Endpoints:
     GET /api/v1/storage-value/{currency} — projected value and hold/sell decision
+    GET /api/v1/storage-value/{currency}/history — time-series of currency/mirror
+        and currency/hinekora ratios (F2 follow-up, iter 75)
 """
 
 from __future__ import annotations
@@ -19,8 +21,14 @@ from fastapi import APIRouter, HTTPException, Query
 
 from backend.config import get_settings
 from backend.economy.momentum import PriceMomentumTracker
+from backend.economy.storage_value_history import (
+    DEFAULT_HINEKORA_API_ID,
+    DEFAULT_MIRROR_API_ID,
+    MAX_DAYS,
+    compute_storage_value_history,
+)
 from backend.predictors.storage_value import project_value
-from backend.api.response_models import StorageValueResponse
+from backend.api.response_models import StorageValueHistoryResponse, StorageValueResponse
 
 logger = logging.getLogger(__name__)
 
@@ -157,4 +165,66 @@ async def get_storage_value(
             "decision": "NEUTRAL",
             "inputs": {},
             "data_available": False,
+        }
+
+
+# ---------------------------------------------------------------------------
+# F2 follow-up (iter 75) — Historical time-series of currency/mirror and
+# currency/hinekora ratios. Used by the historical chart in the Storage
+# Value tab (storage-value-tab.tsx).
+# ---------------------------------------------------------------------------
+
+@router.get("/storage-value/{currency}/history", response_model=StorageValueHistoryResponse)
+async def get_storage_value_history(
+    currency: str,
+    days: int = Query(
+        default=30,
+        ge=1,
+        le=MAX_DAYS,
+        description="Lookback window in days (max 90 to match historical_retention_days)",
+    ),
+):
+    """Time-series of `price(currency) / price(mirror)` and `price(currency) / price(hinekora)`.
+
+    For each timestamp in the currency's price history, the endpoint finds the
+    nearest mirror and hinekora price points (within a 24h tolerance window)
+    and computes the ratio. The result is sorted ascending by timestamp.
+
+    Returns `data_available=false` with an empty `points` list when:
+    - The snapshot is not yet loaded.
+    - The currency has no price history.
+    - All price history points are older than the lookback window.
+    """
+    from backend.api.data_snapshot import get_snapshot_manager
+
+    snapshot_mgr = get_snapshot_manager()
+    if snapshot_mgr.last_snapshot is None:
+        return {
+            "currency": currency,
+            "mirror_currency": DEFAULT_MIRROR_API_ID,
+            "hinekora_currency": DEFAULT_HINEKORA_API_ID,
+            "points": [],
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    try:
+        from backend.api.data_snapshot import get_snapshot
+        snapshot = await get_snapshot()
+        return compute_storage_value_history(
+            snapshot,
+            currency,
+            mirror_api_id=DEFAULT_MIRROR_API_ID,
+            hinekora_api_id=DEFAULT_HINEKORA_API_ID,
+            days=days,
+        )
+    except Exception as e:
+        logger.error("Storage value history failed for %s: %s", currency, e)
+        return {
+            "currency": currency,
+            "mirror_currency": DEFAULT_MIRROR_API_ID,
+            "hinekora_currency": DEFAULT_HINEKORA_API_ID,
+            "points": [],
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
         }

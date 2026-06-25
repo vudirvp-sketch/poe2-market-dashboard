@@ -588,6 +588,13 @@ try:
 except ImportError:
     logger.debug("SSE router not available yet")
 
+# F3 (iter 75): Content Pulse — per-category turnover + 7d/30d rolling deltas.
+try:
+    from backend.api.routes_content_pulse import router as content_pulse_router
+    app.include_router(content_pulse_router)
+except ImportError:
+    logger.debug("Content Pulse router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

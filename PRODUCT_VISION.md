@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 74 — F2 shipped)
+> Last updated: 2026-06-25 (iter 75 — F2 follow-up + F3 shipped)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -103,14 +103,16 @@ Abyss, Incursion) показывать:
 | Data | api_id → RU/EN names | `backend/data/currency_names.json` (iter 70+) |
 | Data | Исторические цены по парам | `backend/data/historical.py` (SQLite) |
 | Logic | Storage value vs Mirror / Hinekora | `backend/predictors/storage_value.py` |
+| Logic | Storage value history (currency/mirror time-series) | ✅ `backend/economy/storage_value_history.py` (iter 75) |
 | Logic | Z-score / percentile | (TODO — добавить в `backend/economy/pricing.py`) |
-| Logic | League mechanic turnover & signals | (TODO — новый модуль `backend/economy/content_pulse.py`) |
+| Logic | League mechanic turnover & signals | ✅ `backend/economy/content_pulse.py` (iter 75) |
 | Logic | PhaseDetector (старт / середина / конец лиги) | `backend/economy/lifecycle.py` |
 | API | `/api/v1/storage-value/{currency}` | `routes_storage_value.py` (существует) |
+| API | `/api/v1/storage-value/{currency}/history` | ✅ `routes_storage_value.py` (iter 75) — time-series of currency/mirror ratios |
 | API | `/api/v1/analyst/summary` | `routes_analyst.py` (существует, расширить) |
-| API | `/api/v1/content-pulse` (TODO) | новый маршрут — top farming suggestions |
-| UI | Tab «Storage Value» (decision card + projection breakdown) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74). Исторический график vs Mirror/Hinekora — TODO. |
-| UI | Tab «Content Pulse» (что фармить сегодня) | TODO — главный экран после входа |
+| API | `/api/v1/content-pulse` | ✅ `routes_content_pulse.py` (iter 75) — top farming suggestions |
+| UI | Tab «Storage Value» (decision card + projection breakdown + historical chart) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74) + `storage-value-history-chart.tsx` (iter 75). |
+| UI | Tab «Content Pulse» (что фармить сегодня) | TODO — главный экран после входа (F4 widget) |
 | UI | Tab «Speculation» (z-score list, buy/sell suggestions) | TODO — расширить существующий flips-tab |
 
 ---
@@ -121,21 +123,31 @@ Abyss, Incursion) показывать:
 Они — продуктовый бэклог, который берётся в работу **после** закрытия P2/P3
 или параллельно с ними, по решению владельца.
 
-### F2. Tab «Storage Value» (ценность относительно Mirror/Hinekora) — ✅ DONE iter 74
-- Вывести исторический график `currency/mirror` для топ-N валют. *(График — следующий шаг; пока реализована карточка решения Hold/Sell с проекцией цены.)*
+### F2. Tab «Storage Value» (ценность относительно Mirror/Hinekora) — ✅ DONE iter 74 + iter 75
+- Вывести исторический график `currency/mirror` для топ-N валют. ✅ iter 75: `src/components/dashboard/storage-value-history-chart.tsx` — SVG line chart с двумя линиями (mirror/hinekora ratios), обёрнут над новым endpoint `/api/v1/storage-value/{currency}/history`.
 - Подсветка валют с трендом «дорожает к зеркалу» (хранить ценность выгодно) и «дешевеет» (лучше избавиться). *(Реализовано через decision BUY_HOLD / SELL_CONVERT / NEUTRAL.)*
-- **Реализовано в iter 74:** `src/components/dashboard/storage-value-tab.tsx` — отдельный UI-таб, обёртка над готовым endpoint `/api/v1/storage-value/{currency}`. Lazy-loaded, ErrorBoundary-wrapped, full i18n (en/ru/zh/ko), 12 jest tests. Решение (BUY/HOLD | NEUTRAL | SELL/CONVERT) + декомпозиция прогноза (current/projected/risk-discount/adjusted/net/ratio) + holdings totals (×quantity) + inputs panel (momentum/volatility/acceleration/liquidity/α/horizon).
+- **Реализовано в iter 74:** `src/components/dashboard/storage-value-tab.tsx` — отдельный UI-таб, обёртка над готовым endpoint `/api/v1/storage-value/{currency}`. Lazy-loaded, ErrorBoundary-wrapped, full i18n (en/ru/zh/ko), 12 jest tests.
+- **Реализовано в iter 75 (follow-up):**
+  - `backend/economy/storage_value_history.py` — pure function `compute_storage_value_history()`. Для каждой точки истории currency находит ближайшую цену mirror/hinekora (24h tolerance) и считает ratio.
+  - `backend/api/routes_storage_value.py` — новый route `GET /api/v1/storage-value/{currency}/history?days=30`.
+  - `src/app/api/flipper/storage-value/[currency]/history/route.ts` — Next.js proxy.
+  - `src/components/dashboard/storage-value-history-chart.tsx` — dependency-free SVG chart (~290 lines), 11 jest tests.
+  - 24 pytest tests в `tests/test_storage_value_history.py`.
 
 ### F1. Доперевод оставшихся ~276 предметов — BLOCKED
 - Парсинг `poe2db.tw/ru/` по категориям (runes, lineage support gems, uncategorized fragments).
 - Скрипт `scripts/sync_currency_names_from_poe2db.py` — одноразовый/периодический импорт в `currency_names.json`.
 - Запуск регрессионных тестов из `tests/test_currency_names_ru.py`.
-- **Статус iter 74:** Все 138 api_ids в текущем cache-snapshot уже переведены. "276 оставшихся" — из baseline iter 32 (625 предметов в API), но без live-доступа к `poe2scout.com` (для полного списка api_id+EN_name) и `poe2db.tw/ru/` (для RU-переводов) расширение ненадёжно. Отложено до появления live-доступа.
+- **Статус iter 75:** Без изменений — заблокирован на live-доступе к `poe2scout.com` (для полного списка api_id+EN_name) и `poe2db.tw/ru/` (для RU-переводов).
 
-### F3. Module `content_pulse` — оборот механик
-- Ежедневный снапшот оборота (sum of trades) по category.
-- Rolling 7d / 30d averages + дельта.
-- Endpoint `/api/v1/content-pulse` → top rising / falling mechanics.
+### F3. Module `content_pulse` — оборот механик — ✅ DONE iter 75
+- Ежедневный снапшот оборота (sum of trades) по category. ✅ `today_volume` = sum of `CurrentQuantity` всех предметов категории.
+- Rolling 7d / 30d averages + дельта. ✅ `_rolling_mean` + `delta_7d_pct` / `delta_30d_pct`.
+- Endpoint `/api/v1/content-pulse` → top rising / falling mechanics. ✅ Возвращает sorted-by-|delta_7d| список категорий, каждая с `signal` (rising/falling/stable, thresholds ±10%) + `top_rising`/`top_falling` (top-3 предметов по % цене).
+- **Реализовано в iter 75:**
+  - `backend/economy/content_pulse.py` — pure function `compute_content_pulse()`. 44 pytest tests в `tests/test_content_pulse.py`.
+  - `backend/api/routes_content_pulse.py` — route handler `GET /api/v1/content-pulse`.
+  - Pydantic response models: `ContentPulseMoverData`, `ContentPulseCategoryData`, `ContentPulseResponse` в `backend/api/response_models.py`.
 
 ### F4. Main dashboard widget «Что фармить сегодня»
 - Карточка на главной странице: 1-2 механики с растущими ценами на лут
@@ -160,8 +172,8 @@ Abyss, Incursion) показывать:
 когда одновременно:
 
 1. ✅ Все предметы в UI — на русском (или явно отмечены «нет перевода»).
-2. ✅ Есть отдельный экран «Storage Value» с историческим графиком относительно Mirror/Hinekora. **(iter 74 — карточка решения Hold/Sell готова; исторический график — следующий шаг)**
-3. ⬜ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены).
+2. ✅ Есть отдельный экран «Storage Value» с историческим графиком относительно Mirror/Hinekora. **(iter 74 — карточка решения Hold/Sell готова; iter 75 — исторический график готов)**
+3. ⬜ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены). *(F4 widget — следующий шаг; backend уже готов через F3 `/api/v1/content-pulse`)*
 4. ⬜ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом.
 5. ⬜ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.).
 

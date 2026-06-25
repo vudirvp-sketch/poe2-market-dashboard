@@ -987,6 +987,15 @@ const en = {
   storageValueLoading: "Computing storage value...",
   storageValueMirrorCompare: "vs Mirror of Kalandra",
   storageValueHinekoraCompare: "vs Hinekora's Lock",
+  // F2 follow-up (iter 75) — historical chart
+  storageValueHistoryTitle: "Storage Value History",
+  storageValueHistorySubtitle: "{0} vs Mirror / Hinekora over the last 30 days",
+  storageValueHistoryEmpty: "No price history available for {0} yet. The chart will populate once the scheduler collects more data points.",
+  storageValueHistoryNoRatios: "Price history for {0} exists, but no Mirror or Hinekora trades were recorded in the same window — cannot compute storage-value ratios yet.",
+  storageValueHistoryLoading: "Loading price history...",
+  storageValueHistoryMirrorLine: "currency / Mirror ratio",
+  storageValueHistoryHinekoraLine: "currency / Hinekora ratio",
+  storageValueHistoryPointCount: "{0} points",
 } as const;
 
 export default en;
