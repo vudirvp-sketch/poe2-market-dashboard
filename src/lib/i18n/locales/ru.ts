@@ -759,6 +759,7 @@ const ru: Record<TranslationKeys, string> = {
   fallbackComparativeAnalytics: "Сравнительная аналитика",
   fallbackContentPulse: "Content Pulse — Что фармить сегодня",
   fallbackSpeculation: "Спекуляции — сигналы BUY / SELL / HOLD",
+  fallbackPhaseHints: "Подсказки по фазе лиги",
   fallbackVolumeLiquidity: "Объём и ликвидность",
   fallbackArbitrageCalculator: "Калькулятор арбитража",
   fallbackFlips: "Флипы",
@@ -974,6 +975,23 @@ const ru: Record<TranslationKeys, string> = {
   speculationHorizonMedium: "горизонт: 3-7 дней (умеренный сигнал)",
   speculationHorizonLong: "горизонт: >1 недели (слабый)",
   speculationHorizonUnknown: "горизонт: неизвестен",
+  // F6 (iter 78) — Phase-aware hints widget (Temporalis, skill gems, etc.)
+  phaseHintsTitle: "Подсказки по фазе лиги",
+  phaseHintsLabelEarly: "Ранняя лига",
+  phaseHintsLabelMid: "Середина лиги",
+  phaseHintsLabelLate: "Поздняя лига",
+  phaseHintsLabelUnknown: "Неизвестная фаза",
+  phaseHintsDayCount: "День {0}",
+  phaseHintsReferenceCurrency: "реф: {0}",
+  phaseHintsActionLabel: "Действие",
+  phaseHintsOffline: "Подсказки требуют аналитический бэкенд.",
+  phaseHintsLoading: "Загрузка подсказок...",
+  phaseHintsError: "Не удалось загрузить подсказки. Бэкенд, возможно, недоступен.",
+  phaseHintsNoData: "Подсказки недоступны — PhaseDetector не смог определить текущую фазу лиги.",
+  phaseHintsNoHints: "Нет рекомендаций для текущей фазы.",
+  phaseHintsRefresh: "Обновить",
+  phaseHintsFetchedAt: "Получено: {0}",
+  phaseHintsHintCount: "{0} подсказок",
 };
 
 export default ru;

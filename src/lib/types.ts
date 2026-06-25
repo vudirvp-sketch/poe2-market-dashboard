@@ -493,6 +493,47 @@ export interface SpeculationResponse {
   days: number;
 }
 
+// ============================================================================
+// Phase-aware Hints (F6, iter 78)
+// ============================================================================
+
+/** A single phase-aware hint — advisory context, NOT a trade signal.
+ *  Backend (Pydantic) shape: PhaseHintData. */
+export interface PhaseHint {
+  /** Stable slug (e.g. "mid-skill-gems-18-20") — for tests + future metric linkage. */
+  id: string;
+  /** Short label for the hint. */
+  title: string;
+  /** One-sentence explanation of the pattern. */
+  detail: string;
+  /** What the user should do (imperative). */
+  action: string;
+  /** Optional POE2Scout category slug for future cross-reference. Empty string if none. */
+  category: string;
+}
+
+/** Response for GET /api/flipper/phase-hints (F6, iter 78). */
+export interface PhaseHintsResponse {
+  /** League name. */
+  league: string;
+  /** Current league phase: "early" | "mid" | "late" | "unknown". */
+  phase: string;
+  /** Human-readable phase label, e.g. "Early League". */
+  phaseLabel: string;
+  /** Days since league start or last major patch. */
+  daysSinceReference: number;
+  /** Reference currency for the phase (e.g. "exalted" for EARLY, "divine" for MID/LATE). Empty if unknown. */
+  referenceCurrency: string;
+  /** 1-2 sentence overview of the current phase. */
+  phaseSummary: string;
+  /** Phase-relevant advisory hints (hardcoded table, no live metrics). */
+  hints: PhaseHint[];
+  /** Always true — the hint table is hardcoded and always available. False only on exception. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+}
+
 // Types previously in poe2api.ts — now consolidated here
 
 export interface ExchangeSnapshot {

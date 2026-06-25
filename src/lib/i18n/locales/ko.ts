@@ -826,6 +826,7 @@ const ko: Record<TranslationKeys, string> = {
   fallbackComparativeAnalytics: "비교 분석",
   fallbackContentPulse: "Content Pulse — 오늘 뭐 팔까",
   fallbackSpeculation: "스페큘레이션 — BUY / SELL / HOLD 신호",
+  fallbackPhaseHints: "리그 단계 힌트",
   fallbackVolumeLiquidity: "거래량 및 유동성",
   fallbackArbitrageCalculator: "차익거래 계산기",
   fallbackFlips: "플립",
@@ -1041,6 +1042,23 @@ const ko: Record<TranslationKeys, string> = {
   speculationHorizonMedium: "기간: 3-7일 (중간 신호)",
   speculationHorizonLong: "기간: >1주 (한계적)",
   speculationHorizonUnknown: "기간: 알 수 없음",
+  // F6 (iter 78) — Phase-aware hints widget (Temporalis, skill gems, etc.)
+  phaseHintsTitle: "리그 단계 힌트",
+  phaseHintsLabelEarly: "리그 초반",
+  phaseHintsLabelMid: "리그 중반",
+  phaseHintsLabelLate: "리그 후반",
+  phaseHintsLabelUnknown: "알 수 없는 단계",
+  phaseHintsDayCount: "{0}일차",
+  phaseHintsReferenceCurrency: "기준: {0}",
+  phaseHintsActionLabel: "행동",
+  phaseHintsOffline: "단계 힌트는 분석 백엔드가 필요합니다.",
+  phaseHintsLoading: "단계 힌트 로딩 중...",
+  phaseHintsError: "단계 힌트를 불러오지 못했습니다. 백엔드에 문제가 있을 수 있습니다.",
+  phaseHintsNoData: "단계 힌트를 사용할 수 없습니다 — PhaseDetector가 현재 리그 단계를 결정할 수 없습니다.",
+  phaseHintsNoHints: "현재 단계에 대한 권장 힌트가 없습니다.",
+  phaseHintsRefresh: "새로고침",
+  phaseHintsFetchedAt: "가져온 시간: {0}",
+  phaseHintsHintCount: "{0}개 힌트",
 };
 
 export default ko;

@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 77 — F5 Speculation tab shipped)
+> Last updated: 2026-06-25 (iter 78 — F6 Phase-aware hints shipped)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -106,16 +106,18 @@ Abyss, Incursion) показывать:
 | Logic | Storage value history (currency/mirror time-series) | ✅ `backend/economy/storage_value_history.py` (iter 75) |
 | Logic | Z-score / percentile | ✅ `backend/economy/pricing.py` (iter 77) — `compute_zscore` + `compute_percentile` pure helpers |
 | Logic | League mechanic turnover & signals | ✅ `backend/economy/content_pulse.py` (iter 75) |
-| Logic | PhaseDetector (старт / середина / конец лиги) | `backend/economy/lifecycle.py` |
+| Logic | PhaseDetector (старт / середина / конец лиги) | ✅ `backend/economy/lifecycle.py` + `backend/economy/phase_hints.py` (iter 78 — hardcoded hint table for EARLY/MID/LATE phases) |
 | API | `/api/v1/storage-value/{currency}` | `routes_storage_value.py` (существует) |
 | API | `/api/v1/storage-value/{currency}/history` | ✅ `routes_storage_value.py` (iter 75) — time-series of currency/mirror ratios |
 | API | `/api/v1/analyst/summary` | `routes_analyst.py` (существует, расширить) |
 | API | `/api/v1/content-pulse` | ✅ `routes_content_pulse.py` (iter 75) — top farming suggestions |
 | API | `/api/v1/speculation` | ✅ `routes_speculation.py` (iter 77) — per-item z-score + BUY/SELL/HOLD signals |
+| API | `/api/v1/phase-hints` | ✅ `routes_phase_hints.py` (iter 78) — phase-aware advisory hints (Temporalis, skill gems, etc.) |
 | UI | Tab «Storage Value» (decision card + projection breakdown + historical chart) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74) + `storage-value-history-chart.tsx` (iter 75). |
 | UI | Widget «Content Pulse — Что фармить сегодня» (top rising/falling mechanics + per-category movers) | ✅ `src/components/dashboard/content-pulse-widget.tsx` (iter 76). Mounted at the top of the Overview tab so it's visible on first dashboard load. |
 | UI | Tab «Content Pulse» (полная версия) | TODO — eventual full tab with all categories, sortable, filterable. F4 widget is the 1-glance MVP per §3.6. |
 | UI | Tab «Speculation» (z-score list, buy/sell suggestions) | ✅ `src/components/dashboard/speculation-tab.tsx` (iter 77). Full tab with filter chips (ALL/BUY/SELL/HOLD), days selector (7/14/30/90), per-row z-score + percentile + mini-sparkline + horizon hint. |
+| UI | Widget «League Phase Hints» (Temporalis, skill gems, etc.) | ✅ `src/components/dashboard/phase-hints-widget.tsx` (iter 78). Static info banner mounted BELOW Content Pulse widget on Overview tab. Shows current phase (EARLY/MID/LATE) + days since league start + bulleted list of phase-aware advisory hints from hardcoded table. |
 
 ---
 
@@ -182,10 +184,21 @@ Abyss, Incursion) показывать:
   - 28 new i18n keys × 4 locales (en/ru/zh/ko) + 1 fallbackSpeculation. Verified parity via ripgrep.
   - TypeScript types: `SpeculationSignal`, `SpeculationResponse`, `SpeculationPriceHistoryPoint`, `SpeculationSignalType`, `SpeculationHorizonHint` в `src/lib/types.ts`.
 
-### F6. Phase-aware hints (Temporalis, skill gems, etc.)
+### F6. Phase-aware hints (Temporalis, skill gems, etc.) — ✅ DONE iter 78
 - На основе PhaseDetector показывать в Speculation tab блок
   «Исторические паттерны для текущей фазы лиги».
 - Например: на 30+ день лиги — Temporalis дорожает, обратить внимание.
+- **Реализовано в iter 78:**
+  - `backend/economy/phase_hints.py` (~210 lines) — pure function `get_phase_hints(phase, days_since_reference, ...)`. Hardcoded `_PHASE_HINTS` table: 4 hints per phase (EARLY/MID/LATE) covering Temporalis price floor→peak, skill gems 18-20 lvl demand, vault keys cheap→saturated, Breach/Ritual catalysts equilibrium/scarcity, triangular arb window, portfolio hold. Each hint has stable slug id + title + detail + action + optional category. `_PHASE_META` table provides phase_label + phase_summary. Helpers `list_phases_with_hints()` + `hint_count_for_phase()` exposed for tests.
+  - `backend/api/routes_phase_hints.py` (~70 lines) — thin route handler `GET /api/v1/phase-hints`. Fetches the global `PhaseDetector` singleton via `get_phase_detector()`, calls `detector.get_phase_info()` to get phase + days_since_reference + reference_currency, then forwards to `get_phase_hints()`. Always returns `data_available=True` (hint table is hardcoded — does NOT depend on DataSnapshot). On exception returns minimal response with `data_available=False` (no 500).
+  - Pydantic response models: `PhaseHintData` + `PhaseHintsResponse` в `backend/api/response_models.py`.
+  - 61 pytest tests в `tests/test_phase_hints.py` (6 классов: TestPerPhase / TestPassthrough / TestMetadata / TestHelpers / TestContentSanity / TestRouteHandler).
+  - `src/app/api/flipper/phase-hints/route.ts` (~40 lines) — Next.js proxy с `proxyWithFallback` + empty hints fallback.
+  - `src/components/dashboard/phase-hints-widget.tsx` (~280 lines) — UI widget. Phase badge (emerald/violet/amber for EARLY/MID/LATE) + day count + reference currency + phase summary + bulleted hint list (each row: bullet + title + detail + action). `useQuery` (5min staleTime — phase only changes daily). Graceful degradation: offline → compact amber notice; loading → spinner; error → card + refresh; data_available=false → "no data" notice; empty hints → "no hints" notice.
+  - Wired в `overview-tab-content.tsx` BELOW ContentPulseWidget (wrapped в `<ErrorBoundary fallbackTitle={t("fallbackPhaseHints")}>`).
+  - 28 new i18n keys × 4 locales (en/ru/zh/ko) + 1 fallbackPhaseHints. Verified parity via ripgrep.
+  - TypeScript types: `PhaseHint` + `PhaseHintsResponse` в `src/lib/types.ts`.
+  - 26 jest tests в `src/__tests__/phase-hints-widget.test.tsx`: offline / loading / error+refresh / no-data / mixed hints / phase badge variants (Early/Mid/Late/Unknown) / day count / reference currency / hint titles/details/actions / bullet rendering / hint count footer / fetched-at / proxy path / refresh refetch / empty hints notice / data-testids.
 
 ---
 
@@ -198,9 +211,9 @@ Abyss, Incursion) показывать:
 2. ✅ Есть отдельный экран «Storage Value» с историческим графиком относительно Mirror/Hinekora. **(iter 74 — карточка решения Hold/Sell готова; iter 75 — исторический график готов)**
 3. ✅ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены). **(iter 76 — F4 widget готов, wired в Overview tab)**
 4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 tab готов, wired как отдельная вкладка)**
-5. ⬜ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.).
+5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.). **(iter 78 — F6 Phase-aware hints widget готов, wired в Overview tab)**
 
-До выполнения этих 5 пунктов продукт находится в стадии «аналитический MVP».
+**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 live translations, F5 backtest, полная Content Pulse tab) и не блокируют основной use case.
 
 ---
 

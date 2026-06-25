@@ -826,6 +826,7 @@ const zh: Record<TranslationKeys, string> = {
   fallbackComparativeAnalytics: "比较分析",
   fallbackContentPulse: "Content Pulse — 今天刷什么",
   fallbackSpeculation: "投机 — BUY / SELL / HOLD 信号",
+  fallbackPhaseHints: "联赛阶段提示",
   fallbackVolumeLiquidity: "成交量与流动性",
   fallbackArbitrageCalculator: "套利计算器",
   fallbackFlips: "翻转",
@@ -1041,6 +1042,23 @@ const zh: Record<TranslationKeys, string> = {
   speculationHorizonMedium: "时间范围: 3-7 天（中等信号）",
   speculationHorizonLong: "时间范围: >1 周（边际）",
   speculationHorizonUnknown: "时间范围: 未知",
+  // F6 (iter 78) — Phase-aware hints widget (Temporalis, skill gems, etc.)
+  phaseHintsTitle: "联赛阶段提示",
+  phaseHintsLabelEarly: "早期联赛",
+  phaseHintsLabelMid: "中期联赛",
+  phaseHintsLabelLate: "后期联赛",
+  phaseHintsLabelUnknown: "未知阶段",
+  phaseHintsDayCount: "第 {0} 天",
+  phaseHintsReferenceCurrency: "参考: {0}",
+  phaseHintsActionLabel: "操作",
+  phaseHintsOffline: "阶段提示需要分析后端。",
+  phaseHintsLoading: "正在加载阶段提示...",
+  phaseHintsError: "加载阶段提示失败。后端可能遇到问题。",
+  phaseHintsNoData: "阶段提示不可用 — PhaseDetector 无法确定当前联赛阶段。",
+  phaseHintsNoHints: "当前阶段没有建议提示。",
+  phaseHintsRefresh: "刷新",
+  phaseHintsFetchedAt: "获取时间: {0}",
+  phaseHintsHintCount: "{0} 条提示",
 };
 
 export default zh;

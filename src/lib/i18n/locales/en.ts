@@ -830,6 +830,7 @@ const en = {
   fallbackComparativeAnalytics: "Comparative Analytics",
   fallbackContentPulse: "Content Pulse — What to Farm Today",
   fallbackSpeculation: "Speculation — Buy / Sell / Hold Signals",
+  fallbackPhaseHints: "League Phase Hints",
   fallbackVolumeLiquidity: "Volume & Liquidity",
   fallbackArbitrageCalculator: "Arbitrage Calculator",
   fallbackFlips: "Flips",
@@ -1046,6 +1047,23 @@ const en = {
   speculationHorizonMedium: "horizon: 3-7 days (moderate signal)",
   speculationHorizonLong: "horizon: >1 week (marginal)",
   speculationHorizonUnknown: "horizon: unknown",
+  // F6 (iter 78) — Phase-aware hints widget (Temporalis, skill gems, etc.)
+  phaseHintsTitle: "League Phase Hints",
+  phaseHintsLabelEarly: "Early League",
+  phaseHintsLabelMid: "Mid League",
+  phaseHintsLabelLate: "Late League",
+  phaseHintsLabelUnknown: "Unknown Phase",
+  phaseHintsDayCount: "Day {0}",
+  phaseHintsReferenceCurrency: "ref: {0}",
+  phaseHintsActionLabel: "Action",
+  phaseHintsOffline: "Phase hints require the analytics backend.",
+  phaseHintsLoading: "Loading phase hints...",
+  phaseHintsError: "Failed to load phase hints. The backend may be experiencing issues.",
+  phaseHintsNoData: "Phase hints are not available — the PhaseDetector could not determine the current league phase.",
+  phaseHintsNoHints: "No advisory hints for the current phase.",
+  phaseHintsRefresh: "Refresh",
+  phaseHintsFetchedAt: "Fetched: {0}",
+  phaseHintsHintCount: "{0} hints",
 } as const;
 
 export default en;

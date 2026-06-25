@@ -602,6 +602,15 @@ try:
 except ImportError:
     logger.debug("Speculation router not available yet")
 
+# F6 (iter 78): Phase-aware hints — Temporalis / skill gems / etc.
+# Static advisory banner based on the current league phase. Does NOT
+# depend on the DataSnapshot — hint table is hardcoded in phase_hints.py.
+try:
+    from backend.api.routes_phase_hints import router as phase_hints_router
+    app.include_router(phase_hints_router)
+except ImportError:
+    logger.debug("Phase hints router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

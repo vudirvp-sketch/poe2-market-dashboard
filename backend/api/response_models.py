@@ -668,3 +668,29 @@ class SpeculationResponse(BaseModel):
     data_available: bool = Field(description="Whether any item in the snapshot had enough price history to compute a signal")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
     days: int = Field(description="Lookback window in days used for the z-score / percentile baseline")
+
+
+# ---------------------------------------------------------------------------
+# Phase-aware Hints (F6, iter 78)
+# ---------------------------------------------------------------------------
+
+class PhaseHintData(BaseModel):
+    """A single phase-aware hint — advisory context, not a trade signal."""
+    id: str = Field(description="Stable slug (e.g. 'mid-skill-gems-18-20') — for tests and future metric linkage")
+    title: str = Field(description="Short label for the hint")
+    detail: str = Field(description="One-sentence explanation of the pattern")
+    action: str = Field(description="What the user should do (imperative)")
+    category: str = Field(default="", description="Optional POE2Scout category slug for future cross-reference. Empty string if none.")
+
+
+class PhaseHintsResponse(BaseModel):
+    """Response for GET /api/v1/phase-hints."""
+    league: str = Field(description="League name")
+    phase: str = Field(description="Current league phase: 'early' | 'mid' | 'late'")
+    phase_label: str = Field(description="Human-readable phase label, e.g. 'Early League'")
+    days_since_reference: int = Field(description="Days since league start or last major patch")
+    reference_currency: str = Field(description="Reference currency for the phase (e.g. 'exalted' for EARLY, 'divine' for MID/LATE). Empty if unknown.")
+    phase_summary: str = Field(description="1-2 sentence overview of the current phase")
+    hints: list[PhaseHintData] = Field(default_factory=list, description="Phase-relevant advisory hints (hardcoded table, no live metrics)")
+    data_available: bool = Field(description="Always True — the hint table is hardcoded and always available")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")

@@ -349,3 +349,138 @@ NOT done in iter 77 (intentionally deferred):
 - e2e tests not run (frontend changes are unit-tested via jest; e2e would require a running backend + browser)
 - useDashboardData hook extraction (optional, deferred)
 - Visual verification with real backend data (jest tests use mocked data; visual polish — colors, spacing, responsive layout on narrow screens — needs manual review against real /api/v1/speculation response)
+
+---
+Task ID: iter-78
+Agent: main (Sonnet 4.5)
+Task: iter 78 — Implement F6 (Phase-aware hints widget) — Temporalis mid/late league, skill gems 18-20 lvl, etc. Final product DoD point 5.
+
+Work Log:
+- Read STATUS.md / PRODUCT_VISION.md / AGENT_NAVIGATION.md / worklog.md iter 77 record to understand the state. Confirmed F5 (Speculation tab) shipped in iter 77 — F6 was the next logical step. PRODUCT_VISION §6 DoD: points 1-4 already ✅, point 5 (PhaseDetector hints) was the last remaining item.
+- F6 design — minimum viable scope per iter 77 recommendations:
+  - Pure-function module `backend/economy/phase_hints.py` with a hardcoded hint table for EARLY/MID/LATE phases (4 hints each = 12 total). Each hint has: stable slug id (e.g. `mid-skill-gems-18-20`), title, detail (one-sentence explanation), action (imperative), optional category slug for future cross-reference.
+  - Uses existing `PhaseDetector` from `backend/economy/lifecycle.py` via the global `get_phase_detector()` singleton in `backend/api/shared.py` — does NOT depend on DataSnapshot.
+  - The hint table is hardcoded (not in config.yaml) — same convention as `content_pulse.py` (analysis constants, not deployment parameters).
+  - Mounted as a static info banner BELOW ContentPulseWidget on the Overview tab — the iter 77 worklog suggested two placement options (Overview widget OR Speculation tab banner); I chose Overview widget because (a) it's visible on first dashboard load alongside the live farming signals, (b) it doesn't require Speculation tab navigation, (c) it's the same pattern as F4 (Content Pulse widget).
+
+- Backend — `backend/economy/phase_hints.py` (NEW, ~210 lines):
+  - `_PHASE_HINTS` dict: keyed by `LeaguePhase` enum, value = list of hint dicts. Each hint has `id` / `title` / `detail` / `action` / `category` keys.
+  - EARLY phase (4 hints): `early-quick-flips` (Chaos/Exalted volatility), `early-skill-gems-low-demand` (1-17 lvl cheap, stockpile 18-20), `early-vault-keys-cheap` (abundant, don't hoard), `early-temporalis-floor` (lowest prices, watch for sub-200c listings).
+  - MID phase (4 hints): `mid-skill-gems-18-20` (demand rising, list at market), `mid-temporalis-rising` (price climbing, hold), `mid-triangular-arb` (deepest liquidity, check Arbitrage tab), `mid-breach-ritual-equilibrium` (balanced, watch for divergence).
+  - LATE phase (4 hints): `late-temporalis-peak` (sell into strength), `late-catalyst-scarcity` (Ritual/Breach catalysts scarce if volume drops), `late-vault-keys-saturated` (market flooded, do not hoard), `late-portfolio-hold` (switch to portfolio holding via Storage Value tab).
+  - `_PHASE_META` dict: phase_label (e.g. "Mid League") + phase_summary (1-2 sentence overview).
+  - `get_phase_hints(phase, days_since_reference, *, reference_currency="", league_name="", now=None)` — pure function. Returns dict with: league, phase, phase_label, days_since_reference, reference_currency, phase_summary, hints (list), data_available (always True), fetched_at (ISO 8601).
+  - Helpers exposed for tests: `list_phases_with_hints()` returns list of LeaguePhase enum values, `hint_count_for_phase(phase)` returns count.
+  - Future extension noted in docstring: pull hints from config.yaml, add per-pattern metrics by cross-referencing snapshot, filter based on actual market state.
+
+- Backend — `backend/api/routes_phase_hints.py` (NEW, ~70 lines):
+  - Route handler `GET /api/v1/phase-hints` (no query params).
+  - Thin wrapper: fetch `get_phase_detector()` singleton → call `detector.get_phase_info()` → forward to `get_phase_hints()` pure function.
+  - Always returns `data_available=True` (hint table is hardcoded — does NOT depend on DataSnapshot).
+  - On exception (e.g. config.league.league_start_date invalid → PhaseDetector construction fails) logs error + returns minimal response with `data_available=False` + empty hints list (no 500).
+
+- Backend — `backend/api/response_models.py` (extended):
+  - Added 2 new Pydantic models: `PhaseHintData` (id, title, detail, action, category) + `PhaseHintsResponse` (league, phase, phase_label, days_since_reference, reference_currency, phase_summary, hints, data_available, fetched_at). All fields documented with `Field(description=...)` for OpenAPI generation.
+
+- Backend — `backend/main.py` (extended):
+  - Registered `routes_phase_hints.router` after `routes_speculation.router` (inside try/except for graceful degradation). F6 comment block added.
+
+- Backend — `tests/test_phase_hints.py` (NEW, ~370 lines, 61 tests):
+  - 6 test classes: `TestPerPhase` (30 tests, parametrized over 3 phases × 10 assertions each), `TestPassthrough` (7), `TestMetadata` (4), `TestHelpers` (5), `TestContentSanity` (7), `TestRouteHandler` (5 async smoke tests).
+  - Tests use the same `SimpleNamespace`-based mock pattern as `tests/test_content_pulse.py` and `tests/test_speculation.py` — no real DataSnapshot needed.
+  - Coverage: per-phase smoke (phase value, label nonempty, summary nonempty, hints count = 4, required keys, slug format, title/detail/action nonempty, category is string, ids unique), pass-through (days_since_reference, reference_currency, league_name), metadata (data_available always True, fetched_at ISO 8601, now override, meta table parity), helpers (list_phases_with_hints, hint_count_for_phase, defensive zero count), content sanity (specific hint ids present, Temporalis mentioned in every phase, skill gems hint mentions 18-20), route handler (MID/EARLY/LATE smoke, exception → empty response, Pydantic validation).
+  - One bug found during dev: the parametrized `test_hint_count_for_phase_zero_when_missing` originally used `hint_count_for_phase(FakePhase())` which mypy flagged — added `# type: ignore[arg-type]` since the helper is intentionally defensive.
+
+- Frontend — `src/lib/types.ts` (extended):
+  - Added 2 new types: `PhaseHint` (id, title, detail, action, category) + `PhaseHintsResponse` (league, phase, phaseLabel, daysSinceReference, referenceCurrency, phaseSummary, hints, dataAvailable, fetchedAt). Mirror the Pydantic models after snake_case → camelCase transform.
+
+- Frontend — `src/app/api/flipper/phase-hints/route.ts` (NEW, ~40 lines):
+  - Next.js proxy with `proxyWithFallback`. Empty `hints: []` + `dataAvailable: false` offline/insufficient-data fallback. No query params forwarded (endpoint takes none).
+
+- Frontend — `src/components/dashboard/phase-hints-widget.tsx` (NEW, ~280 lines):
+  - UI widget with:
+    - Phase badge (emerald for EARLY, violet for MID, amber for LATE, muted for unknown) — color-coded to give at-a-glance phase context.
+    - Day count with CalendarClock icon (e.g. "Day 25").
+    - Reference currency (e.g. "ref: divine") — only rendered when non-empty.
+    - Phase summary (1-2 sentence overview from `_PHASE_META`).
+    - Bulleted hint list — each row: bullet character (•) + title + detail (one-sentence explanation) + action with "Action:" label.
+    - Footer with `fetchedAt` timestamp + hint count.
+    - Refresh button.
+  - `useQuery` bound to `["phaseHints"]`, **5min staleTime** (phase only changes once per day at most), retry: 1.
+  - Wrapped in `<ErrorBoundary fallbackTitle={t("fallbackPhaseHints")}>` in `overview-tab-content.tsx` — render failure doesn't blank out other widgets.
+  - Graceful degradation (5 branches): backendOffline → compact amber notice; loading → spinner text; error → error card + refresh; data_available=false → "no data" notice (only on PhaseDetector exception); empty hints → "no hints" notice.
+  - Phase label key mapping via `phaseLabelKey(phase)` helper → `phaseHintsLabelEarly` / `Mid` / `Late` / `Unknown`.
+  - Phase badge color mapping via `phaseBadgeClass(phase)` helper.
+
+- Frontend — `src/components/dashboard/overview-tab-content.tsx` (modified):
+  - Imported `PhaseHintsWidget`.
+  - Added `<ErrorBoundary fallbackTitle={t("fallbackPhaseHints")}>` + `<PhaseHintsWidget backendOnline={backendOnline} />` BETWEEN `ContentPulseWidget` and `MarketOverview`. Updated the docstring to mention the new widget (4 panels now, was 3).
+  - Placement rationale (in comment): directly below Content Pulse widget so users see phase-aware advisory context alongside the live farming signals on first dashboard load. The hint table is hardcoded and does NOT depend on the DataSnapshot — it only uses the PhaseDetector (which is always available).
+
+- Frontend — i18n (4 locales updated, +17 keys each):
+  - Added `fallbackPhaseHints` to the ErrorBoundary fallback titles block.
+  - Added 16 new keys for the phase hints widget: `phaseHintsTitle`, `phaseHintsLabelEarly` / `Mid` / `Late` / `Unknown`, `phaseHintsDayCount`, `phaseHintsReferenceCurrency`, `phaseHintsActionLabel`, `phaseHintsOffline`, `phaseHintsLoading`, `phaseHintsError`, `phaseHintsNoData`, `phaseHintsNoHints`, `phaseHintsRefresh`, `phaseHintsFetchedAt`, `phaseHintsHintCount`.
+  - Verified parity via ripgrep: 17/17/17/17 phaseHints keys per locale (16 phaseHints + 1 fallbackPhaseHints).
+
+- Frontend — `src/__tests__/phase-hints-widget.test.tsx` (NEW, ~330 lines, 26 tests):
+  - Coverage: backend offline / loading / error+refresh / no-data / mixed hints (4 hints: skill gems, Temporalis rising, triangular arb, breach/ritual equilibrium) / phase badge variants (Early/Mid/Late/Unknown) / day count / reference currency (present + empty) / hint titles / hint details / hint actions with "Action:" label / bullet rendering / hint count footer / fetched-at footer / refresh button visible / refresh refetch / empty hints notice / proxy path / data-testids (phase-hints-widget, phase-hints-list, phase-hints-phase-badge, per-hint testids).
+  - 4 tests needed fixing during dev:
+    1. `findByText("ref: divine")` failed because the span textContent is "· ref: divine" (with leading `· `) — fixed with regex `/ref:\s*divine/` for substring match.
+    2. `findByText("Action")` failed because the span textContent is "Action: " (with trailing `: `) and the action text is in a separate text node — fixed with regex `/Action/` for substring match.
+    3. `findByText("4 hints")` failed because the hint count is in the same `<p>` as the fetched-at timestamp, so the textContent is "Fetched: <date> · 4 hints" — fixed with regex `/4 hints/` and waited for hints to render first via `findByText("Skill gems 18-20 lvl — demand rising")`.
+    4. "re-fetches when refresh button is clicked after error" originally expected 1 call after error + 2 after refresh — but the widget has `retry: 1`, so the actual sequence is initial fetch + retry = 2 calls before the error state is shown, then refresh = 3 calls. Fixed the test to assert `toHaveBeenCalledTimes(2)` after error + `toHaveBeenCalledTimes(3)` after refresh.
+
+- Verification:
+  - `node node_modules/typescript/bin/tsc --noEmit` → 0 errors.
+  - `node node_modules/jest/bin/jest.js` → 407 pass (381 baseline + 26 new phase-hints-widget tests). 0 fail.
+  - `PYTHONPATH=. python -m pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py` → 677 pass (616 baseline + 61 new phase_hints tests). 0 fail.
+    - Note: `tests/test_scheduler.py` is excluded because `aiosqlite` is not installed in this dev env (documented in STATUS.md Quick Reference as a known issue — not a regression).
+  - Smoke tested the route handler manually via Python REPL: `get_phase_hints_route()` returns `phase="mid"`, `phase_label="Mid League"`, `days_since_reference=26`, `hints` count = 4, `data_available=True` for the current league config (`league_start_date=2026-05-29T20:00:00Z` → MID phase at day 26).
+  - Confirmed new route registered: `GET /api/v1/phase-hints`.
+
+- Documentation updates:
+  - `STATUS.md`: bumped "Last updated" to iter 78. F6 row marked ✅ Done with iter 78 implementation details. Added 2 new Quick Reference entries (phase-hints endpoint "data_available=false", "wrong phase").
+  - `PRODUCT_VISION.md`: bumped "Last updated" to iter 78. Updated §4 architecture table (PhaseDetector row marked ✅ with `phase_hints.py`; added `/api/v1/phase-hints` row; added League Phase Hints widget row). Rewrote F6 section with iter 78 implementation details. Updated §6 Product DoD — point 5 (PhaseDetector hints) marked ✅. Added closing note: "Все 5 пунктов DoD выполнены (iter 78). Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник»."
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 78. Updated `lifecycle.py` row (mentions `phase_hints.py` usage). Added 2 new rows to §1 (`phase_hints.py` + `routes_phase_hints.py`). Added `phase-hints-widget.tsx` row. Updated `overview-tab-content.tsx` row (mentions F6 widget). Added invariant #32 (Phase-aware hints widget wiring). Added 2 new Quick Reference entries. Added `/api/v1/phase-hints` row to API table. Added `/api/flipper/phase-hints` row to frontend-only routes table.
+  - `worklog.md`: appended this iter 78 record.
+
+Stage Summary:
+- **F6 (Phase-aware hints widget) — DONE.** Full backend + frontend implementation. New endpoint `GET /api/v1/phase-hints`. New UI widget at `src/components/dashboard/phase-hints-widget.tsx` mounted on Overview tab below Content Pulse. 61 pytest + 26 jest tests. tsc 0 errors.
+- **Product DoD — ALL 5 POINTS COMPLETE.** PRODUCT_VISION §6 criteria all met (RU translations ✅, Storage Value tab ✅, Content Pulse widget ✅, Speculation tab ✅, Phase-aware hints ✅). Product transitioned from "analytical MVP" to "analytical assistant".
+- **F1 (additional RU translations) — STILL BLOCKED.** No change from iter 77 — needs live poe2scout.com + poe2db.tw/ru/ access.
+- **Baseline:** pytest 677 pass (+61), jest 407 pass (+26), tsc 0 errors.
+- **Files changed/created (13 total):**
+  - `backend/economy/phase_hints.py` (NEW, ~210 lines)
+  - `backend/api/routes_phase_hints.py` (NEW, ~70 lines)
+  - `backend/api/response_models.py` (modified: +25 lines — 2 PhaseHint models)
+  - `backend/main.py` (modified: +7 lines — register phase_hints router)
+  - `tests/test_phase_hints.py` (NEW, ~370 lines, 61 tests)
+  - `src/app/api/flipper/phase-hints/route.ts` (NEW, ~40 lines)
+  - `src/components/dashboard/phase-hints-widget.tsx` (NEW, ~280 lines)
+  - `src/components/dashboard/overview-tab-content.tsx` (modified: +12 lines — widget wiring + docstring update)
+  - `src/lib/types.ts` (modified: +40 lines — 2 new PhaseHint types)
+  - `src/lib/i18n/locales/en.ts` (modified: +18 lines — 16 phaseHints keys + fallbackPhaseHints)
+  - `src/lib/i18n/locales/ru.ts` (modified: +18 lines)
+  - `src/lib/i18n/locales/zh.ts` (modified: +18 lines)
+  - `src/lib/i18n/locales/ko.ts` (modified: +18 lines)
+  - `src/__tests__/phase-hints-widget.test.tsx` (NEW, ~330 lines, 26 tests)
+  - `STATUS.md` (updated — F6 marked Done + 2 Quick Reference entries)
+  - `PRODUCT_VISION.md` (updated — F6 marked Done + §4 architecture table + §6 DoD point 5 + closing note)
+  - `AGENT_NAVIGATION.md` (updated — iter 78 wiring + invariant #32 + 2 Quick Reference entries + 2 API rows + new component row)
+  - `worklog.md` (this record)
+
+Next iteration (iter 79) — recommended priorities:
+1. **F5 backtest** — PRODUCT_VISION §3.2 mentions backtesting z-score signals on previous-league data to measure profitability. Could be a separate `/api/v1/speculation/backtest` endpoint or a CLI script. Not blocking — F5 ship is already useful without it. Now that all 5 DoD points are done, this is the most valuable next-step from a product-quality perspective.
+2. **F1 (when live API available)** — `scripts/sync_currency_names_from_poe2db.py`: enumerate 625 api_ids, fetch poe2db.tw/ru/, update `currency_names.json`, bump assertion counters in `tests/test_currency_names_ru.py`.
+3. **Full Content Pulse tab** — F4 widget is the MVP; full version with sorting/filters/drill-down if widget proves useful.
+4. **Phase hints enhancements** (optional) — pull hints from `config.yaml` instead of hardcoding; add per-pattern metrics by cross-referencing the snapshot's `price_histories`; filter hints based on actual market state (e.g. only show "Temporalis near peak" if its 7d momentum is positive).
+5. **useDashboardData hook extraction** (optional, tech debt) — `dashboard-page.tsx` is 1217 lines; ~250 lines of `useQuery`/memo wiring could move into a hook. Staged approach. Not blocking.
+
+NOT done in iter 78 (intentionally deferred):
+- F1 (blocked on live API access)
+- F5 backtest (optional, deferred)
+- Full Content Pulse tab (the F4 widget is the MVP; full tab deferred until product feedback)
+- Phase hints enhancements (hardcoded MVP shipped — config-driven hints + per-pattern metrics deferred)
+- e2e tests not run (frontend changes are unit-tested via jest; e2e would require running backend + browser)
+- useDashboardData hook extraction (optional, deferred)
+- Visual verification with real backend data (jest tests use mocked data; visual polish — colors, spacing, responsive layout on narrow screens — needs manual review against real /api/v1/phase-hints response)

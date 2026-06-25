@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-25 (iter 77 — F5 Speculation tab shipped)
+> **Last updated:** 2026-06-25 (iter 78 — F6 Phase-aware hints shipped)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -21,11 +21,11 @@ The single remaining **optional** technical follow-up:
 | Feature | Status | Notes |
 |---------|--------|-------|
 | **F1** — Translate remaining ~276 items | **Blocked** | Cache-snapshot has 138 unique api_ids, all already translated. The "276 missing" claim comes from the iter 32 baseline of 625 total API items — but without live `poe2scout.com` API access (to enumerate the full 625) + `poe2db.tw/ru/` parsing (to fetch RU names), we cannot reliably extend the map. Risk of adding wrong RU names is high — deferred until live API access is available. |
-| **F2** — Storage Value UI tab | ✅ **Done (iter 74 + iter 75)** | Tab at `src/components/dashboard/storage-value-tab.tsx`. Historical chart at `src/components/dashboard/storage-value-history-chart.tsx` (iter 75) — wraps new endpoint `/api/v1/storage-value/{currency}/history`. |
-| **F3** — `content_pulse` module | ✅ **Done (iter 75)** | `backend/economy/content_pulse.py` (pure function) + `backend/api/routes_content_pulse.py`. Endpoint `GET /api/v1/content-pulse` returns per-category daily turnover + 7d/30d rolling + signal + top-3 rising/falling movers. 44 pytest tests. |
-| **F4** — «Что фармить сегодня» widget | ✅ **Done (iter 76)** | `src/components/dashboard/content-pulse-widget.tsx` (~400 lines). Wired into `overview-tab-content.tsx` ABOVE MarketOverview so it shows on first dashboard load. 16 jest tests. |
-| **F5** — Speculation tab with z-score signals | ✅ **Done (iter 77)** | `backend/economy/speculation.py` (pure function) + `backend/api/routes_speculation.py`. Endpoint `GET /api/v1/speculation?days=30&limit=50&signal=ALL` returns per-item z-score + percentile + BUY/SELL/HOLD signal + horizon hint + 14-pt price-history slice for mini-sparkline. `src/components/dashboard/speculation-tab.tsx` (~480 lines) wired as a new dashboard tab (Sparkles icon, after Storage Value). 43 pytest + 18 jest tests. Backend `compute_zscore` / `compute_percentile` helpers added to `backend/economy/pricing.py` (22 new pricing tests). |
-| **F6** — Phase-aware hints | TODO | Temporalis mid/late league, skill gems 18-20 lvl, etc. Uses `PhaseDetector` from `backend/economy/lifecycle.py`. |
+| **F2** — Storage Value UI tab | ✅ **Done (iter 74 + iter 75)** | Tab at `src/components/dashboard/storage-value-tab.tsx`. Historical chart at `src/components/dashboard/storage-value-history-chart.tsx` (iter 75). |
+| **F3** — `content_pulse` module | ✅ **Done (iter 75)** | `backend/economy/content_pulse.py` + `backend/api/routes_content_pulse.py`. Endpoint `GET /api/v1/content-pulse`. 44 pytest tests. |
+| **F4** — «Что фармить сегодня» widget | ✅ **Done (iter 76)** | `src/components/dashboard/content-pulse-widget.tsx` (~400 lines). Wired into `overview-tab-content.tsx` ABOVE MarketOverview. 16 jest tests. |
+| **F5** — Speculation tab with z-score signals | ✅ **Done (iter 77)** | `backend/economy/speculation.py` + `backend/api/routes_speculation.py`. Endpoint `GET /api/v1/speculation?days=30&limit=50&signal=ALL`. `src/components/dashboard/speculation-tab.tsx` (~480 lines) wired as dashboard tab. 43 pytest + 22 pricing + 18 jest tests. |
+| **F6** — Phase-aware hints | ✅ **Done (iter 78)** | `backend/economy/phase_hints.py` (pure function with hardcoded hint table for EARLY/MID/LATE phases — Temporalis, skill gems 18-20 lvl, vault keys, Breach/Ritual catalysts, triangular arb, portfolio hold). `backend/api/routes_phase_hints.py`. Endpoint `GET /api/v1/phase-hints`. `src/components/dashboard/phase-hints-widget.tsx` (~280 lines) wired below Content Pulse widget on Overview tab. 61 pytest + 26 jest tests. Uses existing `PhaseDetector` from `backend/economy/lifecycle.py` — does NOT depend on DataSnapshot (hint table is hardcoded). |
 
 ---
 
@@ -48,3 +48,5 @@ The single remaining **optional** technical follow-up:
 | `/api/v1/speculation` returns `data_available: false` | Snapshot not loaded yet, OR no item in the snapshot has ≥2 valid price points in the requested `days` window. Wait for the scheduler to collect more snapshots. | `backend/api/routes_speculation.py:get_speculation` |
 | Speculation tab shows "no actionable signals" | All items have `|z_score| < 1.5` — prices are within ±1.5σ of their recent mean. Correct behavior. Try widening the days window (90 instead of 30) to capture more variance. | `backend/economy/speculation.py:_signal_from_zscore` |
 | Speculation z-score is null for an item | Item has <2 valid price points, OR all prices are identical (std=0). Both → `compute_zscore` returns None → item is excluded from the result list. | `backend/economy/pricing.py:compute_zscore` |
+| `/api/v1/phase-hints` returns `data_available: false` | Only happens if PhaseDetector cannot be constructed (e.g. config.league.league_start_date is invalid). Otherwise always True — hint table is hardcoded. | `backend/api/routes_phase_hints.py:get_phase_hints_route` |
+| Phase hints widget shows wrong phase | Phase is computed from `days_since_reference` since `league_start_datetime` (or last `major_patch` event). Check `config.yaml:league.league_start_date` matches the actual league start. | `backend/economy/lifecycle.py:PhaseDetector` |
