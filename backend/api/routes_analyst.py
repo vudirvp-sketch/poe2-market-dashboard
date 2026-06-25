@@ -123,7 +123,12 @@ def _detect_anomalies_simple(prices_in_base: dict[str, float],
 
 def _generate_facts(trends: list[dict], anomalies: list[dict],
                     snapshot_data: dict) -> list[dict]:
-    """Auto-generate interesting facts about the league economy."""
+    """Auto-generate interesting facts about the league economy.
+
+    iter 88: each fact now carries a `template_id` + `params` so the frontend
+    can format the text via i18n keys (analystFactBiggestGainer, etc.). The
+    English `text` field is kept for backward compatibility.
+    """
     facts = []
     
     # Fact: biggest movers
@@ -132,29 +137,38 @@ def _generate_facts(trends: list[dict], anomalies: list[dict],
     
     if big_movers_up:
         top = big_movers_up[0]
+        pct = top.get("change_24h_pct", 0) or 0
         facts.append({
             "type": "trend",
             "icon": "up",
-            "text": f"{top['api_id']} is the biggest gainer (+{top.get('change_24h_pct', 0):.1f}% in 24h)",
+            "text": f"{top['api_id']} is the biggest gainer (+{pct:.1f}% in 24h)",
             "severity": "info",
+            "template_id": "biggest_gainer",
+            "params": {"apiId": top["api_id"], "pct": round(pct, 1)},
         })
     
     if big_movers_down:
         top = big_movers_down[0]
+        pct = top.get("change_24h_pct", 0) or 0
         facts.append({
             "type": "trend",
             "icon": "down",
-            "text": f"{top['api_id']} is the biggest loser ({top.get('change_24h_pct', 0):.1f}% in 24h)",
+            "text": f"{top['api_id']} is the biggest loser ({pct:.1f}% in 24h)",
             "severity": "warning",
+            "template_id": "biggest_loser",
+            "params": {"apiId": top["api_id"], "pct": round(pct, 1)},
         })
     
     # Fact: anomaly count
     if anomalies:
+        count = len(anomalies)
         facts.append({
             "type": "anomaly",
             "icon": "alert",
-            "text": f"{len(anomalies)} currencies showing unusual price activity",
-            "severity": "warning" if len(anomalies) > 5 else "info",
+            "text": f"{count} currencies showing unusual price activity",
+            "severity": "warning" if count > 5 else "info",
+            "template_id": "anomaly_activity",
+            "params": {"count": count},
         })
     
     # Fact: market activity
@@ -166,6 +180,8 @@ def _generate_facts(trends: list[dict], anomalies: list[dict],
             "icon": "chart",
             "text": f"Tracking {total_currencies} currencies across {total_pairs} trading pairs",
             "severity": "info",
+            "template_id": "tracking",
+            "params": {"totalCurrencies": total_currencies, "totalPairs": total_pairs},
         })
     
     # Fact: stable currencies count
@@ -176,6 +192,8 @@ def _generate_facts(trends: list[dict], anomalies: list[dict],
             "icon": "shield",
             "text": f"{stable_count} currencies holding stable (less than 2% change)",
             "severity": "info",
+            "template_id": "stable_count",
+            "params": {"stableCount": stable_count},
         })
     
     return facts

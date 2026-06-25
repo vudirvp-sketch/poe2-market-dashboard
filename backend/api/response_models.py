@@ -483,11 +483,19 @@ class AnomalySimpleData(BaseModel):
 
 
 class FactData(BaseModel):
-    """Auto-generated fact about the league economy."""
+    """Auto-generated fact about the league economy.
+
+    iter 88: added optional `template_id` + `params` so the frontend can format
+    the fact text via i18n keys (e.g. `t("analystFactBiggestGainer", {0: name, 1: pct})`).
+    The English `text` field is still populated for backward compatibility —
+    callers that don't recognize `template_id` fall back to `text`.
+    """
     type: str = Field(description="Fact type: trend, anomaly, market")
     icon: str = Field(description="Fact icon: up, down, alert, chart, shield")
-    text: str = Field(description="Human-readable fact text")
+    text: str = Field(description="Human-readable fact text (English fallback)")
     severity: str = Field(description="Severity: info, warning")
+    template_id: str | None = Field(default=None, description="iter 88: stable template identifier (e.g. 'biggest_gainer', 'biggest_loser', 'anomaly_activity', 'tracking', 'stable_count') — when present, frontend formats the fact via i18n key `analystFact<TemplateIdCamelCase>` with `params`.")
+    params: dict[str, Any] = Field(default_factory=dict, description="iter 88: template parameters (apiId, pct, count, totalCurrencies, totalPairs, stableCount) consumed by the frontend i18n template.")
 
 
 class AnalystSummaryResponse(BaseModel):

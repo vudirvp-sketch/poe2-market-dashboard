@@ -16,6 +16,7 @@ import {
   ArrowDown,
   Star,
   GitCompare,
+  Info,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
@@ -222,8 +223,19 @@ function CrossCurrencyPremiumCell({ pair, optimalPaymentResult, crossRateFlip, a
     return cell;
   }
 
-  // No data
-  return <span className="text-[10px] text-muted-foreground">—</span>;
+  // No data — show em-dash with explanatory tooltip (iter 88, KI-3)
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-[10px] text-muted-foreground cursor-help">—</span>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-[220px] p-2.5 text-xs" sideOffset={6}>
+          <p className="text-muted-foreground">{t("crossCurrencyPremiumEmpty")}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 // ============================================================================
@@ -413,8 +425,24 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 aria-sort={sortField === "change7d" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                 onClick={() => handleSort("change7d")}
               >
-                <span className="inline-flex items-center justify-end">
-                  {t("change7d")}
+                <span className="inline-flex items-center justify-end gap-1">
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className="inline-flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/60"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={t("change7dInfo")}
+                        >
+                          {t("change7d")}
+                          <Info className="h-3 w-3 text-muted-foreground/70" aria-hidden="true" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[280px] p-2.5 text-xs" sideOffset={6}>
+                        <p className="text-muted-foreground">{t("change7dDesc")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <SortIndicator field="change7d" />
                 </span>
               </th>
@@ -437,8 +465,27 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                 aria-sort={sortField === "premium" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
                 onClick={() => handleSort("premium")}
               >
-                <span className="inline-flex items-center justify-end">
-                  {t("crossCurrencyPremium")}
+                <span className="inline-flex items-center justify-end gap-1">
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className="inline-flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/60"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={t("crossCurrencyPremiumInfo")}
+                        >
+                          {t("crossCurrencyPremium")}
+                          <Info className="h-3 w-3 text-muted-foreground/70" aria-hidden="true" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[280px] p-2.5 text-xs" sideOffset={6}>
+                        <div className="space-y-1.5">
+                          <p className="font-medium text-foreground">{t("crossCurrencyPremiumTitle")}</p>
+                          <p className="text-muted-foreground">{t("crossCurrencyPremiumDesc")}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <SortIndicator field="premium" />
                 </span>
               </th>
@@ -576,11 +623,26 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       {chg.text}
                     </span>
                   </td>
-                  {/* 7d Change */}
+                  {/* 7d Change — iter 88 (KI-2): show tooltip when null explaining why */}
                   <td className="px-3 py-2 text-right">
-                    <span className={`text-xs font-medium ${chg7d.color}`}>
-                      {chg7d.text}
-                    </span>
+                    {pair.sevenDayChangePercent === null ? (
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className={`text-xs font-medium ${chg7d.color} cursor-help border-b border-dotted border-muted-foreground/40`}>
+                              {chg7d.text}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[240px] p-2.5 text-xs" sideOffset={6}>
+                            <p className="text-muted-foreground">{t("change7dEmpty")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <span className={`text-xs font-medium ${chg7d.color}`}>
+                        {chg7d.text}
+                      </span>
+                    )}
                   </td>
                   {/* Volume */}
                   <td className="px-3 py-2 text-right">

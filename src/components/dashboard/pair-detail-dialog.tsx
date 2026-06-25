@@ -37,7 +37,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair, ExchangePairHistoryPoint, OHLCVCandle } from "@/lib/types";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatLocaleDate } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
 import { useMemo, useState, useCallback, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -67,7 +67,7 @@ export function PairDetailDialog({
   realm,
   league,
 }: PairDetailDialogProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const reducedMotion = useReducedMotion();
   const { uiState } = useDashboardStore();
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("7d");
@@ -406,10 +406,7 @@ export function PairDetailDialog({
                       dataKey="timestamp"
                       tick={{ fontSize: 10 }}
                       tickFormatter={(v: string) =>
-                        new Date(v).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        })
+                        formatLocaleDate(v, locale)
                       }
                     />
                     <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => fmt(v, 2)} />

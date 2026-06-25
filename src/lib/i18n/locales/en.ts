@@ -79,6 +79,10 @@ const en = {
   priceLabel: "Price",
   change24h: "24h Change",
   change7d: "7d Change",
+  // iter 88 (KI-2): 7d change column header tooltip + null-state explanation
+  change7dInfo: "What is the 7d Change column?",
+  change7dDesc: "Percentage change over the last 7 days, computed from PriceLogs. Shows '—' when fewer than 2 price points exist or when the closest 7-day-ago log is more than ~17 hours off — common for new leagues where price history is still building up.",
+  change7dEmpty: "No 7-day change available — this pair has fewer than 2 price points in its history, or the closest 7-day-ago log is too far off. Will populate as more PriceLogs are collected.",
   hourly: "Hourly",
   dailyCandlestick: "Daily (Candlestick)",
   priceHistory: "Price History",
@@ -142,8 +146,8 @@ const en = {
   removeAlert: "Remove alert",
 
   // Arbitrage
-  arbitrageTheoretical: "Arbitrage opportunities are theoretical",
-  arbitrageTheoreticalDesc: "Market prices change rapidly. Slippage is estimated using a square-root impact model. Actual results may vary. Always verify current rates before trading.",
+  arbitrageTheoretical: "Cross-rate deviations are theoretical",
+  arbitrageTheoreticalDesc: "This tab shows deviations between the market rate and the cross-rate-derived fair rate. POE2 has no order book — actual trading is player-to-player via the trade site, so these deviations signal where a different payment currency could save you money, not guaranteed arbitrage. Always verify current rates before trading.",
   arbitrageClientModeNote: "Client-mode uses simulated spreads",
   arbitrageClientModeNoteDesc: "POE2Scout API provides only mid-prices, not separate bid/ask quotes. Forward and reverse rates from the same pair are exact mirrors, so genuine arbitrage cannot be detected client-side. For real arbitrage detection, use Flipper mode (requires backend).",
   scannedPairs: "Scanned Pairs",
@@ -359,7 +363,7 @@ const en = {
   forecastLastUpdate: "Last update",
 
   // Flips Tab
-  tabFlips: "Flips",
+  tabFlips: "Cross-rate Deviations",
   flipsTotalOpportunities: "Total Opportunities",
   flipsAvgScore: "Avg Score",
   flipsBestPair: "Best Pair",
@@ -902,6 +906,16 @@ const en = {
   analystError: "Failed to load league analyst data. The backend may be experiencing issues.",
   analystFallbackNotice: "Simplified analysis — start the analytics backend for full insights (flips, scoring, forecasting).",
   analystFallbackBadge: "Simplified",
+  // ---- iter 88: Analyst fact templates (KI-5) ----
+  // {0} = currency display name, {1} = percentage (signed for biggest_loser)
+  analystFactBiggestGainer: "{0} is the biggest gainer (+{1}% in 24h)",
+  analystFactBiggestLoser: "{0} is the biggest loser ({1}% in 24h)",
+  // {0} = anomaly count
+  analystFactAnomalyActivity: "{0} currencies showing unusual price activity",
+  // {0} = total currencies, {1} = total pairs
+  analystFactTracking: "Tracking {0} currencies across {1} trading pairs",
+  // {0} = stable count
+  analystFactStable: "{0} currencies holding stable (less than 2% change)",
 
   // ---- Optimizer Offline (backend required) ----
   optimizerOfflineTitle: "Optimizer requires the analytics backend",
@@ -924,6 +938,11 @@ const en = {
   // ---- Premium tooltip (cross-currency optimal payment) ----
   premiumPayIn: "Pay in",
   premiumSave: "save",
+  // iter 88 (KI-3): Premium column header tooltip
+  crossCurrencyPremiumTitle: "Cross-currency premium",
+  crossCurrencyPremiumDesc: "Shows how much the market rate deviates from the cross-rate-derived fair rate, or how much you'd save by paying with a different currency. Large percentages (50%+) are normal for low-liquidity pairs — they signal an opportunity, not a bug.",
+  crossCurrencyPremiumInfo: "What is the Premium column?",
+  crossCurrencyPremiumEmpty: "No premium data — this pair has fewer than 2 payment options and no cross-rate deviation detected.",
 
   // ---- Cross-rate Flip Tooltip i18n ----
   crossRateBuyCheapSell: "Buy cheap → sell",
@@ -1052,6 +1071,16 @@ const en = {
   speculationPercentileTitle: "Percentile of current price within the lookback window range",
   speculationPotentialProfit: "Pot. profit",
   speculationPotentialProfitTitle: "Potential profit % if price reverts to the lookback window mean (BUY: expected to rise, SELL: expected to fall)",
+  // iter 88 (KI-1): Speculation tab — synthetic spread details (joined from /api/flipper/flips)
+  speculationSpreadDetails: "Show synthetic spread details",
+  speculationSyntheticBid: "Synthetic bid",
+  speculationSyntheticAsk: "Synthetic ask",
+  speculationSyntheticSpread: "Spread",
+  speculationSyntheticMid: "Mid price",
+  speculationFairRateLabel: "Fair cross-rate",
+  speculationDeviationLabel: "Deviation",
+  speculationVolumeLabel: "24h volume",
+  speculationSpreadDisclaimer: "Synthetic bid/ask computed from volume-based formula (no real order book in PoE2). Treat as a directional signal, not a guaranteed execution price.",
   speculationSampleSize: "{0} pts",
   speculationMean: "mean {0}",
   speculationStd: "std {0}",

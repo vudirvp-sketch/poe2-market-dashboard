@@ -7,6 +7,61 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // ============================================================================
+// iter 88: Locale-aware date formatting helper
+// ============================================================================
+
+/**
+ * Map our 4-letter locale codes (en/ru/zh/ko) to BCP-47 tags accepted by Intl.
+ * Used by all date formatting helpers — keeps the mapping in ONE place so
+ * future locale additions only need to update this map.
+ *
+ * Pattern established in events-sidebar.tsx (iter 87) — now shared across
+ * all chart components (iter 88, KI-2 hand-off).
+ */
+export function localeToBcp47(locale: string): string {
+  switch (locale) {
+    case "ru": return "ru-RU";
+    case "zh": return "zh-CN";
+    case "ko": return "ko-KR";
+    default: return "en-US";
+  }
+}
+
+/**
+ * Format a date for compact axis labels (e.g. "13 Jun", "6月13日", "13 июня").
+ *
+ * @param value - ISO timestamp OR epoch milliseconds OR Date instance.
+ * @param locale - Active locale ("en" | "ru" | "zh" | "ko").
+ * @param opts - Optional Intl.DateTimeFormatOptions (default: month short + day numeric).
+ * @returns Formatted date string, or the input verbatim if parsing fails.
+ */
+export function formatLocaleDate(
+  value: string | number | Date,
+  locale: string,
+  opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" },
+): string {
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(localeToBcp47(locale), opts);
+}
+
+/**
+ * Format a date+time for compact display (e.g. "13 Jun, 14:30").
+ *
+ * @param value - ISO timestamp OR epoch milliseconds OR Date instance.
+ * @param locale - Active locale ("en" | "ru" | "zh" | "ko").
+ * @returns Formatted string with short date + HH:MM time.
+ */
+export function formatLocaleDateTime(value: string | number | Date, locale: string): string {
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  const bcp47 = localeToBcp47(locale);
+  const datePart = d.toLocaleDateString(bcp47, { month: "short", day: "numeric" });
+  const timePart = d.toLocaleTimeString(bcp47, { hour: "2-digit", minute: "2-digit" });
+  return `${datePart}, ${timePart}`;
+}
+
+// ============================================================================
 // Currency formatting utilities (Phase 0.2)
 // ============================================================================
 

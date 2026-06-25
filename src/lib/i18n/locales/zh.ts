@@ -75,6 +75,10 @@ const zh: Record<TranslationKeys, string> = {
   priceLabel: "价格",
   change24h: "24小时变动",
   change7d: "7天变动",
+  // iter 88 (KI-2): 7天变动列头工具提示 + null 状态说明
+  change7dInfo: "「7天变动」列是什么？",
+  change7dDesc: "过去 7 天的百分比变化，基于 PriceLogs 计算。当价格点少于 2 个，或最接近 7 天前的记录偏差超过约 17 小时时显示「—」 — 这在价格历史仍在建立的新联赛中很常见。",
+  change7dEmpty: "无 7 天变动数据 — 该货币对历史中价格点少于 2 个，或最接近 7 天前的记录偏差过大。随着 PriceLogs 收集更多数据，将自动填充。",
   hourly: "小时",
   dailyCandlestick: "日K线",
   priceHistory: "价格历史",
@@ -138,8 +142,8 @@ const zh: Record<TranslationKeys, string> = {
   removeAlert: "删除提醒",
 
   // Arbitrage
-  arbitrageTheoretical: "套利机会为理论值",
-  arbitrageTheoreticalDesc: "市场价格变动迅速。滑点使用平方根影响模型估算。实际结果可能有所不同。交易前请始终确认当前汇率。",
+  arbitrageTheoretical: "交叉汇率偏差为理论值",
+  arbitrageTheoreticalDesc: "此标签页显示市场汇率与交叉汇率推导的公允汇率之间的偏差。PoE2 没有订单簿 — 实际交易是通过交易网站进行的玩家对玩家交易，因此这些偏差仅表示使用其他支付货币可能节省的金额，而非保证的套利。交易前请始终确认当前汇率。",
   arbitrageClientModeNote: "客户端模式使用模拟价差",
   arbitrageClientModeNoteDesc: "POE2Scout API 仅提供中间价，不提供独立的买价/卖价。同一交易对的正向和反向汇率是完全对称的，因此客户端无法检测到真正的套利。如需真实套利检测，请使用 Flipper 模式（需要后端）。",
   scannedPairs: "已扫描交易对",
@@ -359,7 +363,7 @@ const zh: Record<TranslationKeys, string> = {
   forecastLastUpdate: "上次更新",
 
   // Flips Tab
-  tabFlips: "翻转",
+  tabFlips: "交叉汇率偏差",
   flipsTotalOpportunities: "总机会",
   flipsAvgScore: "平均评分",
   flipsBestPair: "最佳交易对",
@@ -898,6 +902,16 @@ const zh: Record<TranslationKeys, string> = {
   analystError: "加载联赛分析数据失败。后端可能存在问题。",
   analystFallbackNotice: "简化分析 — 启动分析后端以获取完整功能（翻转、评分、预测）。",
   analystFallbackBadge: "简化版",
+  // ---- iter 88: Analyst fact templates (KI-5) ----
+  // {0} = 货币名称, {1} = 百分比（biggest_loser 带符号）
+  analystFactBiggestGainer: "{0} 是涨幅最大的货币（24小时内 +{1}%）",
+  analystFactBiggestLoser: "{0} 是跌幅最大的货币（24小时内 {1}%）",
+  // {0} = 异常数量
+  analystFactAnomalyActivity: "{0} 个货币显示异常价格活动",
+  // {0} = 货币总数, {1} = 交易对总数
+  analystFactTracking: "正在追踪 {0} 个货币，共 {1} 个交易对",
+  // {0} = 稳定货币数量
+  analystFactStable: "{0} 个货币保持稳定（变化小于 2%）",
 
   // ---- Optimizer Offline (需要后端) ----
   optimizerOfflineTitle: "优化器需要分析后端",
@@ -919,6 +933,11 @@ const zh: Record<TranslationKeys, string> = {
   // ---- Premium tooltip (跨币种最优支付) ----
   premiumPayIn: "支付方式",
   premiumSave: "节省",
+  // iter 88 (KI-3): Premium column header tooltip
+  crossCurrencyPremiumTitle: "跨币种溢价",
+  crossCurrencyPremiumDesc: "显示市场汇率相对于交叉汇率推导的公允汇率的偏离程度，或使用其他货币支付可节省的金额。低流动性货币对出现较大百分比（50%+）是正常的 — 它们表示机会，而非错误。",
+  crossCurrencyPremiumInfo: "「溢价」列是什么意思？",
+  crossCurrencyPremiumEmpty: "无溢价数据 — 该货币对少于 2 种支付方式，且未检测到交叉汇率偏差。",
 
   // ---- Cross-rate Flip Tooltip i18n ----
   crossRateBuyCheapSell: "低价买入 → 卖出",
@@ -1047,6 +1066,16 @@ const zh: Record<TranslationKeys, string> = {
   speculationPercentileTitle: "当前价格在回溯窗口范围内的百分位",
   speculationPotentialProfit: "潜在利润",
   speculationPotentialProfitTitle: "如果价格回归到回溯窗口均值的潜在利润百分比（买入：预期上涨，卖出：预期下跌）",
+  // iter 88 (KI-1): 投机标签页 — 合成价差详情（来自 /api/flipper/flips）
+  speculationSpreadDetails: "显示合成价差详情",
+  speculationSyntheticBid: "合成买价",
+  speculationSyntheticAsk: "合成卖价",
+  speculationSyntheticSpread: "价差",
+  speculationSyntheticMid: "中间价",
+  speculationFairRateLabel: "公允交叉汇率",
+  speculationDeviationLabel: "偏差",
+  speculationVolumeLabel: "24小时成交量",
+  speculationSpreadDisclaimer: "合成买/卖价基于成交量公式计算（PoE2 没有真实订单簿）。请将其视为方向性信号，而非保证的执行价格。",
   speculationSampleSize: "{0} 个点",
   speculationMean: "均值 {0}",
   speculationStd: "标准差 {0}",

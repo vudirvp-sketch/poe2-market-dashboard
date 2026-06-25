@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/sheet";
 import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { fetchApi } from "@/lib/types";
+import { formatLocaleDateTime } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -122,18 +123,11 @@ function formatExpiry(
  * iter 87: Replaced the hardcoded English `["Jan", "Feb", ...]` array
  * with `toLocaleDateString(locale, ...)` + `toLocaleTimeString(locale, ...)`
  * so the date adapts to the active locale (e.g. "13 июн, 14:30" for ru).
+ * iter 88: Refactored to use the shared `formatLocaleDateTime` helper from
+ * `@/lib/utils` — same behaviour, less duplication.
  */
 function formatCreatedAt(createdAt: string, locale: string): string {
-  const d = new Date(createdAt);
-  if (isNaN(d.getTime())) return createdAt;
-  // Map our 4-letter locale codes to BCP-47 tags accepted by Intl.
-  const bcp47 = locale === "ru" ? "ru-RU"
-    : locale === "zh" ? "zh-CN"
-    : locale === "ko" ? "ko-KR"
-    : "en-US";
-  const datePart = d.toLocaleDateString(bcp47, { month: "short", day: "numeric" });
-  const timePart = d.toLocaleTimeString(bcp47, { hour: "2-digit", minute: "2-digit" });
-  return `${datePart}, ${timePart}`;
+  return formatLocaleDateTime(createdAt, locale);
 }
 
 // ---------------------------------------------------------------------------

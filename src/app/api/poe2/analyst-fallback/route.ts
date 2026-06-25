@@ -50,6 +50,10 @@ interface FallbackFact {
   icon: string;
   text: string;
   severity: "info" | "warning";
+  /** iter 88: stable template identifier — frontend formats via i18n key. */
+  templateId?: string;
+  /** iter 88: template parameters consumed by the frontend i18n template. */
+  params?: Record<string, string | number>;
 }
 
 /**
@@ -262,30 +266,39 @@ export async function GET(req: NextRequest) {
 
     if (bigMoversUp.length > 0) {
       const top = bigMoversUp[0];
+      const pct = top.change24hPct ?? 0;
       facts.push({
         type: "trend",
         icon: "up",
-        text: `${top.apiId} is the biggest gainer (+${(top.change24hPct ?? 0).toFixed(1)}% in 24h)`,
+        text: `${top.apiId} is the biggest gainer (+${pct.toFixed(1)}% in 24h)`,
         severity: "info",
+        templateId: "biggest_gainer",
+        params: { apiId: top.apiId, pct: Math.round(pct * 10) / 10 },
       });
     }
 
     if (bigMoversDown.length > 0) {
       const top = bigMoversDown[0];
+      const pct = top.change24hPct ?? 0;
       facts.push({
         type: "trend",
         icon: "down",
-        text: `${top.apiId} is the biggest loser (${(top.change24hPct ?? 0).toFixed(1)}% in 24h)`,
+        text: `${top.apiId} is the biggest loser (${pct.toFixed(1)}% in 24h)`,
         severity: "warning",
+        templateId: "biggest_loser",
+        params: { apiId: top.apiId, pct: Math.round(pct * 10) / 10 },
       });
     }
 
     if (topAnomalies.length > 0) {
+      const count = topAnomalies.length;
       facts.push({
         type: "anomaly",
         icon: "alert",
-        text: `${topAnomalies.length} currencies showing unusual price activity`,
-        severity: topAnomalies.length > 5 ? "warning" : "info",
+        text: `${count} currencies showing unusual price activity`,
+        severity: count > 5 ? "warning" : "info",
+        templateId: "anomaly_activity",
+        params: { count },
       });
     }
 
@@ -295,6 +308,8 @@ export async function GET(req: NextRequest) {
         icon: "chart",
         text: `Tracking ${totalCurrencies} currencies across ${totalPairs} trading pairs`,
         severity: "info",
+        templateId: "tracking",
+        params: { totalCurrencies, totalPairs },
       });
     }
 
@@ -304,6 +319,8 @@ export async function GET(req: NextRequest) {
         icon: "shield",
         text: `${stableCount} currencies holding stable (less than 2% change)`,
         severity: "info",
+        templateId: "stable_count",
+        params: { stableCount },
       });
     }
 

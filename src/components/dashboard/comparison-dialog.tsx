@@ -28,6 +28,7 @@ import { fmt, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { formatLocaleDate } from "@/lib/utils";
 import { DialogContentSkeleton } from "./skeletons";
 import { useMemo } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -62,7 +63,7 @@ export function ComparisonDialog({
 }: ComparisonDialogProps) {
   const { comparisonIds, removeFromComparison, clearComparison } =
     useDashboardStore();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const reducedMotion = useReducedMotion();
 
   // Resolve item metadata from allItems
@@ -244,10 +245,7 @@ export function ComparisonDialog({
                     dataKey="timestamp"
                     tick={{ fontSize: 10 }}
                     tickFormatter={(v: string) =>
-                      new Date(v).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
+                      formatLocaleDate(v, locale)
                     }
                   />
                   <YAxis

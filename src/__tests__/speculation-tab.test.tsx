@@ -339,4 +339,153 @@ describe("SpeculationTab (F5)", () => {
     // "long" for the HOLD item — multiple matches expected.
     expect(screen.getAllByText(/horizon: 1-3 days/i).length).toBeGreaterThan(0);
   });
+
+  // ===========================================================================
+  // iter 88 (KI-1) — Speculation tab joins /api/flipper/flips for synthetic
+  // bid/ask spread. Spread details toggle is shown ONLY when a matching
+  // FlipOpportunity exists for the item's api_id.
+  // ===========================================================================
+
+  describe("iter 88 — synthetic spread details (KI-1)", () => {
+    /** Helper: mock fetchApi to return speculation response for /speculation
+     *  and flips response for /flips. Other paths get undefined. */
+    function mockFetchWithFlips(specResponse: SpeculationResponse, flipsResponse: unknown) {
+      mockFetchApi.mockImplementation((path: string) => {
+        if (path === "/api/flipper/speculation") return Promise.resolve(specResponse);
+        if (path === "/api/flipper/flips") return Promise.resolve(flipsResponse);
+        return Promise.resolve(undefined);
+      });
+    }
+
+    const flipsWithBuyItem = {
+      league: "Standard",
+      total: 1,
+      opportunities: [
+        {
+          currency: "buy-item/exalted",
+          score: 0.8,
+          spread: 5.5,
+          volume24h: 1200,
+          cluster: "moderate",
+          bid: 0.95,
+          ask: 1.05,
+          midPrice: 1.0,
+          fairRate: 1.0,
+          deviationPct: 2.5,
+        },
+      ],
+      eventStatus: { anyActive: false, affectedCurrencies: [], summary: null },
+      fetchedAt: "2026-06-25T10:00:00Z",
+      dataAvailable: true,
+    };
+
+    it("shows spread-details toggle button when matching flip exists", async () => {
+      mockFetchWithFlips(mixedResponse, flipsWithBuyItem);
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      // Only buy-item has a matching flip in flipsWithBuyItem
+      const toggle = screen.queryByTestId("speculation-spread-toggle-buy-item");
+      expect(toggle).toBeInTheDocument();
+      // sell-item and hold-item should NOT have a toggle (no matching flip)
+      expect(screen.queryByTestId("speculation-spread-toggle-sell-item")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("speculation-spread-toggle-hold-item")).not.toBeInTheDocument();
+    });
+
+    it("does NOT show spread-details toggle when no flips data available", async () => {
+      // speculation returns normally, but flips returns empty opportunities
+      mockFetchWithFlips(mixedResponse, { opportunities: [], total: 0 });
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      expect(screen.queryByTestId("speculation-spread-toggle-buy-item")).not.toBeInTheDocument();
+    });
+
+    it("clicking toggle expands spread details with bid/ask/spread/mid", async () => {
+      mockFetchWithFlips(mixedResponse, flipsWithBuyItem);
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      const toggle = screen.getByTestId("speculation-spread-toggle-buy-item");
+      // Details panel should NOT be visible before click
+      expect(screen.queryByTestId("speculation-spread-details-buy-item")).not.toBeInTheDocument();
+      // Click to expand
+      fireEvent.click(toggle);
+      // Details panel should now be visible
+      const details = await screen.findByTestId("speculation-spread-details-buy-item");
+      expect(details).toBeInTheDocument();
+      // Verify the bid/ask/spread/mid values render
+      // bid = 0.95 → formatted "0.95", ask = 1.05 → "1.05", spread = 5.5%, mid = 1.0 → "1.00"
+      expect(details.textContent).toContain("0.95");
+      expect(details.textContent).toContain("1.05");
+      expect(details.textContent).toContain("5.50%");
+      expect(details.textContent).toContain("1.00");
+    });
+
+    it("clicking toggle twice collapses spread details", async () => {
+      mockFetchWithFlips(mixedResponse, flipsWithBuyItem);
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      const toggle = screen.getByTestId("speculation-spread-toggle-buy-item");
+      // Expand
+      fireEvent.click(toggle);
+      await screen.findByTestId("speculation-spread-details-buy-item");
+      // Collapse
+      fireEvent.click(toggle);
+      expect(screen.queryByTestId("speculation-spread-details-buy-item")).not.toBeInTheDocument();
+    });
+
+    it("shows fair rate and deviation in expanded panel when available", async () => {
+      mockFetchWithFlips(mixedResponse, flipsWithBuyItem);
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      fireEvent.click(screen.getByTestId("speculation-spread-toggle-buy-item"));
+      const details = await screen.findByTestId("speculation-spread-details-buy-item");
+      // fairRate = 1.0 → "1.00", deviationPct = 2.5 → "+2.50%"
+      expect(details.textContent).toContain("1.00");
+      expect(details.textContent).toContain("+2.50%");
+    });
+
+    it("shows spread disclaimer in expanded panel", async () => {
+      mockFetchWithFlips(mixedResponse, flipsWithBuyItem);
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      fireEvent.click(screen.getByTestId("speculation-spread-toggle-buy-item"));
+      const details = await screen.findByTestId("speculation-spread-details-buy-item");
+      // Disclaimer text mentions "no real order book" or "synthetic"
+      expect(details.textContent).toMatch(/synthetic|order book/i);
+    });
+
+    it("uses highest-scored flip when multiple flips exist for same from-currency", async () => {
+      const multiFlipsResponse = {
+        ...flipsWithBuyItem,
+        opportunities: [
+          {
+            currency: "buy-item/exalted",
+            score: 0.5,
+            spread: 2.0,
+            bid: 0.98,
+            ask: 1.02,
+            midPrice: 1.0,
+          },
+          {
+            currency: "buy-item/divine",
+            score: 0.9,  // higher score — should win
+            spread: 7.5,
+            bid: 0.92,
+            ask: 1.08,
+            midPrice: 1.0,
+            fairRate: 1.0,
+            deviationPct: 5.0,
+          },
+        ],
+      };
+      mockFetchWithFlips(mixedResponse, multiFlipsResponse);
+      renderTab(true);
+      await screen.findByTestId("speculation-tab");
+      fireEvent.click(screen.getByTestId("speculation-spread-toggle-buy-item"));
+      const details = await screen.findByTestId("speculation-spread-details-buy-item");
+      // The higher-scored flip (spread 7.5%, bid 0.92, ask 1.08) should be displayed
+      expect(details.textContent).toContain("7.50%");
+      expect(details.textContent).toContain("0.92");
+      expect(details.textContent).toContain("1.08");
+    });
+  });
 });

@@ -16,7 +16,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from backend.api.routes_analyst import _compute_trends
+from backend.api.routes_analyst import _compute_trends, _generate_facts
 from backend.models.currency import PricePoint
 
 
@@ -152,3 +152,112 @@ async def test_analyst_summary_endpoint(mock_client):
                         "trending_up", "trending_down",
                         "stable", "anomaly_count"):
                 assert key in summary, f"summary missing key: {key}"
+
+
+# ---------------------------------------------------------------------------
+# iter 88 — _generate_facts emits template_id + params for frontend i18n
+# ---------------------------------------------------------------------------
+
+class TestGenerateFactsTemplateId:
+    """iter 88 (KI-5): facts now carry `template_id` + `params` so the
+    frontend can format them via i18n keys (analystFactBiggestGainer, etc.).
+    The English `text` field is kept for backward compatibility.
+    """
+
+    def test_biggest_gainer_fact_has_template_id_and_params(self):
+        """When trends has an 'up' mover, _generate_facts emits a fact with
+        template_id='biggest_gainer' and params={'apiId': ..., 'pct': ...}."""
+        trends = [
+            {"api_id": "divine", "change_24h_pct": 12.3, "direction": "up"},
+            {"api_id": "exalted", "change_24h_pct": 5.0, "direction": "up"},
+        ]
+        anomalies: list[dict] = []
+        snapshot_data = {"total_currencies": 100, "total_pairs": 200}
+        facts = _generate_facts(trends, anomalies, snapshot_data)
+        # Find the biggest_gainer fact
+        gainers = [f for f in facts if f.get("template_id") == "biggest_gainer"]
+        assert len(gainers) == 1
+        fact = gainers[0]
+        assert fact["params"]["apiId"] == "divine"
+        assert fact["params"]["pct"] == 12.3
+        # English text still present (backward compat)
+        assert "divine" in fact["text"]
+        assert "12.3" in fact["text"]
+
+    def test_biggest_loser_fact_has_template_id_and_params(self):
+        """When trends has a 'down' mover, _generate_facts emits a fact with
+        template_id='biggest_loser'."""
+        trends = [
+            {"api_id": "mirror", "change_24h_pct": -8.5, "direction": "down"},
+        ]
+        anomalies: list[dict] = []
+        snapshot_data: dict = {}
+        facts = _generate_facts(trends, anomalies, snapshot_data)
+        losers = [f for f in facts if f.get("template_id") == "biggest_loser"]
+        assert len(losers) == 1
+        fact = losers[0]
+        assert fact["params"]["apiId"] == "mirror"
+        assert fact["params"]["pct"] == -8.5
+        assert fact["severity"] == "warning"
+
+    def test_anomaly_activity_fact_has_template_id_and_params(self):
+        """When anomalies exist, _generate_facts emits a fact with
+        template_id='anomaly_activity' and params={'count': N}."""
+        trends: list[dict] = []
+        anomalies = [{"api_id": "x", "z_score": 3.0}, {"api_id": "y", "z_score": -2.5}]
+        snapshot_data: dict = {}
+        facts = _generate_facts(trends, anomalies, snapshot_data)
+        anomaly_facts = [f for f in facts if f.get("template_id") == "anomaly_activity"]
+        assert len(anomaly_facts) == 1
+        fact = anomaly_facts[0]
+        assert fact["params"]["count"] == 2
+
+    def test_tracking_fact_has_template_id_and_params(self):
+        """When total_currencies > 0, _generate_facts emits a fact with
+        template_id='tracking' and params={'totalCurrencies', 'totalPairs'}."""
+        trends: list[dict] = []
+        anomalies: list[dict] = []
+        snapshot_data = {"total_currencies": 50, "total_pairs": 120}
+        facts = _generate_facts(trends, anomalies, snapshot_data)
+        tracking_facts = [f for f in facts if f.get("template_id") == "tracking"]
+        assert len(tracking_facts) == 1
+        fact = tracking_facts[0]
+        assert fact["params"]["totalCurrencies"] == 50
+        assert fact["params"]["totalPairs"] == 120
+
+    def test_stable_count_fact_has_template_id_and_params(self):
+        """When stable_count > 0, _generate_facts emits a fact with
+        template_id='stable_count' and params={'stableCount': N}."""
+        trends = [
+            {"api_id": "x", "change_24h_pct": 0.5, "direction": "stable"},
+            {"api_id": "y", "change_24h_pct": -0.3, "direction": "stable"},
+        ]
+        anomalies: list[dict] = []
+        snapshot_data: dict = {}
+        facts = _generate_facts(trends, anomalies, snapshot_data)
+        stable_facts = [f for f in facts if f.get("template_id") == "stable_count"]
+        assert len(stable_facts) == 1
+        fact = stable_facts[0]
+        assert fact["params"]["stableCount"] == 2
+
+    def test_facts_without_data_emit_nothing(self):
+        """Empty trends + anomalies + snapshot_data emits no facts."""
+        facts = _generate_facts([], [], {})
+        assert facts == []
+
+    def test_all_facts_have_text_field_for_backward_compat(self):
+        """Every fact must still carry the English `text` field for callers
+        that don't recognize `template_id`."""
+        trends = [
+            {"api_id": "divine", "change_24h_pct": 10.0, "direction": "up"},
+            {"api_id": "mirror", "change_24h_pct": -5.0, "direction": "down"},
+            {"api_id": "x", "change_24h_pct": 0.1, "direction": "stable"},
+        ]
+        anomalies = [{"api_id": "z", "z_score": 3.0}]
+        snapshot_data = {"total_currencies": 10, "total_pairs": 20}
+        facts = _generate_facts(trends, anomalies, snapshot_data)
+        assert len(facts) >= 4  # gainer + loser + anomaly + tracking + stable
+        for fact in facts:
+            assert "text" in fact
+            assert isinstance(fact["text"], str)
+            assert len(fact["text"]) > 0

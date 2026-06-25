@@ -890,6 +890,14 @@ export interface LeagueFact {
   icon: string;
   text: string;
   severity: "info" | "warning";
+  /** iter 88: stable template identifier — when present, frontend formats the
+   * fact text via `t("analystFact<TemplateIdCamelCase>", params)` instead of
+   * rendering `text` directly. Backward-compatible — old responses without
+   * `templateId` fall back to `text`. */
+  templateId?: string;
+  /** iter 88: template parameters (apiId, pct, count, totalCurrencies,
+   * totalPairs, stableCount). Shape depends on `templateId`. */
+  params?: Record<string, string | number>;
 }
 
 /** Response from GET /api/flipper/analyst/summary */

@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi, exportToCsv, exportToJson } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+import { formatLocaleDate } from "@/lib/utils";
 import type { SnapshotHistoryPoint, PoeItem, ExchangePair } from "@/lib/types";
 import { getCurrencyDisplayName } from "@/lib/currency-names";
 import { useState, useMemo } from "react";
@@ -347,12 +348,7 @@ export function MarketOverview({ realm, league, onItemClick, backendOnline }: Ma
                   <XAxis
                     dataKey="timestamp"
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(v: string) =>
-                      new Date(v).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    }
+                    tickFormatter={(v: string) => formatLocaleDate(v, locale)}
                   />
                   <YAxis
                     tick={{ fontSize: 10 }}

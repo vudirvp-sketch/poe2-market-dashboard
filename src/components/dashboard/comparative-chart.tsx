@@ -37,6 +37,7 @@ import { fmt, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { formatLocaleDate } from "@/lib/utils";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 // Colors for up to 6 comparison lines
@@ -145,7 +146,7 @@ export const ComparativeChart = memo(function ComparativeChart({
 }: ComparativeChartProps) {
   const { comparisonIds, removeFromComparison, clearComparison } =
     useDashboardStore();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const reducedMotion = useReducedMotion();
   const [showCorrelation, setShowCorrelation] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<{row: number; col: number} | null>(null);
@@ -431,12 +432,7 @@ export const ComparativeChart = memo(function ComparativeChart({
                   <XAxis
                     dataKey="timestamp"
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(v: string) =>
-                      new Date(v).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
-                    }
+                    tickFormatter={(v: string) => formatLocaleDate(v, locale)}
                   />
                   <YAxis
                     tick={{ fontSize: 10 }}

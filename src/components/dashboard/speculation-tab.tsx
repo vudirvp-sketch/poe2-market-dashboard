@@ -74,6 +74,7 @@ import {
   Play,
   ChevronDown,
   ChevronUp,
+  Layers,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +98,8 @@ import {
   type SpeculationBacktestResponse,
   type SpeculationBacktestStatsBlock,
   type SpeculationBacktestTrade,
+  type FlipsResponse,
+  type FlipOpportunity,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -273,7 +276,7 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
   const [days, setDays] = useState<number>(DEFAULT_DAYS);
   const [signalFilter, setSignalFilter] = useState<SignalFilterValue>("ALL");
 
-  // ---- Query ----
+  // ---- Query: speculation signals (primary) ----
   // 30s staleTime — speculation signals change slowly (rolling 30d average),
   // no need to refetch on every dashboard focus. Retry once for transient blips.
   const { data, isLoading, isError, refetch } = useQuery<SpeculationResponse>({
@@ -288,6 +291,42 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
     staleTime: 30_000,
     retry: 1,
   });
+
+  // ---- Query: /api/flipper/flips (iter 88, KI-1) ----
+  // Fetch synthetic bid/ask spread data IN PARALLEL with speculation signals.
+  // The flips endpoint computes synthetic spreads from volume-based formula
+  // (see backend/api/routes_arbitrage.py). Joined to speculation signals by
+  // api_id (first part of FlipOpportunity.currency, e.g. "divine" from
+  // "divine/exalted"). 60s staleTime — synthetic spreads change slowly.
+  // Gated on backendOnline + hasSignals to avoid firing on empty state.
+  const { data: flipsData } = useQuery<FlipsResponse>({
+    queryKey: ["flipperFlips", "speculation-join"],
+    queryFn: () => fetchApi<FlipsResponse>("/api/flipper/flips"),
+    enabled: backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // ---- Build lookup map: api_id → FlipOpportunity (iter 88, KI-1) ----
+  // FlipOpportunity.currency is "from/to" — we key by the FROM currency
+  // (which is what speculation signals index on). When multiple flips exist
+  // for the same from-currency, pick the one with the highest score (most
+  // actionable). This is a heuristic — the joins are best-effort since
+  // /flips indexes on PAIRS while /speculation indexes on ITEMS.
+  const flipsByApiId = useMemo(() => {
+    const map = new Map<string, FlipOpportunity>();
+    if (!flipsData?.opportunities) return map;
+    for (const opp of flipsData.opportunities) {
+      const fromId = opp.currency.split("/")[0];
+      if (!fromId) continue;
+      const existing = map.get(fromId);
+      // Keep the highest-scored flip per from-currency
+      if (!existing || (opp.score ?? 0) > (existing.score ?? 0)) {
+        map.set(fromId, opp);
+      }
+    }
+    return map;
+  }, [flipsData?.opportunities]);
 
   // ---- Derived ----
   const signals = useMemo(() => data?.signals ?? [], [data]);
@@ -461,7 +500,13 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
         ) : (
           <div className="space-y-2" data-testid="speculation-signals-list">
             {signals.map((sig) => (
-              <SignalRow key={`${sig.apiId}-${sig.zScore}`} signal={sig} t={t} locale={locale} />
+              <SignalRow
+                key={`${sig.apiId}-${sig.zScore}`}
+                signal={sig}
+                t={t}
+                locale={locale}
+                flip={flipsByApiId.get(sig.apiId)}
+              />
             ))}
           </div>
         )}
@@ -499,9 +544,13 @@ interface SignalRowProps {
   signal: SpeculationSignal;
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
   locale: string;
+  /** iter 88 (KI-1): optional synthetic bid/ask spread from /api/flipper/flips.
+   *  Undefined when no matching flip exists for this item's api_id. */
+  flip?: FlipOpportunity;
 }
 
-function SignalRow({ signal, t, locale }: SignalRowProps) {
+function SignalRow({ signal, t, locale, flip }: SignalRowProps) {
+  const [expanded, setExpanded] = useState(false);
   const lineColor =
     signal.signal === "BUY"
       ? "text-emerald-500"
@@ -586,10 +635,89 @@ function SignalRow({ signal, t, locale }: SignalRowProps) {
           {" · "}
           {t(horizonKey(signal.horizonHint))}
         </div>
-        <div className={lineColor}>
-          <Sparkline points={signal.priceHistoryShort} color="currentColor" />
+        <div className="flex items-center gap-2">
+          <div className={lineColor}>
+            <Sparkline points={signal.priceHistoryShort} color="currentColor" />
+          </div>
+          {/* iter 88 (KI-1): Expandable details toggle — only render when
+              synthetic spread data is available for this item. */}
+          {flip && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              aria-label={t("speculationSpreadDetails")}
+              data-testid={`speculation-spread-toggle-${signal.apiId}`}
+            >
+              <Layers className="h-3 w-3" aria-hidden="true" />
+              {expanded
+                ? <ChevronUp className="h-3 w-3" aria-hidden="true" />
+                : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* iter 88 (KI-1): Expandable spread details — synthetic bid/ask from /flips.
+          Shown only when the user clicks the toggle AND a matching FlipOpportunity
+          exists for this item's api_id. */}
+      {expanded && flip && (
+        <div
+          className="mt-2 pt-2 border-t border-border/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]"
+          data-testid={`speculation-spread-details-${signal.apiId}`}
+        >
+          {/* Synthetic bid */}
+          <div className="space-y-0.5">
+            <p className="text-muted-foreground/70">{t("speculationSyntheticBid")}</p>
+            <p className="font-mono text-emerald-500">{fmt(flip.bid)}</p>
+          </div>
+          {/* Synthetic ask */}
+          <div className="space-y-0.5">
+            <p className="text-muted-foreground/70">{t("speculationSyntheticAsk")}</p>
+            <p className="font-mono text-red-500">{fmt(flip.ask)}</p>
+          </div>
+          {/* Synthetic spread */}
+          <div className="space-y-0.5">
+            <p className="text-muted-foreground/70">{t("speculationSyntheticSpread")}</p>
+            <p className="font-mono">
+              {flip.spread != null ? `${flip.spread.toFixed(2)}%` : "—"}
+            </p>
+          </div>
+          {/* Mid price */}
+          <div className="space-y-0.5">
+            <p className="text-muted-foreground/70">{t("speculationSyntheticMid")}</p>
+            <p className="font-mono">{fmt(flip.midPrice)}</p>
+          </div>
+          {/* Fair cross-rate + deviation (second row, full width) */}
+          {flip.fairRate != null && (
+            <div className="col-span-2 sm:col-span-4 space-y-0.5">
+              <p className="text-muted-foreground/70">
+                {t("speculationFairRateLabel")}: <span className="font-mono">{fmt(flip.fairRate)}</span>
+                {flip.deviationPct != null && (
+                  <>
+                    {" · "}
+                    {t("speculationDeviationLabel")}:{" "}
+                    <span className={`font-mono ${Math.abs(flip.deviationPct) >= 5 ? "text-amber-500" : ""}`}>
+                      {flip.deviationPct > 0 ? "+" : ""}{flip.deviationPct.toFixed(2)}%
+                    </span>
+                  </>
+                )}
+                {flip.volume24h != null && (
+                  <>
+                    {" · "}
+                    {t("speculationVolumeLabel")}: <span className="font-mono">{fmt(flip.volume24h)}</span>
+                  </>
+                )}
+              </p>
+              <p className="text-muted-foreground/60 text-[10px] italic">
+                {t("speculationSpreadDisclaimer")}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

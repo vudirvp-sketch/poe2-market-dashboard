@@ -35,7 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint, DailyStat, BenchmarksResponse, OHLCVCandle, ExchangePair } from "@/lib/types";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatLocaleDate } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
@@ -66,7 +66,7 @@ export function DetailDialog({
   // P3-2: Timeframe state for candlestick chart
   const [candleTimeframe, setCandleTimeframe] = useState<Timeframe>("1D");
   const { isFavorite, toggleFavorite, uiState } = useDashboardStore();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const reducedMotion = useReducedMotion();
 
   // Hourly price history
@@ -379,10 +379,7 @@ export function DetailDialog({
                           dataKey="timestamp"
                           tick={{ fontSize: 10 }}
                           tickFormatter={(v: string) =>
-                            new Date(v).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })
+                            formatLocaleDate(v, locale)
                           }
                         />
                         <YAxis
@@ -426,10 +423,7 @@ export function DetailDialog({
                           dataKey="timestamp"
                           tick={{ fontSize: 10 }}
                           tickFormatter={(v: string) =>
-                            new Date(v).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })
+                            formatLocaleDate(v, locale)
                           }
                         />
                         <YAxis

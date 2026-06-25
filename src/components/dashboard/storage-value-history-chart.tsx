@@ -28,6 +28,7 @@ import { useMemo } from "react";
 import { TrendingUp, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
+import { formatLocaleDate } from "@/lib/utils";
 import type { StorageValueHistoryPoint } from "@/lib/types";
 
 export interface StorageValueHistoryChartProps {
@@ -47,7 +48,7 @@ export function StorageValueHistoryChart({
   height = DEFAULT_HEIGHT,
   loading = false,
 }: StorageValueHistoryChartProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const hasAnyMirror = points.some((p) => p.ratioMirror != null);
   const hasAnyHinekora = points.some((p) => p.ratioHinekora != null);
@@ -184,10 +185,7 @@ export function StorageValueHistoryChart({
   }
 
   // ---- Chart render ----
-  const fmtDate = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  };
+  const fmtDate = (ts: number) => formatLocaleDate(ts, locale);
   const fmtRatio = (r: number) => {
     if (r === 0) return "0";
     if (r < 0.001) return r.toExponential(2);

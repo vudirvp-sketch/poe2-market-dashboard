@@ -28,6 +28,7 @@ import { fmt, fetchApi } from "@/lib/types";
 import type { ExchangePairHistoryPoint } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
+import { formatLocaleDate } from "@/lib/utils";
 import { DialogContentSkeleton } from "./skeletons";
 import type { PairComparisonId } from "@/lib/store";
 import { useMemo } from "react";
@@ -57,7 +58,7 @@ export function PairComparisonDialog({
 }: PairComparisonDialogProps) {
   const { pairComparisonIds, removePairFromComparison, clearPairComparison } =
     useDashboardStore();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Fetch history for each compared pair
   const histories = useQuery({
@@ -233,10 +234,7 @@ export function PairComparisonDialog({
                     dataKey="timestamp"
                     tick={{ fontSize: 10 }}
                     tickFormatter={(v: string) =>
-                      new Date(v).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })
+                      formatLocaleDate(v, locale)
                     }
                   />
                   <YAxis

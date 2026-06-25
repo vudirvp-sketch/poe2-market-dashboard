@@ -69,6 +69,10 @@ const ru: Record<TranslationKeys, string> = {
   priceLabel: "\u0426\u0435\u043D\u0430",
   change24h: "\u0418\u0437\u043C. 24\u0447",
   change7d: "\u0418\u0437\u043C. 7\u0434",
+  // iter 88 (KI-2): 7d change column header tooltip + null-state explanation
+  change7dInfo: "Что значит колонка «Изм. 7д»?",
+  change7dDesc: "Процентное изменение за последние 7 дней, вычисленное из PriceLogs. Показывает «—», когда точек цен меньше 2 или ближайшая запись 7-дневной давности отстоит более чем на ~17 часов — обычно для новых лиг, где история цен ещё формируется.",
+  change7dEmpty: "Нет данных об изменении за 7 дней — у этой пары меньше 2 точек цен в истории, или ближайшая запись 7-дневной давности слишком далеко. Появится по мере накопления PriceLogs.",
   hourly: "\u041F\u043E\u0447\u0430\u0441\u043E\u0432\u043E\u0439",
   dailyCandlestick: "\u0414\u043D\u0435\u0432\u043D\u043E\u0439 (\u0421\u0432\u0435\u0447\u0438)",
   priceHistory: "\u0418\u0441\u0442\u043E\u0440\u0438\u044F \u0446\u0435\u043D",
@@ -127,8 +131,8 @@ const ru: Record<TranslationKeys, string> = {
   enableAlert: "\u0412\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u043E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u0435",
   removeAlert: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043E\u043F\u043E\u0432\u0435\u0449\u0435\u043D\u0438\u0435",
   // Arbitrage
-  arbitrageTheoretical: "\u0410\u0440\u0431\u0438\u0442\u0440\u0430\u0436\u043D\u044B\u0435 \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438 \u0442\u0435\u043E\u0440\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0435",
-  arbitrageTheoreticalDesc: "\u0420\u044B\u043D\u043E\u0447\u043D\u044B\u0435 \u0446\u0435\u043D\u044B \u0431\u044B\u0441\u0442\u0440\u043E \u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F. \u041F\u0440\u043E\u0441\u043A\u0430\u043B\u044C\u0437\u044B\u0432\u0430\u043D\u0438\u0435 \u043E\u0446\u0435\u043D\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u043F\u043E \u043C\u043E\u0434\u0435\u043B\u0438 \u043A\u0432\u0430\u0434\u0440\u0430\u0442\u043D\u043E\u0433\u043E \u043A\u043E\u0440\u043D\u044F. \u0420\u0435\u0430\u043B\u044C\u043D\u044B\u0435 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u043C\u043E\u0433\u0443\u0442 \u043E\u0442\u043B\u0438\u0447\u0430\u0442\u044C\u0441\u044F. \u0412\u0441\u0435\u0433\u0434\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0439\u0442\u0435 \u0442\u0435\u043A\u0443\u0449\u0438\u0435 \u043A\u0443\u0440\u0441\u044B \u043F\u0435\u0440\u0435\u0434 \u0442\u043E\u0440\u0433\u043E\u0432\u043B\u0435\u0439.",
+  arbitrageTheoretical: "Отклонения кросс-курса носят теоретический характер",
+  arbitrageTheoreticalDesc: "Эта вкладка показывает отклонения между рыночным курсом и справедливым кросс-курсом. В PoE2 нет стакана заявок — реальная торговля идёт между игроками через торговый сайт, поэтому эти отклонения указывают, где другая валюта оплаты может сэкономить деньги, а не на гарантированный арбитраж. Всегда проверяйте текущие курсы перед торговлей.",
   arbitrageClientModeNote: "\u041A\u043B\u0438\u0435\u043D\u0442\u0441\u043A\u0438\u0439 \u0440\u0435\u0436\u0438\u043C \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442 \u043C\u043E\u0434\u0435\u043B\u0438\u0440\u0443\u0435\u043C\u044B\u0435 \u0441\u043F\u0440\u0435\u0434\u044B",
   arbitrageClientModeNoteDesc: "POE2Scout API \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u0441\u0440\u0435\u0434\u043D\u0438\u0435 \u0446\u0435\u043D\u044B, \u0430 \u043D\u0435 \u0440\u0430\u0437\u0434\u0435\u043B\u044C\u043D\u044B\u0435 bid/ask. \u041F\u0440\u044F\u043C\u044B\u0435 \u0438 \u043E\u0431\u0440\u0430\u0442\u043D\u044B\u0435 \u043A\u0443\u0440\u0441\u044B \u0438\u0437 \u043E\u0434\u043D\u043E\u0439 \u043F\u0430\u0440\u044B \u2014 \u0442\u043E\u0447\u043D\u044B\u0435 \u0437\u0435\u0440\u043A\u0430\u043B\u0430, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u043D\u0430\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u0430\u0440\u0431\u0438\u0442\u0440\u0430\u0436 \u043D\u0435\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0438\u0442\u044C \u043A\u043B\u0438\u0435\u043D\u0442\u0441\u043A\u0438. \u0414\u043B\u044F \u0440\u0435\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u043F\u043E\u0438\u0441\u043A\u0430 \u0430\u0440\u0431\u0438\u0442\u0440\u0430\u0436\u0430 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 Flipper-\u0440\u0435\u0436\u0438\u043C (\u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u0431\u044D\u043A\u0435\u043D\u0434).",
   scannedPairs: "\u041F\u0440\u043E\u0441\u043A\u0430\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043E \u043F\u0430\u0440",
@@ -327,7 +331,7 @@ const ru: Record<TranslationKeys, string> = {
   forecastWsDisconnected: "Live: отключено",
   forecastLastUpdate: "Последнее обновление",
   // Flips Tab
-  tabFlips: "\u0424\u043B\u0438\u043F\u044B",
+  tabFlips: "Отклонения кросс-курса",
   flipsTotalOpportunities: "\u0412\u0441\u0435\u0433\u043E \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0435\u0439",
   flipsAvgScore: "\u0421\u0440\u0435\u0434\u043D\u0438\u0439 \u0441\u043A\u043E\u0440",
   flipsBestPair: "\u041B\u0443\u0447\u0448\u0430\u044F \u043F\u0430\u0440\u0430",
@@ -831,6 +835,16 @@ const ru: Record<TranslationKeys, string> = {
   analystError: "Не удалось загрузить данные аналитики лиги. Возможны проблемы с бэкендом.",
   analystFallbackNotice: "Упрощённый анализ — запустите аналитический бэкенд для полного функционала (флипы, скоринг, прогнозы).",
   analystFallbackBadge: "Упрощённо",
+  // ---- iter 88: Analyst fact templates (KI-5) ----
+  // {0} = название валюты, {1} = процент (со знаком для biggest_loser)
+  analystFactBiggestGainer: "{0} — крупнейший растущий актив (+{1}% за 24ч)",
+  analystFactBiggestLoser: "{0} — крупнейший падающий актив ({1}% за 24ч)",
+  // {0} = количество аномалий
+  analystFactAnomalyActivity: "{0} валют показывают необычную ценовую активность",
+  // {0} = всего валют, {1} = всего пар
+  analystFactTracking: "Отслеживаем {0} валют в {1} торговых парах",
+  // {0} = количество стабильных валют
+  analystFactStable: "{0} валют стабильны (изменение менее 2%)",
 
   // ---- Optimizer Offline (бэкенд обязателен) ----
   optimizerOfflineTitle: "Оптимизатор требует аналитический бэкенд",
@@ -852,6 +866,11 @@ const ru: Record<TranslationKeys, string> = {
   // ---- Premium tooltip (оптимальная оплата в другой валюте) ----
   premiumPayIn: "Платить в",
   premiumSave: "экономия",
+  // iter 88 (KI-3): Premium column header tooltip
+  crossCurrencyPremiumTitle: "Кросс-валютная премия",
+  crossCurrencyPremiumDesc: "Показывает, насколько рыночный курс отклоняется от справедливого кросс-курса, или сколько вы сэкономите при оплате другой валютой. Большие значения (50%+) нормальны для пар с низкой ликвидностью — это сигнал о возможности, а не баг.",
+  crossCurrencyPremiumInfo: "Что значит колонка «Премия»?",
+  crossCurrencyPremiumEmpty: "Нет данных о премии — у пары меньше 2 вариантов оплаты и не обнаружено отклонения кросс-курса.",
 
   // ---- Cross-rate Flip Tooltip i18n ----
   crossRateBuyCheapSell: "Купить дешево → продать",
@@ -980,6 +999,16 @@ const ru: Record<TranslationKeys, string> = {
   speculationPercentileTitle: "Перцентиль текущей цены в диапазоне окна ретроспективы",
   speculationPotentialProfit: "Потенц. профит",
   speculationPotentialProfitTitle: "Потенциальный профит % при возврате цены к среднему за окно ретроспективы (ПОКУПАТЬ: ожидается рост, ПРОДАВАТЬ: ожидается падение)",
+  // iter 88 (KI-1): Speculation tab — synthetic spread details (joined from /api/flipper/flips)
+  speculationSpreadDetails: "Показать детали синтетического спреда",
+  speculationSyntheticBid: "Синтетическая bid",
+  speculationSyntheticAsk: "Синтетическая ask",
+  speculationSyntheticSpread: "Спред",
+  speculationSyntheticMid: "Средняя цена",
+  speculationFairRateLabel: "Справедливый кросс-курс",
+  speculationDeviationLabel: "Отклонение",
+  speculationVolumeLabel: "Объём 24ч",
+  speculationSpreadDisclaimer: "Синтетические bid/ask вычислены по формуле на основе объёма (в PoE2 нет реального стакана заявок). Используйте как направленный сигнал, а не как гарантию исполнения.",
   speculationSampleSize: "{0} точек",
   speculationMean: "среднее {0}",
   speculationStd: "СКО {0}",

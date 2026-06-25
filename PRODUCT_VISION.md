@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-26 (iter 87 — i18n leakage cleanup across 7 components + phase_hints ?lang=ru + Speculation potentialProfitPct + Currency Graph tab removed + Liquid Chain cleanup + dead recipe.py deleted)
+> Last updated: 2026-06-26 (iter 88 — KI-1 through KI-5 addressed + date formatting cleanup + analyst fact templates moved to frontend + Speculation tab joins /flips for synthetic spread)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -241,7 +241,7 @@ Abyss, Incursion) показывать:
 4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 live tab готов; iter 79 — F5 backtest backend готов; iter 80 — F5 backtest UI готов, toggle-driven panel под списком сигналов)**
 5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.). **(iter 78 — F6 Phase-aware hints widget готов, wired в Overview tab)**
 
-**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 sync script shipped iter 85 + live-run verified iter 86 — F1 CLOSED; iter 87 — i18n leakage cleanup across 7 components + phase_hints ?lang=ru + Speculation potentialProfitPct + Currency Graph tab removed + Liquid Chain cleanup + dead recipe.py deleted; useDashboardData hook extraction COMPLETE: Stage 1 в iter 81, Stage 2 в iter 82, Stage 3a в iter 83, Stage 3b в iter 84; `dashboard-page.tsx` теперь 995 строк, было 1685 в iter 70) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
+**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 sync script shipped iter 85 + live-run verified iter 86 — F1 CLOSED; iter 87 — i18n leakage cleanup across 7 components + phase_hints ?lang=ru + Speculation potentialProfitPct + Currency Graph tab removed + Liquid Chain cleanup + dead recipe.py deleted; iter 88 — all 5 Known Issues from iter 87 addressed: KI-1 Speculation joins /flips for synthetic spread details, KI-2 7d Change column tooltip, KI-3 Premium column tooltip, KI-4 Flips tab renamed to "Cross-rate Deviations", KI-5 analyst fact templates moved to frontend with `template_id` + `params` + 5 i18n keys × 4 locales; date formatting cleanup across 8 chart components via shared `formatLocaleDate` helper; useDashboardData hook extraction COMPLETE: Stage 1 в iter 81, Stage 2 в iter 82, Stage 3a в iter 83, Stage 3b в iter 84; `dashboard-page.tsx` теперь 995 строк, было 1685 в iter 70) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
 
 ### iter 87 — i18n leakage cleanup + dead code removal
 
@@ -261,6 +261,22 @@ User feedback batch addressed: heatmap was unsorted and English-only, Currencies
 **Tests:** 757 pytest + 405 jest pass (was 763 + 415 in iter 86 — delta is deleted test_recipe.py + currency-graph-tab.test.tsx + rewritten integration.test.tsx).
 
 **5 Known Issues deferred to iter 88** — see STATUS.md §"Known Issues — Deferred to iter 88": (KI-1) Speculation tab full redesign, (KI-2) Exchanges 7d changes not loading, (KI-3) "Premium" column meaning unclear, (KI-4) Flips tab applicability to PoE2, (KI-5) analyst-tab fact.text English from backend.
+
+### iter 88 — All 5 Known Issues (KI-1 through KI-5) addressed + date formatting cleanup
+
+All 5 user-feedback issues from iter 87 resolved. No new features added — this iteration focused on closing the known-issues backlog and applying the locale-aware date formatting pattern across all chart components.
+
+**Shipped:**
+- **KI-5 (P2) — Analyst fact templates moved to frontend:** Backend `_generate_facts` now emits `template_id` + `params` alongside English `text`. `FactData` model extended with optional fields (backward compatible). Frontend `analyst-tab.tsx` has `TEMPLATE_ID_TO_I18N_KEY` map + `formatFactText(fact, t, locale)` function — formats via i18n keys when `template_id` is present, falls back to `text` otherwise. 5 new i18n keys × 4 locales: `analystFactBiggestGainer`, `analystFactBiggestLoser`, `analystFactAnomalyActivity`, `analystFactTracking`, `analystFactStable`. Currency params localized via `getCurrencyDisplayName(apiId, locale)`. 7 new pytest tests in `tests/e2e/test_analyst.py::TestGenerateFactsTemplateId`.
+- **KI-1 (P1) — Speculation tab joins /api/flipper/flips for synthetic spread:** `speculation-tab.tsx` now fires a parallel `useQuery` for `/api/flipper/flips` (60s staleTime). Builds `flipsByApiId: Map<string, FlipOpportunity>` lookup keyed by FROM currency. `SignalRow` accepts optional `flip?: FlipOpportunity` prop — when present, renders an expandable "Spread Details" toggle button. Expanded panel shows synthetic bid/ask/spread/mid + fair cross-rate + deviation + 24h volume + disclaimer. 7 new jest tests in `speculation-tab.test.tsx`. NOT a full redesign — synthetic spread data comes from the same volume-based formula, but now it's surfaced alongside z-score signals. Full GGG official trade API integration (real order book) deferred indefinitely (requires OAuth2 + rate-limit handling).
+- **KI-2 (P2) — Exchanges 7d changes investigation:** Investigation confirmed `sevenDayChangePercent` is frontend-computed in `poe2api.ts:compute7dChangePercent()`. Returns null by design on new leagues (<2 PriceLogs OR closest 7d-ago log drifts >16.8h OR 7d-ago price is 0). Added tooltip on column header (`change7dDesc`) + on "—" cell (`change7dEmpty`) explaining the null state. NOT a bug — by design. 3 new i18n keys × 4 locales.
+- **KI-3 (P3) — Premium column tooltip:** Premium column header now has Info icon + tooltip explaining "shows how much market rate deviates from cross-rate-derived fair rate; large % is normal for low-liquidity pairs". "—" cell also has tooltip. 4 new i18n keys × 4 locales.
+- **KI-4 (P3) — Flips tab relabel:** `tabFlips` i18n key changed from "Flips" to "Cross-rate Deviations" in all 4 locales. Disclaimer banner rewritten to clarify: tab shows cross-rate deviations (NOT arbitrage), PoE2 has no order book, deviations signal where a different payment currency could save money.
+- **Date formatting cleanup:** Added shared `formatLocaleDate` / `formatLocaleDateTime` / `localeToBcp47` helpers in `src/lib/utils.ts`. Migrated 8 chart components from inline `toLocaleDateString("en-US", ...)` to the shared helper: `comparative-chart.tsx`, `market-overview.tsx`, `comparison-dialog.tsx`, `detail-dialog.tsx` (2 call sites), `pair-comparison-dialog.tsx`, `pair-detail-dialog.tsx`, `watchlist-tab.tsx`, `storage-value-history-chart.tsx`. Refactored `events-sidebar.tsx` to use the shared helper too. Inline `toLocaleDateString("en-US", ...)` in chart components is now FORBIDDEN — see AGENT_NAVIGATION invariant #40(a).
+
+**Tests:** 768 pytest (757 + 11 e2e/analyst) + 412 jest pass (was 757 + 405 in iter 87 — delta is 11 pytest from new `TestGenerateFactsTemplateId` class + 7 jest from new spread-details tests).
+
+**Files changed (24 total):** 3 backend + 12 frontend components + 1 frontend infrastructure + 1 frontend tests + 1 API route + 1 TS types + 4 i18n locales + 3 docs.
 
 ---
 

@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import type { TranslationKeys } from "@/lib/i18n/locales/en";
 import { getCurrencyDisplayName } from "@/lib/currency-names";
 import {
   fetchApi,
@@ -82,6 +83,70 @@ function factIcon(icon: string) {
       return <Shield className="h-4 w-4 text-sky-500" aria-hidden="true" />;
     default:
       return <Activity className="h-4 w-4 text-muted-foreground" aria-hidden="true" />;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// iter 88: Fact text formatter — uses i18n template when templateId is present,
+// falls back to backend-supplied English `text` otherwise.
+// ---------------------------------------------------------------------------
+
+/** Map `templateId` (snake_case from backend) → i18n key (camelCase). */
+const TEMPLATE_ID_TO_I18N_KEY: Record<string, TranslationKeys> = {
+  biggest_gainer: "analystFactBiggestGainer",
+  biggest_loser: "analystFactBiggestLoser",
+  anomaly_activity: "analystFactAnomalyActivity",
+  tracking: "analystFactTracking",
+  stable_count: "analystFactStable",
+};
+
+/**
+ * Format a fact's display text.
+ *
+ * Strategy:
+ *   1. If `fact.templateId` is present AND mapped → format via i18n template.
+ *      Use `getCurrencyDisplayName(apiId, locale)` for currency params so
+ *      currency names localize correctly (e.g. "divine" → "Божественная" in RU).
+ *      Numeric params (pct, count, etc.) are passed through unchanged.
+ *   2. Otherwise → fall back to backend-supplied `fact.text` (English).
+ *
+ * The `t()` helper accepts `{ 0: ..., 1: ... }` for positional interpolation
+ * per the existing i18n pattern (see events-sidebar.tsx, take-profit-calculator.tsx).
+ * For each template we map named params to positional slots.
+ */
+function formatFactText(
+  fact: LeagueFact,
+  t: (key: TranslationKeys, params?: Record<string, string | number>) => string,
+  locale: string
+): string {
+  if (!fact.templateId || !fact.params) return fact.text;
+  const i18nKey = TEMPLATE_ID_TO_I18N_KEY[fact.templateId];
+  if (!i18nKey) return fact.text;
+
+  const p = fact.params;
+  switch (fact.templateId) {
+    case "biggest_gainer":
+    case "biggest_loser": {
+      const apiId = String(p.apiId ?? "");
+      const name = getCurrencyDisplayName(apiId, locale) || apiId;
+      const pct = Number(p.pct ?? 0);
+      return t(i18nKey, { 0: name, 1: pct });
+    }
+    case "anomaly_activity": {
+      const count = Number(p.count ?? 0);
+      return t(i18nKey, { 0: count });
+    }
+    case "tracking": {
+      const totalCurrencies = Number(p.totalCurrencies ?? 0);
+      const totalPairs = Number(p.totalPairs ?? 0);
+      return t(i18nKey, { 0: totalCurrencies, 1: totalPairs });
+    }
+    case "stable_count": {
+      const stableCount = Number(p.stableCount ?? 0);
+      return t(i18nKey, { 0: stableCount });
+    }
+    default:
+      return fact.text;
   }
 }
 
@@ -280,7 +345,7 @@ export function AnalystTab({ backendOnline, realm, league }: AnalystTabProps) {
                 >
                   <div className="mt-0.5 shrink-0">{factIcon(fact.icon)}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm leading-snug">{fact.text}</p>
+                    <p className="text-sm leading-snug">{formatFactText(fact, t, locale)}</p>
                     <Badge
                       variant="outline"
                       className={`mt-1.5 text-[10px] px-1.5 py-0 font-semibold ${

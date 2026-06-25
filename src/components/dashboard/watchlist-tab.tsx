@@ -37,7 +37,7 @@ import { Sparkline } from "./sparkline";
 import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatLocaleDate } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 
 // ============================================================================
@@ -70,7 +70,7 @@ function fmtVolume(n: number | null | undefined): string {
 // ============================================================================
 
 export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const {
     uiState,
     toggleExchangeFavorite,
@@ -202,10 +202,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
     const entry = getWatchlistEntry(pairId);
     if (!entry) return "—";
     try {
-      return new Date(entry.addedAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+      return formatLocaleDate(entry.addedAt, locale);
     } catch {
       return "—";
     }

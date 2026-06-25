@@ -75,6 +75,10 @@ const ko: Record<TranslationKeys, string> = {
   priceLabel: "가격",
   change24h: "24시 변동",
   change7d: "7일 변동",
+  // iter 88 (KI-2): 7일 변동 열 헤더 툴팁 + null 상태 설명
+  change7dInfo: "「7일 변동」 열이 무엇인가요?",
+  change7dDesc: "PriceLogs에서 계산된 지난 7일간의 백분율 변동입니다. 가격 포인트가 2개 미만이거나 가장 가까운 7일 전 로그가 약 17시간 이상 떨어져 있을 때 「—」로 표시됩니다 — 가격 기록이 아직 구축 중인 새 리그에서 흔히 발생합니다.",
+  change7dEmpty: "7일 변동 데이터 없음 — 이 쌍의 기록에 가격 포인트가 2개 미만이거나 가장 가까운 7일 전 로그가 너무 멀리 떨어져 있습니다. PriceLogs가 더 많이 수집되면 채워집니다.",
   hourly: "시간별",
   dailyCandlestick: "일별 캔들스틱",
   priceHistory: "가격 히스토리",
@@ -138,8 +142,8 @@ const ko: Record<TranslationKeys, string> = {
   removeAlert: "알림 삭제",
 
   // Arbitrage
-  arbitrageTheoretical: "채권트라지 기회는 이론적입니다",
-  arbitrageTheoreticalDesc: "시장 가격은 빨리 변동됩니다. 미끄러짐은 제곱근 영향 모델로 추정됩니다. 실제 결과는 다를 수 있습니다. 거래 전 항상 현재 환율을 확인하세요.",
+  arbitrageTheoretical: "교차 환율 편차는 이론적입니다",
+  arbitrageTheoreticalDesc: "이 탭은 시장 환율과 교차 환율로 도출된 공정 환율 간의 편차를 보여줍니다. PoE2에는 주문 장부가 없으며 실제 거래는 거래 사이트를 통해 플레이어 간에 이루어지므로, 이러한 편차는 다른 결제 통화로 절약할 수 있는 위치를 나타낼 뿐 보장된 차익 거래가 아닙니다. 거래 전 항상 현재 환율을 확인하세요.",
   arbitrageClientModeNote: "클라이언트 모드는 시뮬레이션 스프레드 사용",
   arbitrageClientModeNoteDesc: "POE2Scout API는 중간 가격만 제공하며 별도의 bid/ask 견적은 제공하지 않습니다. 같은 페어의 정방향과 역방향 환율은 정확히 대칭이므로 클라이언트 측에서 실제 차익거래를 감지할 수 없습니다. 실제 차익거래 감지를 위해서는 Flipper 모드를 사용하세요(백엔드 필요).",
   scannedPairs: "검색된 페어",
@@ -359,7 +363,7 @@ const ko: Record<TranslationKeys, string> = {
   forecastLastUpdate: "마지막 업데이트",
 
   // Flips Tab
-  tabFlips: "플립",
+  tabFlips: "교차 환율 편차",
   flipsTotalOpportunities: "전체 기회",
   flipsAvgScore: "평균 점수",
   flipsBestPair: "최고 페어",
@@ -898,6 +902,16 @@ const ko: Record<TranslationKeys, string> = {
   analystError: "리그 분석 데이터를 로딩하지 못했습니다. 백엔드에 문제가 있을 수 있습니다.",
   analystFallbackNotice: "간소화된 분석 — 전체 기능(플립, 스코어링, 예측)을 위해 분석 백엔드를 시작하세요.",
   analystFallbackBadge: "간소화",
+  // ---- iter 88: Analyst fact templates (KI-5) ----
+  // {0} = 통화 이름, {1} = 백분율 (biggest_loser는 부호 포함)
+  analystFactBiggestGainer: "{0}이(가) 가장 큰 상승 통화입니다 (24시간 내 +{1}%)",
+  analystFactBiggestLoser: "{0}이(가) 가장 큰 하락 통화입니다 (24시간 내 {1}%)",
+  // {0} = 이상 현상 수
+  analystFactAnomalyActivity: "{0}개 통화가 비정상적인 가격 활동을 보이고 있습니다",
+  // {0} = 전체 통화 수, {1} = 전체 거래 쌍 수
+  analystFactTracking: "{0}개 통화를 {1}개 거래 쌍에서 추적 중",
+  // {0} = 안정적인 통화 수
+  analystFactStable: "{0}개 통화가 안정적으로 유지 중 (변동 2% 미만)",
 
   // ---- Optimizer Offline (백엔드 필요) ----
   optimizerOfflineTitle: "옵티마이저에 분석 백엔드가 필요합니다",
@@ -919,6 +933,11 @@ const ko: Record<TranslationKeys, string> = {
   // ---- Premium tooltip (통화 간 최적 결제) ----
   premiumPayIn: "결제 수단",
   premiumSave: "절약",
+  // iter 88 (KI-3): Premium column header tooltip
+  crossCurrencyPremiumTitle: "통화 간 프리미엄",
+  crossCurrencyPremiumDesc: "시장 환율이 교차 환율로 도출된 공정 환율에서 얼마나 벗어났는지, 또는 다른 통화로 결제할 때 절약할 수 있는 금액을 보여줍니다. 유동성이 낮은 쌍에서 큰 비율(50% 이상)이 나타나는 것은 정상이며, 오류가 아닌 기회를 나타냅니다.",
+  crossCurrencyPremiumInfo: "「프리미엄」 열이 무엇인가요?",
+  crossCurrencyPremiumEmpty: "프리미엄 데이터 없음 — 이 쌍에는 결제 옵션이 2개 미만이며 교차 환율 편차가 감지되지 않았습니다.",
 
   // ---- Cross-rate Flip Tooltip i18n ----
   crossRateBuyCheapSell: "싸게 사기 → 팔기",
@@ -1047,6 +1066,16 @@ const ko: Record<TranslationKeys, string> = {
   speculationPercentileTitle: "룩백 창 범위 내 현재 가격의 백분위수",
   speculationPotentialProfit: "잠재 수익",
   speculationPotentialProfitTitle: "가격이 룩백 창 평균으로 회귀할 경우 잠재 수익 % (매수: 상승 예상, 매도: 하락 예상)",
+  // iter 88 (KI-1): 투기 탭 — 합성 스프레드 세부 정보 (/api/flipper/flips에서 조인)
+  speculationSpreadDetails: "합성 스프레드 세부 정보 표시",
+  speculationSyntheticBid: "합성 매수가",
+  speculationSyntheticAsk: "합성 매도가",
+  speculationSyntheticSpread: "스프레드",
+  speculationSyntheticMid: "중간가",
+  speculationFairRateLabel: "공정 교차 환율",
+  speculationDeviationLabel: "편차",
+  speculationVolumeLabel: "24시간 거래량",
+  speculationSpreadDisclaimer: "합성 매수/매도가는 거래량 기반 공식으로 계산됩니다 (PoE2에는 실제 주문 장부가 없음). 보장된 체결 가격이 아닌 방향성 신호로 취급하세요.",
   speculationSampleSize: "{0}개 포인트",
   speculationMean: "평균 {0}",
   speculationStd: "표준편차 {0}",
