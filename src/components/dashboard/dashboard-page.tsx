@@ -108,6 +108,11 @@ import { useFlipperBackend } from "@/hooks/use-flipper-backend";
 // queries extracted into a dedicated hook. The hook owns the realm+league
 // state so the auto-select useEffect can fire when leagues arrive.
 import { useRealmsAndLeagues } from "@/hooks/use-realms-and-leagues";
+// iter 83 (useDashboardData Stage 3a): exchange-pairs filter pipeline +
+// currency/unique category-chip list derivation extracted into two new
+// hooks. Stage 3b (optimalPayment cluster) still pending.
+import { useFilteredExchangePairs } from "@/hooks/use-filtered-exchange-pairs";
+import { useItemCategoryLists } from "@/hooks/use-item-category-lists";
 import { useCrossRates } from "@/hooks/use-cross-rates";
 import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
 import { useUniqueItems } from "@/hooks/use-unique-items";
@@ -418,46 +423,15 @@ export function Dashboard() {
   });
 
   // --- Derived data ---
-  const exchangePairs = useMemo(() => {
-    let pairs = exchangeData || [];
-
-    // Apply search filter
-    if (search) {
-      pairs = pairs.filter(
-        (p) =>
-          p.currency1Name.toLowerCase().includes(search.toLowerCase()) ||
-          p.currency2Name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    // Apply quick filter chips (§1.2)
-    const activeFilter = uiState.exchange.activeFilter;
-    if (activeFilter === "topVolume") {
-      // Top 20 pairs by volume
-      const sorted = [...pairs].sort((a, b) => b.volume - a.volume);
-      pairs = sorted.slice(0, 20);
-    } else if (activeFilter === "favorites") {
-      // Only favorited pairs
-      pairs = pairs.filter((p) => uiState.exchange.favorites.includes(p.id));
-    }
-
-    // §2.3: Apply extended filters
-    const extFilters = uiState.exchange.extendedFilters;
-    if (extFilters.minVolume != null) {
-      pairs = pairs.filter((p) => p.volume >= (extFilters.minVolume ?? 0));
-    }
-    if (extFilters.maxVolume != null) {
-      pairs = pairs.filter((p) => p.volume <= (extFilters.maxVolume ?? Infinity));
-    }
-    if (extFilters.minChange != null && extFilters.minChange !== 0) {
-      pairs = pairs.filter((p) => (p.changePercent ?? -Infinity) >= (extFilters.minChange ?? -Infinity));
-    }
-    if (extFilters.maxChange != null && extFilters.maxChange !== 0) {
-      pairs = pairs.filter((p) => (p.changePercent ?? Infinity) <= (extFilters.maxChange ?? Infinity));
-    }
-
-    return pairs;
-  }, [exchangeData, search, uiState.exchange.activeFilter, uiState.exchange.favorites, uiState.exchange.extendedFilters]);
+  // iter 83 (Stage 3a): filter pipeline (search → quick chip → extended
+  // numeric filters) extracted into useFilteredExchangePairs. The hook is
+  // pure — it receives exchangeData, search, and the exchangeUiState slice
+  // as inputs and returns a derived array. Zero behavior change.
+  const exchangePairs = useFilteredExchangePairs({
+    exchangeData,
+    search,
+    exchangeUiState: uiState.exchange,
+  });
 
   // ==========================================================================
   // Phase 2.3: Cross-rates hook — derives relativePriceMap, anchor, flips
@@ -627,29 +601,14 @@ export function Dashboard() {
     return map;
   }, [exchangeData, optimalPaymentByPair]);
 
-  // Categories
-  const currencyCategories = useMemo(() => {
-    const cats = uniqueCategories?.filter((c) => c.name !== "Unique") || [];
-    if (cats.length === 0) cats.push({ name: "all", displayName: t("all"), count: 0 });
-    return cats;
-  }, [uniqueCategories, t]);
-
-  const uniqueCategoriesList = useMemo(() => {
-    const cats =
-      uniqueCategories?.filter(
-        (c) =>
-          c.name === "Unique" ||
-          c.name.includes("Unique") ||
-          c.name.includes("Armour") ||
-          c.name.includes("Weapon") ||
-          c.name.includes("Accessory") ||
-          c.name.includes("Flask") ||
-          c.name.includes("Jewel") ||
-          c.name.includes("Gem")
-      ) || [];
-    if (cats.length === 0) cats.push({ name: "all", displayName: t("all"), count: 0 });
-    return cats;
-  }, [uniqueCategories, t]);
+  // iter 83 (Stage 3a): currencyCategories + uniqueCategoriesList derivation
+  // extracted into useItemCategoryLists. The hook is pure — receives
+  // uniqueCategories and t as inputs, returns two derived arrays. Zero
+  // behavior change (same filter rules, same empty-list "all" fallback).
+  const { currencyCategories, uniqueCategoriesList } = useItemCategoryLists({
+    uniqueCategories,
+    t,
+  });
 
   const currentCategories =
     tab === "currencies" ? currencyCategories : uniqueCategoriesList;

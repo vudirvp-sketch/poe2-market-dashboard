@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-26 (iter 82 — useDashboardData Stage 2: `useRealmsAndLeagues` hook extracted)
+> **Last updated:** 2026-06-26 (iter 83 — useDashboardData Stage 3a: `useFilteredExchangePairs` + `useItemCategoryLists` hooks extracted)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -12,7 +12,7 @@ All P0/P1/P2/P3/P4 issues closed in iter 54–73. See `git log` for older histor
 
 The single remaining **optional** technical follow-up:
 
-> **`useDashboardData` hook extraction** (deferred from P2-1, staged approach). `dashboard-page.tsx` is 1169 lines (was 1197 in iter 81, was 1232 in iter 80, was 1685 in iter 70). Stage 1 shipped iter 81: flipper backend health/phase/events queries extracted into `src/hooks/use-flipper-backend.ts`. Stage 2 shipped iter 82: realm/league selection + realms/leagues queries + `effectiveLeague` memo + auto-select useEffect extracted into `src/hooks/use-realms-and-leagues.ts`. Remaining: (3) derived memos (exchangePairs filter, optimalPayment merge, optimalPaymentByDisplayName, currencyCategories, uniqueCategoriesList). Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+> **`useDashboardData` hook extraction** (deferred from P2-1, staged approach). `dashboard-page.tsx` is 1128 lines (was 1169 in iter 82, was 1197 in iter 81, was 1232 in iter 80, was 1685 in iter 70). Stage 1 shipped iter 81: flipper backend health/phase/events queries extracted into `src/hooks/use-flipper-backend.ts`. Stage 2 shipped iter 82: realm/league selection + realms/leagues queries + `effectiveLeague` memo + auto-select useEffect extracted into `src/hooks/use-realms-and-leagues.ts`. Stage 3a shipped iter 83: exchange-pairs filter pipeline + currency/unique category-chip list derivation extracted into `src/hooks/use-filtered-exchange-pairs.ts` + `src/hooks/use-item-category-lists.ts`. Remaining: (3b) optimalPayment cluster (clientOptimalResult memo + backend-merge memo + optimalPaymentByDisplayName memo — highest interdependency risk). Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
 
 ---
 
@@ -57,3 +57,5 @@ The single remaining **optional** technical follow-up:
 | Backtest panel "Run backtest" click does nothing | The query is gated on `enabled: showBacktest && backendOnline`. If the parent received `backendOnline=false`, the toggle expands the panel UI but `useQuery` never fires. Check the dashboard-level backend health check. | `src/components/dashboard/speculation-tab.tsx:BacktestPanel` |
 | Need to inspect dashboard-level backend status | `useFlipperBackend()` (iter 81) is the single source of truth for `flipperBackendOnline`, `flipperUpstreamReachable`, `flipperPhaseData`, `activeEventsCount`. Inline `useQuery` for these endpoints is forbidden — use the hook. | `src/hooks/use-flipper-backend.ts` |
 | Need realm/league data or selection in a new component | `useRealmsAndLeagues()` (iter 82) is the single source of truth for `realm`, `league`, `effectiveLeague`, `realms`, `leagues`, and the `setRealm`/`setLeague` wrappers. Inline `useQuery` for `/api/poe2/realms` or `/api/poe2/leagues` is forbidden — use the hook. The hook also owns the auto-select useEffect (auto-pick first active league when none selected). | `src/hooks/use-realms-and-leagues.ts` |
+| Need filtered exchange pairs (search + quick chip + extended filters) | `useFilteredExchangePairs({ exchangeData, search, exchangeUiState })` (iter 83) is the single source of truth for the Exchange tab filter pipeline. Inline `useMemo` that re-implements the search → chip → extended-filter rules is forbidden — use the hook. Pure derivation: takes the raw `exchangeData` + the `uiState.exchange` slice, returns a filtered `ExchangePair[]`. | `src/hooks/use-filtered-exchange-pairs.ts` |
+| Need currency/unique category chip lists | `useItemCategoryLists({ uniqueCategories, t })` (iter 83) is the single source of truth for `currencyCategories` + `uniqueCategoriesList` (the two chip-strip arrays rendered above the Currencies and Uniques tabs). Inline `useMemo` that re-implements the Unique-family filter rules is forbidden — use the hook. Pure derivation from a single `useItemCategories()` response. | `src/hooks/use-item-category-lists.ts` |
