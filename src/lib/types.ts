@@ -494,6 +494,86 @@ export interface SpeculationResponse {
 }
 
 // ============================================================================
+// Speculation backtest (F5 follow-up, iter 80 — frontend UI)
+// ============================================================================
+
+/** A single realised trade from the backtest.
+ *  Backend (Pydantic) shape: SpeculationBacktestTradeData.
+ *  Field names are camelCase after flipper-proxy transformKeys(). */
+export interface SpeculationBacktestTrade {
+  /** Item API identifier. */
+  apiId: string;
+  /** Display name (EN). */
+  text: string;
+  /** League mechanic category (e.g. "ritual", "breach"). Empty if unknown. */
+  category: string;
+  /** Signal at entry: "BUY" (z<-1.5) | "SELL" (z>+1.5). HOLD signals never produce trades. */
+  signal: SpeculationSignalType;
+  /** Price at entry (nearest price log to t_eval within 24h tolerance). */
+  entryPrice: number;
+  /** ISO 8601 timestamp of the entry price log. */
+  entryDate: string;
+  /** Price at exit (nearest price log to t_eval+holding_days within 24h tolerance). */
+  exitPrice: number;
+  /** ISO 8601 timestamp of the exit price log. */
+  exitDate: string;
+  /** Realised return in %. BUY: (exit-entry)/entry*100. SELL: (entry-exit)/entry*100. Positive = profit. */
+  returnPct: number;
+  /** Z-score of entryPrice vs the lookback window. Null when std=0. */
+  zScoreAtEntry: number | null;
+  /** Number of price points in the lookback window used to compute the z-score. */
+  sampleSizeAtEntry: number;
+}
+
+/** Aggregate stats for a single signal type (BUY / SELL / overall).
+ *  Backend (Pydantic) shape: SpeculationBacktestStatsBlock. */
+export interface SpeculationBacktestStatsBlock {
+  /** Number of trades in this block. */
+  count: number;
+  /** Win rate in % (returns > 0). 0.0 when count=0. */
+  winRate: number;
+  /** Mean return_pct. 0.0 when count=0. */
+  meanReturnPct: number;
+  /** Median return_pct. 0.0 when count=0. */
+  medianReturnPct: number;
+  /** Max return_pct observed. 0.0 when count=0. */
+  bestReturnPct: number;
+  /** Min return_pct observed. 0.0 when count=0. */
+  worstReturnPct: number;
+}
+
+/** Response for GET /api/flipper/speculation/backtest (F5 follow-up, iter 80).
+ *  Backend (Pydantic) shape: SpeculationBacktestResponse. */
+export interface SpeculationBacktestResponse {
+  /** League name. */
+  league: string;
+  /** Per-item realised trades, sorted by |returnPct| desc. Capped by `limit`. */
+  trades: SpeculationBacktestTrade[];
+  /** Counts per signal type: { BUY: N, SELL: N, HOLD: N }. HOLD signals did not produce trades. */
+  signalBreakdown: Record<"BUY" | "SELL" | "HOLD", number>;
+  /** Items with both entry+exit prices AND an actionable signal (BUY or SELL). */
+  evaluatedCount: number;
+  /** Items with an actionable signal but no exit price within tolerance (holding period extends past last price log). */
+  unevaluatedCount: number;
+  /** Aggregate stats for BUY trades only. */
+  buyStats: SpeculationBacktestStatsBlock;
+  /** Aggregate stats for SELL trades only. */
+  sellStats: SpeculationBacktestStatsBlock;
+  /** Aggregate stats across all BUY+SELL trades. */
+  overallStats: SpeculationBacktestStatsBlock;
+  /** Whether any item in the snapshot had price_logs to backtest against. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of backtest run. */
+  fetchedAt: string;
+  /** Days before `now` at which the signal was evaluated (entry timestamp = now - eval_days_ago). */
+  evalDaysAgo: number;
+  /** Holding period in days (exit timestamp = entry + holding_days). */
+  holdingDays: number;
+  /** Z-score baseline window in days (window = [entry-lookback_days, entry)). */
+  lookbackDays: number;
+}
+
+// ============================================================================
 // Phase-aware Hints (F6, iter 78)
 // ============================================================================
 

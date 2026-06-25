@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 79 — F5 backtest shipped)
+> Last updated: 2026-06-25 (iter 80 — F5 backtest frontend UI shipped)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -49,6 +49,9 @@
   были прибыльны при удержании позиции N дней. ✅ iter 79: endpoint
   `GET /api/v1/speculation/backtest` возвращает per-trade результаты +
   агрегаты (win_rate, mean/median/best/worst return) по BUY/SELL/overall.
+  ✅ iter 80: collapsible Backtest panel inside Speculation tab — toggle button
+  (NOT autoload), 3 day selectors (eval/holding/lookback), 3 stats blocks
+  (Overall/BUY/SELL), signal breakdown, top-trades list.
 - Помнить паттерны прошлых лиг (см. §3.4).
 
 ### 3.3. «Инвестиционный» помощник — в какой валюте хранить ценность
@@ -121,7 +124,7 @@ Abyss, Incursion) показывать:
 | UI | Tab «Storage Value» (decision card + projection breakdown + historical chart) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74) + `storage-value-history-chart.tsx` (iter 75). |
 | UI | Widget «Content Pulse — Что фармить сегодня» (top rising/falling mechanics + per-category movers) | ✅ `src/components/dashboard/content-pulse-widget.tsx` (iter 76). Mounted at the top of the Overview tab so it's visible on first dashboard load. |
 | UI | Tab «Content Pulse» (полная версия) | TODO — eventual full tab with all categories, sortable, filterable. F4 widget is the 1-glance MVP per §3.6. |
-| UI | Tab «Speculation» (z-score list, buy/sell suggestions) | ✅ `src/components/dashboard/speculation-tab.tsx` (iter 77). Full tab with filter chips (ALL/BUY/SELL/HOLD), days selector (7/14/30/90), per-row z-score + percentile + mini-sparkline + horizon hint. |
+| UI | Tab «Speculation» (z-score list, buy/sell suggestions + backtest panel) | ✅ `src/components/dashboard/speculation-tab.tsx` (iter 77 live + iter 80 backtest UI). Full tab with filter chips (ALL/BUY/SELL/HOLD), days selector (7/14/30/90), per-row z-score + percentile + mini-sparkline + horizon hint. Below the list — collapsible Backtest panel (toggle button, 3 day selectors, 3 stats blocks, signal breakdown, top trades). |
 | UI | Widget «League Phase Hints» (Temporalis, skill gems, etc.) | ✅ `src/components/dashboard/phase-hints-widget.tsx` (iter 78). Static info banner mounted BELOW Content Pulse widget on Overview tab. Shows current phase (EARLY/MID/LATE) + days since league start + bulleted list of phase-aware advisory hints from hardcoded table. |
 
 ---
@@ -171,10 +174,10 @@ Abyss, Incursion) показывать:
   - 16 jest tests в `src/__tests__/content-pulse-widget.test.tsx`: offline / loading / error / no-data / no-signals / mixed / maxPerSide / refresh / empty-movers / fetched-at / proxy path / title / item-count.
   - Graceful degradation: offline → compact amber notice; loading → spinner text; error → error card + refresh; data_available=false → "no data yet"; all stable → "no signals today".
 
-### F5. Speculation tab — z-score + buy/sell suggestions — ✅ DONE iter 77 (live signals) + iter 79 (backtest)
+### F5. Speculation tab — z-score + buy/sell suggestions — ✅ DONE iter 77 (live signals) + iter 79 (backtest backend) + iter 80 (backtest UI)
 - Для каждого предмета: z-score текущей цены vs 30-day rolling.
 - Сигналы «BUY» (z < -1.5), «SELL» (z > +1.5), «HOLD» (|z| < 1).
-- Бэктест на исторических данных прошлой лиги — насколько сигналы были прибыльны. ✅ iter 79 — endpoint `GET /api/v1/speculation/backtest`.
+- Бэктест на исторических данных прошлой лиги — насколько сигналы были прибыльны. ✅ iter 79 — endpoint `GET /api/v1/speculation/backtest`. ✅ iter 80 — frontend Backtest panel.
 - **Реализовано в iter 77 (live signals):**
   - `backend/economy/pricing.py` — два новых pure-хелпера `compute_zscore(prices, current)` и `compute_percentile(prices, current)`. Population std (ddof=0), 2 valid points minimum для z-score (для std≠0). Linear-interpolation percentile (numpy default).
   - `backend/economy/speculation.py` (~280 lines) — pure function `compute_speculation_signals(snapshot, config, days=30, limit=50, signal_filter="ALL")`. Для каждого item: фильтрует price_logs по окну `days`, считает z-score + percentile, строит BUY/SELL/HOLD сигнал + `horizon_hint` (short/medium/long/unknown based on |z|). Возвращает топ-N items отсортированных по |z| desc.
@@ -200,8 +203,15 @@ Abyss, Incursion) показывать:
   - Reuses `compute_zscore` from `backend/economy/pricing.py` (same thresholds as live signals), `_extract_prices` + `_signal_from_zscore` + `Z_BUY_THRESHOLD` / `Z_SELL_THRESHOLD` / `MIN_SAMPLE_SIZE` from `backend/economy/speculation.py` — guarantees backtest uses the same strategy as the live signal.
   - Tolerance: 24h between target timestamp and nearest price log (matches `storage_value_history.py:_NEAREST_PRICE_TOLERANCE_HOURS`).
   - Baseline window is strictly BEFORE entry timestamp (entry price itself is NOT in the baseline — avoids leaking the signal into its own computation).
-  - No frontend UI yet — backend-only. A small "Backtest" panel below the Speculation list (showing aggregated metrics: win_rate, mean/median return per signal type, best/worst trade) can be added in a follow-up iter without breaking anything.
   - Aggregates computed over ALL trades, not just the `limit`-capped list. `limit` only narrows the response payload.
+  - Frontend UI shipped in iter 80 (see "Реализовано в iter 80" below).
+- **Реализовано в iter 80 (frontend UI):**
+  - `src/app/api/flipper/speculation/backtest/route.ts` (~95 lines) — Next.js proxy с `proxyWithFallback` + empty fallback (zeroed stats blocks) when backend offline.
+  - `src/lib/types.ts` — 3 new TS interfaces: `SpeculationBacktestTrade` (per-trade record), `SpeculationBacktestStatsBlock` (count, winRate, mean/median/best/worst ReturnPct), `SpeculationBacktestResponse` (league, trades, signalBreakdown, evaluated/unevaluated counts, buyStats/sellStats/overallStats, dataAvailable, fetchedAt, evalDaysAgo/holdingDays/lookbackDays).
+  - `src/lib/i18n/locales/{en,ru,zh,ko}.ts` — 34 new i18n keys × 4 locales (title, subtitle, run/hide toggle buttons, day-selector labels, stats labels, breakdown labels, no-data/error/loading/no-trades notices, fetched-at footer, trades-table column headers).
+  - `src/components/dashboard/speculation-tab.tsx` — добавлен `BacktestPanel` subcomponent (внутри того же файла, ~400 lines) + helpers `DaySelector` + `StatsBlock` + `TradeRow`. Панель монтируется ВНУТРИ главного `CardContent` (после fetched-at футера списка signals). **NOT autoload** — toggle button (default collapsed) gates `useQuery` via `enabled: showBacktest && backendOnline`. 3 day selectors: eval_days_ago (7/14/30/90, default 14), holding_days (1/3/7/14/30, default 7), lookback_days (7/14/30/90, default 30). Parent's `signalFilter` forwarded as `signal` query param — если parent отфильтрован BUY-only, backtest тоже ищет только BUY trades. 3 stats blocks (Overall/BUY/SELL — emerald/red/neutral accents) с count + winRate + mean/median/best/worst return_pct (color-coded: green >0, red <0). Signal breakdown row: BUY N · SELL N · HOLD N + evaluated N + unevaluated N. Top-trades list (sorted by |return_pct| desc от бэкенда): каждый TradeRow показывает signal badge + item name + category + entry → exit prices + return_pct (colored).
+  - Graceful degradation: collapsed (default) → только toggle button; expanded + loading → spinner; expanded + error → red notice; expanded + dataAvailable=false → "no data yet"; expanded + dataAvailable=true + trades=[] → "no trades produced"; expanded + trades>0 → full content.
+  - 15 jest tests в `src/__tests__/speculation-backtest-panel.test.tsx`: collapsed default + no fetch when collapsed + toggle expands + default params forwarded + loading + error + no-data + no-trades + stats blocks render + signal breakdown + trade rows + fetched-at footer + hide-button collapse + signalFilter passthrough + day selectors render.
 
 ### F6. Phase-aware hints (Temporalis, skill gems, etc.) — ✅ DONE iter 78
 - На основе PhaseDetector показывать в Speculation tab блок
@@ -229,10 +239,10 @@ Abyss, Incursion) показывать:
 1. ✅ Все предметы в UI — на русском (или явно отмечены «нет перевода»).
 2. ✅ Есть отдельный экран «Storage Value» с историческим графиком относительно Mirror/Hinekora. **(iter 74 — карточка решения Hold/Sell готова; iter 75 — исторический график готов)**
 3. ✅ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены). **(iter 76 — F4 widget готов, wired в Overview tab)**
-4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 tab готов, wired как отдельная вкладка)**
+4. ✅ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом. **(iter 77 — F5 live tab готов; iter 79 — F5 backtest backend готов; iter 80 — F5 backtest UI готов, toggle-driven panel под списком сигналов)**
 5. ✅ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.). **(iter 78 — F6 Phase-aware hints widget готов, wired в Overview tab)**
 
-**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 live translations, F5 backtest, полная Content Pulse tab) и не блокируют основной use case.
+**Все 5 пунктов DoD выполнены (iter 78).** Продукт перешёл из стадии «аналитический MVP» в стадию «аналитический помощник». Дальнейшие улучшения — операционные (F1 live translations, полная Content Pulse tab, config-driven phase hints) и не блокируют основной use case. F5 backtest полностью закрыт в iter 80 (backend + frontend UI).
 
 ---
 

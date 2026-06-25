@@ -583,3 +583,115 @@ NOT done in iter 79 (intentionally deferred):
 - e2e tests not run (frontend changes are unit-tested via jest; e2e would require running backend + browser)
 - useDashboardData hook extraction (optional, deferred)
 - Visual verification with real backend data (jest tests use mocked data; manual verification of the backtest endpoint against real snapshot data — e.g. confirming that `eval_days_ago=14` with `holding_days=7` produces sensible trade counts on a live league — needs a running backend with ≥21d of price_logs collected)
+
+---
+Task ID: iter-80
+Agent: main (Sonnet 4.5)
+Task: iter 80 — F5 backtest frontend UI (collapsible Backtest panel inside Speculation tab, toggle-driven not autoload).
+
+Work Log:
+- Read STATUS.md / PRODUCT_VISION.md / AGENT_NAVIGATION.md / worklog.md iter 79 record to understand the hand-off: F5 backtest backend shipped in iter 79 (pure function + route + 54 pytest), frontend UI was deferred to iter 80 as the recommended priority.
+- Inspected existing `speculation-tab.tsx` (504 lines, 18 jest tests) to plan the additive change: a Backtest panel mounted BELOW the live signals list, inside the same `CardContent`, as an internal subcomponent (NOT a separate file) to keep the spec UI cohesive.
+- Inspected backend backtest response shape (`SpeculationBacktestResponse` Pydantic model in `response_models.py` + `routes_speculation_backtest.py`) — confirmed: trades list (sorted by |return_pct| desc, capped by `limit`), signal_breakdown {BUY,SELL,HOLD}, evaluated/unevaluated counts, buy_stats/sell_stats/overall_stats blocks (count, win_rate, mean/median/best/worst return_pct), dataAvailable, fetchedAt, evalDaysAgo/holdingDays/lookbackDays.
+- Inspected existing Next.js proxy routes (`/api/flipper/speculation/route.ts`, `/api/flipper/phase-hints/route.ts`) for the `proxyWithFallback` pattern — confirmed: returns empty fallback with zeroed stats + `dataAvailable: false` when backend offline (no 503).
+
+- Frontend — `src/app/api/flipper/speculation/backtest/route.ts` (NEW, ~95 lines):
+  - Next.js proxy route for `GET /api/v1/speculation/backtest`. Forwards all 5 query params (`eval_days_ago`, `holding_days`, `lookback_days`, `limit`, `signal`) to the backend via `proxyWithFallback`.
+  - `emptyFallback` shape matches the camelCase-transformed backend response: empty `trades: []`, zeroed `buyStats`/`sellStats`/`overallStats` blocks (count=0, winRate=0, meanReturnPct=0, etc.), `signalBreakdown: {BUY:0, SELL:0, HOLD:0}`, `evaluatedCount: 0`, `unevaluatedCount: 0`, `dataAvailable: false`, plus passthrough of the requested `evalDaysAgo`/`holdingDays`/`lookbackDays` from query params (or backend defaults 14/7/30 if absent).
+  - Uses the same `proxyWithFallback` pattern as the live `/api/flipper/speculation` route — 503 (backend offline / insufficient data) returns the empty fallback as 200, non-503 5xx passes through in dev / becomes 200+fallback in prod.
+
+- Frontend — `src/lib/types.ts` (extended, +80 lines):
+  - Added 3 new TS interfaces in a new "Speculation backtest (F5 follow-up, iter 80 — frontend UI)" section after `SpeculationResponse`:
+    - `SpeculationBacktestTrade` — per-trade record: apiId, text, category, signal (SpeculationSignalType), entryPrice, entryDate, exitPrice, exitDate, returnPct, zScoreAtEntry (nullable), sampleSizeAtEntry.
+    - `SpeculationBacktestStatsBlock` — count, winRate, meanReturnPct, medianReturnPct, bestReturnPct, worstReturnPct.
+    - `SpeculationBacktestResponse` — league, trades, signalBreakdown (Record<"BUY"|"SELL"|"HOLD", number>), evaluatedCount, unevaluatedCount, buyStats, sellStats, overallStats, dataAvailable, fetchedAt, evalDaysAgo, holdingDays, lookbackDays.
+  - All field names are camelCase (post `transformKeys` from flipper-proxy). Each field has a JSDoc comment matching the backend Pydantic description.
+
+- Frontend — `src/lib/i18n/locales/{en,ru,zh,ko}.ts` (extended, +34 keys × 4 locales = +136 lines total):
+  - Added 34 new i18n keys per locale in a new "F5 follow-up (iter 80) — Backtest panel inside Speculation tab" section (after `speculationHorizonUnknown`, before F6 phase hints keys).
+  - Keys cover: title (`speculationBacktestTitle`), subtitle, run/hide toggle buttons (long + short), loading/error/no-data/no-trades notices, 3 day-selector labels (`speculationBacktestEvalDaysLabel` / `HoldingDaysLabel` / `LookbackDaysLabel` with `{0}` placeholder for current value), 3 short variants for compact display, 3 stats-block titles (Overall/BUY/SELL), 5 stats labels (winRate, meanReturn, medianReturn, bestReturn, worstReturn), tradesCount + evaluated + unevaluated, breakdownTitle, tradesTitle, 5 trade-table column headers, fetchedAt footer.
+  - Verified parity via `grep -c "speculationBacktest"` → 34 keys in each of en/ru/zh/ko.
+
+- Frontend — `src/components/dashboard/speculation-tab.tsx` (extended, ~980 lines total, +~470 lines):
+  - Updated file header comment to document the new Backtest panel: toggle behavior, 3 day selectors, stats blocks, signal breakdown, top-trades list, graceful degradation states.
+  - Added imports: `History`, `Play`, `ChevronDown`, `ChevronUp` from `lucide-react`; `SpeculationBacktestResponse`, `SpeculationBacktestStatsBlock`, `SpeculationBacktestTrade` from `@/lib/types`.
+  - Added constants: `BACKTEST_EVAL_PRESETS` [7,14,30,90], `BACKTEST_HOLDING_PRESETS` [1,3,7,14,30], `BACKTEST_LOOKBACK_PRESETS` [7,14,30,90], `BACKTEST_DEFAULT_EVAL_DAYS=14`, `BACKTEST_DEFAULT_HOLDING_DAYS=7`, `BACKTEST_DEFAULT_LOOKBACK_DAYS=30`, `BACKTEST_LIMIT=50` — defaults match backend `DEFAULT_*` constants in `speculation_backtest.py`.
+  - Wired `<BacktestPanel backendOnline={backendOnline} signalFilter={signalFilter} />` inside the main `CardContent`, after the fetched-at footer of the live signals list. Inline comment explains the NOT-autoload rationale.
+  - Added `BacktestPanel` subcomponent (~230 lines):
+    - Local state: `showBacktest` (default false), `evalDays` (14), `holdingDays` (7), `lookbackDays` (30).
+    - `useQuery` with `queryKey: ["speculation-backtest", evalDays, holdingDays, lookbackDays, signalFilter]`, `queryFn: fetchApi("/api/flipper/speculation/backtest", {eval_days_ago, holding_days, lookback_days, limit:50, signal: signalFilter})`, `enabled: showBacktest && backendOnline`, `staleTime: 60_000`, `retry: 1`.
+    - When `!showBacktest` → renders only the "Run backtest" toggle button (full-width outline button with Play icon + ChevronDown).
+    - When `showBacktest` → renders the expanded panel: header (History icon + title + subtitle + Hide button with ChevronUp), 3 `DaySelector` instances + Refresh button, then conditional content based on query state.
+    - Conditional states: `isLoading` → spinner text; `isError` → red notice with AlertTriangle icon; `!dataAvailable` → "no data yet" notice; `dataAvailable && trades.length===0` → "no trades produced" notice; `dataAvailable && trades.length>0` → full content (stats grid + breakdown + trades list + fetched-at footer).
+  - Added `DaySelector` helper (~25 lines): label + Select bound to numeric presets.
+  - Added `StatsBlock` helper (~60 lines): single card for Overall/BUY/SELL with accent color (emerald for BUY, red for SELL, neutral for Overall). Renders count + winRate (1 decimal) + mean/median/best/worst return_pct (2 decimals, signed, color-coded green/red/muted).
+  - Added `TradeRow` helper (~50 lines): single trade row — signal badge (reuses `signalBadgeClass` + `signalIcon` from parent scope) + item name + category (title-cased) + entry price → exit price + return_pct (colored: emerald >0, red <0, muted =0).
+  - All subcomponents use `data-testid` attributes for jest testing: `speculation-backtest-panel-collapsed`, `speculation-backtest-panel`, `speculation-backtest-toggle`, `speculation-backtest-eval-days`, `speculation-backtest-holding-days`, `speculation-backtest-lookback-days`, `speculation-backtest-refresh`, `speculation-backtest-loading`, `speculation-backtest-error`, `speculation-backtest-no-data`, `speculation-backtest-no-trades`, `speculation-backtest-content`, `speculation-backtest-stats-{overall,buy,sell}`, `speculation-backtest-breakdown`, `speculation-backtest-trades`, `speculation-backtest-trade-{apiId}`.
+
+- Frontend — `src/__tests__/speculation-backtest-panel.test.tsx` (NEW, ~480 lines, 15 tests):
+  - Uses the same `mockFetchApi` pattern as `speculation-tab.test.tsx` — mocks `@/lib/types` `fetchApi` so we can intercept both `/api/flipper/speculation` (live) and `/api/flipper/speculation/backtest` (backtest) calls.
+  - Test data: `liveResponse` (1 BUY signal so the parent tab renders the main panel + collapsed Backtest toggle), `makeBacktestResponse()` factory (2 trades: 1 BUY +18.75% + 1 SELL +15.38%, signal_breakdown BUY:1/SELL:1/HOLD:3, evaluated=2, unevaluated=1, populated stats blocks).
+  - 15 tests covering:
+    1. Collapsed by default → toggle button visible, no expanded panel.
+    2. Does NOT call fetchApi for backtest path when panel is collapsed (waits 100ms to confirm no async query fires).
+    3. Toggle click → panel expands + backtest query fires.
+    4. Default params forwarded correctly (eval_days_ago=14, holding_days=7, lookback_days=30, limit=50, signal=ALL).
+    5. Loading state → spinner text visible.
+    6. Error state → red error notice visible (uses ERROR_WAIT_OPTS 5s timeout because of `retry: 1`).
+    7. dataAvailable=false → "no data" notice.
+    8. dataAvailable=true + trades=[] → "no trades" notice.
+    9. Stats blocks render with correct numbers (Overall count=2, winRate=100.0%, BUY mean=+18.75%, SELL mean=+15.38%).
+    10. Signal breakdown shows BUY 1, SELL 1, HOLD 3, 2 evaluated, 1 unevaluated.
+    11. Trade rows render with item name + signal + entry/exit + return_pct (signed: +18.75%, +15.38%).
+    12. Fetched-at footer renders with trade count.
+    13. Hide button collapses panel back (expanded → collapsed state transition).
+    14. Parent signalFilter (BUY) forwarded as `signal` query param to backtest (clicks BUY filter chip on parent, then expands backtest, asserts last backtest call has signal=BUY).
+    15. Day selectors render with default values (Eval 14 days ago / Hold 7 days / Lookback 30 days).
+
+- Verification:
+  - `npx tsc --noEmit` → 0 errors (clean type-check).
+  - `npx jest src/__tests__/speculation-tab.test.tsx` → 18 pass / 0 fail (existing live-signal tests unaffected).
+  - `npx jest src/__tests__/speculation-backtest-panel.test.tsx` → 15 pass / 0 fail (new backtest-panel tests).
+  - `npx jest` (full frontend suite) → **422 pass** (407 baseline + 15 new) / 0 fail across 20 test suites (~6.6s).
+  - Backend unchanged in iter 80 — `pytest tests/test_speculation_backtest.py tests/test_speculation.py` → 97 pass / 0 fail (54 backtest + 43 live, 1.3s). Backend baseline 731 pass preserved.
+
+- Documentation updates:
+  - `STATUS.md`: bumped "Last updated" to iter 80. F5 row updated to "iter 77 live + iter 79 backtest backend + iter 80 backtest UI" with iter 80 frontend UI subsection. Added 2 new Quick Reference entries (Speculation tab shows no "Run backtest" button / Backtest panel "Run backtest" click does nothing).
+  - `PRODUCT_VISION.md`: bumped "Last updated" to iter 80. §3.2 added iter 80 bullet (toggle, 3 day selectors, 3 stats blocks, signal breakdown, top-trades list). §4 architecture table updated Speculation tab row to mention backtest panel. §5 F5 section title updated to include iter 80; removed the obsolete "No frontend UI yet — backend-only" line from iter 79 subsection; added full "Реализовано в iter 80 (frontend UI)" subsection with all implementation details (proxy route, TS types, i18n keys, BacktestPanel + DaySelector + StatsBlock + TradeRow subcomponents, NOT-autoload rationale, parent signalFilter forwarding, graceful degradation states, 15 jest tests). §6 DoD point 4 updated to mention all 3 iters (77 live + 79 backend + 80 UI). Final paragraph updated: "F5 backtest полностью закрыт в iter 80 (backend + frontend UI)".
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 80. §1 `speculation-tab.tsx` row expanded with iter 80 Backtest panel details (toggle, day selectors, stats blocks, breakdown, trades list, parent signalFilter forwarding, graceful degradation, test counts). Invariant #33 expanded with "Frontend UI (iter 80)" subsection documenting the toggle-driven pattern, query params, parent signalFilter forwarding, Next.js proxy path. Frontend routes table added `/api/flipper/speculation/backtest` row. Quick Reference added 2 new entries (no "Run backtest" button / Run backtest click does nothing).
+  - `worklog.md`: appended this iter 80 record.
+
+Stage Summary:
+- **F5 backtest frontend UI — DONE (collapsible Backtest panel inside Speculation tab + Next.js proxy + TS types + 4-locale i18n + 15 jest tests).** Toggle button (NOT autoload — gates `useQuery` via `enabled: showBacktest && backendOnline`). 3 day selectors (eval/holding/lookback). 3 stats blocks (Overall/BUY/SELL). Signal breakdown. Top-trades list. Parent's `signalFilter` forwarded as `signal` query param. Full graceful degradation (collapsed/loading/error/no-data/no-trades/full-content).
+- **F5 (Speculation tab) — fully closed in iter 80.** All three sub-features shipped: iter 77 live signals (43 pytest + 18 jest), iter 79 backtest backend (54 pytest), iter 80 backtest UI (15 jest). No remaining F5 work.
+- **F1 (additional RU translations) — STILL BLOCKED.** No change from iter 79 — needs live poe2scout.com + poe2db.tw/ru/ access.
+- **Baseline:** jest 422 pass (+15), pytest 731 pass (unchanged — backend not touched in iter 80), tsc 0 errors.
+- **Files changed/created (8 total):**
+  - `src/app/api/flipper/speculation/backtest/route.ts` (NEW, ~95 lines)
+  - `src/lib/types.ts` (modified: +80 lines — 3 Backtest interfaces)
+  - `src/lib/i18n/locales/en.ts` (modified: +34 lines)
+  - `src/lib/i18n/locales/ru.ts` (modified: +34 lines)
+  - `src/lib/i18n/locales/zh.ts` (modified: +34 lines)
+  - `src/lib/i18n/locales/ko.ts` (modified: +34 lines)
+  - `src/components/dashboard/speculation-tab.tsx` (modified: +~470 lines — BacktestPanel + DaySelector + StatsBlock + TradeRow subcomponents + wiring)
+  - `src/__tests__/speculation-backtest-panel.test.tsx` (NEW, ~480 lines, 15 tests)
+  - `STATUS.md` (updated — F5 row + 2 Quick Reference entries)
+  - `PRODUCT_VISION.md` (updated — §3.2 + §4 + §5 F5 iter 80 subsection + §6 DoD)
+  - `AGENT_NAVIGATION.md` (updated — §1 speculation-tab.tsx row + invariant #33 + frontend routes table + 2 Quick Reference entries)
+  - `worklog.md` (this record)
+
+Next iteration (iter 81) — recommended priorities:
+1. **F1 (when live API available)** — `scripts/sync_currency_names_from_poe2db.py`: enumerate 625 api_ids, fetch poe2db.tw/ru/, update `currency_names.json`, bump assertion counters in `tests/test_currency_names_ru.py`. Still the only blocked feature.
+2. **Full Content Pulse tab** — F4 widget is the MVP; full version with sorting/filters/drill-down if widget proves useful. The widget is mounted on Overview tab; a full tab would let users see ALL categories (not just top-2 rising + top-2 falling) with sortable columns.
+3. **Phase hints enhancements** (optional) — pull hints from `config.yaml` instead of hardcoding; add per-pattern metrics by cross-referencing the snapshot's `price_histories`; filter hints based on actual market state (e.g. only show "Temporalis near peak" if its 7d momentum is positive).
+4. **useDashboardData hook extraction** (optional, tech debt) — `dashboard-page.tsx` is 1217 lines; ~250 lines of `useQuery`/memo wiring could move into a hook. Staged approach. Not blocking.
+5. **Visual verification with real backend data** — manual verification of the backtest panel against real snapshot data (e.g. confirming that `eval_days_ago=14` with `holding_days=7` produces sensible trade counts on a live league) needs a running backend with ≥21d of price_logs collected. Jest tests use mocked data.
+6. **e2e tests** (optional) — frontend is covered by jest; e2e would require running backend + browser. Not blocking.
+
+NOT done in iter 80 (intentionally deferred):
+- F1 (blocked on live API access)
+- Full Content Pulse tab (the F4 widget is the MVP; full tab deferred until product feedback)
+- Phase hints enhancements (hardcoded MVP shipped — config-driven hints + per-pattern metrics deferred)
+- e2e tests not run (frontend changes are unit-tested via jest; e2e would require running backend + browser)
+- useDashboardData hook extraction (optional, deferred)
+- Visual verification with real backend data (jest tests use mocked data; manual verification of the backtest panel against real snapshot data needs a running backend with ≥21d of price_logs collected)

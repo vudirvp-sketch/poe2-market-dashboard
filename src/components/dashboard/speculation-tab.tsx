@@ -1,8 +1,15 @@
 // ============================================================================
-// Speculation Tab — BUY/SELL/HOLD signals per currency (F5, iter 77).
+// Speculation Tab — BUY/SELL/HOLD signals per currency (F5, iter 77) +
+// Strategy Backtest panel (F5 follow-up, iter 80).
 //
 // Wraps GET /api/flipper/speculation (proxied to FastAPI
-// GET /api/v1/speculation — implemented in iter 77 as F5).
+// GET /api/v1/speculation — implemented in iter 77 as F5) for the live
+// signals list.
+//
+// Wraps GET /api/flipper/speculation/backtest (proxied to FastAPI
+// GET /api/v1/speculation/backtest — implemented in iter 79 as F5 backend,
+// wired into the frontend in iter 80) for the optional Backtest panel
+// mounted BELOW the live signals list.
 //
 // Renders a sortable list of currencies with their z-score relative to the
 // last N days of price_logs. Each row shows:
@@ -13,10 +20,20 @@
 //   │         ▁▂▃▄▅▆▇█ (mini-sparkline of last 14 price points)            │
 //   └──────────────────────────────────────────────────────────────────────┘
 //
+// Below the signals list — a collapsible "Strategy Backtest" panel:
+//   - Toggle button (NOT autoload — backtest is compute-heavy)
+//   - 3 day selectors: eval_days_ago / holding_days / lookback_days
+//   - Aggregated stats: overall + BUY + SELL blocks
+//     (count, win_rate, mean/median/best/worst return_pct)
+//   - Signal breakdown: BUY N / SELL N / HOLD N + evaluated/unevaluated counts
+//   - Top trades list (capped by `limit`, sorted by |return_pct| desc)
+//
 // Rationale (PRODUCT_VISION §3.2):
 //   - For each item: z-score of current_price vs 30-day rolling mean/std.
 //   - Signal: BUY (z < -1.5), SELL (z > +1.5), HOLD (|z| ≤ 1.5).
 //   - Sort: most extreme |z| first (most actionable signals on top).
+//   - Backtest: replay the same strategy on historical price_logs to measure
+//     realised profitability per signal type.
 //
 // Graceful degradation:
 //   - backendOffline → offline card with start-backend hint
@@ -24,10 +41,21 @@
 //   - other fetch errors → error card + retry
 //   - empty signals list (everything stable) → "no actionable signals" notice
 //   - loading → skeleton spinner
+//   - Backtest panel:
+//     - collapsed by default → only "Run backtest" toggle button visible
+//     - expanded + loading → spinner text
+//     - expanded + error → error card + refresh
+//     - expanded + data_available=false → "no data yet" notice
+//     - expanded + trades=[] → "no trades produced" notice
+//     - expanded + trades>0 → stats + breakdown + trades list
 //
 // Filters:
 //   - Signal filter: ALL / BUY / SELL / HOLD (chips at the top)
-//   - Days selector: 7 / 14 / 30 / 90 (default 30)
+//     Also forwarded to the Backtest panel — so a BUY-only filter in the live
+//     list also restricts the backtest to BUY trades.
+//   - Days selector: 7 / 14 / 30 / 90 (default 30) — live signals only.
+//   - Backtest day selectors: eval_days_ago (7/14/30/90), holding_days
+//     (1/3/7/14/30), lookback_days (7/14/30/90) — independent of live days.
 // ============================================================================
 
 "use client";
@@ -42,6 +70,10 @@ import {
   Minus,
   Activity,
   Sparkles,
+  History,
+  Play,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +93,9 @@ import {
   type SpeculationResponse,
   type SpeculationSignal,
   type SpeculationSignalType,
+  type SpeculationBacktestResponse,
+  type SpeculationBacktestStatsBlock,
+  type SpeculationBacktestTrade,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -79,6 +114,17 @@ export interface SpeculationTabProps {
 const DAYS_PRESETS = [7, 14, 30, 90];
 const DEFAULT_DAYS = 30;
 const DEFAULT_LIMIT = 50;
+
+// Backtest panel day presets (F5 follow-up, iter 80)
+// Defaults match backend DEFAULT_EVAL_DAYS_AGO=14 / DEFAULT_HOLDING_DAYS=7 /
+// DEFAULT_LOOKBACK_DAYS=30 (see backend/economy/speculation_backtest.py).
+const BACKTEST_EVAL_PRESETS = [7, 14, 30, 90];
+const BACKTEST_HOLDING_PRESETS = [1, 3, 7, 14, 30];
+const BACKTEST_LOOKBACK_PRESETS = [7, 14, 30, 90];
+const BACKTEST_DEFAULT_EVAL_DAYS = 14;
+const BACKTEST_DEFAULT_HOLDING_DAYS = 7;
+const BACKTEST_DEFAULT_LOOKBACK_DAYS = 30;
+const BACKTEST_LIMIT = 50;
 
 type SignalFilterValue = "ALL" | SpeculationSignalType;
 const FILTER_OPTIONS: SignalFilterValue[] = ["ALL", "BUY", "SELL", "HOLD"];
@@ -428,6 +474,17 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
             {t("speculationSignalCount", { 0: signals.length })}
           </p>
         )}
+
+        {/* ============ Backtest panel (F5 follow-up, iter 80) ============ */}
+        {/* Mounted below the live signals list. NOT autoload — toggle button
+            controls whether the backtest query is enabled. Backtest is
+            compute-heavy (iterates every item with enough price history), so
+            it's opt-in to avoid loading the backend on every Speculation tab
+            visit. See PRODUCT_VISION §3.2 + AGENT_NAVIGATION invariant #33. */}
+        <BacktestPanel
+          backendOnline={backendOnline}
+          signalFilter={signalFilter}
+        />
       </CardContent>
     </Card>
   );
@@ -497,6 +554,423 @@ function SignalRow({ signal, t }: SignalRowProps) {
         <div className={lineColor}>
           <Sparkline points={signal.priceHistoryShort} color="currentColor" />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================================
+// BacktestPanel — optional collapsible panel that replays the BUY/SELL/HOLD
+// strategy on historical price_logs and shows aggregated profitability.
+// (F5 follow-up, iter 80)
+//
+// NOT autoload: the parent SpeculationTab mounts this panel below the live
+// signals list, but the backtest query only fires when the user clicks the
+// "Run backtest" toggle button. Rationale: backtest is significantly more
+// expensive than the live signal (iterates every item with enough price
+// history) — keeping it opt-in avoids loading the backend on every Speculation
+// tab visit. See AGENT_NAVIGATION invariant #33.
+//
+// Props:
+//   backendOnline — pass-through from parent (panel only renders when online;
+//                   parent's offline card already short-circuits the whole tab)
+//   signalFilter  — pass-through from parent's filter chip state. When parent
+//                   filters to BUY-only, the backtest also restricts to BUY
+//                   trades. HOLD-only is a no-op for backtest (HOLD signals
+//                   never produce trades) but still produces a stats block.
+// ===========================================================================
+
+interface BacktestPanelProps {
+  backendOnline: boolean;
+  signalFilter: SignalFilterValue;
+}
+
+function BacktestPanel({ backendOnline, signalFilter }: BacktestPanelProps) {
+  const { t } = useI18n();
+
+  // ---- Local input state ----
+  const [showBacktest, setShowBacktest] = useState(false);
+  const [evalDays, setEvalDays] = useState<number>(BACKTEST_DEFAULT_EVAL_DAYS);
+  const [holdingDays, setHoldingDays] = useState<number>(BACKTEST_DEFAULT_HOLDING_DAYS);
+  const [lookbackDays, setLookbackDays] = useState<number>(BACKTEST_DEFAULT_LOOKBACK_DAYS);
+
+  // ---- Query ----
+  // NOT autoload — `enabled` is gated on `showBacktest && backendOnline`.
+  // 60s staleTime — backtest results don't change second-to-second.
+  // retry: 1 — one retry for transient blips, then surface the error.
+  const { data, isLoading, isError, refetch } = useQuery<SpeculationBacktestResponse>({
+    queryKey: ["speculation-backtest", evalDays, holdingDays, lookbackDays, signalFilter],
+    queryFn: () =>
+      fetchApi<SpeculationBacktestResponse>("/api/flipper/speculation/backtest", {
+        eval_days_ago: String(evalDays),
+        holding_days: String(holdingDays),
+        lookback_days: String(lookbackDays),
+        limit: String(BACKTEST_LIMIT),
+        signal: signalFilter,
+      }),
+    enabled: showBacktest && backendOnline,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
+  // ---- Derived ----
+  const trades = useMemo(() => data?.trades ?? [], [data]);
+  const dataAvailable = data?.dataAvailable ?? false;
+  const overallStats = data?.overallStats;
+  const buyStats = data?.buyStats;
+  const sellStats = data?.sellStats;
+  const signalBreakdown = data?.signalBreakdown ?? { BUY: 0, SELL: 0, HOLD: 0 };
+  const evaluatedCount = data?.evaluatedCount ?? 0;
+  const unevaluatedCount = data?.unevaluatedCount ?? 0;
+
+  // ---- Render: collapsed (default) ----
+  // Only the toggle button is visible. No query is fired.
+  if (!showBacktest) {
+    return (
+      <div
+        className="border-t border-border/50 pt-3 mt-2"
+        data-testid="speculation-backtest-panel-collapsed"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-center"
+          onClick={() => setShowBacktest(true)}
+          aria-label={t("speculationBacktestRunButton")}
+          aria-expanded={false}
+          data-testid="speculation-backtest-toggle"
+        >
+          <Play className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+          {t("speculationBacktestRunButton")}
+          <ChevronDown className="h-3.5 w-3.5 ml-1.5" aria-hidden="true" />
+        </Button>
+      </div>
+    );
+  }
+
+  // ---- Render: expanded ----
+  return (
+    <div
+      className="border-t border-border/50 pt-3 mt-2 space-y-3"
+      data-testid="speculation-backtest-panel"
+    >
+      {/* Header row: title + collapse button */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <History className="h-4 w-4 text-violet-500 shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium leading-tight">{t("speculationBacktestTitle")}</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              {t("speculationBacktestSubtitle")}
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7"
+          onClick={() => setShowBacktest(false)}
+          aria-label={t("speculationBacktestHideButton")}
+          aria-expanded={true}
+          data-testid="speculation-backtest-toggle"
+        >
+          <ChevronUp className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+          <span className="text-xs">{t("speculationBacktestHideButton")}</span>
+        </Button>
+      </div>
+
+      {/* Day selectors: eval_days_ago / holding_days / lookback_days */}
+      <div className="flex items-end gap-2 flex-wrap">
+        <DaySelector
+          label={t("speculationBacktestEvalDaysLabel", { 0: evalDays })}
+          presets={BACKTEST_EVAL_PRESETS}
+          value={evalDays}
+          onChange={setEvalDays}
+          testId="speculation-backtest-eval-days"
+        />
+        <DaySelector
+          label={t("speculationBacktestHoldingDaysLabel", { 0: holdingDays })}
+          presets={BACKTEST_HOLDING_PRESETS}
+          value={holdingDays}
+          onChange={setHoldingDays}
+          testId="speculation-backtest-holding-days"
+        />
+        <DaySelector
+          label={t("speculationBacktestLookbackDaysLabel", { 0: lookbackDays })}
+          presets={BACKTEST_LOOKBACK_PRESETS}
+          value={lookbackDays}
+          onChange={setLookbackDays}
+          testId="speculation-backtest-lookback-days"
+        />
+        {/* Refresh button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8"
+          onClick={() => refetch()}
+          aria-label={t("speculationRefresh")}
+          data-testid="speculation-backtest-refresh"
+        >
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+        </Button>
+      </div>
+
+      {/* Loading state */}
+      {isLoading && (
+        <p className="text-sm text-muted-foreground italic" data-testid="speculation-backtest-loading">
+          {t("speculationBacktestLoading")}
+        </p>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div
+          className="rounded-md border border-red-500/30 bg-red-500/5 p-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-2"
+          data-testid="speculation-backtest-error"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{t("speculationBacktestError")}</span>
+        </div>
+      )}
+
+      {/* No data available */}
+      {!isLoading && !isError && !dataAvailable && (
+        <p className="text-sm text-muted-foreground italic" data-testid="speculation-backtest-no-data">
+          {t("speculationBacktestNoData")}
+        </p>
+      )}
+
+      {/* No trades produced (dataAvailable=true but trades list is empty) */}
+      {!isLoading && !isError && dataAvailable && trades.length === 0 && (
+        <p className="text-sm text-muted-foreground italic" data-testid="speculation-backtest-no-trades">
+          {t("speculationBacktestNoTrades")}
+        </p>
+      )}
+
+      {/* Main content: stats + breakdown + trades list */}
+      {!isLoading && !isError && dataAvailable && trades.length > 0 && (
+        <div className="space-y-3" data-testid="speculation-backtest-content">
+          {/* Stats blocks: Overall + BUY + SELL */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <StatsBlock
+              title={t("speculationBacktestStatsOverall")}
+              stats={overallStats}
+              accent="overall"
+              testId="speculation-backtest-stats-overall"
+              t={t}
+            />
+            <StatsBlock
+              title={t("speculationBacktestStatsBuy")}
+              stats={buyStats}
+              accent="buy"
+              testId="speculation-backtest-stats-buy"
+              t={t}
+            />
+            <StatsBlock
+              title={t("speculationBacktestStatsSell")}
+              stats={sellStats}
+              accent="sell"
+              testId="speculation-backtest-stats-sell"
+              t={t}
+            />
+          </div>
+
+          {/* Signal breakdown */}
+          <div
+            className="rounded-md border border-border/60 p-2 text-[11px] font-mono flex items-center gap-3 flex-wrap"
+            data-testid="speculation-backtest-breakdown"
+          >
+            <span className="font-sans text-muted-foreground">{t("speculationBacktestBreakdownTitle")}:</span>
+            <span className="text-emerald-600 dark:text-emerald-400">BUY {signalBreakdown.BUY ?? 0}</span>
+            <span className="text-red-600 dark:text-red-400">SELL {signalBreakdown.SELL ?? 0}</span>
+            <span className="text-amber-600 dark:text-amber-400">HOLD {signalBreakdown.HOLD ?? 0}</span>
+            <span className="text-muted-foreground/70">·</span>
+            <span>{t("speculationBacktestEvaluated", { 0: evaluatedCount })}</span>
+            <span>{t("speculationBacktestUnevaluated", { 0: unevaluatedCount })}</span>
+          </div>
+
+          {/* Top trades list */}
+          <div data-testid="speculation-backtest-trades">
+            <p className="text-xs font-medium mb-1.5">{t("speculationBacktestTradesTitle")}</p>
+            <div className="space-y-1">
+              {trades.map((tr) => (
+                <TradeRow key={`${tr.apiId}-${tr.entryDate}`} trade={tr} t={t} />
+              ))}
+            </div>
+          </div>
+
+          {/* Footer with fetched-at + trade count */}
+          {data?.fetchedAt && (
+            <p className="text-[10px] text-muted-foreground/70">
+              <Activity className="inline h-3 w-3 mr-1" aria-hidden="true" />
+              {t("speculationBacktestFetchedAt", { 0: new Date(data.fetchedAt).toLocaleString() })}
+              {" · "}
+              {t("speculationBacktestTradesCount", { 0: trades.length })}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DaySelector — small reusable select for backtest day presets
+// ---------------------------------------------------------------------------
+
+interface DaySelectorProps {
+  label: string;
+  presets: number[];
+  value: number;
+  onChange: (v: number) => void;
+  testId: string;
+}
+
+function DaySelector({ label, presets, value, onChange, testId }: DaySelectorProps) {
+  return (
+    <div className="flex flex-col gap-0.5" data-testid={testId}>
+      <span className="text-[10px] text-muted-foreground/80 leading-none">{label}</span>
+      <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
+        <SelectTrigger className="h-8 w-[120px]" aria-label={label}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {presets.map((d) => (
+            <SelectItem key={d} value={String(d)}>
+              {d}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// StatsBlock — single stats card (overall / BUY / SELL)
+// ---------------------------------------------------------------------------
+
+interface StatsBlockProps {
+  title: string;
+  stats: SpeculationBacktestStatsBlock | undefined;
+  accent: "overall" | "buy" | "sell";
+  testId: string;
+  t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+}
+
+function StatsBlock({ title, stats, accent, testId, t }: StatsBlockProps) {
+  const accentClass =
+    accent === "buy"
+      ? "border-emerald-500/40 bg-emerald-500/5"
+      : accent === "sell"
+        ? "border-red-500/40 bg-red-500/5"
+        : "border-border/60 bg-muted/20";
+
+  // Format a return_pct with sign + 2 decimals: 12.34 → "+12.34%", -5.1 → "-5.10%"
+  const fmtReturn = (n: number | undefined | null): string => {
+    if (n === undefined || n === null || !Number.isFinite(n)) return "—";
+    return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
+  };
+
+  // Color a return value: green if >0, red if <0, muted if 0/null
+  const returnColor = (n: number | undefined | null): string => {
+    if (n === undefined || n === null || !Number.isFinite(n) || n === 0) return "text-muted-foreground";
+    return n > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400";
+  };
+
+  const count = stats?.count ?? 0;
+  const winRate = stats?.winRate ?? 0;
+  const meanReturn = stats?.meanReturnPct ?? 0;
+  const medianReturn = stats?.medianReturnPct ?? 0;
+  const bestReturn = stats?.bestReturnPct ?? 0;
+  const worstReturn = stats?.worstReturnPct ?? 0;
+
+  return (
+    <div
+      className={`rounded-md border ${accentClass} p-2 space-y-1 text-[11px] font-mono`}
+      data-testid={testId}
+    >
+      <div className="flex items-center justify-between font-sans text-xs font-medium">
+        <span>{title}</span>
+        <span className="text-muted-foreground">{count}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">{t("speculationBacktestWinRate")}</span>
+        <span>{winRate.toFixed(1)}%</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">{t("speculationBacktestMeanReturn")}</span>
+        <span className={returnColor(meanReturn)}>{fmtReturn(meanReturn)}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">{t("speculationBacktestMedianReturn")}</span>
+        <span className={returnColor(medianReturn)}>{fmtReturn(medianReturn)}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">{t("speculationBacktestBestReturn")}</span>
+        <span className={returnColor(bestReturn)}>{fmtReturn(bestReturn)}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">{t("speculationBacktestWorstReturn")}</span>
+        <span className={returnColor(worstReturn)}>{fmtReturn(worstReturn)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TradeRow — single realised trade in the top-trades list
+// ---------------------------------------------------------------------------
+
+interface TradeRowProps {
+  trade: SpeculationBacktestTrade;
+  t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+}
+
+function TradeRow({ trade, t }: TradeRowProps) {
+  const isProfit = trade.returnPct > 0;
+  const isLoss = trade.returnPct < 0;
+  const returnClass = isProfit
+    ? "text-emerald-600 dark:text-emerald-400"
+    : isLoss
+      ? "text-red-600 dark:text-red-400"
+      : "text-muted-foreground";
+
+  return (
+    <div
+      data-testid={`speculation-backtest-trade-${trade.apiId}`}
+      className="rounded-md border border-border/40 p-2 text-[11px] font-mono flex items-center justify-between gap-2 flex-wrap hover:bg-accent/30 transition-colors"
+    >
+      {/* Left: signal badge + item name + category */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <Badge variant="outline" className={`text-[10px] px-1 py-0 ${signalBadgeClass(trade.signal)}`}>
+          {signalIcon(trade.signal)}
+          <span className="ml-0.5">{trade.signal}</span>
+        </Badge>
+        <span className="text-sm font-medium truncate font-sans" title={trade.text}>
+          {trade.text}
+        </span>
+        {trade.category && (
+          <span className="text-[10px] text-muted-foreground/80">
+            · {titleCase(trade.category)}
+          </span>
+        )}
+      </div>
+      {/* Right: entry → exit + return_pct */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span title={t("speculationBacktestTradeColEntry")}>
+          {fmt(trade.entryPrice)}
+        </span>
+        <span className="text-muted-foreground/60">→</span>
+        <span title={t("speculationBacktestTradeColExit")}>
+          {fmt(trade.exitPrice)}
+        </span>
+        <span
+          className={`font-semibold ${returnClass}`}
+          title={t("speculationBacktestTradeColReturn")}
+        >
+          {trade.returnPct > 0 ? "+" : ""}{trade.returnPct.toFixed(2)}%
+        </span>
       </div>
     </div>
   );
