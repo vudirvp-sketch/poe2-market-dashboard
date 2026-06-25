@@ -1,18 +1,22 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-26 (iter 83 — useDashboardData Stage 3a: `useFilteredExchangePairs` + `useItemCategoryLists` hooks extracted)
+> **Last updated:** 2026-06-26 (iter 84 — useDashboardData Stage 3b: `useOptimalPayment` hook extracted; extraction COMPLETE)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
 ---
 
-## Technical-debt backlog — empty (P0–P4 all closed)
+## Technical-debt backlog — empty (P0–P4 all closed, useDashboardData extraction COMPLETE)
 
 All P0/P1/P2/P3/P4 issues closed in iter 54–73. See `git log` for older history.
 
-The single remaining **optional** technical follow-up:
+The `useDashboardData` hook extraction (deferred from P2-1, staged approach) is now **COMPLETE**:
+- Stage 1 (iter 81): flipper backend health/phase/events queries → `src/hooks/use-flipper-backend.ts`.
+- Stage 2 (iter 82): realm/league selection + realms/leagues queries + `effectiveLeague` memo + auto-select useEffect → `src/hooks/use-realms-and-leagues.ts`.
+- Stage 3a (iter 83): exchange-pairs filter pipeline + currency/unique category-chip list derivation → `src/hooks/use-filtered-exchange-pairs.ts` + `src/hooks/use-item-category-lists.ts`.
+- **Stage 3b (iter 84): optimalPayment cluster — `optimalCurrencyData` useQuery + `clientOptimalResult` memo + backend/client merge memo + `optimalPaymentByDisplayName` memo → `src/hooks/use-optimal-payment.ts` (315 lines). `dashboard-page.tsx` is now 995 lines (was 1128 in iter 83, was 1169 in iter 82, was 1197 in iter 81, was 1232 in iter 80, was 1685 in iter 70). dashboard-page.tsx is now legitimate parent wiring — no more inline `useQuery` / heavy memo clusters left to extract.**
 
-> **`useDashboardData` hook extraction** (deferred from P2-1, staged approach). `dashboard-page.tsx` is 1128 lines (was 1169 in iter 82, was 1197 in iter 81, was 1232 in iter 80, was 1685 in iter 70). Stage 1 shipped iter 81: flipper backend health/phase/events queries extracted into `src/hooks/use-flipper-backend.ts`. Stage 2 shipped iter 82: realm/league selection + realms/leagues queries + `effectiveLeague` memo + auto-select useEffect extracted into `src/hooks/use-realms-and-leagues.ts`. Stage 3a shipped iter 83: exchange-pairs filter pipeline + currency/unique category-chip list derivation extracted into `src/hooks/use-filtered-exchange-pairs.ts` + `src/hooks/use-item-category-lists.ts`. Remaining: (3b) optimalPayment cluster (clientOptimalResult memo + backend-merge memo + optimalPaymentByDisplayName memo — highest interdependency risk). Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+No further staged refactors are planned. Future code-health work should be opportunistic (per-file) rather than the dashboard-page-specific extraction programme.
 
 ---
 
@@ -59,3 +63,4 @@ The single remaining **optional** technical follow-up:
 | Need realm/league data or selection in a new component | `useRealmsAndLeagues()` (iter 82) is the single source of truth for `realm`, `league`, `effectiveLeague`, `realms`, `leagues`, and the `setRealm`/`setLeague` wrappers. Inline `useQuery` for `/api/poe2/realms` or `/api/poe2/leagues` is forbidden — use the hook. The hook also owns the auto-select useEffect (auto-pick first active league when none selected). | `src/hooks/use-realms-and-leagues.ts` |
 | Need filtered exchange pairs (search + quick chip + extended filters) | `useFilteredExchangePairs({ exchangeData, search, exchangeUiState })` (iter 83) is the single source of truth for the Exchange tab filter pipeline. Inline `useMemo` that re-implements the search → chip → extended-filter rules is forbidden — use the hook. Pure derivation: takes the raw `exchangeData` + the `uiState.exchange` slice, returns a filtered `ExchangePair[]`. | `src/hooks/use-filtered-exchange-pairs.ts` |
 | Need currency/unique category chip lists | `useItemCategoryLists({ uniqueCategories, t })` (iter 83) is the single source of truth for `currencyCategories` + `uniqueCategoriesList` (the two chip-strip arrays rendered above the Currencies and Uniques tabs). Inline `useMemo` that re-implements the Unique-family filter rules is forbidden — use the hook. Pure derivation from a single `useItemCategories()` response. | `src/hooks/use-item-category-lists.ts` |
+| Need optimal-payment data (pair map + cross-rate flips + anchor + display-name map) | `useOptimalPayment({ exchangeData, crossRates, flipperBackendOnline })` (iter 84) is the single source of truth for the §11 optimal-payment cluster. The hook owns the `optimalCurrencyData` useQuery (gated on `flipperBackendOnline`, queryKey `QUERY_KEYS.flipperOptimalCurrency`, 60s refetch) + the `clientOptimalResult` memo (client-side fallback using `findOptimalPayment` + `isItemCategory`) + the backend/client merge memo + the `optimalPaymentByDisplayName` memo. Inline `useQuery` for `/api/flipper/optimal-currency` OR inline `useMemo` re-implementing the client fallback / merge / byDisplayName logic in `dashboard-page.tsx` is FORBIDDEN — use the hook. Inputs (`exchangeData`, `crossRates`, `flipperBackendOnline`) are owned by the parent. | `src/hooks/use-optimal-payment.ts` |

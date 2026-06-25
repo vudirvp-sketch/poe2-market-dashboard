@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 
@@ -95,11 +94,7 @@ const SpeculationTab = dynamic(
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
-import {
-  fetchApi,
-  exportToCsv,
-  exportToJson,
-} from "@/lib/types";
+import { exportToCsv, exportToJson } from "@/lib/types";
 import { useExchangePairs, useReferenceCurrencies } from "@/hooks/use-exchange-pairs";
 // iter 81 (useDashboardData Stage 1): flipper backend health/phase/events
 // queries extracted into a dedicated hook to keep dashboard-page.tsx lean.
@@ -110,30 +105,33 @@ import { useFlipperBackend } from "@/hooks/use-flipper-backend";
 import { useRealmsAndLeagues } from "@/hooks/use-realms-and-leagues";
 // iter 83 (useDashboardData Stage 3a): exchange-pairs filter pipeline +
 // currency/unique category-chip list derivation extracted into two new
-// hooks. Stage 3b (optimalPayment cluster) still pending.
+// hooks.
+// iter 84 (useDashboardData Stage 3b): optimalPayment cluster (useQuery +
+// clientOptimalResult memo + merge memo + byDisplayName memo) extracted into
+// useOptimalPayment(). With Stage 3b shipped, the useDashboardData
+// extraction is COMPLETE — dashboard-page.tsx is now legitimate parent
+// wiring. Stage 3b was the highest interdependency risk in the entire
+// extraction plan (merge memo consumes both the useQuery result AND the
+// clientOptimalResult memo; byDisplayName memo consumes the merge memo's
+// output). A single hook suffices because the pipeline is internally linear.
 import { useFilteredExchangePairs } from "@/hooks/use-filtered-exchange-pairs";
 import { useItemCategoryLists } from "@/hooks/use-item-category-lists";
+import { useOptimalPayment } from "@/hooks/use-optimal-payment";
 import { useCrossRates } from "@/hooks/use-cross-rates";
 import { useCurrencyItems, useAllItems, useItemCategories } from "@/hooks/use-currency-items";
 import { useUniqueItems } from "@/hooks/use-unique-items";
 import { usePrefetch } from "@/hooks/use-prefetch";
 import { useInitialBatch } from "@/hooks/use-batch-query";
 import { usePriceStream } from "@/hooks/use-price-stream";
-import { QUERY_KEYS } from "@/components/providers";
-// iter 82: Realm + League type imports removed — they are now consumed
-// inside useRealmsAndLeagues() (see src/hooks/use-realms-and-leagues.ts).
+// iter 84: useQuery + QUERY_KEYS + fetchApi + OptimalPaymentResult +
+// OptimalCurrencyResponse + CrossRateFlip + findOptimalPayment +
+// isItemCategory imports removed — they are now consumed inside
+// useOptimalPayment() (see src/hooks/use-optimal-payment.ts).
 import type {
   PoeItem,
   ExchangePair,
   ReferenceCurrency,
-  OptimalPaymentResult,
-  OptimalCurrencyResponse,
-  CrossRateFlip,
 } from "@/lib/types";
-import {
-  findOptimalPayment,
-  isItemCategory,
-} from "@/lib/currency-optimal";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -447,159 +445,28 @@ export function Dashboard() {
   // ==========================================================================
   // §11: Cross-currency optimal payment — backend-first with client fallback
   // ==========================================================================
-  // When the backend is online, fetch optimal-currency data from
-  // GET /api/flipper/optimal-currency (server-side computation).
-  // When the backend is offline, fall back to client-side computation
-  // using the same logic from currency-optimal.ts.
-
-  const { data: optimalCurrencyData } = useQuery<OptimalCurrencyResponse>({
-    queryKey: [QUERY_KEYS.flipperOptimalCurrency],
-    queryFn: () => fetchApi<OptimalCurrencyResponse>("/api/flipper/optimal-currency"),
-    enabled: flipperBackendOnline,
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    retry: 1,
+  // iter 84 (Stage 3b): the entire optimalPayment cluster — useQuery +
+  // clientOptimalResult memo + backend/client merge memo + byDisplayName
+  // memo — is now owned by useOptimalPayment(). The hook receives
+  // exchangeData + crossRates + flipperBackendOnline as inputs (all already
+  // in scope here) and returns the four values consumed downstream:
+  //   - optimalPaymentByPair         → ExchangeTabContent prop
+  //   - crossRateFlips                → ExchangeTabContent prop
+  //   - selectedAnchorId              → ExchangeTabContent + FlipsTab prop
+  //   - optimalPaymentByDisplayName   → FlipsTab prop
+  // Same query key, same polling interval, same merge priority (backend
+  // first → client fallback), same dependency arrays. Zero behavior change.
+  // With Stage 3b shipped, the useDashboardData extraction is COMPLETE.
+  const {
+    optimalPaymentByPair,
+    crossRateFlips,
+    selectedAnchorId,
+    optimalPaymentByDisplayName,
+  } = useOptimalPayment({
+    exchangeData,
+    crossRates,
+    flipperBackendOnline,
   });
-
-  // Client-side fallback: compute optimal payment from exchangeData when backend is offline
-  // Uses crossRates hook for relativePriceMap, anchorId, and crossRateFlips (Phase 2.3)
-  const clientOptimalResult = useMemo(() => {
-    const allPairs = exchangeData ?? [];
-    if (allPairs.length === 0) {
-      return { optimalPaymentByPair: new Map<string, OptimalPaymentResult>(), crossRateFlips: [] as CrossRateFlip[], anchorId: "exalted" as string };
-    }
-
-    // Use crossRates hook results instead of recomputing buildRelativePriceMap/selectAnchor
-    const relPriceMap = crossRates.relativePriceMap;
-    const anchor = crossRates.anchorId;
-    const anchorRelPrice = crossRates.anchorRelPrice;
-
-    // Group pairs by currency1Id — each group represents one "item" priced in multiple currencies
-    const groups = new Map<string, ExchangePair[]>();
-    for (const pair of allPairs) {
-      const existing = groups.get(pair.currency1Id);
-      if (existing) {
-        existing.push(pair);
-      } else {
-        groups.set(pair.currency1Id, [pair]);
-      }
-    }
-
-    // For each group with 2+ pricing options, compute optimal payment
-    const optimalPaymentByPair = new Map<string, OptimalPaymentResult>();
-    for (const [, groupPairs] of groups) {
-      if (groupPairs.length < 2) continue;
-
-      // Build pricing options from each pair in the group
-      const pricingOptions = groupPairs
-        .filter((p) => p.currency2RelativePrice != null && p.currency2RelativePrice > 0)
-        .map((p) => ({
-          currencyId: p.currency2Id,
-          currencyName: p.currency2Name,
-          // Cross-rate: how many currency2 per 1 currency1
-          priceInCurrency: p.relativePrice != null && p.currency2RelativePrice != null && p.currency2RelativePrice > 0
-            ? p.relativePrice / p.currency2RelativePrice
-            : 0,
-          relativePrice: p.currency2RelativePrice ?? 0,
-        }))
-        .filter((opt) => opt.priceInCurrency > 0 && opt.relativePrice > 0);
-
-      const result = findOptimalPayment(pricingOptions, anchorRelPrice);
-      if (result) {
-        // Map result back to each pair in the group
-        for (const p of groupPairs) {
-          optimalPaymentByPair.set(p.id, result);
-        }
-      }
-    }
-
-    // §11 extension: Item-aware optimal payment.
-    // For craft items (Omens, Soul Cores), currency1Id is the item itself.
-    // These items appear as CurrencyOne in exchange pairs, where CurrencyTwo
-    // is the payment currency. Group all pairs where currency1CategoryApiId
-    // is an item category, then for each item find the cheapest payment currency.
-    const itemGroups = new Map<string, ExchangePair[]>();
-    for (const pair of allPairs) {
-      if (isItemCategory(pair.currency1CategoryApiId)) {
-        const existing = itemGroups.get(pair.currency1Id);
-        if (existing) {
-          existing.push(pair);
-        } else {
-          itemGroups.set(pair.currency1Id, [pair]);
-        }
-      }
-    }
-
-    for (const [, itemPairs] of itemGroups) {
-      if (itemPairs.length < 2) continue;
-
-      // Each pair represents: "item X can be bought with currency Y"
-      // priceInCurrency = price of 1 unit of item X in currency Y
-      const pricingOptions = itemPairs
-        .filter((p) => p.currency2RelativePrice != null && p.currency2RelativePrice > 0 && p.relativePrice != null && p.relativePrice > 0)
-        .map((p) => ({
-          currencyId: p.currency2Id,
-          currencyName: p.currency2Name,
-          priceInCurrency: p.relativePrice! / p.currency2RelativePrice!,
-          relativePrice: p.currency2RelativePrice!,
-        }))
-        .filter((opt) => opt.priceInCurrency > 0 && opt.relativePrice > 0);
-
-      const result = findOptimalPayment(pricingOptions, anchorRelPrice);
-      if (result) {
-        for (const p of itemPairs) {
-          optimalPaymentByPair.set(p.id, result);
-        }
-      }
-    }
-
-    // Use crossRates for cross-rate flips (computed by useCrossRates hook)
-    return { optimalPaymentByPair, crossRateFlips: crossRates.crossRateFlips, anchorId: anchor };
-  }, [exchangeData, crossRates.relativePriceMap, crossRates.anchorId, crossRates.anchorRelPrice, crossRates.crossRateFlips]);
-
-  // Merge: backend data takes priority when available and has data; client fallback otherwise
-  const { optimalPaymentByPair, crossRateFlips, anchorId: selectedAnchorId } = useMemo(() => {
-    // Backend data available?
-    if (optimalCurrencyData?.dataAvailable && optimalCurrencyData.optimalPaymentByPair) {
-      // Remap backend keys ("currencyFrom_currencyTo") to frontend pair.id
-      // Backend groups by currency_from; each key covers a currency_from → currency_to pair.
-      // We need to map these back to the exchange pair IDs for component lookups.
-      const allPairs = exchangeData ?? [];
-      const pairMap = new Map<string, OptimalPaymentResult>();
-
-      for (const pair of allPairs) {
-        // Try the exact backend key format: currency1Id_currency2Id
-        const backendKey = `${pair.currency1Id}_${pair.currency2Id}`;
-        const result = optimalCurrencyData.optimalPaymentByPair[backendKey];
-        if (result) {
-          pairMap.set(pair.id, result);
-        }
-      }
-
-      return {
-        optimalPaymentByPair: pairMap,
-        crossRateFlips: optimalCurrencyData.crossRateFlips ?? [],
-        anchorId: optimalCurrencyData.anchorId || "exalted",
-      };
-    }
-
-    // Fallback: use client-side computation
-    return clientOptimalResult;
-  }, [optimalCurrencyData, exchangeData, clientOptimalResult]);
-
-  // Build display-name-keyed map for FlipsTab (flip currency uses "Name1/Name2" format)
-  const optimalPaymentByDisplayName = useMemo(() => {
-    const map = new Map<string, OptimalPaymentResult>();
-    if (!exchangeData || !optimalPaymentByPair || optimalPaymentByPair.size === 0) return map;
-    for (const pair of exchangeData) {
-      const result = optimalPaymentByPair.get(pair.id);
-      if (result) {
-        const key = `${pair.currency1Name}/${pair.currency2Name}`;
-        map.set(key, result);
-      }
-    }
-    return map;
-  }, [exchangeData, optimalPaymentByPair]);
 
   // iter 83 (Stage 3a): currencyCategories + uniqueCategoriesList derivation
   // extracted into useItemCategoryLists. The hook is pure — receives
