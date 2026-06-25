@@ -3,12 +3,16 @@
 /**
  * OverviewTabContent — extracted from dashboard-page.tsx (P2-1, iter 72).
  *
- * The Overview tab is the default landing view. It composes two panels,
+ * The Overview tab is the default landing view. It composes three panels,
  * each wrapped in its own ErrorBoundary so a failure in one doesn't
- * blank out the other:
+ * blank out the others:
  *
- *   1. MarketOverview  — top movers + summary tiles.
- *   2. ComparativeChart — relative-performance chart against a
+ *   1. ContentPulseWidget (F4, iter 76) — "Что фармить сегодня" card with
+ *      top rising/falling league mechanics + per-category item movers.
+ *      Surfaces the F3 backend (/api/v1/content-pulse) on the main
+ *      dashboard so the user sees actionable signals on first load.
+ *   2. MarketOverview  — top movers + summary tiles.
+ *   3. ComparativeChart — relative-performance chart against a
  *      reference currency.
  *
  * All state lives in the parent (Dashboard) — this component is a pure
@@ -20,6 +24,7 @@
 
 import { MarketOverview } from "@/components/dashboard/market-overview";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
+import { ContentPulseWidget } from "@/components/dashboard/content-pulse-widget";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
 import type { PoeItem } from "@/lib/types";
@@ -53,6 +58,14 @@ export function OverviewTabContent(props: OverviewTabContentProps) {
 
   return (
     <>
+      {/* F4 (iter 76) — "Что фармить сегодня" widget.
+          Placed FIRST on the Overview tab so the user sees actionable
+          farming signals immediately on dashboard load, before the
+          market overview / comparative chart. */}
+      <ErrorBoundary fallbackTitle={t("fallbackContentPulse")}>
+        <ContentPulseWidget backendOnline={backendOnline} />
+      </ErrorBoundary>
+
       <ErrorBoundary fallbackTitle={t("fallbackMarketOverview")}>
         <MarketOverview
           realm={realm}

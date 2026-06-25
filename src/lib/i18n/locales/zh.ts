@@ -824,6 +824,7 @@ const zh: Record<TranslationKeys, string> = {
   fallbackMarketOverview: "市场概览",
   fallbackMarketHeatmap: "市场热力图",
   fallbackComparativeAnalytics: "比较分析",
+  fallbackContentPulse: "Content Pulse — 今天刷什么",
   fallbackVolumeLiquidity: "成交量与流动性",
   fallbackArbitrageCalculator: "套利计算器",
   fallbackFlips: "翻转",
@@ -991,6 +992,24 @@ const zh: Record<TranslationKeys, string> = {
   storageValueHistoryMirrorLine: "货币 / 镜 比率",
   storageValueHistoryHinekoraLine: "货币 / 希内科拉 比率",
   storageValueHistoryPointCount: "{0} 个数据点",
+  // F4 (iter 76) — Content Pulse widget on Overview tab
+  contentPulseTitle: "今天刷什么",
+  contentPulseSubtitle: "各联盟机制的成交量信号（7天滚动变化）。",
+  contentPulseRising: "上涨 — 值得刷",
+  contentPulseFalling: "下跌 — 暂时避开",
+  contentPulseNoRising: "今天没有明显的上涨信号。",
+  contentPulseNoFalling: "今天没有明显的下跌信号。",
+  contentPulseNoMovers: "此类别中尚无显著的物品涨跌。",
+  contentPulse7d: "7天",
+  contentPulseVolumeToday: "今日成交量: {0}",
+  contentPulseItems: "{0} 件物品",
+  contentPulseNoData: "Content Pulse 数据尚不可用 — 调度器需要先收集成交量快照。",
+  contentPulseNoSignals: "今天没有强信号 — 所有类别都在7天滚动区间内（±10%）。",
+  contentPulseLoading: "正在加载 Content Pulse...",
+  contentPulseError: "加载 Content Pulse 失败。后端可能遇到问题。",
+  contentPulseOffline: "Content Pulse 需要分析后端。请启动 FastAPI 后端以启用此组件。",
+  contentPulseRefresh: "刷新",
+  contentPulseFetchedAt: "获取时间: {0}",
 };
 
 export default zh;

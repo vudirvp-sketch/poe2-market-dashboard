@@ -136,3 +136,75 @@ NOT done in iter 75 (intentionally deferred):
 - F5 / F6 (further out in roadmap)
 - e2e tests not run (frontend changes are unit-tested via jest; e2e would require a running backend + browser)
 - useDashboardData hook extraction (optional, deferred)
+
+---
+Task ID: iter-76
+Agent: main (Sonnet 4.5)
+Task: iter 76 — Implement F4 (Main dashboard widget «Что фармить сегодня») consuming the iter-75 `/api/v1/content-pulse` endpoint.
+
+Work Log:
+- Read STATUS.md / PRODUCT_VISION.md / AGENT_NAVIGATION.md / worklog.md (iter 74 + iter 75 records) to understand state.
+- Confirmed F3 backend ready (44 pytest tests pass, endpoint `/api/v1/content-pulse` registered). F4 widget is the next logical step — surfaces F3 data on the dashboard's main landing view.
+- Verified baseline before changes: tsc 0 errors, jest 347 pass (336 baseline from iter 73 + 11 from iter 75 chart).
+- Skipped F1 (still BLOCKED on live poe2scout.com + poe2db.tw/ru/ access — no change from iter 75).
+
+- **F4 (Content Pulse widget)** — implementation:
+  - **Next.js proxy route** — `src/app/api/flipper/content-pulse/route.ts` (~30 lines). Uses `proxyWithFallback` with an empty `categories: []` + `dataAvailable: false` offline/insufficient-data fallback — same pattern as the storage-value-history proxy from iter 75. No query params (the backend takes none).
+  - **TypeScript types** — added `ContentPulseMover`, `ContentPulseCategory`, `ContentPulseResponse` interfaces to `src/lib/types.ts`. Mirror the Pydantic `ContentPulseMoverData` / `ContentPulseCategoryData` / `ContentPulseResponse` models from iter 75. Backend snake_case → frontend camelCase transform happens in `flipper-proxy.ts:transformKeys` (existing invariant #1).
+  - **Widget component** — `src/components/dashboard/content-pulse-widget.tsx` (~400 lines):
+    - Two-column card layout: RISING (emerald, top_rising categories) + FALLING (red, top_falling categories). Each category block shows `delta_7d_pct` badge + per-item `trend_pct` for top-3 movers + volume/item-count meta footer.
+    - `useQuery` bound to `["contentPulse"]`, 60s staleTime (rolling 7d average changes slowly), retry: 1 for transient blips.
+    - `maxPerSide` prop (default 2) caps categories per column — keeps the 1-glance UX per PRODUCT_VISION §3.6 ("killer feature" must be one-glance).
+    - Stable categories (|delta_7d_pct| < 10%) filtered out as noise.
+    - Graceful degradation (5 branches): backendOffline → compact amber notice (no full-card takeover); loading → spinner text; error → error card + refresh; data_available=false → "no data yet"; all-stable → "no signals today"; empty top_rising/top_falling → "no movers" per category.
+    - Footer with `fetched_at` timestamp + refresh button.
+  - **Wiring** — modified `src/components/dashboard/overview-tab-content.tsx` to mount `<ContentPulseWidget>` FIRST (above `<MarketOverview>`), wrapped in its own `<ErrorBoundary fallbackTitle={t("fallbackContentPulse")}>` so a render failure doesn't blank out the rest of the Overview tab. Overview tab is the default landing view per dashboard-page.tsx TAB_MAP — widget is visible on first dashboard load.
+  - **i18n** — 17 new keys × 4 locales (en/ru/zh/ko): `contentPulseTitle`, `contentPulseSubtitle`, `contentPulseRising`, `contentPulseFalling`, `contentPulseNoRising`, `contentPulseNoFalling`, `contentPulseNoMovers`, `contentPulse7d`, `contentPulseVolumeToday`, `contentPulseItems`, `contentPulseNoData`, `contentPulseNoSignals`, `contentPulseLoading`, `contentPulseError`, `contentPulseOffline`, `contentPulseRefresh`, `contentPulseFetchedAt` + `fallbackContentPulse` (ErrorBoundary fallback). Verified parity via ripgrep (17/17/17/17).
+  - **Tests** — `src/__tests__/content-pulse-widget.test.tsx` (~425 lines, 16 tests): offline / loading / error / no-data / no-signals / mixed (rising+falling+stable categories) / maxPerSide cap / refresh button visibility / refresh triggers refetch / empty-movers notice / fetched-at footer / proxy path / title / item-count meta. Test data covers all 5 graceful-degradation branches + the happy path with mixed signals.
+    - One test failure during dev: error-state test timed out because the widget's `retry: 1` overrides the QueryClient's `retry: false` default. Fixed by adding `ERROR_WAIT_OPTS = { timeout: 5000 }` to the error-state `waitFor` call — react-query v5 single-retry settles in ~1s.
+
+- Verification:
+  - `npx tsc --noEmit` → 0 errors.
+  - `npx jest` → 363 pass (347 baseline + 16 new content-pulse-widget tests). 0 fail.
+  - F3 backend untouched (no pytest rerun needed — F4 is frontend-only).
+  - Confirmed new proxy route registered: `GET /api/flipper/content-pulse`.
+
+- Documentation updates:
+  - `STATUS.md`: rewrote F4 row to ✅ Done with iter 76 implementation details. Added 2 new Quick Reference entries (widget "no signals today" + widget "no movers" per category). Bumped "Last updated" to iter 76.
+  - `PRODUCT_VISION.md`: bumped "Last updated" to iter 76. Updated §4 architecture table (Content Pulse widget row marked ✅, added full-tab TODO row). Rewrote F4 section with iter 76 implementation details. Updated §6 Product DoD — point 3 (card on main dashboard) marked ✅.
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 76. Added content-pulse-widget.tsx row to §1. Updated overview-tab-content.tsx row (now 3 panels, widget mounted FIRST). Added invariant #30 (Content Pulse widget wiring). Added 2 new Quick Reference entries. Added `/api/flipper/content-pulse` row to Frontend-only routes table.
+  - `worklog.md`: appended this iter 76 record.
+
+Stage Summary:
+- **F4 (Content Pulse widget) — DONE.** Two-column "Что фармить сегодня" card mounted on the Overview tab, visible on first dashboard load. 16 jest tests pass. tsc 0 errors.
+- **F1 (additional RU translations) — STILL BLOCKED.** No change from iter 75 — needs live poe2scout.com + poe2db.tw/ru/ access.
+- **Baseline:** jest 363 pass (+16), tsc 0 errors. pytest + e2e not re-run (frontend-only changes).
+- **Files changed/created (10 total):**
+  - `src/app/api/flipper/content-pulse/route.ts` (NEW, ~30 lines)
+  - `src/components/dashboard/content-pulse-widget.tsx` (NEW, ~400 lines)
+  - `src/components/dashboard/overview-tab-content.tsx` (modified: +9 lines — ContentPulseWidget import + ErrorBoundary-wrapped mount above MarketOverview)
+  - `src/lib/types.ts` (modified: +55 lines — ContentPulseMover + ContentPulseCategory + ContentPulseResponse)
+  - `src/lib/i18n/locales/en.ts` (modified: +17 lines — 17 new content-pulse keys + fallbackContentPulse)
+  - `src/lib/i18n/locales/ru.ts` (modified: +17 lines)
+  - `src/lib/i18n/locales/zh.ts` (modified: +17 lines)
+  - `src/lib/i18n/locales/ko.ts` (modified: +17 lines)
+  - `src/__tests__/content-pulse-widget.test.tsx` (NEW, ~425 lines, 16 tests)
+  - `STATUS.md` (rewritten — F4 marked Done)
+  - `PRODUCT_VISION.md` (updated — F4 marked Done)
+  - `AGENT_NAVIGATION.md` (updated — iter 76 wiring + invariant #30)
+  - `worklog.md` (this record)
+
+Next iteration (iter 77) — recommended priorities:
+1. **F5** — Speculation tab with z-score signals (BUY/SELL/HOLD). Extends existing flips-tab. Backend needs `z-score` computation in `backend/economy/pricing.py` (per PRODUCT_VISION §3.2 + §4 architecture table "Z-score / percentile TODO").
+2. **F1** — Still blocked on live API access. When available: write `scripts/sync_currency_names_from_poe2db.py` to enumerate all 625 POE2Scout api_ids + fetch RU names from poe2db.tw/ru/ for the ~276 missing. Update `currency_names.json` + bump assertion counts in `tests/test_currency_names_ru.py`.
+3. **F6** — Phase-aware hints (Temporalis mid/late league, skill gems 18-20 lvl). Uses PhaseDetector from `backend/economy/lifecycle.py`. Could be a small widget below the Content Pulse widget on the Overview tab, or a banner in the Speculation tab.
+4. **Full Content Pulse tab** — The F4 widget is the 1-glance MVP per §3.6. A full tab (all categories, sortable, filterable, with per-category drill-down) could be added later if the widget proves useful.
+5. **Optional tech debt** — `useDashboardData` hook extraction (~250 lines of useQuery/memo wiring from `dashboard-page.tsx`). Staged approach: (1) flipperBackend queries, (2) realms/leagues queries, (3) derived memos. Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+
+NOT done in iter 76 (intentionally deferred):
+- F1 (blocked on live API access)
+- F5 / F6 (further out in roadmap)
+- Full Content Pulse tab (the F4 widget is the MVP; full tab deferred until product feedback)
+- e2e tests not run (frontend changes are unit-tested via jest; e2e would require a running backend + browser)
+- useDashboardData hook extraction (optional, deferred)
+- Visual verification with real backend data (jest tests use mocked data; visual polish — colors, spacing, responsive layout on narrow screens — needs manual review against real /api/v1/content-pulse response)

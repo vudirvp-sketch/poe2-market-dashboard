@@ -824,6 +824,7 @@ const ko: Record<TranslationKeys, string> = {
   fallbackMarketOverview: "시장 개요",
   fallbackMarketHeatmap: "가격 히트맵",
   fallbackComparativeAnalytics: "비교 분석",
+  fallbackContentPulse: "Content Pulse — 오늘 뭐 팔까",
   fallbackVolumeLiquidity: "거래량 및 유동성",
   fallbackArbitrageCalculator: "차익거래 계산기",
   fallbackFlips: "플립",
@@ -991,6 +992,24 @@ const ko: Record<TranslationKeys, string> = {
   storageValueHistoryMirrorLine: "통화 / 거울 비율",
   storageValueHistoryHinekoraLine: "통화 / 히네코라 비율",
   storageValueHistoryPointCount: "{0}개 포인트",
+  // F4 (iter 76) — Content Pulse widget on Overview tab
+  contentPulseTitle: "오늘 뭐 팔까",
+  contentPulseSubtitle: "리그 메커니즘별 거래량 신호 (7일 롤링 변화).",
+  contentPulseRising: "상승 — 파밍 가치 있음",
+  contentPulseFalling: "하락 — 당분간 피함",
+  contentPulseNoRising: "오늘은 강한 상승 신호가 없습니다.",
+  contentPulseNoFalling: "오늘은 강한 하락 신호가 없습니다.",
+  contentPulseNoMovers: "이 카테고리에는 아직 주목할 만한 아이템 움직임이 없습니다.",
+  contentPulse7d: "7일",
+  contentPulseVolumeToday: "오늘 거래량: {0}",
+  contentPulseItems: "{0}개 아이템",
+  contentPulseNoData: "Content Pulse 데이터를 아직 사용할 수 없습니다 — 스케줄러가 거래량 스냅샷을 먼저 수집해야 합니다.",
+  contentPulseNoSignals: "오늘은 강한 신호가 없습니다 — 모든 카테고리가 7일 롤링 범위 내에 있습니다 (±10%).",
+  contentPulseLoading: "Content Pulse 로딩 중...",
+  contentPulseError: "Content Pulse 로딩 실패. 백엔드에 문제가 있을 수 있습니다.",
+  contentPulseOffline: "Content Pulse는 분석 백엔드가 필요합니다. 이 위젯을 활성화하려면 FastAPI 백엔드를 시작하세요.",
+  contentPulseRefresh: "새로고침",
+  contentPulseFetchedAt: "가져온 시각: {0}",
 };
 
 export default ko;

@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-25 (iter 75 — F2 follow-up + F3 shipped)
+> **Last updated:** 2026-06-25 (iter 76 — F4 widget shipped)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -12,7 +12,7 @@ All P0/P1/P2/P3/P4 issues closed in iter 54–73. See `git log` for older histor
 
 The single remaining **optional** technical follow-up:
 
-> **`useDashboardData` hook extraction** (deferred from P2-1). `dashboard-page.tsx` is 1216 lines (was 1685 in iter 70). ~250 lines of `useQuery`/memo wiring could move into a hook. Approach in stages: (1) flipperBackend queries, (2) realms/leagues queries, (3) derived memos. Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
+> **`useDashboardData` hook extraction** (deferred from P2-1). `dashboard-page.tsx` is 1217 lines (was 1685 in iter 70). ~250 lines of `useQuery`/memo wiring could move into a hook. Approach in stages: (1) flipperBackend queries, (2) realms/leagues queries, (3) derived memos. Verify tsc + jest after each stage. Not blocking — file is now legitimate parent wiring.
 
 ---
 
@@ -21,9 +21,9 @@ The single remaining **optional** technical follow-up:
 | Feature | Status | Notes |
 |---------|--------|-------|
 | **F1** — Translate remaining ~276 items | **Blocked** | Cache-snapshot has 138 unique api_ids, all already translated. The "276 missing" claim comes from the iter 32 baseline of 625 total API items — but without live `poe2scout.com` API access (to enumerate the full 625) + `poe2db.tw/ru/` parsing (to fetch RU names), we cannot reliably extend the map. Risk of adding wrong RU names is high — deferred until live API access is available. |
-| **F2** — Storage Value UI tab | ✅ **Done (iter 74) + history chart (iter 75)** | Tab at `src/components/dashboard/storage-value-tab.tsx` (iter 74). Historical chart at `src/components/dashboard/storage-value-history-chart.tsx` (iter 75) — wraps new endpoint `/api/v1/storage-value/{currency}/history` to render an SVG line chart of `currency/mirror` and `currency/hinekora` ratios over the last 30 days. |
-| **F3** — `content_pulse` module | ✅ **Done (iter 75)** | New `backend/economy/content_pulse.py` (pure function) + `backend/api/routes_content_pulse.py` (route handler). Endpoint `GET /api/v1/content-pulse` returns per-category daily turnover + 7d/30d rolling averages + delta_pct + signal (rising/falling/stable) + top-3 rising/falling items per category. 44 pytest tests in `tests/test_content_pulse.py`. |
-| **F4** — «Что фармить сегодня» widget | TODO | Card on the main dashboard: 1-2 rising + 1-2 falling mechanics with rationale. Will consume the F3 endpoint. |
+| **F2** — Storage Value UI tab | ✅ **Done (iter 74 + iter 75)** | Tab at `src/components/dashboard/storage-value-tab.tsx`. Historical chart at `src/components/dashboard/storage-value-history-chart.tsx` (iter 75) — wraps new endpoint `/api/v1/storage-value/{currency}/history`. |
+| **F3** — `content_pulse` module | ✅ **Done (iter 75)** | `backend/economy/content_pulse.py` (pure function) + `backend/api/routes_content_pulse.py`. Endpoint `GET /api/v1/content-pulse` returns per-category daily turnover + 7d/30d rolling + signal + top-3 rising/falling movers. 44 pytest tests. |
+| **F4** — «Что фармить сегодня» widget | ✅ **Done (iter 76)** | `src/components/dashboard/content-pulse-widget.tsx` (~400 lines). Wired into `overview-tab-content.tsx` ABOVE MarketOverview so it shows on first dashboard load. Two-column card: top rising categories (with top_rising items as rationale) + top falling categories (with top_falling items). Next.js proxy at `/api/flipper/content-pulse/route.ts`. 16 jest tests. Graceful degradation: offline / loading / error / no-data / no-signals / mixed. |
 | **F5** — Speculation tab with z-score signals | TODO | BUY/SELL/HOLD signals with z-score vs 30-day rolling. Extends existing flips-tab. |
 | **F6** — Phase-aware hints | TODO | Temporalis mid/late league, skill gems 18-20 lvl, etc. Uses `PhaseDetector` from `backend/economy/lifecycle.py`. |
 
@@ -43,3 +43,5 @@ The single remaining **optional** technical follow-up:
 | Storage Value history chart shows "no history" | Either the currency has <2 price points in the last 30 days, OR all mirror/hinekora ratios are null (mirror/hinekora not traded in the same window). | `backend/economy/storage_value_history.py:compute_storage_value_history` |
 | `/api/v1/content-pulse` returns `data_available: false` | Snapshot not yet loaded, or no items in any configured category. Wait for the scheduler to populate `price_histories` from ByCategory. | `backend/api/routes_content_pulse.py:get_content_pulse` |
 | Content Pulse `delta_7d_pct` is `null` | No historical price_logs for any item in that category — only today's volume is known. Not a bug — the rolling average needs ≥1 day of history. | `backend/economy/content_pulse.py:_rolling_mean` |
+| Content Pulse widget shows "no signals today" | All categories have `signal="stable"` (|delta_7d_pct| < 10%). This is correct behavior — the widget only surfaces strong signals. Wait for the market to move or adjust `SIGNAL_RISING_THRESHOLD_PCT` / `SIGNAL_FALLING_THRESHOLD_PCT` constants in `content_pulse.py` if you want more sensitivity. | `backend/economy/content_pulse.py:_signal_from_delta` |
+| Content Pulse widget shows "no movers" for a category | The category has a signal (rising/falling) but its individual items don't have ≥2 price points yet, so per-item trend can't be computed. Not a bug — will populate as the scheduler collects more data. | `backend/economy/content_pulse.py:_top_movers` |

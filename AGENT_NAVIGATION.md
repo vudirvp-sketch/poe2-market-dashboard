@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 75 — F2 follow-up + F3 shipped).
+> **Single entry point** for codebase navigation. Updated 2026-06-25 (iter 76 — F4 widget shipped).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -54,9 +54,10 @@
 | `src/components/dashboard/exchange-tab-content.tsx` | Exchange tab content (**P2-1 iter 71**) | Pure presentational component. Takes all state as props from `Dashboard` — no store/i18n imports of its own. Pattern reused by the iter 72-73 extractions. |
 | `src/components/dashboard/currencies-tab-content.tsx` | Currencies tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, virtual-vs-static grid switch, pagination. |
 | `src/components/dashboard/uniques-tab-content.tsx` | Uniques tab content (**P2-1 iter 72**) | Pure presentational. Owns data-freshness badge, loading/empty/error states, UniqueTable, pagination. |
-| `src/components/dashboard/overview-tab-content.tsx` | Overview tab content (**P2-1 iter 72**) | Pure presentational. Composes MarketOverview + ComparativeChart, each wrapped in its own ErrorBoundary. |
+| `src/components/dashboard/overview-tab-content.tsx` | Overview tab content (**P2-1 iter 72**, updated iter 76) | Pure presentational. Composes 3 panels, each wrapped in its own ErrorBoundary: ContentPulseWidget (F4 iter 76, mounted FIRST for first-load visibility) + MarketOverview + ComparativeChart. |
 | `src/components/dashboard/storage-value-tab.tsx` | Storage Value tab (**F2 iter 74 + iter 75**) | Wraps the existing `/api/v1/storage-value/{currency}` endpoint. Lazy-loaded, ErrorBoundary-wrapped. Currency picker (default list of 14 canonical currencies) + horizon picker (1/6/24/48/168h) + quantity input + Compute button. Renders: decision card (BUY_HOLD / SELL_CONVERT / NEUTRAL with hint), projection breakdown (current/projected/risk-discount/adjusted/net/ratio), holdings totals (×quantity), inputs panel (momentum/volatility/acceleration/liquidity/α/horizon), historical chart (iter 75). Full i18n (en/ru/zh/ko). Backend offline → offline card with start-backend hint. data_available=false → "no price history" notice. 12 jest tests in `src/__tests__/storage-value-tab.test.tsx`. |
 | `src/components/dashboard/storage-value-history-chart.tsx` | Storage Value history chart (**F2 follow-up iter 75**) | Dependency-free SVG line chart (~290 lines) rendering two ratios: `currency/mirror` (blue) and `currency/hinekora` (emerald). Fetches via `useQuery` bound to `/api/flipper/storage-value/[currency]/history?days=30`. Graceful degradation: <2 points → "no history" notice; all-null ratios → "no reference data" notice; loading → spinner text. 11 jest tests in `src/__tests__/storage-value-history-chart.test.tsx`. |
+| `src/components/dashboard/content-pulse-widget.tsx` | Content Pulse widget — «Что фармить сегодня» (**F4 iter 76**) | Two-column card showing top rising (emerald) + falling (red) league mechanic categories with per-category `delta_7d_pct` badge + top-3 movers (`trend_pct` per item). Fetches via `useQuery` (60s staleTime) bound to `/api/flipper/content-pulse`. Mounted FIRST in `overview-tab-content.tsx` (above MarketOverview) so it's visible on first dashboard load — wrapped in its own `<ErrorBoundary>`. Graceful degradation: backendOffline → compact amber notice (no full-card takeover); loading → spinner text; error → error card + refresh button; data_available=false → "no data yet"; all categories stable → "no signals today"; empty top_rising/top_falling → "no movers" per category. `maxPerSide` prop (default 2) caps category count per column. 16 jest tests in `src/__tests__/content-pulse-widget.test.tsx`. |
 
 ## 2. Build & Run Commands
 
@@ -113,6 +114,8 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 29. **Content Pulse endpoint** (F3, iter 75). `GET /api/v1/content-pulse` returns per-category trade volume + 7d/30d rolling deltas + top movers. The heavy lifting is in `backend/economy/content_pulse.py:compute_content_pulse()` — a **pure function** (no side effects, no I/O) that takes a `DataSnapshot` + `AppConfig` and returns a dict. The route handler in `routes_content_pulse.py` is a thin wrapper that fetches the snapshot and calls the function. This separation makes the logic testable without spinning up FastAPI. Signal thresholds are module-level constants (NOT in config.yaml): `SIGNAL_RISING_THRESHOLD_PCT=10.0`, `SIGNAL_FALLING_THRESHOLD_PCT=-10.0`. `delta_7d_pct` is `null` (not 0) when there's no historical data — the frontend should treat `null` as "no signal yet" rather than "stable". Categories with no items in the snapshot still emit a row (with `item_count: 0`) so the UI can render "0 items / no data" rather than hiding the category entirely.
 
+30. **Content Pulse widget wiring** (F4, iter 76). The widget at `src/components/dashboard/content-pulse-widget.tsx` is mounted FIRST inside `overview-tab-content.tsx` — ABOVE MarketOverview — so users see actionable farming signals on first dashboard load. The widget is wrapped in its own `<ErrorBoundary fallbackTitle={t("fallbackContentPulse")}>` so a render failure in the widget doesn't blank out MarketOverview or ComparativeChart. The widget consumes `/api/flipper/content-pulse` (Next.js proxy → `/api/v1/content-pulse`) via `useQuery` with 60s staleTime (rolling 7d average changes slowly). `maxPerSide` prop (default 2) caps how many rising + falling categories are shown — keep this small to preserve the 1-glance UX per PRODUCT_VISION §3.6. The widget only surfaces categories with `signal="rising"` or `signal="falling"` (|delta_7d_pct| ≥ 10%); stable categories are filtered out as noise.
+
 ## 4. Known Issues
 
 **All technical-debt issues are closed** (P0=0, P1=0, P2=0, P3=0, P4=0). Switch focus to product features in `PRODUCT_VISION.md` (F1–F6). See `STATUS.md` for the current product-feature status table.
@@ -134,6 +137,8 @@ Quick reference for the most common symptoms:
 | Storage Value history chart shows "no history" | Currency has <2 price points in last 30 days, OR all mirror/hinekora ratios are null. | F2 (done) |
 | `/api/v1/content-pulse` returns `data_available: false` | Snapshot not loaded yet, OR no items in any configured category. | F3 (done) |
 | Content Pulse `delta_7d_pct` is `null` | No historical price_logs for any item in that category — only today's volume is known. Not a bug. | F3 (done) |
+| Content Pulse widget shows "no signals today" | All categories have `signal="stable"` (|delta_7d_pct| < 10%). Correct behavior — widget only surfaces strong signals. | F4 (done) |
+| Content Pulse widget shows "no movers" for a category | Category has signal but its items lack ≥2 price points to compute per-item trend. Will populate as scheduler collects more data. | F4 (done) |
 
 ## 5. API Endpoints (all REST under `/api/v1/`)
 
@@ -176,6 +181,7 @@ Quick reference for the most common symptoms:
 |--------|------|-------------|
 | GET | `/api/flipper/health` | Proxies backend `/health` |
 | GET | `/api/flipper/health/circuit-breakers` | **P2-6 iter 67** — JSON snapshot of per-endpoint circuit breaker state |
+| GET | `/api/flipper/content-pulse` | **F4 (iter 76)** — Next.js proxy to `/api/v1/content-pulse`. Returns empty `categories: []` + `dataAvailable: false` when backend is offline. |
 | GET | `/api/flipper/{resource}` | Proxies to FastAPI `{resource}` (currencies, prices, flips, etc.) |
 
 (WebSocket endpoints removed in iter 58.)

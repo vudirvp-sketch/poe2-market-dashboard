@@ -377,6 +377,60 @@ export interface StorageValueHistoryResponse {
   fetchedAt: string;
 }
 
+// ============================================================================
+// Content Pulse (F3 backend / F4 widget, iter 75 + iter 76)
+// ============================================================================
+
+/** A single rising/falling item within a content-pulse category.
+ *  Backend (Pydantic) shape: ContentPulseMoverData. */
+export interface ContentPulseMover {
+  /** Item API identifier (e.g. "circle-coin", "breachstone"). */
+  apiId: string;
+  /** Display name (EN) — backend returns `text` field, proxy camelCases to `apiId`/`text`.
+   *  We keep `text` here to match the backend field name. */
+  text: string;
+  /** Price % change over the available price_logs window. */
+  trendPct: number;
+  /** Current price in base currency. */
+  currentPrice: number;
+}
+
+/** Per-category turnover snapshot + rolling deltas + top movers.
+ *  Backend (Pydantic) shape: ContentPulseCategoryData. */
+export interface ContentPulseCategory {
+  /** League mechanic category (e.g. "ritual", "breach"). */
+  category: string;
+  /** Sum of CurrentQuantity across all items in the category today. */
+  todayVolume: number;
+  /** Mean daily volume over the last 7 days. */
+  rolling7d: number;
+  /** Mean daily volume over the last 30 days. */
+  rolling30d: number;
+  /** (today / rolling_7d - 1) * 100. Null when no historical data. */
+  delta7dPct: number | null;
+  /** (today / rolling_30d - 1) * 100. Null when no historical data. */
+  delta30dPct: number | null;
+  /** "rising" | "falling" | "stable" (based on delta_7d_pct ±10%). */
+  signal: "rising" | "falling" | "stable";
+  /** Number of items in this category. */
+  itemCount: number;
+  /** Top-3 items with positive % price change. */
+  topRising: ContentPulseMover[];
+  /** Top-3 items with negative % price change. */
+  topFalling: ContentPulseMover[];
+}
+
+/** Response for GET /api/flipper/content-pulse (F3/F4, iter 75 + iter 76). */
+export interface ContentPulseResponse {
+  league: string;
+  /** Per-category pulse data, sorted by |delta_7d_pct| desc. */
+  categories: ContentPulseCategory[];
+  /** Whether any category had items in the snapshot. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+}
+
 // Types previously in poe2api.ts — now consolidated here
 
 export interface ExchangeSnapshot {

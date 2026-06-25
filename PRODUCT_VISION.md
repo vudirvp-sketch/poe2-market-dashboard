@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 75 — F2 follow-up + F3 shipped)
+> Last updated: 2026-06-25 (iter 76 — F4 widget shipped)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -112,7 +112,8 @@ Abyss, Incursion) показывать:
 | API | `/api/v1/analyst/summary` | `routes_analyst.py` (существует, расширить) |
 | API | `/api/v1/content-pulse` | ✅ `routes_content_pulse.py` (iter 75) — top farming suggestions |
 | UI | Tab «Storage Value» (decision card + projection breakdown + historical chart) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74) + `storage-value-history-chart.tsx` (iter 75). |
-| UI | Tab «Content Pulse» (что фармить сегодня) | TODO — главный экран после входа (F4 widget) |
+| UI | Widget «Content Pulse — Что фармить сегодня» (top rising/falling mechanics + per-category movers) | ✅ `src/components/dashboard/content-pulse-widget.tsx` (iter 76). Mounted at the top of the Overview tab so it's visible on first dashboard load. |
+| UI | Tab «Content Pulse» (полная версия) | TODO — eventual full tab with all categories, sortable, filterable. F4 widget is the 1-glance MVP per §3.6. |
 | UI | Tab «Speculation» (z-score list, buy/sell suggestions) | TODO — расширить существующий flips-tab |
 
 ---
@@ -149,10 +150,18 @@ Abyss, Incursion) показывать:
   - `backend/api/routes_content_pulse.py` — route handler `GET /api/v1/content-pulse`.
   - Pydantic response models: `ContentPulseMoverData`, `ContentPulseCategoryData`, `ContentPulseResponse` в `backend/api/response_models.py`.
 
-### F4. Main dashboard widget «Что фармить сегодня»
+### F4. Main dashboard widget «Что фармить сегодня» — ✅ DONE iter 76
 - Карточка на главной странице: 1-2 механики с растущими ценами на лут
   (спрос превышает сокращающееся предложение).
 - 1-2 механики «избегать» — где предложение растёт быстрее спроса.
+- **Реализовано в iter 76:**
+  - `src/components/dashboard/content-pulse-widget.tsx` (~400 lines) — два-колоночная карточка: RISING (emerald) + FALLING (red). Каждая категория показывает `delta_7d_pct` badge + top-3 movers с их `trend_pct`. Footer с `fetched_at`.
+  - `src/app/api/flipper/content-pulse/route.ts` — Next.js proxy к `/api/v1/content-pulse`. Возвращает empty `categories: []` + `dataAvailable: false` в offline/insufficient-data состоянии.
+  - Wired в `overview-tab-content.tsx` ПЕРВЫМ (выше MarketOverview), обёрнут в `<ErrorBoundary>` — виден на первом входе в дашборд.
+  - TypeScript types: `ContentPulseMover`, `ContentPulseCategory`, `ContentPulseResponse` в `src/lib/types.ts`.
+  - i18n: 17 новых ключей × 4 locales (en/ru/zh/ko) включая `fallbackContentPulse`.
+  - 16 jest tests в `src/__tests__/content-pulse-widget.test.tsx`: offline / loading / error / no-data / no-signals / mixed / maxPerSide / refresh / empty-movers / fetched-at / proxy path / title / item-count.
+  - Graceful degradation: offline → compact amber notice; loading → spinner text; error → error card + refresh; data_available=false → "no data yet"; all stable → "no signals today".
 
 ### F5. Speculation tab — z-score + buy/sell suggestions
 - Для каждого предмета: z-score текущей цены vs 30-day rolling.
@@ -173,7 +182,7 @@ Abyss, Incursion) показывать:
 
 1. ✅ Все предметы в UI — на русском (или явно отмечены «нет перевода»).
 2. ✅ Есть отдельный экран «Storage Value» с историческим графиком относительно Mirror/Hinekora. **(iter 74 — карточка решения Hold/Sell готова; iter 75 — исторический график готов)**
-3. ⬜ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены). *(F4 widget — следующий шаг; backend уже готов через F3 `/api/v1/content-pulse`)*
+3. ✅ На главной — карточка «Что фармить сегодня» с конкретными механиками и обоснованием (обороты + цены). **(iter 76 — F4 widget готов, wired в Overview tab)**
 4. ⬜ Speculation tab даёт сигналы BUY/SELL/HOLD с z-score и горизонтом.
 5. ⬜ PhaseDetector влияет на подсказки (Temporalis mid/late league и т.д.).
 

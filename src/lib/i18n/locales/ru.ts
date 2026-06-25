@@ -757,6 +757,7 @@ const ru: Record<TranslationKeys, string> = {
   fallbackMarketOverview: "Обзор рынка",
   fallbackMarketHeatmap: "Тепловая карта рынка",
   fallbackComparativeAnalytics: "Сравнительная аналитика",
+  fallbackContentPulse: "Content Pulse — Что фармить сегодня",
   fallbackVolumeLiquidity: "Объём и ликвидность",
   fallbackArbitrageCalculator: "Калькулятор арбитража",
   fallbackFlips: "Флипы",
@@ -924,6 +925,24 @@ const ru: Record<TranslationKeys, string> = {
   storageValueHistoryMirrorLine: "валюта / Зеркало",
   storageValueHistoryHinekoraLine: "валюта / Хинекора",
   storageValueHistoryPointCount: "{0} точек",
+  // F4 (iter 76) — Content Pulse widget on Overview tab
+  contentPulseTitle: "Что фармить сегодня",
+  contentPulseSubtitle: "Сигналы оборота по механикам лиги (7-дневная скользящая дельта).",
+  contentPulseRising: "Растёт — стоит фармить",
+  contentPulseFalling: "Падает — пока избегать",
+  contentPulseNoRising: "Сегодня нет сильных растущих сигналов.",
+  contentPulseNoFalling: "Сегодня нет сильных падающих сигналов.",
+  contentPulseNoMovers: "В этой категории пока нет заметных движений предметов.",
+  contentPulse7d: "7д",
+  contentPulseVolumeToday: "Оборот сегодня: {0}",
+  contentPulseItems: "{0} предметов",
+  contentPulseNoData: "Данные Content Pulse пока недоступны — планировщику нужно сначала собрать снимки объёма сделок.",
+  contentPulseNoSignals: "Сегодня нет сильных сигналов — все категории в пределах 7-дневного коридора (±10%).",
+  contentPulseLoading: "Загрузка Content Pulse...",
+  contentPulseError: "Не удалось загрузить Content Pulse. Возможны проблемы с бэкендом.",
+  contentPulseOffline: "Content Pulse требует аналитический бэкенд. Запустите FastAPI бэкенд, чтобы включить виджет.",
+  contentPulseRefresh: "Обновить",
+  contentPulseFetchedAt: "Обновлено: {0}",
 };
 
 export default ru;

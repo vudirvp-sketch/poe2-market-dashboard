@@ -828,6 +828,7 @@ const en = {
   fallbackMarketOverview: "Market Overview",
   fallbackMarketHeatmap: "Market Heatmap",
   fallbackComparativeAnalytics: "Comparative Analytics",
+  fallbackContentPulse: "Content Pulse — What to Farm Today",
   fallbackVolumeLiquidity: "Volume & Liquidity",
   fallbackArbitrageCalculator: "Arbitrage Calculator",
   fallbackFlips: "Flips",
@@ -996,6 +997,24 @@ const en = {
   storageValueHistoryMirrorLine: "currency / Mirror ratio",
   storageValueHistoryHinekoraLine: "currency / Hinekora ratio",
   storageValueHistoryPointCount: "{0} points",
+  // F4 (iter 76) — Content Pulse widget on Overview tab
+  contentPulseTitle: "What to farm today",
+  contentPulseSubtitle: "Trade-volume signals per league mechanic (7-day rolling delta).",
+  contentPulseRising: "Rising — worth farming",
+  contentPulseFalling: "Falling — avoid for now",
+  contentPulseNoRising: "No strong rising signals today.",
+  contentPulseNoFalling: "No strong falling signals today.",
+  contentPulseNoMovers: "No notable item movers in this category yet.",
+  contentPulse7d: "7d",
+  contentPulseVolumeToday: "Today's volume: {0}",
+  contentPulseItems: "{0} items",
+  contentPulseNoData: "Content pulse data is not available yet — the scheduler needs to collect trade-volume snapshots first.",
+  contentPulseNoSignals: "No strong signals today — all categories are within their 7-day rolling range (±10%).",
+  contentPulseLoading: "Loading content pulse...",
+  contentPulseError: "Failed to load content pulse. The backend may be experiencing issues.",
+  contentPulseOffline: "Content pulse requires the analytics backend. Start the FastAPI backend to enable this widget.",
+  contentPulseRefresh: "Refresh",
+  contentPulseFetchedAt: "Fetched: {0}",
 } as const;
 
 export default en;
