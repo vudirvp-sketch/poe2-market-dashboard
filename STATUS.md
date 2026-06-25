@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-25 (iter 78 — F6 Phase-aware hints shipped)
+> **Last updated:** 2026-06-25 (iter 79 — F5 backtest shipped)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -24,7 +24,7 @@ The single remaining **optional** technical follow-up:
 | **F2** — Storage Value UI tab | ✅ **Done (iter 74 + iter 75)** | Tab at `src/components/dashboard/storage-value-tab.tsx`. Historical chart at `src/components/dashboard/storage-value-history-chart.tsx` (iter 75). |
 | **F3** — `content_pulse` module | ✅ **Done (iter 75)** | `backend/economy/content_pulse.py` + `backend/api/routes_content_pulse.py`. Endpoint `GET /api/v1/content-pulse`. 44 pytest tests. |
 | **F4** — «Что фармить сегодня» widget | ✅ **Done (iter 76)** | `src/components/dashboard/content-pulse-widget.tsx` (~400 lines). Wired into `overview-tab-content.tsx` ABOVE MarketOverview. 16 jest tests. |
-| **F5** — Speculation tab with z-score signals | ✅ **Done (iter 77)** | `backend/economy/speculation.py` + `backend/api/routes_speculation.py`. Endpoint `GET /api/v1/speculation?days=30&limit=50&signal=ALL`. `src/components/dashboard/speculation-tab.tsx` (~480 lines) wired as dashboard tab. 43 pytest + 22 pricing + 18 jest tests. |
+| **F5** — Speculation tab with z-score signals | ✅ **Done (iter 77 + iter 79 backtest)** | Live signals: `backend/economy/speculation.py` + `backend/api/routes_speculation.py`. Endpoint `GET /api/v1/speculation?days=30&limit=50&signal=ALL`. `src/components/dashboard/speculation-tab.tsx` (~480 lines). 43 pytest + 22 pricing + 18 jest tests. **Backtest (iter 79):** `backend/economy/speculation_backtest.py` + `backend/api/routes_speculation_backtest.py`. Endpoint `GET /api/v1/speculation/backtest?eval_days_ago=14&holding_days=7&lookback_days=30&limit=50&signal=ALL`. Returns per-trade results + per-signal aggregates (count, win_rate, mean/median/best/worst return_pct). 54 pytest tests. No frontend UI yet — backend-only. |
 | **F6** — Phase-aware hints | ✅ **Done (iter 78)** | `backend/economy/phase_hints.py` (pure function with hardcoded hint table for EARLY/MID/LATE phases — Temporalis, skill gems 18-20 lvl, vault keys, Breach/Ritual catalysts, triangular arb, portfolio hold). `backend/api/routes_phase_hints.py`. Endpoint `GET /api/v1/phase-hints`. `src/components/dashboard/phase-hints-widget.tsx` (~280 lines) wired below Content Pulse widget on Overview tab. 61 pytest + 26 jest tests. Uses existing `PhaseDetector` from `backend/economy/lifecycle.py` — does NOT depend on DataSnapshot (hint table is hardcoded). |
 
 ---
@@ -50,3 +50,6 @@ The single remaining **optional** technical follow-up:
 | Speculation z-score is null for an item | Item has <2 valid price points, OR all prices are identical (std=0). Both → `compute_zscore` returns None → item is excluded from the result list. | `backend/economy/pricing.py:compute_zscore` |
 | `/api/v1/phase-hints` returns `data_available: false` | Only happens if PhaseDetector cannot be constructed (e.g. config.league.league_start_date is invalid). Otherwise always True — hint table is hardcoded. | `backend/api/routes_phase_hints.py:get_phase_hints_route` |
 | Phase hints widget shows wrong phase | Phase is computed from `days_since_reference` since `league_start_datetime` (or last `major_patch` event). Check `config.yaml:league.league_start_date` matches the actual league start. | `backend/economy/lifecycle.py:PhaseDetector` |
+| `/api/v1/speculation/backtest` returns `data_available: false` | Snapshot not loaded yet, OR no item has price_logs spanning both the eval timestamp (`now - eval_days_ago`) and exit timestamp (`entry + holding_days`). Try widening `eval_days_ago` (e.g. 30 instead of 14) to capture older price_logs. | `backend/api/routes_speculation_backtest.py:get_speculation_backtest` |
+| Speculation backtest returns `evaluated_count=0` but `unevaluated_count>0` | Items have an actionable signal (BUY/SELL) at the entry timestamp, but no price log within 24h of the exit timestamp — the holding period extends past the last observed price. Either decrease `holding_days` or wait for the scheduler to collect more data. | `backend/economy/speculation_backtest.py:backtest_speculation_signals` |
+| Speculation backtest `trades` list is shorter than `overall_stats.count` | The `limit` query param caps the per-trade list (default 50, max 500), but `*_stats` blocks are computed over ALL trades. If you need the full list, raise `limit`. | `backend/economy/speculation_backtest.py:backtest_speculation_signals` |

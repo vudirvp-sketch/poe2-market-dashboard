@@ -484,3 +484,102 @@ NOT done in iter 78 (intentionally deferred):
 - e2e tests not run (frontend changes are unit-tested via jest; e2e would require running backend + browser)
 - useDashboardData hook extraction (optional, deferred)
 - Visual verification with real backend data (jest tests use mocked data; visual polish — colors, spacing, responsive layout on narrow screens — needs manual review against real /api/v1/phase-hints response)
+
+---
+Task ID: iter-79
+Agent: main (Sonnet 4.5)
+Task: iter 79 — Implement F5 backtest: measure profitability of z-score BUY/SELL/HOLD signals on historical price_logs. Backend + tests + docs. No frontend UI in this iter (deferred — backend-only is the safe minimum scope per "better underdo than break" rule).
+
+Work Log:
+- Read STATUS.md / PRODUCT_VISION.md / AGENT_NAVIGATION.md / worklog.md iter 78 record to understand the state. Confirmed all 5 DoD points already ✅ in iter 78 — F5 backtest was the recommended next priority per iter 78 worklog ("most valuable next-step from a product-quality perspective").
+- F5 backtest design — minimum viable scope:
+  - Pure-function module `backend/economy/speculation_backtest.py` with `backtest_speculation_signals(snapshot, config, eval_days_ago=14, holding_days=7, lookback_days=30, limit=50, signal_filter="ALL", now=None)`.
+  - For each item: find entry_price (nearest price log to `now - eval_days_ago` within 24h tolerance), compute z-score of entry vs `[entry - lookback_days, entry)` window (strictly BEFORE entry — no signal leak), map to BUY/SELL/HOLD, find exit_price (nearest to `entry + holding_days` within 24h tolerance), compute realized return:
+    - BUY:  `(exit - entry) / entry * 100` (profit when price rises — bought low, expect mean reversion up)
+    - SELL: `(entry - exit) / entry * 100` (profit when price falls — short-sale equivalent)
+    - HOLD: skip (no position taken; counted in `signal_breakdown.HOLD` but not in `trades`).
+  - Reuses `compute_zscore` from `backend/economy/pricing.py` (same thresholds as live signals) + `_extract_prices` + `_signal_from_zscore` + `Z_BUY_THRESHOLD` / `Z_SELL_THRESHOLD` / `MIN_SAMPLE_SIZE` from `backend/economy/speculation.py` — guarantees backtest uses the same strategy as the live signal.
+  - Returns per-trade results (`trades` list sorted by |return_pct| desc, capped by `limit`) + per-signal aggregates (`buy_stats` / `sell_stats` / `overall_stats` — each with count, win_rate, mean/median/best/worst return_pct) + `signal_breakdown` ({BUY, SELL, HOLD} counts) + `evaluated_count` / `unevaluated_count` (actionable signal but no exit price within tolerance) + `data_available` / `fetched_at` / `eval_days_ago` / `holding_days` / `lookback_days`.
+  - Aggregates computed over ALL trades, not just the `limit`-capped list — `limit` only narrows the response payload.
+  - Separate endpoint `GET /api/v1/speculation/backtest` — NOT a query-param mode on `/api/v1/speculation`. Rationale: backtest is significantly more expensive than the live signal (iterates every item with enough price history), keeping it as a separate route makes the cost opt-in.
+  - No frontend UI in this iter — backend-only. A small "Backtest" panel below the Speculation list can be added in a follow-up iter without breaking anything.
+
+- Backend — `backend/economy/speculation_backtest.py` (NEW, ~340 lines):
+  - Tunable constants at module top: `DEFAULT_EVAL_DAYS_AGO=14`, `DEFAULT_HOLDING_DAYS=7`, `DEFAULT_LOOKBACK_DAYS=30`, `DEFAULT_LIMIT=50`, `TOLERANCE_HOURS=24` (matches `storage_value_history.py:_NEAREST_PRICE_TOLERANCE_HOURS`).
+  - Helper `_find_price_at(history, target, tolerance_hours)` — nearest (timestamp, price) to target within tolerance. Returns None when no point within tolerance. Handles timezone-naive datetimes (treats as UTC).
+  - Helper `_build_trade_entry(api_id, text, category, signal, entry_price, entry_ts, exit_price, exit_ts, z_score, sample_size)` — builds a single per-item trade dict. Implements the return sign convention (BUY: +exit-entry, SELL: +entry-exit). Edge case: entry_price=0 → return_pct=0.0 (avoids div-by-zero).
+  - Helper `_stats_block(returns)` — computes count, win_rate (% of returns > 0), mean_return_pct, median_return_pct, best_return_pct, worst_return_pct. Returns zeroed block for empty list.
+  - Main entry point `backtest_speculation_signals()` — clamps inputs (eval_days_ago [1,365], holding_days [1,90], lookback_days [1,90], limit [1,500]), defaults invalid signal_filter to "ALL". Iterates `snapshot.currencies.values()`, extracts price_logs in a wide enough window (eval_days_ago + lookback_days + 7 padding), finds entry, computes z-score baseline (strictly BEFORE entry_ts), finds exit, builds trade entry. Skips items with: no ApiId, no price_logs, no entry within tolerance, <MIN_SAMPLE_SIZE baseline points, std=0 baseline (z=None → HOLD), no exit within tolerance (incremented `unevaluated_count`).
+  - Sorts trades by |return_pct| desc — most impactful (positive OR negative) trades first. Applies `limit` AFTER sort (so the most impactful trades are kept).
+  - Aggregates computed over the FILTERED set (after signal_filter applied) — matches the live `/api/v1/speculation` behaviour.
+
+- Backend — `backend/api/routes_speculation_backtest.py` (NEW, ~140 lines):
+  - Route handler `GET /api/v1/speculation/backtest` (router prefix `/api/v1`, tag `speculation-backtest`).
+  - Query params validated by FastAPI: `eval_days_ago` (ge=1, le=365), `holding_days` (ge=1, le=90), `lookback_days` (ge=1, le=90), `limit` (ge=1, le=500), `signal` (pattern=^(ALL|BUY|SELL|HOLD)$).
+  - When snapshot manager has no snapshot → returns `data_available=False` + empty trades + zeroed stats blocks (no 500, no 503). Matches the pattern in `routes_speculation.py`.
+  - On exception in `backtest_speculation_signals` → logs error + returns the same empty/zeroed response (no 500).
+
+- Backend — `backend/api/response_models.py` (extended):
+  - Added 3 new Pydantic models: `SpeculationBacktestTradeData` (per-trade record: api_id, text, category, signal, entry_price, entry_date, exit_price, exit_date, return_pct, z_score_at_entry, sample_size_at_entry) + `SpeculationBacktestStatsBlock` (count, win_rate, mean/median/best/worst return_pct) + `SpeculationBacktestResponse` (league, trades, signal_breakdown, evaluated_count, unevaluated_count, buy_stats, sell_stats, overall_stats, data_available, fetched_at, eval_days_ago, holding_days, lookback_days). All fields documented with `Field(description=...)` for OpenAPI generation.
+
+- Backend — `backend/main.py` (extended):
+  - Registered `routes_speculation_backtest.router` after `routes_speculation.router` (inside try/except for graceful degradation). F5 follow-up comment block added.
+
+- Backend — `tests/test_speculation_backtest.py` (NEW, ~640 lines, 54 tests):
+  - 5 test classes: `TestFindPriceAt` (6 tests), `TestStatsBlock` (5), `TestBuildTradeEntry` (6), `TestBacktest*` pure-function tests (33 in 6 subclasses: TestBacktestEmpty / TestBacktestBuyScenario / TestBacktestSellScenario / TestBacktestHoldScenario / TestBacktestEdgeCases / TestBacktestFiltersAndLimit / TestBacktestInputClamping / TestBacktestFieldNameDefence / TestBacktestResponseShape), `TestRouteHandler` (5 async smoke tests).
+  - Tests use the same `SimpleNamespace`-based mock pattern as `tests/test_speculation.py` — no real DataSnapshot needed.
+  - Coverage:
+    - Helpers: empty history, exact match, nearest match within tolerance, beyond tolerance, naive datetime target/history, snake_case field name defence.
+    - Pure function: empty snapshot, no price_logs, BUY scenario (positive return on reversion up + negative return when price keeps falling), SELL scenario (positive return on reversion down), HOLD scenario (not in trades but counted in breakdown), std=0 baseline (skipped → HOLD), insufficient baseline sample size (skipped), no entry within tolerance (skipped), no exit within tolerance (unevaluated_count incremented), signal_filter BUY/SELL/HOLD, limit caps trades list but aggregates over ALL, trades sorted by |return_pct| desc, input clamping (eval_days_ago / holding_days / lookback_days / limit / invalid signal_filter), snake_case field names accepted, non-dict currency skipped, missing api_id skipped, response shape (all required fields), stats block shape, trade entry shape, fetched_at ISO string, league name pass-through.
+    - Route handler: no-snapshot returns empty + zeroed stats blocks, snapshot available returns trades, query params forwarded (eval_days_ago / holding_days / lookback_days / limit / signal all respected), exception returns data_available=False, no-snapshot returns zeroed stats blocks (not absent).
+
+- Smoke tests (manual verification during dev):
+  - `from backend.economy.speculation_backtest import backtest_speculation_signals` + `_find_price_at` + `_stats_block` + `_build_trade_entry` → imports OK.
+  - `from backend.api.routes_speculation_backtest import router, get_speculation_backtest` → imports OK, route path `/api/v1/speculation/backtest`.
+  - `from backend.main import app; [r.path for r in app.routes if 'speculation' in r.path]` → `['/api/v1/speculation', '/api/v1/speculation/backtest']` (both routes registered).
+  - Empty snapshot: `data_available=False`, `evaluated_count=0`, `trades=[]`.
+  - BUY scenario: baseline mean=100 std≈2.4, entry=80, exit=95 → BUY signal, return_pct=18.75%, win_rate=100%, z_score_at_entry≈-9.26.
+  - SELL scenario: baseline mean=100, entry=130, exit=110 → SELL signal, return_pct=15.38%, win_rate=100%.
+  - Route handler with no snapshot: returns `data_available=False`, zeroed stats blocks, `eval_days_ago=14`, `holding_days=7`, `lookback_days=30`.
+
+- Verification:
+  - `PYTHONPATH=. python -m pytest tests/test_speculation_backtest.py -v` → 54 pass / 0 fail (1.24s).
+  - `PYTHONPATH=. python -m pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py` → **731 pass** (677 baseline + 54 new backtest tests). 0 fail. (~29s.)
+    - Note: `tests/test_scheduler.py` excluded because `aiosqlite` is not installed in this dev env (documented in STATUS.md Quick Reference as a known issue — not a regression).
+
+- Documentation updates:
+  - `STATUS.md`: bumped "Last updated" to iter 79. F5 row expanded with iter 79 backtest implementation details (endpoint, returns shape, test count). Added 3 new Quick Reference entries (backtest endpoint "data_available=false", "evaluated_count=0 but unevaluated_count>0", "trades list shorter than overall_stats.count").
+  - `PRODUCT_VISION.md`: bumped "Last updated" to iter 79. §3.2 added "Бэктестить сигналы на исторических данных" bullet marked ✅ iter 79 with endpoint summary. §4 architecture table added `/api/v1/speculation/backtest` row. §5 F5 section: title updated to "iter 77 (live signals) + iter 79 (backtest)"; backtest bullet marked ✅ iter 79; added full "Реализовано в iter 79 (backtest)" subsection with all implementation details (pure function, route handler, response models, test count, reuse strategy, tolerance, baseline window, no frontend UI, aggregates over ALL trades).
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 79. Added `speculation_backtest.py` row to §1 (with reuse notes + tolerance + baseline window note). Added `routes_speculation_backtest.py` row to §1 (with query param validation rules). Added invariant #33 (Speculation backtest is a SEPARATE endpoint — rationale, reuse strategy, tolerance, aggregates over ALL trades, return sign convention, no frontend UI yet). Added 3 new Quick Reference entries (backtest data_available=false, evaluated_count=0 + unevaluated_count>0, trades list shorter than overall_stats.count). Added `/api/v1/speculation/backtest` row to API table.
+  - `worklog.md`: appended this iter 79 record.
+
+Stage Summary:
+- **F5 backtest (z-score BUY/SELL/HOLD strategy profitability on historical price_logs) — DONE (backend + tests + docs).** New endpoint `GET /api/v1/speculation/backtest?eval_days_ago=14&holding_days=7&lookback_days=30&limit=50&signal=ALL`. New pure function `backtest_speculation_signals()` in `backend/economy/speculation_backtest.py`. 54 pytest tests. Backend-only — no frontend UI in this iter.
+- **F1 (additional RU translations) — STILL BLOCKED.** No change from iter 78 — needs live poe2scout.com + poe2db.tw/ru/ access.
+- **Baseline:** pytest 731 pass (+54), tsc/jest unchanged (no frontend changes in this iter).
+- **Files changed/created (7 total):**
+  - `backend/economy/speculation_backtest.py` (NEW, ~340 lines)
+  - `backend/api/routes_speculation_backtest.py` (NEW, ~140 lines)
+  - `backend/api/response_models.py` (modified: +60 lines — 3 Backtest models)
+  - `backend/main.py` (modified: +8 lines — register backtest router)
+  - `tests/test_speculation_backtest.py` (NEW, ~640 lines, 54 tests)
+  - `STATUS.md` (updated — F5 row expanded + 3 Quick Reference entries)
+  - `PRODUCT_VISION.md` (updated — §3.2 + §4 architecture table + §5 F5 section with iter 79 subsection)
+  - `AGENT_NAVIGATION.md` (updated — iter 79 wiring + invariant #33 + 3 Quick Reference entries + 1 API row + 2 new module rows in §1)
+  - `worklog.md` (this record)
+
+Next iteration (iter 80) — recommended priorities:
+1. **F5 backtest frontend UI** — small "Backtest" panel below the Speculation list showing aggregated metrics: overall win_rate + mean_return_pct + best/worst trade + per-signal (BUY/SELL) breakdown. Toggle button to fetch (doesn't auto-load — backtest is compute-heavy). Eval/holding/lookback day selectors. Lazy-loaded. This is a safe additive change — no existing UI is modified, just a new card below the existing list.
+2. **F1 (when live API available)** — `scripts/sync_currency_names_from_poe2db.py`: enumerate 625 api_ids, fetch poe2db.tw/ru/, update `currency_names.json`, bump assertion counters in `tests/test_currency_names_ru.py`.
+3. **Full Content Pulse tab** — F4 widget is the MVP; full version with sorting/filters/drill-down if widget proves useful.
+4. **Phase hints enhancements** (optional) — pull hints from `config.yaml` instead of hardcoding; add per-pattern metrics by cross-referencing the snapshot's `price_histories`; filter hints based on actual market state (e.g. only show "Temporalis near peak" if its 7d momentum is positive).
+5. **useDashboardData hook extraction** (optional, tech debt) — `dashboard-page.tsx` is 1217 lines; ~250 lines of `useQuery`/memo wiring could move into a hook. Staged approach. Not blocking.
+
+NOT done in iter 79 (intentionally deferred):
+- F5 backtest frontend UI (backend-only shipped — UI is a safe additive follow-up)
+- F1 (blocked on live API access)
+- Full Content Pulse tab (the F4 widget is the MVP; full tab deferred until product feedback)
+- Phase hints enhancements (hardcoded MVP shipped — config-driven hints + per-pattern metrics deferred)
+- e2e tests not run (frontend changes are unit-tested via jest; e2e would require running backend + browser)
+- useDashboardData hook extraction (optional, deferred)
+- Visual verification with real backend data (jest tests use mocked data; manual verification of the backtest endpoint against real snapshot data — e.g. confirming that `eval_days_ago=14` with `holding_days=7` produces sensible trade counts on a live league — needs a running backend with ≥21d of price_logs collected)

@@ -671,6 +671,52 @@ class SpeculationResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Speculation backtest (F5 follow-up, iter 79)
+# ---------------------------------------------------------------------------
+
+class SpeculationBacktestTradeData(BaseModel):
+    """A single realised trade from the backtest."""
+    api_id: str = Field(description="Item API identifier")
+    text: str = Field(description="Display name (EN)")
+    category: str = Field(description="League mechanic category (e.g. 'ritual', 'breach'). Empty if unknown.")
+    signal: str = Field(description="Signal at entry: 'BUY' (z<-1.5) | 'SELL' (z>+1.5). HOLD signals never produce trades.")
+    entry_price: float = Field(description="Price at entry (nearest price log to t_eval within 24h tolerance)")
+    entry_date: str = Field(description="ISO 8601 timestamp of the entry price log")
+    exit_price: float = Field(description="Price at exit (nearest price log to t_eval+holding_days within 24h tolerance)")
+    exit_date: str = Field(description="ISO 8601 timestamp of the exit price log")
+    return_pct: float = Field(description="Realised return in %. BUY: (exit-entry)/entry*100. SELL: (entry-exit)/entry*100. Positive = profit.")
+    z_score_at_entry: float | None = Field(default=None, description="Z-score of entry_price vs the lookback window. None when std=0.")
+    sample_size_at_entry: int = Field(description="Number of price points in the lookback window used to compute the z-score")
+
+
+class SpeculationBacktestStatsBlock(BaseModel):
+    """Aggregate stats for a single signal type (BUY / SELL / overall)."""
+    count: int = Field(description="Number of trades in this block")
+    win_rate: float = Field(description="Win rate in % (returns > 0). 0.0 when count=0.")
+    mean_return_pct: float = Field(description="Mean return_pct. 0.0 when count=0.")
+    median_return_pct: float = Field(description="Median return_pct. 0.0 when count=0.")
+    best_return_pct: float = Field(description="Max return_pct observed. 0.0 when count=0.")
+    worst_return_pct: float = Field(description="Min return_pct observed. 0.0 when count=0.")
+
+
+class SpeculationBacktestResponse(BaseModel):
+    """Response for GET /api/v1/speculation/backtest."""
+    league: str = Field(description="League name")
+    trades: list[SpeculationBacktestTradeData] = Field(default_factory=list, description="Per-item realised trades, sorted by |return_pct| desc. Capped by `limit`.")
+    signal_breakdown: dict[str, int] = Field(description="Counts per signal type: {'BUY': N, 'SELL': N, 'HOLD': N}. HOLD signals did not produce trades.")
+    evaluated_count: int = Field(description="Items with both entry+exit prices AND an actionable signal (BUY or SELL)")
+    unevaluated_count: int = Field(description="Items with an actionable signal but no exit price within tolerance (holding period extends past last price log)")
+    buy_stats: SpeculationBacktestStatsBlock = Field(description="Aggregate stats for BUY trades only")
+    sell_stats: SpeculationBacktestStatsBlock = Field(description="Aggregate stats for SELL trades only")
+    overall_stats: SpeculationBacktestStatsBlock = Field(description="Aggregate stats across all BUY+SELL trades")
+    data_available: bool = Field(description="Whether any item in the snapshot had price_logs to backtest against")
+    fetched_at: str = Field(description="ISO 8601 timestamp of backtest run")
+    eval_days_ago: int = Field(description="Days before `now` at which the signal was evaluated (entry timestamp = now - eval_days_ago)")
+    holding_days: int = Field(description="Holding period in days (exit timestamp = entry + holding_days)")
+    lookback_days: int = Field(description="Z-score baseline window in days (window = [entry-lookback_days, entry))")
+
+
+# ---------------------------------------------------------------------------
 # Phase-aware Hints (F6, iter 78)
 # ---------------------------------------------------------------------------
 

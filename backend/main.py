@@ -602,6 +602,16 @@ try:
 except ImportError:
     logger.debug("Speculation router not available yet")
 
+# F5 follow-up (iter 79): Speculation backtest — measure profitability of
+# z-score BUY/SELL/HOLD signals on historical price_logs. Separate route to
+# keep the cost of running a backtest opt-in (does not affect the live
+# /api/v1/speculation endpoint).
+try:
+    from backend.api.routes_speculation_backtest import router as speculation_backtest_router
+    app.include_router(speculation_backtest_router)
+except ImportError:
+    logger.debug("Speculation backtest router not available yet")
+
 # F6 (iter 78): Phase-aware hints — Temporalis / skill gems / etc.
 # Static advisory banner based on the current league phase. Does NOT
 # depend on the DataSnapshot — hint table is hardcoded in phase_hints.py.

@@ -1,6 +1,6 @@
 # PRODUCT_VISION.md — PoE2 Market Dashboard
 
-> Last updated: 2026-06-25 (iter 78 — F6 Phase-aware hints shipped)
+> Last updated: 2026-06-25 (iter 79 — F5 backtest shipped)
 > Owner: project lead (user)
 > Audience: every contributor agent. Read this BEFORE proposing features.
 
@@ -45,6 +45,10 @@
 - Сигнализировать «дешевле обычного» / «дороже обычного» на каждом таймфрейме.
 - Предлагать окно «купить сейчас» / «продать сейчас» с указанием ожидаемой
   доходности и горизонта.
+- **Бэктестить сигналы на исторических данных** — насколько BUY/SELL сигналы
+  были прибыльны при удержании позиции N дней. ✅ iter 79: endpoint
+  `GET /api/v1/speculation/backtest` возвращает per-trade результаты +
+  агрегаты (win_rate, mean/median/best/worst return) по BUY/SELL/overall.
 - Помнить паттерны прошлых лиг (см. §3.4).
 
 ### 3.3. «Инвестиционный» помощник — в какой валюте хранить ценность
@@ -112,6 +116,7 @@ Abyss, Incursion) показывать:
 | API | `/api/v1/analyst/summary` | `routes_analyst.py` (существует, расширить) |
 | API | `/api/v1/content-pulse` | ✅ `routes_content_pulse.py` (iter 75) — top farming suggestions |
 | API | `/api/v1/speculation` | ✅ `routes_speculation.py` (iter 77) — per-item z-score + BUY/SELL/HOLD signals |
+| API | `/api/v1/speculation/backtest` | ✅ `routes_speculation_backtest.py` (iter 79) — backtest z-score signals on historical price_logs; returns per-trade results + per-signal aggregates |
 | API | `/api/v1/phase-hints` | ✅ `routes_phase_hints.py` (iter 78) — phase-aware advisory hints (Temporalis, skill gems, etc.) |
 | UI | Tab «Storage Value» (decision card + projection breakdown + historical chart) | ✅ `src/components/dashboard/storage-value-tab.tsx` (iter 74) + `storage-value-history-chart.tsx` (iter 75). |
 | UI | Widget «Content Pulse — Что фармить сегодня» (top rising/falling mechanics + per-category movers) | ✅ `src/components/dashboard/content-pulse-widget.tsx` (iter 76). Mounted at the top of the Overview tab so it's visible on first dashboard load. |
@@ -166,11 +171,11 @@ Abyss, Incursion) показывать:
   - 16 jest tests в `src/__tests__/content-pulse-widget.test.tsx`: offline / loading / error / no-data / no-signals / mixed / maxPerSide / refresh / empty-movers / fetched-at / proxy path / title / item-count.
   - Graceful degradation: offline → compact amber notice; loading → spinner text; error → error card + refresh; data_available=false → "no data yet"; all stable → "no signals today".
 
-### F5. Speculation tab — z-score + buy/sell suggestions — ✅ DONE iter 77
+### F5. Speculation tab — z-score + buy/sell suggestions — ✅ DONE iter 77 (live signals) + iter 79 (backtest)
 - Для каждого предмета: z-score текущей цены vs 30-day rolling.
 - Сигналы «BUY» (z < -1.5), «SELL» (z > +1.5), «HOLD» (|z| < 1).
-- Бэктест на исторических данных прошлой лиги — насколько сигналы были прибыльны. *(TODO — separate task, not blocking F5 ship.)*
-- **Реализовано в iter 77:**
+- Бэктест на исторических данных прошлой лиги — насколько сигналы были прибыльны. ✅ iter 79 — endpoint `GET /api/v1/speculation/backtest`.
+- **Реализовано в iter 77 (live signals):**
   - `backend/economy/pricing.py` — два новых pure-хелпера `compute_zscore(prices, current)` и `compute_percentile(prices, current)`. Population std (ddof=0), 2 valid points minimum для z-score (для std≠0). Linear-interpolation percentile (numpy default).
   - `backend/economy/speculation.py` (~280 lines) — pure function `compute_speculation_signals(snapshot, config, days=30, limit=50, signal_filter="ALL")`. Для каждого item: фильтрует price_logs по окну `days`, считает z-score + percentile, строит BUY/SELL/HOLD сигнал + `horizon_hint` (short/medium/long/unknown based on |z|). Возвращает топ-N items отсортированных по |z| desc.
   - `backend/api/routes_speculation.py` — thin route handler `GET /api/v1/speculation?days=30&limit=50&signal=ALL`. Query params валидируются FastAPI (ge/le/pattern). Returns `data_available=false` + empty signals list when snapshot not loaded.
@@ -183,6 +188,20 @@ Abyss, Incursion) показывать:
   - Tab trigger в `dashboard-toolbar.tsx` (Sparkles icon).
   - 28 new i18n keys × 4 locales (en/ru/zh/ko) + 1 fallbackSpeculation. Verified parity via ripgrep.
   - TypeScript types: `SpeculationSignal`, `SpeculationResponse`, `SpeculationPriceHistoryPoint`, `SpeculationSignalType`, `SpeculationHorizonHint` в `src/lib/types.ts`.
+- **Реализовано в iter 79 (backtest):**
+  - `backend/economy/speculation_backtest.py` (~340 lines) — pure function `backtest_speculation_signals(snapshot, config, eval_days_ago=14, holding_days=7, lookback_days=30, limit=50, signal_filter="ALL")`. Для каждого item: находит entry_price (ближайший price_log к `now - eval_days_ago` в пределах 24h tolerance), считает z-score entry vs `[entry - lookback_days, entry)` window, мапит в BUY/SELL/HOLD, находит exit_price (ближайший к `entry + holding_days`), считает realized return:
+    - BUY:  `(exit - entry) / entry * 100` (profit when price rises — bought low, expect mean reversion up)
+    - SELL: `(entry - exit) / entry * 100` (profit when price falls — short-sale equivalent)
+    - HOLD: skip (no position taken; counted in `signal_breakdown.HOLD` but not in `trades`).
+  - Возвращает: `trades` list (sorted by |return_pct| desc, capped by `limit`), `signal_breakdown` ({BUY, SELL, HOLD} counts), `evaluated_count`, `unevaluated_count` (actionable signal but no exit price within tolerance), `buy_stats` / `sell_stats` / `overall_stats` blocks (count, win_rate, mean/median/best/worst return_pct), `data_available`, `fetched_at`, `eval_days_ago`, `holding_days`, `lookback_days`.
+  - `backend/api/routes_speculation_backtest.py` (~140 lines) — thin route handler `GET /api/v1/speculation/backtest?eval_days_ago=14&holding_days=7&lookback_days=30&limit=50&signal=ALL`. Query params валидируются FastAPI (`ge=1, le=365` для eval_days_ago, `ge=1, le=90` для holding_days / lookback_days, `ge=1, le=500` для limit, `pattern=^(ALL|BUY|SELL|HOLD)$` для signal). Returns `data_available=false` + empty trades + zeroed stats blocks when snapshot not loaded.
+  - Pydantic response models: `SpeculationBacktestTradeData`, `SpeculationBacktestStatsBlock`, `SpeculationBacktestResponse` в `backend/api/response_models.py`.
+  - 54 pytest tests в `tests/test_speculation_backtest.py` (5 классов: TestFindPriceAt / TestStatsBlock / TestBuildTradeEntry / TestBacktest* pure-function / TestRouteHandler).
+  - Reuses `compute_zscore` from `backend/economy/pricing.py` (same thresholds as live signals), `_extract_prices` + `_signal_from_zscore` + `Z_BUY_THRESHOLD` / `Z_SELL_THRESHOLD` / `MIN_SAMPLE_SIZE` from `backend/economy/speculation.py` — guarantees backtest uses the same strategy as the live signal.
+  - Tolerance: 24h between target timestamp and nearest price log (matches `storage_value_history.py:_NEAREST_PRICE_TOLERANCE_HOURS`).
+  - Baseline window is strictly BEFORE entry timestamp (entry price itself is NOT in the baseline — avoids leaking the signal into its own computation).
+  - No frontend UI yet — backend-only. A small "Backtest" panel below the Speculation list (showing aggregated metrics: win_rate, mean/median return per signal type, best/worst trade) can be added in a follow-up iter without breaking anything.
+  - Aggregates computed over ALL trades, not just the `limit`-capped list. `limit` only narrows the response payload.
 
 ### F6. Phase-aware hints (Temporalis, skill gems, etc.) — ✅ DONE iter 78
 - На основе PhaseDetector показывать в Speculation tab блок
