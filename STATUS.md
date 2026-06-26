@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-26 (iter 93 — Best Payment primary view on Exchange)
+> **Last updated:** 2026-06-26 (iter 94 — KI-10 fix + Spread Capture view)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -8,15 +8,13 @@
 
 ## Known Issues — open
 
-| ID | Status | Notes |
-|----|--------|-------|
-| **KI-10** | 🔓 Open (iter 93) | Pre-existing duplicate i18n keys block `tsc --noEmit`. `flipsBid` defined twice in all 4 locale files (line ~379 = "Bid", line ~631 = "Buy at") and `flipsAsk` twice (line ~380 = "Ask", line ~633 = "Sell at"). Introduced in iter 92 (TD-1 relabel). The second definition silently wins at runtime, but TS1117 fails the type-check. Fix in iter 94: delete the old "Bid"/"Ask" entries (lines 379-380) and keep the new "Buy at"/"Sell at" entries. Same pattern likely in `ru.ts` (lines 579-581), `zh.ts`, `ko.ts`. |
+_None._ All previously open KIs are closed.
 
 ---
 
 ## Known Issues — closed
 
-All previously open KIs (KI-1 through KI-9) closed in iter 88-92. See git log for details.
+All previously open KIs (KI-1 through KI-10) closed in iter 88-94. See git log for details.
 
 ---
 
@@ -31,6 +29,7 @@ All previously open KIs (KI-1 through KI-9) closed in iter 88-92. See git log fo
 | **TD-6** | P3 | `highest_stock` + `current_quantity` not used for Wall detection. |
 | **TD-7** | P3 | `PriceMomentumTracker` momentum + volatility computed but not shown. |
 | **TD-8** | P3 | Tier classification (T1-T5) not shown anywhere. |
+| **TD-9** | P3 | **iter 94 added:** FlipsTable "Trend" sparkline column uses a derived `momentum × volatility` indicator (clearly labeled in tooltip as "NOT historical"). When backend adds `priceHistoryShort` to `FlipOpportunity` (per-pair recent price points), the column can switch to real data without UI changes — only `flips-helpers.ts:deriveTrendSparklineData` needs to be replaced with a passthrough. |
 
 TD-1 closed in iter 92 (FlipsTable 5 new columns).
 
@@ -48,7 +47,8 @@ TD-1 closed in iter 92 (FlipsTable 5 new columns).
 | **F6** — Phase-aware hints | ✅ Done (iter 78 + 87) | |
 | **iter 90–91** | ✅ Done (recon) | 14 clarifying questions + POE2Scout API capability map |
 | **iter 92** | ✅ Done | KI-7/8/9 fixes + TD-1 (5 FlipsTable columns) + entry price tracking |
-| **iter 93** | ✅ **Done** | **Best Payment primary view** on Exchange. New `BestPaymentTopList` component (top-10 cards strip) at the top of the Exchange tab. `useOptimalPayment` hook extended with `bestPaymentTopList` (sorted by savingsPct desc, filtered ≥1%, covers currencies + craft items). 13 new i18n keys × 4 locales. Q1="Пример А" + Q2="для всего" + Q3="скрывать <1%" all addressed. |
+| **iter 93** | ✅ Done | **Best Payment primary view** on Exchange — top-10 cards strip. 13 new i18n keys × 4 locales. |
+| **iter 94** | ✅ **Done** | **KI-10 fix + Spread Capture view.** `tsc --noEmit` now green (0 errors). Q4 (Spread tier filter + color-coded Spread cell), Q5 (Trend sparkline column — derived from momentum × volatility, honestly labeled), Q6 (spread-capture-intent tooltips on Spread + Profit columns). 7 new i18n keys × 4 locales = 28 lines. 16 new jest tests (428/428 green). New TD-9 (real sparkline needs backend `priceHistoryShort`). |
 
 ---
 
@@ -56,7 +56,7 @@ TD-1 closed in iter 92 (FlipsTable 5 new columns).
 
 | Symptom | Cause | Where to fix |
 |---------|-------|--------------|
-| `tsc --noEmit` fails with TS1117 on `flipsBid` / `flipsAsk` | Duplicate i18n keys (KI-10). Pre-existing from iter 92. | Delete old "Bid"/"Ask" entries at lines 379-380 in all 4 locale files. Keep "Buy at"/"Sell at". |
+| `tsc --noEmit` fails with TS1117 on `flipsBid` / `flipsAsk` | **FIXED iter 94 (KI-10 closed)** — old "Bid"/"Ask" entries at lines 379-380 deleted from all 4 locale files. New "Buy at"/"Sell at" entries (with tooltips) preserved. | Historical: `src/lib/i18n/locales/{en,ru,zh,ko}.ts` |
 | `test_scheduler.py` collection fails | `aiosqlite` not installed in env | `pip install aiosqlite` |
 | `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle detected — fall back to `direct_rate` | `backend/api/routes_optimizer.py:_bellman_ford` |
 | SQLite `near "LIMIT": syntax error` | Use `rowid IN (SELECT ... LIMIT ?)` pattern | `backend/data/historical.py:_prune_old_league_data` |
@@ -66,3 +66,5 @@ TD-1 closed in iter 92 (FlipsTable 5 new columns).
 | Exchange tab shows "Best Payment" strip at the top | By design (iter 93) — top-10 cards strip with savings ≥1%. Hidden when no opportunities exist. | `exchange-tab-content.tsx`, `best-payment-top-list.tsx` |
 | Best Payment badge doesn't appear on a pair | By design (iter 93, Q3) — pairs with `savingsPct < 1` are hidden in both `BestPaymentBadge` and the top-list. | `best-payment-badge.tsx:40`, `use-optimal-payment.ts:BEST_PAYMENT_MIN_SAVINGS_PCT` |
 | Craft items (Ritual Omens, Soul Cores) appear in Best Payment | By design (iter 93, Q2) — the hook groups by `currency1Id`, which covers all priced items including `ritual` / `ultimatum` / `idol` / `vaultkeys` / `delirium` categories. | `use-optimal-payment.ts:bestPaymentTopList`, `currency-optimal.ts:ITEM_CATEGORIES` |
+| FlipsTable "Trend" sparkline looks synthetic | By design (iter 94, Q5) — derived from `momentum × volatility` (NOT historical price data). Tooltip explicitly states this. When backend adds `priceHistoryShort` (TD-9), the column will switch to real data without UI changes. | `flips-helpers.ts:deriveTrendSparklineData`, `flips-table.tsx:Trend column` |
+| FlipsTable Spread cell color changes | By design (iter 94, Q4) — emerald ≥5% (wide), amber 2-5% (medium), muted <2% (tight). Same thresholds power the "Spread tier" filter dropdown in the filter row. | `flips-helpers.ts:classifySpreadTier`, `flips-tab.tsx:spreadTierFilter` |

@@ -375,8 +375,6 @@ const ko: Record<TranslationKeys, string> = {
   flipsDetailedOpportunities: "상세 플립 기회",
   flipsNoOpportunities: "필터 조건에 맞는 플립 기회가 없습니다",
   flipsNoOpportunitiesDesc: "필터를 조정하거나 시장 조건이 변경되면 나중에 다시 확인하세요.",
-  flipsBid: "매수",
-  flipsAsk: "도",
   flipsMid: "중간",
   flipsDetailTitle: "플립 상세: {0}",
   flipsDataQualityWarning: "데이터 품질 문제: 가격이 부정확할 수 있습니다",
@@ -631,6 +629,15 @@ const ko: Record<TranslationKeys, string> = {
   flipsDeviationPctTooltip: "시장 환율이 계산된 공정 교차 환율에서 얼마나 벗어나는지. 큰 편차 = 잠재적 기회 또는 의심스러운 데이터.",
   flipsFairRate: "공정 환율",
   flipsFairRateTooltip: "공정 교차 환율 — 모든 시장이 완벽히 일치할 때 예상되는 환율. 각 통화의 기본 통화(Exalted) 가격으로부터 계산.",
+
+  // ---- iter 94: Spread Capture view (Q4 spread tier filter + Q5 trend sparkline + Q6 intuitive labels) ----
+  flipperSpreadTooltip: "총 스프레드 (ask − bid) / mid price. 수수료 공제 전 왕복 거래당 마진입니다. 넓음 ≥5% = 강한 스프레드 포착 기회; 중간 2-5% = 미미; 좁음 <2% = 건너뛰기.",
+  flipsSpreadTierFilter: "스프레드 등급",
+  flipsSpreadTierWide: "넓음 ≥5%",
+  flipsSpreadTierMedium: "중간 2-5%",
+  flipsSpreadTierTight: "좁음 <2%",
+  flipsTrend: "추세",
+  flipsTrendTooltip: "모멘텀 × 변동성 지표 (현재 스냅샷에서 파생 — 과거 가격 데이터 아님). 기울기 = 모멘텀 부호/크기, 진폭 = 변동성. 백엔드가 priceHistoryShort (TD-9)를 추가하면 실제 최근 가격으로 전환.",
 
   // P1-1: Quantized Detail Panel
   quantizedAnalysisTitle: "양자화 분석",

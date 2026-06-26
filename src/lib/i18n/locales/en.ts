@@ -376,8 +376,6 @@ const en = {
   flipsDetailedOpportunities: "Detailed Flip Opportunities",
   flipsNoOpportunities: "No flip opportunities match filters",
   flipsNoOpportunitiesDesc: "Try adjusting the filters above or check back later when market conditions change.",
-  flipsBid: "Bid",
-  flipsAsk: "Ask",
   flipsMid: "Mid",
   flipsDetailTitle: "Flip Detail: {0}",
   flipsDataQualityWarning: "Data quality issue: prices may be inaccurate",
@@ -636,6 +634,15 @@ const en = {
   flipsDeviationPctTooltip: "How much the market rate differs from the calculated fair cross-rate. Large deviation = potential opportunity or suspicious data.",
   flipsFairRate: "Fair rate",
   flipsFairRateTooltip: "Fair cross-rate — the exchange rate you'd expect if all markets were perfectly consistent. Computed from each currency's price in the base currency (Exalted).",
+
+  // ---- iter 94: Spread Capture view (Q4 spread tier filter + Q5 trend sparkline + Q6 intuitive labels) ----
+  flipperSpreadTooltip: "Gross spread (ask − bid) / mid price. This is the profit margin per round-trip trade before fees. Wide ≥5% = strong spread-capture opportunity; Medium 2-5% = marginal; Tight <2% = skip.",
+  flipsSpreadTierFilter: "Spread tier",
+  flipsSpreadTierWide: "Wide ≥5%",
+  flipsSpreadTierMedium: "Medium 2-5%",
+  flipsSpreadTierTight: "Tight <2%",
+  flipsTrend: "Trend",
+  flipsTrendTooltip: "Momentum × volatility indicator (derived from current snapshot — NOT historical price data). Slope = momentum sign/magnitude, amplitude = volatility. When backend adds priceHistoryShort (TD-9), this will switch to real recent price points.",
 
   // ---- P1-1: Quantized Detail Panel ----
   quantizedAnalysisTitle: "Quantized Analysis",

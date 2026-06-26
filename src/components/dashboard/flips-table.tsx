@@ -38,8 +38,12 @@ import {
   scoreColor,
   clusterBadgeClass,
   clusterLabel,
+  classifySpreadTier,
+  spreadTierColor,
+  deriveTrendSparklineData,
 } from "./flips-helpers";
 import { isFlipDataSuspicious } from "@/lib/flipper-helpers";
+import { Sparkline } from "./sparkline";
 
 // ---------------------------------------------------------------------------
 // Local helpers (JSX-dependent)
@@ -146,9 +150,11 @@ export const FlipsTable = memo(function FlipsTable({
     page * perPage,
   );
 
-  // iter 92 (TD-1): Grid now has 17 columns (was 12). New: volume24h, bid, ask, deviationPct, fairRate.
+  // iter 92 (TD-1): Grid had 17 columns (was 12). New: volume24h, bid, ask, deviationPct, fairRate.
+  // iter 94 (Q5): Added Trend sparkline column (18 cols + detail arrow = 19 tracks).
   // Columns 7-11 (volume24h, bid, ask, deviationPct, fairRate) are hidden on smaller screens.
-  const GRID_COLS = "grid-cols-[1.5fr_50px_80px_65px_50px_65px_55px_55px_55px_55px_60px_70px_60px_60px_55px_55px_60px_30px]";
+  // Trend column (col 17) is hidden on smaller screens (lg+).
+  const GRID_COLS = "grid-cols-[1.5fr_50px_80px_65px_50px_65px_55px_55px_55px_55px_60px_70px_60px_60px_55px_55px_70px_60px_30px]";
 
   return (
     <Card>
@@ -179,8 +185,8 @@ export const FlipsTable = memo(function FlipsTable({
             <div role="row" className={`${GRID_COLS} gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10`}>
               <span role="columnheader">{t("flipperCurrency")}</span>
               <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
-              <span role="columnheader" className="text-right">{t("flipperProfitExa")}</span>
-              <span role="columnheader" className="text-right"><SortHeader field="spreadAfterFees" label={t("flipperSpread")} /></span>
+              <span role="columnheader" className="text-right" title={t("profitExaTooltip")}>{t("flipperProfitExa")}</span>
+              <span role="columnheader" className="text-right" title={t("flipperSpreadTooltip")}><SortHeader field="spreadAfterFees" label={t("flipperSpread")} /></span>
               <span role="columnheader" className="text-right hidden sm:table-cell" title={t("qSpreadTooltip")}><SortHeader field="qSpread" label={t("qSpread")} /></span>
               {/* iter 92 (TD-1): 5 new columns — hidden on small screens */}
               <span role="columnheader" className="text-right hidden lg:table-cell" title={t("flipsVolume24hTooltip")}><SortHeader field="volume24h" label={t("flipsVolume24h")} /></span>
@@ -195,6 +201,8 @@ export const FlipsTable = memo(function FlipsTable({
               <span role="columnheader" className="text-center">{t("flipperCluster")}</span>
               <span role="columnheader" className="text-center hidden md:table-cell" title={t("tierDistanceTooltip")}><SortHeader field="tierDistance" label={t("tierDist")} /></span>
               <span role="columnheader" className="text-center hidden md:table-cell"><SortHeader field="premium" label={t("crossCurrencyPremium")} /></span>
+              {/* iter 94 (Q5): Trend sparkline column */}
+              <span role="columnheader" className="text-center hidden lg:table-cell" title={t("flipsTrendTooltip")}>{t("flipsTrend")}</span>
               <span role="columnheader" />
             </div>
 
@@ -239,9 +247,17 @@ export const FlipsTable = memo(function FlipsTable({
                     )}
                   </span>
 
-                  {/* Spread (theoretical) */}
-                  <span className="text-right font-mono text-xs">
-                    {(((opp.spread ?? opp.spreadAfterFees) ?? 0) * 100).toFixed(2)}%
+                  {/* Spread (theoretical) — iter 94 (Q4): color-coded by spread tier */}
+                  <span className="text-right font-mono text-xs" title={t("flipperSpreadTooltip")}>
+                    {(() => {
+                      const spread = opp.spread ?? opp.spreadAfterFees;
+                      const tier = classifySpreadTier(spread);
+                      return (
+                        <span className={spreadTierColor(tier)}>
+                          {(((spread) ?? 0) * 100).toFixed(2)}%
+                        </span>
+                      );
+                    })()}
                   </span>
 
                   {/* P1-1: Q-Spread — quantized spread at min profitable lot */}
@@ -424,6 +440,17 @@ export const FlipsTable = memo(function FlipsTable({
                       }
                       return cell;
                     })()}
+                  </span>
+
+                  {/* iter 94 (Q5): Trend sparkline — derived from momentum × volatility */}
+                  <span className="flex justify-center hidden lg:table-cell" title={t("flipsTrendTooltip")}>
+                    <Sparkline
+                      data={deriveTrendSparklineData(opp.momentum, opp.volatility)}
+                      color="#94a3b8"
+                      width={60}
+                      height={20}
+                      showFill={true}
+                    />
                   </span>
 
                   {/* Detail arrow */}

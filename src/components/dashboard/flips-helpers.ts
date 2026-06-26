@@ -84,3 +84,68 @@ export function decisionBadgeClass(decision: string): string {
       return "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10";
   }
 }
+
+// ---------------------------------------------------------------------------
+// iter 94 (Spread Capture view — Q4): Spread tier classification
+// ---------------------------------------------------------------------------
+// Used by: (1) FlipsTable Spread cell color, (2) FlipsTab "Spread tier" filter.
+// Thresholds chosen for PoE2 currency market: 5%+ is a wide spread worth
+// capturing; 2-5% is marginal (fees may eat most of it); <2% is tight (skip).
+// Returns the tier id ("wide" | "medium" | "tight") — caller maps to label.
+
+export type SpreadTier = "wide" | "medium" | "tight";
+
+export const SPREAD_TIER_WIDE_THRESHOLD = 0.05;   // ≥5%
+export const SPREAD_TIER_MEDIUM_THRESHOLD = 0.02; // ≥2%
+
+export function classifySpreadTier(spread: number | null | undefined): SpreadTier {
+  if (spread == null) return "tight";
+  if (spread >= SPREAD_TIER_WIDE_THRESHOLD) return "wide";
+  if (spread >= SPREAD_TIER_MEDIUM_THRESHOLD) return "medium";
+  return "tight";
+}
+
+export function spreadTierColor(tier: SpreadTier): string {
+  switch (tier) {
+    case "wide":
+      return "text-emerald-600 dark:text-emerald-400 font-semibold";
+    case "medium":
+      return "text-amber-600 dark:text-amber-400";
+    case "tight":
+      return "text-muted-foreground";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// iter 94 (Spread Capture view — Q5): Trend sparkline synthetic shape
+// ---------------------------------------------------------------------------
+// The /api/flipper/flips endpoint does NOT return per-pair price history
+// (only momentum + volatility). We derive a 6-point shape that visualizes
+// the price-action character: linear slope from momentum, amplitude from
+// volatility. CLEARLY labeled in UI as "derived indicator, not historical".
+// When backend adds priceHistoryShort (TD-9, future iter), the Sparkline
+// column can switch to real data without UI changes.
+
+export const FLIPS_TREND_SPARKLINE_POINTS = 6;
+
+export function deriveTrendSparklineData(
+  momentum: number | null | undefined,
+  volatility: number | null | undefined,
+): number[] {
+  const m = momentum ?? 0;
+  const v = volatility ?? 0;
+  // Baseline = 0, slope = momentum (signed), amplitude = volatility.
+  // Generate N points: trend line + alternating perturbations (deterministic,
+  // no Math.random — same input always produces same shape).
+  // Wave uses sin(i * PI/2): 0,1,0,-1,0,1,... — gives a clean oscillation.
+  // Multiplied by (1-t) so amplitude decays toward the final point (lands on
+  // the pure trend value at t=1).
+  const points: number[] = [];
+  for (let i = 0; i < FLIPS_TREND_SPARKLINE_POINTS; i++) {
+    const t = i / (FLIPS_TREND_SPARKLINE_POINTS - 1); // 0..1
+    const trend = m * t;
+    const wave = v * Math.sin((i * Math.PI) / 2) * (1 - t) * 0.5;
+    points.push(trend + wave);
+  }
+  return points;
+}

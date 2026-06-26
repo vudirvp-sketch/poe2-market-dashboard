@@ -375,8 +375,6 @@ const zh: Record<TranslationKeys, string> = {
   flipsDetailedOpportunities: "详细翻转机会",
   flipsNoOpportunities: "没有符合筛选条件的翻转机会",
   flipsNoOpportunitiesDesc: "请尝试调整筛选条件，或稍后再查看市场变化。",
-  flipsBid: "买价",
-  flipsAsk: "卖价",
   flipsMid: "中价",
   flipsDetailTitle: "翻转详情: {0}",
   flipsDataQualityWarning: "数据质量问题：价格可能不准确",
@@ -631,6 +629,15 @@ const zh: Record<TranslationKeys, string> = {
   flipsDeviationPctTooltip: "市场价格与计算的公平交叉汇率之间的偏差。大偏差=潜在机会或可疑数据。",
   flipsFairRate: "公平汇率",
   flipsFairRateTooltip: "公平交叉汇率 — 如果所有市场完全一致时的预期汇率。根据每种货币对基础货币（Exalted）的价格计算。",
+
+  // ---- iter 94: Spread Capture view (Q4 spread tier filter + Q5 trend sparkline + Q6 intuitive labels) ----
+  flipperSpreadTooltip: "总差价 (ask − bid) / mid price。这是扣除手续费前每次往返交易的利润率。宽 ≥5% = 强差价捕获机会；中 2-5% = 边缘；窄 <2% = 跳过。",
+  flipsSpreadTierFilter: "差价等级",
+  flipsSpreadTierWide: "宽 ≥5%",
+  flipsSpreadTierMedium: "中 2-5%",
+  flipsSpreadTierTight: "窄 <2%",
+  flipsTrend: "趋势",
+  flipsTrendTooltip: "动量 × 波动率指标（从当前快照派生 — 非历史价格数据）。斜率 = 动量符号/幅度，振幅 = 波动率。当后端添加 priceHistoryShort (TD-9) 时，将切换到真实近期价格。",
 
   // P1-1: Quantized Detail Panel
   quantizedAnalysisTitle: "量化分析",

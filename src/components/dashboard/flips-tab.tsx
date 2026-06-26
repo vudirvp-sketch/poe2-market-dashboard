@@ -64,6 +64,8 @@ import {
   type SortField,
   type SortDirection,
   scoreColor,
+  classifySpreadTier,
+  type SpreadTier,
 } from "./flips-helpers";
 import { isFlipDataSuspicious, isFlipsResponseSuspicious } from "@/lib/flipper-helpers";
 import type { CrossRatesResult } from "@/hooks/use-cross-rates";
@@ -104,6 +106,10 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
   const [minVolume, setMinVolume] = useState(0);
   const [minSpread, setMinSpread] = useState(0);
   const [clusterFilter, setClusterFilter] = useState<string>("all");
+  // iter 94 (Q4): Spread tier filter — quick picker for spread-capture view
+  // ("wide" = ≥5%, "medium" = 2-5%, "tight" = <2%). Different from minSpread
+  // (which is a numeric threshold) — this is a tier shortcut.
+  const [spreadTierFilter, setSpreadTierFilter] = useState<SpreadTier | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [autoRefresh, setAutoRefresh] = useState(false);
 
@@ -193,6 +199,11 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
       filtered = filtered.filter((o) => (o.spread ?? 0) >= minSpread);
     }
 
+    // iter 94 (Q4): Spread tier filter
+    if (spreadTierFilter !== "all") {
+      filtered = filtered.filter((o) => classifySpreadTier(o.spread ?? o.spreadAfterFees) === spreadTierFilter);
+    }
+
     // Cluster filter
     if (clusterFilter !== "all") {
       filtered = filtered.filter((o) => o.cluster === clusterFilter);
@@ -243,7 +254,7 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
     });
 
     return sorted;
-  }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection, minScore, minVolume, minSpread, optimalPaymentByDisplayName]);
+  }, [flipsData, clusterFilter, searchQuery, sortField, sortDirection, minScore, minVolume, minSpread, spreadTierFilter, optimalPaymentByDisplayName]);
 
   // ---- Summary stats ----
   const avgScore = useMemo(() => {
@@ -567,6 +578,24 @@ export const FlipsTab = memo(function FlipsTab({ backendOnline, upstreamDegraded
                 <SelectItem value="stable">{t("flipsClusterStable")}</SelectItem>
                 <SelectItem value="moderate">{t("flipsClusterModerate")}</SelectItem>
                 <SelectItem value="volatile_illiquid">{t("flipsClusterVolatile")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* iter 94 (Q4): Spread tier filter — spread-capture quick filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground" htmlFor="flips-spread-tier">
+              {t("flipsSpreadTierFilter")}
+            </label>
+            <Select value={spreadTierFilter} onValueChange={(v: SpreadTier | "all") => { setSpreadTierFilter(v); setPage(1); }}>
+              <SelectTrigger id="flips-spread-tier" className="w-[120px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("all")}</SelectItem>
+                <SelectItem value="wide">{t("flipsSpreadTierWide")}</SelectItem>
+                <SelectItem value="medium">{t("flipsSpreadTierMedium")}</SelectItem>
+                <SelectItem value="tight">{t("flipsSpreadTierTight")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

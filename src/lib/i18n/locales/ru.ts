@@ -343,8 +343,6 @@ const ru: Record<TranslationKeys, string> = {
   flipsDetailedOpportunities: "\u0414\u0435\u0442\u0430\u043B\u044C\u043D\u044B\u0435 \u0444\u043B\u0438\u043F-\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438",
   flipsNoOpportunities: "\u0424\u043B\u0438\u043F-\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u044B",
   flipsNoOpportunitiesDesc: "\u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u0444\u0438\u043B\u044C\u0442\u0440\u044B \u0438\u043B\u0438 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u043E\u0437\u0436\u0435, \u043A\u043E\u0433\u0434\u0430 \u0440\u044B\u043D\u043E\u0447\u043D\u044B\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u0437\u043C\u0435\u043D\u044F\u0442\u0441\u044F.",
-  flipsBid: "\u041F\u043E\u043A\u0443\u043F\u043A\u0430",
-  flipsAsk: "\u041F\u0440\u043E\u0434\u0430\u0436\u0430",
   flipsMid: "\u0421\u0440\u0435\u0434\u043D.",
   flipsDetailTitle: "\u0414\u0435\u0442\u0430\u043B\u0438 \u0444\u043B\u0438\u043F\u0430: {0}",
   flipsDataQualityWarning: "\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u0430 \u043A\u0430\u0447\u0435\u0441\u0442\u0432\u0430 \u0434\u0430\u043D\u043D\u044B\u0445: \u0446\u0435\u043D\u044B \u043C\u043E\u0433\u0443\u0442 \u0431\u044B\u0442\u044C \u043D\u0435\u0442\u043E\u0447\u043D\u044B\u043C\u0438",
@@ -584,6 +582,15 @@ const ru: Record<TranslationKeys, string> = {
   flipsDeviationPctTooltip: "Насколько рыночный курс отличается от расчётного честного курса. Большое отклонение = возможная возможность или подозрительные данные.",
   flipsFairRate: "Честный курс",
   flipsFairRateTooltip: "Честный кросс-курс — обменный курс, который был бы при полностью согласованных рынках. Вычисляется из цены каждой валюты в базовой (Exalted).",
+
+  // ---- iter 94: Spread Capture view (Q4 spread tier filter + Q5 trend sparkline + Q6 intuitive labels) ----
+  flipperSpreadTooltip: "Валовый спред (ask − bid) / mid price. Это маржа за одну круглую сделку до вычета комиссий. Широкий ≥5% = сильная возможность захвата спреда; Средний 2-5% = посредственно; Узкий <2% = пропускать.",
+  flipsSpreadTierFilter: "Уровень спреда",
+  flipsSpreadTierWide: "Широкий ≥5%",
+  flipsSpreadTierMedium: "Средний 2-5%",
+  flipsSpreadTierTight: "Узкий <2%",
+  flipsTrend: "Тренд",
+  flipsTrendTooltip: "Индикатор моментум × волатильность (вычислено из текущего снимка — НЕ исторические данные). Наклон = знак и величина моментума, амплитуда = волатильность. Когда бэкенд добавит priceHistoryShort (TD-9), переключится на реальные недавние цены.",
 
   // ---- P1-1: Quantized Detail Panel ----
   quantizedAnalysisTitle: "Квантованный анализ",
