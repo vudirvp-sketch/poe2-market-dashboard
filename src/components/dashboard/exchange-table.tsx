@@ -556,7 +556,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleExchangeFavorite(pair.id);
+                        toggleExchangeFavorite(pair.id, pair.relativePrice);
                       }}
                       className="p-0.5 hover:scale-110 transition-transform"
                       aria-label={isFav ? t("removeFromFavorites") : t("addToFavorites")}

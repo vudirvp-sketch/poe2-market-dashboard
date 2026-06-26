@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-06-26 (iter 91 — recon refinement: iter 90 critique + POE2Scout API capability map + refined iter 91+ roadmap; 3 new KIs (7/8/9) + 8 new Tech Debt items).
+> **Single entry point** for codebase navigation. Updated 2026-06-26 (iter 92 — KI-7/8/9 closed + TD-1 closed + entry price tracking + FlipsTable 5 new columns + cross-rate threshold unified to 7%).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 
@@ -156,12 +156,12 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 ## 4. Known Issues
 
-iter 91 recon found **3 new Known Issues** (KI-7/8/9) and **8 new Tech Debt items** (TD-1 through TD-8) — all documented in `STATUS.md`. Quick summary:
+iter 91 recon found **3 new Known Issues** (KI-7/8/9) and **8 new Tech Debt items** (TD-1 through TD-8) — all documented in `STATUS.md`. **All KI-7/8/9 and TD-1 were CLOSED in iter 92.** Quick summary of what was fixed:
 
-- **KI-7** — `TAB_MAP` has 2 dead slots (`"arbitrage"` idx 4, `"graph"` idx 11). Shortcut "5" silently does nothing. Also `store.ts:validTabs` has stale entries. Fix in iter 91.
-- **KI-8** — `watchlist-tab.tsx` `pnl` column sorts identically to `change` column (both by `changePercent`). Fix in iter 91.
-- **KI-9** — Cross-rate inconsistency uses 2 different thresholds (10% backend / 5% frontend). Also `affectedCurrencies` list not truncated. Fix in iter 91.
-- **TD-1** — FlipsTable hides 5 backend-computed fields (`volume24h, bid, ask, fairRate, deviationPct`) — types already declared, backend already returns them. Fix in iter 91.
+- **KI-7** ✅ Closed iter 92 — Removed dead `"arbitrage"` and `"graph"` from TAB_MAP. Cleaned validTabs. Updated shortcuts-dialog. All 10 keyboard shortcuts now work.
+- **KI-8** ✅ Closed iter 92 — Watchlist pnl now uses entry price tracking (`WatchlistEntry.entryPrice`, store v5). Real P&L = `(currentPrice - entryPrice) / entryPrice * 100`.
+- **KI-9** ✅ Closed iter 92 — Cross-rate threshold unified to 7% (backend+frontend). `affectedCurrencies` truncated to top-5 + `"and N more"`.
+- **TD-1** ✅ Closed iter 92 — FlipsTable now shows volume24h, bid, ask, deviationPct, fairRate. 4 new SortField types. Intuitive i18n labels in 4 locales.
 - **TD-2 through TD-8** — see `STATUS.md` Technical-debt backlog table. Most are data already collected by DataSnapshot but not surfaced in UI.
 
 All earlier P0-P4 issues remain closed (iter 54-73). All F1-F6 product features remain shipped (iter 74-89).
@@ -198,7 +198,7 @@ Quick reference for the most common symptoms:
 | Premium column shows large % (50%+) | (iter 88) By design — shows how much market rate deviates from cross-rate-derived fair rate. Large % is normal for low-liquidity pairs and signals an opportunity. Tooltip explains. | KI-3 (closed iter 88) |
 | Analyst tab `fact.text` shows English from backend | (iter 88, KI-5) Backend now sends `template_id` + `params`. Frontend formats via i18n keys. Old clients fall back to `text`. To add a new template: see invariant #40(b). | KI-5 (closed iter 88) |
 | Date in chart / dialog shows English ("Jun 13") instead of locale | (iter 88) Use `formatLocaleDate(value, locale, opts?)` or `formatLocaleDateTime(value, locale)` from `src/lib/utils.ts`. Inline `toLocaleDateString("en-US", ...)` is FORBIDDEN — see invariant #40(a). | — |
-| Shortcuts dialog shows wrong tab label for keys 7/8/9/0 | (iter 89, KI-6) `shortcuts-dialog.tsx` MUST stay in sync with `TAB_MAP` in `dashboard-page.tsx`. Current mapping: 7→Optimizer, 8→Analyst, 9→Storage Value, 0→Speculation. liquid-chain + watchlist NOT reachable via keyboard — see invariant #41(a). | KI-6 (closed iter 89) |
+| Shortcuts dialog shows wrong tab labels | (iter 92, KI-7 closed) `shortcuts-dialog.tsx` MUST stay in sync with `TAB_MAP` in `dashboard-page.tsx`. Current mapping: 1→Overview, 2→Currencies, 3→Uniques, 4→Exchange, 5→Flips, 6→Optimizer, 7→Analyst, 8→Storage Value, 9→Speculation, 0→Liquid Chain. Watchlist (idx 10) NOT reachable via keyboard. | KI-7 (closed iter 92) |
 | Need to remove dead i18n keys after a tab/dialog/feature removal | (iter 89) Run `scripts/cleanup_dead_i18n_keys.py` — it removes the dead `tabXxx`/`fallbackXxx`/feature-specific keys from all 4 locale files. Leave a `REMOVED iter NN` comment marker in place of the old section header. See invariant #41(b). | — |
 | Need to localize a currency name / category slug in a frontend component | (iter 87) Use `getCurrencyDisplayName(apiId, locale)` / `getCategoryDisplayName(slug, locale)` from `src/lib/currency-names.ts`. Always provide a fallback (`?? apiId` or `\|\| upstreamText`) since the helper returns `null` when the api_id isn't in the mapping. Pull `locale` from `useI18n().locale`. | — |
 | Need to add `?lang=` support to a backend hint endpoint | (iter 87) Add `lang: str = Query("en", ...)` to the FastAPI route signature, forward to the pure function. Keep a parallel Russian table (`_XXX_RU`) with the SAME `id`/`category` slugs. Add the `lang` query param to the Next.js proxy route too. Frontend widget should pull `locale` from `useI18n()`, map to `lang`, include in `queryKey`, pass as query param to `fetchApi`. | — |

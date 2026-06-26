@@ -110,7 +110,7 @@ export const ExchangePairCard = memo(function ExchangePairCard({
         className="absolute top-2 left-2 z-10 transition-opacity"
         onClick={(e) => {
           e.stopPropagation();
-          toggleExchangeFavorite(pair.id);
+          toggleExchangeFavorite(pair.id, pair.relativePrice);
         }}
         aria-label={isFav ? t("removeFromFavorites") : t("addToFavorites")}
       >

@@ -533,7 +533,9 @@ export function Dashboard() {
   // "storage-value" added iter 74 (F2).
   // "speculation" added iter 77 (F5) — placed after storage-value so the
   // analytics-cluster (storage-value → speculation) sits together.
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "arbitrage", "flips", "optimizer", "analyst", "storage-value", "speculation", "liquid-chain", "graph", "watchlist"];
+  // iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
+  // and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "liquid-chain", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs

@@ -6,6 +6,8 @@
 // P1-1/P1-3: Added quantized columns (Q-Spread, Min Lot, Brick Risk, Tier)
 // Iteration 12: Added Premium column with BestPaymentBadge + tooltip
 // Iteration 13: i18n-ified Premium tooltip strings
+// iter 92 (TD-1): Added 5 previously hidden backend columns:
+//   volume24h, bid, ask, deviationPct, fairRate
 // ============================================================================
 "use client";
 
@@ -19,6 +21,7 @@ import {
   ChevronRight,
   Shield,
   Boxes,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +50,16 @@ function momentumIcon(momentum: number | undefined) {
   if (m > 0.001) return <TrendingUp className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />;
   if (m < -0.001) return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />;
   return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />;
+}
+
+/**
+ * Format volume number compactly (e.g. 12345 → "12.3K")
+ */
+function fmtVol(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
 /**
@@ -133,6 +146,10 @@ export const FlipsTable = memo(function FlipsTable({
     page * perPage,
   );
 
+  // iter 92 (TD-1): Grid now has 17 columns (was 12). New: volume24h, bid, ask, deviationPct, fairRate.
+  // Columns 7-11 (volume24h, bid, ask, deviationPct, fairRate) are hidden on smaller screens.
+  const GRID_COLS = "grid-cols-[1.5fr_50px_80px_65px_50px_65px_55px_55px_55px_55px_60px_70px_60px_60px_55px_55px_60px_30px]";
+
   return (
     <Card>
       <CardHeader className="pb-2 pt-4 px-4">
@@ -158,13 +175,20 @@ export const FlipsTable = memo(function FlipsTable({
           </div>
         ) : (
           <div role="table" aria-label={t("flipsDetailedOpportunities")}>
-            {/* Table header — Profit in base currency + spread + quantized columns */}
-            <div role="row" className="grid grid-cols-[1.5fr_50px_80px_65px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10">
+            {/* Table header */}
+            <div role="row" className={`${GRID_COLS} gap-1 py-2 px-2 text-xs font-medium text-muted-foreground border-b border-border sticky top-0 bg-card z-10`}>
               <span role="columnheader">{t("flipperCurrency")}</span>
               <span role="columnheader" className="text-center"><SortHeader field="score" label={t("flipperScore")} /></span>
               <span role="columnheader" className="text-right">{t("flipperProfitExa")}</span>
               <span role="columnheader" className="text-right"><SortHeader field="spreadAfterFees" label={t("flipperSpread")} /></span>
               <span role="columnheader" className="text-right hidden sm:table-cell" title={t("qSpreadTooltip")}><SortHeader field="qSpread" label={t("qSpread")} /></span>
+              {/* iter 92 (TD-1): 5 new columns — hidden on small screens */}
+              <span role="columnheader" className="text-right hidden lg:table-cell" title={t("flipsVolume24hTooltip")}><SortHeader field="volume24h" label={t("flipsVolume24h")} /></span>
+              <span role="columnheader" className="text-right hidden lg:table-cell" title={t("flipsBidTooltip")}><SortHeader field="bid" label={t("flipsBid")} /></span>
+              <span role="columnheader" className="text-right hidden lg:table-cell" title={t("flipsAskTooltip")}><SortHeader field="ask" label={t("flipsAsk")} /></span>
+              <span role="columnheader" className="text-right hidden lg:table-cell" title={t("flipsDeviationPctTooltip")}><SortHeader field="deviationPct" label={t("flipsDeviationPct")} /></span>
+              <span role="columnheader" className="text-right hidden xl:table-cell" title={t("flipsFairRateTooltip")}><SortHeader field="fairRate" label={t("flipsFairRate")} /></span>
+              {/* End new columns */}
               <span role="columnheader" className="text-right">{t("flipperMomentum")}</span>
               <span role="columnheader" className="text-right hidden sm:table-cell" title={t("minLotTooltip")}><SortHeader field="minLot" label={t("minLot")} /></span>
               <span role="columnheader" className="text-center hidden sm:table-cell" title={t("brickRiskTooltip")}><SortHeader field="brickRisk" label={t("brickRisk")} /></span>
@@ -179,7 +203,7 @@ export const FlipsTable = memo(function FlipsTable({
               {paginatedOpportunities.map((opp) => (
                 <div
                   key={opp.currency}
-                  className="grid grid-cols-[1.5fr_50px_80px_65px_50px_70px_60px_60px_55px_55px_60px_30px] gap-1 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer"
+                  className={`${GRID_COLS} gap-1 py-2 px-2 text-sm border-b border-border/50 hover:bg-muted/20 transition-colors items-center cursor-pointer`}
                   role="row"
                   onClick={() => onRowClick(opp)}
                   onKeyDown={(e) => {
@@ -226,6 +250,62 @@ export const FlipsTable = memo(function FlipsTable({
                       <span className={(opp.quantizedAnalysis.optimalLotProfitPct ?? 0) > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}>
                         {(opp.quantizedAnalysis.optimalLotProfitPct ?? 0).toFixed(1)}%
                       </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+
+                  {/* iter 92 (TD-1): Volume 24h — how much was traded in the last day */}
+                  <span className="text-right font-mono text-xs hidden lg:table-cell" title={t("flipsVolume24hTooltip")}>
+                    {opp.volume24h != null ? (
+                      <span className="flex items-center justify-end gap-0.5">
+                        <BarChart3 className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                        <span className={opp.volume24h >= 1000 ? "text-emerald-600 dark:text-emerald-400" : opp.volume24h >= 100 ? "" : "text-muted-foreground"}>
+                          {fmtVol(opp.volume24h)}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+
+                  {/* iter 92 (TD-1): Bid — "Buy at" price */}
+                  <span className="text-right font-mono text-xs hidden lg:table-cell" title={t("flipsBidTooltip")}>
+                    {opp.bid != null ? (
+                      <span className="text-amber-600 dark:text-amber-400">{fmt(opp.bid)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+
+                  {/* iter 92 (TD-1): Ask — "Sell at" price */}
+                  <span className="text-right font-mono text-xs hidden lg:table-cell" title={t("flipsAskTooltip")}>
+                    {opp.ask != null ? (
+                      <span className="text-sky-600 dark:text-sky-400">{fmt(opp.ask)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+
+                  {/* iter 92 (TD-1): Deviation % — how much market rate differs from fair rate */}
+                  <span className="text-right font-mono text-xs hidden lg:table-cell" title={t("flipsDeviationPctTooltip")}>
+                    {opp.deviationPct != null ? (
+                      <span className={
+                        Math.abs(opp.deviationPct) >= 20 ? "text-red-500 font-semibold"
+                          : Math.abs(opp.deviationPct) >= 10 ? "text-amber-600 dark:text-amber-400"
+                          : "text-muted-foreground"
+                      }>
+                        {opp.deviationPct >= 0 ? "+" : ""}{opp.deviationPct.toFixed(1)}%
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+
+                  {/* iter 92 (TD-1): Fair Rate — what the exchange rate "should" be */}
+                  <span className="text-right font-mono text-xs hidden xl:table-cell" title={t("flipsFairRateTooltip")}>
+                    {opp.fairRate != null ? (
+                      <span>{fmt(opp.fairRate)}</span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

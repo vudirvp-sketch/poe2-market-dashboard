@@ -625,6 +625,18 @@ const en = {
   tierDist: "Tier",
   tierDistanceTooltip: "Tier distance between the two currencies. Higher = more quantization risk from cross-tier trading.",
 
+  // ---- iter 92 (TD-1): Previously hidden backend fields now exposed ----
+  flipsVolume24h: "Vol 24h",
+  flipsVolume24hTooltip: "24-hour trading volume — how many units were traded in the last day. Higher = more liquid (easier to buy/sell quickly).",
+  flipsBid: "Buy at",
+  flipsBidTooltip: "Best buy price — the lowest price sellers are currently asking. This is what you pay to buy this currency.",
+  flipsAsk: "Sell at",
+  flipsAskTooltip: "Best sell price — the highest price buyers are currently offering. This is what you receive when selling this currency.",
+  flipsDeviationPct: "Deviation",
+  flipsDeviationPctTooltip: "How much the market rate differs from the calculated fair cross-rate. Large deviation = potential opportunity or suspicious data.",
+  flipsFairRate: "Fair rate",
+  flipsFairRateTooltip: "Fair cross-rate — the exchange rate you'd expect if all markets were perfectly consistent. Computed from each currency's price in the base currency (Exalted).",
+
   // ---- P1-1: Quantized Detail Panel ----
   quantizedAnalysisTitle: "Quantized Analysis",
   qSpreadDetail: "Q-Spread (Optimal)",

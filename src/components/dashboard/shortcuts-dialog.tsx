@@ -74,21 +74,21 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
           <p className="text-xs text-muted-foreground mb-1.5">
             {t("shortcutTabMapping")}
           </p>
-          {/* iter 89 (KI-6): Mapping now matches TAB_MAP in dashboard-page.tsx.
-              "0" maps to TAB_MAP[9] which is "speculation", NOT watchlist.
-              liquid-chain + watchlist are NOT reachable via keyboard (TAB_MAP has 13 entries
-              but shortcuts only cover indices 0–9). Pre-existing limitation, not a regression. */}
+          {/* iter 92 (KI-7): Mapping updated after removing dead "arbitrage" and "graph" from TAB_MAP.
+              Now all 10 shortcuts (1–9 + 0) map to live tabs.
+              "5" → Flips (was dead "arbitrage"), "0" → Liquid Chain (was "speculation").
+              Watchlist (idx 10) still NOT keyboard-reachable — only 10 shortcut slots. */}
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span><kbd className="font-mono font-semibold">1</kbd> {t("tabOverview")}</span>
             <span><kbd className="font-mono font-semibold">2</kbd> {t("tabCurrencies")}</span>
             <span><kbd className="font-mono font-semibold">3</kbd> {t("tabUniques")}</span>
             <span><kbd className="font-mono font-semibold">4</kbd> {t("tabExchange")}</span>
-            <span><kbd className="font-mono font-semibold">5</kbd> {t("tabArbitrage")}</span>
-            <span><kbd className="font-mono font-semibold">6</kbd> {t("tabFlips")}</span>
-            <span><kbd className="font-mono font-semibold">7</kbd> {t("tabOptimizer")}</span>
-            <span><kbd className="font-mono font-semibold">8</kbd> {t("tabAnalyst")}</span>
-            <span><kbd className="font-mono font-semibold">9</kbd> {t("tabStorageValue")}</span>
-            <span><kbd className="font-mono font-semibold">0</kbd> {t("tabSpeculation")}</span>
+            <span><kbd className="font-mono font-semibold">5</kbd> {t("tabFlips")}</span>
+            <span><kbd className="font-mono font-semibold">6</kbd> {t("tabOptimizer")}</span>
+            <span><kbd className="font-mono font-semibold">7</kbd> {t("tabAnalyst")}</span>
+            <span><kbd className="font-mono font-semibold">8</kbd> {t("tabStorageValue")}</span>
+            <span><kbd className="font-mono font-semibold">9</kbd> {t("tabSpeculation")}</span>
+            <span><kbd className="font-mono font-semibold">0</kbd> {t("tabLiquidChain")}</span>
           </div>
         </div>
       </DialogContent>

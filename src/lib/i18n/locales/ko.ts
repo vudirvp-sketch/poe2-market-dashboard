@@ -620,6 +620,18 @@ const ko: Record<TranslationKeys, string> = {
   tierDist: "티어",
   tierDistanceTooltip: "두 통화 간 티어 거리. 높을수록 크로스 티어 거래 시 양자화 리스크 증가.",
 
+  // iter 92 (TD-1): Previously hidden backend fields now exposed
+  flipsVolume24h: "24h 거래량",
+  flipsVolume24hTooltip: "24시간 거래량 — 최근 하루 동안 거래된 단위 수. 높을수록 유동성이 좋음 (빠른 매수/매도 가능).",
+  flipsBid: "매수가",
+  flipsBidTooltip: "최적 매수가 — 판매자가 현재 요청하는 최저 가격. 이 통화를 구매할 때 지불하는 금액입니다.",
+  flipsAsk: "매도가",
+  flipsAskTooltip: "최적 매도가 — 구매자가 현재 제시하는 최고 가격. 이 통화를 판매할 때 받는 금액입니다.",
+  flipsDeviationPct: "편차",
+  flipsDeviationPctTooltip: "시장 환율이 계산된 공정 교차 환율에서 얼마나 벗어나는지. 큰 편차 = 잠재적 기회 또는 의심스러운 데이터.",
+  flipsFairRate: "공정 환율",
+  flipsFairRateTooltip: "공정 교차 환율 — 모든 시장이 완벽히 일치할 때 예상되는 환율. 각 통화의 기본 통화(Exalted) 가격으로부터 계산.",
+
   // P1-1: Quantized Detail Panel
   quantizedAnalysisTitle: "양자화 분석",
   qSpreadDetail: "Q-스프레드 (최적)",

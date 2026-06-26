@@ -25,7 +25,12 @@ export type SortField =
   | "minLot"        // minProfitableLot from quantized analysis
   | "brickRisk"     // brickResistance from quantized analysis
   | "tierDistance"   // tier_distance between currencies
-  | "premium";      // savingsPct from optimal payment result
+  | "premium"       // savingsPct from optimal payment result
+  // iter 92 (TD-1): New sort fields for previously hidden backend columns
+  | "bid"           // best buy price
+  | "ask"           // best sell price
+  | "deviationPct"  // deviation of market rate from fair rate
+  | "fairRate";     // fair cross-rate between currencies
 
 export type SortDirection = "asc" | "desc";
 

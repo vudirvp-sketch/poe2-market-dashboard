@@ -86,7 +86,7 @@ export interface CrossRatesResult {
 export interface UseCrossRatesOptions {
   /** Only compute when this is true (default: true) */
   enabled?: boolean;
-  /** Minimum deviation % to flag as cross-rate flip opportunity (default: 5) */
+  /** Minimum deviation % to flag as cross-rate flip opportunity (default: 7, iter 92 KI-9 unified with backend) */
   flipThresholdPct?: number;
   /**
    * Override exchange pairs data (bypasses useExchangePairs if provided).
@@ -123,7 +123,7 @@ export interface UseCrossRatesOptions {
  */
 export function useCrossRates({
   enabled = true,
-  flipThresholdPct = 5,
+  flipThresholdPct = 7,
   exchangePairsOverride,
   realm,
   league,

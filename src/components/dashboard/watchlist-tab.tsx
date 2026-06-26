@@ -146,8 +146,16 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
           return dir * (aChg - bChg);
         }
         case "pnl": {
-          const aPnl = a.changePercent ?? -Infinity;
-          const bPnl = b.changePercent ?? -Infinity;
+          // iter 92 (KI-8): Real P&L from entry price tracking.
+          // If entry price exists, compute actual P&L. Otherwise fall back to changePercent.
+          const aEntry = watchlist.find((w) => w.id === a.id);
+          const bEntry = watchlist.find((w) => w.id === b.id);
+          const aPnl = (aEntry?.entryPrice && aEntry.entryPrice > 0 && a.relativePrice != null)
+            ? ((a.relativePrice - aEntry.entryPrice) / aEntry.entryPrice) * 100
+            : (a.changePercent ?? -Infinity);
+          const bPnl = (bEntry?.entryPrice && bEntry.entryPrice > 0 && b.relativePrice != null)
+            ? ((b.relativePrice - bEntry.entryPrice) / bEntry.entryPrice) * 100
+            : (b.changePercent ?? -Infinity);
           return dir * (aPnl - bPnl);
         }
         case "added": {
@@ -428,7 +436,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleExchangeFavorite(pair.id);
+                            toggleExchangeFavorite(pair.id, pair.relativePrice);
                           }}
                           className="p-0.5 hover:scale-110 transition-transform"
                           aria-label={isFav ? t("removeFromFavorites") : t("addToFavorites")}
@@ -483,11 +491,27 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                           {fmtVolume(pair.volume)}
                         </span>
                       </td>
-                      {/* P&L */}
+                      {/* P&L — iter 92 (KI-8): Real P&L from entry price tracking */}
                       <td className="px-3 py-2 text-right">
-                        <span className={`text-xs font-semibold font-mono ${chg.color}`}>
-                          {fmtChange(pair.changePercent).text}
-                        </span>
+                        {(() => {
+                          const entry = getWatchlistEntry(pair.id);
+                          const entryPrice = entry?.entryPrice;
+                          if (entryPrice && entryPrice > 0 && pair.relativePrice != null) {
+                            const pnlPct = ((pair.relativePrice - entryPrice) / entryPrice) * 100;
+                            const pnlChg = fmtChange(pnlPct);
+                            return (
+                              <span className={`text-xs font-semibold font-mono ${pnlChg.color}`}>
+                                {pnlChg.text}
+                              </span>
+                            );
+                          }
+                          // Fallback for entries without tracked entry price: show 24h change
+                          return (
+                            <span className={`text-xs font-semibold font-mono ${chg.color}`}>
+                              {fmtChange(pair.changePercent).text}
+                            </span>
+                          );
+                        })()}
                       </td>
                       {/* Added date */}
                       <td className="px-3 py-2 text-right">

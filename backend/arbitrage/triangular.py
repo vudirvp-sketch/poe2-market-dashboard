@@ -483,7 +483,7 @@ async def find_triangular_arbitrage(
     min_profit_pct: float = 1.0,
     pair_volumes: dict[tuple[str, str], float] | None = None,
     snapshot_time: datetime | None = None,
-    cross_rate_threshold_pct: float = 10.0,
+    cross_rate_threshold_pct: float = 7.0,
 ) -> TriangularResult:
     """Find triangular (and multi-hop) arbitrage opportunities using Bellman-Ford.
 
@@ -497,7 +497,7 @@ async def find_triangular_arbitrage(
     Cross-rate validation: Before returning results, each detected cycle is
     checked against a cross-rate divergence map. If the cycle passes through
     a triple where the implied cross-rate diverges from the direct rate by
-    more than cross_rate_threshold_pct (default 10%), the cycle is flagged
+    more than cross_rate_threshold_pct (default 7%), the cycle is flagged
     as suspicious and its profit is discounted.
 
     PERFORMANCE: The entire computation (Bellman-Ford O(V*V*E) +
@@ -513,8 +513,8 @@ async def find_triangular_arbitrage(
         pair_volumes: Optional volume data per edge
         snapshot_time: When the snapshot data was taken
         cross_rate_threshold_pct: Divergence threshold for cross-rate
-            inconsistency detection (default 10%). Cycles involving triples
-            with >10% implied-vs-direct divergence are flagged.
+            inconsistency detection (default 7%). Cycles involving triples
+            with >7% implied-vs-direct divergence are flagged.
 
     Returns:
         TriangularResult with opportunities and suspicious_triples

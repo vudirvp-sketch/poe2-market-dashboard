@@ -620,6 +620,18 @@ const zh: Record<TranslationKeys, string> = {
   tierDist: "层级",
   tierDistanceTooltip: "两种货币之间的层级距离。越高=跨层级交易的量化风险越大。",
 
+  // iter 92 (TD-1): Previously hidden backend fields now exposed
+  flipsVolume24h: "24h量",
+  flipsVolume24hTooltip: "24小时交易量 — 最近一天内交易了多少单位。越高=流动性越好（越容易快速买卖）。",
+  flipsBid: "买入价",
+  flipsBidTooltip: "最佳买入价 — 卖方目前要求的最低价格。这是你购买时需要支付的价格。",
+  flipsAsk: "卖出价",
+  flipsAskTooltip: "最佳卖出价 — 买方目前提供的最高价格。这是你卖出时能收到的价格。",
+  flipsDeviationPct: "偏差",
+  flipsDeviationPctTooltip: "市场价格与计算的公平交叉汇率之间的偏差。大偏差=潜在机会或可疑数据。",
+  flipsFairRate: "公平汇率",
+  flipsFairRateTooltip: "公平交叉汇率 — 如果所有市场完全一致时的预期汇率。根据每种货币对基础货币（Exalted）的价格计算。",
+
   // P1-1: Quantized Detail Panel
   quantizedAnalysisTitle: "量化分析",
   qSpreadDetail: "量化价差（最优）",

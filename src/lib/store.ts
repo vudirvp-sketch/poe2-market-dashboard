@@ -44,6 +44,9 @@ export interface ExchangeExtendedFilters {
 export interface WatchlistEntry {
   id: string;
   addedAt: string; // ISO timestamp
+  /** iter 92 (KI-8): Price at the time the pair was added to the watchlist.
+   *  Used for real P&L computation. null = added before this feature existed. */
+  entryPrice?: number | null;
 }
 
 // ---------- Persisted UI State (§1.7 + §2.3 + §2.6) ----------
@@ -140,15 +143,17 @@ function validateUIState(raw: unknown): PersistedUIState {
   if (!raw || typeof raw !== "object") return DEFAULT_UI_STATE;
   const stored = raw as Record<string, unknown>;
 
-  // Version check — support v1, v2, v3, v4 (migrate)
+  // Version check — support v1, v2, v3, v4, v5 (migrate)
   const version = stored._version;
-  if (version !== 1 && version !== 2 && version !== 3 && version !== 4) return DEFAULT_UI_STATE;
+  if (version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5) return DEFAULT_UI_STATE;
 
   // Validate activeTab
+  // iter 92 (KI-7): Removed dead "arbitrage", "forecast", "portfolio", "graph".
+  // Added missing "storage-value", "speculation", "liquid-chain".
   const validTabs = [
     "overview", "currencies", "uniques", "exchange",
-    "arbitrage", "flips", "optimizer", "analyst", "forecast", "portfolio",
-    "graph", "watchlist",
+    "flips", "optimizer", "analyst", "storage-value", "speculation",
+    "liquid-chain", "watchlist",
   ];
   const activeTab = validTabs.includes(stored.activeTab as string)
     ? (stored.activeTab as string)
@@ -182,12 +187,16 @@ function validateUIState(raw: unknown): PersistedUIState {
     ? stored.league
     : DEFAULT_UI_STATE.league;
 
-  // §2.6: Watchlist entries with added dates
+  // §2.6: Watchlist entries with added dates + entry prices (iter 92 KI-8)
   const rawWatchlist = stored.watchlist;
   const watchlist: WatchlistEntry[] = Array.isArray(rawWatchlist)
     ? rawWatchlist.filter(
         (w: unknown) => w && typeof (w as Record<string, unknown>).id === "string" && typeof (w as Record<string, unknown>).addedAt === "string"
-      ) as WatchlistEntry[]
+      ).map((w: Record<string, unknown>) => ({
+        id: w.id as string,
+        addedAt: w.addedAt as string,
+        entryPrice: typeof w.entryPrice === "number" ? w.entryPrice : null,
+      })) as WatchlistEntry[]
     : [];
 
   // Migrate exchange favorites to watchlist entries (v1 → v2)
@@ -206,7 +215,7 @@ function validateUIState(raw: unknown): PersistedUIState {
   const baseCurrencyApiId = typeof stored.baseCurrencyApiId === "string" ? stored.baseCurrencyApiId : null;
   const baseCurrencyText = typeof stored.baseCurrencyText === "string" ? stored.baseCurrencyText : null;
 
-  return { _version: 4, activeTab, exchange, watchlist, league, denseMode, baseCurrencyApiId, baseCurrencyText };
+  return { _version: 5, activeTab, exchange, watchlist, league, denseMode, baseCurrencyApiId, baseCurrencyText };
 }
 
 // ---------- Store Interface ----------
@@ -244,7 +253,8 @@ interface DashboardStore {
   setExchangeViewMode: (mode: "table" | "cards") => void;
   setExchangeSort: (field: string, direction: "asc" | "desc") => void;
   setExchangeFilter: (filter: "all" | "topVolume" | "favorites") => void;
-  toggleExchangeFavorite: (pairId: string) => void;
+  /** iter 92 (KI-8): Optional entryPrice for real P&L tracking */
+  toggleExchangeFavorite: (pairId: string, entryPrice?: number | null) => void;
   setLeague: (league: string) => void;
 
   // §2.3: Extended Exchange Filters
@@ -253,8 +263,10 @@ interface DashboardStore {
 
   // §2.6: Watchlist with added dates
   getWatchlistEntry: (id: string) => WatchlistEntry | undefined;
-  addToWatchlist: (id: string) => void;
+  addToWatchlist: (id: string, entryPrice?: number | null) => void;
   removeFromWatchlist: (id: string) => void;
+  /** iter 92 (KI-8): Update entry price for an existing watchlist entry. */
+  updateWatchlistEntryPrice: (id: string, entryPrice: number) => void;
 
   // §3.5: Global dense mode
   setDenseMode: (enabled: boolean) => void;
@@ -431,7 +443,10 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
   },
 
-  toggleExchangeFavorite: (pairId) => {
+  /** iter 92 (KI-8): toggleExchangeFavorite now accepts optional entryPrice.
+   *  When adding a pair to favorites, the caller should pass the current price
+   *  so real P&L can be computed later. */
+  toggleExchangeFavorite: (pairId: string, entryPrice?: number | null) => {
     const current = get().uiState.exchange.favorites;
     const isFav = current.includes(pairId);
     const next = isFav
@@ -441,7 +456,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     // §2.6: Sync with watchlist — add/remove watchlist entry too
     const watchlist = isFav
       ? get().uiState.watchlist.filter((w) => w.id !== pairId)
-      : [...get().uiState.watchlist, { id: pairId, addedAt: new Date().toISOString() }];
+      : [...get().uiState.watchlist, { id: pairId, addedAt: new Date().toISOString(), entryPrice: entryPrice ?? null }];
 
     const uiState = {
       ...get().uiState,
@@ -483,10 +498,10 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   // ---- §2.6: Watchlist with added dates ----
   getWatchlistEntry: (id) => get().uiState.watchlist.find((w) => w.id === id),
 
-  addToWatchlist: (id) => {
+  addToWatchlist: (id, entryPrice?) => {
     const existing = get().uiState.watchlist;
     if (existing.some((w) => w.id === id)) return; // already in watchlist
-    const watchlist = [...existing, { id, addedAt: new Date().toISOString() }];
+    const watchlist = [...existing, { id, addedAt: new Date().toISOString(), entryPrice: entryPrice ?? null }];
     const uiState = { ...get().uiState, watchlist };
     set({ uiState });
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
@@ -494,6 +509,16 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   removeFromWatchlist: (id) => {
     const watchlist = get().uiState.watchlist.filter((w) => w.id !== id);
+    const uiState = { ...get().uiState, watchlist };
+    set({ uiState });
+    debouncedSaveToStorage(UI_STATE_KEY, uiState);
+  },
+
+  // iter 92 (KI-8): Update entry price for an existing watchlist entry
+  updateWatchlistEntryPrice: (id, entryPrice) => {
+    const watchlist = get().uiState.watchlist.map((w) =>
+      w.id === id ? { ...w, entryPrice } : w
+    );
     const uiState = { ...get().uiState, watchlist };
     set({ uiState });
     debouncedSaveToStorage(UI_STATE_KEY, uiState);
