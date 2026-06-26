@@ -3,64 +3,83 @@
 > Append-only shared multi-agent work log. Each section starts with `---`.
 > Old task history is in `git log`.
 
-Recent iterations kept (iter 88+). Older iter 77-87 records trimmed — those features are fully shipped and documented in PRODUCT_VISION.md / STATUS.md / AGENT_NAVIGATION.md.
-
----
-Task ID: iter-88
-Agent: main (Sonnet 4.5)
-Task: iter 88 — Address all 5 Known Issues (KI-1 through KI-5) deferred from iter 87 + apply date formatting cleanup pattern across 8 chart components.
-
-Stage Summary:
-- iter 88 SHIPPED — all 5 Known Issues from iter 87 addressed + date formatting cleanup. KI-5 (analyst fact templates → frontend i18n) + KI-3 (Premium column tooltip) + KI-4 (Flips tab relabel to "Cross-rate Deviations") + KI-2 (7d Change column tooltip — investigation confirmed by-design null state) + KI-1 (Speculation tab joins /api/flipper/flips for synthetic bid/ask + spread + fair rate + deviation in expandable panel per signal row). 8 chart components migrated to shared `formatLocaleDate` / `formatLocaleDateTime` helpers.
-- Tests: 768 pytest (757 + 11 e2e/analyst) + 412 jest pass.
-- Files changed (24 total): backend (3: `response_models.py`, `routes_analyst.py`, `tests/e2e/test_analyst.py`), frontend components (10), frontend infrastructure (1: `src/lib/utils.ts`), frontend tests (1), API route (1: `analyst-fallback/route.ts`), TS types (1: `types.ts`), i18n locales (4 × 21 new keys each), docs (3: STATUS, AGENT_NAVIGATION, worklog).
-- For full iter 88 detail, see git log (commit message + diff).
+Recent iterations kept (iter 89+). Older iter 77-88 records trimmed — those features are fully shipped and documented in PRODUCT_VISION.md / STATUS.md / AGENT_NAVIGATION.md. For full iter 88/89 detail see git log.
 
 ---
 Task ID: iter-89
 Agent: main (Sonnet 4.5)
-Task: iter 89 — Dead i18n key cleanup (low priority task deferred from iter 88 hand-off) + opportunistic code health. Visual verification (P1) deferred — requires running backend + frontend locally (user action).
-
-Work Log:
-- Reviewed STATUS.md (iter 88 row + Quick Reference), AGENT_NAVIGATION.md (invariant #40), worklog.md (iter 88 Stage Summary). Identified iter 89 priorities: (1) dead `graphXxx` i18n key cleanup (~30 keys × 4 locales, low priority, harmless), (2) visual verification (P1, deferred — requires browser), (3) code health opportunistic.
-- **Audit phase (grep `graphXxx` + `tabGraph` across `src/`):** confirmed all 24 `graphXxx` keys + `tabGraph` exist ONLY in the 4 locale files (no live references in `src/`). All dead — left over from iter 87 Currency Graph tab removal.
-- **Audit extension (related dead keys):** discovered 3 more dead keys while auditing locale files:
-  - `tabForecast` — Forecast tab was removed in an earlier iteration; key still in all 4 locale files.
-  - `tabPortfolio` — Portfolio tab was removed in an earlier iteration; key still in all 4 locale files.
-  - `fallbackForecasts` / `fallbackPortfolio` / `fallbackCurrencyGraph` — `ErrorBoundary` fallback titles for the 3 removed tabs. Only `fallbackFlips`, `fallbackTierDrift`, `fallbackWatchlist`, `fallbackItemDetails`, `fallbackPairDetails`, `fallbackArbitrageCalculator` are still referenced (in `dashboard-page.tsx` + `dashboard-dialogs.tsx`); the other 3 fallback keys are dead.
-- **New bug discovered (KI-6):** while auditing `tabForecast` / `tabPortfolio`, found that `shortcuts-dialog.tsx` displays an OUTDATED tab mapping. The dialog shows: 7→Forecast, 8→Portfolio, 0→Watchlist. But the actual `TAB_MAP` in `dashboard-page.tsx` is: 7→Optimizer, 8→Analyst, 9→Storage Value, 0→Speculation. This is a real bug — the dialog has been misinforming users since iter 87 (or earlier). Per project rule "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись", documented KI-6 first, then fixed it.
-- **Fix KI-6:** `src/components/dashboard/shortcuts-dialog.tsx` — replaced the 3 outdated `<kbd>...</kbd> {t("tabForecast")}` / `{t("tabPortfolio")}` / `{t("tabWatchlist")}` rows with the correct mapping: 7→`t("tabOptimizer")`, 8→`t("tabAnalyst")`, 9→`t("tabStorageValue")`, 0→`t("tabSpeculation")`. Added an inline comment block explaining the pre-existing limitation: TAB_MAP has 13 entries but shortcuts only cover indices 0–9, so liquid-chain + watchlist are NOT keyboard-reachable (this was always the case — not a regression).
-- **Dead i18n key cleanup script:** wrote `/home/z/my-project/scripts/cleanup_dead_i18n_keys.py` — a small Python script that removes the 30 dead keys (24 `graphXxx` + `tabGraph` + `tabForecast` + `tabPortfolio` + `fallbackForecasts` + `fallbackPortfolio` + `fallbackCurrencyGraph`) from all 4 locale files. The script also replaces the now-orphaned section headers (`// ---- Currency Graph Tab ----`, `// ---- Currency Graph — SVG labels ----`, `// ---- Portfolio Tab ----`) with `REMOVED iter 89` comment markers so future agents searching for the sections know they were intentionally deleted.
-- **Script execution + bug fix:** ran the script — removed 30 dead keys × 4 locales = 120 dead lines. Discovered a bug in the script's `replace_section_headers` step: `str.replace(old, new, 1)` matches `old` as a SUBSTRING inside the already-replaced comment, causing the "REMOVED iter 89" suffix to be appended multiple times on each run. Wrote `/home/z/my-project/scripts/fix_duplicate_comments.py` to deduplicate the suffixes, then `/home/z/my-project/scripts/restore_blank_lines.py` to restore the blank lines between comment markers and the next section header (lost during the script's `collapse_blank_lines` step). All 4 locale files now have consistent structure.
-- **Code health cleanup:** removed `"graph"` from `e2e/navigation.spec.ts:tabValues` list — was a dead leftover from iter 87 Currency Graph tab removal. Added an inline comment noting that `storage-value` + `speculation` are also missing from the list (separate test approach needed if added — leaving as-is to keep the test stable).
-- **Verification:**
-  - `./node_modules/.bin/tsc --noEmit` → clean (no errors).
-  - `python3 -m pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py` → **757 passed** (same as iter 88).
-  - `python3 -m pytest tests/e2e/test_analyst.py` → **11 passed** (same as iter 88).
-  - `./node_modules/.bin/jest --silent` → **412 passed, 19 suites passed** (same as iter 88).
-  - Total: **768 pytest + 412 jest pass** — identical to iter 88 (no test count change because all changes were deletions of dead code + 1 small UI fix that doesn't add testable behavior).
-- **Documentation:**
-  - `STATUS.md`: rewrote entirely — bumped "Last updated" to iter 89. Replaced the KI table to include KI-6 (closed iter 89). Added iter 89 row in Product Features section. Added 2 new Quick Reference entries: "Keyboard shortcut 0 goes to Speculation, not Watchlist" + "Need to add a new tab to the dashboard" (3-place update checklist: TAB_MAP, store.ts:validTabs, shortcuts-dialog.tsx).
-  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 89. Added invariant #41 (iter 89 patterns — 3 sub-sections: shortcuts dialog TAB_MAP sync, dead i18n key cleanup workflow, store.ts:validTabs migration safety). Added 2 new symptom rows in §4 Quick Reference table.
-  - `worklog.md`: trimmed iter 87 (now 2 iterations old — see git log). Trimmed iter 88 to Stage Summary only (was full detail). Added this iter 89 record.
+Task: iter 89 — Dead i18n key cleanup + KI-6 shortcuts dialog mismatch fix.
 
 Stage Summary:
-- **iter 89 SHIPPED — dead i18n key cleanup + KI-6 shortcuts dialog mismatch fix.** 30 dead keys × 4 locales = 120 dead lines removed (~3.5KB per locale). KI-6 (shortcuts dialog showing outdated tab mapping for keys 7/8/9/0) fixed — now matches `TAB_MAP` in `dashboard-page.tsx`. Pre-existing limitation documented: liquid-chain + watchlist NOT reachable via keyboard (TAB_MAP has 13 entries but shortcuts only cover indices 0–9) — was always this way, not a regression. Code health: removed "graph" from `e2e/navigation.spec.ts` tabValues.
-- **Tests: 768 pytest (757 + 11 e2e/analyst) + 412 jest pass — same as iter 88.** No test count change because all changes were deletions of dead code + 1 small UI fix.
-- **Files changed (9 total):**
-  - Frontend component (1): `src/components/dashboard/shortcuts-dialog.tsx` (KI-6 fix: updated tab mapping).
-  - i18n locales (4): `src/lib/i18n/locales/en.ts`, `src/lib/i18n/locales/ru.ts`, `src/lib/i18n/locales/zh.ts`, `src/lib/i18n/locales/ko.ts` — removed 30 dead keys each, added `REMOVED iter 89` comment markers.
-  - e2e test (1): `e2e/navigation.spec.ts` (removed "graph" from tabValues).
-  - Docs (3): `STATUS.md`, `AGENT_NAVIGATION.md`, `worklog.md`.
-  - Helper scripts (3, NEW — kept under `scripts/` for future reuse): `cleanup_dead_i18n_keys.py`, `fix_duplicate_comments.py`, `restore_blank_lines.py`.
+- 30 dead i18n keys × 4 locales = 120 dead lines removed. KI-6 fixed (shortcuts dialog now matches TAB_MAP). Pre-existing limitation documented: liquid-chain + watchlist NOT keyboard-reachable. Tests: 768 pytest + 412 jest pass — same as iter 88 (no new testable behavior).
+- Files changed (9 total): `shortcuts-dialog.tsx`, 4 i18n locale files, `e2e/navigation.spec.ts`, 3 docs (STATUS / AGENT_NAVIGATION / worklog), 3 helper scripts under `scripts/`.
 
-Next iteration (iter 90) — recommended priorities:
-1. **Visual verification (P1, deferred from iter 89)** — manual test of all iter 88 + iter 89 changes in browser (requires running backend + frontend). Check: Speculation spread details expand button (iter 88), Premium tooltip (iter 88), Flips tab relabel (iter 88), 7d Change tooltip (iter 88), Analyst facts localized in RU locale (iter 88), Shortcuts dialog now shows correct tab mapping for keys 7/8/9/0 (iter 89).
-2. **Extend keyboard shortcuts to cover liquid-chain + watchlist** (low priority, deferred from iter 89). Either reorder `TAB_MAP` (place them earlier) or add `Shift+1`..`Shift+9` bindings in `use-keyboard-shortcuts.ts` for indices 10–18.
-3. **Opportunistic refactoring** — no staged plan; per-file cleanup as opportunities arise.
-4. **Dead `portfolio*` i18n key cleanup** (~30 keys × 4 locales, similar to iter 89's `graphXxx` cleanup). The `portfolioMethod`, `portfolioAnnualizedRisk`, `portfolioCorrelationStatus`, etc. keys are mostly dead (Portfolio tab was removed in an earlier iteration). Only `portfolioCurrency` is still referenced (in `tier-drift-tracker.tsx`). Requires careful audit before removal — some keys may have non-obvious references.
+---
+Task ID: iter-90
+Agent: main (Sonnet 4.5)
+Task: iter 90 — Pure recon & planning iteration (NO code changes, NO archive, NO git commits — per user instruction "ПРОСТО анализ проведи и планирование").
 
-NOT done in iter 89 (intentionally deferred):
-- Visual verification (manual browser test) — requires running backend + frontend locally (user action).
-- Keyboard shortcut extension for liquid-chain + watchlist — pre-existing limitation, not introduced by iter 89.
-- Dead `portfolio*` key cleanup — would expand iter 89 scope too much. Defer to iter 90.
+Stage Summary:
+- Audited 11 live tabs + 1 sub-component (ArbitrageFlipperTriangular inside Flips). Described both flip scenarios (cross-currency optimal purchase + spread capture). Explained cross-rate inconsistency (2 thresholds: 10% backend / 5% frontend) and triangular arbitrage (Bellman-Ford + integer simulation + cross-rate filter). Proposed 5 overheat analytics features (Proposal A-E). Asked 14 clarifying questions (Q1-Q14). Drafted iter 91-96 plan.
+- **No code changes, no archive, no git commits** — by design. Pure chat output.
+
+---
+Task ID: iter-91
+Agent: main (Sonnet 4.5)
+Task: iter 91 — Recon refinement: critique iter 90 + deep-dive POE2Scout API + refine iter 91+ plan. User asked "Со всем согласен? Дополнить нечем? Улучшить, ошибки исправить?" and "ясно уясни для себя что ты можешь извлекать по api из данных и в каком виде". Then asked for: archive + upload to tmpfiles.org + git commands + stop point.
+
+Work Log:
+- Cloned repo to `/home/z/my-project/work/poe2-market-dashboard`. Read: `STATUS.md`, `AGENT_NAVIGATION.md` (invariant #41), `worklog.md` (iter 89 stage summary).
+- **POE2Scout API deep-dive:** read full `backend/data/providers/poe2scout.py` (934 lines) + `backend/data/schemas.py` (293 lines) + `backend/api/data_snapshot.py` (DataSnapshot pattern, ~16 API calls per 5-min cycle) + `backend/economy/content_pulse.py` (352 lines) + `backend/api/routes_arbitrage.py` (lines 1-200 + 700-1000). Catalogued **12 POE2Scout endpoints** + **8 free-data fields** (already collected by DataSnapshot) + **5 not-available data points** (real trade count, order book depth, individual bid/ask per order, seller identifiers, real-time push).
+- **Frontend verification of iter 90 claims:** read `dashboard-page.tsx:536` (TAB_MAP confirmed 13 entries incl. 2 dead), `store.ts:148-152` (validTabs confirmed stale: arbitrage/forecast/portfolio/graph), `flips-table.tsx:120-375` (confirmed 12 columns, missing volume24h/bid/ask/deviationPct/fairRate), `watchlist-tab.tsx:148-150` (confirmed pnl sorts by changePercent — duplicate of change column), `speculation-tab.tsx:195-255` (confirmed Sparkline exists, both local + shared `./sparkline` versions), `lib/types.ts:160-220` (confirmed FlipOpportunity type has all 5 hidden fields).
+- **iter 90 critique — confirmed 6 findings:** (1) dead TAB_MAP slots, (2) hidden backend fields in FlipsTable, (3) pnl/change duplicate in Watchlist, (4) two cross-rate thresholds (10% backend / 5% frontend), (5) Sparkline already exists, (6) `relative_price` semantics described.
+- **iter 90 critique — found 5 ERRORS:**
+  - **E1:** iter 90 described `relative_price` as per-pair. REALITY: per-currency vs BASE (Exalted). Cross-rate = `from_rel / to_rel`, NOT `from_pair.relative_price / to_pair.relative_price`.
+  - **E2:** iter 90 mixed `current_quantity` (listings count = supply snapshot) with `volume_traded` (24h trade volume = activity). `content_pulse._category_today_volume` uses `current_quantity` — wrong metric for "overheat" detection.
+  - **E3:** iter 90 said "no `delta_24h_pct`". REALITY: `find_price_24h_ago` already exists in `pricing.py`, used by `routes_analyst.py`. Adding `volume_24h_delta_pct` to `/content-pulse` is a 10-line change, not a new endpoint.
+  - **E4:** iter 90 proposed `executable_estimate: fast/medium/slow` for triangular arbitrage. REALITY: cannot build formula without backtesting data. Must add SQLite persistence first (TD-3, iter 96).
+  - **E5:** iter 90 flagged `CURRENCY_DISPLAY_NAMES` hardcode in `optimizer-tab.tsx` as duplication. REALITY: intentional fallback — `getCurrencyDisplayName` returns `null` for unmapped currencies; hardcode prevents UI from showing raw `api_id`.
+- **5 new Proposals F-J** (all use data already collected by DataSnapshot, just need exposition):
+  - **F:** Wall detection (`highest_stock / current_quantity > 0.3` = one seller holds >30% of listings)
+  - **G:** OHLCV from `DailyStatsHistory` (POE2Scout endpoint exists, project doesn't use it — `pair-detail-dialog.tsx` candlestick is synthetic)
+  - **H:** Cross-pair volume correlation (from existing `price_logs`, 90-day retention)
+  - **I:** Spread persistence (add `market_spread` to HistoricalStore, 5-min bucket, 30 days)
+  - **J:** Liquidity-tier UI (`tiers.py` already computes T1-T5 per currency, never shown)
+- **Refined iter 91-97 plan** — key changes vs iter 90:
+  - **iter 91** adds `validTabs` cleanup in `store.ts` (iter 90 forgot)
+  - **iter 95** Overheat Index uses `volume_traded` (NOT `current_quantity` — iter 90 had wrong formula)
+  - **iter 96** triangular persistence is PREREQUISITE for executable_estimate (iter 90 wanted to skip)
+  - **iter 97+** adds Proposal F-J (iter 90 didn't see these opportunities)
+- **3 new Known Issues documented:**
+  - **KI-7:** TAB_MAP has 2 dead slots (`"arbitrage"` idx 4, `"graph"` idx 11). Shortcut "5" silently does nothing.
+  - **KI-8:** `watchlist-tab.tsx:148-150` `pnl` column sorts identically to `change` column.
+  - **KI-9:** Cross-rate inconsistency uses 2 thresholds (10% backend / 5% frontend) + `affectedCurrencies` not truncated.
+- **8 new Tech Debt items documented:**
+  - **TD-1:** FlipsTable hides 5 backend-computed fields (volume24h, bid, ask, fairRate, deviationPct).
+  - **TD-2:** `content_pulse._category_today_volume` uses `current_quantity` (listings) instead of `volume_traded` (24h trades).
+  - **TD-3:** Triangular arbitrage has no persistence — cannot backtest executable_estimate.
+  - **TD-4:** `market_spread` not persisted in HistoricalStore.
+  - **TD-5:** `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used.
+  - **TD-6:** `highest_stock` + `current_quantity` not used for Wall detection.
+  - **TD-7:** `PriceMomentumTracker` momentum + volatility computed but not shown in UI.
+  - **TD-8:** Tier classification (T1-T5 from `tiers.py`) not shown anywhere.
+- **Documentation updated (3 files):**
+  - `STATUS.md`: bumped "Last updated" to iter 91. Added KI-7/8/9 + TD-1 through TD-8. Added iter 90 + iter 91 rows in Product Features table. Added 7 new Quick Reference symptom rows. Trimmed iter 88 stage summary (kept only iter 89+ in worklog).
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 91. Added invariant #42 (iter 91 recon patterns — 10 sub-sections a-j: relative_price semantics, current_quantity vs volume_traded, find_price_24h_ago exists, executable_estimate requires persistence, CURRENCY_DISPLAY_NAMES is intentional fallback, 12 API endpoints, 8 free-data fields, 5 not-available data points, 5 new Proposals F-J, refined iter 91-97 plan). Updated §4 Known Issues intro to reference new KIs + TDs.
+  - `worklog.md`: trimmed iter 88 (now 3 iterations old — see git log). Trimmed iter 89 to Stage Summary (was full detail). Added iter 90 + iter 91 records.
+
+Stage Summary:
+- **iter 91 SHIPPED — recon refinement (NO code changes, NO tests, NO archive of code, NO git commits to source code).** Pure planning + documentation update. User explicitly said "не генерируй докс и пдф, просто текстом в чат" — main analysis is in chat. Documentation updated per user's standard requirement "После выполнения: обнови документацию, упакуй результат в архив, загрузи на tmpfiles.org, git-команды, точка остановки".
+- **3 new KIs (7/8/9) + 8 new TDs (1-8) documented** in STATUS.md for future iter 91+ implementation work.
+- **5 new Proposals F-J** added to roadmap — all leverage data already collected by DataSnapshot (no new API calls needed).
+- **Files changed (3 total — documentation only):** `STATUS.md`, `AGENT_NAVIGATION.md`, `worklog.md`.
+
+Next iteration (iter 92) — recommended priorities (refined plan, awaiting user's answers to iter 90 Q1-Q14):
+1. **iter 92 = iter 91 plan implementation** (cleanup + low-hanging fruit, 1-2 days): remove dead TAB_MAP slots + cleanup validTabs, add 5 columns to FlipsTable, fix Watchlist pnl duplicate, truncate cross_rate_warning.affectedCurrencies, unify cross-rate threshold to 7%.
+2. **iter 93 = Best Payment primary view** (per user's flip point 1 — Hinakora's Hair example).
+3. **iter 94 = Spread Capture view** (per user's flip point 2 — buy 80 / sell 100 example).
+4. **iter 95 = Overheat Index + Wall Detection** (per user's "перегретые рынки" request).
+5. **iter 96 = Spread persistence + triangular persistence** (TD-3 + TD-4).
+6. **iter 97+ = Proposal F-J exposition** (Wall detection UI, OHLCV candlestick, cross-pair correlation, liquidity-tier UI).
+
+User's iter 90 Q1-Q14 still unanswered — these will determine exact iter 92-95 scope. See iter 90 chat output for the 14 questions.
