@@ -619,9 +619,9 @@ class ContentPulseMoverData(BaseModel):
 
 
 class ContentPulseCategoryData(BaseModel):
-    """Per-category turnover snapshot + rolling deltas + top movers."""
+    """Per-category turnover snapshot + rolling deltas + top movers + overheat index."""
     category: str = Field(description="League mechanic category (e.g. 'ritual', 'breach')")
-    today_volume: float = Field(description="Sum of CurrentQuantity across all items in the category today")
+    today_volume: float = Field(description="Sum of 24h volume_traded across all items in the category (iter 95 TD-2 fix: was current_quantity)")
     rolling_7d: float = Field(description="Mean daily volume over the last 7 days")
     rolling_30d: float = Field(description="Mean daily volume over the last 30 days")
     delta_7d_pct: float | None = Field(default=None, description="(today / rolling_7d - 1) * 100. None when no historical data.")
@@ -630,6 +630,13 @@ class ContentPulseCategoryData(BaseModel):
     item_count: int = Field(description="Number of items in this category")
     top_rising: list[ContentPulseMoverData] = Field(default_factory=list, description="Top-3 items with positive % price change")
     top_falling: list[ContentPulseMoverData] = Field(default_factory=list, description="Top-3 items with negative % price change")
+    # iter 95 (Q13): Overheat Index — composite signal for the post-streamer
+    # pattern (volume spike + price drop). All four fields are derived from
+    # data the snapshot already collects; no new API calls.
+    overheat_index: float = Field(default=0.0, description="0-100 composite score for the post-streamer pattern (volume spike + price drop). Higher = more overheated. 0 when insufficient data.")
+    overheat_signal: str = Field(default="cool", description="Overheat classification: 'hot' (volume spiking AND prices dropping) | 'warm' (only one) | 'cool' (neither or insufficient data).")
+    volume_spike_ratio: float | None = Field(default=None, description="today_volume / rolling_7d. None when rolling_7d is 0 or today_volume is 0.")
+    price_change_pct: float | None = Field(default=None, description="Mean per-item % price change over price_logs. None when no items have ≥2 price points.")
 
 
 class ContentPulseResponse(BaseModel):

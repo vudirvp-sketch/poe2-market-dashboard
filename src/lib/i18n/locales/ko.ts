@@ -1048,6 +1048,13 @@ const ko: Record<TranslationKeys, string> = {
   contentPulseOffline: "Content Pulse는 분석 백엔드가 필요합니다. 이 위젯을 활성화하려면 FastAPI 백엔드를 시작하세요.",
   contentPulseRefresh: "새로고침",
   contentPulseFetchedAt: "가져온 시각: {0}",
+  // iter 95 (Q13): Overheat Index badge + tooltip on Content Pulse categories.
+  // Shows when a category's volume is spiking (>2x 7d avg) AND prices are
+  // dropping (<-5%) — the classic post-streamer fade pattern.
+  contentPulseOverheatBadge: "과열",
+  contentPulseOverheatTooltip: "과열 지수: {0}/100. 거래량이 7일 평균의 {1}배로 급증하고 가격이 {2}% 하락했습니다. 전형적인 스트리머 이펙트 종료 패턴 — 거래량 급증이 가라앉으면서 늦게 들어온 판매자들이 서로 가격을 깎고 있습니다. 매수 전 가격 안정을 기다리는 것을 권장합니다.",
+  contentPulseOverheatWarmBadge: "과열 진행 중",
+  contentPulseOverheatWarmTooltip: "과열 진행 중: 부분적 과열 신호 ({0}/100). 거래량이 7일 평균의 {1}배, 가격은 {2}%. 스트리머 이펙트 종료의 시작일 수도 있고 일반적인 변동성일 수도 있습니다 — 행동 전에 관찰하세요.",
   // F5 (iter 77) — Speculation tab (z-score BUY/SELL/HOLD signals)
   tabSpeculation: "스페큘레이션",
   speculationTitle: "스페큘레이션 — 싸게 사, 비싸게 팔아",

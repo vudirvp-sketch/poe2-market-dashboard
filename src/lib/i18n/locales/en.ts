@@ -1054,6 +1054,13 @@ const en = {
   contentPulseOffline: "Content pulse requires the analytics backend. Start the FastAPI backend to enable this widget.",
   contentPulseRefresh: "Refresh",
   contentPulseFetchedAt: "Fetched: {0}",
+  // iter 95 (Q13): Overheat Index badge + tooltip on Content Pulse categories.
+  // Shows when a category's volume is spiking (>2x 7d avg) AND prices are
+  // dropping (<-5%) — the classic post-streamer fade pattern.
+  contentPulseOverheatBadge: "Overheated",
+  contentPulseOverheatTooltip: "Overheat Index: {0}/100. Volume spiking {1}× above 7-day average while prices dropped {2}%. Classic post-streamer fade pattern — late sellers undercutting each other as the volume spike fades. Consider waiting for the price to stabilize before buying in.",
+  contentPulseOverheatWarmBadge: "Warming up",
+  contentPulseOverheatWarmTooltip: "Warming up: partial overheat signal ({0}/100). Volume spiking {1}× above 7-day average, prices {2}%. Could be the start of a post-streamer fade or just normal volatility — monitor before acting.",
   // F5 (iter 77) — Speculation tab (z-score BUY/SELL/HOLD signals)
   tabSpeculation: "Speculation",
   speculationTitle: "Speculation — Buy Low, Sell High",

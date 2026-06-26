@@ -1048,6 +1048,13 @@ const zh: Record<TranslationKeys, string> = {
   contentPulseOffline: "Content Pulse 需要分析后端。请启动 FastAPI 后端以启用此组件。",
   contentPulseRefresh: "刷新",
   contentPulseFetchedAt: "获取时间: {0}",
+  // iter 95 (Q13): Overheat Index badge + tooltip on Content Pulse categories.
+  // Shows when a category's volume is spiking (>2x 7d avg) AND prices are
+  // dropping (<-5%) — the classic post-streamer fade pattern.
+  contentPulseOverheatBadge: "过热",
+  contentPulseOverheatTooltip: "过热指数: {0}/100。成交量飙升至 7 天均值的 {1}×,价格下跌 {2}%。典型的主播效应消退模式 — 随着成交量峰值消退,后入场的卖家相互压价。建议等待价格稳定后再买入。",
+  contentPulseOverheatWarmBadge: "升温中",
+  contentPulseOverheatWarmTooltip: "升温中:部分过热信号 ({0}/100)。成交量为 7 天均值的 {1}×,价格 {2}%。可能是主播效应消退的开始,也可能只是正常波动 — 建议观察后再行动。",
   // F5 (iter 77) — Speculation tab (z-score BUY/SELL/HOLD signals)
   tabSpeculation: "投机",
   speculationTitle: "投机 — 低买高卖",

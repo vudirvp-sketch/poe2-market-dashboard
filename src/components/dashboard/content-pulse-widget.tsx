@@ -51,6 +51,7 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
+  Flame,
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -351,19 +352,59 @@ function CategoryBlock({ category, side, t, locale }: CategoryBlockProps) {
     ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
     : "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10";
 
+  // iter 95 (Q13): Overheat badge — only render when overheat_signal is "hot"
+  // or "warm" (not "cool"). The badge is wrapped in a <span title=...>
+  // tooltip so users hovering see the volume_spike_ratio + price_change_pct
+  // breakdown without needing a separate UI element.
+  const overheat = category.overheatSignal;
+  const showOverheatBadge = overheat === "hot" || overheat === "warm";
+  const overheatLabel = overheat === "hot"
+    ? t("contentPulseOverheatBadge")
+    : t("contentPulseOverheatWarmBadge");
+  const overheatTooltip = overheat === "hot"
+    ? t("contentPulseOverheatTooltip", {
+        0: category.overheatIndex.toFixed(1),
+        1: category.volumeSpikeRatio != null ? category.volumeSpikeRatio.toFixed(2) : "—",
+        2: category.priceChangePct != null ? `${category.priceChangePct.toFixed(2)}%` : "—",
+      })
+    : t("contentPulseOverheatWarmTooltip", {
+        0: category.overheatIndex.toFixed(1),
+        1: category.volumeSpikeRatio != null ? category.volumeSpikeRatio.toFixed(2) : "—",
+        2: category.priceChangePct != null ? `${category.priceChangePct.toFixed(2)}%` : "—",
+      });
+  const overheatBadgeClass = overheat === "hot"
+    ? "border-orange-500/60 text-orange-600 dark:text-orange-400 bg-orange-500/10"
+    : "border-amber-500/60 text-amber-600 dark:text-amber-400 bg-amber-500/10";
+
   return (
     <div
       data-testid={`content-pulse-category-${side}-${category.category}`}
       className="rounded-md border border-border/60 p-3 space-y-2"
     >
-      {/* Header: category name + 7d delta badge */}
+      {/* Header: category name + 7d delta badge + optional overheat badge */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">
           {getCategoryDisplayName(category.category, locale) || titleCase(category.category)}
         </span>
-        <Badge variant="outline" className={`text-xs ${badgeClass}`}>
-          {deltaLabel} ({t("contentPulse7d")})
-        </Badge>
+        <div className="flex items-center gap-1.5">
+          {showOverheatBadge && (
+            <span
+              title={overheatTooltip}
+              data-testid={`content-pulse-overheat-badge-${category.category}`}
+            >
+              <Badge
+                variant="outline"
+                className={`text-xs gap-1 cursor-help ${overheatBadgeClass}`}
+              >
+                <Flame className="h-3 w-3" aria-hidden="true" />
+                {overheatLabel}
+              </Badge>
+            </span>
+          )}
+          <Badge variant="outline" className={`text-xs ${badgeClass}`}>
+            {deltaLabel} ({t("contentPulse7d")})
+          </Badge>
+        </div>
       </div>
 
       {/* Movers list */}

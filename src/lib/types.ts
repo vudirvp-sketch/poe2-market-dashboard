@@ -395,12 +395,13 @@ export interface ContentPulseMover {
   currentPrice: number;
 }
 
-/** Per-category turnover snapshot + rolling deltas + top movers.
+/** Per-category turnover snapshot + rolling deltas + top movers + overheat index.
  *  Backend (Pydantic) shape: ContentPulseCategoryData. */
 export interface ContentPulseCategory {
   /** League mechanic category (e.g. "ritual", "breach"). */
   category: string;
-  /** Sum of CurrentQuantity across all items in the category today. */
+  /** Sum of 24h volume_traded across all items in the category
+   *  (iter 95 TD-2 fix: was current_quantity / listings count). */
   todayVolume: number;
   /** Mean daily volume over the last 7 days. */
   rolling7d: number;
@@ -418,6 +419,16 @@ export interface ContentPulseCategory {
   topRising: ContentPulseMover[];
   /** Top-3 items with negative % price change. */
   topFalling: ContentPulseMover[];
+  /** iter 95 (Q13): 0-100 composite overheat score. Higher = more overheated.
+   *  0 when insufficient data. */
+  overheatIndex: number;
+  /** iter 95 (Q13): "hot" (volume spiking AND prices dropping) | "warm" (only one) | "cool". */
+  overheatSignal: "hot" | "warm" | "cool";
+  /** iter 95 (Q13): today_volume / rolling_7d. Null when rolling_7d is 0 or today_volume is 0. */
+  volumeSpikeRatio: number | null;
+  /** iter 95 (Q13): mean per-item % price change over price_logs.
+   *  Null when no items have ≥2 price points. */
+  priceChangePct: number | null;
 }
 
 /** Response for GET /api/flipper/content-pulse (F3/F4, iter 75 + iter 76). */

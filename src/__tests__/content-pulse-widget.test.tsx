@@ -84,6 +84,16 @@ function makeMover(
   return { apiId, text, trendPct, currentPrice };
 }
 
+// iter 95: default overheat fields used by test fixtures that don't care
+// about the overheat badge (most existing tests). Tests that DO care
+// override these explicitly.
+const COOL_OVERHEAT = {
+  overheatIndex: 0,
+  overheatSignal: "cool" as const,
+  volumeSpikeRatio: null,
+  priceChangePct: null,
+};
+
 const mixedResponse: ContentPulseResponse = {
   league: "Standard",
   dataAvailable: true,
@@ -103,6 +113,7 @@ const mixedResponse: ContentPulseResponse = {
         makeMover("breachstone", "Breachstone", 9.5),
       ],
       topFalling: [],
+      ...COOL_OVERHEAT,
     },
     {
       category: "delirium",
@@ -115,6 +126,7 @@ const mixedResponse: ContentPulseResponse = {
       itemCount: 14,
       topRising: [makeMover("simulacrum-shard", "Simulacrum Shard", 5.1)],
       topFalling: [],
+      ...COOL_OVERHEAT,
     },
     {
       category: "ritual",
@@ -130,6 +142,7 @@ const mixedResponse: ContentPulseResponse = {
         makeMover("omens-ritual", "Omen of Ritual", -8.4),
         makeMover("ritual-vessel", "Ritual Vessel", -6.2),
       ],
+      ...COOL_OVERHEAT,
     },
     {
       category: "expedition",
@@ -142,6 +155,7 @@ const mixedResponse: ContentPulseResponse = {
       itemCount: 9,
       topRising: [],
       topFalling: [makeMover("logbook", "Expedition Logbook", -4.0)],
+      ...COOL_OVERHEAT,
     },
     {
       category: "stable-cat",
@@ -154,6 +168,7 @@ const mixedResponse: ContentPulseResponse = {
       itemCount: 5,
       topRising: [],
       topFalling: [],
+      ...COOL_OVERHEAT,
     },
   ],
 };
@@ -174,6 +189,7 @@ const allStableResponse: ContentPulseResponse = {
       itemCount: 5,
       topRising: [],
       topFalling: [],
+      ...COOL_OVERHEAT,
     },
   ],
 };
@@ -370,6 +386,7 @@ describe("ContentPulseWidget", () => {
           itemCount: 27,
           topRising: [],
           topFalling: [],
+          ...COOL_OVERHEAT,
         },
       ],
     };
@@ -423,5 +440,138 @@ describe("ContentPulseWidget", () => {
       // ritual has 22 items
       expect(screen.getByText(/22 items/i)).toBeInTheDocument();
     });
+  });
+
+  // ==========================================================================
+  // iter 95 (Q13): Overheat Index badge tests
+  // ==========================================================================
+
+  it("does NOT render overheat badge when overheatSignal is 'cool'", async () => {
+    mockFetchApi.mockResolvedValue(mixedResponse);
+    renderWidget(true);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("content-pulse-widget")).toBeInTheDocument();
+    });
+
+    // All categories in mixedResponse have overheatSignal: "cool"
+    // → no overheat badge should be rendered for any of them.
+    expect(screen.queryByTestId("content-pulse-overheat-badge-breach")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("content-pulse-overheat-badge-ritual")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("content-pulse-overheat-badge-expedition")).not.toBeInTheDocument();
+  });
+
+  it("renders 'Overheated' badge when overheatSignal is 'hot'", async () => {
+    const hotResponse: ContentPulseResponse = {
+      league: "Standard",
+      dataAvailable: true,
+      fetchedAt: new Date().toISOString(),
+      categories: [
+        {
+          category: "breach",
+          todayVolume: 2500.0,
+          rolling7d: 1000.0,
+          rolling30d: 900.0,
+          delta7dPct: 150.0,
+          delta30dPct: 178.0,
+          signal: "rising",
+          itemCount: 27,
+          topRising: [makeMover("xoph-catalyst", "Xoph's Catalyst", 12.3)],
+          topFalling: [],
+          // iter 95: hot overheat — 2.5x volume spike + -8% price drop
+          overheatIndex: 45.0,
+          overheatSignal: "hot",
+          volumeSpikeRatio: 2.5,
+          priceChangePct: -8.0,
+        },
+      ],
+    };
+    mockFetchApi.mockResolvedValue(hotResponse);
+    renderWidget(true);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("content-pulse-overheat-badge-breach")).toBeInTheDocument();
+    });
+
+    // Badge text should be the "hot" label
+    expect(screen.getByText("Overheated")).toBeInTheDocument();
+
+    // Tooltip should contain the index value, spike ratio, and price drop
+    const badge = screen.getByTestId("content-pulse-overheat-badge-breach");
+    const tooltipText = badge.getAttribute("title") ?? "";
+    expect(tooltipText).toContain("45.0");      // overheatIndex
+    expect(tooltipText).toContain("2.50");      // volumeSpikeRatio
+    expect(tooltipText).toContain("-8.00%");    // priceChangePct
+  });
+
+  it("renders 'Warming up' badge when overheatSignal is 'warm'", async () => {
+    const warmResponse: ContentPulseResponse = {
+      league: "Standard",
+      dataAvailable: true,
+      fetchedAt: new Date().toISOString(),
+      categories: [
+        {
+          category: "delirium",
+          todayVolume: 1800.0,
+          rolling7d: 1000.0,
+          rolling30d: 950.0,
+          delta7dPct: 80.0,
+          delta30dPct: 89.0,
+          signal: "rising",
+          itemCount: 14,
+          topRising: [makeMover("simulacrum-shard", "Simulacrum Shard", 5.1)],
+          topFalling: [],
+          // iter 95: warm overheat — 1.8x volume spike (< 2.0 threshold) but prices dropping
+          overheatIndex: 22.0,
+          overheatSignal: "warm",
+          volumeSpikeRatio: 1.8,
+          priceChangePct: -11.0,
+        },
+      ],
+    };
+    mockFetchApi.mockResolvedValue(warmResponse);
+    renderWidget(true);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("content-pulse-overheat-badge-delirium")).toBeInTheDocument();
+    });
+
+    // Badge text should be the "warm" label
+    expect(screen.getByText("Warming up")).toBeInTheDocument();
+  });
+
+  it("renders overheat badge alongside the 7d delta badge", async () => {
+    const hotResponse: ContentPulseResponse = {
+      league: "Standard",
+      dataAvailable: true,
+      fetchedAt: new Date().toISOString(),
+      categories: [
+        {
+          category: "breach",
+          todayVolume: 2500.0,
+          rolling7d: 1000.0,
+          rolling30d: 900.0,
+          delta7dPct: 150.0,
+          delta30dPct: 178.0,
+          signal: "rising",
+          itemCount: 27,
+          topRising: [makeMover("xoph-catalyst", "Xoph's Catalyst", 12.3)],
+          topFalling: [],
+          overheatIndex: 45.0,
+          overheatSignal: "hot",
+          volumeSpikeRatio: 2.5,
+          priceChangePct: -8.0,
+        },
+      ],
+    };
+    mockFetchApi.mockResolvedValue(hotResponse);
+    renderWidget(true);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("content-pulse-overheat-badge-breach")).toBeInTheDocument();
+    });
+
+    // The 7d delta badge should ALSO be present (both badges coexist)
+    expect(screen.getByText("+150.00% (7d)")).toBeInTheDocument();
   });
 });

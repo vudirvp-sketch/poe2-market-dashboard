@@ -984,6 +984,13 @@ const ru: Record<TranslationKeys, string> = {
   contentPulseOffline: "Content Pulse требует аналитический бэкенд. Запустите FastAPI бэкенд, чтобы включить виджет.",
   contentPulseRefresh: "Обновить",
   contentPulseFetchedAt: "Обновлено: {0}",
+  // iter 95 (Q13): Overheat Index badge + tooltip on Content Pulse categories.
+  // Shows when a category's volume is spiking (>2x 7d avg) AND prices are
+  // dropping (<-5%) — the classic post-streamer fade pattern.
+  contentPulseOverheatBadge: "Перегрет",
+  contentPulseOverheatTooltip: "Индекс перегрева: {0}/100. Объём вспыхнул в {1}× выше 7-дневного среднего, цены упали на {2}%. Классическая пост-стримерская коррекция — продавцы демпингуют друг друга, пока всплеск объёма спадает. Подумайте о том, чтобы подождать стабилизации цены перед покупкой.",
+  contentPulseOverheatWarmBadge: "Разогревается",
+  contentPulseOverheatWarmTooltip: "Разогревается: частичный сигнал перегрева ({0}/100). Объём в {1}× выше 7-дневного среднего, цены {2}%. Может быть началом пост-стримерской коррекции или просто обычной волатильностью — понаблюдайте перед действием.",
   // F5 (iter 77) — Speculation tab (z-score BUY/SELL/HOLD signals)
   tabSpeculation: "Спекуляции",
   speculationTitle: "Спекуляции — покупай дёшево, продавай дорого",
