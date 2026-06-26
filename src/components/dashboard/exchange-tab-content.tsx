@@ -35,6 +35,9 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { ApiErrorFallback } from "@/components/dashboard/api-error-fallback";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 import { ExchangeTableSkeleton } from "@/components/dashboard/skeletons";
+// iter 93: Best Payment primary view — top-10 cards strip.
+import { BestPaymentTopList } from "@/components/dashboard/best-payment-top-list";
+import type { BestPaymentTopListItem } from "@/hooks/use-optimal-payment";
 
 import type {
   ExchangePair,
@@ -79,6 +82,9 @@ export interface ExchangeTabContentProps {
   optimalPaymentByPair: Map<string, OptimalPaymentResult>;
   crossRateFlips: CrossRateFlip[];
   anchorId: string;
+  /** iter 93: Top-N best-payment opportunities (currencies + craft items),
+   *  already filtered (savingsPct ≥1%) and sorted (savingsPct desc). */
+  bestPaymentTopList: BestPaymentTopListItem[];
 
   // Highlight state (keyboard navigation)
   highlightedRowIndex: number | null;
@@ -129,6 +135,7 @@ export function ExchangeTabContent(props: ExchangeTabContentProps) {
     optimalPaymentByPair,
     crossRateFlips,
     anchorId,
+    bestPaymentTopList,
     highlightedRowIndex,
     highlightedItemId,
     realm,
@@ -175,6 +182,19 @@ export function ExchangeTabContent(props: ExchangeTabContentProps) {
         />
       ) : (
         <>
+          {/* iter 93: Best Payment primary view — top-10 cards strip.
+              Renders ABOVE the filter chips/table so it's the first thing
+              the user sees on the Exchange tab. Wrapped in ErrorBoundary
+              so a bug in the new component can never blank the whole tab. */}
+          <ErrorBoundary fallbackTitle={t("fallbackBestPayment")}>
+            <BestPaymentTopList
+              items={bestPaymentTopList}
+              anchorId={anchorId}
+              exchangeData={exchangeData}
+              onPairClick={onPairClick}
+            />
+          </ErrorBoundary>
+
           {/* §1.1: View toggle + §1.2: Quick Filter Chips + §2.3: Extended Filters */}
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             {/* Quick Filter Chips (§1.2) */}

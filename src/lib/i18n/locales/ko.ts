@@ -932,6 +932,20 @@ const ko: Record<TranslationKeys, string> = {
   crossRateProfitPotential: "수익 잠재력",
   crossRateVol: "거래량",
 
+  // ---- iter 93: Best Payment primary view (Exchange tab top strip) ----
+  bestPaymentTitle: "최적 결제 — 절약 기회 상위",
+  bestPaymentSubtitle: "다른 통화로 결제하여 최악 옵션 대비 절약",
+  bestPaymentPayIn: "결제",
+  bestPaymentVs: "vs",
+  bestPaymentSave: "절약",
+  bestPaymentHide: "숨기기",
+  bestPaymentShow: "표시",
+  bestPaymentCraftItem: "크래프트",
+  bestPaymentCountTooltip: "다른 통화로 결제 시 ≥1% 절약되는 아이템 수",
+  bestPaymentSavingsTooltip: "이 아이템의 최악 결제 통화 대비 절약 %",
+  bestPaymentCardAria: "{item} — {best}로 결제, {worst} 대비 {pct}% 절약",
+  fallbackBestPayment: "최적 결제",
+
   // ---- §12: Liquid Chain Tab ----
   tabLiquidChain: "액체 체인",
   liquidChainTitle: "섬막 액체 재조합 체인",

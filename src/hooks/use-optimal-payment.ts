@@ -76,6 +76,49 @@ import {
 import type { CrossRatesResult } from "@/hooks/use-cross-rates";
 import { QUERY_KEYS } from "@/components/providers";
 
+// ---------------------------------------------------------------------------
+// iter 93: Best Payment top-list entry
+// ---------------------------------------------------------------------------
+/** One row in the Best Payment top-list (iter 93).
+ *  Aggregates all exchange pairs sharing the same `currency1Id` (the item
+ *  being paid for) into a single best-payment opportunity. */
+export interface BestPaymentTopListItem {
+  /** The apiId of the item/currency being bought (currency1Id). */
+  itemId: string;
+  /** Display name of the item/currency being bought. */
+  itemName: string;
+  /** POE2Scout category of the item ("currency", "ritual", "ultimatum", …).
+   *  When `isCraftItem` is true, this is a craft item (Omens, Soul Cores). */
+  categoryApiId: string;
+  /** True when categoryApiId is a craft-item category (not a pure currency). */
+  isCraftItem: boolean;
+  /** The cheapest payment currency apiId. */
+  bestCurrencyId: string;
+  /** Display name of the cheapest payment currency. */
+  bestCurrencyName: string;
+  /** The most expensive payment currency apiId. */
+  worstCurrencyId: string;
+  /** Display name of the most expensive payment currency. */
+  worstCurrencyName: string;
+  /** Savings percentage (worst → best). Always ≥1 (filtered). */
+  savingsPct: number;
+  /** Savings in anchor currency units. */
+  savingsAnchor: number;
+  /** Representative pair (the pair whose currency2Id === bestCurrencyId,
+   *  so clicking the card opens the most useful pair detail). */
+  representativePairId: string;
+  /** 24h volume of the representative pair (for sort tiebreak + display). */
+  volume: number;
+  /** Full optimal-payment result (for tooltip / detail dialog). */
+  result: OptimalPaymentResult;
+}
+
+/** Minimum savings % to surface in the Best Payment top-list (iter 93, Q3). */
+export const BEST_PAYMENT_MIN_SAVINGS_PCT = 1;
+
+/** Max rows surfaced in the Best Payment top-list (iter 93, Q1 — "top-10"). */
+export const BEST_PAYMENT_TOP_LIMIT = 10;
+
 /** Inputs for useOptimalPayment. */
 export interface UseOptimalPaymentInput {
   /** Raw exchange pair data from useExchangePairs (undefined while loading). */
@@ -96,6 +139,10 @@ export interface UseOptimalPaymentResult {
   selectedAnchorId: string;
   /** Display-name-keyed map ("Name1/Name2") for FlipsTab consumption. */
   optimalPaymentByDisplayName: Map<string, OptimalPaymentResult>;
+  /** iter 93: Top-N best-payment opportunities sorted by savingsPct desc.
+   *  Covers currencies + craft items (Ritual Omens, Soul Cores, Idols, …).
+   *  Each entry aggregates all pairs sharing the same `currency1Id`. */
+  bestPaymentTopList: BestPaymentTopListItem[];
 }
 
 /**
@@ -306,10 +353,135 @@ export function useOptimalPayment({
     return map;
   }, [exchangeData, optimalPaymentByPair]);
 
+  // ==========================================================================
+  // 5. iter 93: Best Payment top-list — sorted list of items where paying in
+  //    a non-default currency saves ≥1% vs the worst option. Covers both
+  //    pure currencies (currency1CategoryApiId === "currency") and craft
+  //    items (currency1CategoryApiId in ITEM_CATEGORIES: ritual, ultimatum,
+  //    idol, vaultkeys, delirium). Each entry aggregates ALL pairs sharing
+  //    the same `currency1Id` — we don't emit one row per pair because the
+  //    user thinks in terms of "what should I buy?", not "what pair?".
+  //
+  //    Algorithm:
+  //      1. Group exchangeData by currency1Id (preserves both currency-pairs
+  //         and item-pairs in a single pass — uses category to distinguish).
+  //      2. For each group, look up the OptimalPaymentResult attached to
+  //         ANY pair in the group (they all share the same result — see the
+  //         clientOptimalResult memo above where we set the same result for
+  //         every pair.id in a group).
+  //      3. Filter savingsPct ≥ BEST_PAYMENT_MIN_SAVINGS_PCT (1%).
+  //      4. Sort by savingsPct desc, then by volume desc (tiebreak).
+  //      5. Take top BEST_PAYMENT_TOP_LIMIT (10).
+  //
+  //    The "representative pair" is the pair whose currency2Id ===
+  //    bestCurrencyId — clicking the card opens that pair's detail dialog
+  //    so the user sees the actual cheapest-payment trade.
+  // ==========================================================================
+  const bestPaymentTopList = useMemo<BestPaymentTopListItem[]>(() => {
+    if (!exchangeData || exchangeData.length === 0 || optimalPaymentByPair.size === 0) {
+      return [];
+    }
+
+    // Group pairs by currency1Id (the "thing being bought").
+    // currency1Id is unique per item — covers both currencies and craft items.
+    const groups = new Map<
+      string,
+      {
+        itemName: string;
+        categoryApiId: string;
+        pairs: ExchangePair[];
+      }
+    >();
+
+    for (const pair of exchangeData) {
+      const existing = groups.get(pair.currency1Id);
+      if (existing) {
+        existing.pairs.push(pair);
+      } else {
+        groups.set(pair.currency1Id, {
+          itemName: pair.currency1Name,
+          categoryApiId: pair.currency1CategoryApiId,
+          pairs: [pair],
+        });
+      }
+    }
+
+    const items: BestPaymentTopListItem[] = [];
+
+    for (const [itemId, group] of groups) {
+      // Need at least 2 pairs to have a meaningful best/worst comparison.
+      if (group.pairs.length < 2) continue;
+
+      // Look up the OptimalPaymentResult from any pair in the group.
+      // (All pairs in a group share the same result.)
+      let result: OptimalPaymentResult | undefined;
+      for (const p of group.pairs) {
+        result = optimalPaymentByPair.get(p.id);
+        if (result) break;
+      }
+      if (!result) continue;
+
+      // Q3 (iter 93): hide pairs with savings <1%.
+      if (result.savingsPct < BEST_PAYMENT_MIN_SAVINGS_PCT) continue;
+
+      // Find the representative pair — the one whose currency2Id matches
+      // bestCurrencyId. This is the pair the user should actually trade.
+      // Fallback: the first pair in the group.
+      let representativePairId = group.pairs[0]!.id;
+      let volume = group.pairs[0]!.volume;
+      for (const p of group.pairs) {
+        if (p.currency2Id === result.bestCurrencyId) {
+          representativePairId = p.id;
+          volume = p.volume;
+          break;
+        }
+      }
+
+      // Look up best/worst currency display names from the pairs themselves.
+      let bestCurrencyName = result.bestCurrencyId;
+      let worstCurrencyName = result.worstCurrencyId;
+      for (const p of group.pairs) {
+        if (p.currency2Id === result.bestCurrencyId) {
+          bestCurrencyName = p.currency2Name;
+        }
+        if (p.currency2Id === result.worstCurrencyId) {
+          worstCurrencyName = p.currency2Name;
+        }
+      }
+
+      items.push({
+        itemId,
+        itemName: group.itemName,
+        categoryApiId: group.categoryApiId,
+        isCraftItem: isItemCategory(group.categoryApiId),
+        bestCurrencyId: result.bestCurrencyId,
+        bestCurrencyName,
+        worstCurrencyId: result.worstCurrencyId,
+        worstCurrencyName,
+        savingsPct: result.savingsPct,
+        savingsAnchor: result.savingsAnchor,
+        representativePairId,
+        volume,
+        result,
+      });
+    }
+
+    // Sort by savingsPct desc, then by volume desc (tiebreak).
+    items.sort((a, b) => {
+      if (b.savingsPct !== a.savingsPct) {
+        return b.savingsPct - a.savingsPct;
+      }
+      return b.volume - a.volume;
+    });
+
+    return items.slice(0, BEST_PAYMENT_TOP_LIMIT);
+  }, [exchangeData, optimalPaymentByPair]);
+
   return {
     optimalPaymentByPair,
     crossRateFlips,
     selectedAnchorId,
     optimalPaymentByDisplayName,
+    bestPaymentTopList,
   };
 }

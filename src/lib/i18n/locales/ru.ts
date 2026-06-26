@@ -868,6 +868,20 @@ const ru: Record<TranslationKeys, string> = {
   crossRateProfitPotential: "Потенциал прибыли",
   crossRateVol: "Объём",
 
+  // ---- iter 93: Best Payment primary view (Exchange tab top strip) ----
+  bestPaymentTitle: "Лучшая оплата — топ возможностей для экономии",
+  bestPaymentSubtitle: "Заплати другой валютой и сэкономь vs худшего варианта",
+  bestPaymentPayIn: "Заплати",
+  bestPaymentVs: "vs",
+  bestPaymentSave: "сэкономь",
+  bestPaymentHide: "Скрыть",
+  bestPaymentShow: "Показать",
+  bestPaymentCraftItem: "крафт",
+  bestPaymentCountTooltip: "Количество предметов, где оплата другой валютой экономит ≥1%",
+  bestPaymentSavingsTooltip: "% экономии относительно худшей валюты оплаты для этого предмета",
+  bestPaymentCardAria: "{item} — заплати {best}, сэкономь {pct}% vs {worst}",
+  fallbackBestPayment: "Лучшая оплата",
+
   // ---- §12: Liquid Chain Tab ----
   tabLiquidChain: "Цепочка жидкостей",
   liquidChainTitle: "Цепочка перекрафта жидкостей делирия",

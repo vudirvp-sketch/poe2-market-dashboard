@@ -932,6 +932,20 @@ const zh: Record<TranslationKeys, string> = {
   crossRateProfitPotential: "盈利潜力",
   crossRateVol: "成交量",
 
+  // ---- iter 93: Best Payment primary view (Exchange tab top strip) ----
+  bestPaymentTitle: "最佳支付 — 省钱机会排行",
+  bestPaymentSubtitle: "用另一种货币支付，相对最差选项可省钱",
+  bestPaymentPayIn: "支付",
+  bestPaymentVs: "vs",
+  bestPaymentSave: "省",
+  bestPaymentHide: "隐藏",
+  bestPaymentShow: "显示",
+  bestPaymentCraftItem: "工艺",
+  bestPaymentCountTooltip: "用另一种货币支付可节省 ≥1% 的物品数量",
+  bestPaymentSavingsTooltip: "相对最差支付货币的省钱百分比",
+  bestPaymentCardAria: "{item} — 用 {best} 支付，vs {worst} 省 {pct}%",
+  fallbackBestPayment: "最佳支付",
+
   // ---- §12: Liquid Chain Tab ----
   tabLiquidChain: "液体链",
   liquidChainTitle: "谵妄液体重铸链",

@@ -457,6 +457,7 @@ export function Dashboard() {
     crossRateFlips,
     selectedAnchorId,
     optimalPaymentByDisplayName,
+    bestPaymentTopList,
   } = useOptimalPayment({
     exchangeData,
     crossRates,
@@ -877,6 +878,7 @@ export function Dashboard() {
                 optimalPaymentByPair={optimalPaymentByPair}
                 crossRateFlips={crossRateFlips}
                 anchorId={selectedAnchorId}
+                bestPaymentTopList={bestPaymentTopList}
                 highlightedRowIndex={highlightedRowIndex}
                 highlightedItemId={highlightedItemId}
                 realm={realm}

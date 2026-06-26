@@ -938,6 +938,20 @@ const en = {
   crossRateProfitPotential: "Profit potential",
   crossRateVol: "Vol",
 
+  // ---- iter 93: Best Payment primary view (Exchange tab top strip) ----
+  bestPaymentTitle: "Best Payment — top savings opportunities",
+  bestPaymentSubtitle: "Pay in a different currency to save vs the worst option",
+  bestPaymentPayIn: "Pay in",
+  bestPaymentVs: "vs",
+  bestPaymentSave: "save",
+  bestPaymentHide: "Hide",
+  bestPaymentShow: "Show",
+  bestPaymentCraftItem: "craft",
+  bestPaymentCountTooltip: "Number of items where paying in a different currency saves ≥1%",
+  bestPaymentSavingsTooltip: "Savings % vs the worst payment currency for this item",
+  bestPaymentCardAria: "{item} — pay in {best}, save {pct}% vs {worst}",
+  fallbackBestPayment: "Best Payment",
+
   // ---- §12: Liquid Chain Tab ----
   tabLiquidChain: "Liquid Chain",
   liquidChainTitle: "Delirium Liquid Reforge Chain",
