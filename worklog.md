@@ -3,89 +3,64 @@
 > Append-only shared multi-agent work log. Each section starts with `---`.
 > Old task history is in `git log`.
 
-
-Recent iterations kept (iter 87+). Older iter 77-86 records trimmed — those features are fully shipped and documented in PRODUCT_VISION.md / STATUS.md / AGENT_NAVIGATION.md.
-
----
-Task ID: iter-87
-Agent: main (Sonnet 4.5)
-Task: iter 87 — User feedback batch: fix i18n leakage across multiple tabs (heatmap/currencies/exchange/content-pulse/phase-hints/speculation in English), remove Currency Graph tab (low value), cleanup Liquid Chain ("Craft") tab (Concentrated liquids + Ritual Omens chains were fabricated — not real PoE2 reforge recipes), delete dead `recipe.py` code, add `getCategoryRuName()` helper + wire `getCurrencyRuName()` into 8 components, fix `take-profit-calculator.tsx` (14 hardcoded EN strings), fix `events-sidebar.tsx` English month array, add Russian parallel table + `?lang=` param to phase_hints backend.
-
-Stage Summary:
-- i18n leakage fixed across 7 frontend components + 1 backend module + 2 i18n key additions. All 4 locale files (en/ru/zh/ko) updated with new keys. Currency Graph tab completely removed. Liquid Chain tab cleaned up (removed fabricated Concentrated + Ritual Omens chains). Dead `recipe.py` code deleted. Backend `phase_hints.py` now serves a parallel Russian hint table via `?lang=ru`. Speculation tab got `potentialProfitPct` as partial fix for user's buy-low/sell-high request. Full take-profit-calculator + events-sidebar i18n cleanup.
-- Tests: 757 pytest + 405 jest pass.
-- 5 Known Issues documented as deferred to iter 88 (KI-1 — KI-5).
+Recent iterations kept (iter 88+). Older iter 77-87 records trimmed — those features are fully shipped and documented in PRODUCT_VISION.md / STATUS.md / AGENT_NAVIGATION.md.
 
 ---
 Task ID: iter-88
 Agent: main (Sonnet 4.5)
 Task: iter 88 — Address all 5 Known Issues (KI-1 through KI-5) deferred from iter 87 + apply date formatting cleanup pattern across 8 chart components.
 
+Stage Summary:
+- iter 88 SHIPPED — all 5 Known Issues from iter 87 addressed + date formatting cleanup. KI-5 (analyst fact templates → frontend i18n) + KI-3 (Premium column tooltip) + KI-4 (Flips tab relabel to "Cross-rate Deviations") + KI-2 (7d Change column tooltip — investigation confirmed by-design null state) + KI-1 (Speculation tab joins /api/flipper/flips for synthetic bid/ask + spread + fair rate + deviation in expandable panel per signal row). 8 chart components migrated to shared `formatLocaleDate` / `formatLocaleDateTime` helpers.
+- Tests: 768 pytest (757 + 11 e2e/analyst) + 412 jest pass.
+- Files changed (24 total): backend (3: `response_models.py`, `routes_analyst.py`, `tests/e2e/test_analyst.py`), frontend components (10), frontend infrastructure (1: `src/lib/utils.ts`), frontend tests (1), API route (1: `analyst-fallback/route.ts`), TS types (1: `types.ts`), i18n locales (4 × 21 new keys each), docs (3: STATUS, AGENT_NAVIGATION, worklog).
+- For full iter 88 detail, see git log (commit message + diff).
+
+---
+Task ID: iter-89
+Agent: main (Sonnet 4.5)
+Task: iter 89 — Dead i18n key cleanup (low priority task deferred from iter 88 hand-off) + opportunistic code health. Visual verification (P1) deferred — requires running backend + frontend locally (user action).
+
 Work Log:
-- Reviewed STATUS.md (Known Issues section) + AGENT_NAVIGATION.md (invariant #39 — i18n pattern) + worklog.md (iter 87 Stage Summary). Read key source files: `routes_analyst.py`, `analyst-fallback/route.ts`, `analyst-tab.tsx`, `exchange-table.tsx`, `speculation-tab.tsx`, `events-sidebar.tsx`, `poe2api.ts:compute7dChangePercent`, types.ts (`LeagueFact`, `FlipOpportunity`, `SpeculationSignal`).
-- **KI-5 (P2) — Analyst fact templates moved to frontend:**
-  - `backend/api/response_models.py:FactData` — added optional `template_id: str | None` + `params: dict[str, Any]` fields (backward compatible — old clients fall back to `text`).
-  - `backend/api/routes_analyst.py:_generate_facts` — each of the 5 fact types now emits `template_id` + `params` alongside English `text`. Templates: `biggest_gainer` (params: apiId, pct), `biggest_loser` (apiId, pct), `anomaly_activity` (count), `tracking` (totalCurrencies, totalPairs), `stable_count` (stableCount).
-  - `src/app/api/poe2/analyst-fallback/route.ts` — `FallbackFact` interface extended with optional `templateId` + `params`; same 5 fact emitters updated to include them.
-  - `src/lib/types.ts:LeagueFact` — added optional `templateId` + `params` fields (camelCase from proxy transform).
-  - `src/components/dashboard/analyst-tab.tsx` — added `TEMPLATE_ID_TO_I18N_KEY` map (snake_case → camelCase i18n key) + `formatFactText(fact, t, locale)` function. Uses `getCurrencyDisplayName(apiId, locale)` for currency params. Falls back to `fact.text` when `templateId` is absent or unmapped. Updated fact rendering to call `formatFactText(fact, t, locale)` instead of `fact.text` directly.
-  - Added 5 new i18n keys to all 4 locales (en/ru/zh/ko): `analystFactBiggestGainer`, `analystFactBiggestLoser`, `analystFactAnomalyActivity`, `analystFactTracking`, `analystFactStable`. Each key uses `{0}`/`{1}` positional interpolation.
-  - Added 7 pytest tests in `tests/e2e/test_analyst.py::TestGenerateFactsTemplateId` — covers each template emits correct `template_id` + `params`, empty-data case, backward-compat `text` field always present.
-- **KI-3 (P3) — Premium column tooltip:**
-  - `src/components/dashboard/exchange-table.tsx` — Premium column header now wraps `t("crossCurrencyPremium")` in a Tooltip with Info icon. Tooltip body shows `crossCurrencyPremiumTitle` + `crossCurrencyPremiumDesc` explaining what "Premium" means ("shows how much market rate deviates from cross-rate-derived fair rate; large % is normal for low-liquidity pairs").
-  - `CrossCurrencyPremiumCell` "—" empty cell now also wrapped in a tooltip with `crossCurrencyPremiumEmpty` explaining "no premium data — fewer than 2 payment options and no cross-rate deviation detected".
-  - Added 4 new i18n keys × 4 locales: `crossCurrencyPremiumTitle`, `crossCurrencyPremiumDesc`, `crossCurrencyPremiumInfo`, `crossCurrencyPremiumEmpty`.
-  - Added `Info` icon import from lucide-react.
-- **KI-4 (P3) — Flips tab relabel:**
-  - `tabFlips` i18n key changed from "Flips" / "Флипы" / "翻转" / "플립" to "Cross-rate Deviations" / "Отклонения кросс-курса" / "交叉汇率偏差" / "교차 환율 편차" in all 4 locales.
-  - `arbitrageTheoretical` + `arbitrageTheoreticalDesc` i18n keys rewritten in all 4 locales to clarify: tab shows cross-rate deviations (NOT arbitrage), PoE2 has no order book, deviations signal where a different payment currency could save money.
-- **KI-2 (P2) — Exchanges 7d changes investigation:**
-  - Investigation: `sevenDayChangePercent` is computed frontend-side in `src/lib/poe2api.ts:compute7dChangePercent()` (lines 843-871). NOT a backend field. Returns `null` when: (a) <2 PriceLogs, (b) closest 7d-ago log drifts >16.8h (drift tolerance scales with lookback period — `getMaxTimeDriftMs(7d) = 0.1 * 7d = 16.8h`), OR (c) 7d-ago price is 0. Common on new leagues where PriceLogs only have recent data.
-  - Fix: NOT a bug — by design. Added tooltip on 7d Change column header (`change7dInfo` aria-label + `change7dDesc` body) explaining what the column computes + why "—" appears. The "—" cell itself also gets a tooltip (`change7dEmpty`) explaining "fewer than 2 price points in history, or closest 7-day-ago log is too far off — will populate as more PriceLogs are collected".
-  - Added 3 new i18n keys × 4 locales: `change7dInfo`, `change7dDesc`, `change7dEmpty`.
-- **KI-1 (P1) — Speculation tab extends with /api/flipper/flips join:**
-  - `src/components/dashboard/speculation-tab.tsx` — added parallel `useQuery` for `/api/flipper/flips` (60s staleTime, gated on `backendOnline`). Fires alongside the existing speculation signals query.
-  - Built `flipsByApiId: Map<string, FlipOpportunity>` lookup keyed by FROM currency (first part of `FlipOpportunity.currency`, e.g. "divine" from "divine/exalted"). When multiple flips exist for the same from-currency, the highest-scored one wins (heuristic — `/flips` indexes on PAIRS while `/speculation` indexes on ITEMS).
-  - `SignalRow` accepts new optional `flip?: FlipOpportunity` prop. When present, renders an expandable "Spread Details" toggle button (Layers + ChevronDown/Up icons) next to the sparkline.
-  - Expanded panel shows 4 columns: synthetic bid, synthetic ask, spread %, mid price. When `fairRate` is available, also shows a second row with fair cross-rate + deviation % + 24h volume + italic disclaimer (`speculationSpreadDisclaimer` — "Synthetic bid/ask computed from volume-based formula (no real order book in PoE2). Treat as a directional signal, not a guaranteed execution price.").
-  - Updated `SignalRow` call site to pass `flip={flipsByApiId.get(sig.apiId)}`.
-  - Added 9 new i18n keys × 4 locales: `speculationSpreadDetails`, `speculationSyntheticBid`, `speculationSyntheticAsk`, `speculationSyntheticSpread`, `speculationSyntheticMid`, `speculationFairRateLabel`, `speculationDeviationLabel`, `speculationVolumeLabel`, `speculationSpreadDisclaimer`.
-  - Added 7 new jest tests in `src/__tests__/speculation-tab.test.tsx` under `describe("iter 88 — synthetic spread details (KI-1)")` — covers: toggle visibility when matching flip exists/absent, expand/collapse behavior, value rendering (bid/ask/spread/mid), fair rate + deviation rendering, spread disclaimer presence, highest-scored-flip selection when multiple flips exist for same from-currency. Tests use `mockFetchApi.mockImplementation` to route different responses to `/api/flipper/speculation` vs `/api/flipper/flips`.
-- **Date formatting cleanup (low priority from iter 87 hand-off):**
-  - Added shared helpers to `src/lib/utils.ts`: `localeToBcp47(locale)` (maps en/ru/zh/ko → en-US/ru-RU/zh-CN/ko-KR), `formatLocaleDate(value, locale, opts?)` (compact date for axis labels), `formatLocaleDateTime(value, locale)` (date + HH:MM for timestamps).
-  - Migrated 8 chart components from inline `toLocaleDateString("en-US", ...)` to `formatLocaleDate`: `comparative-chart.tsx`, `market-overview.tsx`, `comparison-dialog.tsx`, `detail-dialog.tsx` (2 call sites), `pair-comparison-dialog.tsx`, `pair-detail-dialog.tsx`, `watchlist-tab.tsx`, `storage-value-history-chart.tsx` (was using `toLocaleDateString(undefined, ...)`). For each: added `formatLocaleDate` import + added `locale` to `useI18n()` destructure + replaced inline date formatter with helper call.
-  - Refactored `events-sidebar.tsx:formatCreatedAt` to use the shared `formatLocaleDateTime` helper (same behaviour, less duplication).
+- Reviewed STATUS.md (iter 88 row + Quick Reference), AGENT_NAVIGATION.md (invariant #40), worklog.md (iter 88 Stage Summary). Identified iter 89 priorities: (1) dead `graphXxx` i18n key cleanup (~30 keys × 4 locales, low priority, harmless), (2) visual verification (P1, deferred — requires browser), (3) code health opportunistic.
+- **Audit phase (grep `graphXxx` + `tabGraph` across `src/`):** confirmed all 24 `graphXxx` keys + `tabGraph` exist ONLY in the 4 locale files (no live references in `src/`). All dead — left over from iter 87 Currency Graph tab removal.
+- **Audit extension (related dead keys):** discovered 3 more dead keys while auditing locale files:
+  - `tabForecast` — Forecast tab was removed in an earlier iteration; key still in all 4 locale files.
+  - `tabPortfolio` — Portfolio tab was removed in an earlier iteration; key still in all 4 locale files.
+  - `fallbackForecasts` / `fallbackPortfolio` / `fallbackCurrencyGraph` — `ErrorBoundary` fallback titles for the 3 removed tabs. Only `fallbackFlips`, `fallbackTierDrift`, `fallbackWatchlist`, `fallbackItemDetails`, `fallbackPairDetails`, `fallbackArbitrageCalculator` are still referenced (in `dashboard-page.tsx` + `dashboard-dialogs.tsx`); the other 3 fallback keys are dead.
+- **New bug discovered (KI-6):** while auditing `tabForecast` / `tabPortfolio`, found that `shortcuts-dialog.tsx` displays an OUTDATED tab mapping. The dialog shows: 7→Forecast, 8→Portfolio, 0→Watchlist. But the actual `TAB_MAP` in `dashboard-page.tsx` is: 7→Optimizer, 8→Analyst, 9→Storage Value, 0→Speculation. This is a real bug — the dialog has been misinforming users since iter 87 (or earlier). Per project rule "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись", documented KI-6 first, then fixed it.
+- **Fix KI-6:** `src/components/dashboard/shortcuts-dialog.tsx` — replaced the 3 outdated `<kbd>...</kbd> {t("tabForecast")}` / `{t("tabPortfolio")}` / `{t("tabWatchlist")}` rows with the correct mapping: 7→`t("tabOptimizer")`, 8→`t("tabAnalyst")`, 9→`t("tabStorageValue")`, 0→`t("tabSpeculation")`. Added an inline comment block explaining the pre-existing limitation: TAB_MAP has 13 entries but shortcuts only cover indices 0–9, so liquid-chain + watchlist are NOT keyboard-reachable (this was always the case — not a regression).
+- **Dead i18n key cleanup script:** wrote `/home/z/my-project/scripts/cleanup_dead_i18n_keys.py` — a small Python script that removes the 30 dead keys (24 `graphXxx` + `tabGraph` + `tabForecast` + `tabPortfolio` + `fallbackForecasts` + `fallbackPortfolio` + `fallbackCurrencyGraph`) from all 4 locale files. The script also replaces the now-orphaned section headers (`// ---- Currency Graph Tab ----`, `// ---- Currency Graph — SVG labels ----`, `// ---- Portfolio Tab ----`) with `REMOVED iter 89` comment markers so future agents searching for the sections know they were intentionally deleted.
+- **Script execution + bug fix:** ran the script — removed 30 dead keys × 4 locales = 120 dead lines. Discovered a bug in the script's `replace_section_headers` step: `str.replace(old, new, 1)` matches `old` as a SUBSTRING inside the already-replaced comment, causing the "REMOVED iter 89" suffix to be appended multiple times on each run. Wrote `/home/z/my-project/scripts/fix_duplicate_comments.py` to deduplicate the suffixes, then `/home/z/my-project/scripts/restore_blank_lines.py` to restore the blank lines between comment markers and the next section header (lost during the script's `collapse_blank_lines` step). All 4 locale files now have consistent structure.
+- **Code health cleanup:** removed `"graph"` from `e2e/navigation.spec.ts:tabValues` list — was a dead leftover from iter 87 Currency Graph tab removal. Added an inline comment noting that `storage-value` + `speculation` are also missing from the list (separate test approach needed if added — leaving as-is to keep the test stable).
 - **Verification:**
-  - `npx tsc --noEmit` → clean (no errors).
-  - `python3 -m pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py` → **757 passed**.
-  - `python3 -m pytest tests/e2e/test_analyst.py` → **11 passed** (4 existing + 7 new template_id tests).
-  - `npx jest` → **412 passed, 19 suites passed** (was 405 in iter 87 — 7 new spread-details tests in `speculation-tab.test.tsx`).
-  - Total: **768 pytest + 412 jest pass**.
+  - `./node_modules/.bin/tsc --noEmit` → clean (no errors).
+  - `python3 -m pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py` → **757 passed** (same as iter 88).
+  - `python3 -m pytest tests/e2e/test_analyst.py` → **11 passed** (same as iter 88).
+  - `./node_modules/.bin/jest --silent` → **412 passed, 19 suites passed** (same as iter 88).
+  - Total: **768 pytest + 412 jest pass** — identical to iter 88 (no test count change because all changes were deletions of dead code + 1 small UI fix that doesn't add testable behavior).
 - **Documentation:**
-  - `STATUS.md`: rewrote entirely — bumped "Last updated" to iter 88. Replaced the 5-row "Known Issues — Deferred to iter 88" table with a status table showing KI-1 (partial fix), KI-2/3/4/5 (closed). Added iter 88 row in Product Features section. Added new Quick Reference entries for: Speculation "Spread Details" toggle missing, Exchanges 7d Change "—", Premium column large %, analyst fact.text English, locale-aware date formatting, adding new analyst fact templates.
-  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 88. Added invariant #40 (iter 88 patterns — 6 sub-sections covering date helper, analyst fact templates, Speculation /flips join, Flips tab relabel, Premium column tooltip, 7d Change column tooltip). Cleaned up the duplicate "Speculation backtest trades list shorter" row in §4 symptom table. Added new symptom rows for iter 88 issues.
-  - `worklog.md`: trimmed iter 86 (removed — 2 iterations old, fully shipped, see git log). Trimmed iter 87 to Stage Summary only. Added this iter 88 record (full detail).
+  - `STATUS.md`: rewrote entirely — bumped "Last updated" to iter 89. Replaced the KI table to include KI-6 (closed iter 89). Added iter 89 row in Product Features section. Added 2 new Quick Reference entries: "Keyboard shortcut 0 goes to Speculation, not Watchlist" + "Need to add a new tab to the dashboard" (3-place update checklist: TAB_MAP, store.ts:validTabs, shortcuts-dialog.tsx).
+  - `AGENT_NAVIGATION.md`: bumped "Last updated" to iter 89. Added invariant #41 (iter 89 patterns — 3 sub-sections: shortcuts dialog TAB_MAP sync, dead i18n key cleanup workflow, store.ts:validTabs migration safety). Added 2 new symptom rows in §4 Quick Reference table.
+  - `worklog.md`: trimmed iter 87 (now 2 iterations old — see git log). Trimmed iter 88 to Stage Summary only (was full detail). Added this iter 89 record.
 
 Stage Summary:
-- **iter 88 SHIPPED — all 5 Known Issues from iter 87 addressed + date formatting cleanup.** KI-5 (analyst fact templates → frontend i18n) + KI-3 (Premium column tooltip) + KI-4 (Flips tab relabel to "Cross-rate Deviations") + KI-2 (7d Change column tooltip — investigation confirmed by-design null state) + KI-1 (Speculation tab joins /api/flipper/flips for synthetic bid/ask + spread + fair rate + deviation in expandable panel per signal row). 8 chart components migrated to shared `formatLocaleDate` / `formatLocaleDateTime` helpers.
-- **Tests: 768 pytest (757 + 11 e2e/analyst) + 412 jest pass** (was 757 + 405 in iter 87 — delta is 11 pytest from new TestGenerateFactsTemplateId class + 7 jest from new spread-details tests).
-- **Files changed (24 total):**
-  - Backend (3): `backend/api/response_models.py` (FactData + template_id + params), `backend/api/routes_analyst.py` (_generate_facts + template_id + params), `tests/e2e/test_analyst.py` (7 new tests).
-  - Frontend components (10): `src/components/dashboard/analyst-tab.tsx` (formatFactText + TEMPLATE_ID_TO_I18N_KEY), `src/components/dashboard/exchange-table.tsx` (Premium + 7d tooltips), `src/components/dashboard/speculation-tab.tsx` (flips join + expandable spread details), `src/components/dashboard/comparative-chart.tsx` (formatLocaleDate), `src/components/dashboard/market-overview.tsx` (formatLocaleDate), `src/components/dashboard/comparison-dialog.tsx` (formatLocaleDate), `src/components/dashboard/detail-dialog.tsx` (formatLocaleDate × 2), `src/components/dashboard/pair-comparison-dialog.tsx` (formatLocaleDate), `src/components/dashboard/pair-detail-dialog.tsx` (formatLocaleDate), `src/components/dashboard/watchlist-tab.tsx` (formatLocaleDate), `src/components/dashboard/storage-value-history-chart.tsx` (formatLocaleDate), `src/components/dashboard/events-sidebar.tsx` (refactored to formatLocaleDateTime).
-  - Frontend infrastructure (1): `src/lib/utils.ts` (formatLocaleDate + formatLocaleDateTime + localeToBcp47).
-  - Frontend tests (1): `src/__tests__/speculation-tab.test.tsx` (7 new spread-details tests).
-  - API route (1): `src/app/api/poe2/analyst-fallback/route.ts` (templateId + params on FallbackFact).
-  - TS types (1): `src/lib/types.ts` (LeagueFact + templateId + params).
-  - i18n locales (4): `src/lib/i18n/locales/en.ts`, `src/lib/i18n/locales/ru.ts`, `src/lib/i18n/locales/zh.ts`, `src/lib/i18n/locales/ko.ts` — added 21 new keys each (5 analystFact + 4 crossCurrencyPremium + 3 change7d + 9 speculationSpread).
+- **iter 89 SHIPPED — dead i18n key cleanup + KI-6 shortcuts dialog mismatch fix.** 30 dead keys × 4 locales = 120 dead lines removed (~3.5KB per locale). KI-6 (shortcuts dialog showing outdated tab mapping for keys 7/8/9/0) fixed — now matches `TAB_MAP` in `dashboard-page.tsx`. Pre-existing limitation documented: liquid-chain + watchlist NOT reachable via keyboard (TAB_MAP has 13 entries but shortcuts only cover indices 0–9) — was always this way, not a regression. Code health: removed "graph" from `e2e/navigation.spec.ts` tabValues.
+- **Tests: 768 pytest (757 + 11 e2e/analyst) + 412 jest pass — same as iter 88.** No test count change because all changes were deletions of dead code + 1 small UI fix.
+- **Files changed (9 total):**
+  - Frontend component (1): `src/components/dashboard/shortcuts-dialog.tsx` (KI-6 fix: updated tab mapping).
+  - i18n locales (4): `src/lib/i18n/locales/en.ts`, `src/lib/i18n/locales/ru.ts`, `src/lib/i18n/locales/zh.ts`, `src/lib/i18n/locales/ko.ts` — removed 30 dead keys each, added `REMOVED iter 89` comment markers.
+  - e2e test (1): `e2e/navigation.spec.ts` (removed "graph" from tabValues).
   - Docs (3): `STATUS.md`, `AGENT_NAVIGATION.md`, `worklog.md`.
+  - Helper scripts (3, NEW — kept under `scripts/` for future reuse): `cleanup_dead_i18n_keys.py`, `fix_duplicate_comments.py`, `restore_blank_lines.py`.
 
-Next iteration (iter 89) — recommended priorities:
-1. **Visual verification** — manual test of all iter 88 changes: (a) Speculation tab spread details expand button (only shows for items with matching flip data); (b) Premium column header tooltip + "—" cell tooltip in Exchange tab; (c) Flips tab renamed to "Cross-rate Deviations" with new disclaimer; (d) 7d Change column header tooltip + "—" cell tooltip; (e) Analyst tab facts now localized (Russian locale should show translated facts, not English).
-2. **KI-1 full redesign (deferred)** — if user wants REAL buy-low/sell-high with order book, the only path is GGG official trade API scraping (requires OAuth2 + rate-limit handling). The iter 88 partial fix surfaces synthetic spread data alongside z-score signals — this is the maximum we can do without real order book data.
-3. **Dead i18n key cleanup** — 4 locale files still contain ~30 unused `graphXxx` keys from the removed Currency Graph tab (iter 87). Harmless (~2KB per locale) but could be cleaned up.
-4. **Code health** — opportunistic per-file refactoring (no staged plan).
+Next iteration (iter 90) — recommended priorities:
+1. **Visual verification (P1, deferred from iter 89)** — manual test of all iter 88 + iter 89 changes in browser (requires running backend + frontend). Check: Speculation spread details expand button (iter 88), Premium tooltip (iter 88), Flips tab relabel (iter 88), 7d Change tooltip (iter 88), Analyst facts localized in RU locale (iter 88), Shortcuts dialog now shows correct tab mapping for keys 7/8/9/0 (iter 89).
+2. **Extend keyboard shortcuts to cover liquid-chain + watchlist** (low priority, deferred from iter 89). Either reorder `TAB_MAP` (place them earlier) or add `Shift+1`..`Shift+9` bindings in `use-keyboard-shortcuts.ts` for indices 10–18.
+3. **Opportunistic refactoring** — no staged plan; per-file cleanup as opportunities arise.
+4. **Dead `portfolio*` i18n key cleanup** (~30 keys × 4 locales, similar to iter 89's `graphXxx` cleanup). The `portfolioMethod`, `portfolioAnnualizedRisk`, `portfolioCorrelationStatus`, etc. keys are mostly dead (Portfolio tab was removed in an earlier iteration). Only `portfolioCurrency` is still referenced (in `tier-drift-tracker.tsx`). Requires careful audit before removal — some keys may have non-obvious references.
 
-NOT done in iter 88 (intentionally deferred):
-- KI-1 full GGG official trade API integration (real order book) — requires OAuth2 + rate-limit handling, deferred indefinitely.
-- Dead `graphXxx` i18n key cleanup (low priority, harmless).
-- Visual verification (manual test) — requires running backend + frontend locally.
+NOT done in iter 89 (intentionally deferred):
+- Visual verification (manual browser test) — requires running backend + frontend locally (user action).
+- Keyboard shortcut extension for liquid-chain + watchlist — pre-existing limitation, not introduced by iter 89.
+- Dead `portfolio*` key cleanup — would expand iter 89 scope too much. Defer to iter 90.

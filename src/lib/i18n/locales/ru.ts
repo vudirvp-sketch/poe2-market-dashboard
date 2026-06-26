@@ -10,7 +10,6 @@ const ru: Record<TranslationKeys, string> = {
   tabUniques: "\u0423\u043D\u0438\u043A\u0430\u043B\u044C\u043D\u044B\u0435",
   tabExchange: "\u041E\u0431\u043C\u0435\u043D",
   tabArbitrage: "\u0410\u0440\u0431\u0438\u0442\u0440\u0430\u0436",
-  tabForecast: "Прогнозы",
   tabWatchlist: "\u0418\u0437\u0431\u0440\u0430\u043D\u043D\u043E\u0435",
   // Header
   searchPlaceholder: "\u041F\u043E\u0438\u0441\u043A \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432...",
@@ -394,9 +393,7 @@ const ru: Record<TranslationKeys, string> = {
   eventsDaysHours: "{0}д {1}ч",
   eventsHoursMinutes: "{0}ч {1}м",
   eventsMinutes: "{0}м",
-  // ---- Portfolio Tab ----
-  tabPortfolio: "Портфель",
-  tabGraph: "Граф валют",
+  // ---- Portfolio Tab ---- (tabPortfolio + tabGraph removed iter 89 — Portfolio tab + Currency Graph tab were both removed in earlier iterations)
   portfolioMethod: "Метод",
   portfolioAnnualizedRisk: "Годовой риск",
   portfolioCorrelationStatus: "Корреляция",
@@ -448,29 +445,10 @@ const ru: Record<TranslationKeys, string> = {
   phaseLate: "ПОЗДНЯЯ",
   phaseEstimatedTooltip: "Фаза определена по возрасту лиги (данные бэкенда могут быть устаревшими)",
   phaseBackendTooltip: "Фаза из аналитики бэкенда",
-  // ---- Currency Graph Tab ----
-  graphCurrencies: "Валюты",
-  graphTradePairs: "Торговые пары",
-  graphDensity: "Плотность графа",
-  graphArbCycles: "Арб. циклы",
-  graphFocusOn: "Фокус на",
-  graphAllCurrencies: "Все валюты",
-  graphZoomIn: "Увеличить",
-  graphZoomOut: "Уменьшить",
-  graphResetZoom: "Сбросить масштаб",
-  graphNoData: "Данные обменных курсов недоступны",
-  graphNoDataDesc: "Граф требует данных о ценах от бэкенда flipper. Убедитесь, что бэкенд запущен и получил курсы.",
-  graphNoNodes: "Нет торговых пар для визуализации",
-  graphAriaLabel: "Граф обменных курсов валют",
-  graphLegendStable: "Стабильные — низкая волатильность, высокая ликвидность",
-  graphLegendModerate: "Умеренные — сбалансированный профиль",
-  graphLegendVolatile: "Волатильные/Неликвидные — высокий риск",
-  graphLegendArbCycle: "Ребро арбитражного цикла",
-  graphDetectedCycles: "Обнаруженные арбитражные циклы",
-  graphNodeDetail: "Детали валюты: {0}",
-  graphNodeVolume: "Объём",
-  graphNodeConnections: "Связи",
-  graphNodeCluster: "Кластер",
+  // ---- Currency Graph Tab ---- REMOVED iter 89 (tab removed iter 87, keys were dead)
+  // All 22 graph* keys removed — they existed only in locale files, no live references in src/.
+  // Kept as a comment marker so agents looking for the old section know it was intentionally deleted.
+
   // ---- Sticky Bar ----
   stickyBarBestFlip: "Лучший флип",
   stickyBarTrend24h: "Тренд 24ч",
@@ -716,9 +694,9 @@ const ru: Record<TranslationKeys, string> = {
   tierBoundaryMin: "{0} мин",
   tierDriftHistoricalNote: "Исторический дрейф тиров требует данных временных рядов бэкенда (пока недоступно).",
   tierDriftAllCurrencies: "Все валюты по тирам",
-  // ---- Currency Graph — SVG labels ----
-  graphArbCycleLabel: "Арб: +{0}%",
-  graphArbCycleTooltip: "[АРБ. ЦИКЛ]",
+  // ---- Currency Graph — SVG labels ---- REMOVED iter 89 (same as above)
+  // graphArbCycleLabel + graphArbCycleTooltip removed — dead keys.
+
   // ---- Accessibility: Sort ----
   sortBy: "Сортировать по {0}",
   // ---- Suffix: 24h ----
@@ -779,9 +757,6 @@ const ru: Record<TranslationKeys, string> = {
   fallbackArbitrageCalculator: "Калькулятор арбитража",
   fallbackFlips: "Флипы",
   fallbackTierDrift: "Дрифт тиров",
-  fallbackForecasts: "Прогнозы",
-  fallbackPortfolio: "Портфель",
-  fallbackCurrencyGraph: "Граф валют",
   fallbackWatchlist: "Избранное",
   fallbackItemDetails: "Детали предмета",
   fallbackPairDetails: "Детали пары",

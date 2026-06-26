@@ -13,7 +13,7 @@ const en = {
   tabUniques: "Uniques",
   tabExchange: "Exchange",
   tabArbitrage: "Arbitrage",
-  tabForecast: "Forecasts",
+  // tabForecast removed iter 89 — Forecast tab was removed in an earlier iteration, key was dead
   tabWatchlist: "Watchlist",
 
   // Header
@@ -428,9 +428,7 @@ const en = {
   eventsHoursMinutes: "{0}h {1}m",
   eventsMinutes: "{0}m",
 
-  // ---- Portfolio Tab ----
-  tabPortfolio: "Portfolio",
-  tabGraph: "Currency Graph",
+  // ---- Portfolio Tab ---- (tabPortfolio + tabGraph removed iter 89 — Portfolio tab + Currency Graph tab were both removed in earlier iterations)
   portfolioMethod: "Method",
   portfolioAnnualizedRisk: "Annualized Risk",
   portfolioCorrelationStatus: "Correlation",
@@ -484,29 +482,9 @@ const en = {
   phaseEstimatedTooltip: "Phase is estimated based on league age (backend data may be outdated)",
   phaseBackendTooltip: "Phase from backend analytics",
 
-  // ---- Currency Graph Tab ----
-  graphCurrencies: "Currencies",
-  graphTradePairs: "Trade Pairs",
-  graphDensity: "Graph Density",
-  graphArbCycles: "Arb Cycles",
-  graphFocusOn: "Focus on",
-  graphAllCurrencies: "All currencies",
-  graphZoomIn: "Zoom in",
-  graphZoomOut: "Zoom out",
-  graphResetZoom: "Reset zoom",
-  graphNoData: "No exchange rate data available",
-  graphNoDataDesc: "The graph requires price data from the flipper backend. Make sure the backend is running and has fetched rates.",
-  graphNoNodes: "No trade pairs to visualize",
-  graphAriaLabel: "Currency exchange network graph",
-  graphLegendStable: "Stable — low volatility, high liquidity",
-  graphLegendModerate: "Moderate — balanced profile",
-  graphLegendVolatile: "Volatile/Illiquid — high risk",
-  graphLegendArbCycle: "Arbitrage cycle edge",
-  graphDetectedCycles: "Detected Arbitrage Cycles",
-  graphNodeDetail: "Currency Detail: {0}",
-  graphNodeVolume: "Volume",
-  graphNodeConnections: "Connections",
-  graphNodeCluster: "Cluster",
+  // ---- Currency Graph Tab ---- REMOVED iter 89 (tab removed iter 87, keys were dead)
+  // All 22 graph* keys removed — they existed only in locale files, no live references in src/.
+  // Kept as a comment marker so agents looking for the old section know it was intentionally deleted.
 
   // ---- Sticky Bar ----
   stickyBarBestFlip: "Best Flip",
@@ -784,9 +762,8 @@ const en = {
   tierDriftHistoricalNote: "Historical tier drift requires backend time-series data (not yet available).",
   tierDriftAllCurrencies: "All Currencies by Tier",
 
-  // ---- Currency Graph — SVG labels ----
-  graphArbCycleLabel: "Arb: +{0}%",
-  graphArbCycleTooltip: "[ARB CYCLE]",
+  // ---- Currency Graph — SVG labels ---- REMOVED iter 89 (same as above)
+  // graphArbCycleLabel + graphArbCycleTooltip removed — dead keys.
 
   // ---- Accessibility: Sort ----
   sortBy: "Sort by {0}",
@@ -850,9 +827,6 @@ const en = {
   fallbackArbitrageCalculator: "Arbitrage Calculator",
   fallbackFlips: "Flips",
   fallbackTierDrift: "Tier Drift",
-  fallbackForecasts: "Forecasts",
-  fallbackPortfolio: "Portfolio",
-  fallbackCurrencyGraph: "Currency Graph",
   fallbackWatchlist: "Watchlist",
   fallbackItemDetails: "Item Details",
   fallbackPairDetails: "Pair Details",

@@ -11,7 +11,6 @@ const zh: Record<TranslationKeys, string> = {
   tabUniques: "传奇",
   tabExchange: "兑换",
   tabArbitrage: "套利",
-  tabForecast: "预测",
   tabWatchlist: "关注",
 
   // Header
@@ -428,9 +427,7 @@ const zh: Record<TranslationKeys, string> = {
   eventsHoursMinutes: "{0}小时 {1}分",
   eventsMinutes: "{0}分",
 
-  // ---- Portfolio Tab ----
-  tabPortfolio: "投资组合",
-  tabGraph: "货币关系图",
+  // ---- Portfolio Tab ---- (tabPortfolio + tabGraph removed iter 89 — Portfolio tab + Currency Graph tab were both removed in earlier iterations)
   portfolioMethod: "方法",
   portfolioAnnualizedRisk: "年化风险",
   portfolioCorrelationStatus: "相关性",
@@ -484,29 +481,9 @@ const zh: Record<TranslationKeys, string> = {
   phaseEstimatedTooltip: "阶段根据联赛年龄估算（后端数据可能已过时）",
   phaseBackendTooltip: "阶段来自后端分析",
 
-  // ---- Currency Graph Tab ----
-  graphCurrencies: "货币数",
-  graphTradePairs: "交易对",
-  graphDensity: "图密度",
-  graphArbCycles: "套利循环",
-  graphFocusOn: "聚焦",
-  graphAllCurrencies: "所有货币",
-  graphZoomIn: "放大",
-  graphZoomOut: "缩小",
-  graphResetZoom: "重置缩放",
-  graphNoData: "汇率数据不可用",
-  graphNoDataDesc: "图表需要flipper后端的汇率数据。请确保后端正在运行并已获取汇率。",
-  graphNoNodes: "没有交易对可可视化",
-  graphAriaLabel: "货币汇率网络图",
-  graphLegendStable: "稳定 — 低波动率，高流动性",
-  graphLegendModerate: "中等 — 均衡特征",
-  graphLegendVolatile: "波动/低流动性 — 高风险",
-  graphLegendArbCycle: "套利循环边",
-  graphDetectedCycles: "检测到的套利循环",
-  graphNodeDetail: "货币详情: {0}",
-  graphNodeVolume: "交易量",
-  graphNodeConnections: "连接数",
-  graphNodeCluster: "集群",
+  // ---- Currency Graph Tab ---- REMOVED iter 89 (tab removed iter 87, keys were dead)
+  // All 22 graph* keys removed — they existed only in locale files, no live references in src/.
+  // Kept as a comment marker so agents looking for the old section know it was intentionally deleted.
 
   // ---- Sticky Bar ----
   stickyBarBestFlip: "最佳翻转",
@@ -780,9 +757,8 @@ const zh: Record<TranslationKeys, string> = {
   tierDriftHistoricalNote: "历史层级漂移需要后端时间序列数据（暂不可用）。",
   tierDriftAllCurrencies: "按层级查看所有货币",
 
-  // ---- Currency Graph — SVG labels ----
-  graphArbCycleLabel: "套利: +{0}%",
-  graphArbCycleTooltip: "[套利循环]",
+  // ---- Currency Graph — SVG labels ---- REMOVED iter 89 (same as above)
+  // graphArbCycleLabel + graphArbCycleTooltip removed — dead keys.
 
   // ---- Accessibility: Sort ----
   sortBy: "排序方式 {0}",
@@ -846,9 +822,6 @@ const zh: Record<TranslationKeys, string> = {
   fallbackArbitrageCalculator: "套利计算器",
   fallbackFlips: "翻转",
   fallbackTierDrift: "层级漂移",
-  fallbackForecasts: "预测",
-  fallbackPortfolio: "投资组合",
-  fallbackCurrencyGraph: "货币关系图",
   fallbackWatchlist: "关注",
   fallbackItemDetails: "物品详情",
   fallbackPairDetails: "交易对详情",

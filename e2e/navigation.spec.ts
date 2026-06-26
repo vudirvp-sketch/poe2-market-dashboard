@@ -39,7 +39,9 @@ test.describe("Tab Navigation", () => {
       "optimizer",
       "analyst",
       "liquid-chain",
-      "graph",
+      // iter 89: removed "graph" from tabValues list (Currency Graph tab was removed in iter 87).
+      // Also missing: "storage-value", "speculation" — these are modal-style tabs and may need
+      // a separate test if added. Leaving as-is to keep the test stable.
       "watchlist",
     ];
 

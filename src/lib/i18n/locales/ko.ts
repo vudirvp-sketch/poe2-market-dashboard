@@ -11,7 +11,6 @@ const ko: Record<TranslationKeys, string> = {
   tabUniques: "유니크",
   tabExchange: "교환",
   tabArbitrage: "채권트라지",
-  tabForecast: "예측",
   tabWatchlist: "관심목록",
 
   // Header
@@ -428,9 +427,7 @@ const ko: Record<TranslationKeys, string> = {
   eventsHoursMinutes: "{0}시간 {1}분",
   eventsMinutes: "{0}분",
 
-  // ---- Portfolio Tab ----
-  tabPortfolio: "포트폴리오",
-  tabGraph: "통화 그래프",
+  // ---- Portfolio Tab ---- (tabPortfolio + tabGraph removed iter 89 — Portfolio tab + Currency Graph tab were both removed in earlier iterations)
   portfolioMethod: "방법",
   portfolioAnnualizedRisk: "연간 리스크",
   portfolioCorrelationStatus: "상관관계",
@@ -484,29 +481,9 @@ const ko: Record<TranslationKeys, string> = {
   phaseEstimatedTooltip: "리그 기간을 기반으로 추정된 단계 (백엔드 데이터가 오래되었을 수 있음)",
   phaseBackendTooltip: "백엔드 분석의 단계",
 
-  // ---- Currency Graph Tab ----
-  graphCurrencies: "통화 수",
-  graphTradePairs: "거래 쌍",
-  graphDensity: "그래프 밀도",
-  graphArbCycles: "차익 사이클",
-  graphFocusOn: "포커스",
-  graphAllCurrencies: "모든 통화",
-  graphZoomIn: "확대",
-  graphZoomOut: "축소",
-  graphResetZoom: "줌 리셋",
-  graphNoData: "환율 데이터를 사용할 수 없음",
-  graphNoDataDesc: "그래프는 flipper 백엔드의 가격 데이터가 필요합니다. 백엔드가 실행 중이고 환율을 가져왔는지 확인하세요.",
-  graphNoNodes: "시각화할 거래 쌍 없음",
-  graphAriaLabel: "통화 환율 네트워크 그래프",
-  graphLegendStable: "안정 — 낮은 변동성, 높은 유동성",
-  graphLegendModerate: "보통 — 균형 잡힌 프로필",
-  graphLegendVolatile: "변동/비유동 — 높은 리스크",
-  graphLegendArbCycle: "차익거래 사이클 간선",
-  graphDetectedCycles: "감지된 차익거래 사이클",
-  graphNodeDetail: "통화 상세: {0}",
-  graphNodeVolume: "거래량",
-  graphNodeConnections: "연결 수",
-  graphNodeCluster: "클러스터",
+  // ---- Currency Graph Tab ---- REMOVED iter 89 (tab removed iter 87, keys were dead)
+  // All 22 graph* keys removed — they existed only in locale files, no live references in src/.
+  // Kept as a comment marker so agents looking for the old section know it was intentionally deleted.
 
   // ---- Sticky Bar ----
   stickyBarBestFlip: "최고 플립",
@@ -780,9 +757,8 @@ const ko: Record<TranslationKeys, string> = {
   tierDriftHistoricalNote: "역사적 티어 드리프트는 백엔드 시계열 데이터가 필요합니다 (아직 사용 불가).",
   tierDriftAllCurrencies: "티어별 모든 통화",
 
-  // ---- Currency Graph — SVG labels ----
-  graphArbCycleLabel: "차익: +{0}%",
-  graphArbCycleTooltip: "[차익거래 사이클]",
+  // ---- Currency Graph — SVG labels ---- REMOVED iter 89 (same as above)
+  // graphArbCycleLabel + graphArbCycleTooltip removed — dead keys.
 
   // ---- Accessibility: Sort ----
   sortBy: "정렬 기준 {0}",
@@ -846,9 +822,6 @@ const ko: Record<TranslationKeys, string> = {
   fallbackArbitrageCalculator: "차익거래 계산기",
   fallbackFlips: "플립",
   fallbackTierDrift: "티어 드리프트",
-  fallbackForecasts: "예측",
-  fallbackPortfolio: "포트폴리오",
-  fallbackCurrencyGraph: "통화 그래프",
   fallbackWatchlist: "관심목록",
   fallbackItemDetails: "아이템 상세",
   fallbackPairDetails: "페어 상세",
