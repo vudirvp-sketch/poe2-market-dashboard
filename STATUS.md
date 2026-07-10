@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-06-26 (iter 95 — TD-2 fix + Overheat Index Q13)
+> **Last updated:** 2026-07-10 (iter 96 — Market Playbook + Circuit Patterns foundation)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -14,7 +14,7 @@ _None._ All previously open KIs are closed.
 
 ## Known Issues — closed
 
-All previously open KIs (KI-1 through KI-10) closed in iter 88-94. See git log for details.
+All previously open KIs (KI-1 through KI-10) closed in iter 88-95. See git log for details.
 
 ---
 
@@ -22,15 +22,16 @@ All previously open KIs (KI-1 through KI-10) closed in iter 88-94. See git log f
 
 | ID | Priority | Notes |
 |----|----------|-------|
-| **TD-3** | P3 | Triangular arbitrage no persistence. Cannot backtest executable_estimate. iter 96. |
-| **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. iter 96. |
+| **TD-3** | P3 | Triangular arbitrage no persistence. Cannot backtest executable_estimate. |
+| **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
 | **TD-6** | P3 | `highest_stock` + `current_quantity` not used for Wall detection. |
 | **TD-7** | P3 | `PriceMomentumTracker` momentum + volatility computed but not shown. |
 | **TD-8** | P3 | Tier classification (T1-T5) not shown anywhere. |
 | **TD-9** | P3 | FlipsTable "Trend" sparkline uses a derived `momentum × volatility` indicator. When backend adds `priceHistoryShort` to `FlipOpportunity`, switch to real data — only `flips-helpers.ts:deriveTrendSparklineData` needs replacing with a passthrough. |
+| **TD-10** | P3 | **Circuit Patterns** (iter 96): pure function `compute_circuit_patterns()` ready in `backend/economy/circuit_patterns.py` + 75 tests. **NOT yet wired up**: no API route, no response model, no Next.js proxy, no UI, no i18n. iter 97 task. See `docs/MARKET_PLAYBOOK.md` §P8 for the full pattern rationale. |
 
-TD-1 closed in iter 92 (FlipsTable 5 new columns). TD-2 closed in iter 95 (Overheat Index — see below).
+TD-1 closed in iter 92. TD-2 closed in iter 95.
 
 ---
 
@@ -40,15 +41,11 @@ TD-1 closed in iter 92 (FlipsTable 5 new columns). TD-2 closed in iter 95 (Overh
 |---------|--------|-------|
 | **F1** — Translate remaining items | ✅ Done (iter 85 + 86) | |
 | **F2** — Storage Value UI tab | ✅ Done (iter 74 + 75) | |
-| **F3** — `content_pulse` module | ✅ Done (iter 75) | |
+| **F3** — `content_pulse` module | ✅ Done (iter 75) + iter 95 Overheat Index | |
 | **F4** — «Что фармить сегодня» widget | ✅ Done (iter 76) | |
 | **F5** — Speculation tab | ✅ Done (iter 77 + 79 + 80 + 88) | |
 | **F6** — Phase-aware hints | ✅ Done (iter 78 + 87) | |
-| **iter 90–91** | ✅ Done (recon) | 14 clarifying questions + POE2Scout API capability map |
-| **iter 92** | ✅ Done | KI-7/8/9 fixes + TD-1 (5 FlipsTable columns) + entry price tracking |
-| **iter 93** | ✅ Done | **Best Payment primary view** on Exchange — top-10 cards strip. 13 new i18n keys × 4 locales. |
-| **iter 94** | ✅ Done | **KI-10 fix + Spread Capture view.** `tsc --noEmit` green. Q4/Q5/Q6 + new TD-9. |
-| **iter 95** | ✅ **Done** | **TD-2 fix + Overheat Index (Q13).** `content_pulse._category_today_volume()` now uses `volume_traded` (activity) instead of `current_quantity` (supply) — semantically consistent with `rolling_7d`/`rolling_30d`. New backend fields: `overheat_index` (0-100), `overheat_signal` (`hot`/`warm`/`cool`), `volume_spike_ratio`, `price_change_pct`. New UI: orange "Overheated" / amber "Warming up" badge on Content Pulse categories (only when signal ≠ cool), with tooltip showing the volume_spike_ratio + price_change_pct breakdown. 4 new i18n keys × 4 locales = 16 lines. 38 new Python tests (44→82) + 4 new jest tests (428→432). |
+| **F7** — Market Playbook + Circuit Patterns (P8) | 🚧 **In progress** (iter 96) | `docs/MARKET_PLAYBOOK.md` + `backend/economy/circuit_patterns.py` (75 tests). iter 97 = API + UI. See `docs/MARKET_PLAYBOOK.md` for the full roadmap (P1–P20). |
 
 ---
 

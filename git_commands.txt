@@ -1,48 +1,51 @@
-# Git commands for iter 86 — F1 closure
+# Git commands for iter 91
+# Run from the root of your local poe2-market-dashboard clone
+# after extracting the 3 .md files from this archive.
 
-# After merging the patched files into your local repo:
+cd /path/to/your/local/poe2-market-dashboard
 
-# 1. Verify tests pass
-pytest tests/test_currency_names_ru.py tests/test_sync_currency_names.py -v
-# Expected: 39 passed
+# Stage the 3 changed documentation files
+git add STATUS.md AGENT_NAVIGATION.md worklog.md
 
-# 2. (Optional) Run the broader test suite
-pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py -q
-# Expected: 763 passed
+# Commit
+git commit -m "iter 91: recon refinement — iter 90 critique + POE2Scout API capability map + refined iter 92-97 plan
 
-# 3. Stage the 6 changed files
-git add AGENT_NAVIGATION.md PRODUCT_VISION.md STATUS.md \
-        backend/data/currency_names.json \
-        src/lib/currency-names.ts \
-        worklog.md
+Pure recon iteration (NO source code changes). Documentation only.
 
-# 4. Commit
-git commit -m "iter 86: F1 closure — live sync run completed, against-the-darkness EN-name conflict resolved inline
+iter 90 critique — confirmed 6 findings, found 5 errors:
+- E1: relative_price is per-currency vs BASE (Exalted), NOT per-pair
+- E2: current_quantity (listings) ≠ volume_traded (24h trades) — iter 90 mixed them
+- E3: find_price_24h_ago already exists in pricing.py
+- E4: Triangular executable_estimate impossible without persistence first
+- E5: CURRENCY_DISPLAY_NAMES hardcode is intentional fallback
 
-Maintainer ran the F1 sync pipeline (iter 85 script) from a non-RU IP:
-  --fetch-ids  → 639 poe2scout items enumerated
-  --fetch-ru   → 186 EN→RU pairs scraped from poe2db.tw/ru/
-                 (8/17 categories returned data; 6 returned 0 pairs;
-                  4 returned 404 — URL slugs need updating, not blocking)
-  --diff       → 297 already translated, 0 new candidates matched,
-                 1 conflict (against-the-darkness), 342 no-match
-  --apply      → 0 added (poe2db.tw doesn't cover the missing items),
-                 1 conflict skipped, 342 no-op. Counts unchanged: ru=349, en=349.
+POE2Scout API capability map (invariant #42):
+- 12 endpoints catalogued
+- 8 free-data fields already collected by DataSnapshot
+- 5 not-available data points (real trades, order book depth, etc)
 
-Conflict resolution (against-the-darkness):
-  Pre-existing data inconsistency — EN field held the short name
-  'Against the Darkness' while RU held the full descriptive name
-  'Ключ от Реликвария Зарока: Противление тьме'. Aligned EN to poe2scout's
-  canonical 'Zarokh's Reliquary Key: Against the Darkness' (matches the
-  sibling temporalis entry pattern + the existing RU translation).
-  Both backend/data/currency_names.json + src/lib/currency-names.ts (TS mirror)
-  updated.
+5 new Proposals F-J (data already collected, need exposition):
+- F: Wall detection (highest_stock / current_quantity > 0.3)
+- G: OHLCV from DailyStatsHistory (endpoint exists, not used)
+- H: Cross-pair volume correlation (from existing price_logs)
+- I: Spread persistence (add market_spread to HistoricalStore)
+- J: Liquidity-tier UI (tiers.py already computes T1-T5)
 
-F1 CLOSED. 342 items remain untranslated — poe2db.tw has no pages for them.
-Re-running the script in the future will pick up any new translations poe2db adds.
+3 new Known Issues:
+- KI-7: TAB_MAP has 2 dead slots (arbitrage idx 4, graph idx 11)
+- KI-8: watchlist-tab.tsx pnl column duplicates change column
+- KI-9: Cross-rate inconsistency uses 2 thresholds (10% backend / 5% frontend)
 
-Tests: pytest 763 pass (incl. 39 currency_names + sync script tests).
-No frontend code changes — only JSON data + TS mirror string value + docs."
+8 new Tech Debt items (TD-1 through TD-8) — see STATUS.md
 
-# 5. Push to remote
+Refined iter 92-97 plan — see STATUS.md iter 91 row.
+
+Files changed (3, documentation only):
+- STATUS.md
+- AGENT_NAVIGATION.md
+- worklog.md
+
+No tests run (no code changes)."
+
+# Push to remote
 git push origin main

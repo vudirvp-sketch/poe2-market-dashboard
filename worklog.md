@@ -107,3 +107,37 @@ Next iteration (iter 96) — recommended priorities:
 1. **iter 96 = Triangular persistence** (TD-3 + TD-4). Add SQLite persistence for triangular arbitrage cycles `(cycle_hash, timestamp, profit_pct, snapshot_id)` + 30-min-later re-check, so we can backtest `executable_estimate` (fast/medium/slow formula). Also persist `market_spread` to HistoricalStore (TD-4). PREREQUISITE for the executable_estimate feature (iter 90 ERROR #4).
 2. **iter 97+ = Proposal F-J exposition** (data already collected, just need UI): F=Wall detection (`highest_stock/current_quantity > 0.3`), G=OHLCV from `DailyStatsHistory` (endpoint exists, not used), H=Cross-pair volume correlation (from `price_logs`), I=Spread persistence (covered by TD-4 in iter 96), J=Liquidity-tier UI (`tiers.py` already computes T1-T5 per currency). Plus TD-9 (real FlipsTable sparkline when backend adds `priceHistoryShort`).
 3. **Optional iter 95b (polish):** If real-world data shows the overheat thresholds (2.0x / -5%) need tuning, promote `OVERHEAT_VOLUME_SPIKE_THRESHOLD` + `OVERHEAT_PRICE_DROP_THRESHOLD` to `config.yaml`. Also consider weighting `price_change_pct` by `volume_traded` (currently unweighted mean).
+
+---
+Task ID: iter 96
+Agent: main (analysis + foundation)
+Task: Analyze POE2 currency-making guide text → extract patterns/logic/algorithms → design dashboard implementation. Per user: "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись". Per user: "Лучше недоделать, чем сломать — остальное в следующей итерации".
+
+Work Log:
+- Read user-provided POE2 currency-making guide (~2500 words). Extracted 20 distinct market patterns (P1–P20): triangular arb, rate lifecycle, leveling uniques lifecycle, time-of-day pattern, weekday/weekend pattern, priority listing arb, Mirror/Divine arb, currency appreciation trajectory (Chaos-orb pattern), phase-aware investment lifecycle, gold map ROI, Megalomaniac scanner, tablet resell, crafting profit discovery, meta gem mass listing, vendor gold strategy, reinvestment ranking, new season items, market trend detection, meta gem demand divergence, skill gem quality crafting.
+- Cloned repo https://github.com/vudirvp-sketch/poe2-market-dashboard. Read STATUS.md, PRODUCT_VISION.md, AGENT_NAVIGATION.md, content_pulse.py (as reference module pattern), test_content_pulse.py (as reference test pattern), speculation.py, momentum.py, lifecycle.py, response_models.py.
+- Cross-referenced each pattern against codebase: 3 patterns fully implemented (P1 triangular arb, P18 overheat index), 5 partial (P2/P7/P9/P16/P17), 12 missing. Of the missing, 4 are implementable on current POE2Scout data (P3/P4/P5/P8), 7 require GGG official trade API (out of scope).
+- Created docs/MARKET_PLAYBOOK.md (~290 lines) — main analytical deliverable. Contains: Part A (20 extracted patterns with logic), Part B (codebase cross-reference), Part C (implementation roadmap iter 96–103+), Part D (priorities + stopping point).
+- Created backend/economy/circuit_patterns.py (~470 lines) — pure function `compute_circuit_patterns(snapshot, config, *, days=30, limit=50, trajectory_filter="ALL", now=None)`. Classifies each currency into one of 7 archetypes: EXPONENTIAL_GROWTH / LINEAR_GROWTH / PEAK_THEN_DECLINE / MEAN_REVERTING / VOLATILE / DECLINING / STABLE. Uses stdlib OLS linear regression (no numpy/pandas dep). Tunable thresholds at module top. Returns `recommended_action`: HOLD_FOR_GROWTH / SELL_NOW / AVOID / WATCH / NEUTRAL. Implements P8 from MARKET_PLAYBOOK.md.
+- Created tests/test_circuit_patterns.py (~860 lines) — 75 pytest tests across 10 test classes: TestExtractPricePoints, TestFilterToWindow, TestMeanStd, TestCoefficientOfVariation, TestLinearRegression, TestTotalChangePct, TestDaysSincePeak, TestIsPeakThenDecline, TestRecommendedAction, TestClassifyTrajectory, TestComputeCircuitPatterns. Covers pure helpers + end-to-end + edge cases (empty snapshot, below MIN_SAMPLE_SIZE, snake_case keys, peak-then-decline shape, all 7 archetypes smoke test).
+- Fixed 2 bugs found during test runs: (a) timezone-naive datetime comparison — added `if ts.tzinfo is None: ts = ts.replace(tzinfo=timezone.utc)` defensive normalization in `_extract_price_points`. (b) `limit=0` semantic clarified to mean "return 0 items" (not "no cap") — matches test expectation.
+- Verified: `python -m pytest tests/test_circuit_patterns.py` → 75/75 green. `python -m pytest tests/test_circuit_patterns.py tests/test_content_pulse.py tests/test_speculation.py` → 200/200 green. No regressions in adjacent modules.
+- Updated STATUS.md — closed iter 95 notes, added TD-10 (circuit patterns backend only, no API/UI), added F7 row (in progress), kept Quick Reference lean.
+- Updated PRODUCT_VISION.md — major cleanup: removed long iter-by-iter history (was 289 lines of iter 75–88 detail), kept only current state. Added §3.7 Circuit Patterns + §3.8 Roadmap reference to MARKET_PLAYBOOK.md. Now ~150 lines.
+- Updated AGENT_NAVIGATION.md — refreshed header note (iter 96), added entry for `backend/economy/circuit_patterns.py` in section 1 table, added link to MARKET_PLAYBOOK.md in header.
+- Updated README.md — replaced stale iter 87 archive instructions with clean project overview + key features + doc links + run commands + stack info.
+
+Stage Summary:
+- **iter 96 SHIPPED — Market Playbook + Circuit Patterns foundation.**
+- Main deliverable: `docs/MARKET_PLAYBOOK.md` — comprehensive analysis of 20 market patterns + implementation roadmap.
+- Implementation: `backend/economy/circuit_patterns.py` pure function (P8 trajectory classification) + 75 pytest tests. Pure function pattern matches existing `content_pulse.py` / `speculation.py` conventions — no risk of breaking existing code.
+- Files added (3): `docs/MARKET_PLAYBOOK.md`, `backend/economy/circuit_patterns.py`, `tests/test_circuit_patterns.py`.
+- Files updated (4): `STATUS.md`, `PRODUCT_VISION.md`, `AGENT_NAVIGATION.md`, `README.md`.
+- No existing logic touched — zero regression risk.
+- **Stopping point:** iter 96 = foundation only. NO API route, NO response model, NO Next.js proxy, NO UI, NO i18n. iter 97 task = wire-up (TD-10).
+
+Next iteration (iter 97) — recommended priorities:
+1. **iter 97 = Circuit Patterns API + UI wire-up** (TD-10). Add `backend/api/routes_circuit_patterns.py` (route handler `GET /api/v1/circuit-patterns?days=30&limit=50&trajectory=ALL`), Pydantic models `CircuitPatternData` + `CircuitPatternsResponse` in `response_models.py`, register router in `backend/main.py`. Next.js proxy at `src/app/api/flipper/circuit-patterns/route.ts`. UI tab or widget showing top currencies by `|total_change_pct|` with trajectory badge + recommended_action. i18n keys × 4 locales.
+2. **iter 98 = Time-of-Day Pattern Detector (P4)** — pure function `compute_intraday_patterns(snapshot, config, days=14)`. For each currency: hourly mean price (UTC), buy/sell windows. Heatmap UI: час × валюта. Most novel pattern, no scout/ninja has it.
+3. **iter 99 = Weekday/Weekend Pattern Detector (P5)** — similar to iter 98 but groupby day-of-week.
+4. **iter 100+ = Leveling Uniques Lifecycle (P3), Mirror/Divine Arb (P7), Phase-aware Investment Advisor (P9)** — see MARKET_PLAYBOOK.md §C for full roadmap.
