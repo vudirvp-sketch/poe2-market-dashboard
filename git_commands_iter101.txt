@@ -1,0 +1,91 @@
+# Git commands for iter 101 — KI-14 fix (2 jest test bugs) + repo cleanup
+# Run from the repo root after extracting iter101-changes.zip
+#
+# This script:
+#   1. Stages 2 modified files + 2 new files
+#   2. Removes 18 obsolete legacy files (old iter archives + log files)
+#   3. Commits + pushes
+#
+# Expected `git status --short` after staging (22 changes total):
+#   M  STATUS.md
+#   M  src/__tests__/leveling-uniques-widget.test.tsx
+#   A  MERGE_INSTRUCTIONS_iter101.md
+#   A  git_commands_iter101.txt
+#   D  DELETIONS.sh
+#   D  DELETIONS.txt
+#   D  MERGE_INSTRUCTIONS.md
+#   D  MERGE_INSTRUCTIONS_iter81.md
+#   D  MERGE_INSTRUCTIONS_iter88.md
+#   D  MERGE_INSTRUCTIONS_iter89.md
+#   D  MERGE_INSTRUCTIONS_iter91.md
+#   D  MERGE_INSTRUCTIONS_iter94.md
+#   D  MERGE_INSTRUCTIONS_iter95.md
+#   D  MERGE_INSTRUCTIONS_iter97.md
+#   D  MERGE_INSTRUCTIONS_iter98.md
+#   D  MERGE_INSTRUCTIONS_iter99.md
+#   D  README.txt
+#   D  flipper-bridge.log
+#   D  git_commands.txt
+#   D  git_commands_iter94.txt
+#   D  git_commands_iter98.txt
+#   D  git_commands_iter99.txt
+
+# ---- 1. Stage modified + new files ----
+git add STATUS.md
+git add src/__tests__/leveling-uniques-widget.test.tsx
+git add MERGE_INSTRUCTIONS_iter101.md
+git add git_commands_iter101.txt
+
+# ---- 2. Remove obsolete legacy files ----
+git rm flipper-bridge.log
+git rm README.txt
+git rm DELETIONS.sh
+git rm DELETIONS.txt
+git rm MERGE_INSTRUCTIONS.md
+git rm MERGE_INSTRUCTIONS_iter81.md
+git rm MERGE_INSTRUCTIONS_iter88.md
+git rm MERGE_INSTRUCTIONS_iter89.md
+git rm MERGE_INSTRUCTIONS_iter91.md
+git rm MERGE_INSTRUCTIONS_iter94.md
+git rm MERGE_INSTRUCTIONS_iter95.md
+git rm MERGE_INSTRUCTIONS_iter97.md
+git rm MERGE_INSTRUCTIONS_iter98.md
+git rm MERGE_INSTRUCTIONS_iter99.md
+git rm git_commands.txt
+git rm git_commands_iter94.txt
+git rm git_commands_iter98.txt
+git rm git_commands_iter99.txt
+
+# ---- 3. Verify staging ----
+git status --short
+
+# ---- 4. Commit ----
+git commit -m "iter 101: fix 2 failing jest tests in leveling-uniques-widget (KI-14) + repo cleanup
+
+KI-14 (closed): leveling-uniques-widget.test.tsx had 2 failing jest tests after iter 100.
+
+Bug A: 'renders item count with uniques.length' used exact-match getByText(\"3 items\")
+but the JSX renders \"· 3 items\" inside one span (separator + count). Fixed by switching
+to regex matcher /3 items/.
+
+Bug B: 'calls fetchApi again when refresh button clicked after error' expected 2 calls
+but got 3. Root cause: widget has per-query retry:1 (overrides test client retry:false)
+AND I18nProvider hydrates from localStorage after mount (DEFAULT_LOCALE 'ru' -> stored
+'en'), changing the queryKey and triggering an extra fetch. Fixed by snapshotting
+mockFetchApi.mock.calls.length after error UI appears, then asserting
+toHaveBeenCalledTimes(callsBeforeRefresh + 1) after refresh click + verifying error
+UI is gone.
+
+Verified: tsc --noEmit clean, npx jest 24 suites / 532 tests green,
+pytest tests/test_leveling_uniques.py 86 tests green.
+
+Repo cleanup: removed 18 obsolete legacy files (flipper-bridge.log runtime log,
+DELETIONS.sh/.txt iter 87 leftovers, README.txt iter 86 leftover, 9 old
+MERGE_INSTRUCTIONS_iter8X.md archives, 4 old git_commands files). Kept iter 100
++ iter 101 archives only."
+
+# ---- 5. Push ----
+git push origin main
+
+# ---- 6. Verify push ----
+git log --oneline -3

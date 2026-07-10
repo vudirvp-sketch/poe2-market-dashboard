@@ -204,3 +204,40 @@ Stage Summary:
 - Tests: 89 new pytest + 23 new jest — all green. No regressions (963/963 pytest, 475/475 jest, tsc green).
 - Behavioral change: tab count grew to 13 — Intraday Patterns (idx 10) + Liquid Chain (idx 11) + Watchlist (idx 12) are all click-only (only 10 shortcut slots 1-9+0). Keyboard shortcuts 1-9+0 still map to the first 10 tabs (overview through circuit-patterns).
 - **Stopping point:** iter 98 = full wire-up complete. P4 = Done. Next iter (iter 99) = P5 Weekday/weekend pattern detector — pure function compute_weekly_patterns() + UI (день недели × валюта). See docs/MARKET_PLAYBOOK.md §C.4 for the spec.
+
+---
+Task ID: iter-101
+Agent: main (Super Z / GLM)
+Task: Fix 2 failing jest tests in leveling-uniques-widget.test.tsx (KI-14) + repo cleanup.
+
+Work Log:
+- Read STATUS.md (KI-11/12/13 open from iter 100), MERGE_INSTRUCTIONS_iter100.md (context), AGENT_NAVIGATION.md (header + changelog + KI list), src/__tests__/leveling-uniques-widget.test.tsx (the 2 failing tests), src/components/dashboard/leveling-uniques-widget.tsx (production code), src/lib/i18n/index.tsx (I18nProvider hydration logic), jest.setup.ts, src/__tests__/test-utils.tsx.
+- Analyzed the 2 failing tests from the user-provided jest output:
+  - Bug A: `renders item count with uniques.length` used exact-match `getByText("3 items")` but the widget renders `"· 3 items"` inside one span (separator + count). Fixed by switching to regex `/3 items/`.
+  - Bug B: `calls fetchApi again when refresh button clicked after error` expected `toHaveBeenCalledTimes(2)` after refresh click but got 3. Root cause: widget has per-query `retry: 1` (overrides test client's `retry: false`) AND `I18nProvider` hydrates from localStorage after mount (DEFAULT_LOCALE "ru" → stored "en"), changing the queryKey ["levelingUniques","ru"] → ["levelingUniques","en"] and triggering an extra fetch.
+- Documented KI-14 in STATUS.md (Known Issues — closed section) BEFORE fixing, per the workflow rule "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись".
+- Applied Fix A: changed `getByText("3 items")` to `getByText(/3 items/)` with explanatory comment.
+- Applied Fix B (first attempt): used `mockRejectedValue` (persistent) + expected `toHaveBeenCalledTimes(2)` before click and `toHaveBeenCalledTimes(3)` after click. Ran jest — failed because actual count before click was 3 (not 2) due to I18nProvider hydration adding an extra fetch.
+- Applied Fix B (second attempt): switched to robust snapshot+1 approach — `callsBeforeRefresh = mockFetchApi.mock.calls.length` after error UI appears, assert `≥ 2`, then assert `toHaveBeenCalledTimes(callsBeforeRefresh + 1)` after refresh click + verify error UI is gone (`queryByText(/Failed to load/).not.toBeInTheDocument()`).
+- Ran `npm install` (816 packages, succeeded with NODE_OPTIONS=--max-old-space-size=2048). Ran `npx tsc --noEmit` (clean, no errors). Ran `npx jest src/__tests__/leveling-uniques-widget.test.tsx` — 32/32 tests green. Ran full `npx jest` — 24 suites / 532 tests green. Ran `python -m pytest tests/test_leveling_uniques.py -q` — 86/86 tests green.
+- Repo cleanup: removed 18 obsolete legacy files that were accidentally committed in iter 100 (leftovers from old iter archives):
+  - flipper-bridge.log (409KB runtime log — should never have been in repo)
+  - README.txt (iter 86 leftover)
+  - DELETIONS.sh, DELETIONS.txt (iter 87 leftover)
+  - MERGE_INSTRUCTIONS.md (generic, undated)
+  - MERGE_INSTRUCTIONS_iter81.md, _iter88.md, _iter89.md, _iter91.md, _iter94.md, _iter95.md, _iter97.md, _iter98.md, _iter99.md (9 old iter archives)
+  - git_commands.txt (generic, undated)
+  - git_commands_iter94.txt, _iter98.txt, _iter99.txt (3 old git command files)
+  - Kept: MERGE_INSTRUCTIONS_iter100.md + git_commands_iter100.txt (most recent, for traceability) + new iter 101 files.
+- Updated STATUS.md: header "Last updated" refreshed, KI-14 entry added to "Known Issues — closed" section with full root-cause analysis + verification numbers.
+- Updated AGENT_NAVIGATION.md: header refreshed, new changelog entry #50 added for iter 101, KI-14 added to "iter 101 closed 1 KI" list in section 4.
+- Created MERGE_INSTRUCTIONS_iter101.md (full delivery report with Files Changed / Verification / Merge Instructions / Stop Point).
+- Created git_commands_iter101.txt (git add + git rm + commit + push commands for the 22 changes: 2 modified + 2 new + 18 deleted).
+
+Stage Summary:
+- **iter 101 SHIPPED — KI-14 closed. 2 failing jest tests fixed. Repo cleaned up.**
+- Modified files (2): src/__tests__/leveling-uniques-widget.test.tsx (2 test bodies rewritten with explanatory comments — no production code changed), STATUS.md (KI-14 closed entry + header).
+- New files (2): MERGE_INSTRUCTIONS_iter101.md, git_commands_iter101.txt.
+- Deleted files (18): obsolete legacy files from iter 81-99 archives + flipper-bridge.log runtime log + DELETIONS.sh/.txt + README.txt.
+- Verified: `npx tsc --noEmit` clean, `npx jest` 24 suites / 532 tests green, `pytest tests/test_leveling_uniques.py` 86 tests green.
+- **Stopping point:** iter 101 = KI-14 closed + repo cleanup done. Next iter (iter 102) candidate = fix KI-11 (return [] on 404 in `backend/data/providers/poe2scout.py:_fetch_json` + update proxy routes) — highest user-facing impact, unblocks the rest of the dashboard when an invalid league slug is configured. Then start P7 Mirror/Divine Arb Detector (§C.6 of docs/MARKET_PLAYBOOK.md).

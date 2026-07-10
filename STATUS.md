@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-07-10 (iter 100 — Leveling Uniques Lifecycle widget + 3 new KIs from log analysis)
+> **Last updated:** 2026-07-10 (iter 101 — fixed 2 jest test bugs in leveling-uniques-widget.test.tsx; KI-14 closed in same iter)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -72,6 +72,8 @@ Import trace:
 ## Known Issues — closed
 
 All previously open KIs (KI-1 through KI-10) closed in iter 88-95. See git log for details.
+
+- **KI-14** (closed iter 101): `leveling-uniques-widget.test.tsx` had 2 failing jest tests after iter 100. (a) `renders item count with uniques.length` used exact-match `getByText("3 items")` but the JSX renders `"· 3 items"` inside one span (separator + count) — fixed by switching to regex `/3 items/`. (b) `calls fetchApi again when refresh button clicked after error` expected 2 calls but got 3 — root cause: widget has per-query `retry: 1` (overrides test client's `retry: false`) AND `I18nProvider` hydrates from localStorage after mount (DEFAULT_LOCALE `"ru"` → stored `"en"`), changing the queryKey `["levelingUniques","ru"]` → `["levelingUniques","en"]` and triggering an extra fetch. Fixed by snapshotting `mockFetchApi.mock.calls.length` after error UI appears (≥2 expected), then asserting `toHaveBeenCalledTimes(callsBeforeRefresh + 1)` after refresh click + verifying error UI is gone. **Verified:** `npx tsc --noEmit` clean, `npx jest` 24 suites / 532 tests green, `pytest tests/test_leveling_uniques.py` 86 tests green. See `MERGE_INSTRUCTIONS_iter101.md`.
 
 ---
 

@@ -185,17 +185,33 @@ describe("LevelingUniquesWidget", () => {
   });
 
   it("calls fetchApi again when refresh button clicked after error", async () => {
-    mockFetchApi.mockRejectedValueOnce(new Error("Network error"));
+    // The widget has per-query `retry: 1` which overrides the test client's
+    // `retry: false`. Additionally, I18nProvider hydrates from localStorage
+    // after mount (DEFAULT_LOCALE "ru" → stored "en"), which changes the
+    // queryKey ["levelingUniques","ru"] → ["levelingUniques","en"], causing
+    // React Query to start a fresh query and abandon the in-flight retry of
+    // the previous one. The exact call count before the error UI shows is
+    // therefore timing-dependent (typically 3: ru-initial + en-initial +
+    // en-retry). What matters for this test is that clicking Refresh
+    // triggers exactly ONE additional fetch and the widget transitions out
+    // of the error state.
+    mockFetchApi.mockRejectedValue(new Error("Network error"));
     renderWidget(true);
     await waitFor(() => {
       expect(screen.getByText(/Failed to load leveling uniques/i)).toBeInTheDocument();
     }, ERROR_WAIT_OPTS);
-    // Reset and resolve successfully on retry
+    const callsBeforeRefresh = mockFetchApi.mock.calls.length;
+    expect(callsBeforeRefresh).toBeGreaterThanOrEqual(2); // initial + at least 1 retry
+    // Switch mock to success and click refresh → exactly 1 more call.
     mockFetchApi.mockResolvedValue({ ...mixedResponse, uniques: [] });
     const refreshButtons = screen.getAllByLabelText("Refresh");
     fireEvent.click(refreshButtons[0]);
     await waitFor(() => {
-      expect(mockFetchApi).toHaveBeenCalledTimes(2);
+      expect(mockFetchApi).toHaveBeenCalledTimes(callsBeforeRefresh + 1);
+    });
+    // Verify the widget transitioned to the success state (error UI gone).
+    await waitFor(() => {
+      expect(screen.queryByText(/Failed to load leveling uniques/i)).not.toBeInTheDocument();
     });
   });
 
@@ -243,7 +259,10 @@ describe("LevelingUniquesWidget", () => {
     mockFetchApi.mockResolvedValue(mixedResponse);
     renderWidget(true);
     await waitFor(() => {
-      expect(screen.getByText("3 items")).toBeInTheDocument();
+      // The count is rendered in a span together with a leading "·"
+      // separator ("· 3 items"), so an exact-match getByText would miss it.
+      // Use a regex matcher to find the count text inside that span.
+      expect(screen.getByText(/3 items/)).toBeInTheDocument();
     });
   });
 
