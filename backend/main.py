@@ -643,6 +643,18 @@ try:
 except ImportError:
     logger.debug("Intraday Patterns router not available yet")
 
+# P5 (iter 99): Weekly Patterns — weekday/weekend (ISO Mon-Sun) price
+# pattern detector. For each currency: per-weekday mean/std/count + buy day
+# (min mean) + sell day (max mean) + weekday_delta_pct (weekend vs weekday)
+# + significance flag (range >= 10%). Powers the heatmap UI in
+# weekly-patterns-tab.tsx. Pure function lives in
+# backend/economy/weekly_patterns.py. Same thin-wrapper pattern.
+try:
+    from backend.api.routes_weekly_patterns import router as weekly_patterns_router
+    app.include_router(weekly_patterns_router)
+except ImportError:
+    logger.debug("Weekly Patterns router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

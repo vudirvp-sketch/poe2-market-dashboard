@@ -41,6 +41,7 @@ import {
   Sparkles,
   Activity,
   Clock,
+  Calendar,
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,10 @@ export function DashboardToolbar(props: DashboardToolbarProps) {
         {/* P4 (iter 98): Intraday Patterns tab — time-of-day heatmap. */}
         <TabsTrigger value="intraday-patterns" className="gap-1.5" aria-label={t("tabIntradayPatterns")}>
           <Clock className="h-4 w-4" aria-hidden="true" /> {t("tabIntradayPatterns")}
+        </TabsTrigger>
+        {/* P5 (iter 99): Weekly Patterns tab — weekday/weekend heatmap. */}
+        <TabsTrigger value="weekly-patterns" className="gap-1.5" aria-label={t("tabWeeklyPatterns")}>
+          <Calendar className="h-4 w-4" aria-hidden="true" /> {t("tabWeeklyPatterns")}
         </TabsTrigger>
         <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
           <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}

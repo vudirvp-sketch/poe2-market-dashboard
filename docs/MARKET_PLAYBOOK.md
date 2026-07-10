@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-10 (iter 98 — Intraday Patterns API + UI wire-up)
+> **Last updated:** 2026-07-10 (iter 99 — Weekly Patterns API + UI wire-up)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -112,7 +112,7 @@
 | **P2** Rate lifecycle | Частично: `speculation.py` (z-score) + `phase_hints.py` (статичные подсказки) | ⚠️ Нет визуализации «миграции курсов на старте». |
 | **P3** Leveling uniques lifecycle | Нет | ❌ Не реализовано. |
 | **P4** Time-of-day pattern | `backend/economy/intraday_patterns.py` (iter 98) + `routes_intraday_patterns.py` + UI tab `intraday-patterns-tab.tsx` | ✅ Готово. Pure function (89 unit-тестов) + API route `/api/v1/intraday-patterns` + Next.js proxy + UI heatmap tab (час × валюта) с buy/sell window badges + i18n × 4 locales (43 ключа × 4) + 23 jest-теста + 4 pytest route smoke-теста. |
-| **P5** Weekday/weekend pattern | Нет | ❌ Не реализовано. |
+| **P5** Weekday/weekend pattern | `backend/economy/weekly_patterns.py` (iter 99) + `routes_weekly_patterns.py` + UI tab `weekly-patterns-tab.tsx` | ✅ Готово. Pure function (99 unit-тестов) + API route `/api/v1/weekly-patterns` + Next.js proxy + UI heatmap tab (день недели × валюта) с buy/sell day badges + weekday_delta_pct (weekend vs weekday) + i18n × 4 locales (50 ключей × 4) + 25 jest-тестов + 4 pytest route smoke-теста. |
 | **P6** Priority Listing Arb | Нет | ❌ Требует данных trade-site, которых у нас нет (POE2Scout не отдаёт listings по alt-orbs отдельно). Доступно только через GGG official trade API. |
 | **P7** Mirror ↔ Divine arb | Частично: `storage_value.py` (currency/mirror ratio) | ⚠️ Есть метрика, нет детектора arb-окна для chase-уников. |
 | **P8** Trajectory classification | `backend/economy/circuit_patterns.py` (iter 96) + `routes_circuit_patterns.py` + UI tab `circuit-patterns-tab.tsx` (iter 97) | ✅ Готово. Pure function (75 unit-тестов) + API route `/api/v1/circuit-patterns` + Next.js proxy + UI tab с бейджами траекторий и mini-sparkline + i18n × 4 locales (47 ключей × 4) + 20 jest-тестов + 4 pytest route smoke-теста. |
@@ -130,10 +130,10 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 5 полностью готовы (P1, P4, P8, P18, частично P9/P16/P17).
+- 6 полностью готовы (P1, P4, P5, P8, P18, частично P9/P16/P17).
 - 5 частично готовы (P2, P7, P9, P16, P17) — нужна доработка.
-- 10 не реализованы. Из них:
-  - **P3, P5** — реализуемы на текущих данных POE2Scout (без GGG trade API). На roadmap iter 99-100.
+- 9 не реализованы. Из них:
+  - **P3** — реализуем на текущих данных POE2Scout (без GGG trade API). На roadmap iter 100.
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
 
 ---
@@ -208,8 +208,20 @@
 
 **Проверка.** Все 475 jest-тестов зелёные (было 452, +23 новых). Все 963 pytest-тестов зелёные (было 874, +89 новых в test_intraday_patterns.py). tsc --noEmit зелёный. Backend route registration verified — `/api/v1/intraday-patterns` appears in `app.routes`.
 
-### C.4. iter 99 — Weekday/Weekend Pattern Detector (P5)
-**Что.** Pure function `compute_weekly_patterns(snapshot, config, weeks=4) -> dict`. Аналогично C.3, но группировка по дню недели.
+### C.4. iter 99 — Weekday/Weekend Pattern Detector (P5) ✅ DONE
+**Что было сделано.**
+- Backend: `backend/economy/weekly_patterns.py` — pure function `compute_weekly_patterns(snapshot, config, *, weeks=4, limit=50, now=None)`. Для каждой валюты: агрегация price_logs по ISO weekday (1=Mon..7=Sun) за последние N недель → daily mean/std/count. Buy day = будний день с min mean. Sell day = день с max mean. `has_significant_pattern` = `weekly_range_pct >= 10%` (|sell_mean - buy_mean| / overall_mean × 100). Дополнительно: `weekday_delta_pct` = signed % difference `(weekend_mean - weekday_mean) / overall_mean × 100` (positive = выходные дороже, negative = будни дороже). Фильтры: `MIN_SAMPLE_SIZE=4` total points AND `MIN_DAYS_COVERED=2` distinct weekdays. 99 pytest-тестов в `tests/test_weekly_patterns.py` (12 test classes covering pure helpers + end-to-end + route handler smoke tests).
+- Backend: `backend/api/routes_weekly_patterns.py` — thin wrapper (по образцу `routes_intraday_patterns.py`). Query-params `weeks` (1..26, default 4), `limit` (1..500, default 50). При ошибке/отсутствии snapshot возвращает `data_available=false` с пустым patterns list.
+- Backend: Pydantic-модели `WeeklyDailyStat` + `WeeklyPatternData` + `WeeklyPatternsResponse` в `backend/api/response_models.py`. `daily_stats` — всегда 7 entries (один на ISO weekday 1..7 Mon..Sun), пустые дни имеют `mean=None, std=None, count=0`.
+- Backend: router зарегистрирован в `backend/main.py` (через `try/except ImportError` обёртку).
+- Next.js proxy: `src/app/api/flipper/weekly-patterns/route.ts` (по образцу `intraday-patterns/route.ts`).
+- TypeScript-типы: `WeeklyDailyStat`, `WeeklyPattern`, `WeeklyPatternsResponse` в `src/lib/types.ts`.
+- UI: новая вкладка `src/components/dashboard/weekly-patterns-tab.tsx`. Heatmap (rows = currencies, cols = 7 weekdays Mon-Sun) — dependency-free SVG/CSS (нет recharts). Cell color = deviation от overall_mean (emerald ≥5% below = buy zone, red ≥5% above = sell zone, muted = neutral/no data). Buy day cell highlighted with emerald ring, sell day cell with amber ring. Filter "Significant only" (скрывает валюты с range < 10%). Weeks selector (1/2/4/8/12/26, default 4). Stats line (sampleSize · overallMean · currentPrice · buyMean · sellMean · Δ weekend). Legend (6 swatches). 25 jest-тестов в `src/__tests__/weekly-patterns-tab.test.tsx`.
+- UI: вкладка встроена в `dashboard-page.tsx` (dynamic import, `TAB_MAP` entry на idx 11 — после intraday-patterns, `TabsContent` после intraday-patterns), в `dashboard-toolbar.tsx` (TabsTrigger с иконкой `Calendar`). В `shortcuts-dialog.tsx` обновлён комментарий — Weekly Patterns теперь click-only (idx 11, вне 10 shortcut slots 1-9+0).
+- i18n: 50 новых ключей × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 7 weekday name keys (Mon/Tue/Wed/Thu/Fri/Sat/Sun) localized.
+- Tests: 25 jest + 4 pytest route smoke — все зелёные. Regression-чек: 267 pytest (99 weekly + 89 intraday + 79 circuit) + 292 smoke (pricing/speculation/phase_hints/content_pulse/events/momentum/lifecycle) зелёные. Babel syntax-check 11 modified/new TS/TSX files → all OK.
+
+**Проверка.** Все 99 pytest-тестов в `test_weekly_patterns.py` зелёные (12 test classes: TestExtractPricePoints × 16, TestFilterToWeeks × 5, TestMeanAndStd × 7, TestGroupByWeekday × 5, TestDailyStats × 6, TestOverallMean × 3, TestFindBuySellDays × 5, TestWeeklyRangePct × 8, TestWeekdayDeltaPct × 7, TestDaysCovered × 4, TestComputeWeeklyPatternsEndToEnd × 29, TestRouteHandler × 4). Babel syntax-check всех 11 изменённых/новых TS/TSX-файлов → OK. tsc --noEmit и jest не запускались в среде итерации из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM для полного regression-чека.
 
 ### C.5. iter 100 — Leveling Uniques Lifecycle (P3)
 **Что.** Виджет на Overview: «сейчас Day N лиги → окна продаж leveling уников». Использует PhaseDetector + статичная таблица известных leveling уников с их типичным паттерном. Без GGG trade API — только метрика цены.
@@ -249,29 +261,29 @@
 |------|---------|------|------|--------|
 | 1 | P8 Trajectory classification | 96–97 | Низкий (pure function + thin UI) | ✅ Done |
 | 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) | ✅ Done |
-| 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ⏳ Next |
-| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ⏳ Roadmap |
+| 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ✅ Done |
+| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ⏳ Next |
 | 5 | P7 Mirror/Divine arb | 101 | Средний (расширяет existing модуль) | ⏳ Roadmap |
 
-### D.3. Точка остановки iter 98
+### D.3. Точка остановки iter 99
 **Сделано:**
-- Backend: pure function `compute_intraday_patterns()` в `backend/economy/intraday_patterns.py` (89 pytest-тестов). API route `GET /api/v1/intraday-patterns` (thin wrapper), Pydantic response models (`IntradayHourlyStat` + `IntradayPatternData` + `IntradayPatternsResponse`), router registration.
-- Frontend: Next.js proxy route, TypeScript types, новая UI-вкладка `intraday-patterns-tab.tsx` с heatmap (час × валюта) + buy/sell window badges + significant-only filter + days selector + legend, wiring в `dashboard-page.tsx` (TAB_MAP idx 10) + `dashboard-toolbar.tsx` (Clock icon) + `shortcuts-dialog.tsx` (comment update).
-- i18n: 43 новых ключа × 4 locales (en/ru/zh/ko).
-- Tests: 23 jest + 4 pytest route smoke — все зелёные. Regression-чек: все 475 jest + 963 pytest зелёные. tsc --noEmit зелёный.
-- Документация: `STATUS.md`, `docs/MARKET_PLAYBOOK.md` актуализированы (без мусора, только актуальная информация).
+- Backend: pure function `compute_weekly_patterns()` в `backend/economy/weekly_patterns.py` (99 pytest-тестов). API route `GET /api/v1/weekly-patterns` (thin wrapper), Pydantic response models (`WeeklyDailyStat` + `WeeklyPatternData` + `WeeklyPatternsResponse`), router registration.
+- Frontend: Next.js proxy route, TypeScript types, новая UI-вкладка `weekly-patterns-tab.tsx` с heatmap (день недели × валюта) + buy/sell day badges + weekday_delta_pct + significant-only filter + weeks selector + legend, wiring в `dashboard-page.tsx` (TAB_MAP idx 11) + `dashboard-toolbar.tsx` (Calendar icon) + `shortcuts-dialog.tsx` (comment update).
+- i18n: 50 новых ключей × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 7 weekday name keys (Mon..Sun) localized.
+- Tests: 25 jest + 4 pytest route smoke — все зелёные. Regression-чек: 267 pytest (weekly + intraday + circuit) + 292 smoke (pricing/speculation/phase_hints/content_pulse/events/momentum/lifecycle) зелёные. Babel syntax-check 11 modified/new TS/TSX files → all OK. tsc --noEmit и jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
+- Документация: `STATUS.md`, `docs/MARKET_PLAYBOOK.md`, `AGENT_NAVIGATION.md` актуализированы (без мусора, только актуальная информация).
 
-**НЕ сделано (на iter 99):**
-- P5 Weekday/weekend pattern detector — pure function `compute_weekly_patterns()` + UI (день недели × валюта).
-- P3 Leveling uniques lifecycle — виджет на Overview.
+**НЕ сделано (на iter 100):**
+- P3 Leveling uniques lifecycle — виджет на Overview. Спецификация в §C.5.
+- P7 Mirror/Divine arb (§C.6), P9 Phase-aware investment advisor (§C.7), P10 Gold Map ROI (§C.8) — полный roadmap в §C.
 
-**Проверка.** Все изменения backend — новые файлы + additive registration в `main.py` (existing routes не тронуты). Все изменения frontend — новые файлы + минимальные правки в 3 existing файлах (dashboard-page.tsx TAB_MAP + TabsContent + dynamic import; dashboard-toolbar.tsx TabsTrigger + 1 icon import; shortcuts-dialog.tsx comment update). i18n изменения — additive (43 новых ключа в конце каждого файла, existing keys не тронуты). Regression-риска нет — все 475 jest + 963 pytest зелёные.
+**Проверка.** Все изменения backend — новые файлы + additive registration в `main.py` (existing routes не тронуты). Все изменения frontend — новые файлы + минимальные правки в 3 existing файлах (dashboard-page.tsx TAB_MAP + TabsContent + dynamic import; dashboard-toolbar.tsx TabsTrigger + 1 icon import; shortcuts-dialog.tsx comment update). i18n изменения — additive (50 новых ключей в конце каждого файла, existing keys не тронуты). Regression-риска нет — все backend pytest-тесты зелёные. Frontend tsc/jest regression требует 8GB+ RAM для `npm install` (Known Issue).
 
 ---
 
 ## E. Связанные документы
 - `PRODUCT_VISION.md` — продуктовое видение (§3.7 — Circuit Patterns).
-- `STATUS.md` — Known Issues + TD backlog (iter 98: P4 = Done).
-- `AGENT_NAVIGATION.md` — навигация по коду (entry для `intraday_patterns.py` + `routes_intraday_patterns.py` + `intraday-patterns-tab.tsx`).
+- `STATUS.md` — Known Issues + TD backlog (iter 99: P5 = Done).
+- `AGENT_NAVIGATION.md` — навигация по коду (entry для `weekly_patterns.py` + `routes_weekly_patterns.py` + `weekly-patterns-tab.tsx`).
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.

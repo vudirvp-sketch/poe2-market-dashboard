@@ -640,6 +640,76 @@ export interface IntradayPatternsResponse {
 }
 
 // ============================================================================
+// Weekly Patterns (P5, iter 99 — frontend UI)
+// Pure function: backend/economy/weekly_patterns.py
+// ============================================================================
+
+/** Per-weekday aggregation for a single currency (ISO weekday 1=Mon..7=Sun).
+ *  Backend (Pydantic) shape: WeeklyDailyStat.
+ *  Field names are camelCase after flipper-proxy transformKeys(). */
+export interface WeeklyDailyStat {
+  /** ISO weekday (1=Mon, 2=Tue, ..., 7=Sun). */
+  weekday: number;
+  /** Mean price for this weekday over the lookback window. Null when count=0. */
+  mean: number | null;
+  /** Population std of prices for this weekday. Null when count=0. */
+  std: number | null;
+  /** Number of price_logs on this weekday (0 when no data). */
+  count: number;
+}
+
+/** A single currency's weekday (Mon-Sun) price pattern.
+ *  Backend (Pydantic) shape: WeeklyPatternData. */
+export interface WeeklyPattern {
+  /** Item API identifier (e.g. "chaos-orb", "exalted"). */
+  apiId: string;
+  /** Display name (EN) — backend returns `text` field, proxy camelCases. */
+  text: string;
+  /** League mechanic category slug (e.g. "ritual", "breach"). Empty if unknown. */
+  category: string;
+  /** Always 7 entries (one per ISO weekday 1..7, Mon..Sun, ascending). Days
+   *  with no data have mean=null, std=null, count=0. */
+  dailyStats: WeeklyDailyStat[];
+  /** ISO weekday with the LOWEST mean price (best day to BUY). Null when no data. */
+  buyWindowDay: number | null;
+  /** ISO weekday with the HIGHEST mean price (best day to SELL). Null when no data. */
+  sellWindowDay: number | null;
+  /** Mean price at the buy window day. Null when buyWindowDay is null. */
+  buyWindowMean: number | null;
+  /** Mean price at the sell window day. Null when sellWindowDay is null. */
+  sellWindowMean: number | null;
+  /** Mean of ALL price points across all weekdays (NOT mean of daily means). */
+  overallMean: number;
+  /** |sellWindowMean - buyWindowMean| / overallMean * 100. 0 = no variation. */
+  weeklyRangePct: number;
+  /** Signed % difference: (weekend_mean - weekday_mean) / overall_mean * 100.
+   *  Positive = weekends are MORE expensive (sell on weekend).
+   *  Negative = weekdays are MORE expensive (sell on weekday).
+   *  0 = no difference or insufficient data on one side. */
+  weekdayDeltaPct: number;
+  /** True when weeklyRangePct >= 10% (SIGNIFICANT_RANGE_PCT). */
+  hasSignificantPattern: boolean;
+  /** Total number of price_logs in the lookback window (across all 7 weekdays). */
+  sampleSize: number;
+  /** Most recent price in base currency. */
+  currentPrice: number;
+}
+
+/** Response for GET /api/flipper/weekly-patterns (P5, iter 99). */
+export interface WeeklyPatternsResponse {
+  league: string;
+  /** Per-currency weekly patterns, sorted by weeklyRangePct desc. */
+  patterns: WeeklyPattern[];
+  /** Whether any currency had enough price_logs (≥ MIN_SAMPLE_SIZE AND
+   *  ≥ MIN_DAYS_COVERED distinct weekdays) to aggregate. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+  /** Lookback window in weeks used for the aggregation. */
+  weeks: number;
+}
+
+// ============================================================================
 // Speculation backtest (F5 follow-up, iter 80 — frontend UI)
 // ============================================================================
 

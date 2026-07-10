@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-07-10 (iter 98 — Intraday Patterns API + UI wire-up)
+> **Last updated:** 2026-07-10 (iter 99 — Weekly Patterns API + UI wire-up)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -46,6 +46,7 @@ TD-1 closed in iter 92. TD-2 closed in iter 95. TD-10 closed in iter 97 (Circuit
 | **F6** — Phase-aware hints | ✅ Done (iter 78 + 87) | |
 | **F7** — Market Playbook + Circuit Patterns (P8) | ✅ Done (iter 96 + 97) | Pure function + API + UI tab + i18n × 4 + tests. See `docs/MARKET_PLAYBOOK.md` §C.1 + §C.2. |
 | **P4** — Time-of-Day Pattern Detector | ✅ Done (iter 98) | Pure function `compute_intraday_patterns()` + API `/api/v1/intraday-patterns` + Next.js proxy + UI heatmap tab + i18n × 4 (43 keys × 4) + 23 jest + 89 pytest. See `docs/MARKET_PLAYBOOK.md` §C.3. |
+| **P5** — Weekday/Weekend Pattern Detector | ✅ Done (iter 99) | Pure function `compute_weekly_patterns()` + API `/api/v1/weekly-patterns` + Next.js proxy + UI heatmap tab (rows = currencies, cols = 7 weekdays Mon-Sun) + i18n × 4 (50 keys × 4) + 25 jest + 99 pytest. See `docs/MARKET_PLAYBOOK.md` §C.4. |
 
 ---
 
@@ -70,3 +71,6 @@ TD-1 closed in iter 92. TD-2 closed in iter 95. TD-10 closed in iter 97 (Circuit
 | Circuit Patterns sparkline empty for some currencies | By design (iter 97) — sparkline needs ≥2 price points in the lookback window. Backend filters currencies with < `MIN_SAMPLE_SIZE` (4) points before classification, but the sparkline slice is the last 14 — so even classified currencies can show fewer points if the window is short. When the slice has < 2 points, the empty-sparkline fallback renders. | `backend/economy/circuit_patterns.py:recent_points`, `circuit-patterns-tab.tsx:Sparkline` |
 | Intraday heatmap shows "No data" cells | By design (iter 98) — the heatmap renders all 24 UTC hours per currency. Hours with no price_logs in the lookback window show as muted "No data" cells (count=0, mean=null). This is expected when the snapshot scheduler hasn't collected data at that hour yet. | `backend/economy/intraday_patterns.py:_hourly_stats`, `intraday-patterns-tab.tsx:cellColor` |
 | Intraday tab not reachable via keyboard shortcut | By design (iter 98) — only 10 shortcut slots (1-9 + 0). Intraday Patterns is at TAB_MAP idx 10, so it's click-only. Liquid Chain (idx 11) + Watchlist (idx 12) are also click-only. | `dashboard-page.tsx:TAB_MAP`, `shortcuts-dialog.tsx` |
+| Weekly heatmap shows "No data" cells | By design (iter 99) — the heatmap renders all 7 weekdays (Mon-Sun) per currency. Days with no price_logs in the lookback window show as muted "No data" cells (count=0, mean=null). Expected for fresh leagues or weekdays with no snapshot collection. | `backend/economy/weekly_patterns.py:_daily_stats`, `weekly-patterns-tab.tsx:cellColor` |
+| Weekly tab not reachable via keyboard shortcut | By design (iter 99) — only 10 shortcut slots (1-9 + 0). Weekly Patterns is at TAB_MAP idx 11, so it's click-only. Intraday (idx 10) + Liquid Chain (idx 12) + Watchlist (idx 13) are also click-only. | `dashboard-page.tsx:TAB_MAP`, `shortcuts-dialog.tsx` |
+| Weekly tab `weekday_delta_pct` shows 0% even when weekends look different | By design (iter 99) — delta is computed as `(weekend_mean - weekday_mean) / overall_mean × 100`. Returns 0 when either group (Mon-Fri or Sat-Sun) has no data points. The badge is shown only for context — the buy/sell day badges and range_pct are the actionable signals. | `backend/economy/weekly_patterns.py:_weekday_delta_pct` |

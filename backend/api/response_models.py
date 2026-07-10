@@ -807,6 +807,77 @@ class IntradayPatternsResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Weekly Patterns (P5, iter 99 — weekday/weekend pattern detector)
+# Pure function: backend/economy/weekly_patterns.py
+# ---------------------------------------------------------------------------
+
+class WeeklyDailyStat(BaseModel):
+    """Per-weekday aggregation for a single currency (ISO weekday 1=Mon..7=Sun)."""
+    weekday: int = Field(description="ISO weekday (1=Mon, 2=Tue, ..., 7=Sun)")
+    mean: float | None = Field(default=None, description=(
+        "Mean price for this weekday over the lookback window. None when no "
+        "price_logs fell on this weekday (count=0)."
+    ))
+    std: float | None = Field(default=None, description=(
+        "Population std of prices for this weekday. None when count=0."
+    ))
+    count: int = Field(description="Number of price_logs on this weekday (0 when no data)")
+
+
+class WeeklyPatternData(BaseModel):
+    """A single currency's weekday (Mon-Sun) price pattern."""
+    api_id: str = Field(description="Item API identifier (e.g. 'chaos-orb', 'exalted')")
+    text: str = Field(description="Display name (EN) — backend returns raw POE2Scout Text field")
+    category: str = Field(description="League mechanic category slug (e.g. 'ritual', 'breach'). Empty if unknown.")
+    daily_stats: list[WeeklyDailyStat] = Field(description=(
+        "Always 7 entries (one per ISO weekday 1..7, Mon..Sun, ascending). "
+        "Days with no data have mean=None, std=None, count=0. The UI heatmap "
+        "renders one row per currency using these 7 cells."
+    ))
+    buy_window_day: int | None = Field(default=None, description=(
+        "ISO weekday with the LOWEST mean price (best day to BUY). None when no "
+        "day has data. Canonical example: mid-week days when supply is steady."
+    ))
+    sell_window_day: int | None = Field(default=None, description=(
+        "ISO weekday with the HIGHEST mean price (best day to SELL). None when "
+        "no day has data. Canonical example: weekends when demand spikes."
+    ))
+    buy_window_mean: float | None = Field(default=None, description="Mean price at the buy_window_day. None when buy_window_day is None.")
+    sell_window_mean: float | None = Field(default=None, description="Mean price at the sell_window_day. None when sell_window_day is None.")
+    overall_mean: float = Field(description="Mean of ALL price points across all weekdays (NOT mean of daily means). Used as the denominator for weekly_range_pct.")
+    weekly_range_pct: float = Field(description=(
+        "|sell_window_mean - buy_window_mean| / overall_mean * 100. Measures "
+        "the magnitude of the weekly pattern. 0 = no variation across weekdays."
+    ))
+    weekday_delta_pct: float = Field(description=(
+        "Signed % difference: (weekend_mean - weekday_mean) / overall_mean * 100. "
+        "Positive = weekends are MORE expensive (sell on weekend). Negative = "
+        "weekdays are MORE expensive (sell on weekday). 0 = no difference or "
+        "insufficient data on one side. Directly answers the playbook question: "
+        "'Perfect Jewelers Orb в будни на 20–30% дешевле, в выходные на 30% дороже'."
+    ))
+    has_significant_pattern: bool = Field(description=(
+        "True when weekly_range_pct >= 10% (SIGNIFICANT_RANGE_PCT). Below "
+        "this threshold the pattern is real but uninteresting — transaction "
+        "spread will eat the gain."
+    ))
+    sample_size: int = Field(description="Total number of price_logs in the lookback window (across all 7 weekdays)")
+    current_price: float = Field(description="Most recent price in base currency")
+
+
+class WeeklyPatternsResponse(BaseModel):
+    """Response for GET /api/v1/weekly-patterns."""
+    league: str = Field(description="League name")
+    patterns: list[WeeklyPatternData] = Field(default_factory=list, description=(
+        "Per-currency weekly patterns, sorted by weekly_range_pct "
+        "descending (most actionable pattern first). Capped by `limit`."
+    ))
+    data_available: bool = Field(description="Whether any currency in the snapshot had enough price_logs (≥ MIN_SAMPLE_SIZE AND ≥ MIN_DAYS_COVERED distinct weekdays) to aggregate")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+    weeks: int = Field(description="Lookback window in weeks used for the aggregation")
+
+
+# ---------------------------------------------------------------------------
 # Speculation backtest (F5 follow-up, iter 79)
 # ---------------------------------------------------------------------------
 
