@@ -22,7 +22,18 @@ export async function register() {
   // Only run on the server (not during build)
   if (process.env.NEXT_RUNTIME === "nodejs") {
     try {
-      const { startBackendBridge } = await import("./scripts/flipper-backend-bridge");
+      // KI-12 (iter 102): the `/* turbopackIgnore: true */` magic comment
+      // tells Turbopack's Node File Trace (NFT) to NOT bundle this dynamic
+      // import into the serverless build output. Previously, the import
+      // chain instrumentation.ts -> scripts/flipper-backend-bridge.ts caused
+      // Turbopack to emit a "Encountered unexpected file in NFT list" warning
+      // during `next build`. The bridge file is only needed when running
+      // `next start` / `next dev` (where it lives on disk), so excluding it
+      // from the serverless bundle is safe — serverless deployments would
+      // need to run the Python backend as a separate service anyway.
+      const { startBackendBridge } = await import(
+        /* turbopackIgnore: true */ "./scripts/flipper-backend-bridge"
+      );
       startBackendBridge();
     } catch (err) {
       // Bridge is optional — if it fails, dashboard still works

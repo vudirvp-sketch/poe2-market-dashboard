@@ -241,3 +241,43 @@ Stage Summary:
 - Deleted files (18): obsolete legacy files from iter 81-99 archives + flipper-bridge.log runtime log + DELETIONS.sh/.txt + README.txt.
 - Verified: `npx tsc --noEmit` clean, `npx jest` 24 suites / 532 tests green, `pytest tests/test_leveling_uniques.py` 86 tests green.
 - **Stopping point:** iter 101 = KI-14 closed + repo cleanup done. Next iter (iter 102) candidate = fix KI-11 (return [] on 404 in `backend/data/providers/poe2scout.py:_fetch_json` + update proxy routes) — highest user-facing impact, unblocks the rest of the dashboard when an invalid league slug is configured. Then start P7 Mirror/Divine Arb Detector (§C.6 of docs/MARKET_PLAYBOOK.md).
+
+---
+Task ID: iter-102
+Agent: main (Super Z / GLM)
+Task: Fix KI-11 (502 Bad Gateway on /api/poe2/uniques & /api/poe2/currencies when upstream returns 404 for league slug "runes") + KI-12 (Turbopack NFT warning).
+
+Work Log:
+- Read STATUS.md (KI-11/12/13 open from iter 100, KI-14 closed iter 101), AGENT_NAVIGATION.md (header + KI list), MERGE_INSTRUCTIONS_iter101.md (context for stopping point), src/app/api/poe2/uniques/route.ts (route handler — top-level catch returns 502 with items:[]), src/app/api/poe2/currencies/route.ts (same pattern), src/lib/poe2api.ts (cachedFetch + doFetch + getUniquesByCategory + getUniquesAllCategories + getCurrenciesByCategory + getCurrenciesAllCategories).
+- Analyzed the actual request flow: browser → Next.js route handler → `getUniquesByCategory("poe2", "runes", "all", ...)` → `getUniquesAllCategories(...)` → `cachedFetch<RawCategoriesResponse>("https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories")` → upstream 404 → `doFetch` throws `Error("API 404: Not Found — ...")` (no retry on 4xx) → `cachedFetch` propagates (no stale cache) → `getUniquesAllCategories` propagates (no try/catch around first call) → route handler catch → 502 with items:[].
+- **Root cause correction:** the iter 101 stopping-point note suggested fixing `backend/data/providers/poe2scout.py:_fetch_json` — but (a) there is no `_fetch_json` method in that file, and (b) the 502 doesn't go through the Python backend at all. The Next.js route handlers hit upstream directly via `cachedFetch`. The Python `_do_request` already returns `None` on 4xx and all callers already convert `None` → empty list/dict, so the Python side is correct.
+- **KI-11 fix:** added two exported helpers to `src/lib/poe2api.ts`:
+  - `isUpstream4xxError(err: unknown): boolean` — matches `/^API 4\d\d[ :]/` against the error message (the same prefix `doFetch` uses to identify 4xx). Returns false for 5xx, network errors, and non-Error values so those still propagate to the route handler's catch (genuine upstream failure → 502).
+  - `emptyPaginatedResponse<T>(page, perPage): PaginatedResponse<T>` — returns `{ items: [], page, perPage, totalItems: 0, totalPages: 0 }`.
+  - Wrapped the league-scoped `cachedFetch` call in `getUniquesByCategory` (single-category branch) in try/catch. On `isUpstream4xxError`, log a warning and return `emptyPaginatedResponse(page, perPage)`. Re-throw non-4xx errors.
+  - Same wrap in `getUniquesAllCategories` (the initial `Items/Categories` call). Per-category fan-out calls already have `.catch(() => null)` so they're unaffected.
+  - Same wrap in `getCurrenciesByCategory` (single-category branch).
+  - Same wrap in `getCurrenciesAllCategories` (the initial `Items/Categories` call).
+- **KI-12 fix:** the original description claimed the fix belonged in `next.config.ts`, but the actual import of `scripts/flipper-backend-bridge.ts` is in `instrumentation.ts` (line 25). Added `/* turbopackIgnore: true */` magic comment inside the `await import(...)` call. This tells Turbopack's Node File Trace to exclude the bridge from the serverless bundle — `next dev` and `next start` still load the file from disk normally; the bridge is only needed when the Next.js process manages the Python backend (not for serverless/edge deployments where the backend runs as a separate service).
+- **Tests:** created `src/__tests__/poe2api-ki11-graceful-4xx.test.ts` with 37 jest tests covering:
+  - `isUpstream4xxError` (13 tests): true for 400/403/404/422/499; false for 200/500/503, network errors (ECONNRESET/ETIMEDOUT/fetch failed), non-Error values, undefined message, "API 4" without a third digit, strings with "API 4" only in the middle.
+  - `emptyPaginatedResponse` (5 tests): empty items array, defaults to page=1/perPage=50, accepts custom page/perPage, totalItems=0/totalPages=0, satisfies PaginatedResponse<T> shape.
+  - `getUniquesByCategory` single-category (5 tests): 404 → empty, 400 → empty, 403 → empty, 500 → propagates, 200 → populated items.
+  - `getCurrenciesByCategory` single-category (4 tests): 404 → empty, 422 → empty, 500 → propagates, 200 → populated items.
+  - `getUniquesByCategory(category="all")` (4 tests): Items/Categories 404 → empty + only 1 fetch (no fan-out), 400 → empty, 500 → propagates, fan-out NOT called when Items/Categories 404s.
+  - `getCurrenciesByCategory(category="all")` (4 tests): same as above for currencies.
+  - Sanity (2 tests): BASE_URL ends with /api, BASE_URL contains poe2scout.com.
+  - Mocked global `fetch` to control response status + body. Silenced `console.warn/info/error` via `jest.spyOn` since the production code intentionally logs a warning when upstream 4xx is converted to empty data.
+- **Verification:** `npx tsc --noEmit` clean (exit 0). `npx jest src/__tests__/poe2api-ki11-graceful-4xx.test.ts` — 37/37 green. Full `npx jest` — 25 suites / 569 tests green (532 baseline + 37 new).
+- Updated STATUS.md: KI-11 + KI-12 moved from "Known Issues — open" to "Known Issues — closed" with full root-cause analysis + verification numbers. Header "Last updated" refreshed. Quick Reference table updated: KI-11 entry replaced with "200 with empty items" (was "502 Bad Gateway"), KI-12 row removed (cosmetic, closed), KI-13 row kept (still open).
+- Updated AGENT_NAVIGATION.md: header refreshed, KI list section updated to show KI-11 + KI-12 closed (with corrected root cause for KI-11 + correct file location for KI-12).
+- Created MERGE_INSTRUCTIONS_iter102.md + git_commands_iter102.txt. Removed obsolete MERGE_INSTRUCTIONS_iter100.md + git_commands_iter100.txt (per "keep docs light" rule — only the latest two iter archives are kept: iter 101 + iter 102).
+
+Stage Summary:
+- **iter 102 SHIPPED — KI-11 + KI-12 closed.**
+- Modified files (3): src/lib/poe2api.ts (+`isUpstream4xxError` +`emptyPaginatedResponse` exports + try/catch wraps in 4 league-scoped GET functions), instrumentation.ts (added `/* turbopackIgnore: true */` to bridge import), STATUS.md (KI-11 + KI-12 closed entries + header + Quick Reference table refresh).
+- Modified docs (1): AGENT_NAVIGATION.md (header refresh + KI list section).
+- New files (3): src/__tests__/poe2api-ki11-graceful-4xx.test.ts (37 jest tests), MERGE_INSTRUCTIONS_iter102.md, git_commands_iter102.txt.
+- Deleted files (2): MERGE_INSTRUCTIONS_iter100.md, git_commands_iter100.txt (old iter archives — only iter 101 + iter 102 kept).
+- Verified: `npx tsc --noEmit` clean, `npx jest` 25 suites / 569 tests green (532 baseline + 37 new). No backend changes — pytest not re-run.
+- **Stopping point:** iter 102 = KI-11 + KI-12 closed. Next iter (iter 103) candidate = fix KI-13 (SSE 400 investigation — add explicit logging in `_sse_event_generator` + check `middleware_compression.py` skips `text/event-stream`). Then start P7 Mirror/Divine Arb Detector (§C.6 of docs/MARKET_PLAYBOOK.md).

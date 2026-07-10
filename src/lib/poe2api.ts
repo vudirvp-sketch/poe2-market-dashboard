@@ -2066,9 +2066,68 @@ export async function getMultiTimeframeOHLCV(
   }
 }
 
+// ============================================================================
+// KI-11 (iter 102): Graceful degradation helpers for upstream 4xx errors
+// ============================================================================
+// When the upstream POE2Scout API returns 4xx (most commonly 404 because
+// the configured league slug is invalid for the current API state), the
+// `cachedFetch` layer throws an `Error("API 4xx: ...")`. If left to
+// propagate, the Next.js route handler's top-level catch block converts
+// this into a 502 Bad Gateway response with `items: []`. That breaks the
+// dashboard even though the rest of the app (analytics, static data,
+// widgets that don't depend on the upstream API) would still work.
+//
+// The two helpers below let the league-scoped GET functions in this file
+// catch upstream 4xx and return an empty PaginatedResponse instead, so the
+// route handler returns 200 with `items: []` and the frontend's existing
+// empty-state UI renders normally.
+// ============================================================================
+
+/**
+ * Detect whether an error thrown by `cachedFetch` is an upstream 4xx
+ * response (e.g. 400, 401, 403, 404). The `doFetch` helper formats these
+ * as `Error("API <status>: <statusText> — <url>")` and re-throws without
+ * retry (see the `lastError.message.startsWith("API 4")` check in doFetch).
+ *
+ * We match the same prefix here so the behaviour stays in sync with doFetch.
+ * Network errors (ETIMEDOUT, ECONNRESET, etc.) and 5xx errors do NOT match
+ * — those may be transient and should still propagate so the route handler
+ * can return 502 (genuine upstream failure, not "league not found").
+ */
+export function isUpstream4xxError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  // Match "API 4" followed by exactly one more digit (400-499).
+  return /^API 4\d\d[ :]/.test(err.message);
+}
+
+/**
+ * Build an empty `PaginatedResponse<T>` with the requested page/perPage.
+ * Used by the league-scoped GET functions when upstream returns 4xx.
+ */
+export function emptyPaginatedResponse<T>(
+  page: number = 1,
+  perPage: number = 50,
+): PaginatedResponse<T> {
+  return {
+    items: [] as T[],
+    page,
+    perPage,
+    totalItems: 0,
+    totalPages: 0,
+  };
+}
+
 // --- Uniques (paginated) ---
 // Category=all returns EMPTY results from the API.
 // When category is "all", we fetch ALL unique categories and merge results.
+//
+// KI-11 (iter 102): All league-scoped GET functions in this section catch
+// upstream 4xx errors (e.g. 404 when the league slug is invalid) and return
+// an empty PaginatedResponse instead of propagating the throw. The Next.js
+// route handlers (`src/app/api/poe2/{uniques,currencies,items}/route.ts`)
+// then return 200 with `items: []`, which the frontend's empty-state UI
+// handles gracefully. Without this catch, the route handlers' top-level
+// catch block converts the throw into a 502 Bad Gateway.
 export async function getUniquesByCategory(
   realm: string,
   league: string,
@@ -2092,22 +2151,38 @@ export async function getUniquesByCategory(
   if (search) params.set("Search", search);
   if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
 
-  const raw = await cachedFetch<RawPaginatedResponse<RawUniqueItem>>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
-  );
+  try {
+    const raw = await cachedFetch<RawPaginatedResponse<RawUniqueItem>>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Uniques/ByCategory?${params}`
+    );
 
-  return {
-    items: (raw.Items ?? []).map((item) => mapUniqueItem(item)),
-    page: raw.CurrentPage,
-    perPage: perPage,
-    totalItems: raw.Total,
-    totalPages: raw.Pages,
-  };
+    return {
+      items: (raw.Items ?? []).map((item) => mapUniqueItem(item)),
+      page: raw.CurrentPage,
+      perPage: perPage,
+      totalItems: raw.Total,
+      totalPages: raw.Pages,
+    };
+  } catch (err) {
+    if (isUpstream4xxError(err)) {
+      console.warn(
+        `[poe2api] getUniquesByCategory: upstream 4xx for realm=${realm} league=${league} category=${category} — returning empty page.`,
+        err instanceof Error ? err.message : err
+      );
+      return emptyPaginatedResponse(page, perPage);
+    }
+    throw err;
+  }
 }
 
 /**
  * Fetch uniques across ALL categories since Category=all returns empty.
  * Fetches ALL pages of each category, then merges and paginates client-side.
+ *
+ * KI-11 (iter 102): If the initial Items/Categories call throws an upstream
+ * 4xx (e.g. 404 because the league slug is invalid), return an empty
+ * PaginatedResponse instead of propagating — the per-category fetches would
+ * all 404 anyway, so there's no point continuing.
  */
 async function getUniquesAllCategories(
   realm: string,
@@ -2118,9 +2193,21 @@ async function getUniquesAllCategories(
   referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
   // First, get the list of unique categories
-  const categoriesRaw = await cachedFetch<RawCategoriesResponse>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
-  );
+  let categoriesRaw: RawCategoriesResponse;
+  try {
+    categoriesRaw = await cachedFetch<RawCategoriesResponse>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
+    );
+  } catch (err) {
+    if (isUpstream4xxError(err)) {
+      console.warn(
+        `[poe2api] getUniquesAllCategories: upstream 4xx on Items/Categories for realm=${realm} league=${league} — returning empty page.`,
+        err instanceof Error ? err.message : err
+      );
+      return emptyPaginatedResponse(page, perPage);
+    }
+    throw err;
+  }
 
   const uniqueCats = categoriesRaw.UniqueCategories ?? [];
 
@@ -2209,6 +2296,9 @@ async function getUniquesAllCategories(
 // --- Currencies ---
 // Category=all returns EMPTY results from the API.
 // When category is "all", we fetch ALL currency categories and merge results.
+//
+// KI-11 (iter 102): same graceful-degradation pattern as getUniquesByCategory —
+// catch upstream 4xx and return an empty PaginatedResponse.
 export async function getCurrenciesByCategory(
   realm: string,
   league: string,
@@ -2230,22 +2320,38 @@ export async function getCurrenciesByCategory(
   });
   if (referenceCurrency) params.set("ReferenceCurrency", referenceCurrency);
 
-  const raw = await cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
-  );
+  try {
+    const raw = await cachedFetch<RawPaginatedResponse<RawCurrencyItem>>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Currencies/ByCategory?${params}`
+    );
 
-  return {
-    items: (raw.Items ?? []).map((item) => mapCurrencyItem(item)),
-    page: raw.CurrentPage,
-    perPage: perPage,
-    totalItems: raw.Total,
-    totalPages: raw.Pages,
-  };
+    return {
+      items: (raw.Items ?? []).map((item) => mapCurrencyItem(item)),
+      page: raw.CurrentPage,
+      perPage: perPage,
+      totalItems: raw.Total,
+      totalPages: raw.Pages,
+    };
+  } catch (err) {
+    if (isUpstream4xxError(err)) {
+      console.warn(
+        `[poe2api] getCurrenciesByCategory: upstream 4xx for realm=${realm} league=${league} category=${category} — returning empty page.`,
+        err instanceof Error ? err.message : err
+      );
+      return emptyPaginatedResponse(page, perPage);
+    }
+    throw err;
+  }
 }
 
 /**
  * Fetch currencies across ALL categories since Category=all returns empty.
  * Fetches ALL pages of each category, then merges and paginates client-side.
+ *
+ * KI-11 (iter 102): If the initial Items/Categories call throws an upstream
+ * 4xx (e.g. 404 because the league slug is invalid), return an empty
+ * PaginatedResponse instead of propagating — the per-category fetches would
+ * all 404 anyway, so there's no point continuing.
  */
 async function getCurrenciesAllCategories(
   realm: string,
@@ -2255,9 +2361,21 @@ async function getCurrenciesAllCategories(
   referenceCurrency?: string
 ): Promise<PaginatedResponse<PoeItem>> {
   // Get the list of currency categories
-  const categoriesRaw = await cachedFetch<RawCategoriesResponse>(
-    `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
-  );
+  let categoriesRaw: RawCategoriesResponse;
+  try {
+    categoriesRaw = await cachedFetch<RawCategoriesResponse>(
+      `${BASE_URL}/${realm}/Leagues/${encodeURIComponent(league)}/Items/Categories`
+    );
+  } catch (err) {
+    if (isUpstream4xxError(err)) {
+      console.warn(
+        `[poe2api] getCurrenciesAllCategories: upstream 4xx on Items/Categories for realm=${realm} league=${league} — returning empty page.`,
+        err instanceof Error ? err.message : err
+      );
+      return emptyPaginatedResponse(page, perPage);
+    }
+    throw err;
+  }
 
   const currencyCats = categoriesRaw.CurrencyCategories ?? [];
 
