@@ -3,9 +3,13 @@
 // ============================================================================
 //
 // PURPOSE:
-//   Proxies requests to https://api.poe2scout.com/api/* from regions where
+//   Proxies requests to https://poe2scout.com/api/* from regions where
 //   the API is blocked (e.g. Russian IPs). The Worker runs on Cloudflare's
 //   edge network, which is not subject to the same blocking.
+//
+//   NOTE (iter 103): the api.poe2scout.com subdomain is DEAD — the API now
+//   lives at the bare domain poe2scout.com/api/*. This worker has been
+//   updated accordingly. See STATUS.md KI-15.
 //
 // DEPLOYMENT (quick):
 //   1. Install Wrangler CLI:  npm install -g wrangler
@@ -24,14 +28,14 @@
 //   - Up to 10 Workers
 //
 // SECURITY:
-//   - Only proxies to api.poe2scout.com (no open proxy)
+//   - Only proxies to poe2scout.com (no open proxy)
 //   - Passes through all query parameters
 //   - Preserves original response status codes and headers
 //   - Adds CORS headers for browser compatibility
 //   - Request logging for monitoring
 // ============================================================================
 
-const UPSTREAM_BASE = 'https://api.poe2scout.com/api';
+const UPSTREAM_BASE = 'https://poe2scout.com/api';
 
 // Allowed origin patterns for CORS (adjust to your deployment domain)
 const ALLOWED_ORIGINS = [
@@ -144,7 +148,7 @@ export default {
     }
 
     // Security check: ensure the constructed URL is still under poe2scout.com
-    if (upstreamUrl.hostname !== 'api.poe2scout.com') {
+    if (upstreamUrl.hostname !== 'poe2scout.com') {
       return new Response(JSON.stringify({ error: 'Forbidden: upstream host mismatch' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },

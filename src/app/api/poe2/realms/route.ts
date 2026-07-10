@@ -16,7 +16,7 @@ export async function GET() {
       {
         error: message,
         error_type: "upstream_error",
-        hint: `The poe2scout.com API is unreachable. The dashboard will use fallback data for realms and leagues. Try: 1) Set POE2_API_BASE_URL=${process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api"} in .env.local, 2) Use a VPN, 3) Check your internet connection`,
+        hint: `The poe2scout.com API is unreachable. The dashboard will use fallback data for realms and leagues. Try: 1) Set POE2_API_BASE_URL=${process.env.POE2_API_BASE_URL || "https://poe2scout.com/api"} in .env.local, 2) Use a VPN, 3) Check your internet connection`,
       },
       { status: 502 }
     );

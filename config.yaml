@@ -4,7 +4,7 @@
 data:
   primary_provider: "poe2scout"
   fallback_provider: "official"
-  poe2scout_base_url: "https://api.poe2scout.com/api"
+  poe2scout_base_url: "https://poe2scout.com/api"
   # CORS proxy for backend — set this to your Cloudflare Worker URL
   # if the backend cannot reach poe2scout.com directly (e.g. blocked region).
   # Can also be set via POE2SCOUT_CORS_PROXY_URL env var (takes precedence).

@@ -26,7 +26,7 @@ import * as path from "path";
 
 // ---------- Configuration ----------
 
-const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
+const BASE_URL = process.env.POE2_API_BASE_URL || "https://poe2scout.com/api";
 const SNAPSHOT_REALM = process.env.POE2_SNAPSHOT_REALM || "poe2";
 const SNAPSHOT_LEAGUE = process.env.POE2_SNAPSHOT_LEAGUE || "runes";
 const DUMP_DIR = process.env.POE2_DUMP_DIR || path.resolve(__dirname, "../tests/fixtures");

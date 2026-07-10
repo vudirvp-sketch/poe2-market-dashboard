@@ -163,21 +163,22 @@ fi
 if [ ! -f ".env.local" ]; then
     info "Creating .env.local with default settings..."
     {
-        echo "# PoE2 API Base URL"
-        echo "POE2_API_BASE_URL=https://api.poe2scout.com/api"
+        echo "# PoE2 API Base URL (iter 103: api.poe2scout.com subdomain is DEAD - use bare domain)"
+        echo "POE2_API_BASE_URL=https://poe2scout.com/api"
         echo "# Flipper backend URL (server-side only, used by API proxy routes)"
         echo "FLIPPER_API_URL=http://localhost:8000"
     } > .env.local
-    info ".env.local created with api.poe2scout.com"
+    info ".env.local created with poe2scout.com/api"
     echo ""
 else
     info ".env.local found."
-    # Verify POE2_API_BASE_URL uses api. subdomain (not bare poe2scout.com)
-    if ! grep -q "poe2scout.com/api" .env.local 2>/dev/null; then
-        warn ".env.local may have wrong POE2_API_BASE_URL!"
-        warn "The URL should include the \"api.\" subdomain:"
-        warn "POE2_API_BASE_URL=https://api.poe2scout.com/api"
-        warn "Using the bare domain (poe2scout.com) causes ECONNRESET/502 errors."
+    # Verify POE2_API_BASE_URL is NOT the dead api.poe2scout.com subdomain
+    if grep -q "api.poe2scout.com" .env.local 2>/dev/null; then
+        warn ".env.local uses DEAD api.poe2scout.com subdomain!"
+        warn "The api.poe2scout.com host no longer serves the API and returns 404"
+        warn "for every endpoint. Replace it with the bare domain:"
+        warn "POE2_API_BASE_URL=https://poe2scout.com/api"
+        warn "See STATUS.md KI-15 for details."
     fi
     echo ""
 fi

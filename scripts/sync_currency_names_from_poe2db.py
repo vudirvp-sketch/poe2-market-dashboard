@@ -7,7 +7,7 @@ api_ids" gap documented in STATUS.md (F1 — blocked on live API access).
 
 This script does NOT run inside the FastAPI backend. It is a CLI tool meant
 to be executed locally by a maintainer who has live network access to:
-  1. https://api.poe2scout.com/api  (to enumerate all api_ids + EN names)
+  1. https://poe2scout.com/api  (to enumerate all api_ids + EN names)
   2. https://poe2db.tw/ru/           (to fetch Russian translations)
 
 Both endpoints are blocked from Russia (see docs/CORS_PROXY_GUIDE.md), which
@@ -99,7 +99,7 @@ ENVIRONMENT VARIABLES
 ------------------------------------------------------------------------------
 
   POE2_API_BASE_URL       — Override poe2scout.com API base URL.
-                             Default: https://api.poe2scout.com/api
+                             Default: https://poe2scout.com/api
   POE2DB_BASE_URL         — Override poe2db.tw base URL.
                              Default: https://poe2db.tw
   POE2_SNAPSHOT_REALM     — Realm path segment for poe2scout.
@@ -157,7 +157,7 @@ POE2SCOUT_ITEMS_CACHE = CACHE_DIR / "poe2scout_items.json"
 POE2DB_RU_CACHE = CACHE_DIR / "poe2db_ru_names.json"
 PATCH_CACHE = CACHE_DIR / "currency_names_patch.json"
 
-DEFAULT_POE2SCOUT_BASE = "https://api.poe2scout.com/api"
+DEFAULT_POE2SCOUT_BASE = "https://poe2scout.com/api"
 DEFAULT_POE2DB_BASE = "https://poe2db.tw"
 DEFAULT_REALM = "poe2"
 DEFAULT_LEAGUE = "runes"  # Current PoE2 league as of iter 85 (Dawn of the Hunt retired, runes is current)

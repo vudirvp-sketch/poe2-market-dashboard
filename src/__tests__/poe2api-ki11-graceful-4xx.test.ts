@@ -89,7 +89,7 @@ afterEach(() => {
 // ============================================================================
 describe("KI-11: isUpstream4xxError", () => {
   it("returns true for Error('API 404: Not Found — ...')", () => {
-    expect(isUpstream4xxError(new Error("API 404: Not Found — https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories"))).toBe(true);
+    expect(isUpstream4xxError(new Error("API 404: Not Found — https://poe2scout.com/api/poe2/Leagues/runes/Items/Categories"))).toBe(true);
   });
 
   it("returns true for Error('API 400: Bad Request — ...')", () => {

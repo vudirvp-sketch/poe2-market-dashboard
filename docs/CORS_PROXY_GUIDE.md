@@ -6,7 +6,7 @@
 
 ## 1. The Problem
 
-The POE2Scout API (`api.poe2scout.com`) is **blocked from Russian IPs**. Direct requests from servers in Russia result in `ECONNRESET` or `ETIMEDOUT` errors. The dashboard includes multiple resilience mechanisms to handle this and other connectivity issues.
+The POE2Scout API (`poe2scout.com`) is **blocked from Russian IPs**. Direct requests from servers in Russia result in `ECONNRESET` or `ETIMEDOUT` errors. The dashboard includes multiple resilience mechanisms to handle this and other connectivity issues.
 
 ## 2. Frontend Resilience (poe2api.ts)
 
@@ -15,7 +15,7 @@ The POE2Scout API (`api.poe2scout.com`) is **blocked from Russian IPs**. Direct 
 The frontend uses a layered fallback strategy for all POE2Scout API calls:
 
 ```
-1. Direct API call → api.poe2scout.com/api/...
+1. Direct API call → poe2scout.com/api/...
    ↓ on ECONNRESET / ETIMEDOUT / network error
 2. CORS proxy retry → {POE2_CORS_PROXY_URL}/api/...
    ↓ on failure
@@ -53,7 +53,7 @@ On startup, reads `src/data/cache-snapshot.json` and seeds the in-memory cache. 
 The backend uses a simpler fallback chain:
 
 ```
-1. Direct API call → https://api.poe2scout.com/api/...
+1. Direct API call → https://poe2scout.com/api/...
    ↓ on connection error
 2. CORS proxy → {cors_proxy_url}/api/...
    ↓ on failure
@@ -128,7 +128,7 @@ export POE2SCOUT_CORS_PROXY_URL="https://poe2scout-proxy.your-account.workers.de
 
 The worker simply proxies requests:
 ```
-Client → worker.dev/api/Leagues?realm=poe2 → api.poe2scout.com/api/Leagues?realm=poe2
+Client → worker.dev/api/Leagues?realm=poe2 → poe2scout.com/api/Leagues?realm=poe2
 ```
 
 No transformation, no caching — just routing through Cloudflare's edge to bypass regional blocking.
@@ -142,7 +142,7 @@ If you deploy the worker, you can also route ALL API traffic through Cloudflare 
 POE2_API_BASE_URL=https://poe2scout-proxy.your-account.workers.dev/api
 ```
 
-When set, `poe2api.ts` uses this URL as the primary base URL instead of `api.poe2scout.com`. No fallback chain needed.
+When set, `poe2api.ts` uses this URL as the primary base URL instead of `poe2scout.com`. No fallback chain needed.
 
 ## 6. Alternative: VPN
 

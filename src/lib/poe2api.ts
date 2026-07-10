@@ -1,10 +1,16 @@
 // ============================================================================
 // PoE2 Scout API — Server-side fetch functions + in-memory cache
-// Base URL: configurable via POE2_API_BASE_URL env var (default: https://api.poe2scout.com/api)
+// Base URL: configurable via POE2_API_BASE_URL env var (default: https://poe2scout.com/api)
+//
+// IMPORTANT (iter 103): The old `api.poe2scout.com` subdomain NO LONGER
+// serves the API (returns 404 for every endpoint). The API now lives at
+// the bare domain `poe2scout.com/api/*`. If the dashboard shows 404 for
+// every upstream call, check .env.local — it must NOT contain the `api.`
+// subdomain. See STATUS.md KI-15.
 //
 // v5 FIXES (POE2-FIX-SPEC):
 // 1. API base URL is now configurable via POE2_API_BASE_URL environment variable
-//    so users behind blocked networks can use api.poe2scout.com or a local proxy
+//    so users behind blocked networks can use a local proxy
 // 2. Added User-Agent header to avoid being blocked by bot detection
 // 3. Improved error messages with actionable hints
 // 4. API returns PascalCase for Leagues/Items/etc., snake_case for Realms
@@ -40,11 +46,11 @@ import type {
 } from "./types";
 
 // ---------- Configurable API Base URL ----------
-export const BASE_URL = process.env.POE2_API_BASE_URL || "https://api.poe2scout.com/api";
+export const BASE_URL = process.env.POE2_API_BASE_URL || "https://poe2scout.com/api";
 
 // ---------- CORS Proxy fallback ----------
 // When the direct API call fails with ECONNRESET/ETIMEDOUT (common from
-// Russian IPs where api.poe2scout.com is blocked), automatically retry
+// Russian IPs where poe2scout.com is blocked), automatically retry
 // through a CORS proxy if one is configured.
 //
 // Set POE2_CORS_PROXY_URL in .env.local to your Cloudflare Worker URL
@@ -438,7 +444,7 @@ async function doFetch<T>(url: string, maxRetries: number): Promise<T> {
       }
 
       // ECONNRESET is a transient error — the remote server reset the connection.
-      // This is common when api.poe2scout.com is under load or when the network
+      // This is common when poe2scout.com is under load or when the network
       // is unstable. Unlike ECONNREFUSED (server not listening), ECONNRESET means
       // the server WAS reachable but dropped the connection. Retry with backoff.
       const isTransientNetworkError =

@@ -30,7 +30,7 @@
 |  Scorer, Triangular, Portfolio, Anomaly, Forecast, Events        |
 +------------------------------------------------------------------+
 |                     Data Sources                                  |
-|  POE2Scout API (api.poe2scout.com) + SQLite (historical.db)     |
+|  POE2Scout API (poe2scout.com) + SQLite (historical.db)     |
 |  Cloudflare Worker (CORS proxy fallback)                         |
 +------------------------------------------------------------------+
 ```
@@ -44,7 +44,7 @@ Browser
   → fetchApi("/api/poe2/realms")
   → Next.js route handler (src/app/api/poe2/realms/route.ts)
   → poe2api.ts: fetchFromPoe2Scout("/Realms")
-      → Direct API call → api.poe2scout.com/api/Realms
+      → Direct API call → poe2scout.com/api/Realms
       ↓ on ECONNRESET/ETIMEDOUT
       → CORS proxy → poe2scout-proxy.workers.dev/api/Realms
       ↓ on failure

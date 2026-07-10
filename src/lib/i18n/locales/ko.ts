@@ -276,7 +276,7 @@ const ko: Record<TranslationKeys, string> = {
   flipperBackendCheckingDesc: "Flipper 백엔드 응답을 기다리고 있습니다. 시작 시 몇 초 정도 걸릴 수 있습니다.",
   flipperBackendDegradedTitle: "업스트림 API에 연결할 수 없습니다",
   flipperBackendDegradedDesc: "Flipper 백엔드가 실행 중이지만 POE2Scout API(poe2scout.com)에 연결할 수 없습니다. 지역 네트워크 제한 때문일 수 있습니다. VPN을 사용하거나 .env.local에서 POE2_API_BASE_URL을 대체 엔드포인트로 설정하세요. 캐시된 데이터는 계속 사용할 수 있습니다.",
-  flipperBackendDegradedHint: "1) .env.local 편집: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) VPN 사용   3) 변경 후 서버 재시작",
+  flipperBackendDegradedHint: "1) .env.local 편집: POE2_API_BASE_URL=https://poe2scout.com/api   2) VPN 사용   3) 변경 후 서버 재시작",
   flipperBackendInsufficientDataTitle: "이 기능에 대한 데이터가 부족합니다",
   flipperBackendInsufficientDataDesc: "백엔드는 온라인 상태이지만 아직 충분한 과거 데이터를 수집하지 못했습니다. 더 많은 가격 데이터가 수집되면 나중에 다시 시도하세요 (일반적으로 최소 2개 통화, 각각 5+ 가격 포인트 필요).",
   flipperEventActive: "시장에 영향을 미치는 활성 이벤트",
@@ -912,7 +912,7 @@ const ko: Record<TranslationKeys, string> = {
   upstreamBlockedTitle: "POE2Scout API에 현재 IP에서 접근할 수 없습니다.",
   upstreamBlockedStep1: "1) VPN — 차단되지 않은 지역 서버에 연결",
   upstreamBlockedStep2: "2) CORS 프록시 — .env.local에 설정:",
-  upstreamBlockedStep3: "3) Cloudflare Worker — api.poe2scout.com 요청을 프록시하는 Worker 생성",
+  upstreamBlockedStep3: "3) Cloudflare Worker — poe2scout.com 요청을 프록시하는 Worker 생성",
   upstreamBlockedStep4: "4) 변경 후 서버 재시작",
 
   // ---- Data Freshness Badge (데이터 신선도 표시기) ----

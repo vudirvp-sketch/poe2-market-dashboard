@@ -23,7 +23,7 @@ Browser → Next.js (port 3000)
 
 ## 2. POE2Scout API Endpoints
 
-**Base URL:** `https://api.poe2scout.com/api` (configurable via `POE2_API_BASE_URL` or `config.yaml → data.poe2scout_base_url`)
+**Base URL:** `https://poe2scout.com/api` (configurable via `POE2_API_BASE_URL` or `config.yaml → data.poe2scout_base_url`)
 
 | # | Endpoint | Purpose | Response Case |
 |---|----------|---------|---------------|

@@ -1,8 +1,12 @@
 """
 Poe2ScoutProvider — primary data provider using the POE2Scout public API.
 
-API base URL: https://api.poe2scout.com/api
-Swagger docs: https://api.poe2scout.com/api/swagger
+API base URL: https://poe2scout.com/api
+Swagger docs: https://poe2scout.com/api/swagger
+
+NOTE (iter 103): The old api.poe2scout.com subdomain is DEAD and returns 404
+for every endpoint. The API now lives at the bare domain poe2scout.com/api/*.
+See STATUS.md KI-15.
 
 CRITICAL FINDING: The /{Realm} path parameter does NOT use the `value` field
 from /Realms (e.g. "poe2/poe2" or "poe2/pc"). Instead it uses a SIMPLIFIED

@@ -34,10 +34,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "web.poecdn.com",
       },
-      {
-        protocol: "https",
-        hostname: "api.poe2scout.com",
-      },
     ],
   },
 };

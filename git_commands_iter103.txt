@@ -1,0 +1,78 @@
+# Git commands for iter 103 — poe2-market-dashboard
+#
+# After extracting the archive (poe2-market-dashboard-iter103.zip) into your
+# local repo root (overwriting existing files), run these commands.
+#
+# IMPORTANT: Before committing, also delete or edit your local .env.local
+# so it uses the new URL:
+#   POE2_API_BASE_URL=https://poe2scout.com/api
+# (the old api.poe2scout.com subdomain is DEAD and returns 404)
+#
+# .env.local is gitignored and will NOT be in the commit — but it must be
+# correct locally or the dashboard will still show 404s after this update.
+
+# 1. Stage all changed files
+git add \
+  AGENT_NAVIGATION.md \
+  README.md \
+  STATUS.md \
+  MERGE_INSTRUCTIONS_iter103.md \
+  backend/config.py \
+  backend/data/providers/poe2scout.py \
+  cloudflare-worker/worker.js \
+  config.yaml \
+  docs/ARCHITECTURE.md \
+  docs/CORS_PROXY_GUIDE.md \
+  docs/DATA_FLOW.md \
+  instrumentation.ts \
+  next.config.ts \
+  scripts/dump-live-data.ts \
+  scripts/generate-cache-snapshot.ts \
+  scripts/sync_currency_names_from_poe2db.py \
+  src/__tests__/poe2api-ki11-graceful-4xx.test.ts \
+  src/app/api/poe2/health/route.ts \
+  src/app/api/poe2/leagues/route.ts \
+  src/app/api/poe2/realms/route.ts \
+  src/data/cache-snapshot.json \
+  src/lib/i18n/locales/en.ts \
+  src/lib/i18n/locales/ko.ts \
+  src/lib/i18n/locales/ru.ts \
+  src/lib/i18n/locales/zh.ts \
+  src/lib/poe2api.ts \
+  start.bat \
+  start.sh
+
+# 2. Verify what's staged
+git status
+
+# 3. Commit
+git commit -m "iter 103: fix KI-15 (dead api.poe2scout.com subdomain) + KI-16 (revert KI-12 turbopackIgnore regression)
+
+KI-15: api.poe2scout.com subdomain is DEAD — every endpoint returns 404.
+The API has moved to the bare domain poe2scout.com/api/*. All 27 files with
+hardcoded api.poe2scout.com references updated: config.yaml, backend/config.py,
+src/lib/poe2api.ts, start.bat, start.sh, next.config.ts, cloudflare-worker,
+scripts/{generate-cache-snapshot,dump-live-data,sync_currency_names_from_poe2db},
+src/data/cache-snapshot.json (URL keys rewritten, 14 entries),
+src/app/api/poe2/{health,leagues,realms}/route.ts, i18n locales (en/ru/ko/zh),
+backend/data/providers/poe2scout.py docstring, docs/{DATA_FLOW,ARCHITECTURE,CORS_PROXY_GUIDE}.md,
+test fixtures. start.bat/start.sh now WARN if .env.local still contains the
+dead api. subdomain (previously warned if it was ABSENT — exactly backwards).
+
+KI-16: iter 102's /* turbopackIgnore: true */ 'fix' for the cosmetic NFT
+warning (KI-12) was a regression — it caused Turbopack to fully exclude
+scripts/flipper-backend-bridge.ts from the server bundle, so next start
+failed with 'Cannot find module .../chunks/scripts/flipper-backend-bridge'.
+Reverted: the NFT warning is cosmetic, the runtime breakage was not.
+Long-term fix (P2): move scripts/flipper-backend-bridge.ts -> src/lib/.
+
+User action required: delete or edit local .env.local to use
+POE2_API_BASE_URL=https://poe2scout.com/api (the old api.poe2scout.com URL
+no longer serves the API)."
+
+# 4. Push to remote
+git push origin main
+
+# 5. (Optional) Verify the push
+git log --oneline -1
+git status

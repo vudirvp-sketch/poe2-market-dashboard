@@ -24,7 +24,7 @@ from pydantic_settings import BaseSettings
 class DataConfig(BaseModel):
     primary_provider: str = "poe2scout"
     fallback_provider: str = "official"
-    poe2scout_base_url: str = "https://api.poe2scout.com/api"
+    poe2scout_base_url: str = "https://poe2scout.com/api"
     # CORS proxy URL for backend — when poe2scout.com is blocked in the
     # backend's network, set this to a Cloudflare Worker URL so the
     # Poe2ScoutProvider can route requests through the proxy.

@@ -2,7 +2,7 @@
   "version": 1,
   "timestamp": "2026-06-08T14:11:32.339Z",
   "entries": {
-    "https://api.poe2scout.com/api/Realms": {
+    "https://poe2scout.com/api/Realms": {
       "data": [
         {
           "value": "poe1/pc",
@@ -39,7 +39,7 @@
       ],
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues": {
+    "https://poe2scout.com/api/poe2/Leagues": {
       "data": [
         {
           "Value": "Dawn of the Hunt",
@@ -264,7 +264,7 @@
       ],
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/ExchangeSnapshot": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/ExchangeSnapshot": {
       "data": {
         "Epoch": 1780920000,
         "Volume": "64786826.80704399",
@@ -274,7 +274,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/SnapshotPairs": {
       "data": [
         {
           "CurrencyExchangeSnapshotPairId": 81949040,
@@ -2534,7 +2534,7 @@
       ],
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/SnapshotHistory?Limit=24": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/SnapshotHistory?Limit=24": {
       "data": {
         "Data": [
           {
@@ -2666,7 +2666,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/ReferenceCurrencies": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/ReferenceCurrencies": {
       "data": [
         {
           "ApiId": "exalted",
@@ -2689,7 +2689,7 @@
       ],
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Items/Categories": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Items/Categories": {
       "data": {
         "UniqueCategories": [
           {
@@ -2842,7 +2842,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=50": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=currency&Page=1&PerPage=50": {
       "data": {
         "CurrentPage": 1,
         "Pages": 1,
@@ -5086,7 +5086,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=25": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ritual&Page=1&PerPage=25": {
       "data": {
         "CurrentPage": 1,
         "Pages": 2,
@@ -6560,7 +6560,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=25": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=ultimatum&Page=1&PerPage=25": {
       "data": {
         "CurrentPage": 1,
         "Pages": 2,
@@ -8069,7 +8069,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=25": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=idol&Page=1&PerPage=25": {
       "data": {
         "CurrentPage": 1,
         "Pages": 1,
@@ -9094,7 +9094,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=25": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=vaultkeys&Page=1&PerPage=25": {
       "data": {
         "CurrentPage": 1,
         "Pages": 1,
@@ -9560,7 +9560,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=25": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Currencies/ByCategory?Category=delirium&Page=1&PerPage=25": {
       "data": {
         "CurrentPage": 1,
         "Pages": 2,
@@ -11101,7 +11101,7 @@
       },
       "ts": 1780927889251
     },
-    "https://api.poe2scout.com/api/poe2/Leagues/runes/Items?Page=1&PerPage=25": {
+    "https://poe2scout.com/api/poe2/Leagues/runes/Items?Page=1&PerPage=25": {
       "data": [
         {
           "ItemId": 25,

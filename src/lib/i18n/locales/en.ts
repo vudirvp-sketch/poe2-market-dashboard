@@ -277,7 +277,7 @@ const en = {
   flipperBackendCheckingDesc: "Waiting for the Flipper backend to respond. This usually takes a few seconds on startup.",
   flipperBackendDegradedTitle: "Upstream API unreachable",
   flipperBackendDegradedDesc: "The Flipper backend is running but cannot reach the POE2Scout API (poe2scout.com). This may be caused by network restrictions in your region. Try using a VPN, or set POE2_API_BASE_URL in .env.local to an alternative endpoint. Cached data is still available.",
-  flipperBackendDegradedHint: "1) Edit .env.local: POE2_API_BASE_URL=https://api.poe2scout.com/api   2) Use a VPN   3) Restart the server after changes",
+  flipperBackendDegradedHint: "1) Edit .env.local: POE2_API_BASE_URL=https://poe2scout.com/api   2) Use a VPN   3) Restart the server after changes",
   flipperBackendInsufficientDataTitle: "Insufficient data for this feature",
   flipperBackendInsufficientDataDesc: "The backend is online but does not have enough historical data yet. Try again later when more price points have been collected (typically requires at least 2 currencies with 5+ price points each).",
   flipperEventActive: "Active event affecting market",
@@ -918,7 +918,7 @@ const en = {
   upstreamBlockedTitle: "POE2Scout API is unreachable from your IP.",
   upstreamBlockedStep1: "1) VPN — connect to a server outside the blocked region",
   upstreamBlockedStep2: "2) CORS proxy — set in .env.local:",
-  upstreamBlockedStep3: "3) Cloudflare Worker — create a Worker that proxies requests to api.poe2scout.com",
+  upstreamBlockedStep3: "3) Cloudflare Worker — create a Worker that proxies requests to poe2scout.com",
   upstreamBlockedStep4: "4) Restart the server after making changes",
 
   // ---- Data Freshness Badge (graceful degradation indicator) ----

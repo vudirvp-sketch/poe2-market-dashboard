@@ -16,23 +16,23 @@
  *
  * To start backend manually:
  *   PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000
+ *
+ * NOTE (iter 103, KI-15): the `/* turbopackIgnore: true */` magic comment
+ * added in iter 102 to silence the Turbopack NFT warning was a REGRESSION —
+ * it caused Turbopack to fully exclude the bridge file from the server
+ * bundle, so `next start` failed at runtime with
+ * "Cannot find module '.../.next/server/chunks/scripts/flipper-backend-bridge'".
+ * The comment has been removed. The NFT warning is purely cosmetic and does
+ * not break the build or runtime. A proper fix would move the bridge into
+ * src/lib/ so Turbopack treats it as a regular module — tracked as KI-16.
  */
 
 export async function register() {
   // Only run on the server (not during build)
   if (process.env.NEXT_RUNTIME === "nodejs") {
     try {
-      // KI-12 (iter 102): the `/* turbopackIgnore: true */` magic comment
-      // tells Turbopack's Node File Trace (NFT) to NOT bundle this dynamic
-      // import into the serverless build output. Previously, the import
-      // chain instrumentation.ts -> scripts/flipper-backend-bridge.ts caused
-      // Turbopack to emit a "Encountered unexpected file in NFT list" warning
-      // during `next build`. The bridge file is only needed when running
-      // `next start` / `next dev` (where it lives on disk), so excluding it
-      // from the serverless bundle is safe — serverless deployments would
-      // need to run the Python backend as a separate service anyway.
       const { startBackendBridge } = await import(
-        /* turbopackIgnore: true */ "./scripts/flipper-backend-bridge"
+        "./scripts/flipper-backend-bridge"
       );
       startBackendBridge();
     } catch (err) {

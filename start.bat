@@ -161,22 +161,23 @@ REM now uses SSE for real-time price updates and REST polling for everything
 REM else. No NEXT_PUBLIC_FLIPPER_WS_* variables are needed anymore.
 if not exist ".env.local" (
     echo [INFO] .env.local not found. Creating with default settings...
-    echo # PoE2 API Base URL> .env.local
-    echo POE2_API_BASE_URL=https://api.poe2scout.com/api>> .env.local
+    echo # PoE2 API Base URL (iter 103: api.poe2scout.com subdomain is DEAD - use bare domain)> .env.local
+    echo POE2_API_BASE_URL=https://poe2scout.com/api>> .env.local
     echo # Flipper backend URL (server-side only)>> .env.local
     echo FLIPPER_API_URL=http://localhost:8000>> .env.local
     echo.
-    echo [OK] .env.local created with api.poe2scout.com
+    echo [OK] .env.local created with poe2scout.com/api
     echo.
 ) else (
     echo [OK] .env.local found.
-    REM Verify POE2_API_BASE_URL uses api. subdomain (not bare poe2scout.com)
-    findstr /C:"poe2scout.com/api" .env.local >nul 2>&1
-    if !ERRORLEVEL! neq 0 (
-        echo [WARN] .env.local may have wrong POE2_API_BASE_URL^^!
-        echo        The URL should include the "api." subdomain:
-        echo        POE2_API_BASE_URL=https://api.poe2scout.com/api
-        echo        Using the bare domain ^(poe2scout.com^) causes ECONNRESET/502 errors.
+    REM Verify POE2_API_BASE_URL is NOT the dead api.poe2scout.com subdomain
+    findstr /C:"api.poe2scout.com" .env.local >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        echo [WARN] .env.local uses DEAD api.poe2scout.com subdomain^^!
+        echo        The api.poe2scout.com host no longer serves the API and returns 404
+        echo        for every endpoint. Replace it with the bare domain:
+        echo        POE2_API_BASE_URL=https://poe2scout.com/api
+        echo        See STATUS.md KI-15 for details.
         echo.
     )
 )
@@ -436,8 +437,9 @@ echo     1. Hard-refresh: Ctrl+Shift+R ^(^or Ctrl+F5^)
 echo     2. Clear browser cache: Ctrl+Shift+Delete
 echo     3. Or open DevTools ^> Application ^> Storage ^> Clear site data
 echo.
-echo   If you see 502 errors, try editing .env.local:
-echo     POE2_API_BASE_URL=https://api.poe2scout.com/api
+echo   If you see 502/404 errors, edit .env.local and make sure it uses the
+echo   bare domain (NOT the dead api. subdomain):
+echo     POE2_API_BASE_URL=https://poe2scout.com/api
 echo.
 echo   Press Ctrl+C to stop the server.
 echo ============================================================
