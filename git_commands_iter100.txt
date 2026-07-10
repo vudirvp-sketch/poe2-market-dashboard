@@ -1,0 +1,154 @@
+# Git Commands — iter 100
+
+> **Iter:** 100 — Leveling Uniques Lifecycle (P3) widget on Overview + 3 new KIs from log analysis
+> **Date:** 2026-07-10
+
+## Pre-commit verification (run before committing)
+
+```bash
+# 1. Backend tests — must be all green (704 passed expected)
+python -m pytest tests/test_leveling_uniques.py tests/test_weekly_patterns.py tests/test_intraday_patterns.py tests/test_circuit_patterns.py tests/test_phase_hints.py tests/test_lifecycle.py tests/test_pricing.py tests/test_speculation.py tests/test_content_pulse.py tests/test_events.py tests/test_storage_value.py tests/test_anomaly.py --no-header -q
+
+# 2. Frontend syntax check (Babel — does NOT require npm install)
+# (Requires @babel/core + @babel/preset-typescript + @babel/preset-react installed
+#  in a temp dir — see scripts/babel-check-iter100.js for details)
+node /path/to/babel-check-iter100.js /path/to/repo
+
+# 3. (Optional, requires 8GB+ RAM) Full frontend regression
+npm install
+npx tsc --noEmit
+npx jest src/__tests__/leveling-uniques-widget.test.tsx
+```
+
+## Git commands
+
+```bash
+# Stage all iter 100 changes (5 new files + 6 modified files + 2 doc files)
+git add backend/economy/leveling_uniques.py
+git add backend/api/routes_leveling_uniques.py
+git add backend/api/response_models.py
+git add backend/main.py
+git add tests/test_leveling_uniques.py
+git add src/app/api/flipper/leveling-uniques/route.ts
+git add src/components/dashboard/leveling-uniques-widget.tsx
+git add src/components/dashboard/overview-tab-content.tsx
+git add src/lib/types.ts
+git add src/lib/i18n/locales/en.ts
+git add src/lib/i18n/locales/ru.ts
+git add src/lib/i18n/locales/zh.ts
+git add src/lib/i18n/locales/ko.ts
+git add src/__tests__/leveling-uniques-widget.test.tsx
+git add STATUS.md
+git add docs/MARKET_PLAYBOOK.md
+git add AGENT_NAVIGATION.md
+git add MERGE_INSTRUCTIONS_iter100.md
+git add git_commands_iter100.txt
+
+# Or stage everything at once:
+# git add -A
+
+# Verify staged changes
+git status
+git diff --cached --stat
+
+# Commit with descriptive message
+git commit -m "iter 100: Leveling Uniques Lifecycle widget on Overview (P3) + 3 new KIs from log analysis
+
+Backend:
+- New pure function compute_leveling_uniques_lifecycle() in backend/economy/leveling_uniques.py
+  Static table of 10 leveling uniques (Polcirkeln, Megalomaniac, Wall of Brambles,
+  Mana Leech Support, Feeding Frenzy Support, Echoes of Worldstone, Mind of the Council,
+  Boots of Momentum, Wings of Entropy, Soul Tether Amulet) with peak_day /
+  peak_price_exalted / decay_pct / pattern / notes. Computes per-unique lifecycle stage
+  (PRE_PEAK / AT_PEAK / POST_PEAK) + recommendation (BUY_OR_HOLD / SELL_NOW /
+  AVOID_BUYING) + estimated_current_price_exalted (piecewise-linear heuristic) +
+  days_until_peak. Parallel _LEVELING_UNIQUES_NOTES_RU table for Russian notes.
+  Does NOT depend on DataSnapshot — uses PhaseDetector only (immune to KI-11).
+- New route GET /api/v1/leveling-uniques?lang=en|ru in backend/api/routes_leveling_uniques.py
+  Thin wrapper using get_phase_detector() singleton. Always returns data_available=true.
+- New Pydantic models LevelingUniqueData + LevelingUniquesResponse in response_models.py.
+- Router registered in backend/main.py (additive try/except ImportError block).
+- 86 new pytest tests in tests/test_leveling_uniques.py (8 test classes).
+  All green. Regression: 618 existing tests still green (704 total).
+
+Frontend:
+- New Next.js proxy route src/app/api/flipper/leveling-uniques/route.ts (forwards lang).
+- New TS types LevelingUnique + LevelingUniquesResponse + LevelingUniqueStage +
+  LevelingUniqueRecommendation in src/lib/types.ts.
+- New UI widget src/components/dashboard/leveling-uniques-widget.tsx — renders on
+  Overview between PhaseHintsWidget and MarketOverview. Header (TrendingUp icon +
+  Day N + item count + reference currency) + summary line (dominant stage) + 5-column
+  table (Item / Stage / Est. Price / Peak Day / Action) + disclaimer + footer
+  (fetched-at + stage breakdown). Color-coded badges: PRE_PEAK=blue / AT_PEAK=amber /
+  POST_PEAK=muted (stage), BUY_OR_HOLD=emerald / SELL_NOW=red / AVOID_BUYING=muted
+  (recommendation). Uses useQuery (5min staleTime, retry 1).
+- Wiring in overview-tab-content.tsx (new ErrorBoundary + LevelingUniquesWidget).
+- 31 new i18n keys × 4 locales (en/ru/zh/ko) — all parity.
+- 28 new jest tests in src/__tests__/leveling-uniques-widget.test.tsx.
+  Babel syntax-check 9/9 OK. Full jest run requires 8GB+ RAM (Known Issue).
+
+Log analysis (3 new KIs documented in STATUS.md, NOT fixed):
+- KI-11: Upstream POE2Scout API returns 404 for league 'runes' (all endpoints).
+  Browser sees 502 on /api/poe2/currencies + /api/poe2/uniques. Workaround: edit
+  .env.local → set POE2_DEFAULT_LEAGUE to a valid current league slug.
+- KI-12: Turbopack NFT list warning (cosmetic). Fix: add /*turbopackIgnore: true*/
+  to bridge import in next.config.ts.
+- KI-13: /api/v1/prices/stream?threshold_pct=1 returns 400 (cause uncertain).
+  Likely middleware rejecting SSE or exception in _sse_event_generator when
+  snapshot is empty (cascades from KI-11).
+
+Docs:
+- STATUS.md: 3 new open KIs (KI-11/12/13), P3 row in Product Features table,
+  5 new Quick Reference entries, updated header.
+- docs/MARKET_PLAYBOOK.md: §B.2 P3 row → Done, §C.5 full implementation details,
+  §D.2 P3 → Done / P7 → Next, §D.3 iter 100 stopping point, §E updated refs.
+- AGENT_NAVIGATION.md: 3 new entries in §1, iter 100 changelog entry #49 in §3,
+  3 new KIs in §4, updated header.
+- MERGE_INSTRUCTIONS_iter100.md: full merge instructions + verification steps.
+
+Refs: docs/MARKET_PLAYBOOK.md §C.5, STATUS.md KI-11/12/13"
+
+# Push to remote
+git push origin main
+
+# Verify push succeeded
+git log --oneline -1
+```
+
+## Rollback (if needed)
+
+```bash
+# If the commit hasn't been pushed yet:
+git reset HEAD~1
+
+# If the commit has been pushed:
+git revert HEAD
+git push origin main
+```
+
+## Files in this iteration
+
+**New files (5):**
+- `backend/economy/leveling_uniques.py`
+- `backend/api/routes_leveling_uniques.py`
+- `tests/test_leveling_uniques.py`
+- `src/app/api/flipper/leveling-uniques/route.ts`
+- `src/components/dashboard/leveling-uniques-widget.tsx`
+- `src/__tests__/leveling-uniques-widget.test.tsx`
+
+**Modified files (8):**
+- `backend/api/response_models.py`
+- `backend/main.py`
+- `src/lib/types.ts`
+- `src/components/dashboard/overview-tab-content.tsx`
+- `src/lib/i18n/locales/en.ts`
+- `src/lib/i18n/locales/ru.ts`
+- `src/lib/i18n/locales/zh.ts`
+- `src/lib/i18n/locales/ko.ts`
+- `STATUS.md`
+- `docs/MARKET_PLAYBOOK.md`
+- `AGENT_NAVIGATION.md`
+
+**New doc files (2):**
+- `MERGE_INSTRUCTIONS_iter100.md`
+- `git_commands_iter100.txt`

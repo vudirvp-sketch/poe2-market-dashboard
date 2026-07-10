@@ -710,6 +710,85 @@ export interface WeeklyPatternsResponse {
 }
 
 // ============================================================================
+// Leveling Uniques Lifecycle (P3, iter 100 — frontend UI)
+// Pure function: backend/economy/leveling_uniques.py
+// ============================================================================
+
+/** Lifecycle stage identifiers for a leveling unique.
+ *  - PRE_PEAK:  days_since_reference < peak_day (prices rising toward peak)
+ *  - AT_PEAK:   peak_day ≤ days ≤ peak_day + 1 (peak demand window)
+ *  - POST_PEAK: days > peak_day + 1 (prices crashing)
+ *
+ *  Backend emits these as the `current_lifecycle_stage` field (string). */
+export type LevelingUniqueStage = "PRE_PEAK" | "AT_PEAK" | "POST_PEAK";
+
+/** User-facing recommendation identifiers.
+ *  - BUY_OR_HOLD:   PRE_PEAK — prices still rising, OK to buy or hold existing
+ *  - SELL_NOW:      AT_PEAK  — peak demand, list now for max return
+ *  - AVOID_BUYING:  POST_PEAK — prices crashing, only buy for personal use
+ *
+ *  Backend emits these as the `recommendation` field (string). */
+export type LevelingUniqueRecommendation =
+  | "BUY_OR_HOLD"
+  | "SELL_NOW"
+  | "AVOID_BUYING";
+
+/** A single leveling unique with its current lifecycle stage.
+ *  Backend (Pydantic) shape: LevelingUniqueData.
+ *  Field names are camelCase after flipper-proxy transformKeys(). */
+export interface LevelingUnique {
+  /** Stable slug (e.g. "polcirkeln-sapphire-ring") — for tests + future metric linkage. */
+  id: string;
+  /** Display name (EN, matches in-game name). */
+  name: string;
+  /** Optional POE2Scout category slug for future cross-reference. Empty string if priced as item. */
+  category: string;
+  /** League day on which the unique's price historically peaks (Day 1 = launch). Typically 2. */
+  peakDay: number;
+  /** Typical peak price in Exalted Orbs. */
+  peakPriceExalted: number;
+  /** Typical % decline from peak by Day 7+ (POST_PEAK_FLOOR_DAY). Range [0, 100]. */
+  decayPct: number;
+  /** Price pattern identifier. Always "SPIKE_THEN_CRASH" for iter 100. */
+  pattern: string;
+  /** Current lifecycle stage: PRE_PEAK | AT_PEAK | POST_PEAK. */
+  currentLifecycleStage: LevelingUniqueStage;
+  /** User-facing action: BUY_OR_HOLD | SELL_NOW | AVOID_BUYING. */
+  recommendation: LevelingUniqueRecommendation;
+  /** Heuristic estimated price in Exalted Orbs (NOT a live market price).
+   *  Computed via piecewise-linear interpolation. The widget tooltip
+   *  explicitly states this is a planning heuristic. */
+  estimatedCurrentPriceExalted: number;
+  /** Days until the unique hits its peak.
+   *  Positive = days to wait. 0 = currently in AT_PEAK window.
+   *  Negative = days since peak window ended (POST_PEAK). */
+  daysUntilPeak: number;
+  /** Short description of why this is a leveling unique. Localized via ?lang=. */
+  notes: string;
+}
+
+/** Response for GET /api/flipper/leveling-uniques (P3, iter 100). */
+export interface LevelingUniquesResponse {
+  /** League name. */
+  league: string;
+  /** Current league phase: "early" | "mid" | "late" | "unknown". */
+  phase: string;
+  /** Days since league start or last major patch. */
+  daysSinceReference: number;
+  /** Alias for daysSinceReference — current league day. Same value, used for display. */
+  currentDay: number;
+  /** Reference currency for the phase (e.g. "exalted" for EARLY). Empty if unknown. */
+  referenceCurrency: string;
+  /** Static leveling-uniques table with per-item lifecycle stage + recommendation. */
+  uniques: LevelingUnique[];
+  /** Always true — the table is hardcoded and always available.
+   *  False only on exception (PhaseDetector construction failure). */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+}
+
+// ============================================================================
 // Speculation backtest (F5 follow-up, iter 80 — frontend UI)
 // ============================================================================
 

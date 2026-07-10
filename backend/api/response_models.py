@@ -878,6 +878,61 @@ class WeeklyPatternsResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Leveling Uniques Lifecycle (P3, iter 100 — leveling-uniques spike-then-crash)
+# Pure function: backend/economy/leveling_uniques.py
+# ---------------------------------------------------------------------------
+
+class LevelingUniqueData(BaseModel):
+    """A single leveling unique with its current lifecycle stage."""
+    id: str = Field(description="Stable slug (e.g. 'polcirkeln-sapphire-ring') — for tests and future metric linkage")
+    name: str = Field(description="Display name (EN, matches in-game name)")
+    category: str = Field(default="", description="Optional POE2Scout category slug for future cross-reference. Empty string if the unique is priced as an item (most cases).")
+    peak_day: int = Field(description="League day on which the unique's price historically peaks (Day 1 = launch day; Day 2 = first full day). Typically 2 for leveling uniques.")
+    peak_price_exalted: float = Field(description="Typical peak price in Exalted Orbs. Used by the widget to render 'est. ~X exa'.")
+    decay_pct: float = Field(description="Typical % decline from peak by Day 7+ (POST_PEAK_FLOOR_DAY). Range [0, 100]. 70 = item loses 70% of its peak value by Day 7.")
+    pattern: str = Field(description="Price pattern identifier. Always 'SPIKE_THEN_CRASH' for iter 100. Future iterations may add LINEAR_DECLINE / STABLE_LOW_DEMAND.")
+    current_lifecycle_stage: str = Field(description=(
+        "One of 'PRE_PEAK' | 'AT_PEAK' | 'POST_PEAK'. "
+        "PRE_PEAK: days_since_reference < peak_day (prices rising toward peak). "
+        "AT_PEAK: peak_day ≤ days ≤ peak_day + 1 (peak demand window — list now for max return). "
+        "POST_PEAK: days > peak_day + 1 (prices crashing — only buy for personal use)."
+    ))
+    recommendation: str = Field(description=(
+        "User-facing action: 'BUY_OR_HOLD' (PRE_PEAK) | 'SELL_NOW' (AT_PEAK) | "
+        "'AVOID_BUYING' (POST_PEAK). Maps directly from current_lifecycle_stage."
+    ))
+    estimated_current_price_exalted: float = Field(description=(
+        "Heuristic estimated price in Exalted Orbs, computed via piecewise-linear "
+        "interpolation (NOT a live market price — see module docstring). The widget "
+        "tooltip explicitly states this is a planning heuristic, not the actual "
+        "current listing price. Used so the user can see 'if I list now, I can "
+        "expect ~X exa'."
+    ))
+    days_until_peak: int = Field(description=(
+        "Days until the unique hits its peak (positive = days to wait, "
+        "0 = currently in AT_PEAK window, negative = days since peak window ended)."
+    ))
+    notes: str = Field(description="Short description of why this is a leveling unique. Localized via ?lang= query param (ru → Russian notes).")
+
+
+class LevelingUniquesResponse(BaseModel):
+    """Response for GET /api/v1/leveling-uniques."""
+    league: str = Field(description="League name")
+    phase: str = Field(description="Current league phase: 'early' | 'mid' | 'late'")
+    days_since_reference: int = Field(description="Days since league start or last major patch (from PhaseDetector)")
+    current_day: int = Field(description="Alias for days_since_reference — current league day. Same value, but the widget uses this field name for display ('Day N of league').")
+    reference_currency: str = Field(description="Reference currency for the phase (e.g. 'exalted' for EARLY, 'divine' for MID/LATE). Empty if unknown.")
+    uniques: list[LevelingUniqueData] = Field(default_factory=list, description=(
+        "Static leveling-uniques table with per-item lifecycle stage + "
+        "recommendation. Sorted by peak_price_exalted descending (chase "
+        "leveling uniques first). Always returns the full table — the "
+        "frontend filters/sorts as needed."
+    ))
+    data_available: bool = Field(description="Always True — the table is hardcoded and always available. False only on exception (PhaseDetector construction failure).")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+
+
+# ---------------------------------------------------------------------------
 # Speculation backtest (F5 follow-up, iter 79)
 # ---------------------------------------------------------------------------
 

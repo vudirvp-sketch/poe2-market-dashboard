@@ -3,7 +3,7 @@
 /**
  * OverviewTabContent — extracted from dashboard-page.tsx (P2-1, iter 72).
  *
- * The Overview tab is the default landing view. It composes four panels,
+ * The Overview tab is the default landing view. It composes five panels,
  * each wrapped in its own ErrorBoundary so a failure in one doesn't
  * blank out the others:
  *
@@ -16,8 +16,16 @@
  *      (Temporalis, skill gems 18-20 lvl, etc.). Surfaces the F6
  *      backend (/api/v1/phase-hints) directly below the Content Pulse
  *      widget so users see phase-aware context on first load.
- *   3. MarketOverview  — top movers + summary tiles.
- *   4. ComparativeChart — relative-performance chart against a
+ *   3. LevelingUniquesWidget (P3, iter 100) — "Leveling Uniques Lifecycle"
+ *      table with per-item lifecycle stage (PRE_PEAK / AT_PEAK /
+ *      POST_PEAK) + recommendation (BUY_OR_HOLD / SELL_NOW /
+ *      AVOID_BUYING). Surfaces the P3 backend
+ *      (/api/v1/leveling-uniques) directly below the PhaseHints widget
+ *      so users see leveling-unique sell/buy windows right after the
+ *      phase context. Only depends on PhaseDetector — immune to KI-11
+ *      (upstream API 404 errors).
+ *   4. MarketOverview  — top movers + summary tiles.
+ *   5. ComparativeChart — relative-performance chart against a
  *      reference currency.
  *
  * All state lives in the parent (Dashboard) — this component is a pure
@@ -31,6 +39,7 @@ import { MarketOverview } from "@/components/dashboard/market-overview";
 import { ComparativeChart } from "@/components/dashboard/comparative-chart";
 import { ContentPulseWidget } from "@/components/dashboard/content-pulse-widget";
 import { PhaseHintsWidget } from "@/components/dashboard/phase-hints-widget";
+import { LevelingUniquesWidget } from "@/components/dashboard/leveling-uniques-widget";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
 import type { PoeItem } from "@/lib/types";
@@ -80,6 +89,18 @@ export function OverviewTabContent(props: OverviewTabContentProps) {
           uses the PhaseDetector (which is always available). */}
       <ErrorBoundary fallbackTitle={t("fallbackPhaseHints")}>
         <PhaseHintsWidget backendOnline={backendOnline} />
+      </ErrorBoundary>
+
+      {/* P3 (iter 100) — Leveling Uniques Lifecycle widget.
+          Placed directly below the PhaseHints widget so the user sees
+          leveling-unique sell/buy windows right after the phase context.
+          Static table of well-known leveling uniques (Polcirkeln, Wall
+          of Brambles, Mana Leech Support, etc.) with per-item lifecycle
+          stage (PRE_PEAK / AT_PEAK / POST_PEAK) + recommendation
+          (BUY_OR_HOLD / SELL_NOW / AVOID_BUYING). Only depends on
+          PhaseDetector — immune to KI-11 (upstream API 404 errors). */}
+      <ErrorBoundary fallbackTitle={t("fallbackLevelingUniques")}>
+        <LevelingUniquesWidget backendOnline={backendOnline} />
       </ErrorBoundary>
 
       <ErrorBoundary fallbackTitle={t("fallbackMarketOverview")}>

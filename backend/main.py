@@ -655,6 +655,19 @@ try:
 except ImportError:
     logger.debug("Weekly Patterns router not available yet")
 
+# P3 (iter 100): Leveling Uniques Lifecycle — static leveling-uniques table
+# with per-item lifecycle stage (PRE_PEAK / AT_PEAK / POST_PEAK) +
+# recommendation (BUY_OR_HOLD / SELL_NOW / AVOID_BUYING). Powers the widget
+# on the Overview tab (between PhaseHintsWidget and MarketOverview). Pure
+# function lives in backend/economy/leveling_uniques.py. Does NOT depend
+# on the DataSnapshot — uses PhaseDetector only (immune to KI-11 upstream
+# API 404 errors). Same thin-wrapper pattern as routes_phase_hints.py.
+try:
+    from backend.api.routes_leveling_uniques import router as leveling_uniques_router
+    app.include_router(leveling_uniques_router)
+except ImportError:
+    logger.debug("Leveling Uniques router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

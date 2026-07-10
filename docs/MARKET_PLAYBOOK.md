@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-10 (iter 99 — Weekly Patterns API + UI wire-up)
+> **Last updated:** 2026-07-10 (iter 100 — Leveling Uniques Lifecycle widget on Overview)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -110,7 +110,7 @@
 |---------|-----------------|--------|
 | **P1** Triangular arb | `backend/arbitrage/triangular.py` + `routes_arbitrage.py` `/flips` | ✅ Готово. TD-3: нет persistence/backtest — на roadmap. |
 | **P2** Rate lifecycle | Частично: `speculation.py` (z-score) + `phase_hints.py` (статичные подсказки) | ⚠️ Нет визуализации «миграции курсов на старте». |
-| **P3** Leveling uniques lifecycle | Нет | ❌ Не реализовано. |
+| **P3** Leveling uniques lifecycle | `backend/economy/leveling_uniques.py` (iter 100) + `routes_leveling_uniques.py` + UI widget `leveling-uniques-widget.tsx` | ✅ Готово. Static table (10 leveling уников) + pure function `compute_leveling_uniques_lifecycle()` (86 pytest) + API route `/api/v1/leveling-uniques` + Next.js proxy + UI widget на Overview (между PhaseHints и MarketOverview) с lifecycle stage badges (PRE_PEAK / AT_PEAK / POST_PEAK) + recommendation badges (BUY/HOLD / SELL NOW / AVOID BUYING) + est. price heuristic + i18n × 4 locales (31 ключ × 4) + 28 jest-тестов. Зависит только от PhaseDetector — иммунен к KI-11 (upstream API 404). |
 | **P4** Time-of-day pattern | `backend/economy/intraday_patterns.py` (iter 98) + `routes_intraday_patterns.py` + UI tab `intraday-patterns-tab.tsx` | ✅ Готово. Pure function (89 unit-тестов) + API route `/api/v1/intraday-patterns` + Next.js proxy + UI heatmap tab (час × валюта) с buy/sell window badges + i18n × 4 locales (43 ключа × 4) + 23 jest-теста + 4 pytest route smoke-теста. |
 | **P5** Weekday/weekend pattern | `backend/economy/weekly_patterns.py` (iter 99) + `routes_weekly_patterns.py` + UI tab `weekly-patterns-tab.tsx` | ✅ Готово. Pure function (99 unit-тестов) + API route `/api/v1/weekly-patterns` + Next.js proxy + UI heatmap tab (день недели × валюта) с buy/sell day badges + weekday_delta_pct (weekend vs weekday) + i18n × 4 locales (50 ключей × 4) + 25 jest-тестов + 4 pytest route smoke-теста. |
 | **P6** Priority Listing Arb | Нет | ❌ Требует данных trade-site, которых у нас нет (POE2Scout не отдаёт listings по alt-orbs отдельно). Доступно только через GGG official trade API. |
@@ -130,10 +130,10 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 6 полностью готовы (P1, P4, P5, P8, P18, частично P9/P16/P17).
+- 7 полностью готовы (P1, P3, P4, P5, P8, P18, частично P9/P16/P17).
 - 5 частично готовы (P2, P7, P9, P16, P17) — нужна доработка.
-- 9 не реализованы. Из них:
-  - **P3** — реализуем на текущих данных POE2Scout (без GGG trade API). На roadmap iter 100.
+- 8 не реализованы. Из них:
+  - **P10** — реализуем на текущих данных (зависит от P1). На roadmap iter 103+.
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
 
 ---
@@ -223,8 +223,23 @@
 
 **Проверка.** Все 99 pytest-тестов в `test_weekly_patterns.py` зелёные (12 test classes: TestExtractPricePoints × 16, TestFilterToWeeks × 5, TestMeanAndStd × 7, TestGroupByWeekday × 5, TestDailyStats × 6, TestOverallMean × 3, TestFindBuySellDays × 5, TestWeeklyRangePct × 8, TestWeekdayDeltaPct × 7, TestDaysCovered × 4, TestComputeWeeklyPatternsEndToEnd × 29, TestRouteHandler × 4). Babel syntax-check всех 11 изменённых/новых TS/TSX-файлов → OK. tsc --noEmit и jest не запускались в среде итерации из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM для полного regression-чека.
 
-### C.5. iter 100 — Leveling Uniques Lifecycle (P3)
+### C.5. iter 100 — Leveling Uniques Lifecycle (P3) ✅ Done
 **Что.** Виджет на Overview: «сейчас Day N лиги → окна продаж leveling уников». Использует PhaseDetector + статичная таблица известных leveling уников с их типичным паттерном. Без GGG trade API — только метрика цены.
+
+**Реализация (iter 100):**
+- **Backend pure function:** `backend/economy/leveling_uniques.py` — `compute_leveling_uniques_lifecycle(phase, days_since_reference, *, reference_currency="", league_name="", now=None, lang="en")`. Статичная таблица из 10 leveling уников (Polcirkeln Sapphire Ring, Megalomaniac Diamond, Wall of Brambles, Mana Leech Support, Feeding Frenzy Support, Echoes of Worldstone, Mind of the Council, Boots of Momentum, Wings of Entropy, Soul Tether Amulet) с `peak_day` / `peak_price_exalted` / `decay_pct` / `pattern` / `notes`. Для каждого уника вычисляет:
+  - `current_lifecycle_stage`: `PRE_PEAK` (days < peak_day) / `AT_PEAK` (peak_day ≤ days ≤ peak_day + 1, 2-day window) / `POST_PEAK` (days > peak_day + 1).
+  - `recommendation`: `BUY_OR_HOLD` (PRE_PEAK) / `SELL_NOW` (AT_PEAK) / `AVOID_BUYING` (POST_PEAK).
+  - `estimated_current_price_exalted`: piecewise-linear heuristic (NOT live market price). PRE_PEAK: interp from 0.5×peak (Day 0) to peak (peak_day). AT_PEAK: hold at peak. POST_PEAK: linear decay from peak to (1-decay/100)×peak by Day 7.
+  - `days_until_peak`: positive (days to wait), 0 (in AT_PEAK window), negative (days since peak ended).
+- **Backend route:** `backend/api/routes_leveling_uniques.py` — thin wrapper `GET /api/v1/leveling-uniques?lang=en`. Использует `get_phase_detector()` singleton (как `routes_phase_hints.py`). Не зависит от DataSnapshot → иммунен к KI-11 (upstream API 404).
+- **Pydantic models:** `LevelingUniqueData` + `LevelingUniquesResponse` в `response_models.py`.
+- **Next.js proxy:** `src/app/api/flipper/leveling-uniques/route.ts` — forwards `lang`. Returns empty `uniques: []` + `dataAvailable: false` when backend offline.
+- **TS types:** `LevelingUnique`, `LevelingUniquesResponse`, `LevelingUniqueStage`, `LevelingUniqueRecommendation` в `src/lib/types.ts`.
+- **UI widget:** `src/components/dashboard/leveling-uniques-widget.tsx` — карточка на Overview (между PhaseHintsWidget и MarketOverview). Header: TrendingUp icon + title + Day N + item count + reference currency. Summary line: зависит от доминирующей стадии (AT_PEAK → "X item(s) at peak demand — SELL NOW..." / PRE_PEAK → "...still rising toward peak..." / POST_PEAK → "...past peak — AVOID BUYING..."). Таблица: 5 колонок (Item / Stage / Est. Price / Peak Day / Action). Каждая строка: name + notes (line-clamp-2) + stage badge (PRE_PEAK=blue, AT_PEAK=amber, POST_PEAK=muted) + est price ("~X.X exa") + peak day short ("Day N · X.X exa") + recommendation badge (BUY/HOLD=emerald, SELL NOW=red, AVOID BUYING=muted). Disclaimer о heuristic pricing. Footer: fetched-at timestamp + stage breakdown counts.
+- **Wiring:** `overview-tab-content.tsx` — новый ErrorBoundary + LevelingUniquesWidget между PhaseHints и MarketOverview.
+- **i18n:** 31 новый ключ × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 3 stage label keys + 4 recommendation label keys + 5 column header keys + 3 summary keys + disclaimer.
+- **Tests:** 86 pytest (9 TestStaticTableIntegrity + 28 TestLifecycleStage + 4 TestRecommendation + 14 TestEstimateCurrentPrice + 3 TestDaysUntilPeak + 18 TestComputeLevelingUniquesLifecycle + 5 TestRussianLocalization + 4 TestRouteHandler = 86) — все зелёные. Regression-чек: 343 pytest (99 weekly + 89 intraday + 79 circuit + 58 phase_hints + 15 lifecycle + 3 shared) зелёные. 275 smoke тестов (pricing/speculation/content_pulse/events/storage_value/anomaly) зелёные. Babel syntax-check 9 modified/new TS/TSX файлов → all OK. tsc --noEmit и jest не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
 
 ### C.6. iter 101 — Mirror/Divine Arb Detector (P7)
 **Что.** Расширить `storage_value.py`: для предметов ≥ 1 Mirror показывать arbitrage opportunity между Mirror и Divine способами оплаты. Использует существующий `currency/mirror` ratio history.
@@ -262,28 +277,31 @@
 | 1 | P8 Trajectory classification | 96–97 | Низкий (pure function + thin UI) | ✅ Done |
 | 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) | ✅ Done |
 | 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ✅ Done |
-| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ⏳ Next |
-| 5 | P7 Mirror/Divine arb | 101 | Средний (расширяет existing модуль) | ⏳ Roadmap |
+| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ✅ Done |
+| 5 | P7 Mirror/Divine arb | 101 | Средний (расширяет existing модуль) | ⏳ Next |
 
-### D.3. Точка остановки iter 99
+### D.3. Точка остановки iter 100
 **Сделано:**
-- Backend: pure function `compute_weekly_patterns()` в `backend/economy/weekly_patterns.py` (99 pytest-тестов). API route `GET /api/v1/weekly-patterns` (thin wrapper), Pydantic response models (`WeeklyDailyStat` + `WeeklyPatternData` + `WeeklyPatternsResponse`), router registration.
-- Frontend: Next.js proxy route, TypeScript types, новая UI-вкладка `weekly-patterns-tab.tsx` с heatmap (день недели × валюта) + buy/sell day badges + weekday_delta_pct + significant-only filter + weeks selector + legend, wiring в `dashboard-page.tsx` (TAB_MAP idx 11) + `dashboard-toolbar.tsx` (Calendar icon) + `shortcuts-dialog.tsx` (comment update).
-- i18n: 50 новых ключей × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 7 weekday name keys (Mon..Sun) localized.
-- Tests: 25 jest + 4 pytest route smoke — все зелёные. Regression-чек: 267 pytest (weekly + intraday + circuit) + 292 smoke (pricing/speculation/phase_hints/content_pulse/events/momentum/lifecycle) зелёные. Babel syntax-check 11 modified/new TS/TSX files → all OK. tsc --noEmit и jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
-- Документация: `STATUS.md`, `docs/MARKET_PLAYBOOK.md`, `AGENT_NAVIGATION.md` актуализированы (без мусора, только актуальная информация).
+- Backend: pure function `compute_leveling_uniques_lifecycle()` в `backend/economy/leveling_uniques.py` (86 pytest-тестов). Static table из 10 leveling уников (Polcirkeln, Megalomaniac, Wall of Brambles, Mana Leech Support, Feeding Frenzy Support, Echoes of Worldstone, Mind of the Council, Boots of Momentum, Wings of Entropy, Soul Tether Amulet) с peak_day / peak_price_exalted / decay_pct / pattern / notes. API route `GET /api/v1/leveling-uniques?lang=en|ru` (thin wrapper, использует `get_phase_detector()` singleton). Pydantic response models (`LevelingUniqueData` + `LevelingUniquesResponse`), router registration в `main.py`.
+- Frontend: Next.js proxy route `/api/flipper/leveling-uniques`, TypeScript types (`LevelingUnique` + `LevelingUniquesResponse` + `LevelingUniqueStage` + `LevelingUniqueRecommendation`), новый UI-виджет `leveling-uniques-widget.tsx` (карточка на Overview между PhaseHints и MarketOverview) с header (TrendingUp icon + Day N + item count + reference currency) + summary line (доминирующая стадия) + таблица (5 колонок: Item / Stage / Est. Price / Peak Day / Action) + disclaimer + footer (fetched-at + stage breakdown), wiring в `overview-tab-content.tsx` (новый ErrorBoundary + LevelingUniquesWidget).
+- i18n: 31 новый ключ × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 3 stage label keys + 4 recommendation label keys + 5 column header keys + 3 summary keys + disclaimer.
+- Tests: 86 pytest (StaticTableIntegrity + LifecycleStage + Recommendation + EstimateCurrentPrice + DaysUntilPeak + ComputeEndToEnd + RussianLocalization + RouteHandler) — все зелёные. Regression-чек: 343 pytest (99 weekly + 89 intraday + 79 circuit + 58 phase_hints + 15 lifecycle + 3 shared) зелёные. 275 smoke тестов (pricing/speculation/content_pulse/events/storage_value/anomaly) зелёные. Babel syntax-check 9 modified/new TS/TSX файлов → all OK. tsc --noEmit и jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
+- Документация: `STATUS.md` (3 новых KI из логов: KI-11/KI-12/KI-13), `docs/MARKET_PLAYBOOK.md` (§C.5 + §B.2 + §D.2/D.3 обновлены), `AGENT_NAVIGATION.md` (новые entries) актуализированы (без мусора, только актуальная информация).
 
-**НЕ сделано (на iter 100):**
-- P3 Leveling uniques lifecycle — виджет на Overview. Спецификация в §C.5.
-- P7 Mirror/Divine arb (§C.6), P9 Phase-aware investment advisor (§C.7), P10 Gold Map ROI (§C.8) — полный roadmap в §C.
+**НЕ сделано (на iter 101):**
+- P7 Mirror/Divine arb (§C.6) — следующий на roadmap.
+- P9 Phase-aware investment advisor (§C.7), P10 Gold Map ROI (§C.8) — полный roadmap в §C.
+- KI-11 (upstream API 404 для league "runes") — не фиксировали, т.к. это конфигурационная проблема пользователя (нужно указать валидный league slug в `.env.local`).
+- KI-12 (Turbopack NFT warning) — cosmetic, не блокирует.
+- KI-13 (SSE 400) — требует investigation, не блокирует.
 
-**Проверка.** Все изменения backend — новые файлы + additive registration в `main.py` (existing routes не тронуты). Все изменения frontend — новые файлы + минимальные правки в 3 existing файлах (dashboard-page.tsx TAB_MAP + TabsContent + dynamic import; dashboard-toolbar.tsx TabsTrigger + 1 icon import; shortcuts-dialog.tsx comment update). i18n изменения — additive (50 новых ключей в конце каждого файла, existing keys не тронуты). Regression-риска нет — все backend pytest-тесты зелёные. Frontend tsc/jest regression требует 8GB+ RAM для `npm install` (Known Issue).
+**Проверка.** Все изменения backend — новые файлы + additive registration в `main.py` (existing routes не тронуты). Все изменения frontend — новые файлы + минимальные правки в 1 existing файле (`overview-tab-content.tsx` — добавлен import + ErrorBoundary + LevelingUniquesWidget между PhaseHints и MarketOverview). i18n изменения — additive (31 новый ключ в конце каждого locale файла, existing keys не тронуты). Regression-риска нет — все backend pytest-тесты зелёные (86 новых + 343 regression + 275 smoke = 704 всего зелёные). Frontend tsc/jest regression требует 8GB+ RAM для `npm install` (Known Issue).
 
 ---
 
 ## E. Связанные документы
 - `PRODUCT_VISION.md` — продуктовое видение (§3.7 — Circuit Patterns).
-- `STATUS.md` — Known Issues + TD backlog (iter 99: P5 = Done).
-- `AGENT_NAVIGATION.md` — навигация по коду (entry для `weekly_patterns.py` + `routes_weekly_patterns.py` + `weekly-patterns-tab.tsx`).
+- `STATUS.md` — Known Issues + TD backlog (iter 100: P3 = Done, 3 новых KI: KI-11/KI-12/KI-13).
+- `AGENT_NAVIGATION.md` — навигация по коду (entry для `leveling_uniques.py` + `routes_leveling_uniques.py` + `leveling-uniques-widget.tsx`).
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.

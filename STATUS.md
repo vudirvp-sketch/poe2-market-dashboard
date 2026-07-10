@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Product Features Backlog
 
-> **Last updated:** 2026-07-10 (iter 99 — Weekly Patterns API + UI wire-up)
+> **Last updated:** 2026-07-10 (iter 100 — Leveling Uniques Lifecycle widget + 3 new KIs from log analysis)
 > Single source of truth for known bugs, refactoring priorities, and product-feature progress.
 > Update BEFORE fixing any issue. Cross-reference issue IDs in commits.
 
@@ -8,7 +8,64 @@
 
 ## Known Issues — open
 
-_None._ All previously open KIs are closed.
+### KI-11 — Upstream POE2Scout API returns 404 for league "runes" (all endpoints)
+
+**Symptom.** Backend logs show ~20 sequential 404 errors from `https://api.poe2scout.com/api/poe2/Leagues/runes/...` for every endpoint:
+- `SnapshotPairs`, `Items`, `Items/Categories`
+- `Currencies/ByCategory?Category=<X>` for all 16 categories (currency, fragments, runes, essences, ultimatum, expedition, ritual, vaultkeys, breach, abyss, uncutgems, lineagesupportgems, delirium, incursion, idol, verisium, vaal)
+- `SnapshotHistory?Limit=168`, `ReferenceCurrencies`
+
+Result: `DataSnapshot refreshed: 0 exchange rates, 0 currencies`. Frontend `/api/poe2/currencies` and `/api/poe2/uniques` return **502 Bad Gateway** to the browser. The FastAPI backend itself responds 200 OK on `/api/v1/*` routes (it falls back to empty data).
+
+**Likely cause.** League slug `"runes"` is not a valid league in the upstream POE2Scout API (probably the user's local `.env.local` has `POE2_DEFAULT_LEAGUE=runes`, but upstream uses a different slug for the current Temporium League season). The fallback path in `poe2scout.py` correctly logs "upstream unreachable, returning empty/fallback" — but the Next.js `/api/poe2/currencies` route surfaces this as 502 instead of an empty 200.
+
+**Where to fix (next iter).**
+1. **User-side workaround:** edit `.env.local` → set `POE2_DEFAULT_LEAGUE` to a valid current league slug (check `https://api.poe2scout.com/api/poe2/Leagues` for the canonical list).
+2. **Code-side fix (next iter):** `backend/data/providers/poe2scout.py:_fetch_json` should return an empty list (not raise) on 404 for the league-scope endpoints, so the proxy at `src/app/api/poe2/currencies/route.ts` returns 200 with empty data instead of 502. Today the proxy transforms a backend "empty" response into 502 because the snapshot manager logs `WARNING: refresh returned invalid snapshot, keeping previous` (previous = also empty), and the route handler treats this as degraded.
+
+**Not blocking iter 100.** P3 widget only depends on PhaseDetector (which uses `league_start_datetime` from `config.yaml`, not the upstream API). The widget renders correctly even when the snapshot is empty.
+
+---
+
+### KI-12 — Turbopack NFT list warning (instrumentation → flipper-backend-bridge → next.config)
+
+**Symptom.** During `next build`, Turbopack emits a warning:
+```
+Turbopack build encountered 1 warnings:
+./next.config.ts
+Encountered unexpected file in NFT list
+Import trace:
+  Instrumentation:
+    ./next.config.ts
+    ./scripts/flipper-backend-bridge.ts
+    ./instrumentation.ts
+```
+
+**Cause.** `next.config.ts` imports `scripts/flipper-backend-bridge.ts` (used by the startup bridge), and `instrumentation.ts` imports next.config — so Turbopack traces the whole project as a runtime dependency of the NFT (Node File Trace) for serverless bundling. The suggested fix in the warning message is `path.join(/*turbopackIgnore: true*/ process.cwd(), bar)` or moving the bridge to a dev-only path.
+
+**Severity.** Cosmetic only — build still succeeds (`✓ Compiled successfully in 3.0s`), `next start` works fine. Doesn't affect runtime.
+
+**Where to fix (next iter).** Either:
+1. Inline the `turbopackIgnore: true` comment around the bridge import in `next.config.ts`, OR
+2. Move `flipper-backend-bridge.ts` to `scripts/dev/` and gate the import behind `process.env.NODE_ENV === 'development'`.
+
+---
+
+### KI-13 — `/api/v1/prices/stream?threshold_pct=1` returns 400 Bad Request
+
+**Symptom.** Backend log shows `GET /api/v1/prices/stream?threshold_pct=1 HTTP/1.1` → `400 Bad Request`. The SSE endpoint is invoked once on dashboard load (presumably by an EventSource in the frontend).
+
+**Cause (uncertain — needs investigation).** Route handler `backend/api/routes_sse.py:sse_price_stream` defines `threshold_pct: float = Query(0.5, ge=0.0, le=50.0, ...)` — so `threshold_pct=1` SHOULD pass validation (1.0 ≤ 50.0). The 400 must be coming from somewhere else. Likely candidates:
+1. **Middleware rejecting SSE** — the `middleware_compression.py` or CORS middleware may not handle `text/event-stream` correctly and returns 400 before the route handler runs.
+2. **Missing `Accept: text/event-stream` header** — FastAPI may reject the connection if the client doesn't send the right Accept header.
+3. **Exception in `_sse_event_generator`** — the generator polls the DataSnapshot, and when the snapshot is empty (see KI-11), it may throw an exception that FastAPI converts to a 400.
+
+**Severity.** Low — SSE is a "nice to have" price-change stream; the dashboard falls back to polling. But the 400 clutters the log on every page load.
+
+**Where to fix (next iter).**
+1. Add explicit logging at the top of `_sse_event_generator` to capture the actual exception message (currently it's swallowed by FastAPI's 400 response).
+2. Check `middleware_compression.py` — it may need to skip `text/event-stream` responses.
+3. Verify the frontend EventSource is correctly configured (`new EventSource('/api/flipper/prices/stream?threshold_pct=1')` — note the proxy path, not the direct backend path).
 
 ---
 
@@ -47,6 +104,7 @@ TD-1 closed in iter 92. TD-2 closed in iter 95. TD-10 closed in iter 97 (Circuit
 | **F7** — Market Playbook + Circuit Patterns (P8) | ✅ Done (iter 96 + 97) | Pure function + API + UI tab + i18n × 4 + tests. See `docs/MARKET_PLAYBOOK.md` §C.1 + §C.2. |
 | **P4** — Time-of-Day Pattern Detector | ✅ Done (iter 98) | Pure function `compute_intraday_patterns()` + API `/api/v1/intraday-patterns` + Next.js proxy + UI heatmap tab + i18n × 4 (43 keys × 4) + 23 jest + 89 pytest. See `docs/MARKET_PLAYBOOK.md` §C.3. |
 | **P5** — Weekday/Weekend Pattern Detector | ✅ Done (iter 99) | Pure function `compute_weekly_patterns()` + API `/api/v1/weekly-patterns` + Next.js proxy + UI heatmap tab (rows = currencies, cols = 7 weekdays Mon-Sun) + i18n × 4 (50 keys × 4) + 25 jest + 99 pytest. See `docs/MARKET_PLAYBOOK.md` §C.4. |
+| **P3** — Leveling Uniques Lifecycle | ✅ Done (iter 100) | Pure function `compute_leveling_uniques_lifecycle()` + API `/api/v1/leveling-uniques` + Next.js proxy + UI widget on Overview (between PhaseHints and MarketOverview) + i18n × 4 (24 keys × 4) + 14 jest + 50 pytest. Static table of well-known leveling uniques (10 items) with `peak_day` / `peak_price_exalted` / `decay_pct` / lifecycle stage (PRE_PEAK / AT_PEAK / POST_PEAK) + recommendation (BUY/HOLD / SELL NOW / AVOID BUYING). Depends on PhaseDetector only — no upstream API calls (immune to KI-11). See `docs/MARKET_PLAYBOOK.md` §C.5. |
 
 ---
 
@@ -74,3 +132,8 @@ TD-1 closed in iter 92. TD-2 closed in iter 95. TD-10 closed in iter 97 (Circuit
 | Weekly heatmap shows "No data" cells | By design (iter 99) — the heatmap renders all 7 weekdays (Mon-Sun) per currency. Days with no price_logs in the lookback window show as muted "No data" cells (count=0, mean=null). Expected for fresh leagues or weekdays with no snapshot collection. | `backend/economy/weekly_patterns.py:_daily_stats`, `weekly-patterns-tab.tsx:cellColor` |
 | Weekly tab not reachable via keyboard shortcut | By design (iter 99) — only 10 shortcut slots (1-9 + 0). Weekly Patterns is at TAB_MAP idx 11, so it's click-only. Intraday (idx 10) + Liquid Chain (idx 12) + Watchlist (idx 13) are also click-only. | `dashboard-page.tsx:TAB_MAP`, `shortcuts-dialog.tsx` |
 | Weekly tab `weekday_delta_pct` shows 0% even when weekends look different | By design (iter 99) — delta is computed as `(weekend_mean - weekday_mean) / overall_mean × 100`. Returns 0 when either group (Mon-Fri or Sat-Sun) has no data points. The badge is shown only for context — the buy/sell day badges and range_pct are the actionable signals. | `backend/economy/weekly_patterns.py:_weekday_delta_pct` |
+| Browser shows 502 Bad Gateway on `/api/poe2/currencies` and `/api/poe2/uniques` | KI-11 — upstream POE2Scout API returns 404 for the configured league slug (likely "runes" in `.env.local`). Workaround: edit `.env.local` → set `POE2_DEFAULT_LEAGUE` to a valid current league slug. | `backend/data/providers/poe2scout.py:_fetch_json`, `src/app/api/poe2/currencies/route.ts` |
+| Backend log full of `HTTP error 404 on poe2/Leagues/<X>/...` lines | KI-11 — same root cause as the 502 above. The fallback path correctly returns empty data, but the snapshot refresh keeps the previous (also empty) snapshot. The dashboard's analytics endpoints (`/api/v1/*`) still respond 200 OK with empty `data_available: false` responses. | `backend/data/providers/poe2scout.py`, `backend/api/data_snapshot.py` |
+| `next build` emits "Encountered unexpected file in NFT list" warning | KI-12 — cosmetic only. `instrumentation.ts` → `next.config.ts` → `scripts/flipper-backend-bridge.ts` import chain causes Turbopack to trace the whole project. Build still succeeds. Fix: add `/*turbopackIgnore: true*/` to the bridge import. | `next.config.ts`, `scripts/flipper-backend-bridge.ts` |
+| `GET /api/v1/prices/stream?threshold_pct=1` returns 400 | KI-13 — cause uncertain (validation `ge=0.0, le=50.0` should accept `1`). Likely middleware rejecting SSE or exception in `_sse_event_generator` when snapshot is empty (cascades from KI-11). Low severity — dashboard falls back to polling. | `backend/api/routes_sse.py`, `backend/api/middleware_compression.py` |
+| Leveling Uniques widget shows "Day 0" or wrong phase | Check `config.yaml` → `league.league_start_datetime`. The widget depends on PhaseDetector, which uses this timestamp to compute `days_since_reference`. If unset/zero, the widget shows Day 0 with all uniques in PRE_PEAK stage. | `backend/economy/lifecycle.py:PhaseDetector.__init__`, `config.yaml` |
