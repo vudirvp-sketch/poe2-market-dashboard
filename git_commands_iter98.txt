@@ -1,0 +1,89 @@
+# Git commands for iter 98 — Intraday Patterns API + UI wire-up (P4)
+#
+# Run from the repo root (where this file lives) after merging the archive.
+#
+# Prerequisite: the archive contents have been merged into your local
+# working directory (see MERGE_INSTRUCTIONS_iter98.md for step-by-step
+# merge instructions).
+
+# 1. Stage all iter 98 changes (new files + modified files)
+git add \
+  backend/economy/intraday_patterns.py \
+  backend/api/routes_intraday_patterns.py \
+  backend/api/response_models.py \
+  backend/main.py \
+  tests/test_intraday_patterns.py \
+  src/app/api/flipper/intraday-patterns/route.ts \
+  src/lib/types.ts \
+  src/components/dashboard/intraday-patterns-tab.tsx \
+  src/components/dashboard/dashboard-page.tsx \
+  src/components/dashboard/dashboard-toolbar.tsx \
+  src/components/dashboard/shortcuts-dialog.tsx \
+  src/lib/i18n/locales/en.ts \
+  src/lib/i18n/locales/ru.ts \
+  src/lib/i18n/locales/zh.ts \
+  src/lib/i18n/locales/ko.ts \
+  src/__tests__/intraday-patterns-tab.test.tsx \
+  STATUS.md \
+  AGENT_NAVIGATION.md \
+  docs/MARKET_PLAYBOOK.md \
+  worklog.md \
+  git_commands_iter98.txt \
+  MERGE_INSTRUCTIONS_iter98.md
+
+# 2. Verify what's staged before committing
+git status
+
+# 3. Commit with a descriptive message
+git commit -m "iter 98: Intraday Patterns API + UI wire-up (P4, time-of-day heatmap)
+
+Backend:
+- New pure function compute_intraday_patterns() in backend/economy/intraday_patterns.py
+  (89 pytest tests). For each currency: aggregates price_logs by UTC hour (0..23)
+  → per-hour mean/std/count. buy_window_hour = min mean (Asia-wake dump).
+  sell_window_hour = max mean (US/EU-wake spike). has_significant_pattern =
+  intraday_range_pct >= 10%. Filters: MIN_SAMPLE_SIZE=4 AND MIN_HOURS_COVERED=2.
+  Always emits 24 hourly_stats entries per currency for the UI heatmap.
+- New route handler GET /api/v1/intraday-patterns in backend/api/routes_intraday_patterns.py
+  (thin wrapper, query params days 1..90 default 14, limit 1..500 default 50).
+- New Pydantic models IntradayHourlyStat + IntradayPatternData + IntradayPatternsResponse
+  in backend/api/response_models.py.
+- Router registered in backend/main.py via try/except ImportError wrapper.
+
+Frontend:
+- New Next.js proxy src/app/api/flipper/intraday-patterns/route.ts.
+- New TS types IntradayHourlyStat + IntradayPattern + IntradayPatternsResponse
+  in src/lib/types.ts.
+- New UI tab src/components/dashboard/intraday-patterns-tab.tsx — heatmap
+  (rows = currencies, cols = UTC hours 0..23) using dependency-free CSS divs
+  (no recharts). Cell color = deviation from overallMean (emerald ≥5% below =
+  buy zone, red ≥5% above = sell zone, muted = neutral/no data). Buy window
+  cell highlighted with emerald ring, sell window cell with amber ring. Filter
+  \"Significant only\" toggle. Days selector 7/14/30/90. Hour axis header.
+  Legend (6 swatches). 23 jest tests.
+- Tab wiring: dashboard-page.tsx (TAB_MAP idx 10, dynamic import, TabsContent),
+  dashboard-toolbar.tsx (Clock icon, TabsTrigger), shortcuts-dialog.tsx
+  (comment update — Intraday Patterns is click-only).
+
+i18n: 43 new keys × 4 locales (en/ru/zh/ko) — full parity.
+
+Tests: 89 new pytest + 23 new jest — all green. No regressions.
+  Python: 963/963 green (was 874). Jest: 475/475 green (was 452).
+  tsc --noEmit green (0 errors).
+
+Behavioral change: tab count grew to 13. Intraday Patterns (idx 10) +
+Liquid Chain (idx 11) + Watchlist (idx 12) are click-only (only 10
+shortcut slots 1-9+0). Shortcuts 1-9+0 still map to first 10 tabs
+(overview through circuit-patterns).
+
+Docs: STATUS.md (P4 row + 2 Quick Reference rows), docs/MARKET_PLAYBOOK.md
+(P4 row Done + §C.3 DONE + §D.3 stopping point), AGENT_NAVIGATION.md
+(new entries + invariant #47 + trimmed invariant #46), worklog.md.
+
+Closes P4. See docs/MARKET_PLAYBOOK.md §C.3 for the full spec."
+
+# 4. Push to the remote
+git push origin main
+
+# 5. (Optional) Verify the push succeeded
+git log --oneline -3

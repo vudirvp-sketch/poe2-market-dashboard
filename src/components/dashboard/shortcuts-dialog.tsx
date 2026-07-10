@@ -76,9 +76,11 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
           </p>
           {/* iter 92 (KI-7): Mapping updated after removing dead "arbitrage" and "graph" from TAB_MAP.
               iter 97 (F7): "circuit-patterns" inserted at idx 9 (shortcut 0).
+              iter 98 (P4): "intraday-patterns" inserted at idx 10 (click-only — only 10 shortcut slots).
               Now all 10 shortcuts (1–9 + 0) map to live tabs.
               "5" → Flips, "0" → Circuits (was Liquid Chain in iter 92).
-              Liquid Chain (idx 10) + Watchlist (idx 11) NOT keyboard-reachable — only 10 shortcut slots. */}
+              Intraday Patterns (idx 10) + Liquid Chain (idx 11) + Watchlist (idx 12)
+              NOT keyboard-reachable — only 10 shortcut slots. */}
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span><kbd className="font-mono font-semibold">1</kbd> {t("tabOverview")}</span>
             <span><kbd className="font-mono font-semibold">2</kbd> {t("tabCurrencies")}</span>

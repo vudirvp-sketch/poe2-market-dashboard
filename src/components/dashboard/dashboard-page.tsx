@@ -95,6 +95,14 @@ const CircuitPatternsTab = dynamic(
   { loading: TabSkeleton },
 );
 
+// P4 (iter 98): Intraday Patterns tab — lazy-loaded. Wraps the new
+// /api/v1/intraday-patterns endpoint. Per-currency time-of-day (UTC hour)
+// price pattern + buy/sell windows. Heatmap UI (час × валюта).
+const IntradayPatternsTab = dynamic(
+  () => import("@/components/dashboard/intraday-patterns-tab").then((m) => ({ default: m.IntradayPatternsTab })),
+  { loading: TabSkeleton },
+);
+
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
@@ -545,13 +553,15 @@ export function Dashboard() {
   // analytics-cluster (storage-value → speculation) sits together.
   // "circuit-patterns" added iter 97 (F7 / P8) — placed after speculation
   // to extend the analytics-cluster (storage-value → speculation → circuits).
+  // "intraday-patterns" added iter 98 (P4) — placed after circuit-patterns
+  // to extend the analytics-cluster further. Heatmap UI (час × валюта).
   // iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
   // and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
-  // NOTE: tab count grew to 12 in iter 97 — shortcuts 1–9 cover the first 9
+  // NOTE: tab count grew to 13 in iter 98 — shortcuts 1–9 cover the first 9
   // tabs (overview through speculation), shortcut 0 covers circuit-patterns.
-  // liquid-chain + watchlist remain accessible via click only (was already
-  // the case before iter 97 for index 10+).
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "circuit-patterns", "liquid-chain", "watchlist"];
+  // intraday-patterns + liquid-chain + watchlist remain accessible via click
+  // only (was already the case before iter 98 for liquid-chain + watchlist).
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "circuit-patterns", "intraday-patterns", "liquid-chain", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -953,6 +963,13 @@ export function Dashboard() {
             <TabsContent value="circuit-patterns">
               <ErrorBoundary fallbackTitle={t("fallbackCircuitPatterns")}>
                 <CircuitPatternsTab backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ INTRADAY PATTERNS TAB (P4, iter 98) ============ */}
+            <TabsContent value="intraday-patterns">
+              <ErrorBoundary fallbackTitle={t("fallbackIntradayPatterns")}>
+                <IntradayPatternsTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 

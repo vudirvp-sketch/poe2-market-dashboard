@@ -743,6 +743,70 @@ class CircuitPatternsResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Intraday Patterns (P4, iter 98 — time-of-day pattern detector)
+# Pure function: backend/economy/intraday_patterns.py
+# ---------------------------------------------------------------------------
+
+class IntradayHourlyStat(BaseModel):
+    """Per-hour aggregation for a single currency (UTC hour 0..23)."""
+    hour: int = Field(description="UTC hour of day (0..23)")
+    mean: float | None = Field(default=None, description=(
+        "Mean price for this hour over the lookback window. None when no "
+        "price_logs fell in this hour (count=0)."
+    ))
+    std: float | None = Field(default=None, description=(
+        "Population std of prices for this hour. None when count=0."
+    ))
+    count: int = Field(description="Number of price_logs in this hour (0 when no data)")
+
+
+class IntradayPatternData(BaseModel):
+    """A single currency's time-of-day (UTC hour) price pattern."""
+    api_id: str = Field(description="Item API identifier (e.g. 'chaos-orb', 'exalted')")
+    text: str = Field(description="Display name (EN) — backend returns raw POE2Scout Text field")
+    category: str = Field(description="League mechanic category slug (e.g. 'ritual', 'breach'). Empty if unknown.")
+    hourly_stats: list[IntradayHourlyStat] = Field(description=(
+        "Always 24 entries (one per UTC hour 0..23, ascending). Hours with no "
+        "data have mean=None, std=None, count=0. The UI heatmap renders one "
+        "row per currency using these 24 cells."
+    ))
+    buy_window_hour: int | None = Field(default=None, description=(
+        "UTC hour with the LOWEST mean price (best hour to BUY). None when no "
+        "hour has data. Canonical example: Asia-wake hours (farmers dump loot)."
+    ))
+    sell_window_hour: int | None = Field(default=None, description=(
+        "UTC hour with the HIGHEST mean price (best hour to SELL). None when no "
+        "hour has data. Canonical example: US/EU-wake hours (demand spikes)."
+    ))
+    buy_window_mean: float | None = Field(default=None, description="Mean price at the buy_window_hour. None when buy_window_hour is None.")
+    sell_window_mean: float | None = Field(default=None, description="Mean price at the sell_window_hour. None when sell_window_hour is None.")
+    overall_mean: float = Field(description="Mean of ALL price points across all hours (NOT mean of hourly means). Used as the denominator for intraday_range_pct.")
+    intraday_range_pct: float = Field(description=(
+        "|sell_window_mean - buy_window_mean| / overall_mean * 100. Measures "
+        "the magnitude of the intraday pattern. 0 = no variation across hours."
+    ))
+    has_significant_pattern: bool = Field(description=(
+        "True when intraday_range_pct >= 10% (SIGNIFICANT_RANGE_PCT). Below "
+        "this threshold the pattern is real but uninteresting — transaction "
+        "spread will eat the gain."
+    ))
+    sample_size: int = Field(description="Total number of price_logs in the lookback window (across all 24 hours)")
+    current_price: float = Field(description="Most recent price in base currency")
+
+
+class IntradayPatternsResponse(BaseModel):
+    """Response for GET /api/v1/intraday-patterns."""
+    league: str = Field(description="League name")
+    patterns: list[IntradayPatternData] = Field(default_factory=list, description=(
+        "Per-currency intraday patterns, sorted by intraday_range_pct "
+        "descending (most actionable pattern first). Capped by `limit`."
+    ))
+    data_available: bool = Field(description="Whether any currency in the snapshot had enough price_logs (≥ MIN_SAMPLE_SIZE AND ≥ MIN_HOURS_COVERED distinct hours) to aggregate")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+    days: int = Field(description="Lookback window in days used for the aggregation")
+
+
+# ---------------------------------------------------------------------------
 # Speculation backtest (F5 follow-up, iter 79)
 # ---------------------------------------------------------------------------
 

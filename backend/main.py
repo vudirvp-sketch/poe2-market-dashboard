@@ -632,6 +632,17 @@ try:
 except ImportError:
     logger.debug("Circuit Patterns router not available yet")
 
+# P4 (iter 98): Intraday Patterns — time-of-day (UTC hour) price pattern
+# detector. For each currency: hourly mean/std/count + buy window (min mean)
+# + sell window (max mean) + significance flag (range >= 10%). Powers the
+# heatmap UI in intraday-patterns-tab.tsx. Pure function lives in
+# backend/economy/intraday_patterns.py. Same thin-wrapper pattern.
+try:
+    from backend.api.routes_intraday_patterns import router as intraday_patterns_router
+    app.include_router(intraday_patterns_router)
+except ImportError:
+    logger.debug("Intraday Patterns router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

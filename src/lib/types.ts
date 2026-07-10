@@ -575,6 +575,71 @@ export interface CircuitPatternsResponse {
 }
 
 // ============================================================================
+// Intraday Patterns (P4, iter 98 — frontend UI)
+// Pure function: backend/economy/intraday_patterns.py
+// ============================================================================
+
+/** Per-hour aggregation for a single currency (UTC hour 0..23).
+ *  Backend (Pydantic) shape: IntradayHourlyStat.
+ *  Field names are camelCase after flipper-proxy transformKeys(). */
+export interface IntradayHourlyStat {
+  /** UTC hour of day (0..23). */
+  hour: number;
+  /** Mean price for this hour over the lookback window. Null when count=0. */
+  mean: number | null;
+  /** Population std of prices for this hour. Null when count=0. */
+  std: number | null;
+  /** Number of price_logs in this hour (0 when no data). */
+  count: number;
+}
+
+/** A single currency's time-of-day (UTC hour) price pattern.
+ *  Backend (Pydantic) shape: IntradayPatternData. */
+export interface IntradayPattern {
+  /** Item API identifier (e.g. "chaos-orb", "exalted"). */
+  apiId: string;
+  /** Display name (EN) — backend returns `text` field, proxy camelCases. */
+  text: string;
+  /** League mechanic category slug (e.g. "ritual", "breach"). Empty if unknown. */
+  category: string;
+  /** Always 24 entries (one per UTC hour 0..23, ascending). Hours with no
+   *  data have mean=null, std=null, count=0. */
+  hourlyStats: IntradayHourlyStat[];
+  /** UTC hour with the LOWEST mean price (best hour to BUY). Null when no data. */
+  buyWindowHour: number | null;
+  /** UTC hour with the HIGHEST mean price (best hour to SELL). Null when no data. */
+  sellWindowHour: number | null;
+  /** Mean price at the buy window hour. Null when buyWindowHour is null. */
+  buyWindowMean: number | null;
+  /** Mean price at the sell window hour. Null when sellWindowHour is null. */
+  sellWindowMean: number | null;
+  /** Mean of ALL price points across all hours (NOT mean of hourly means). */
+  overallMean: number;
+  /** |sellWindowMean - buyWindowMean| / overallMean * 100. 0 = no variation. */
+  intradayRangePct: number;
+  /** True when intradayRangePct >= 10% (SIGNIFICANT_RANGE_PCT). */
+  hasSignificantPattern: boolean;
+  /** Total number of price_logs in the lookback window (across all 24 hours). */
+  sampleSize: number;
+  /** Most recent price in base currency. */
+  currentPrice: number;
+}
+
+/** Response for GET /api/flipper/intraday-patterns (P4, iter 98). */
+export interface IntradayPatternsResponse {
+  league: string;
+  /** Per-currency intraday patterns, sorted by intradayRangePct desc. */
+  patterns: IntradayPattern[];
+  /** Whether any currency had enough price_logs (≥ MIN_SAMPLE_SIZE AND
+   *  ≥ MIN_HOURS_COVERED distinct hours) to aggregate. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+  /** Lookback window in days used for the aggregation. */
+  days: number;
+}
+
+// ============================================================================
 // Speculation backtest (F5 follow-up, iter 80 — frontend UI)
 // ============================================================================
 
