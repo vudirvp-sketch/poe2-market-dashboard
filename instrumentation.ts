@@ -17,14 +17,16 @@
  * To start backend manually:
  *   PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000
  *
- * NOTE (iter 103, KI-15): the `/* turbopackIgnore: true */` magic comment
- * added in iter 102 to silence the Turbopack NFT warning was a REGRESSION —
- * it caused Turbopack to fully exclude the bridge file from the server
- * bundle, so `next start` failed at runtime with
- * "Cannot find module '.../.next/server/chunks/scripts/flipper-backend-bridge'".
- * The comment has been removed. The NFT warning is purely cosmetic and does
- * not break the build or runtime. A proper fix would move the bridge into
- * src/lib/ so Turbopack treats it as a regular module — tracked as KI-16.
+ * NOTE (iter 103→104, KI-15/KI-17): iter 102 added a turbopackIgnore magic
+ * comment to silence the Turbopack NFT warning. That was a double regression:
+ *   1. It caused Turbopack to fully exclude the bridge file from the server
+ *      bundle, so "next start" failed at runtime with Cannot-find-module.
+ *   2. The magic comment syntax inside this JSDoc block prematurely closed
+ *      the comment (the star-slash sequence), breaking the entire build.
+ * The comment has been removed. The NFT warning is purely cosmetic — the
+ * build succeeds and the bridge works at runtime. A proper fix would move
+ * the bridge into src/lib/ so Turbopack treats it as a regular module —
+ * tracked as KI-16.
  */
 
 export async function register() {
