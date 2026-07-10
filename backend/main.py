@@ -621,6 +621,17 @@ try:
 except ImportError:
     logger.debug("Phase hints router not available yet")
 
+# F7 / P8 (iter 97): Circuit Patterns — per-currency trajectory
+# classification (EXPONENTIAL_GROWTH / PEAK_THEN_DECLINE / ...) with a
+# recommended action (HOLD_FOR_GROWTH / SELL_NOW / AVOID / WATCH / NEUTRAL).
+# Pure function lives in backend/economy/circuit_patterns.py (iter 96, 75
+# tests). This route is a thin wrapper — same pattern as routes_speculation.
+try:
+    from backend.api.routes_circuit_patterns import router as circuit_patterns_router
+    app.include_router(circuit_patterns_router)
+except ImportError:
+    logger.debug("Circuit Patterns router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

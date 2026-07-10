@@ -530,6 +530,10 @@ def compute_circuit_patterns(
                         "recommended_action": str, # HOLD_FOR_GROWTH / SELL_NOW / ...
                         "sample_size": int,
                         "current_price": float,
+                        "price_history_short": [   # iter 97 — for UI sparkline
+                            {"date": str (ISO 8601), "price": float},
+                            ...up to 14 most-recent points (oldest-first)
+                        ],
                     },
                     ...
                 ],
@@ -580,6 +584,18 @@ def compute_circuit_patterns(
         days_peak = _days_since_peak(window_points)
         action = _recommended_action(trajectory)
 
+        # iter 97 — emit up to 14 most-recent price points (oldest-first)
+        # for the UI mini-sparkline. Mirrors SpeculationSignalData's
+        # price_history_short field shape. We slice from the END of the
+        # window_points list (already time-sorted ascending) so the most
+        # recent N points are kept. Stays empty when fewer than 2 points
+        # (the UI then renders the empty-sparkline fallback).
+        recent_points = window_points[-14:]
+        price_history_short = [
+            {"date": ts.isoformat(), "price": round(p, 6)}
+            for ts, p in recent_points
+        ]
+
         patterns.append({
             "api_id": api_id,
             "text": curr.get("Text") or curr.get("text") or api_id,
@@ -601,6 +617,7 @@ def compute_circuit_patterns(
                 or curr.get("current_price")
                 or prices[-1]
             ),
+            "price_history_short": price_history_short,
         })
 
     # Sort: most action first (largest |total_change_pct|).

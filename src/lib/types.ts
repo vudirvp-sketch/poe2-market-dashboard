@@ -505,6 +505,76 @@ export interface SpeculationResponse {
 }
 
 // ============================================================================
+// Circuit Patterns (F7 / P8, iter 97 — frontend UI)
+// Pure function: backend/economy/circuit_patterns.py (iter 96, 75 tests).
+// ============================================================================
+
+/** Trajectory archetype — see docs/MARKET_PLAYBOOK.md §P8 for the rationale. */
+export type CircuitTrajectory =
+  | "EXPONENTIAL_GROWTH"
+  | "LINEAR_GROWTH"
+  | "PEAK_THEN_DECLINE"
+  | "MEAN_REVERTING"
+  | "VOLATILE"
+  | "DECLINING"
+  | "STABLE";
+
+/** Recommended action — derived from the trajectory archetype. */
+export type CircuitRecommendedAction =
+  | "HOLD_FOR_GROWTH"
+  | "SELL_NOW"
+  | "AVOID"
+  | "WATCH"
+  | "NEUTRAL";
+
+/** A single currency's trajectory classification + recommended action.
+ *  Backend (Pydantic) shape: CircuitPatternData.
+ *  Field names are camelCase after flipper-proxy transformKeys(). */
+export interface CircuitPattern {
+  /** Item API identifier (e.g. "chaos-orb", "exalted"). */
+  apiId: string;
+  /** Display name (EN) — backend returns `text` field, proxy camelCases. */
+  text: string;
+  /** League mechanic category slug (e.g. "ritual", "breach"). Empty if unknown. */
+  category: string;
+  /** Trajectory archetype — one of CircuitTrajectory. */
+  trajectory: CircuitTrajectory;
+  /** % change from first to last price in the lookback window. */
+  totalChangePct: number;
+  /** Slope × 100, normalised by mean price — percent-per-day change. */
+  recentSlopePctPerDay: number;
+  /** Coefficient of variation (std / mean) over the window. */
+  volatilityCv: number;
+  /** Goodness-of-fit of the linear regression (0..1). 0 = no linear trend. */
+  rSquared: number;
+  /** For PEAK_THEN_DECLINE: days between the highest-price point and the
+   *  last point. Null for other archetypes. 0 means the peak IS the last point. */
+  daysSincePeak: number | null;
+  /** Actionable recommendation derived from the trajectory. */
+  recommendedAction: CircuitRecommendedAction;
+  /** Number of valid price points in the lookback window. */
+  sampleSize: number;
+  /** Most recent price in base currency. */
+  currentPrice: number;
+  /** Up to 14 most-recent price points (oldest-first) for the mini-sparkline.
+   *  Empty when fewer than 2 points are in the window. */
+  priceHistoryShort: SpeculationPriceHistoryPoint[];
+}
+
+/** Response for GET /api/flipper/circuit-patterns (F7, iter 97). */
+export interface CircuitPatternsResponse {
+  league: string;
+  /** Per-currency classifications, sorted by |totalChangePct| desc. */
+  patterns: CircuitPattern[];
+  /** Whether any currency had enough price_logs (≥ MIN_SAMPLE_SIZE) to classify. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+  /** Lookback window in days used for the classification. */
+  days: number;
+}
+
+// ============================================================================
 // Speculation backtest (F5 follow-up, iter 80 — frontend UI)
 // ============================================================================
 

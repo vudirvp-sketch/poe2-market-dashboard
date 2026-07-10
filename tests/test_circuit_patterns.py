@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -852,3 +853,101 @@ class TestComputeCircuitPatterns:
         assert TRAJECTORY_MEAN_REVERTING in trajectories
         assert TRAJECTORY_VOLATILE in trajectories
         assert TRAJECTORY_DECLINING in trajectories
+
+
+# ===========================================================================
+# iter 97 — Route handler smoke tests.
+#
+# We patch `get_snapshot_manager` and `get_snapshot` so the route returns
+# deterministic data, then call the handler function directly (no uvicorn).
+# Mirrors the pattern used in tests/test_content_pulse.py::TestRouteHandler.
+# ===========================================================================
+
+
+class TestRouteHandler:
+    """Smoke tests for the FastAPI route handler in routes_circuit_patterns."""
+
+    async def test_route_returns_empty_when_no_snapshot(self):
+        """When the snapshot manager hasn't fetched data yet, the route
+        must return data_available=false with an empty patterns list and
+        the requested `days` echoed back (for client cache keys)."""
+        from backend.api.routes_circuit_patterns import get_circuit_patterns
+
+        with patch(
+            "backend.api.routes_circuit_patterns.get_snapshot_manager"
+        ) as mock_mgr:
+            mock_mgr.return_value = SimpleNamespace(last_snapshot=None)
+            result = await get_circuit_patterns(days=30, limit=50, trajectory="ALL")
+            assert result["data_available"] is False
+            assert result["patterns"] == []
+            assert result["days"] == 30
+            assert "fetched_at" in result
+
+    async def test_route_returns_data_when_snapshot_available(self):
+        """When the snapshot has data, the route returns the computed
+        patterns list (sorted by |total_change_pct| desc) and echoes days."""
+        from backend.api.routes_circuit_patterns import get_circuit_patterns
+
+        now = datetime.now(timezone.utc)
+        # Build a snapshot with one DECLINING currency (5 price points).
+        logs = _make_logs([100.0, 90.0, 80.0, 70.0, 60.0], base=now)
+        snapshot = _make_snapshot([
+            _make_currency("c-dec", category="currency", price_logs=logs),
+        ])
+
+        with patch(
+            "backend.api.routes_circuit_patterns.get_snapshot_manager"
+        ) as mock_mgr, patch(
+            "backend.api.routes_circuit_patterns.get_snapshot"
+        ) as mock_get:
+            mock_mgr.return_value = SimpleNamespace(last_snapshot=object())  # truthy
+            mock_get.return_value = snapshot
+            result = await get_circuit_patterns(days=30, limit=50, trajectory="ALL")
+            assert result["data_available"] is True
+            assert result["days"] == 30
+            assert len(result["patterns"]) == 1
+            p = result["patterns"][0]
+            assert p["api_id"] == "c-dec"
+            assert p["trajectory"] == TRAJECTORY_DECLINING
+            assert p["recommended_action"] == ACTION_AVOID
+            assert p["total_change_pct"] == -40.0  # (60-100)/100*100
+
+    async def test_route_returns_empty_on_exception(self):
+        """If compute_circuit_patterns raises, the route must return
+        data_available=false (not propagate the exception)."""
+        from backend.api.routes_circuit_patterns import get_circuit_patterns
+
+        with patch(
+            "backend.api.routes_circuit_patterns.get_snapshot_manager"
+        ) as mock_mgr, patch(
+            "backend.api.routes_circuit_patterns.get_snapshot"
+        ) as mock_get:
+            mock_mgr.return_value = SimpleNamespace(last_snapshot=object())  # truthy
+            mock_get.side_effect = RuntimeError("boom")
+            result = await get_circuit_patterns(days=14, limit=10, trajectory="ALL")
+            assert result["data_available"] is False
+            assert result["patterns"] == []
+            assert result["days"] == 14
+
+    async def test_route_echoes_days_param(self):
+        """The `days` query param is echoed in the response even on the
+        success path — needed by the frontend's React Query cache key."""
+        from backend.api.routes_circuit_patterns import get_circuit_patterns
+
+        now = datetime.now(timezone.utc)
+        snapshot = _make_snapshot([
+            _make_currency("c-exp", price_logs=_make_logs([1.0, 2.0, 4.0, 8.0, 16.0], base=now)),
+        ])
+
+        with patch(
+            "backend.api.routes_circuit_patterns.get_snapshot_manager"
+        ) as mock_mgr, patch(
+            "backend.api.routes_circuit_patterns.get_snapshot"
+        ) as mock_get:
+            mock_mgr.return_value = SimpleNamespace(last_snapshot=object())
+            mock_get.return_value = snapshot
+            result = await get_circuit_patterns(days=7, limit=5, trajectory="ALL")
+            assert result["days"] == 7
+            assert result["data_available"] is True
+            assert len(result["patterns"]) == 1
+

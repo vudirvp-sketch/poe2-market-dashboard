@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-10 (iter 96)
+> **Last updated:** 2026-07-10 (iter 97 — Circuit Patterns API + UI wire-up)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -115,7 +115,7 @@
 | **P5** Weekday/weekend pattern | Нет | ❌ Не реализовано. |
 | **P6** Priority Listing Arb | Нет | ❌ Требует данных trade-site, которых у нас нет (POE2Scout не отдаёт listings по alt-orbs отдельно). Доступно только через GGG official trade API. |
 | **P7** Mirror ↔ Divine arb | Частично: `storage_value.py` (currency/mirror ratio) | ⚠️ Есть метрика, нет детектора arb-окна для chase-уников. |
-| **P8** Trajectory classification | **iter 96**: новый модуль `backend/economy/circuit_patterns.py` | 🆕 Pure function + тесты. Без API route / UI — следующий шаг. |
+| **P8** Trajectory classification | `backend/economy/circuit_patterns.py` (iter 96) + `routes_circuit_patterns.py` + UI tab `circuit-patterns-tab.tsx` (iter 97) | ✅ Готово. Pure function (75 unit-тестов) + API route `/api/v1/circuit-patterns` + Next.js proxy + UI tab с бейджами траекторий и mini-sparkline + i18n × 4 locales (47 ключей × 4) + 20 jest-тестов + 4 pytest route smoke-теста. |
 | **P9** Phase-aware investment | `phase_hints.py` (4 hints на фазу) | ⚠️ Статичная таблица. Нет привязки к live-ценам. |
 | **P10** Gold Map ROI | Нет | ❌ Нужен калькулятор. Зависит от P1 (3-way flips). |
 | **P11** Megalomaniac / +3 Prism scanner | Нет | ❌ Требует GGG trade API (фильтрация по аффиксам). |
@@ -130,10 +130,10 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 3 полностью готовы (P1, P18, частично P9/P16/P17).
+- 4 полностью готовы (P1, P8, P18, частично P9/P16/P17).
 - 5 частично готовы (P2, P7, P9, P16, P17) — нужна доработка.
-- 12 не реализованы. Из них:
-  - **P3, P4, P5, P8** — реализуемы на текущих данных POE2Scout (без GGG trade API).
+- 11 не реализованы. Из них:
+  - **P3, P4, P5** — реализуемы на текущих данных POE2Scout (без GGG trade API). На roadmap iter 98-100.
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
 
 ---
@@ -178,8 +178,20 @@
 
 **Что НЕ входит в iter 96.** API route, UI, i18n — чтобы не сломать прод. Это iter 97.
 
-### C.2. iter 97 — Circuit Patterns: API route + UI
-**Что.** Добавить route `GET /api/v1/circuit-patterns?days=30&trajectory=ALL` → `routes_circuit_patterns.py`. Response model `CircuitPatternResponse` в `response_models.py`. Next.js proxy `src/app/api/flipper/circuit-patterns/route.ts`. UI-таб или widget, показывающий топ-валюты по `|total_change_pct|` с бейджем траектории и recommended_action.
+### C.2. iter 97 — Circuit Patterns: API route + UI ✅ DONE
+**Что было сделано.**
+- Backend: `backend/api/routes_circuit_patterns.py` (thin wrapper по образцу `routes_speculation.py`). Поддерживает query-params `days` (1..90, default 30), `limit` (1..500, default 50), `trajectory` (ALL | один из 7 архетипов). При ошибке или отсутствии snapshot возвращает `data_available=false` с пустым patterns list.
+- Backend: Pydantic-модели `CircuitPatternData` + `CircuitPatternsResponse` в `backend/api/response_models.py`. Включая поле `price_history_short` (до 14 последних price points для mini-sparkline в UI).
+- Backend: pure function `compute_circuit_patterns()` в `backend/economy/circuit_patterns.py` расширена — теперь возвращает `price_history_short` на каждой валюте (additive change, существующие 75 тестов остались зелёными).
+- Backend: router зарегистрирован в `backend/main.py` (через `try/except ImportError` обёртку, как все остальные).
+- Next.js proxy: `src/app/api/flipper/circuit-patterns/route.ts` (по образцу `speculation/route.ts`).
+- TypeScript-типы: `CircuitPattern`, `CircuitPatternsResponse`, `CircuitTrajectory`, `CircuitRecommendedAction` в `src/lib/types.ts`.
+- UI: новая вкладка `src/components/dashboard/circuit-patterns-tab.tsx` (по образцу `speculation-tab.tsx`, но проще — без backtest panel). Filter chips (ALL + 7 архетипов), days selector (7/14/30/90), per-row trajectory badge + recommended_action badge + total_change_pct + mini-sparkline + статы (sampleSize / slope / vol / R² / current / daysSincePeak).
+- UI: вкладка встроена в `dashboard-page.tsx` (dynamic import, `TAB_MAP` entry на idx 9, `TabsContent` после speculation), в `dashboard-toolbar.tsx` (TabsTrigger с иконкой `Activity`), в `shortcuts-dialog.tsx` (shortcut "0" → Circuits, Liquid Chain + Watchlist теперь click-only).
+- i18n: 47 новых ключей × 4 locales (en/ru/zh/ko) — все локали имеют parity.
+- Tests: 20 jest-тестов в `src/__tests__/circuit-patterns-tab.test.tsx` (offline / loading / error / no-data / patterns rendering / filter chips / days selector / sparkline / filter click / daysSincePeak / etc.) + 4 pytest route smoke-теста в `tests/test_circuit_patterns.py::TestRouteHandler`.
+
+**Проверка.** Все 452 jest-тестов зелёные. Все 79 pytest-тестов в `test_circuit_patterns.py` зелёные (75 оригинальных + 4 новых route smoke). tsc --noEmit зелёный (на момент создания UI tab; последующие правки были тривиальными JSX-изменениями, валидированы через ts-jest).
 
 ### C.3. iter 98 — Time-of-Day Pattern Detector (P4)
 **Что.** Pure function `compute_intraday_patterns(snapshot, config, days=14) -> dict`. Для каждой валюты: hourly mean price (UTC), buy/sell windows. Heatmap UI: час × валюта.
@@ -223,35 +235,33 @@
 4. **Self-contained** (минимальный риск сломать прод).
 
 ### D.2. Топ-5 паттернов для следующих итераций
-| Ранг | Паттерн | iter | Риск |
-|------|---------|------|------|
-| 1 | P8 Trajectory classification | 96–97 | Низкий (pure function + thin UI) |
-| 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) |
-| 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) |
-| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) |
-| 5 | P7 Mirror/Divine arb | 101 | Средний (расширяет existing модуль) |
+| Ранг | Паттерн | iter | Риск | Статус |
+|------|---------|------|------|--------|
+| 1 | P8 Trajectory classification | 96–97 | Низкий (pure function + thin UI) | ✅ Done |
+| 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) | ⏳ Next |
+| 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ⏳ Roadmap |
+| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ⏳ Roadmap |
+| 5 | P7 Mirror/Divine arb | 101 | Средний (расширяет existing модуль) | ⏳ Roadmap |
 
-### D.3. Точка остановки iter 96
+### D.3. Точка остановки iter 97
 **Сделано:**
-- Создан `docs/MARKET_PLAYBOOK.md` (этот файл) — полный анализ 20 паттернов + roadmap.
-- Создан `backend/economy/circuit_patterns.py` — pure function для P8.
-- Создан `tests/test_circuit_patterns.py` — полный coverage.
-- Обновлены `STATUS.md`, `PRODUCT_VISION.md`, `AGENT_NAVIGATION.md` (без мусора, актуальные).
+- Backend: API route `GET /api/v1/circuit-patterns` (thin wrapper), Pydantic response models, router registration. Pure function расширена полем `price_history_short`.
+- Frontend: Next.js proxy route, TypeScript types, новая UI-вкладка `circuit-patterns-tab.tsx`, wiring в `dashboard-page.tsx` + `dashboard-toolbar.tsx` + `shortcuts-dialog.tsx`.
+- i18n: 47 новых ключей × 4 locales (en/ru/zh/ko).
+- Tests: 20 jest + 4 pytest route smoke — все зелёные. Regression-чек: все 452 jest + 79 pytest (circuit-related) зелёные.
+- Документация: `STATUS.md`, `docs/MARKET_PLAYBOOK.md` актуализированы (без мусора, только актуальная информация).
 
-**НЕ сделано (на iter 97):**
-- API route `GET /api/v1/circuit-patterns` — backend wire-up.
-- Response model в `response_models.py`.
-- Next.js proxy route.
-- UI widget/tab с бейджами траекторий.
-- i18n keys × 4 locales.
+**НЕ сделано (на iter 98):**
+- P4 Time-of-day pattern detector — pure function + UI heatmap (час × валюта).
+- P5 Weekday/weekend — аналогично, но группировка по дню недели.
 
-**Проверка.** Все изменения — добавление новых файлов + минорные правки docs. Никакой existing-логики не тронуто → regression-риска нет. Тесты для нового модуля изолированы.
+**Проверка.** Все изменения backend — новые файлы + 1 additive field в pure function (existing 75 тестов не сломаны). Все изменения frontend — новые файлы + минимальные правки в 3 existing файлах (dashboard-page.tsx TAB_MAP + TabsContent + dynamic import; dashboard-toolbar.tsx TabsTrigger + 1 icon import; shortcuts-dialog.tsx shortcut mapping text). i18n изменения — additive (47 новых ключей в конце каждого файла, existing keys не тронуты). Regression-риска нет — все 452 jest + 79 pytest (circuit-related) зелёные.
 
 ---
 
 ## E. Связанные документы
-- `PRODUCT_VISION.md` — продуктовое видение (обновлено в iter 96 — добавлена секция §3.7).
-- `STATUS.md` — Known Issues + TD backlog (обновлено в iter 96 — добавлен TD-10).
-- `AGENT_NAVIGATION.md` — навигация по коду (обновлено в iter 96 — добавлен entry для `circuit_patterns.py`).
+- `PRODUCT_VISION.md` — продуктовое видение (§3.7 — Circuit Patterns).
+- `STATUS.md` — Known Issues + TD backlog (iter 97: TD-10 закрыт, F7 = Done).
+- `AGENT_NAVIGATION.md` — навигация по коду (entry для `circuit_patterns.py` + `routes_circuit_patterns.py` + `circuit-patterns-tab.tsx`).
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.

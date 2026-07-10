@@ -686,6 +686,63 @@ class SpeculationResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Circuit Patterns (F7 / P8, iter 97 — API + UI wire-up)
+# Pure function: backend/economy/circuit_patterns.py (iter 96).
+# ---------------------------------------------------------------------------
+
+class CircuitPatternData(BaseModel):
+    """A single currency's trajectory classification + recommended action."""
+    api_id: str = Field(description="Item API identifier (e.g. 'chaos-orb', 'exalted')")
+    text: str = Field(description="Display name (EN) — backend returns raw POE2Scout Text field")
+    category: str = Field(description="League mechanic category slug (e.g. 'ritual', 'breach'). Empty if unknown.")
+    trajectory: str = Field(description=(
+        "Trajectory archetype: 'EXPONENTIAL_GROWTH' | 'LINEAR_GROWTH' | "
+        "'PEAK_THEN_DECLINE' | 'MEAN_REVERTING' | 'VOLATILE' | 'DECLINING' | "
+        "'STABLE'. See docs/MARKET_PLAYBOOK.md §P8 for the full rationale."
+    ))
+    total_change_pct: float = Field(description="% change from first to last price in the lookback window")
+    recent_slope_pct_per_day: float = Field(description=(
+        "Slope of the linear fit × 100, normalised by mean price — interpreted "
+        "as percent-per-day change. Positive = rising, negative = falling."
+    ))
+    volatility_cv: float = Field(description="Coefficient of variation (std / mean) over the window")
+    r_squared: float = Field(description="Goodness-of-fit of the linear regression (0..1). 0 = no linear trend.")
+    days_since_peak: int | None = Field(default=None, description=(
+        "For PEAK_THEN_DECLINE: days between the highest-price point and the "
+        "last point. None for other archetypes. 0 means the peak IS the last point."
+    ))
+    recommended_action: str = Field(description=(
+        "Actionable recommendation derived from the trajectory: "
+        "'HOLD_FOR_GROWTH' (EXPONENTIAL_GROWTH / LINEAR_GROWTH) | "
+        "'SELL_NOW' (PEAK_THEN_DECLINE) | "
+        "'AVOID' (DECLINING) | "
+        "'WATCH' (VOLATILE) | "
+        "'NEUTRAL' (MEAN_REVERTING / STABLE)."
+    ))
+    sample_size: int = Field(description="Number of valid price points in the lookback window used for classification")
+    current_price: float = Field(description="Most recent price in base currency")
+    price_history_short: list[SpeculationPriceHistoryPoint] = Field(
+        default_factory=list,
+        description=(
+            "Up to 14 most-recent price points (oldest-first) for the UI "
+            "mini-sparkline. Empty when fewer than 2 points are in the window."
+        ),
+    )
+
+
+class CircuitPatternsResponse(BaseModel):
+    """Response for GET /api/v1/circuit-patterns."""
+    league: str = Field(description="League name")
+    patterns: list[CircuitPatternData] = Field(default_factory=list, description=(
+        "Per-currency trajectory classifications, sorted by |total_change_pct| "
+        "descending (most action first). Capped by `limit`."
+    ))
+    data_available: bool = Field(description="Whether any currency in the snapshot had enough price_logs (≥ MIN_SAMPLE_SIZE) to classify")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+    days: int = Field(description="Lookback window in days used for the classification")
+
+
+# ---------------------------------------------------------------------------
 # Speculation backtest (F5 follow-up, iter 79)
 # ---------------------------------------------------------------------------
 

@@ -86,6 +86,15 @@ const SpeculationTab = dynamic(
   { loading: TabSkeleton },
 );
 
+// F7 / P8 (iter 97): Circuit Patterns tab — lazy-loaded. Wraps the new
+// /api/v1/circuit-patterns endpoint. Per-currency trajectory classification
+// (EXPONENTIAL_GROWTH / PEAK_THEN_DECLINE / ...) with a recommended action
+// (HOLD_FOR_GROWTH / SELL_NOW / AVOID / WATCH / NEUTRAL).
+const CircuitPatternsTab = dynamic(
+  () => import("@/components/dashboard/circuit-patterns-tab").then((m) => ({ default: m.CircuitPatternsTab })),
+  { loading: TabSkeleton },
+);
+
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
@@ -534,9 +543,15 @@ export function Dashboard() {
   // "storage-value" added iter 74 (F2).
   // "speculation" added iter 77 (F5) — placed after storage-value so the
   // analytics-cluster (storage-value → speculation) sits together.
+  // "circuit-patterns" added iter 97 (F7 / P8) — placed after speculation
+  // to extend the analytics-cluster (storage-value → speculation → circuits).
   // iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
   // and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "liquid-chain", "watchlist"];
+  // NOTE: tab count grew to 12 in iter 97 — shortcuts 1–9 cover the first 9
+  // tabs (overview through speculation), shortcut 0 covers circuit-patterns.
+  // liquid-chain + watchlist remain accessible via click only (was already
+  // the case before iter 97 for index 10+).
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "circuit-patterns", "liquid-chain", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -931,6 +946,13 @@ export function Dashboard() {
             <TabsContent value="speculation">
               <ErrorBoundary fallbackTitle={t("fallbackSpeculation")}>
                 <SpeculationTab backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ CIRCUIT PATTERNS TAB (F7 / P8, iter 97) ============ */}
+            <TabsContent value="circuit-patterns">
+              <ErrorBoundary fallbackTitle={t("fallbackCircuitPatterns")}>
+                <CircuitPatternsTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 
