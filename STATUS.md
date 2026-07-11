@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 108 — P7 Mirror/Divine Arb Detector shipped: backend pure function + FastAPI route + Next.js proxy + 70 pytest green. KI-13 confirmed working in production log. Build + 1218 pytest green; tsc/jest not run locally due to OOM-killer at `npm install` — see iter 100 notes.)
+> **Last updated:** 2026-07-11 (iter 109 — P7 Mirror/Divine Arb Detector UI tab shipped end-to-end: single-object card render + 42 i18n keys × 4 locales + wiring in dashboard-page/toolbar/shortcuts-dialog. Backend was iter 108. Build + 1218 pytest green; tsc/jest not run locally due to OOM-killer at `npm install` — see iter 100 notes.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -66,6 +66,7 @@ Type error: Unknown keyword or identifier. Did you mean 'delete'?
 | Keyboard shortcut "5" goes to Flips, not Arbitrage | By design (iter 92 KI-7) | `dashboard-page.tsx:TAB_MAP` |
 | Keyboard shortcut "0" goes to Circuits, not Liquid Chain | By design (iter 97 F7) | `dashboard-page.tsx:TAB_MAP` |
 | FlipsTable "Trend" sparkline looks synthetic | By design (iter 94, Q5) — derived from `momentum × volatility` (TD-9) | `flips-helpers.ts:deriveTrendSparklineData` |
+| Mirror/Divine Arb tab shows "no price history yet" | By design (iter 109) — backend returns `data_available: false` when scheduler hasn't collected ≥ 4 Mirror + Divine price snapshots in the lookback window. Wait for the scheduler or widen the days selector. | `backend/economy/mirror_divine_arb.py`, `mirror-divine-arb-tab.tsx` |
 | `/api/poe2/uniques` or `/api/poe2/currencies` returns 200 with empty `items: []` | KI-11 (closed iter 102) — verify `config.yaml:league.league_name` is valid | `src/lib/poe2api.ts` |
 | Leveling Uniques widget shows "Day 0" or wrong phase | Check `config.yaml` → `league.league_start_date` | `backend/economy/lifecycle.py:PhaseDetector`, `config.yaml` |
 | `flipper-bridge.log` file no longer created | By design (iter 106, KI-16-deep) — redirect: `npm run start > flipper-bridge.log 2>&1` | `src/lib/flipper-backend-bridge.ts` |

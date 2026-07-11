@@ -111,6 +111,16 @@ const WeeklyPatternsTab = dynamic(
   { loading: TabSkeleton },
 );
 
+// P7 (iter 109): Mirror/Divine Arbitrage tab — lazy-loaded. Wraps the new
+// /api/v1/mirror-divine-arb endpoint. SINGLE-OBJECT response (Mirror:Divine
+// is one market, not a per-currency list) — renders one big card with the
+// current rate / z-score / signal / action / sparkline. Backend + proxy +
+// TS types shipped in iter 108; UI wiring is iter 109.
+const MirrorDivineArbTab = dynamic(
+  () => import("@/components/dashboard/mirror-divine-arb-tab").then((m) => ({ default: m.MirrorDivineArbTab })),
+  { loading: TabSkeleton },
+);
+
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
@@ -565,14 +575,16 @@ export function Dashboard() {
   // to extend the analytics-cluster further. Heatmap UI (час × валюта).
   // "weekly-patterns" added iter 99 (P5) — placed after intraday-patterns
   // to extend the analytics-cluster further. Heatmap UI (день × валюта).
+  // "mirror-divine-arb" added iter 109 (P7) — placed after weekly-patterns
+  // to extend the analytics-cluster further. Single-object card UI (Mirror:Divine
+  // is one market, not a per-currency list).
   // iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
   // and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
-  // NOTE: tab count grew to 14 in iter 99 — shortcuts 1–9 cover the first 9
+  // NOTE: tab count grew to 15 in iter 109 — shortcuts 1–9 cover the first 9
   // tabs (overview through speculation), shortcut 0 covers circuit-patterns.
-  // intraday-patterns + weekly-patterns + liquid-chain + watchlist remain
-  // accessible via click only (was already the case before iter 98 for
-  // liquid-chain + watchlist).
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "circuit-patterns", "intraday-patterns", "weekly-patterns", "liquid-chain", "watchlist"];
+  // intraday-patterns + weekly-patterns + mirror-divine-arb + liquid-chain
+  // + watchlist remain accessible via click only (only 10 shortcut slots).
+  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "circuit-patterns", "intraday-patterns", "weekly-patterns", "mirror-divine-arb", "liquid-chain", "watchlist"];
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -988,6 +1000,13 @@ export function Dashboard() {
             <TabsContent value="weekly-patterns">
               <ErrorBoundary fallbackTitle={t("fallbackWeeklyPatterns")}>
                 <WeeklyPatternsTab backendOnline={flipperBackendOnline} />
+              </ErrorBoundary>
+            </TabsContent>
+
+            {/* ============ MIRROR/DIVINE ARBITRAGE TAB (P7, iter 109) ============ */}
+            <TabsContent value="mirror-divine-arb">
+              <ErrorBoundary fallbackTitle={t("fallbackMirrorDivineArb")}>
+                <MirrorDivineArbTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 

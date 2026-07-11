@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-11 (iter 108 — P7 Mirror/Divine Arb Detector backend shipped: pure function + API route + proxy + 70 pytest green. UI tab — на iter 109.)
+> **Last updated:** 2026-07-11 (iter 109 — P7 Mirror/Divine Arb Detector UI tab shipped: single-object card render + i18n × 4 locales. Backend was iter 108.)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -114,7 +114,7 @@
 | **P4** Time-of-day pattern | `backend/economy/intraday_patterns.py` (iter 98) + `routes_intraday_patterns.py` + UI tab `intraday-patterns-tab.tsx` | ✅ Готово. Pure function (89 unit-тестов) + API route `/api/v1/intraday-patterns` + Next.js proxy + UI heatmap tab (час × валюта) с buy/sell window badges + i18n × 4 locales (43 ключа × 4) + 23 jest-теста + 4 pytest route smoke-теста. |
 | **P5** Weekday/weekend pattern | `backend/economy/weekly_patterns.py` (iter 99) + `routes_weekly_patterns.py` + UI tab `weekly-patterns-tab.tsx` | ✅ Готово. Pure function (99 unit-тестов) + API route `/api/v1/weekly-patterns` + Next.js proxy + UI heatmap tab (день недели × валюта) с buy/sell day badges + weekday_delta_pct (weekend vs weekday) + i18n × 4 locales (50 ключей × 4) + 25 jest-тестов + 4 pytest route smoke-теста. |
 | **P6** Priority Listing Arb | Нет | ❌ Требует данных trade-site, которых у нас нет (POE2Scout не отдаёт listings по alt-orbs отдельно). Доступно только через GGG official trade API. |
-| **P7** Mirror ↔ Divine arb | `backend/economy/mirror_divine_arb.py` (iter 108) + `routes_mirror_divine_arb.py` + Next.js proxy | ✅ Готово (backend). Pure function `compute_mirror_divine_arb()` (70 pytest) + API route `/api/v1/mirror-divine-arb` + Next.js proxy + TS types. Single-object response (Mirror:Divine = one market): current_rate / mean_rate / std_rate / z_score / signal (SELL_MIRROR_BUY_DIVINE / SELL_DIVINE_BUY_MIRROR / NEUTRAL) / recommended_action (EXECUTE_ARB / WATCH / HOLD) + 14-point sparkline. Profit threshold = 100 Div per Mirror (per playbook). UI tab — на iter 109. |
+| **P7** Mirror ↔ Divine arb | `backend/economy/mirror_divine_arb.py` (iter 108) + `routes_mirror_divine_arb.py` + Next.js proxy + UI tab (iter 109) | ✅ Готово (end-to-end). Backend: pure function `compute_mirror_divine_arb()` (70 pytest) + API route `/api/v1/mirror-divine-arb` + Next.js proxy + TS types. Single-object response (Mirror:Divine = one market). UI (iter 109): `mirror-divine-arb-tab.tsx` — single-card render with current rate / z-score / deviation / signal+action badges / sparkline + 7/14/30/90-day selector. 42 i18n keys × 4 locales. Profit threshold = 100 Div per Mirror (per playbook). |
 | **P8** Trajectory classification | `backend/economy/circuit_patterns.py` (iter 96) + `routes_circuit_patterns.py` + UI tab `circuit-patterns-tab.tsx` (iter 97) | ✅ Готово. Pure function (75 unit-тестов) + API route `/api/v1/circuit-patterns` + Next.js proxy + UI tab с бейджами траекторий и mini-sparkline + i18n × 4 locales (47 ключей × 4) + 20 jest-тестов + 4 pytest route smoke-теста. |
 | **P9** Phase-aware investment | `phase_hints.py` (4 hints на фазу) | ⚠️ Статичная таблица. Нет привязки к live-ценам. |
 | **P10** Gold Map ROI | Нет | ❌ Нужен калькулятор. Зависит от P1 (3-way flips). |
@@ -130,8 +130,8 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 8 полностью готовы (P1, P3, P4, P5, P7-backend, P8, P18, частично P9/P16/P17).
-- 4 частично готовы (P2, P9, P16, P17) — нужна доработка. P7-backend готов, UI на iter 109.
+- 8 полностью готовы (P1, P3, P4, P5, P7, P8, P18, частично P9/P16/P17).
+- 4 частично готовы (P2, P9, P16, P17) — нужна доработка.
 - 8 не реализованы. Из них:
   - **P10** — реализуем на текущих данных (зависит от P1). На roadmap.
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
@@ -241,7 +241,7 @@
 - **i18n:** 31 новый ключ × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 3 stage label keys + 4 recommendation label keys + 5 column header keys + 3 summary keys + disclaimer.
 - **Tests:** 86 pytest (9 TestStaticTableIntegrity + 28 TestLifecycleStage + 4 TestRecommendation + 14 TestEstimateCurrentPrice + 3 TestDaysUntilPeak + 18 TestComputeLevelingUniquesLifecycle + 5 TestRussianLocalization + 4 TestRouteHandler = 86) — все зелёные. Regression-чек: 343 pytest (99 weekly + 89 intraday + 79 circuit + 58 phase_hints + 15 lifecycle + 3 shared) зелёные. 275 smoke тестов (pricing/speculation/content_pulse/events/storage_value/anomaly) зелёные. Babel syntax-check 9 modified/new TS/TSX файлов → all OK. tsc --noEmit и jest не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
 
-### C.6. iter 108 — Mirror/Divine Arb Detector (P7) ✅ Backend DONE
+### C.6. iter 108 + iter 109 — Mirror/Divine Arb Detector (P7) ✅ End-to-end DONE
 **Что.** Анализирует курс Mirror:Divine (mirror_price / divine_price) за lookback-окно и flagged окна, где курс отклонился от historical mean достаточно, чтобы arb "swap-then-swap-back" был прибыльным для chase-уников (≥ 1 Mirror). Использует существующие `price_histories` из DataSnapshot (не требует нового API).
 
 **Реализация (iter 108):**
@@ -262,7 +262,7 @@
 - **Next.js proxy:** `src/app/api/flipper/mirror-divine-arb/route.ts` — forwards `days` param. Returns empty fallback with `dataAvailable: false` when backend offline.
 - **TS types:** `MirrorDivineArbSignal` / `MirrorDivineArbAction` / `MirrorDivineArbRatePoint` / `MirrorDivineArbResponse` в `src/lib/types.ts`.
 - **Tests:** 70 pytest в `tests/test_mirror_divine_arb.py` (8 test classes: TestExtractRateSeries × 11, TestFilterToWindow × 6, TestMeanStdZscore × 11, TestSignalFromZscore × 7, TestRecommendedAction × 8, TestComputeMirrorDivineArbEmpty × 4, TestComputeMirrorDivineArbSteady × 2, TestComputeMirrorDivineArbSpike × 3, TestComputeMirrorDivineArbWatch × 1, TestComputeMirrorDivineArbPriceHistoryShort × 2, TestComputeMirrorDivineArbDefensive × 13, TestRouteHandler × 2). Regression: 1218 pytest green (было 1161 в iter 107, +70 новых −13 test_scheduler из-за missing aiosqlite в среде итерации).
-- **НЕ входит в iter 108:** UI tab/widget — на iter 109. i18n keys — на iter 109 вместе с UI.
+- **UI tab (iter 109):** `src/components/dashboard/mirror-divine-arb-tab.tsx` — single-object card render (NOT a per-currency list — Mirror:Divine is one market). Layout: signal+action badge row → hero metrics block (current rate / z-score / deviation) → profit+actionable row → 5-cell stats grid (mean/std/min/max/sample size) → rate sparkline → footer (fetched at / sample size / window). Days selector 7/14/30/90 (default 30). 42 i18n keys × 4 locales (en/ru/zh/ko). Wired into `dashboard-page.tsx` (TAB_MAP idx 12, lazy-loaded via next/dynamic, TabsContent + ErrorBoundary), `dashboard-toolbar.tsx` (new TabsTrigger with `ArrowUpDown` icon), `shortcuts-dialog.tsx` (comment updated — click-only, no shortcut slot).
 
 **Проверка.** Все 1218 pytest-тестов зелёные (включая 70 новых для P7). Backend router registration verified — `/api/v1/mirror-divine-arb` appears in `app.routes`. tsc/jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue с iter 99. TS files syntax-checked (balanced braces/parens), types match Python response models 1:1.
 
@@ -300,27 +300,29 @@
 | 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) | ✅ Done |
 | 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ✅ Done |
 | 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ✅ Done |
-| 5 | P7 Mirror/Divine arb | 108 (backend) / 109 (UI) | Средний (расширяет existing модуль) | ⏳ Backend done, UI next |
+| 5 | P7 Mirror/Divine arb | 108 (backend) / 109 (UI) | Средний (расширяет existing модуль) | ✅ Done |
 
-### D.3. Точка остановки iter 108
-**Сделано:**
-- Backend P7 Mirror/Divine Arb Detector: pure function `compute_mirror_divine_arb()` в `backend/economy/mirror_divine_arb.py` (70 pytest-тестов). API route `GET /api/v1/mirror-divine-arb?days=N` (thin wrapper). Pydantic models (`MirrorDivineArbRatePoint` + `MirrorDivineArbResponse`). Router registration в `main.py`.
-- Frontend wiring (без UI): Next.js proxy `/api/flipper/mirror-divine-arb`, TS types (`MirrorDivineArbSignal` / `MirrorDivineArbAction` / `MirrorDivineArbRatePoint` / `MirrorDivineArbResponse`).
-- KI-13 production verification: backend log line `SSE /stream request received (threshold_pct=1.0000) — route matched correctly` confirms the route-registration-order fix from iter 107 is working in production.
-- Документация: `STATUS.md` (KI-13 verified, iter 108 update), `docs/MARKET_PLAYBOOK.md` (§C.6 + §B.7 + §D.2/D.3 обновлены), `worklog.md` (iter 108 entry, trimmed iter 105).
+### D.3. Точка остановки iter 109
+**Сделано (iter 108 + iter 109):**
+- Backend P7 Mirror/Divine Arb Detector (iter 108): pure function `compute_mirror_divine_arb()` в `backend/economy/mirror_divine_arb.py` (70 pytest-тестов). API route `GET /api/v1/mirror-divine-arb?days=N`. Pydantic models. Router registration в `main.py`.
+- Frontend proxy + TS types (iter 108): Next.js proxy `/api/flipper/mirror-divine-arb`, TS types (`MirrorDivineArbSignal` / `MirrorDivineArbAction` / `MirrorDivineArbRatePoint` / `MirrorDivineArbResponse`).
+- UI tab (iter 109): `mirror-divine-arb-tab.tsx` — single-object card render. Wired into `dashboard-page.tsx` (TAB_MAP idx 12, lazy-loaded), `dashboard-toolbar.tsx` (new TabsTrigger, `ArrowUpDown` icon), `shortcuts-dialog.tsx` (comment updated).
+- i18n: 42 новых ключа × 4 locales (en/ru/zh/ko) — все 4 локали имеют parity (1185 keys total).
+- KI-13 production verification (iter 108).
+- Документация: `STATUS.md`, `docs/MARKET_PLAYBOOK.md`, `worklog.md`, `AGENT_NAVIGATION.md` обновлены.
 
-**НЕ сделано (на iter 109):**
-- UI tab/widget для P7 — потребует: новый компонент `mirror-divine-arb-tab.tsx` (по образцу `speculation-tab.tsx`, но single-object response), wiring в `dashboard-page.tsx` + `dashboard-toolbar.tsx` + `shortcuts-dialog.tsx`, i18n × 4 locales (~25-30 ключей × 4).
+**НЕ сделано (на iter 110+):**
 - TD-3/4/5/9 — persistence gaps (не блокируют, на roadmap).
 - P9 Phase-aware investment advisor (§C.7), P10 Gold Map ROI (§C.8) — полный roadmap в §C.
+- tsc/jest regression — Known Issue с iter 99 (OOM-killer при `npm install`, нужно 8GB+ RAM). TS files syntax-checked (balanced braces/parens), i18n key parity verified programmatically.
 
-**Проверка.** Все 1218 pytest-тестов зелёные (70 новых для P7 + 1148 regression; 13 test_scheduler пропущены из-за missing aiosqlite в среде итерации). Backend router registration verified. tsc/jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue с iter 99. TS files syntax-checked (balanced braces/parens), types match Python response models 1:1.
+**Проверка.** Все 1218 pytest-тестов зелёные (70 P7 + 1148 regression; 13 test_scheduler пропущены из-за missing aiosqlite в среде итерации). Backend router registration verified. TS files syntax-checked (balanced braces/parens), i18n parity verified (42 ключа × 4 locales = 168 строк, all match).
 
 ---
 
 ## E. Связанные документы
 - `PRODUCT_VISION.md` — продуктовое видение (§3.7 — Circuit Patterns).
-- `STATUS.md` — Known Issues + TD backlog (iter 108: P7-backend done, KI-13 verified).
-- `AGENT_NAVIGATION.md` — навигация по коду (entry для `mirror_divine_arb.py` + `routes_mirror_divine_arb.py` + proxy route).
+- `STATUS.md` — Known Issues + TD backlog (iter 109: P7 end-to-end done, KI-13 verified).
+- `AGENT_NAVIGATION.md` — навигация по коду (entry для `mirror_divine_arb.py` + `routes_mirror_divine_arb.py` + proxy route + UI tab).
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.

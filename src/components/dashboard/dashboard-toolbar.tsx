@@ -42,6 +42,7 @@ import {
   Activity,
   Clock,
   Calendar,
+  ArrowUpDown,
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -146,6 +147,10 @@ export function DashboardToolbar(props: DashboardToolbarProps) {
         {/* P5 (iter 99): Weekly Patterns tab — weekday/weekend heatmap. */}
         <TabsTrigger value="weekly-patterns" className="gap-1.5" aria-label={t("tabWeeklyPatterns")}>
           <Calendar className="h-4 w-4" aria-hidden="true" /> {t("tabWeeklyPatterns")}
+        </TabsTrigger>
+        {/* P7 (iter 109): Mirror/Divine Arbitrage tab — single-object rate detector. */}
+        <TabsTrigger value="mirror-divine-arb" className="gap-1.5" aria-label={t("tabMirrorDivineArb")}>
+          <ArrowUpDown className="h-4 w-4" aria-hidden="true" /> {t("tabMirrorDivineArb")}
         </TabsTrigger>
         <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
           <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}
