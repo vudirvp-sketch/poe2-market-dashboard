@@ -139,12 +139,21 @@ def _safe_snapshot_age_sec(snapshot_time: datetime | None) -> int:
 
     Returns 0 when ``snapshot_time`` is None (no fetched_at on the
     snapshot — rare but possible during early init).
+
+    Naive datetimes (``tzinfo is None``) are interpreted as system local
+    time and converted to UTC via ``astimezone(timezone.utc)``. This
+    matches Python's standard semantics for naive datetimes and correctly
+    handles the most common source — ``datetime.now()`` without tz, which
+    returns local time. Using ``replace(tzinfo=timezone.utc)`` instead
+    would just relabel the wall-clock value as UTC without converting,
+    producing a future timestamp in non-UTC timezones and clamping the
+    age to 0 (see KI-26).
     """
     if snapshot_time is None:
         return 0
     now = datetime.now(timezone.utc)
     if snapshot_time.tzinfo is None:
-        snapshot_time = snapshot_time.replace(tzinfo=timezone.utc)
+        snapshot_time = snapshot_time.astimezone(timezone.utc)
     return max(0, int((now - snapshot_time).total_seconds()))
 
 

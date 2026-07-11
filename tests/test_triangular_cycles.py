@@ -406,7 +406,13 @@ class TestComputeTriangularCyclesFieldMapping:
 
     @pytest.mark.asyncio
     async def test_snapshot_age_sec_handles_naive_datetime(self):
-        """Naive datetime (no tzinfo) is treated as UTC."""
+        """Naive datetime (no tzinfo) is interpreted as local time and
+        converted to UTC. This is the correct semantic for the most common
+        source of naive datetimes — ``datetime.now()`` without tz, which
+        returns local time. Regression guard for KI-26 (was previously
+        using ``replace(tzinfo=utc)`` which just relabels without
+        converting, producing a future timestamp in non-UTC timezones and
+        clamping the age to 0)."""
         from backend.economy.triangular_cycles import _safe_snapshot_age_sec
 
         naive_past = datetime.now() - timedelta(seconds=30)
