@@ -2,31 +2,49 @@
 // useRealmsAndLeagues — Realm/league selection + realms/leagues queries
 // ============================================================================
 //
-// Stage 2 of the useDashboardData hook extraction (iter 82, deferred from
-// P2-1). See STATUS.md "Technical-debt backlog" for the staged plan.
+// iter 122 (KI-24 set-state-in-effect): PERSISTENCE-MODEL REDESIGN.
 //
-// This hook owns the realm + league selection state AND the two read-only
-// queries that populate the Header dropdowns:
-//   1. /api/poe2/realms  → realms (list of available realms)
-//   2. /api/poe2/leagues → leagues (list of leagues for the current realm)
+// PREVIOUS MODEL (broken): this hook owned `league` as a local `useState("")`
+// AND mirrored every change into the Zustand store via `persistLeague`. The
+// store's `uiState.league` was persisted to localStorage but NEVER READ BACK
+// on mount — local `league` always started as `""`. An auto-select `useEffect`
+// fired whenever `league === ""` and `leagues` arrived, calling `setLeague`
+// (which wrote to BOTH local state AND the store). This meant every reload
+// overwrote the user's previously-persisted league with the API's
+// auto-detected "active" league — silently losing the user's selection.
 //
-// It also derives `effectiveLeague` — the league name that downstream data
-// queries should actually use:
-//   - If the user has explicitly selected a league that exists in `leagues`,
-//     use that.
-//   - Otherwise, fall back to the league flagged `active` in the API response.
-//   - Otherwise, fall back to the first league in the list.
-//   - Otherwise, empty string (signals "no league yet" to consumers).
+// NEW MODEL (single source of truth): `league` is read directly from the
+// Zustand store (`uiState.league`). No local copy. The `effectiveLeague`
+// memo (unchanged) derives the league downstream queries should actually
+// use: user selection (if valid for the current realm) > active > first > "".
+// A small "normalize" effect syncs `effectiveLeague` back into the store
+// when the persisted league is invalid (empty or not in the current
+// `leagues` list) — this keeps downstream hooks on OTHER routes
+// (use-currency-items, use-unique-items, use-exchange-pairs — all read
+// `uiState.league` directly) supplied with a valid league. The normalize
+// effect calls `persistLeague` (a Zustand store action), NOT React's
+// `setState`, so the `react-hooks/set-state-in-effect` rule does NOT fire.
 //
-// State ownership — the hook owns `realm` and `league` so it can guarantee
-// the auto-select useEffect fires whenever `leagues` arrives. The store
-// (Zustand `useDashboardStore`) still receives league-persistence calls via
-// the `persistLeague` action — same coupling as before, just centralized
-// here instead of in dashboard-page.tsx.
+// Why this is safe:
+//   - Header.tsx uses `effectiveLeague` for the dropdown value (line 286:
+//     `leagueSelectValue = effectiveLeague || "__none__"`), NOT the `league`
+//     prop. So removing local `league` does not change dropdown rendering.
+//   - `effectiveLeague` already implemented the correct fallback without an
+//     effect; the auto-select effect was redundant for dropdown display.
+//   - The `league` prop passed to Header is declared in `HeaderProps` but
+//     never destructured — it is dead. Returning `uiState.league` here is
+//     backward-compatible.
 //
-// `setRealm` clears the league — this matches the previous inline behaviour
-// at the call site (`setRealm(v); setLeague("")`). Centralizing it inside
-// the hook means the parent doesn't have to remember to do it.
+// State ownership:
+//   - `realm` — local `useState("poe2")` (not persisted; "poe2" is the only
+//     realm the API supports today).
+//   - `league` — Zustand `uiState.league` (persisted to localStorage via
+//     the store's `setLeague` action, rehydrated on mount by
+//     `StoreRehydrator`).
+//
+// `setRealm` clears the persisted league (`persistLeague("")`) — matches the
+// previous inline behaviour (`setRealm(v); setLeague("")`) and ensures
+// `effectiveLeague` re-derives for the new realm's leagues.
 //
 // Future stages (NOT in this hook):
 //   - Stage 3: derived memos (exchangePairs filter, optimalPayment merge,
@@ -46,15 +64,20 @@ export interface UseRealmsAndLeaguesResult {
   /** Currently selected realm (default "poe2"). */
   realm: string;
   /**
-   * Set the realm. Also clears the league — matches the previous inline
-   * behaviour (`setRealm(v); setLeague("")`).
+   * Set the realm. Also clears the persisted league — matches the previous
+   * inline behaviour (`setRealm(v); setLeague("")`).
    */
   setRealm: (v: string) => void;
-  /** Currently selected league (may be empty until auto-select runs). */
+  /**
+   * Currently persisted league (from `uiState.league`). May be `""`, the
+   * default `"runes"`, or a value that doesn't exist in the current realm's
+   * `leagues` list — consumers should prefer `effectiveLeague`.
+   */
   league: string;
   /**
-   * Set the league. Persists to the Zustand store via `persistLeague` so
-   * the selection survives reloads.
+   * Set the league. Persists to the Zustand store via `setLeague` so the
+   * selection survives reloads. (iter 122: no longer updates local state —
+   * the store IS the source of truth.)
    */
   setLeague: (newLeague: string) => void;
   /** Available realms from /api/poe2/realms (undefined while loading). */
@@ -74,20 +97,22 @@ export interface UseRealmsAndLeaguesResult {
 
 /**
  * Realm/league selection + the two queries that populate the Header
- * dropdowns. Owns the `realm` and `league` state so the auto-select
- * effect can fire when `leagues` arrives.
+ * dropdowns. `realm` is local state; `league` is read from the Zustand
+ * store (single source of truth, persisted across sessions).
  */
 export function useRealmsAndLeagues(): UseRealmsAndLeaguesResult {
   // --- Selection state ---
   // Default realm is "poe2" to match API URL path segment.
   const [realm, setRealmState] = useState("poe2");
-  const [league, setLeagueLocal] = useState("");
 
-  // Persist league selection to the Zustand store so it survives reloads.
-  // The store also re-hydrates `uiState.league` from localStorage on mount,
-  // but the source of truth for the current session lives in this hook's
-  // useState — the store is for cross-session persistence only.
-  const { setLeague: persistLeague } = useDashboardStore();
+  // iter 122: `league` is read directly from the Zustand store — single
+  // source of truth. The store rehydrates `uiState.league` from localStorage
+  // on mount (via `StoreRehydrator`), so the user's previous selection is
+  // preserved across reloads. Selecting just the `league` string (not the
+  // whole `uiState` object) ensures this hook only re-renders when the
+  // league actually changes.
+  const league = useDashboardStore((s) => s.uiState.league);
+  const persistLeague = useDashboardStore((s) => s.setLeague);
 
   // --- Realms query (no enabled gate — always fetches on mount) ---
   const { data: realms, isLoading: realmsLoading } = useQuery({
@@ -120,34 +145,49 @@ export function useRealmsAndLeagues(): UseRealmsAndLeaguesResult {
     return active?.name || leagues?.[0]?.name || "";
   }, [league, leagues]);
 
-  // --- Wrapper: setRealm also clears the league (matches prior behaviour) ---
+  // --- Wrapper: setRealm also clears the persisted league (matches prior
+  // behaviour: `setRealm(v); setLeague("")`). The cleared league is then
+  // re-normalized by the effect below once the new realm's leagues arrive. ---
   const setRealm = useCallback((v: string) => {
     setRealmState(v);
-    setLeagueLocal("");
-  }, []);
+    persistLeague("");
+  }, [persistLeague]);
 
-  // --- Wrapper: setLeague persists to the store as well as local state ---
+  // --- Wrapper: setLeague persists to the store (single source of truth). ---
   const setLeague = useCallback(
     (newLeague: string) => {
-      setLeagueLocal(newLeague);
       persistLeague(newLeague);
     },
     [persistLeague]
   );
 
-  // FIX: Auto-select the first league when leagues load and no league is
-  // explicitly selected. Without this the Radix Select stays empty because
-  // `value=""` is invalid, and the "Select a realm and league" placeholder
-  // never goes away even though effectiveLeague resolves to a name.
+  // --- Normalize persisted league (iter 122). ---
+  // If `uiState.league` is empty OR not present in the current realm's
+  // `leagues` list, replace it with `effectiveLeague` (the active/first
+  // fallback). This keeps downstream hooks on OTHER routes
+  // (use-currency-items, use-unique-items, use-exchange-pairs — all read
+  // `uiState.league` directly) supplied with a valid league, matching the
+  // pre-iter-122 behaviour where the auto-select effect populated the store.
+  //
+  // This effect calls `persistLeague` (a Zustand store action — an EXTERNAL
+  // store mutation), NOT React's `setState`. The `react-hooks/set-state-in-
+  // effect` rule fires on `useState`/`useReducer` dispatchers, not on
+  // Zustand's `set`. Verified: dashboard-page.tsx:382 calls `setBaseCurrency`
+  // (Zustand) in an effect without triggering the rule, while line 387
+  // `setReferenceCurrency` (React useState) in the same effect DOES trigger.
+  //
+  // Guard against infinite loops: once `persisted === effectiveLeague`, the
+  // condition `effectiveLeague !== persisted` is false and no further
+  // `persistLeague` call is made.
   useEffect(() => {
-    if (!league && leagues && leagues.length > 0) {
-      const autoLeague =
-        leagues.find((l) => l.active)?.name || leagues[0].name;
-      if (autoLeague) {
-        setLeague(autoLeague);
-      }
+    if (!leagues || leagues.length === 0) return; // wait for leagues to arrive
+    if (!effectiveLeague) return; // nothing to normalize to
+    const isValid =
+      !!league && leagues.some((l) => l.name === league);
+    if (!isValid && effectiveLeague !== league) {
+      persistLeague(effectiveLeague);
     }
-  }, [league, leagues, setLeague]);
+  }, [leagues, effectiveLeague, league, persistLeague]);
 
   return {
     realm,
