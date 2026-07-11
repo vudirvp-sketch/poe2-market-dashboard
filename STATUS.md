@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 107 — KI-13 fixed: SSE 400 root cause was route-registration order. KI-19 documented: DELETE_*.ts placeholder files break build. Build + 569 jest + 1161 pytest + tsc all green, zero warnings.)
+> **Last updated:** 2026-07-11 (iter 108 — P7 Mirror/Divine Arb Detector shipped: backend pure function + FastAPI route + Next.js proxy + 70 pytest green. KI-13 confirmed working in production log. Build + 1218 pytest green; tsc/jest not run locally due to OOM-killer at `npm install` — see iter 100 notes.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -30,8 +30,8 @@ Type error: Unknown keyword or identifier. Did you mean 'delete'?
 
 ## Known Issues — closed (recent)
 
-- **KI-13** (closed iter 107): `GET /api/v1/prices/stream?threshold_pct=1` returned 400. **Root cause:** route-registration order in `backend/main.py`. The greedy route `/api/v1/prices/{pair:path}` (in `routes_prices.py`) was registered BEFORE the SSE route `/api/v1/prices/stream` (in `routes_sse.py`). FastAPI matches routes in registration order, so `{pair:path}` captured `/stream` as a pair name → `get_price_for_pair(pair="stream")` → `len("stream".split("/")) != 2` → `HTTPException(400, "Invalid pair format: stream. Expected 'from/to'.")`. **Fix:** moved SSE router registration ABOVE prices router registration in `main.py`. Also added explicit logging to `_sse_event_generator` + `sse_price_stream` handler, and two regression tests in `tests/e2e/test_sse.py` (route-order check + HTTP endpoint check). The middleware `middleware_compression.py` was NOT the cause — it already passes `text/event-stream` through correctly.
-- **KI-16-deep** (closed iter 106): Turbopack NFT warning permanently eliminated. Root cause: NFT flags `spawn(variable)`/`spawnSync(variable)` but NOT `exec(variable)`/`execSync(variable)`. Fix: replaced all `spawn`/`spawnSync` with `exec`/`execSync` in `src/lib/flipper-backend-bridge.ts`, removed all `fs`/`path` imports. `flipper-bridge.log` file no longer created — redirect Next.js output to persist logs: `npm run start > flipper-bridge.log 2>&1`.
+- **KI-13** (closed iter 107, **verified iter 108**): `GET /api/v1/prices/stream?threshold_pct=1` returned 400. **Root cause:** route-registration order in `backend/main.py`. The greedy route `/api/v1/prices/{pair:path}` (in `routes_prices.py`) was registered BEFORE the SSE route `/api/v1/prices/stream` (in `routes_sse.py`). FastAPI matches routes in registration order, so `{pair:path}` captured `/stream` as a pair name → `HTTPException(400, "Invalid pair format: stream. Expected 'from/to'.")`. **Fix:** moved SSE router registration ABOVE prices router registration in `main.py`. **Production verification (iter 108):** backend log shows `SSE /stream request received (threshold_pct=1.0000) — route matched correctly` followed by `SSE generator started` — route is correctly hit, no more 400.
+- **KI-16-deep** (closed iter 106): Turbopack NFT warning permanently eliminated. Fix: replaced all `spawn`/`spawnSync` with `exec`/`execSync` in `src/lib/flipper-backend-bridge.ts`.
 - **KI-18** (closed iter 105): `pytest` hung on `test_triangular.py`. Fix: `tests/conftest.py` autouse fixture patches `get_process_pool` → None.
 - **KI-17** (closed iter 104): `instrumentation.ts` JSDoc contained `*/` sequence. Fix: reworded comment.
 - **KI-15** (closed iter 103): `api.poe2scout.com` dead. Use `POE2_API_BASE_URL=https://poe2scout.com/api`.
@@ -56,7 +56,7 @@ Type error: Unknown keyword or identifier. Did you mean 'delete'?
 |---------|-------|--------------|
 | All API calls return 404; dashboard empty | **KI-15** — `.env.local` has dead `api.poe2scout.com`. Use `POE2_API_BASE_URL=https://poe2scout.com/api` | `.env.local`, `start.bat`, `start.sh` |
 | `next build` fails with "Unknown keyword or identifier. Did you mean 'delete'?" on a `DELETE_*.ts` file | **KI-19** (fixed iter 107) — run `DELETE_obsolete_files.sh` to remove placeholder files. `tsconfig.json` now excludes `**/DELETE_*` as defense-in-depth. | `DELETE_obsolete_files.sh`, `tsconfig.json` |
-| `GET /api/v1/prices/stream?threshold_pct=1` returns 400 | **KI-13** (fixed iter 107) — SSE router must be registered before prices router in `main.py` | `backend/main.py`, `backend/api/routes_sse.py` |
+| `GET /api/v1/prices/stream?threshold_pct=1` returns 400 | **KI-13** (fixed iter 107, verified iter 108) — SSE router must be registered before prices router in `main.py` | `backend/main.py`, `backend/api/routes_sse.py` |
 | `next build` warns "Encountered unexpected file in NFT list ... flipper-backend-bridge.ts" | **KI-16-deep** (fixed iter 106) — bridge must use `exec`/`execSync`, not `spawn`/`spawnSync`. No `fs`/`path` imports. | `instrumentation.ts`, `src/lib/flipper-backend-bridge.ts` |
 | `pytest` hangs on `test_triangular.py` | **KI-18** (fixed iter 105) — check `tests/conftest.py` patches `get_process_pool` → None | `tests/conftest.py` |
 | `test_scheduler.py` collection fails | `aiosqlite` not installed | `pip install aiosqlite` |
@@ -69,3 +69,9 @@ Type error: Unknown keyword or identifier. Did you mean 'delete'?
 | `/api/poe2/uniques` or `/api/poe2/currencies` returns 200 with empty `items: []` | KI-11 (closed iter 102) — verify `config.yaml:league.league_name` is valid | `src/lib/poe2api.ts` |
 | Leveling Uniques widget shows "Day 0" or wrong phase | Check `config.yaml` → `league.league_start_date` | `backend/economy/lifecycle.py:PhaseDetector`, `config.yaml` |
 | `flipper-bridge.log` file no longer created | By design (iter 106, KI-16-deep) — redirect: `npm run start > flipper-bridge.log 2>&1` | `src/lib/flipper-backend-bridge.ts` |
+
+---
+
+## Key technical insight for future agents
+
+**FastAPI route matching is ORDER-DEPENDENT.** A `{param:path}` converter is greedy and matches slashes — it will shadow any literal sub-path registered AFTER it. Always register literal-path routers BEFORE greedy-path routers. The KI-13 bug (SSE `/api/v1/prices/stream` shadowed by `/api/v1/prices/{pair:path}`) survived 6 iterations because the SSE router was registered after the prices router.

@@ -1002,3 +1002,42 @@ class PhaseHintsResponse(BaseModel):
     hints: list[PhaseHintData] = Field(default_factory=list, description="Phase-relevant advisory hints (hardcoded table, no live metrics)")
     data_available: bool = Field(description="Always True — the hint table is hardcoded and always available")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+
+
+# ---------------------------------------------------------------------------
+# Mirror/Divine Arbitrage Detector (P7, iter 108 — Mirror ↔ Divine arb window)
+# Pure function: backend/economy/mirror_divine_arb.py
+# ---------------------------------------------------------------------------
+
+class MirrorDivineArbRatePoint(BaseModel):
+    """A single point in the Mirror:Divine rate time-series (for UI sparkline)."""
+    date: str = Field(description="ISO 8601 timestamp of the mirror price observation")
+    rate: float = Field(description="mirror_price / divine_price at this timestamp (Div per Mirror)")
+
+
+class MirrorDivineArbResponse(BaseModel):
+    """Response for GET /api/v1/mirror-divine-arb.
+
+    Single-object response (Mirror:Divine is one market, not a per-currency
+    list). When data is unavailable, all numeric fields are None and
+    `signal` is NEUTRAL / `recommended_action` is HOLD.
+    """
+    league: str = Field(description="League name")
+    mirror_currency: str = Field(description="Mirror currency api_id (default: 'mirror')")
+    divine_currency: str = Field(description="Divine currency api_id (default: 'divine')")
+    current_rate: float | None = Field(default=None, description="Most recent mirror_price / divine_price (Div per Mirror). None when data unavailable.")
+    mean_rate: float | None = Field(default=None, description="Historical mean of the rate over the lookback window. None when data unavailable.")
+    std_rate: float | None = Field(default=None, description="Sample std (ddof=1) of the rate over the window. 0.0 when <2 points. None when data unavailable.")
+    min_rate: float | None = Field(default=None, description="Lowest rate observed in the window. None when data unavailable.")
+    max_rate: float | None = Field(default=None, description="Highest rate observed in the window. None when data unavailable.")
+    z_score: float | None = Field(default=None, description="(current - mean) / std. None when std == 0 or data unavailable.")
+    deviation_pct: float | None = Field(default=None, description="Signed (current - mean) / mean * 100. Positive = Mirror overvalued vs Div. None when mean == 0 or data unavailable.")
+    profit_potential_per_mirror_div: float | None = Field(default=None, description="|current - mean| in Div per Mirror. The arb profit potential for a 1-Mirror item. None when data unavailable.")
+    signal: str = Field(description="SELL_MIRROR_BUY_DIVINE (z >= +1.5, Mirror overvalued) | SELL_DIVINE_BUY_MIRROR (z <= -1.5, Mirror undervalued) | NEUTRAL")
+    is_actionable: bool = Field(description="True when profit_potential_per_mirror_div >= 100 (PROFIT_THRESHOLD_DIV). False otherwise.")
+    recommended_action: str = Field(description="EXECUTE_ARB (actionable AND |z| >= 1.5) | WATCH (actionable AND |z| in [1.0, 1.5)) | HOLD")
+    sample_size: int = Field(description="Number of rate points in the lookback window. 0 when data unavailable.")
+    price_history_short: list[MirrorDivineArbRatePoint] = Field(default_factory=list, description="Up to 14 most-recent rate points (oldest-first) for UI sparkline rendering.")
+    data_available: bool = Field(description="Whether at least MIN_SAMPLE_SIZE (4) rate points fell inside the lookback window.")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
+    days: int = Field(description="Lookback window in days used for the aggregation")

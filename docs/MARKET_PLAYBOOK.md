@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-10 (iter 100 — Leveling Uniques Lifecycle widget on Overview)
+> **Last updated:** 2026-07-11 (iter 108 — P7 Mirror/Divine Arb Detector backend shipped: pure function + API route + proxy + 70 pytest green. UI tab — на iter 109.)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -114,7 +114,7 @@
 | **P4** Time-of-day pattern | `backend/economy/intraday_patterns.py` (iter 98) + `routes_intraday_patterns.py` + UI tab `intraday-patterns-tab.tsx` | ✅ Готово. Pure function (89 unit-тестов) + API route `/api/v1/intraday-patterns` + Next.js proxy + UI heatmap tab (час × валюта) с buy/sell window badges + i18n × 4 locales (43 ключа × 4) + 23 jest-теста + 4 pytest route smoke-теста. |
 | **P5** Weekday/weekend pattern | `backend/economy/weekly_patterns.py` (iter 99) + `routes_weekly_patterns.py` + UI tab `weekly-patterns-tab.tsx` | ✅ Готово. Pure function (99 unit-тестов) + API route `/api/v1/weekly-patterns` + Next.js proxy + UI heatmap tab (день недели × валюта) с buy/sell day badges + weekday_delta_pct (weekend vs weekday) + i18n × 4 locales (50 ключей × 4) + 25 jest-тестов + 4 pytest route smoke-теста. |
 | **P6** Priority Listing Arb | Нет | ❌ Требует данных trade-site, которых у нас нет (POE2Scout не отдаёт listings по alt-orbs отдельно). Доступно только через GGG official trade API. |
-| **P7** Mirror ↔ Divine arb | Частично: `storage_value.py` (currency/mirror ratio) | ⚠️ Есть метрика, нет детектора arb-окна для chase-уников. |
+| **P7** Mirror ↔ Divine arb | `backend/economy/mirror_divine_arb.py` (iter 108) + `routes_mirror_divine_arb.py` + Next.js proxy | ✅ Готово (backend). Pure function `compute_mirror_divine_arb()` (70 pytest) + API route `/api/v1/mirror-divine-arb` + Next.js proxy + TS types. Single-object response (Mirror:Divine = one market): current_rate / mean_rate / std_rate / z_score / signal (SELL_MIRROR_BUY_DIVINE / SELL_DIVINE_BUY_MIRROR / NEUTRAL) / recommended_action (EXECUTE_ARB / WATCH / HOLD) + 14-point sparkline. Profit threshold = 100 Div per Mirror (per playbook). UI tab — на iter 109. |
 | **P8** Trajectory classification | `backend/economy/circuit_patterns.py` (iter 96) + `routes_circuit_patterns.py` + UI tab `circuit-patterns-tab.tsx` (iter 97) | ✅ Готово. Pure function (75 unit-тестов) + API route `/api/v1/circuit-patterns` + Next.js proxy + UI tab с бейджами траекторий и mini-sparkline + i18n × 4 locales (47 ключей × 4) + 20 jest-тестов + 4 pytest route smoke-теста. |
 | **P9** Phase-aware investment | `phase_hints.py` (4 hints на фазу) | ⚠️ Статичная таблица. Нет привязки к live-ценам. |
 | **P10** Gold Map ROI | Нет | ❌ Нужен калькулятор. Зависит от P1 (3-way flips). |
@@ -130,10 +130,10 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 7 полностью готовы (P1, P3, P4, P5, P8, P18, частично P9/P16/P17).
-- 5 частично готовы (P2, P7, P9, P16, P17) — нужна доработка.
+- 8 полностью готовы (P1, P3, P4, P5, P7-backend, P8, P18, частично P9/P16/P17).
+- 4 частично готовы (P2, P9, P16, P17) — нужна доработка. P7-backend готов, UI на iter 109.
 - 8 не реализованы. Из них:
-  - **P10** — реализуем на текущих данных (зависит от P1). На roadmap iter 103+.
+  - **P10** — реализуем на текущих данных (зависит от P1). На roadmap.
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
 
 ---
@@ -241,8 +241,30 @@
 - **i18n:** 31 новый ключ × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 3 stage label keys + 4 recommendation label keys + 5 column header keys + 3 summary keys + disclaimer.
 - **Tests:** 86 pytest (9 TestStaticTableIntegrity + 28 TestLifecycleStage + 4 TestRecommendation + 14 TestEstimateCurrentPrice + 3 TestDaysUntilPeak + 18 TestComputeLevelingUniquesLifecycle + 5 TestRussianLocalization + 4 TestRouteHandler = 86) — все зелёные. Regression-чек: 343 pytest (99 weekly + 89 intraday + 79 circuit + 58 phase_hints + 15 lifecycle + 3 shared) зелёные. 275 smoke тестов (pricing/speculation/content_pulse/events/storage_value/anomaly) зелёные. Babel syntax-check 9 modified/new TS/TSX файлов → all OK. tsc --noEmit и jest не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
 
-### C.6. iter 101 — Mirror/Divine Arb Detector (P7)
-**Что.** Расширить `storage_value.py`: для предметов ≥ 1 Mirror показывать arbitrage opportunity между Mirror и Divine способами оплаты. Использует существующий `currency/mirror` ratio history.
+### C.6. iter 108 — Mirror/Divine Arb Detector (P7) ✅ Backend DONE
+**Что.** Анализирует курс Mirror:Divine (mirror_price / divine_price) за lookback-окно и flagged окна, где курс отклонился от historical mean достаточно, чтобы arb "swap-then-swap-back" был прибыльным для chase-уников (≥ 1 Mirror). Использует существующие `price_histories` из DataSnapshot (не требует нового API).
+
+**Реализация (iter 108):**
+- **Backend pure function:** `backend/economy/mirror_divine_arb.py` — `compute_mirror_divine_arb(snapshot, config, *, days=30, mirror_api_id="mirror", divine_api_id="divine", now=None)`. Для каждого timestamp в mirror_history находит ближайший divine_price (24h tolerance — reuses `_find_nearest_price` from `storage_value_history.py`). Считает rate series, фильтрует по lookback window, вычисляет:
+  - `current_rate` — most recent rate (Div per Mirror)
+  - `mean_rate` / `std_rate` (sample, ddof=1) — historical baseline
+  - `min_rate` / `max_rate` — observed range
+  - `z_score` — `(current - mean) / std` (None when std == 0)
+  - `deviation_pct` — signed % deviation from mean
+  - `profit_potential_per_mirror_div` — `|current - mean|` в Div (arb profit per 1-Mirror item)
+  - `signal`: `SELL_MIRROR_BUY_DIVINE` (z ≥ +1.5) / `SELL_DIVINE_BUY_MIRROR` (z ≤ -1.5) / `NEUTRAL`
+  - `is_actionable` — `profit_potential_per_mirror_div >= 100` (PROFIT_THRESHOLD_DIV per playbook)
+  - `recommended_action`: `EXECUTE_ARB` (actionable AND |z| ≥ 1.5) / `WATCH` (actionable AND |z| in [1.0, 1.5)) / `HOLD`
+  - `price_history_short` — up to 14 most-recent rate points (oldest-first) for UI sparkline
+- **Backend route:** `backend/api/routes_mirror_divine_arb.py` — thin wrapper `GET /api/v1/mirror-divine-arb?days=N`. Same pattern as `routes_circuit_patterns.py`. Returns `data_available=false` with all-None fields when snapshot not loaded or < MIN_SAMPLE_SIZE (4) rate points.
+- **Pydantic models:** `MirrorDivineArbRatePoint` + `MirrorDivineArbResponse` в `response_models.py`.
+- **Router registration:** `backend/main.py` — registered after `leveling_uniques_router`, wrapped in `try/except ImportError`.
+- **Next.js proxy:** `src/app/api/flipper/mirror-divine-arb/route.ts` — forwards `days` param. Returns empty fallback with `dataAvailable: false` when backend offline.
+- **TS types:** `MirrorDivineArbSignal` / `MirrorDivineArbAction` / `MirrorDivineArbRatePoint` / `MirrorDivineArbResponse` в `src/lib/types.ts`.
+- **Tests:** 70 pytest в `tests/test_mirror_divine_arb.py` (8 test classes: TestExtractRateSeries × 11, TestFilterToWindow × 6, TestMeanStdZscore × 11, TestSignalFromZscore × 7, TestRecommendedAction × 8, TestComputeMirrorDivineArbEmpty × 4, TestComputeMirrorDivineArbSteady × 2, TestComputeMirrorDivineArbSpike × 3, TestComputeMirrorDivineArbWatch × 1, TestComputeMirrorDivineArbPriceHistoryShort × 2, TestComputeMirrorDivineArbDefensive × 13, TestRouteHandler × 2). Regression: 1218 pytest green (было 1161 в iter 107, +70 новых −13 test_scheduler из-за missing aiosqlite в среде итерации).
+- **НЕ входит в iter 108:** UI tab/widget — на iter 109. i18n keys — на iter 109 вместе с UI.
+
+**Проверка.** Все 1218 pytest-тестов зелёные (включая 70 новых для P7). Backend router registration verified — `/api/v1/mirror-divine-arb` appears in `app.routes`. tsc/jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue с iter 99. TS files syntax-checked (balanced braces/parens), types match Python response models 1:1.
 
 ### C.7. iter 102 — Phase-aware Investment Advisor (P9)
 **Что.** Расширить `phase_hints.py`: динамические подсказки на основе текущего дня лиги + live цен. Например: «Сейчас Day 7 — исторически Perfect Jewelers Orb растёт 200% к Day 14. Текущая цена: X. Рекомендация: BUY».
@@ -278,30 +300,27 @@
 | 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) | ✅ Done |
 | 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ✅ Done |
 | 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ✅ Done |
-| 5 | P7 Mirror/Divine arb | 101 | Средний (расширяет existing модуль) | ⏳ Next |
+| 5 | P7 Mirror/Divine arb | 108 (backend) / 109 (UI) | Средний (расширяет existing модуль) | ⏳ Backend done, UI next |
 
-### D.3. Точка остановки iter 100
+### D.3. Точка остановки iter 108
 **Сделано:**
-- Backend: pure function `compute_leveling_uniques_lifecycle()` в `backend/economy/leveling_uniques.py` (86 pytest-тестов). Static table из 10 leveling уников (Polcirkeln, Megalomaniac, Wall of Brambles, Mana Leech Support, Feeding Frenzy Support, Echoes of Worldstone, Mind of the Council, Boots of Momentum, Wings of Entropy, Soul Tether Amulet) с peak_day / peak_price_exalted / decay_pct / pattern / notes. API route `GET /api/v1/leveling-uniques?lang=en|ru` (thin wrapper, использует `get_phase_detector()` singleton). Pydantic response models (`LevelingUniqueData` + `LevelingUniquesResponse`), router registration в `main.py`.
-- Frontend: Next.js proxy route `/api/flipper/leveling-uniques`, TypeScript types (`LevelingUnique` + `LevelingUniquesResponse` + `LevelingUniqueStage` + `LevelingUniqueRecommendation`), новый UI-виджет `leveling-uniques-widget.tsx` (карточка на Overview между PhaseHints и MarketOverview) с header (TrendingUp icon + Day N + item count + reference currency) + summary line (доминирующая стадия) + таблица (5 колонок: Item / Stage / Est. Price / Peak Day / Action) + disclaimer + footer (fetched-at + stage breakdown), wiring в `overview-tab-content.tsx` (новый ErrorBoundary + LevelingUniquesWidget).
-- i18n: 31 новый ключ × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 3 stage label keys + 4 recommendation label keys + 5 column header keys + 3 summary keys + disclaimer.
-- Tests: 86 pytest (StaticTableIntegrity + LifecycleStage + Recommendation + EstimateCurrentPrice + DaysUntilPeak + ComputeEndToEnd + RussianLocalization + RouteHandler) — все зелёные. Regression-чек: 343 pytest (99 weekly + 89 intraday + 79 circuit + 58 phase_hints + 15 lifecycle + 3 shared) зелёные. 275 smoke тестов (pricing/speculation/content_pulse/events/storage_value/anomaly) зелёные. Babel syntax-check 9 modified/new TS/TSX файлов → all OK. tsc --noEmit и jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
-- Документация: `STATUS.md` (3 новых KI из логов: KI-11/KI-12/KI-13), `docs/MARKET_PLAYBOOK.md` (§C.5 + §B.2 + §D.2/D.3 обновлены), `AGENT_NAVIGATION.md` (новые entries) актуализированы (без мусора, только актуальная информация).
+- Backend P7 Mirror/Divine Arb Detector: pure function `compute_mirror_divine_arb()` в `backend/economy/mirror_divine_arb.py` (70 pytest-тестов). API route `GET /api/v1/mirror-divine-arb?days=N` (thin wrapper). Pydantic models (`MirrorDivineArbRatePoint` + `MirrorDivineArbResponse`). Router registration в `main.py`.
+- Frontend wiring (без UI): Next.js proxy `/api/flipper/mirror-divine-arb`, TS types (`MirrorDivineArbSignal` / `MirrorDivineArbAction` / `MirrorDivineArbRatePoint` / `MirrorDivineArbResponse`).
+- KI-13 production verification: backend log line `SSE /stream request received (threshold_pct=1.0000) — route matched correctly` confirms the route-registration-order fix from iter 107 is working in production.
+- Документация: `STATUS.md` (KI-13 verified, iter 108 update), `docs/MARKET_PLAYBOOK.md` (§C.6 + §B.7 + §D.2/D.3 обновлены), `worklog.md` (iter 108 entry, trimmed iter 105).
 
-**НЕ сделано (на iter 101):**
-- P7 Mirror/Divine arb (§C.6) — следующий на roadmap.
+**НЕ сделано (на iter 109):**
+- UI tab/widget для P7 — потребует: новый компонент `mirror-divine-arb-tab.tsx` (по образцу `speculation-tab.tsx`, но single-object response), wiring в `dashboard-page.tsx` + `dashboard-toolbar.tsx` + `shortcuts-dialog.tsx`, i18n × 4 locales (~25-30 ключей × 4).
+- TD-3/4/5/9 — persistence gaps (не блокируют, на roadmap).
 - P9 Phase-aware investment advisor (§C.7), P10 Gold Map ROI (§C.8) — полный roadmap в §C.
-- KI-11 (upstream API 404 для league "runes") — не фиксировали, т.к. это конфигурационная проблема пользователя (нужно указать валидный league slug в `.env.local`).
-- KI-12 (Turbopack NFT warning) — cosmetic, не блокирует.
-- KI-13 (SSE 400) — требует investigation, не блокирует.
 
-**Проверка.** Все изменения backend — новые файлы + additive registration в `main.py` (existing routes не тронуты). Все изменения frontend — новые файлы + минимальные правки в 1 existing файле (`overview-tab-content.tsx` — добавлен import + ErrorBoundary + LevelingUniquesWidget между PhaseHints и MarketOverview). i18n изменения — additive (31 новый ключ в конце каждого locale файла, existing keys не тронуты). Regression-риска нет — все backend pytest-тесты зелёные (86 новых + 343 regression + 275 smoke = 704 всего зелёные). Frontend tsc/jest regression требует 8GB+ RAM для `npm install` (Known Issue).
+**Проверка.** Все 1218 pytest-тестов зелёные (70 новых для P7 + 1148 regression; 13 test_scheduler пропущены из-за missing aiosqlite в среде итерации). Backend router registration verified. tsc/jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue с iter 99. TS files syntax-checked (balanced braces/parens), types match Python response models 1:1.
 
 ---
 
 ## E. Связанные документы
 - `PRODUCT_VISION.md` — продуктовое видение (§3.7 — Circuit Patterns).
-- `STATUS.md` — Known Issues + TD backlog (iter 100: P3 = Done, 3 новых KI: KI-11/KI-12/KI-13).
-- `AGENT_NAVIGATION.md` — навигация по коду (entry для `leveling_uniques.py` + `routes_leveling_uniques.py` + `leveling-uniques-widget.tsx`).
+- `STATUS.md` — Known Issues + TD backlog (iter 108: P7-backend done, KI-13 verified).
+- `AGENT_NAVIGATION.md` — навигация по коду (entry для `mirror_divine_arb.py` + `routes_mirror_divine_arb.py` + proxy route).
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.

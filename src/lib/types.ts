@@ -1332,6 +1332,52 @@ export interface LiquidChainOpportunitiesResponse {
 }
 
 // ============================================================================
+// Mirror/Divine Arbitrage Detector (P7, iter 108)
+// ============================================================================
+
+/** Signal emitted by the Mirror:Divine arb detector. */
+export type MirrorDivineArbSignal =
+  | "SELL_MIRROR_BUY_DIVINE" // z >= +1.5 — Mirror overvalued vs Div
+  | "SELL_DIVINE_BUY_MIRROR" // z <= -1.5 — Mirror undervalued vs Div
+  | "NEUTRAL"; // rate within normal range
+
+/** Recommended action from the Mirror:Divine arb detector. */
+export type MirrorDivineArbAction =
+  | "EXECUTE_ARB" // actionable AND |z| >= 1.5 — execute swap-then-swap-back now
+  | "WATCH" // actionable AND |z| in [1.0, 1.5) — watch for escalation
+  | "HOLD"; // not actionable OR |z| < 1.0
+
+/** A single point in the Mirror:Divine rate time-series (UI sparkline). */
+export interface MirrorDivineArbRatePoint {
+  date: string; // ISO 8601 timestamp
+  rate: number; // mirror_price / divine_price (Div per Mirror)
+}
+
+/** Response from GET /api/flipper/mirror-divine-arb.
+ *  Single-object response (Mirror:Divine is one market, not a per-currency list). */
+export interface MirrorDivineArbResponse {
+  league: string;
+  mirrorCurrency: string; // default "mirror"
+  divineCurrency: string; // default "divine"
+  currentRate: number | null; // most recent rate (Div per Mirror)
+  meanRate: number | null; // historical mean over the window
+  stdRate: number | null; // sample std (ddof=1) over the window
+  minRate: number | null;
+  maxRate: number | null;
+  zScore: number | null; // (current - mean) / std; null when std == 0
+  deviationPct: number | null; // signed (current - mean) / mean * 100
+  profitPotentialPerMirrorDiv: number | null; // |current - mean| in Div per Mirror
+  signal: MirrorDivineArbSignal;
+  isActionable: boolean; // profit_potential >= 100 Div
+  recommendedAction: MirrorDivineArbAction;
+  sampleSize: number; // number of rate points in the window
+  priceHistoryShort: MirrorDivineArbRatePoint[]; // up to 14 most-recent points
+  dataAvailable: boolean;
+  fetchedAt: string; // ISO 8601
+  days: number; // lookback window echoed for client cache keys
+}
+
+// ============================================================================
 // Export helpers (CSV/JSON)
 // ============================================================================
 export function exportToCsv(data: Record<string, unknown>[], filename: string) {

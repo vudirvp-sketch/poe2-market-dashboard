@@ -678,6 +678,21 @@ try:
 except ImportError:
     logger.debug("Leveling Uniques router not available yet")
 
+# P7 (iter 108): Mirror/Divine Arbitrage Detector — analyses the
+# Mirror:Divine exchange rate over a lookback window and flags windows
+# where the rate deviates far enough from its rolling mean to make a
+# "swap-then-swap-back" arb profitable for chase uniques (≥ 1 Mirror).
+# Returns a single-object response (Mirror:Divine is one market, not a
+# per-currency list) with current_rate / mean_rate / std_rate / z_score /
+# signal / recommended_action. Pure function lives in
+# backend/economy/mirror_divine_arb.py. Same thin-wrapper pattern as
+# routes_circuit_patterns.py.
+try:
+    from backend.api.routes_mirror_divine_arb import router as mirror_divine_arb_router
+    app.include_router(mirror_divine_arb_router)
+except ImportError:
+    logger.debug("Mirror/Divine Arb router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.
