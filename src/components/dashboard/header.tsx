@@ -8,7 +8,7 @@
 // ============================================================================
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useSyncExternalStore } from "react";
 import {
   RefreshCw,
   Activity,
@@ -153,6 +153,39 @@ function phaseLabel(phase: string, t: (key: TranslationKeys) => string): string 
   }
 }
 
+// ---------------------------------------------------------------------------
+// `mounted` flag via useSyncExternalStore (KI-24 fixed iter 117)
+// ---------------------------------------------------------------------------
+// Replaces the previous `useState(false) + useEffect(() => setMounted(true))`
+// pattern, which fired the `react-hooks/set-state-in-effect` warning.
+//
+// This is the canonical "is client post-hydration" pattern:
+//   - getServerSnapshot returns `false` (used during SSR AND during the first
+//     client render that hydrates the server HTML, so the markup matches).
+//   - getSnapshot returns `true` (always, on the client after hydration).
+//   - subscribe is a no-op — there is no external store to subscribe to; the
+//     only "transition" is the hydration boundary itself, which React handles
+//     internally by switching from getServerSnapshot to getSnapshot.
+//
+// Semantic equivalence with the previous implementation:
+//   - SSR: mounted = false (theme toggle button not rendered)
+//   - First client render (hydration): mounted = false (matches SSR HTML)
+//   - After hydration: React re-renders with getSnapshot → mounted = true
+//     (theme toggle button appears)
+//
+// The `mounted` flag is only used at line ~516 to gate the theme toggle
+// button (avoids SSR/client mismatch for next-themes, which reads
+// localStorage and would produce different HTML on server vs client).
+function subscribeMounted(): () => void {
+  return () => {};
+}
+function getMountedSnapshot(): boolean {
+  return true;
+}
+function getMountedServerSnapshot(): boolean {
+  return false;
+}
+
 export function Header({
   realms,
   leagues,
@@ -185,8 +218,10 @@ export function Header({
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const { t, tp, locale, setLocale } = useI18n();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  // KI-24 (iter 117): `mounted` flag via useSyncExternalStore — see module-level
+  // helpers above. Eliminates the `set-state-in-effect` warning while preserving
+  // the SSR/first-render = false, post-hydration = true semantics.
+  const mounted = useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot);
   const [timeAgo, setTimeAgo] = useState<string>("");
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);

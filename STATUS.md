@@ -1,25 +1,26 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 116 — closed KI-20 + KI-23, advanced KI-24 by 2 sites. KI-20: `case-transform.ts` regex `/_([a-z])/g` → `/_([a-z0-9])/g` so `delta_7d_pct` → `delta7dPct` (was `delta_7dPct`); added 29 jest tests. KI-23: extracted `<CategoryGroupTable>` child from `unique-table.tsx` so `useReactTable` is called at top level (was inside `.map()` callback — latent rules-of-hooks violation). KI-24: refactored `use-reduced-motion.ts` to `useSyncExternalStore` (eliminates 1 `set-state-in-effect` site) + documented `speculation-tab.tsx:316` `useMemo` rationale and suppressed with inline eslint-disable (eliminates 1 `preserve-manual-memoization` warning). Lint 125 → 123, 0 errors. 618 jest green (was 582), tsc green. KI-24 backlog now 8 sites across 1 React Compiler rule.)
+> **Last updated:** 2026-07-11 (iter 117 — advanced KI-24 by 1 site. Refactored `header.tsx` `mounted` flag from `useState(false) + useEffect(() => setMounted(true))` to `useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot)` — eliminates 1 `set-state-in-effect` site. Added 1 defensive jest test for theme-toggle visibility (gated by `mounted`). Lint 123 → 122, 0 errors. 619 jest green (was 618), tsc green. KI-24 backlog now 7 sites across 1 React Compiler rule.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
 
 ## Known Issues — open
 
-### KI-24 — React Compiler rule migration backlog (8 sites remaining, 1 rule)
+### KI-24 — React Compiler rule migration backlog (7 sites remaining, 1 rule)
 
-**Symptom.** `npm run lint` emits 123 warnings (0 errors). Of these, 8 come from 1 React Compiler rule shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
+**Symptom.** `npm run lint` emits 122 warnings (0 errors). Of these, 7 come from 1 React Compiler rule shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
 
 | Rule | Count | Sites |
 |------|-------|-------|
-| `react-hooks/set-state-in-effect` | 8 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `header.tsx` (1), `offline-banner.tsx` (1), `use-realms-and-leagues.ts` (1), `i18n/index.tsx` (1) |
+| `react-hooks/set-state-in-effect` | 7 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `offline-banner.tsx` (1), `use-realms-and-leagues.ts` (1), `i18n/index.tsx` (1) |
 
 **Closed sub-rules (history):**
 - `static-components` — fully resolved iter 113 (`SortIndicator` moved to module scope in `exchange-table.tsx` + `watchlist-tab.tsx`).
 - `refs` — fully resolved iter 114 (latest-ref writes moved into `useEffect` in `use-price-stream.ts`).
 - `set-state-in-effect` 1 of 10 resolved iter 115 (`use-price-stream.ts` `backendOnline` transitions effect — derived `status`/`lastError` in return + `freshSessionRef` signal-ref pattern).
 - `set-state-in-effect` 1 of 10 resolved iter 116 (`use-reduced-motion.ts` — rewritten with `useSyncExternalStore`).
+- `set-state-in-effect` 1 of 10 resolved iter 117 (`header.tsx` `mounted` flag — rewritten with `useSyncExternalStore`; canonical "is client post-hydration" pattern).
 - `preserve-manual-memoization` 1 of 1 resolved iter 116 (`speculation-tab.tsx:316` — `useMemo` kept with inline eslint-disable; rationale documented, React Compiler not yet enabled so removal would regress performance).
 
 **Impact.** None at runtime — performance/optimization smells flagged for React Compiler adoption. The code works correctly.
@@ -53,7 +54,7 @@
 
 | ID | Priority | Notes |
 |----|----------|-------|
-| **KI-24** | P3 | 8 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 2 of 10 resolved iter 115+116, `preserve-manual-memoization` 1 of 1 suppressed with rationale iter 116). Incremental per-file refactors (see KI-24 table above). |
+| **KI-24** | P3 | 7 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 3 of 10 resolved iter 115+116+117, `preserve-manual-memoization` 1 of 1 suppressed with rationale iter 116). Incremental per-file refactors (see KI-24 table above). |
 | **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. |
 | **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
@@ -104,6 +105,8 @@
 2. **Move setState into a `useCallback` via a "signal ref"** (when the state genuinely needs to be reset on a prop transition, but is not fully derivable). Add a `useRef<boolean>(false)` "signal" flag; set it to `true` in the effect (a ref write, not flagged by the rule); consume + reset it at the top of the callback BEFORE any early-return guards so the reset fires even if the callback is skipped. The callback is called synchronously from the same effect (`cbRef.current()`), so semantics are preserved. Canonical example: `use-price-stream.ts` `freshSessionRef`.
 
 **`react-hooks/set-state-in-effect` fix via `useSyncExternalStore` (iter 116).** When the effect's purpose is to subscribe to an external store (e.g. `window.matchMedia("(prefers-reduced-motion: reduce)")`), the canonical fix is to rewrite the hook with `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)`. This eliminates the `set-state-in-effect` warning entirely because there's no `useEffect` + `setState` pattern — the store subscription is handled by the primitive itself. The three callbacks are: (a) `subscribe(callback)` — attaches a `change` listener and returns cleanup; (b) `getSnapshot()` — reads the current value synchronously (MUST be fast, no allocations); (c) `getServerSnapshot()` — returns the SSR default (typically `false` or `null`). Canonical example: `use-reduced-motion.ts`. Verify with `eslint <file>` (warning gone) + `tsc --noEmit` + `jest` (existing tests still pass).
+
+**`react-hooks/set-state-in-effect` fix for "mounted" flag via `useSyncExternalStore` (iter 117).** A special case of the iter-116 recipe: when the effect's ONLY purpose is to flip a `mounted` boolean from `false` → `true` after first render (the classic `useState(false) + useEffect(() => setMounted(true), [])` SSR-safety pattern, used to gate client-only UI like `next-themes`'s theme toggle), the canonical fix is `const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false)`. Here `subscribe` is a no-op (`() => () => {}`) because there is no external store — the only "transition" is the hydration boundary itself, which React handles internally by switching from `getServerSnapshot` (false) to `getSnapshot` (true) after hydration. Semantics are identical: SSR/first-render = false (matches server HTML, no hydration mismatch), post-hydration = true (client-only UI appears). This is safer than `useEffect` because React guarantees the transition without an extra render cycle. Canonical example: `header.tsx` `mounted` flag (gates the theme toggle button). Extract the three callbacks to module-level named functions for readability and self-documentation.
 
 **`react-hooks/preserve-manual-memoization` evaluation recipe (iter 116).** The rule fires when the React Compiler cannot preserve a manual `useMemo` — typically because the compiler's inferred deps are broader than the source's `deps` array (e.g. source uses `[obj?.prop]` to leverage structural sharing, but compiler infers `[obj]`). The recipe: (1) Check if React Compiler is enabled in `next.config.ts` (`experimental.reactCompiler: true`). If NOT enabled, removing `useMemo` is a PERFORMANCE REGRESSION (rebuilds the value every render). (2) Check if the memoized value is consumed in any `useEffect`/`useMemo` deps array. If NOT, removing `useMemo` is correctness-safe (just slower). (3) If compiler not enabled AND the narrow deps are intentional, KEEP the `useMemo` and add an inline `eslint-disable-next-line react-hooks/preserve-manual-memoization` with a comment explaining the rationale + when to revisit (after enabling the compiler). Canonical example: `speculation-tab.tsx:332` `flipsByApiId` (narrow dep `[flipsData?.opportunities]` leverages TanStack Query structural sharing).
 

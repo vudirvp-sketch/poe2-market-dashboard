@@ -5,6 +5,51 @@
 
 ---
 
+Task ID: iter-117
+Agent: main
+Task: iter 117 — incremental KI-24 fix: eliminate the 1 `react-hooks/set-state-in-effect` warning in `header.tsx` (the `mounted` flag effect). Strategy: replace `useState(false) + useEffect(() => setMounted(true), [])` with `useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot)` — the canonical "is client post-hydration" pattern. Added 1 defensive jest test for theme-toggle visibility (gated by `mounted`). Lint 123 → 122, 0 errors. 619 jest green (was 618), tsc green.
+
+Work Log:
+- Cloned repo. Read STATUS.md (KI-24 open with 8 sites / 1 rule after iter 116), worklog.md (iter 115 + iter 116), next.config.ts (React Compiler NOT enabled — confirmed), and all 5 iter-117 candidate files: `use-realms-and-leagues.ts`, `i18n/index.tsx`, `header.tsx`, `offline-banner.tsx`, `fuzzy-search.tsx`.
+- **Risk analysis of all 6 remaining candidates** (per "Лучше недоделать, чем сломать"):
+  - `header.tsx:189` — `setMounted(true)` on mount. **LOWEST RISK.** Pure SSR-safety flag, only consumer is the theme-toggle button gate (line ~516). Mechanical 3-line replacement with `useSyncExternalStore`. No semantic change.
+  - `use-realms-and-leagues.ts:147` — `setLeague(autoLeague)` in auto-select effect. **HIGH RISK.** NOT a `useSyncExternalStore` candidate (despite iter-116 stopping-point speculation). The effect's purpose is to PERSIST the auto-detected league to the Zustand store (via `setLeague` → `persistLeague`). Removing the effect would break cross-session persistence of the auto-selected league. Needs a persistence-model redesign, not a mechanical fix.
+  - `i18n/index.tsx:128` — 2 setState in one effect (`setLocaleState(stored)` + `setHydrated(true)`). **MEDIUM RISK.** `useSyncExternalStore` for locale requires a custom same-tab notification mechanism (the `storage` event only fires in other tabs). Also need a separate `useSyncExternalStore` for the `hydrated` flag. 28 existing tests must continue to pass.
+  - `offline-banner.tsx:16` — 2 setState (`setWasOffline(true)` + `setDismissed(false)`). **MEDIUM RISK.** `wasOffline` is dead state (set but never read — candidate for cleanup). `setDismissed(false)` is a legitimate state reset on prop transition — signal-ref pattern (iter 115 recipe) applies, but adds complexity (ref + callback + effect vs original 3-line effect).
+  - `fuzzy-search.tsx:88` — `setLocalValue` sync prop → local state. **MEDIUM RISK.** Proper fix is to make the component fully controlled (remove `localValue`, use `value` prop directly), but this affects debounce UX and touches `handleInput`/`handleClear`/`handleResultClick`.
+  - `dashboard-page.tsx` — 3 sites. **HIGHEST RISK.** Explicitly deferred to a dedicated iter.
+- **Selected iter 117 scope = `header.tsx` only.** Per "Лучше недоделать, чем сломать": chose the single lowest-risk candidate. A clean, mechanical, well-tested fix is better than a risky multi-file iter. Deferred all other candidates to iter 118+ with documented risk analysis.
+- **Confirmed baseline.** `npm install` → packages installed silently. `npx tsc --noEmit` → exit 0. `npx eslint .` → 123 warnings, 0 errors (matches iter-116 baseline). Per-file lint on target: `header.tsx` had 3 warnings — `set-state-in-effect` at line 189 (`setMounted(true)`), `tp` unused var, `LOCALE_ORDER` missing dep. Only the first is in scope (KI-24). `npx jest --maxWorkers=1` → 618 passed, 27 suites, exit 0.
+- **Read iter-116 canonical example** (`use-reduced-motion.ts`) to follow the same `useSyncExternalStore` pattern. The header.tsx case is simpler — no external store to subscribe to, so `subscribe` is a no-op.
+- **Applied fix to `header.tsx`:**
+  1. Added `useSyncExternalStore` to the React imports (line 11).
+  2. Added 3 module-level helper functions after `phaseLabel` (before the `Header` component): `subscribeMounted()` (no-op, returns empty cleanup), `getMountedSnapshot()` (returns `true`), `getMountedServerSnapshot()` (returns `false`). Each has a JSDoc comment block explaining the pattern, the SSR/first-render/post-hydration semantics, and the rationale (gates the theme-toggle button to avoid next-themes SSR mismatch).
+  3. Replaced `const [mounted, setMounted] = useState(false); useEffect(() => { setMounted(true); }, []);` with `const mounted = useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot);` (with an inline comment referencing the module-level helpers).
+  4. `useEffect` import retained — 2 other effects still use it (lines 210, 233). `useState` import retained — `timeAgo` and `moreOpen` still use it.
+- **Added defensive test** to `src/__tests__/header-i18n.test.tsx`: new describe block "theme toggle (mounted flag via useSyncExternalStore — KI-24 iter 117)" with 1 test that renders the Header, opens the "More" menu, and verifies the theme-toggle button is visible via `findByLabelText(/Переключить на (тёмную|светлую) тему/)`. The regex matches both `switchToDarkMode` and `switchToLightMode` because the test environment's `useTheme()` (next-themes without ThemeProvider wrapper) returns `theme: "dark"`, so the button shows the "switch to light" label — the test only cares that the button is rendered, which requires `mounted = true`. Initial attempt used the exact string `"Переключить на тёмную тему"` (switchToDarkMode) — failed because the test env returns `theme = "dark"`, making the button show `switchToLightMode`. Fixed with a regex matching both.
+- **Verification:**
+  - `npx tsc --noEmit` → **exit 0** ✅
+  - `npx eslint src/components/dashboard/header.tsx` → **2 warnings, 0 errors** ✅ (was 3). The `set-state-in-effect` warning is GONE. The remaining 2 warnings (`tp` unused, `LOCALE_ORDER` missing dep) are pre-existing and out of scope (not KI-24).
+  - `npx eslint .` → **0 errors, 122 warnings, exit 0** ✅ (was 123 → 122 = 1 warning removed).
+  - `npx jest --maxWorkers=1` → **619 passed, 0 failed, 27 suites, exit 0** ✅ (was 618 + 1 new test = 619).
+  - `pytest` not run (no backend changes) — 1279 passed expected per iter 113.
+  - `next build` not run (4GB RAM env constraint) — the change is a mechanical replacement of a well-understood pattern (`useState+useEffect` → `useSyncExternalStore`) with full test coverage. No plausible build-regression failure mode.
+- **Documentation updates:**
+  - `STATUS.md`: bumped "Last updated" header (iter 117). Updated KI-24 table — `header.tsx` removed from sites list, count 8 → 7. Added new bullet to "Closed sub-rules (history)" documenting iter-117 fix. Updated backlog row: "7 React Compiler rule sites remaining (was 25 — ... `set-state-in-effect` 3 of 10 resolved iter 115+116+117 ...)". Added new "Key technical insights" paragraph: "`react-hooks/set-state-in-effect` fix for \"mounted\" flag via `useSyncExternalStore` (iter 117)" — documents the no-op `subscribe` special case for the SSR-safety `mounted` pattern.
+  - `worklog.md` (this entry) — trimmed iter 115 (oldest, now in git log), now shows iter 116 + iter 117 (last 2 iterations per header convention).
+  - `AGENT_NAVIGATION.md` — header bump only.
+
+Stage Summary:
+- **iter 117 SHIPPED — KI-24 `set-state-in-effect` 1 of 10 sites resolved (`header.tsx` `mounted` flag).** Lint warnings: 123 → 122 (0 errors). `tsc` green. 619 jest green (was 618). 1279 pytest expected green (no backend changes).
+- **Modified files (3):** `src/components/dashboard/header.tsx`, `src/__tests__/header-i18n.test.tsx`, `STATUS.md`. Plus `worklog.md` (this entry) + `AGENT_NAVIGATION.md` (header bump).
+- **What was NOT done (intentionally deferred to iter 118+):**
+  - KI-24 remaining 7 `set-state-in-effect` sites: `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `offline-banner.tsx` (1), `use-realms-and-leagues.ts` (1), `i18n/index.tsx` (1). Each needs case-by-case evaluation — see risk analysis above.
+  - TD-3/4/5/9 persistence gaps (need persistence-layer design).
+  - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
+- **Stopping point:** iter 117 = KI-24 advanced by 1 site (8 → 7). KI-24 backlog now 7 sites / 1 rule. Next iter (iter 118) candidates in approximate risk order: (a) `offline-banner.tsx` (1 site, signal-ref pattern — also has dead `wasOffline` state to clean up); (b) `i18n/index.tsx` (1 site, `useSyncExternalStore` for locale + `hydrated` flag — needs custom same-tab notification); (c) `fuzzy-search.tsx` (1 site, controlled-component refactor — affects debounce UX); (d) `use-realms-and-leagues.ts` (1 site, needs persistence-model redesign — NOT a mechanical fix); (e) `dashboard-page.tsx` (3 sites, largest refactor — dedicated iter); (f) TD-3/4/5/9 persistence gaps; (g) P10 Gold Map ROI (§C.8).
+
+---
+
 Task ID: iter-116
 Agent: main
 Task: iter 116 — close KI-20 + KI-23, advance KI-24 by 2 sites. KI-20: `case-transform.ts` regex `/_([a-z])/g` → `/_([a-z0-9])/g` so `delta_7d_pct` correctly becomes `delta7dPct` (was `delta_7dPct` with leftover `_`); added 29 jest tests. KI-23: extracted `<CategoryGroupTable>` child from `unique-table.tsx` so `useReactTable` is called at top level (was inside `.map()` callback — latent rules-of-hooks violation). KI-24: refactored `use-reduced-motion.ts` to `useSyncExternalStore` (1 `set-state-in-effect` site) + suppressed `speculation-tab.tsx:316` `useMemo` warning with documented rationale (1 `preserve-manual-memoization` site). Lint 125 → 123, 0 errors. 618 jest green (was 582), tsc green. KI-24 backlog now 8 sites across 1 React Compiler rule.
@@ -39,36 +84,3 @@ Stage Summary:
   - TD-3/4/5/9 persistence gaps (need persistence-layer design).
   - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
 - **Stopping point:** iter 116 = KI-20 closed + KI-23 closed + KI-24 advanced by 2 sites (10 → 8). KI-24 backlog now 8 sites / 1 rule. Next iter (iter 117) candidates: (a) KI-24 `set-state-in-effect` incremental — `use-realms-and-leagues.ts` (1 site, hook, similar to use-reduced-motion — may also be a `useSyncExternalStore` candidate or a `useCallback`+signal-ref candidate); (b) KI-24 `set-state-in-effect` incremental — `i18n/index.tsx` (1 site, "hydrate from localStorage" pattern, may move to `useSyncExternalStore`); (c) KI-24 `set-state-in-effect` incremental — `header.tsx` or `offline-banner.tsx` (1 site each); (d) KI-24 `set-state-in-effect` — `dashboard-page.tsx` (3 sites, larger refactor, needs careful analysis); (e) KI-24 `set-state-in-effect` — `fuzzy-search.tsx` (1 site); (f) TD-3/4/5/9 persistence gaps; (g) P10 Gold Map ROI (§C.8).
-
----
-
-Task ID: iter-115
-Agent: main
-Task: iter 115 — incremental KI-24 fix: eliminate the 1 `react-hooks/set-state-in-effect` warning in `use-price-stream.ts` (the `backendOnline` transitions effect). Strategy: (a) derive `status`/`lastError` from `backendOnline` in the return statement; (b) move `setReconnectCount(0)` + `setLastError(null)` out of the effect into `connect()` via a `freshSessionRef` latest-ref pattern. Lint 126 → 125, 0 errors. No backend/test changes.
-
-Work Log:
-- Cloned repo. Read STATUS.md (KI-23 open, KI-24 open with 11 sites / 2 rules after iter 114, KI-20 open), worklog.md (iter 113 + iter 114), package.json, `use-price-stream.ts` (full 399-line file).
-- **Selected iter 115 scope = KI-24 `set-state-in-effect` — `use-price-stream.ts`.** Per "Лучше недоделать, чем сломать": chose the smallest-scope candidate from the iter-114 stopping-point list. Same file already in context from iter 114. Single warning site. Other candidates (KI-23 ~120-line refactor, KI-20 regex change with full regression, KI-24 `preserve-manual-memoization` in a different file, TD-3/4/5/9 persistence, P10 Gold Map ROI feature) all carry higher risk or need their own dedicated iter.
-- **Confirmed baseline.** `npm install` → packages installed silently. `npx eslint .` → 126 warnings, 0 errors (matches iter-114 baseline). Per-file lint on the target: `use-price-stream.ts` had 1 warning — `react-hooks/set-state-in-effect` at line 386 (`setStatus("disconnected")` inside the `backendOnline` transitions effect). `npx tsc --noEmit` → exit 0. `npx jest --maxWorkers=1` → 582 passed, 25 suites, exit 0.
-- **Read the full target file & analyzed the transitions effect.** The `backendOnline` transitions effect (lines 375-395 pre-fix) had 3 setState calls:
-  - Offline branch: `setStatus("disconnected")` (line 386, flagged) + `setLastError(null)` (line 387) — clear stale status/error so UI shows "disconnected" / no-error while backend is offline.
-  - Online branch: `setReconnectCount(0)` (line 390) — reset the reconnect counter for the new session, so the user doesn't see stale counts from the previous session.
-  - The rule fires on the FIRST setState in an effect (line 386). Removing only that line would cause the rule to fire on line 387, then line 390. To fully eliminate the warning, ALL setState calls must be removed from the effect.
-- **Safety analysis (semantics preservation):**
-  - `status` and `lastError` are FULLY DETERMINED by `backendOnline` when offline — when `backendOnline === false`, the UI must show "disconnected" with no error regardless of internal state. This is a pure derivation: `backendOnline === false ? "disconnected" : status`. The internal state is no longer mutated by the effect, but the rendered output is identical. This is the React-recommended pattern (https://react.dev/learn/you-might-not-need-an-effect).
-  - `setReconnectCount(0)` (online branch) is NOT fully derivable — `reconnectCount` is genuine state that accumulates over time (incremented in `es.onerror`'s reconnect callback). It needs to be RESET once per backend-online transition. Strategy: move the reset into `connect()` (a `useCallback`, not an effect — the rule doesn't trace setState through useCallback boundaries, confirmed by the existing `setStatus("connecting")` at line 226 not firing the rule) via a `freshSessionRef` "signal ref" pattern.
-- **Applied fix:**
-  1. Added `const freshSessionRef = useRef(false);` near the other refs (after `thresholdRef`), with explanatory comment block citing the rule, the rationale, and the pattern.
-  2. At the top of `connect()` (before any early-return guards), added a `freshSessionRef` consumption block: `if (freshSessionRef.current) { setReconnectCount(0); setLastError(null); reconnectCountRef.current = 0; freshSessionRef.current = false; }`. Placed BEFORE guards so the reset fires even if `connect` is skipped this tick.
-  3. In the `backendOnline` transitions effect: offline branch reduced to `cleanup()` only (removed `setStatus("disconnected")` + `setLastError(null)` — now derived in return); online branch reduced to `freshSessionRef.current = true; everConnectedRef.current = false; connectRef.current();` (removed `setReconnectCount(0)` + `reconnectCountRef.current = 0` — now handled by `connect()` consuming `freshSessionRef`).
-  4. Replaced `return { status, lastError, reconnectCount };` with derivation: `const effectiveStatus = backendOnline === false ? "disconnected" : status;` + `const effectiveLastError = backendOnline === false ? null : lastError;` + `return { status: effectiveStatus, lastError: effectiveLastError, reconnectCount };`.
-- **Verification:**
-  - `npx eslint src/hooks/use-price-stream.ts` → **0 warnings, 0 errors** ✅ (was 1 warning).
-  - `npx eslint .` → **0 errors, 125 warnings, exit 0** ✅ (was 126 → 125 = 1 warning removed).
-  - `npx tsc --noEmit` → **exit 0** ✅.
-  - `npx jest --maxWorkers=1` → **582 passed, 0 failed, 25 suites, exit 0** ✅.
-
-Stage Summary:
-- **iter 115 SHIPPED — KI-24 `set-state-in-effect` 1 of 10 sites resolved.** Lint warnings: 126 → 125 (0 errors). `tsc` green. 582 jest green. 1279 pytest expected green (no backend changes).
-- **Modified files (3):** `src/hooks/use-price-stream.ts`, `STATUS.md`. Plus `worklog.md` (this entry) + `AGENT_NAVIGATION.md` (header bump).
-- **Stopping point:** iter 115 = KI-24 `set-state-in-effect` 1 of 10 sites resolved (use-price-stream.ts). KI-24 backlog now 10 sites / 2 rules.

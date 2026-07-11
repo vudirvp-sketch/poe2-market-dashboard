@@ -276,4 +276,29 @@ describe("Header i18n integration", () => {
       expect(refreshButton).toBeInTheDocument();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Theme toggle visibility — gated by the `mounted` flag, which was refactored
+  // in iter 117 from `useState(false) + useEffect(() => setMounted(true))` to
+  // `useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot)`.
+  // This test ensures the refactor preserves the post-hydration visibility of
+  // the theme toggle button (which is the ONLY consumer of `mounted` in Header).
+  // -------------------------------------------------------------------------
+  describe("theme toggle (mounted flag via useSyncExternalStore — KI-24 iter 117)", () => {
+    it("renders the theme toggle button after mount", async () => {
+      renderWithProviders(<Header {...baseProps} />);
+      openMoreMenu(DEFAULT_LOCALE);
+
+      // `mounted` transitions from false (getServerSnapshot) to true
+      // (getSnapshot) after hydration. In jsdom this happens after the initial
+      // render's microtask flush. findByLabelText waits for the transition.
+      // The aria-label is either switchToDarkMode or switchToLightMode depending
+      // on the current theme — match either one (the test only cares that the
+      // button is rendered, which requires `mounted = true`).
+      const themeButton = await screen.findByLabelText(
+        /Переключить на (тёмную|светлую) тему/
+      );
+      expect(themeButton).toBeInTheDocument();
+    });
+  });
 });
