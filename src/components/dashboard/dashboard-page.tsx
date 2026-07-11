@@ -157,11 +157,7 @@ import { usePriceStream } from "@/hooks/use-price-stream";
 // OptimalCurrencyResponse + CrossRateFlip + findOptimalPayment +
 // isItemCategory imports removed — they are now consumed inside
 // useOptimalPayment() (see src/hooks/use-optimal-payment.ts).
-import type {
-  PoeItem,
-  ExchangePair,
-  ReferenceCurrency,
-} from "@/lib/types";
+import type { PoeItem, ExchangePair } from "@/lib/types";
 import { useDashboardStore } from "@/lib/store";
 import { usePriceAlerts } from "@/hooks/use-price-alerts";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
@@ -171,7 +167,50 @@ import { useI18n } from "@/lib/i18n";
 // Virtualization threshold: use virtual grid when more than this many currencies
 const CURRENCY_VIRTUAL_THRESHOLD = 30;
 
-
+// ============================================================================
+// §3.2: Keyboard Shortcuts — Tab index mapping (module-level constant)
+// ============================================================================
+// Tab index mapping for shortcuts 1–9 (matching visible tab order).
+// "forecast" and "portfolio" removed from TAB_MAP.
+// "storage-value" added iter 74 (F2).
+// "speculation" added iter 77 (F5) — placed after storage-value so the
+// analytics-cluster (storage-value → speculation) sits together.
+// "circuit-patterns" added iter 97 (F7 / P8) — placed after speculation
+// to extend the analytics-cluster (storage-value → speculation → circuits).
+// "intraday-patterns" added iter 98 (P4) — placed after circuit-patterns
+// to extend the analytics-cluster further. Heatmap UI (час × валюта).
+// "weekly-patterns" added iter 99 (P5) — placed after intraday-patterns
+// to extend the analytics-cluster further. Heatmap UI (день × валюта).
+// "mirror-divine-arb" added iter 109 (P7) — placed after weekly-patterns
+// to extend the analytics-cluster further. Single-object card UI (Mirror:Divine
+// is one market, not a per-currency list).
+// iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
+// and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
+// NOTE: tab count grew to 15 in iter 109 — shortcuts 1–9 cover the first 9
+// tabs (overview through speculation), shortcut 0 covers circuit-patterns.
+// intraday-patterns + weekly-patterns + mirror-divine-arb + liquid-chain
+// + watchlist remain accessible via click only (only 10 shortcut slots).
+//
+// iter 124 (TD-10): Moved to module level so the array identity is stable
+// across renders. This eliminates `TAB_MAP` from the `keyboardActions`
+// useMemo deps (which previously triggered `react-hooks/exhaustive-deps`).
+const TAB_MAP = [
+  "overview",
+  "currencies",
+  "uniques",
+  "exchange",
+  "flips",
+  "optimizer",
+  "analyst",
+  "storage-value",
+  "speculation",
+  "circuit-patterns",
+  "intraday-patterns",
+  "weekly-patterns",
+  "mirror-divine-arb",
+  "liquid-chain",
+  "watchlist",
+];
 
 // ============================================================================
 // Main Dashboard
@@ -309,7 +348,10 @@ export function Dashboard() {
   // This is a complement to polling (not a replacement): SSE provides
   // push-based invalidation, reducing perceived latency for price updates.
   // ============================================================================
-  const { status: sseStatus } = usePriceStream({
+  // iter 124 (TD-10): `sseStatus` was destructured but never read. The hook
+  // is called for its side effects (SSE subscription + React Query cache
+  // invalidation), so the destructuring is unnecessary.
+  usePriceStream({
     enabled: flipperBackendOnline,
     backendOnline: flipperBackendOnline,
     invalidationThresholdPct: 1.0, // Invalidate caches on ≥1% price changes
@@ -343,11 +385,14 @@ export function Dashboard() {
     }
   }
 
-  // Wrapper for tab changes that also persists
-  const setTab = (newTab: string) => {
+  // Wrapper for tab changes that also persists.
+  // iter 124 (TD-10): Wrapped in useCallback so the identity is stable —
+  // required for the `keyboardActions` useMemo deps (a plain function would
+  // change identity every render and trigger `react-hooks/exhaustive-deps`).
+  const setTab = useCallback((newTab: string) => {
     setTabLocal(newTab);
     setActiveTab(newTab);
-  };
+  }, [setActiveTab]);
 
   // Wrapper for league changes moved to useRealmsAndLeagues() in iter 82.
   // The hook also owns the auto-select useEffect that fires when `leagues`
@@ -629,30 +674,7 @@ export function Dashboard() {
     return () => window.removeEventListener("keydown", handler);
   }, [tab, uniquesData, currenciesData]);
 
-  // ============================================================================
-  // §3.2: Keyboard Shortcuts
-  // ============================================================================
-  // Tab index mapping for shortcuts 1–9 (matching visible tab order)
-  // "forecast" and "portfolio" removed from TAB_MAP
-  // "storage-value" added iter 74 (F2).
-  // "speculation" added iter 77 (F5) — placed after storage-value so the
-  // analytics-cluster (storage-value → speculation) sits together.
-  // "circuit-patterns" added iter 97 (F7 / P8) — placed after speculation
-  // to extend the analytics-cluster (storage-value → speculation → circuits).
-  // "intraday-patterns" added iter 98 (P4) — placed after circuit-patterns
-  // to extend the analytics-cluster further. Heatmap UI (час × валюта).
-  // "weekly-patterns" added iter 99 (P5) — placed after intraday-patterns
-  // to extend the analytics-cluster further. Heatmap UI (день × валюта).
-  // "mirror-divine-arb" added iter 109 (P7) — placed after weekly-patterns
-  // to extend the analytics-cluster further. Single-object card UI (Mirror:Divine
-  // is one market, not a per-currency list).
-  // iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
-  // and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
-  // NOTE: tab count grew to 15 in iter 109 — shortcuts 1–9 cover the first 9
-  // tabs (overview through speculation), shortcut 0 covers circuit-patterns.
-  // intraday-patterns + weekly-patterns + mirror-divine-arb + liquid-chain
-  // + watchlist remain accessible via click only (only 10 shortcut slots).
-  const TAB_MAP = ["overview", "currencies", "uniques", "exchange", "flips", "optimizer", "analyst", "storage-value", "speculation", "circuit-patterns", "intraday-patterns", "weekly-patterns", "mirror-divine-arb", "liquid-chain", "watchlist"];
+  // (TAB_MAP moved to module level in iter 124 — see top of file.)
 
   // Get the current list for row navigation (depends on active tab)
   // §3.5: Extended to uniques and currencies tabs
@@ -729,7 +751,9 @@ export function Dashboard() {
         setShortcutsHelpOpen(true);
       },
     }),
-    [tab, uiState.exchange.viewMode, setExchangeViewMode, navigableList, highlightedRowIndex, openPairDetail, setTab]
+    // iter 124 (TD-10): Added `openDetail` (used in `onEnter`). `TAB_MAP` is
+    // now a module-level constant, so it no longer needs to be in deps.
+    [tab, uiState.exchange.viewMode, setExchangeViewMode, navigableList, highlightedRowIndex, openPairDetail, openDetail, setTab]
   );
 
   useKeyboardShortcuts(keyboardActions);
