@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 110 — P9 Phase-aware Investment Advisor: `phase_hints.py` extended with optional `snapshot` param + live-price enrichment. 3 hints tracked (exalted/divine) with current_price / change_pct_week / change_pct_month / momentum / phase-aware recommendation. 1266 pytest green. KI-20 documented — case-transform `_<digit>` bug found, not fixed.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 111 — fixed KI-21: `fmtPrice` in `phase-hints-widget.tsx` rounded prices ≥ 100 to integer, breaking iter-110 jest live-price test. Removed the `>= 100 → toFixed(0)` branch. KI-22 documented — ESLint v9 flat config missing, `npm run lint` fails. 1279 pytest green.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

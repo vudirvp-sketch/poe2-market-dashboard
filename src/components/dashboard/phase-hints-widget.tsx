@@ -372,10 +372,12 @@ function fmtSignedPct(pct: number | null): string {
   return `${sign}${pct.toFixed(1)}%`;
 }
 
-/** iter 110: format a price — 4 significant digits, trim trailing zeros. */
+/** iter 111: format a price — 2 decimals for >= 1, 4 decimals for < 1.
+ *  Previously the >= 100 branch used toFixed(0) which silently rounded
+ *  115.5 → "116" (KI-21). Removed in iter 111 so prices like 115.50 divines
+ *  render with cent precision, matching the rest of the dashboard. */
 function fmtPrice(price: number | null): string {
   if (price === null) return "—";
-  if (price >= 100) return price.toFixed(0);
   if (price >= 1) return price.toFixed(2);
   return price.toFixed(4);
 }

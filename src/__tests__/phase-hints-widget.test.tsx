@@ -497,6 +497,37 @@ describe("PhaseHintsWidget", () => {
       expect(priceEl?.textContent).toBe("115.50");
     });
 
+    // iter 111 — KI-21 regression guard: prices >= 100 must keep 2 decimals,
+    // not be rounded to integer (the old fmtPrice `>= 100 → toFixed(0)` branch
+    // silently turned 115.5 → "116" and 1234.5 → "1235"). This test locks in
+    // the fix and prevents the bug from reappearing if someone "optimizes"
+    // fmtPrice back to integer truncation for large numbers.
+    it("renders large price (>= 1000) with 2 decimals, not rounded to integer (KI-21)", async () => {
+      const largePriceResponse: PhaseHintsResponse = {
+        ...mixedResponse,
+        hints: [
+          makeHint({
+            id: "mid-triangular-arb",
+            title: "Triangular arbitrage window",
+            trackedCurrency: "divine",
+            currentPrice: 1234.5,
+            changePctWeek: 3.2,
+            changePctMonth: 7.8,
+            momentum: "UP",
+            recommendation: "HOLD",
+          }),
+        ],
+      };
+      mockFetchApi.mockResolvedValue(largePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const priceEl = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-current-price"]',
+      );
+      expect(priceEl).toBeTruthy();
+      expect(priceEl?.textContent).toBe("1234.50");
+    });
+
     it("renders 7d change with + sign for positive values", async () => {
       mockFetchApi.mockResolvedValue(livePriceResponse);
       const { container } = renderWidget(true);
