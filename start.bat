@@ -218,7 +218,7 @@ if !UVICORN_AVAILABLE! equ 1 (
         echo [INFO] Flipper backend will be managed by Next.js bridge ^(auto-start + auto-restart^).
         echo        The bridge starts the Python process when Next.js starts.
         echo        If the backend crashes, it will be restarted automatically.
-        echo        Bridge logs: flipper-bridge.log
+        echo        Bridge logs: console output (Next.js server log)
         echo.
         REM Set FLIPPER_BRIDGE_DISABLED=false explicitly to ensure bridge is enabled
         set FLIPPER_BRIDGE_DISABLED=false
@@ -430,7 +430,7 @@ echo   Starting PoE2 Market Dashboard...
 echo   Open your browser: http://localhost:3000
 echo.
 echo   Flipper backend: http://localhost:8000
-echo   Bridge logs: flipper-bridge.log
+echo   Bridge logs: console output (Next.js server log)
 echo.
 echo   IMPORTANT: If you see 404 errors in browser after a rebuild:
 echo     1. Hard-refresh: Ctrl+Shift+R ^(^or Ctrl+F5^)

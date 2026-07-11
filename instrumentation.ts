@@ -17,12 +17,12 @@
  * To start backend manually:
  *   PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --port 8000
  *
- * NOTE (iter 105, KI-16 long-term fix): the bridge module was moved from
- * scripts/flipper-backend-bridge.ts to src/lib/flipper-backend-bridge.ts
- * so Turbopack bundles it as a regular src module. This permanently
- * eliminates the cosmetic NFT warning that earlier iterations tried to
- * silence with a turbopackIgnore magic comment (which broke the runtime
- * bundle — see KI-16/KI-17 history in STATUS.md).
+ * NOTE (iter 106, KI-16-deep fix): the bridge module no longer contains any
+ * filesystem or path-module operations — they were removed entirely so
+ * Turbopack's Node File Trace (NFT) no longer flags the instrumentation
+ * import graph. The bridge uses only `child_process` (spawn/execSync/spawnSync)
+ * and `process.cwd()`. File logging was removed (console only — Next.js
+ * captures it in the server log). See KI-16-deep in STATUS.md for history.
  */
 
 export async function register() {

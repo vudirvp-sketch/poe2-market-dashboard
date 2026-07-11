@@ -253,7 +253,7 @@ if [ "$UVICORN_AVAILABLE" -eq 1 ]; then
     else
         # Bridge mode (default): Next.js manages the Python backend
         info "Flipper backend will be managed by Next.js bridge (auto-start + auto-restart)."
-        info "Bridge logs: flipper-bridge.log"
+        info "Bridge logs: console output (Next.js server log)"
         info "The bridge starts the Python process when Next.js starts."
         info "If the backend crashes, it will be restarted automatically."
         echo ""
@@ -399,7 +399,7 @@ echo "  Starting PoE2 Market Dashboard..."
 echo "  Open your browser: http://localhost:3000"
 echo ""
 echo "  Flipper backend: http://localhost:8000"
-echo "  Bridge logs: flipper-bridge.log"
+echo "  Bridge logs: console output (Next.js server log)"
 echo ""
 echo "  Press Ctrl+C to stop all servers."
 echo "============================================================"

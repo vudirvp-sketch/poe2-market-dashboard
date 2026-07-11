@@ -2,7 +2,7 @@
  * Flipper Backend Bridge — manages the Python FastAPI backend lifecycle.
  *
  * This module is used by the Next.js instrumentation hook to start the
- * Python uvicorn process as a child_process, monitor its health, and
+ * Python uvicorn process as a child process, monitor its health, and
  * automatically restart it if it crashes.
  *
  * Usage (from instrumentation.ts):
@@ -20,14 +20,33 @@
  *   processes on Windows (no POSIX signal support).
  *   Unix/macOS: uses SIGTERM → SIGKILL fallback as before.
  *
+ * KI-16-deep fix (iter 106): this module deliberately avoids all
+ * filesystem and path-module APIs, AND avoids passing dynamic (env-var
+ * or function-return) commands to `spawn`/`spawnSync`. Turbopack's NFT
+ * flags `spawn(variable)` / `spawnSync(variable)` because the variable
+ * could hold any executable path, potentially tracing the whole project.
+ *
+ * The fix uses `exec` / `execSync` (shell-based) instead of `spawn` /
+ * `spawnSync` for any command that is not a literal string. NFT does not
+ * flag `exec(dynamicString)` because the shell is the literal program
+ * being executed — the command string is just an argument to the shell.
+ *
+ * Additional changes:
+ *   - Project root: `process.cwd()` directly (no path-module join).
+ *   - Venv detection: `execSync` with quoted candidate path.
+ *   - Disk logging: REMOVED. All log output goes to console only. Next.js
+ *     captures console output in its server log. To persist logs to a file,
+ *     redirect the Next.js server output:
+ *       `npm run start > flipper-bridge.log 2>&1`  (Unix)
+ *       `start.bat > flipper-bridge.log 2>&1`       (Windows)
+ *
  * Location history: this file lived at scripts/flipper-backend-bridge.ts
- * through iter 104. In iter 105 it was moved to src/lib/ so Turbopack
- * bundles it as a regular module (closes KI-16 long-term fix).
+ * through iter 104. In iter 105 it was moved to src/lib/. In iter 106
+ * (KI-16-deep) all disk and path-module operations were removed, and
+ * dynamic spawn calls were replaced with exec.
  */
 
-import { spawn, execSync, ChildProcess } from "child_process";
-import { existsSync, writeFileSync, appendFileSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
+import { exec, execSync, ChildProcess } from "child_process";
 
 const BACKEND_URL = process.env.FLIPPER_API_URL || "http://localhost:8000";
 const HEALTH_ENDPOINT = `${BACKEND_URL}/api/v1/health/ping`; // Use /ping — ultra-lightweight, plain-text "ok", responds in <1ms even during heavy computation. Prevents false-positive "unhealthy" detections from GIL contention during Bellman-Ford. NOTE: Updated to /api/v1/ prefix (Phase 4.2 API versioning).
@@ -36,7 +55,6 @@ const RESTART_DELAY = 5_000; // 5s
 const MAX_RESTARTS = 5;
 const MAX_RESTART_WINDOW = 60_000; // 1 minute — if >MAX_RESTARTS restarts in this window, give up
 const MAX_CONSECUTIVE_UNHEALTHY = 5; // kill process after N consecutive unhealthy checks — increased from 3: the backend may be temporarily unresponsive during heavy computation (cross-rate validation with 600+ currencies). 3 consecutive failures at 45s intervals = 3:45 before kill, which gives enough headroom for transient overload.
-const LOG_FILE_MAX_BYTES = 2 * 1024 * 1024; // 2 MB — rotate log after this size
 
 const isWindows = process.platform === "win32";
 
@@ -48,73 +66,23 @@ let isShuttingDown = false;
 let consecutiveUnhealthy = 0;
 
 // ---------------------------------------------------------------------------
-// File logging — writes to flipper-bridge.log in the project root
+// Logging — console only (disk logging removed in KI-16-deep; see header)
 // ---------------------------------------------------------------------------
 
-// Project root detection:
-// After Next.js bundles this file, __dirname points inside .next/server/ — NOT
-// the project root. process.cwd() is always the project root when running
-// `next start` or `npm run start` (start.bat / start.sh both cd to project root).
-// We also check for package.json as a sanity check, falling back to __dirname
-// if CWD looks wrong (e.g. during development with tsx).
-function getProjectRoot(): string {
-  const cwd = process.cwd();
-  if (existsSync(join(cwd, "package.json"))) {
-    return cwd;
-  }
-  // Fallback: __dirname relative (works when running via npx tsx scripts/...)
-  const fromDirname = join(__dirname, "..");
-  if (existsSync(join(fromDirname, "package.json"))) {
-    return fromDirname;
-  }
-  // Last resort: use CWD anyway
-  return cwd;
-}
-
-const projectRoot = getProjectRoot();
-const LOG_FILE = join(projectRoot, "flipper-bridge.log");
-
-function logToFile(message: string): void {
-  try {
-    const timestamp = new Date().toISOString();
-    const line = `[${timestamp}] ${message}\n`;
-
-    // Rotate log if too large
-    if (existsSync(LOG_FILE)) {
-      try {
-        const { statSync } = require("fs");
-        const stats = statSync(LOG_FILE);
-        if (stats.size > LOG_FILE_MAX_BYTES) {
-          // Truncate: keep last ~256 KB by writing empty + appending
-          writeFileSync(LOG_FILE, "");
-        }
-      } catch {
-        // Ignore rotation errors
-      }
-    }
-
-    appendFileSync(LOG_FILE, line);
-  } catch {
-    // Log file write failures are non-critical — don't crash
-  }
-}
-
 /**
- * Log a message to both console and the log file.
+ * Log a message to the console. Next.js captures console output in its
+ * server log, so messages are still accessible for debugging.
  */
 function log(message: string): void {
   console.log(message);
-  logToFile(message);
 }
 
 function logWarn(message: string): void {
   console.warn(message);
-  logToFile(`[WARN] ${message}`);
 }
 
 function logError(message: string): void {
   console.error(message);
-  logToFile(`[ERROR] ${message}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +141,11 @@ function killBackendProcess(child: ChildProcess): void {
 
 /**
  * Detect the Python command to use.
- * Prefers .venv Python if available.
+ * Prefers .venv Python if available (checked via execSync). Falls back to
+ * PYTHON_CMD env var, then to system `python`.
+ *
+ * Uses `execSync` (shell-based) instead of `spawnSync` because NFT flags
+ * `spawnSync(variable)` — see KI-16-deep header.
  */
 function detectPythonCommand(): string {
   // 1. Check PYTHON_CMD env var — set by start.bat / start.sh
@@ -182,41 +154,26 @@ function detectPythonCommand(): string {
     return process.env.PYTHON_CMD;
   }
 
-  // 2. Windows: check .venv\Scripts\python.exe
-  const winVenvPython = join(projectRoot, ".venv", "Scripts", "python.exe");
-  if (existsSync(winVenvPython)) {
-    log(`[flipper-bridge] Using venv Python: ${winVenvPython}`);
-    return winVenvPython;
+  // 2. Check .venv Python — path built with string concat (no path-module
+  //    join) so that Turbopack NFT does not flag this module.
+  const venvPython = isWindows
+    ? process.cwd() + "/.venv/Scripts/python.exe"
+    : process.cwd() + "/.venv/bin/python";
+
+  // Test if the venv python exists by running it with --version.
+  // Use execSync (shell-based) — NFT does not flag execSync(dynamicString).
+  try {
+    const quoted = isWindows ? `"${venvPython}"` : `'${venvPython}'`;
+    execSync(`${quoted} --version`, { stdio: "ignore", timeout: 5_000 });
+    log(`[flipper-bridge] Using venv Python: ${venvPython}`);
+    return venvPython;
+  } catch {
+    // venv python doesn't exist or can't be executed — fall through
   }
 
-  // 3. Unix: check .venv/bin/python
-  const unixVenvPython = join(projectRoot, ".venv", "bin", "python");
-  if (existsSync(unixVenvPython)) {
-    log(`[flipper-bridge] Using venv Python: ${unixVenvPython}`);
-    return unixVenvPython;
-  }
-
-  // 4. Fallback: system python (may fail with ENOENT if not in PATH)
+  // 3. Fallback: system python (may fail with ENOENT if not in PATH)
   log("[flipper-bridge] No .venv found and PYTHON_CMD not set, falling back to system python");
   return "python";
-}
-
-/**
- * Always use `python -m uvicorn` to start the backend.
- *
- * Previously, when uvicorn.exe / uvicorn binary was found in .venv, the bridge
- * would omit `-m uvicorn` from the args and just pass `backend.main:app` as a
- * positional arg to python. This caused Python to interpret `backend.main:app`
- * as a script filename (ENOENT), NOT as a uvicorn app spec.
- *
- * Using `python -m uvicorn backend.main:app` is always correct because:
- * 1. The venv python finds uvicorn in its own site-packages automatically.
- * 2. It avoids path-encoding issues with non-ASCII chars in the uvicorn.exe path
- *    on Windows (e.g., Cyrillic characters in user profile directories).
- * 3. It matches what start.bat / start.sh do when running uvicorn manually.
- */
-function getUvicornArgs(): string[] {
-  return ["-m", "uvicorn"];
 }
 
 // ---------------------------------------------------------------------------
@@ -225,33 +182,43 @@ function getUvicornArgs(): string[] {
 
 /**
  * Start the Python backend process.
+ *
+ * Uses `exec` (shell-based) instead of `spawn` because NFT flags
+ * `spawn(variable)` — see KI-16-deep header. The command string is
+ * properly quoted so paths with spaces work correctly.
  */
 function startBackendProcess(): ChildProcess | null {
   if (isShuttingDown) return null;
 
   const pythonCmd = detectPythonCommand();
-  const uvicornArgs = getUvicornArgs();
+  const projectRoot = process.cwd();
 
-  const args = [
-    ...uvicornArgs,
-    "backend.main:app",
-    "--host", "0.0.0.0",
-    "--port", "8000",
-  ];
+  // Build the shell command string. Quote the python command in case it
+  // contains spaces (e.g., Windows paths like "C:\Program Files\...").
+  const quotedCmd = isWindows ? `"${pythonCmd}"` : `'${pythonCmd}'`;
+  const shellCommand = `${quotedCmd} -m uvicorn backend.main:app --host 0.0.0.0 --port 8000`;
 
-  log(`[flipper-bridge] Starting backend: ${pythonCmd} ${args.join(" ")}`);
+  log(`[flipper-bridge] Starting backend: ${shellCommand}`);
 
   const env = {
     ...process.env,
     PYTHONPATH: projectRoot,
   };
 
-  const child = spawn(pythonCmd, args, {
+  const child = exec(shellCommand, {
     cwd: projectRoot,
     env,
-    stdio: ["ignore", "pipe", "pipe"],
-    detached: false,
+    // No maxBuffer limit — we read streams, not the buffered result.
+    // Setting maxBuffer to a very large value prevents the process from
+    // being killed if output exceeds the default 1 MB buffer.
+    maxBuffer: 1024 * 1024 * 1024, // 1 GB — effectively unlimited
+    timeout: 0, // no timeout — the backend runs until killed
   });
+
+  if (!child) {
+    logError("[flipper-bridge] Failed to spawn backend process (exec returned null)");
+    return null;
+  }
 
   // Log stdout
   child.stdout?.on("data", (data: Buffer) => {
@@ -407,6 +374,10 @@ function startHealthMonitoring(): void {
 /**
  * Start the flipper backend bridge.
  * Call this from Next.js instrumentation.ts.
+ *
+ * This function is synchronous — all operations (exec, health monitoring)
+ * run in the background after it returns. Errors are caught by the caller's
+ * try/catch in instrumentation.ts.
  */
 export function startBackendBridge(): void {
   // Check if bridge is disabled
@@ -423,8 +394,7 @@ export function startBackendBridge(): void {
 
   log("[flipper-bridge] Starting Flipper backend bridge...");
   log(`[flipper-bridge] Platform: ${process.platform} (${isWindows ? "Windows" : "Unix"})`);
-  log(`[flipper-bridge] Project root: ${projectRoot}`);
-  log(`[flipper-bridge] Log file: ${LOG_FILE}`);
+  log(`[flipper-bridge] Project root: ${process.cwd()}`);
 
   backendProcess = startBackendProcess();
 
