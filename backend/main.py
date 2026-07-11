@@ -526,6 +526,20 @@ class APIVersionMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(APIVersionMiddleware)
 
+# Phase 3.2: SSE endpoint — live price updates via Server-Sent Events
+# IMPORTANT (KI-13 fix, iter 107): The SSE router MUST be registered BEFORE
+# prices_router. prices_router defines `/prices/{pair:path}` which is a greedy
+# path-parameter route that matches ANY sub-path under /api/v1/prices/, including
+# /stream. If prices_router is registered first, GET /api/v1/prices/stream is
+# routed to get_price_for_pair(pair="stream"), which fails with 400
+# ("Invalid pair format: stream. Expected 'from/to'."). Registering sse_router
+# first ensures /api/v1/prices/stream hits the SSE endpoint.
+try:
+    from backend.api.routes_sse import router as sse_router
+    app.include_router(sse_router)
+except ImportError:
+    logger.debug("SSE router not available yet")
+
 # Register routers
 app.include_router(prices_router)
 app.include_router(arbitrage_router)
@@ -581,12 +595,8 @@ try:
 except ImportError:
     logger.debug("Batch router not available yet")
 
-# Phase 3.2: SSE endpoint — live price updates via Server-Sent Events
-try:
-    from backend.api.routes_sse import router as sse_router
-    app.include_router(sse_router)
-except ImportError:
-    logger.debug("SSE router not available yet")
+# Phase 3.2: SSE endpoint — registered ABOVE (before prices_router) to fix KI-13.
+# See the "Phase 3.2" comment block near line 529 for the full explanation.
 
 # F3 (iter 75): Content Pulse — per-category turnover + 7d/30d rolling deltas.
 try:

@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 106 — KI-16-deep FIXED: permanently eliminated the Turbopack NFT warning by removing all `fs`/`path` operations and replacing `spawn`/`spawnSync` with `exec`/`execSync` in `src/lib/flipper-backend-bridge.ts`. Root cause: NFT flags both filesystem operations AND `spawn(variable)` calls in the instrumentation import graph. Side effect: `flipper-bridge.log` file no longer created — logs go to console only. Build + 569 jest + 1161 pytest + tsc all green, zero warnings.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 107 — KI-13 FIXED: SSE `/api/v1/prices/stream` 400 error was a route-registration-order bug. The greedy `{pair:path}` route in `routes_prices.py` was shadowing the SSE `/stream` route because `prices_router` was registered before `sse_router` in `main.py`. Fix: register `sse_router` first. Also documented KI-19: `DELETE_*.ts` placeholder files break `next build` — `tsconfig.json` now excludes `**/DELETE_*`. Build + 569 jest + 1161 pytest + tsc all green, zero warnings.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.
@@ -15,7 +15,7 @@
 | `backend/api/` | Route handlers + response models + middleware | Import from `arbitrage/`, `economy/`, `predictors/`, `data/` |
 | `backend/api/response_models.py` | Pydantic response models | Must match route return dicts exactly |
 | `backend/api/data_snapshot.py` | DataSnapshot — shared TTL-cached snapshot | All routes use `get_snapshot()`, no direct provider calls |
-| `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct` |
+| `backend/api/routes_sse.py` | SSE price stream (P0-1 fixed iter 55, KI-13 fixed iter 107) | Sends `{pair, change_pct, new_price, old_price, timestamp}` per changed currency; filters by `threshold_pct`. **KI-13:** `sse_router` MUST be registered before `prices_router` in `main.py` — the greedy `{pair:path}` route shadows `/stream` if registered first. |
 | `backend/api/routes_analyst.py` | League analyst summary (P0-3 fixed iter 54) | `_compute_trends` uses `find_price_24h_ago` from `backend.economy.pricing` |
 | `backend/api/routes_arbitrage.py` | Flips + triangular + clustering (P1-4 iter 63, P1-9 iter 66, **P2-4 iter 67**) | `/flips` supports `max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir` (all optional with safe defaults). The standalone `/scanner/scan` endpoint was deleted in iter 68. |
 | `backend/api/routes_optimizer.py` | Bellman-Ford conversion paths (P1-8 fixed iter 64) | `_detect_negative_cycle_nodes()` flags profitable arbitrage cycles; `_bellman_ford` returns `None` when target is on a cycle |

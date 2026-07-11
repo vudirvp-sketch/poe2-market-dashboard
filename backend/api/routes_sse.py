@@ -52,13 +52,25 @@ async def _sse_event_generator(
 
     This matches the ``SSEPriceUpdate`` interface expected by the
     frontend hook ``use-price-stream.ts``.
+
+    KI-13 (iter 107): Added explicit logging at each cycle boundary to
+    aid diagnosis if the generator silently stops or the connection is
+    dropped by an intermediary (middleware, proxy, etc.).
     """
     from backend.api.data_snapshot import get_snapshot_manager
 
     previous_prices: dict[str, float] | None = None
+    cycle = 0
+
+    logger.info(
+        "SSE generator started (threshold_pct=%.4f, poll_interval=%.1fs)",
+        threshold_pct,
+        poll_interval,
+    )
 
     try:
         while True:
+            cycle += 1
             snapshot_mgr = get_snapshot_manager()
             snapshot = snapshot_mgr.last_snapshot if snapshot_mgr else None
 
@@ -67,6 +79,7 @@ async def _sse_event_generator(
 
                 if previous_prices is not None:
                     # Compute per-currency changes and emit events
+                    events_sent = 0
                     for api_id, new_price in current_prices.items():
                         old_price = previous_prices.get(api_id)
                         if old_price is None or old_price == 0:
@@ -83,6 +96,15 @@ async def _sse_event_generator(
                             "timestamp": time.time(),
                         }
                         yield f"data: {json.dumps(event_data)}\n\n"
+                        events_sent += 1
+
+                    if events_sent > 0:
+                        logger.debug(
+                            "SSE cycle %d: emitted %d events (of %d tracked currencies)",
+                            cycle,
+                            events_sent,
+                            len(current_prices),
+                        )
 
                 # Record current snapshot for next cycle
                 previous_prices = current_prices
@@ -95,13 +117,20 @@ async def _sse_event_generator(
                     yield ": heartbeat\n\n"
             else:
                 # No snapshot available yet
+                if cycle == 1 or cycle % 12 == 0:
+                    # Log on first cycle and every ~minute (12 × 5s) thereafter
+                    logger.debug(
+                        "SSE cycle %d: no snapshot available (snapshot_mgr=%s)",
+                        cycle,
+                        "None" if snapshot_mgr is None else type(snapshot_mgr).__name__,
+                    )
                 yield ": waiting\n\n"
 
             await asyncio.sleep(poll_interval)
     except asyncio.CancelledError:
-        logger.info("SSE event generator cancelled")
+        logger.info("SSE event generator cancelled after %d cycles", cycle)
     except Exception as e:
-        logger.error("SSE event generator error: %s", e)
+        logger.error("SSE event generator error after %d cycles: %s", cycle, e, exc_info=True)
         yield f"event: error\ndata: {json.dumps({'message': str(e)})}\n\n"
 
 
@@ -116,7 +145,18 @@ async def sse_price_stream(
     in the format ``{pair, change_pct, new_price, old_price, timestamp}``.
 
     Clients should reconnect on disconnect.
+
+    KI-13 (iter 107): Added explicit logging at request entry to confirm
+    the route is reached. The 400 that was observed in production was
+    NOT from this handler — it was from a route conflict where
+    ``GET /api/v1/prices/{pair:path}`` (in routes_prices.py) captured
+    ``/stream`` as a pair name before this route was registered. Fixed
+    by registering sse_router before prices_router in main.py.
     """
+    logger.info(
+        "SSE /stream request received (threshold_pct=%.4f) — route matched correctly",
+        threshold_pct,
+    )
     return StreamingResponse(
         _sse_event_generator(threshold_pct=threshold_pct, poll_interval=5.0),
         media_type="text/event-stream",
