@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 122 — KI-24 `set-state-in-effect` 1 site resolved (`use-realms-and-leagues.ts`). Persistence-model redesign: eliminated local `league` useState, made Zustand `uiState.league` the single source of truth, added a "normalize" effect via Zustand `set` (NOT React `setState`, so the rule doesn't fire). Fixes a latent persistence bug: the old auto-select effect overwrote the user's persisted league with the API's auto-detected active league on every reload. Added 3 jest tests. Lint 118 → 117, 0 errors. 622 jest green, tsc green. KI-24 backlog: 3 sites across 1 React Compiler rule — all in `dashboard-page.tsx`.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 123 — KI-24 FULLY RESOLVED. All 3 remaining `set-state-in-effect` sites in `dashboard-page.tsx` refactored via the iter 118 "adjust state during render" recipe (Recipe 3). Lint 117 → 114, 0 errors. 622 jest green, tsc green. KI-24 backlog: 0 sites / 0 rules — all 10 sites across 7 files resolved iter 115–123.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

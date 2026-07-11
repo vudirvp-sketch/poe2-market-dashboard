@@ -319,15 +319,29 @@ export function Dashboard() {
   // moved to useRealmsAndLeagues() in iter 82 (Stage 2 of useDashboardData
   // hook extraction). See src/hooks/use-realms-and-leagues.ts.
 
-  // Sync tab with persisted state on mount (or when store hydrates)
-  // FIX: Added `tab` to deps — without it the closure captured the initial
-  // "overview" value, causing a stale-check that could overwrite a user's
-  // manual tab switch if uiState.activeTab changed later.
-  useEffect(() => {
-    if (uiState.activeTab && tab === "overview") {
+  // iter 123 (KI-24): Replaced the old `useEffect(() => setTabLocal(...))`
+  // sync with the "adjust state during render" recipe (ref iter 118).
+  // When `uiState.activeTab` transitions (e.g. after store hydration) AND
+  // the local `tab` is still at the initial sentinel "overview", sync to
+  // the store's persisted value. The `tab === "overview"` guard preserves
+  // the user's manual tab switches — `setTab` (below) updates both local
+  // and store together, so once the user clicks a tab, `tab` diverges from
+  // "overview" and the sync becomes a no-op.
+  //
+  // Why not derive `tab` entirely from `uiState.activeTab`? SSR/hydration
+  // safety: on the very first client render `storeHydrated` may still be
+  // false, so `uiState.activeTab` could be empty. Keeping a local `tab`
+  // state initialized to "overview" ensures the SSR HTML matches the first
+  // client render (both show "overview"), and the prev-guard below syncs
+  // to the persisted value only after the store actually transitions.
+  // Ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevStoreActiveTab, setPrevStoreActiveTab] = useState(uiState.activeTab);
+  if (uiState.activeTab !== prevStoreActiveTab) {
+    setPrevStoreActiveTab(uiState.activeTab);
+    if (tab === "overview" && uiState.activeTab) {
       setTabLocal(uiState.activeTab);
     }
-  }, [uiState.activeTab, tab]);
+  }
 
   // Wrapper for tab changes that also persists
   const setTab = (newTab: string) => {
@@ -356,38 +370,72 @@ export function Dashboard() {
     league: effectiveLeague,
   });
 
-  // Phase 0.2 + P0-2: Update base currency in store when league changes.
-  // Only update if the store doesn't already have a user-selected base currency,
-  // OR if the currently selected currency doesn't exist in the new league.
-  useEffect(() => {
-    if (leagues && effectiveLeague) {
-      const currentLeague = leagues.find((l) => l.name === effectiveLeague);
-      if (currentLeague?.baseCurrencyApiId || currentLeague?.baseCurrencyText) {
-        // P0-2: Check if the user's selected reference currency still exists
-        // in the new league's reference currencies. If it does, keep it.
-        // If not, reset to the league default.
-        // SSR guard: only check user selection after store hydration completes.
-        const userBaseApiId = safeBaseCurrencyApiId;
-        if (userBaseApiId && referenceCurrencies) {
-          const existsInNewLeague = referenceCurrencies.some(
-            (c) => c.apiId === userBaseApiId
-          );
-          if (existsInNewLeague) {
-            // User's selected currency exists in new league — keep it
-            return;
-          }
-        }
-        // Either no user selection or currency doesn't exist in new league
-        // → Reset to league default
-        setBaseCurrency(
-          currentLeague.baseCurrencyApiId ?? null,
-          currentLeague.baseCurrencyText ?? null,
-        );
-        // Also reset the local referenceCurrency state
-        setReferenceCurrency("");
-      }
+  // Phase 0.2 + P0-2: Reset base currency (Zustand store) + reference currency
+  // (local React state) when the user switches to a league where their current
+  // selection is no longer valid.
+  //
+  // iter 123 (KI-24): Split the original `useEffect` into two halves:
+  //   (a) The Zustand mutation (`setBaseCurrency`) STAYS in the effect — the
+  //       `set-state-in-effect` rule does NOT fire on Zustand's `set` (it
+  //       only fires on `useState`/`useReducer` dispatchers — see iter 122
+  //       recipe insight, verified at dashboard-page.tsx:382).
+  //   (b) The React `setState` (`setReferenceCurrency("")`) moves to the
+  //       "adjust state during render" pattern below (ref iter 118), keyed
+  //       on the `effectiveLeague` transition.
+  //
+  // This split is safe because `effectiveLeague` is the primary trigger for
+  // the reset (the user switches league → the hook normalizes the persisted
+  // value → `effectiveLeague` transitions → both halves fire). The other
+  // deps (`leagues`, `referenceCurrencies`, `safeBaseCurrencyApiId`) only
+  // matter for the Zustand half: they re-validate the user's selection as
+  // the async data arrives, which may call `setBaseCurrency` again (idempotent
+  // — same league default values). The local `referenceCurrency` is reset
+  // once on the `effectiveLeague` transition and stays at "" until the user
+  // picks a new currency from the dropdown.
+
+  // Returns true if the user's currently-selected base currency is missing or
+  // invalid in the new league — i.e. BOTH the Zustand store AND the local
+  // referenceCurrency need to be reset to the league default.
+  const shouldResetForNewLeague = useCallback((): boolean => {
+    if (!leagues || !effectiveLeague) return false;
+    const currentLeague = leagues.find((l) => l.name === effectiveLeague);
+    if (!currentLeague?.baseCurrencyApiId && !currentLeague?.baseCurrencyText) {
+      return false;
     }
-  }, [leagues, effectiveLeague, setBaseCurrency, referenceCurrencies, safeBaseCurrencyApiId]);
+    const userBaseApiId = safeBaseCurrencyApiId;
+    if (userBaseApiId && referenceCurrencies) {
+      // User has a selection AND reference list is loaded — keep iff valid.
+      return !referenceCurrencies.some((c) => c.apiId === userBaseApiId);
+    }
+    // No user selection OR reference list not loaded yet → reset to default.
+    return true;
+  }, [leagues, effectiveLeague, safeBaseCurrencyApiId, referenceCurrencies]);
+
+  // (b) React state reset — "adjust state during render" (iter 118 recipe).
+  // Fires when `effectiveLeague` transitions. The prev-guard ensures the
+  // first render does NOT trigger a reset (hydration safety).
+  const [prevEffectiveLeague, setPrevEffectiveLeague] = useState(effectiveLeague);
+  if (effectiveLeague !== prevEffectiveLeague) {
+    setPrevEffectiveLeague(effectiveLeague);
+    if (shouldResetForNewLeague()) {
+      setReferenceCurrency("");
+    }
+  }
+
+  // (a) Zustand store reset — kept in effect because `setBaseCurrency` is a
+  // Zustand action (NOT React setState) and the rule doesn't fire on it.
+  // Re-runs whenever the async inputs (`leagues`, `referenceCurrencies`,
+  // `safeBaseCurrencyApiId`) arrive so the store is re-validated against
+  // the latest data.
+  useEffect(() => {
+    if (shouldResetForNewLeague()) {
+      const currentLeague = leagues?.find((l) => l.name === effectiveLeague);
+      setBaseCurrency(
+        currentLeague?.baseCurrencyApiId ?? null,
+        currentLeague?.baseCurrencyText ?? null,
+      );
+    }
+  }, [shouldResetForNewLeague, leagues, effectiveLeague, setBaseCurrency]);
 
   // All items (for comparison resolution + overview + alerts) — shared hook (Phase 2.2)
   const { data: allItems } = useAllItems({ realm, league: effectiveLeague });
@@ -532,12 +580,32 @@ export function Dashboard() {
     else if (tab === "exchange") refetchExchange();
   }, [tab, refetchCurrencies, refetchUniques, refetchExchange]);
 
-  // Update lastUpdated when data arrives
-  useEffect(() => {
+  // iter 123 (KI-24): Replaced the old `useEffect(() => setLastUpdated(...))`
+  // data-arrival sync with the "adjust state during render" recipe (ref iter 118).
+  // When any of the three data references transitions (new data arrived from
+  // React Query), update `lastUpdated` to "now". The prev-guard ensures we
+  // fire only on actual reference transitions, not every render. The
+  // `if (currenciesData || uniquesData || exchangeData)` guard preserves the
+  // original semantics: don't update `lastUpdated` when going from data →
+  // undefined (e.g. league switch clears the cache).
+  //
+  // Manual refresh (`handleRefresh` below) still calls `setLastUpdated(new Date())`
+  // directly for immediate UI feedback — that path is unchanged.
+  const [prevCurrenciesData, setPrevCurrenciesData] = useState(currenciesData);
+  const [prevUniquesData, setPrevUniquesData] = useState(uniquesData);
+  const [prevExchangeData, setPrevExchangeData] = useState(exchangeData);
+  if (
+    currenciesData !== prevCurrenciesData ||
+    uniquesData !== prevUniquesData ||
+    exchangeData !== prevExchangeData
+  ) {
+    setPrevCurrenciesData(currenciesData);
+    setPrevUniquesData(uniquesData);
+    setPrevExchangeData(exchangeData);
     if (currenciesData || uniquesData || exchangeData) {
       setLastUpdated(new Date());
     }
-  }, [currenciesData, uniquesData, exchangeData]);
+  }
 
   // Keyboard navigation for pages
   useEffect(() => {
