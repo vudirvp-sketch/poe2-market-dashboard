@@ -1,11 +1,34 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 109 — P7 Mirror/Divine Arb Detector UI tab shipped end-to-end: single-object card render + 42 i18n keys × 4 locales + wiring in dashboard-page/toolbar/shortcuts-dialog. Backend was iter 108. Build + 1218 pytest green; tsc/jest not run locally due to OOM-killer at `npm install` — see iter 100 notes.)
+> **Last updated:** 2026-07-11 (iter 110 — P9 Phase-aware Investment Advisor: live-price binding for phase hints. Backend `phase_hints.py` extended with optional `snapshot` param + enrichment logic (current_price / change_pct_week / change_pct_month / momentum / recommendation). 3 hints tracked (exalted/divine). 1218+ pytest green. KI-20 documented — case-transform `_<digit>` bug found, not fixed (risky).)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
 
 ## Known Issues — open
+
+### KI-20 — `case-transform.ts` regex skips `_<digit>` underscores (latent bug in content-pulse)
+
+**Symptom.** Backend snake_case fields containing `_<digit>` patterns (e.g. `delta_7d_pct`, `rolling_7d`, `volume_24h`) are NOT fully camelCased by the frontend proxy's `transformKeys()`. The regex `/_([a-z])/g` only matches underscore followed by a **lowercase letter** — a digit after `_` is left as-is.
+
+**Resulting transform mismatches:**
+| Backend field | Expected TS field | Actual transformed key |
+|---------------|-------------------|------------------------|
+| `delta_7d_pct` | `delta7dPct` | `delta_7dPct` (leftover `_`) |
+| `rolling_7d` | `rolling7d` | `rolling_7d` (unchanged) |
+| `volume_24h` | `volume24h` | `volume_24h` (unchanged) |
+
+**Impact.** The `ContentPulseCategory` TS interface declares `delta7dPct` / `rolling7d`, but the proxy delivers `delta_7dPct` / `rolling_7d`. The content-pulse widget accesses `category.delta7dPct` → gets `undefined`. The widget likely shows stale/zero delta values silently. NOT a crash, but data loss.
+
+**Cause.** `src/lib/case-transform.ts:17` — `str.replace(/_([a-z])/g, ...)` should be `/_([a-z0-9])/g` to also match digits.
+
+**Severity.** Medium — silent data loss in content-pulse widget deltas. Does not crash. Iter 110 new code (phase-hints live-price binding) AVOIDS the bug by using clean field names without `_<digit>` (`change_pct_week` / `change_pct_month` instead of `change_pct_7d` / `change_pct_30d`).
+
+**Fix (deferred).** Change the regex to `/_([a-z0-9])/g` in `src/lib/case-transform.ts`. Risk: medium — could expose latent type mismatches in other widgets that were silently tolerating the buggy transform. Requires full jest + manual UI regression before merge. Deferred to a dedicated iter.
+
+**Where to fix.** `src/lib/case-transform.ts`.
+
+---
 
 ### KI-19 — `scripts/DELETE_*.ts` placeholder files break `next build`
 

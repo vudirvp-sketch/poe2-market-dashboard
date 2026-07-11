@@ -1,0 +1,70 @@
+# Git commands for iter 110 — P9 Phase-aware Investment Advisor (live-price binding)
+#
+# Архив с изменёнными файлами: https://tmpfiles.org/wpw4YbWeovhl/iter110_p9_phase_hints_live_price.tar.gz
+# Размер архива: 222K, 14 изменённых файлов
+#
+# Инструкция по слиянию:
+# 1. Распаковать архив в корень локальной копии репозитория (сохраняет структуру папок):
+#      tar -xzf iter110_p9_phase_hints_live_price.tar.gz
+# 2. Проверить diff:
+#      git diff --stat
+# 3. Запустить тесты локально (опционально, требует aiosqlite для test_scheduler):
+#      python3 -m pytest -q --ignore=tests/test_scheduler.py
+#      Ожидаемый результат: 1266 passed
+# 4. Закоммитить и запушить командами ниже.
+
+# === Stage all changed files ===
+git add \
+  AGENT_NAVIGATION.md \
+  STATUS.md \
+  backend/api/response_models.py \
+  backend/api/routes_phase_hints.py \
+  backend/economy/phase_hints.py \
+  docs/MARKET_PLAYBOOK.md \
+  src/__tests__/phase-hints-widget.test.tsx \
+  src/components/dashboard/phase-hints-widget.tsx \
+  src/lib/i18n/locales/en.ts \
+  src/lib/i18n/locales/ko.ts \
+  src/lib/i18n/locales/ru.ts \
+  src/lib/i18n/locales/zh.ts \
+  src/lib/types.ts \
+  tests/test_phase_hints.py \
+  worklog.md
+
+# === Commit ===
+git commit -m "iter 110: P9 Phase-aware Investment Advisor — live-price binding for phase hints
+
+Backend:
+- phase_hints.py: get_phase_hints() gains optional snapshot param. When
+  provided, each hint with non-empty tracked_currency is enriched with
+  current_price / change_pct_week / change_pct_month / momentum /
+  phase-aware recommendation. 3 of 12 hints tracked (exalted/divine).
+  Backward-compat: snapshot=None returns static-only hints.
+- routes_phase_hints.py: best-effort snapshot fetch with graceful
+  fallback (preserves immune-to-KI-11 property).
+- response_models.py: PhaseHintData gains 6 optional fields.
+
+Frontend:
+- types.ts: PhaseHint interface extended with 6 new fields.
+- phase-hints-widget.tsx: HintRow renders live-price section (price +
+  7d/30d change + momentum badge + recommendation badge) when
+  trackedCurrency + currentPrice available.
+- i18n: 12 new keys x 4 locales (en/ru/ko/zh). Parity: 1191 keys x 4.
+
+Tests:
+- test_phase_hints.py: 48 new pytest (7 test classes covering helpers,
+  enrichment logic, route handler with snapshot, backward-compat).
+- phase-hints-widget.test.tsx: 13 new jest tests for live-price rendering.
+
+Docs:
+- KI-20 documented: case-transform _<digit> bug found, not fixed (risky).
+  Iter 110 new code AVOIDS the bug by using change_pct_week/month
+  instead of change_pct_7d/30d.
+- STATUS.md, MARKET_PLAYBOOK.md, AGENT_NAVIGATION.md, worklog.md updated.
+
+Verification: 1266 pytest green (48 new + 1218 regression). i18n parity
+verified programmatically. tsc/jest not run (OOM-killer, Known Issue
+since iter 99)."
+
+# === Push ===
+git push origin main

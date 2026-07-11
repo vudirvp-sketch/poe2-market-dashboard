@@ -53,6 +53,9 @@ import {
   Activity,
   CalendarClock,
   Compass,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -301,7 +304,96 @@ interface HintRowProps {
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
 }
 
+/** iter 110: momentum badge color + icon. */
+function momentumBadgeClass(momentum: "UP" | "DOWN" | "FLAT"): string {
+  switch (momentum) {
+    case "UP":
+      return "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10";
+    case "DOWN":
+      return "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10";
+    case "FLAT":
+      return "border-muted-foreground/30 text-muted-foreground bg-muted/30";
+  }
+}
+
+/** iter 110: momentum → localized label key. */
+function momentumLabelKey(momentum: "UP" | "DOWN" | "FLAT"): TranslationKeys {
+  switch (momentum) {
+    case "UP":
+      return "phaseHintsMomentumUp";
+    case "DOWN":
+      return "phaseHintsMomentumDown";
+    case "FLAT":
+      return "phaseHintsMomentumFlat";
+  }
+}
+
+/** iter 110: recommendation badge color. */
+function recommendationBadgeClass(rec: string): string {
+  switch (rec) {
+    case "BUY_OPPORTUNITY":
+      return "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10";
+    case "HOLD":
+      return "border-violet-500/50 text-violet-600 dark:text-violet-400 bg-violet-500/10";
+    case "WATCH":
+      return "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10";
+    case "SELL_INTO_STRENGTH":
+    case "SELL_NOW":
+      return "border-red-500/50 text-red-600 dark:text-red-400 bg-red-500/10";
+    case "NEUTRAL":
+    default:
+      return "border-muted-foreground/30 text-muted-foreground bg-muted/30";
+  }
+}
+
+/** iter 110: recommendation → localized label key. */
+function recommendationLabelKey(rec: string): TranslationKeys {
+  switch (rec) {
+    case "BUY_OPPORTUNITY":
+      return "phaseHintsRecBuyOpportunity";
+    case "HOLD":
+      return "phaseHintsRecHold";
+    case "WATCH":
+      return "phaseHintsRecWatch";
+    case "SELL_INTO_STRENGTH":
+      return "phaseHintsRecSellIntoStrength";
+    case "SELL_NOW":
+      return "phaseHintsRecSellNow";
+    case "NEUTRAL":
+    default:
+      return "phaseHintsRecNeutral";
+  }
+}
+
+/** iter 110: format a signed % change with + sign for positive values. */
+function fmtSignedPct(pct: number | null): string {
+  if (pct === null) return "—";
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}%`;
+}
+
+/** iter 110: format a price — 4 significant digits, trim trailing zeros. */
+function fmtPrice(price: number | null): string {
+  if (price === null) return "—";
+  if (price >= 100) return price.toFixed(0);
+  if (price >= 1) return price.toFixed(2);
+  return price.toFixed(4);
+}
+
 function HintRow({ hint, t }: HintRowProps) {
+  // iter 110: live-price section renders only when the hint has a
+  // trackedCurrency AND currentPrice is not null. When the backend has no
+  // snapshot (or the hint is untracked), currentPrice is null and the
+  // live-price section is omitted — the hint renders as before (static).
+  const hasLivePrice = Boolean(hint.trackedCurrency) && hint.currentPrice !== null;
+  const momentumIcon = hint.momentum === "UP" ? (
+    <TrendingUp className="h-3 w-3" aria-hidden="true" />
+  ) : hint.momentum === "DOWN" ? (
+    <TrendingDown className="h-3 w-3" aria-hidden="true" />
+  ) : (
+    <Minus className="h-3 w-3" aria-hidden="true" />
+  );
+
   return (
     <li
       data-testid={`phase-hint-${hint.id}`}
@@ -330,6 +422,84 @@ function HintRow({ hint, t }: HintRowProps) {
         <span className="font-medium">{t("phaseHintsActionLabel")}: </span>
         {hint.action}
       </p>
+
+      {/* iter 110: Live-price section — only when tracked + has data */}
+      {hasLivePrice && (
+        <div
+          data-testid={`phase-hint-${hint.id}-live-price`}
+          className="pl-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs"
+        >
+          {/* Current price */}
+          <span className="flex items-center gap-1">
+            <span className="text-muted-foreground">{t("phaseHintsLivePriceLabel")}</span>
+            <span className="font-mono font-medium" data-testid={`phase-hint-${hint.id}-current-price`}>
+              {fmtPrice(hint.currentPrice)}
+            </span>
+            {hint.trackedCurrency && (
+              <span className="text-muted-foreground/70 uppercase text-[10px]">
+                {hint.trackedCurrency}
+              </span>
+            )}
+          </span>
+
+          {/* 7d change */}
+          <span className="flex items-center gap-1">
+            <span className="text-muted-foreground">{t("phaseHintsChangeWeekLabel")}</span>
+            <span
+              className={
+                hint.changePctWeek === null
+                  ? "text-muted-foreground"
+                  : hint.changePctWeek >= 0
+                    ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                    : "text-red-600 dark:text-red-400 font-medium"
+              }
+              data-testid={`phase-hint-${hint.id}-change-week`}
+            >
+              {fmtSignedPct(hint.changePctWeek)}
+            </span>
+          </span>
+
+          {/* 30d change */}
+          {hint.changePctMonth !== null && (
+            <span className="flex items-center gap-1">
+              <span className="text-muted-foreground">{t("phaseHintsChangeMonthLabel")}</span>
+              <span
+                className={
+                  hint.changePctMonth >= 0
+                    ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                    : "text-red-600 dark:text-red-400 font-medium"
+                }
+                data-testid={`phase-hint-${hint.id}-change-month`}
+              >
+                {fmtSignedPct(hint.changePctMonth)}
+              </span>
+            </span>
+          )}
+
+          {/* Momentum badge */}
+          {hint.momentum && (
+            <Badge
+              variant="outline"
+              className={`text-[10px] gap-0.5 ${momentumBadgeClass(hint.momentum)}`}
+              data-testid={`phase-hint-${hint.id}-momentum`}
+            >
+              {momentumIcon}
+              {t(momentumLabelKey(hint.momentum))}
+            </Badge>
+          )}
+
+          {/* Recommendation badge */}
+          {hint.recommendation && (
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${recommendationBadgeClass(hint.recommendation)}`}
+              data-testid={`phase-hint-${hint.id}-recommendation`}
+            >
+              {t(recommendationLabelKey(hint.recommendation))}
+            </Badge>
+          )}
+        </div>
+      )}
     </li>
   );
 }

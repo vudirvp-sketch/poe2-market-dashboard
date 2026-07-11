@@ -34,35 +34,124 @@ The actual quantitative signals come from F5 Speculation (z-score) and
 F4 Content Pulse (volume deltas). This module complements those by
 providing phase-aware *context* — "right now is a good time to check X".
 
+iter 110 — P9 Phase-aware Investment Advisor (live-price binding)
+-----------------------------------------------------------------
+The hint table is now optionally enriched with **live price metrics** when
+a `DataSnapshot` is passed to `get_phase_hints()`. Each hint may declare a
+`tracked_currency` (an api_id like "exalted" / "divine") — when the
+snapshot contains price history for that currency, the hint is enriched
+with:
+
+- ``current_price``     — most recent price in base currency (Exalted)
+- ``change_pct_week``   — signed % change over ~7d (None when <7d history)
+- ``change_pct_month``  — signed % change over ~30d (None when <30d history)
+- ``momentum``          — "UP" (≥+5%) | "DOWN" (≤-5%) | "FLAT" (between)
+- ``recommendation``    — phase-aware: BUY_OPPORTUNITY / HOLD / WATCH /
+                          SELL_INTO_STRENGTH / SELL_NOW / NEUTRAL
+
+When `snapshot` is None (the default), or the tracked currency has no
+price data, these fields are absent and the hint renders as before
+(static-only). This preserves backward compatibility — all 58 pre-iter-110
+tests remain green without modification.
+
+**Recommendation matrix** (phase × momentum):
+
+| Phase | UP            | DOWN              | FLAT     |
+|-------|---------------|-------------------|----------|
+| EARLY | HOLD          | BUY_OPPORTUNITY   | WATCH    |
+| MID   | HOLD          | WATCH             | NEUTRAL  |
+| LATE  | SELL_INTO_STRENGTH | SELL_NOW      | NEUTRAL  |
+
+Rationale: in EARLY league, a price dip is a buying opportunity (the
+currency will recover as the league matures). In LATE league, a price
+spike is a sell signal (sell into strength before the league ends). MID
+is hold-and-watch. This mirrors the playbook's lifecycle narrative.
+
+**Tracked currencies (iter 110):** only 3 of 12 hints declare a
+`tracked_currency` — the major reference currencies we are confident are
+in the snapshot ("exalted", "divine"). Hints about unique items
+(Temporalis) or category-level items (vault keys, breach catalysts) are
+left untracked because their api_ids are not reliably in the currency
+snapshot. Future iterations can extend coverage.
+
 Future extension
 ----------------
 - Pull hints from `config.yaml` instead of hardcoding them.
-- Add per-pattern metrics (e.g. "Temporalis price +X% over last 7d") by
-  cross-referencing the snapshot's `price_histories`.
+- Add per-pattern metrics for ALL hints (not just tracked ones).
 - Filter hints based on actual market state (e.g. only show "Temporalis
   near peak" if its 7d momentum is positive).
 
-For iter 78 we ship the MVP: hardcoded hint table + static info banner.
+For iter 78 we shipped the MVP: hardcoded hint table + static info banner.
+For iter 110 we add live-price binding for 3 tracked hints (P9).
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Any
+from datetime import datetime, timedelta, timezone
+from typing import Any, TYPE_CHECKING
 
 from backend.models.currency import LeaguePhase
+
+if TYPE_CHECKING:
+    from backend.api.data_snapshot import DataSnapshot
 
 logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Tunable constants — iter 110 live-price enrichment
+# ---------------------------------------------------------------------------
+
+MOMENTUM_UP_THRESHOLD_PCT: float = 5.0
+"""% change over 7d at or above which momentum is "UP"."""
+
+MOMENTUM_DOWN_THRESHOLD_PCT: float = -5.0
+"""% change over 7d at or below which momentum is "DOWN"."""
+
+CHANGE_WEEK_DAYS: int = 7
+"""Lookback for change_pct_week."""
+
+CHANGE_MONTH_DAYS: int = 30
+"""Lookback for change_pct_month."""
+
+NEAREST_PRICE_TOLERANCE_HOURS: float = 24.0
+"""Tolerance for matching a historical price to (now - N days).
+Matches the convention in storage_value_history.py and mirror_divine_arb.py."""
+
+
+# ---------------------------------------------------------------------------
+# Recommendation enum-like constants (iter 110)
+# ---------------------------------------------------------------------------
+
+REC_BUY_OPPORTUNITY: str = "BUY_OPPORTUNITY"
+"""EARLY + DOWN — price dipping in early league = good entry point."""
+
+REC_HOLD: str = "HOLD"
+"""EARLY/MID + UP — let the trend ride."""
+
+REC_WATCH: str = "WATCH"
+"""EARLY + FLAT or MID + DOWN — potential movement, monitor."""
+
+REC_SELL_INTO_STRENGTH: str = "SELL_INTO_STRENGTH"
+"""LATE + UP — sell into the rally before league ends."""
+
+REC_SELL_NOW: str = "SELL_NOW"
+"""LATE + DOWN — exit before further decline."""
+
+REC_NEUTRAL: str = "NEUTRAL"
+"""MID/LATE + FLAT — no clear signal."""
+
+
+# ---------------------------------------------------------------------------
 # Hint table — keyed by phase. Each hint has:
-#   - "id":         stable slug for tests / future metric linkage
-#   - "title":      short label
-#   - "detail":     one-sentence explanation
-#   - "action":     what the user should do (imperative)
-#   - "category":   optional POE2Scout category slug for future cross-ref
+#   - "id":                stable slug for tests / future metric linkage
+#   - "title":             short label
+#   - "detail":            one-sentence explanation
+#   - "action":            what the user should do (imperative)
+#   - "category":          optional POE2Scout category slug for future cross-ref
+#   - "tracked_currency":  optional api_id for live-price binding (iter 110).
+#                          Empty string = untracked hint (static only).
 #
 # Order matters — hints are rendered top-to-bottom in the UI.
 # ---------------------------------------------------------------------------
@@ -78,6 +167,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Focus on high-volume pairs; hold times ≤ 2 hours.",
             "category": "currency",
+            "tracked_currency": "exalted",
         },
         {
             "id": "early-skill-gems-low-demand",
@@ -88,6 +178,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Stockpile 18-20 lvl gems if you find them cheap.",
             "category": "uncutgems",
+            "tracked_currency": "",
         },
         {
             "id": "early-vault-keys-cheap",
@@ -98,6 +189,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Buy keys for personal use; do not hoard for resale yet.",
             "category": "vaultkeys",
+            "tracked_currency": "",
         },
         {
             "id": "early-temporalis-floor",
@@ -108,6 +200,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "If you have liquid currency, watch for sub-200c listings.",
             "category": "",
+            "tracked_currency": "",
         },
     ],
     LeaguePhase.MID: [
@@ -120,6 +213,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "List 18-20 lvl gems at market; check z-score in Speculation tab.",
             "category": "uncutgems",
+            "tracked_currency": "",
         },
         {
             "id": "mid-temporalis-rising",
@@ -130,6 +224,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Hold Temporalis if you have it; do not sell into weakness yet.",
             "category": "",
+            "tracked_currency": "",
         },
         {
             "id": "mid-triangular-arb",
@@ -140,6 +235,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Check the Arbitrage → Triangular tab for 3-hop cycles.",
             "category": "currency",
+            "tracked_currency": "divine",
         },
         {
             "id": "mid-breach-ritual-equilibrium",
@@ -150,6 +246,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Watch Content Pulse for the first sign of volume divergence.",
             "category": "breach",
+            "tracked_currency": "",
         },
     ],
     LeaguePhase.LATE: [
@@ -162,6 +259,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "List Temporalis at market or slightly above; do not hold for next league.",
             "category": "",
+            "tracked_currency": "",
         },
         {
             "id": "late-catalyst-scarcity",
@@ -173,6 +271,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Check Content Pulse + Speculation tab for SELL signals on catalysts.",
             "category": "breach",
+            "tracked_currency": "",
         },
         {
             "id": "late-vault-keys-saturated",
@@ -183,6 +282,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Do not hoard vault keys for resale. Use them or convert now.",
             "category": "vaultkeys",
+            "tracked_currency": "",
         },
         {
             "id": "late-portfolio-hold",
@@ -193,6 +293,7 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Use the Storage Value tab to pick the best store-of-value currency.",
             "category": "",
+            "tracked_currency": "divine",
         },
     ],
 }
@@ -200,8 +301,8 @@ _PHASE_HINTS: dict[LeaguePhase, list[dict[str, str]]] = {
 
 # ---------------------------------------------------------------------------
 # Russian parallel table (iter 87 — i18n leakage fix).
-# Same `id`/`category` keys so the frontend can swap tables by locale without
-# losing the stable slugs used for tests + future metric linkage.
+# Same `id`/`category`/`tracked_currency` keys so the frontend can swap tables
+# by locale without losing the stable slugs used for tests + metric linkage.
 # ---------------------------------------------------------------------------
 
 _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
@@ -215,6 +316,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Фокусируйтесь на высокообъёмных парах; время удержания ≤ 2 часа.",
             "category": "currency",
+            "tracked_currency": "exalted",
         },
         {
             "id": "early-skill-gems-low-demand",
@@ -225,6 +327,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Скупайте камни 18-20 ур., если нашли дёшево.",
             "category": "uncutgems",
+            "tracked_currency": "",
         },
         {
             "id": "early-vault-keys-cheap",
@@ -235,6 +338,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Покупайте ключи для личного использования; не копите на перепродажу.",
             "category": "vaultkeys",
+            "tracked_currency": "",
         },
         {
             "id": "early-temporalis-floor",
@@ -245,6 +349,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Если есть ликвидная валюта — следите за листами ниже 200с.",
             "category": "",
+            "tracked_currency": "",
         },
     ],
     LeaguePhase.MID: [
@@ -257,6 +362,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Выставляйте камни 18-20 ур. по рынку; проверьте z-score во вкладке Спекуляции.",
             "category": "uncutgems",
+            "tracked_currency": "",
         },
         {
             "id": "mid-temporalis-rising",
@@ -267,6 +373,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Держите Temporalis если он у вас есть; пока не продавайте на слабости.",
             "category": "",
+            "tracked_currency": "",
         },
         {
             "id": "mid-triangular-arb",
@@ -277,6 +384,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Проверьте вкладку Арбитраж → Треугольный для 3-хоп циклов.",
             "category": "currency",
+            "tracked_currency": "divine",
         },
         {
             "id": "mid-breach-ritual-equilibrium",
@@ -287,6 +395,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Следите за Content Pulse для первого признака расхождения объёмов.",
             "category": "breach",
+            "tracked_currency": "",
         },
     ],
     LeaguePhase.LATE: [
@@ -299,6 +408,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Выставляйте Temporalis по рынку или чуть выше; не держите до следующей лиги.",
             "category": "",
+            "tracked_currency": "",
         },
         {
             "id": "late-catalyst-scarcity",
@@ -310,6 +420,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Проверьте Content Pulse + Спекуляции для SELL-сигналов по катализаторам.",
             "category": "breach",
+            "tracked_currency": "",
         },
         {
             "id": "late-vault-keys-saturated",
@@ -320,6 +431,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Не копите ключи на перепродажу. Используйте или конвертируйте сейчас.",
             "category": "vaultkeys",
+            "tracked_currency": "",
         },
         {
             "id": "late-portfolio-hold",
@@ -330,6 +442,7 @@ _PHASE_HINTS_RU: dict[LeaguePhase, list[dict[str, str]]] = {
             ),
             "action": "Используйте вкладку Ценность хранения для выбора лучшей валюты.",
             "category": "",
+            "tracked_currency": "divine",
         },
     ],
 }
@@ -390,6 +503,211 @@ _PHASE_META_RU: dict[LeaguePhase, dict[str, str]] = {
 
 
 # ---------------------------------------------------------------------------
+# Live-price enrichment helpers (iter 110 — P9)
+# ---------------------------------------------------------------------------
+
+def _find_price_near(
+    history: list,
+    target_ts: datetime,
+    *,
+    tolerance_hours: float = NEAREST_PRICE_TOLERANCE_HOURS,
+) -> float | None:
+    """Find the price closest to ``target_ts`` in ``history``.
+
+    Reuses the same nearest-neighbour-with-tolerance convention as
+    ``storage_value_history._find_nearest_price`` and
+    ``mirror_divine_arb._extract_rate_series`` — 24h tolerance by default.
+
+    Args:
+        history: List of PricePoint-like objects (``.timestamp``, ``.price``).
+        target_ts: The timestamp to match.
+        tolerance_hours: Max acceptable gap. Defaults to 24h.
+
+    Returns:
+        The closest price within tolerance, or None.
+    """
+    if not history:
+        return None
+
+    best_price: float | None = None
+    best_delta = timedelta.max
+    tolerance = timedelta(hours=tolerance_hours)
+
+    for point in history:
+        try:
+            delta = abs(point.timestamp - target_ts)
+        except (TypeError, AttributeError):
+            continue
+        if delta < best_delta:
+            best_delta = delta
+            best_price = point.price
+
+    if best_delta > tolerance or best_price is None:
+        return None
+    try:
+        return float(best_price)
+    except (TypeError, ValueError):
+        return None
+
+
+def _compute_change_pct(
+    current_price: float,
+    history: list,
+    days: int,
+    now: datetime,
+    *,
+    tolerance_hours: float = NEAREST_PRICE_TOLERANCE_HOURS,
+) -> float | None:
+    """Compute signed % change over the last ``days`` days.
+
+    Finds the price nearest to (now - days) within tolerance, then computes
+    ``(current - old) / old * 100``. Returns None when no historical price
+    is within tolerance (i.e. the history is shorter than ``days``).
+
+    Args:
+        current_price: The current price (must be > 0).
+        history: Price history list (PricePoint-like).
+        days: Lookback window in days.
+        now: Reference "now" timestamp.
+        tolerance_hours: Nearest-neighbour tolerance.
+
+    Returns:
+        Signed % change (e.g. +12.5 for a 12.5% rise), or None.
+    """
+    if not history or current_price <= 0:
+        return None
+    target_ts = now - timedelta(days=days)
+    old_price = _find_price_near(history, target_ts, tolerance_hours=tolerance_hours)
+    if old_price is None or old_price <= 0:
+        return None
+    return (current_price - old_price) / old_price * 100.0
+
+
+def _momentum_from_change(change_pct_week: float | None) -> str | None:
+    """Classify 7d change into UP / DOWN / FLAT.
+
+    - ``UP``   — change ≥ +5%
+    - ``DOWN`` — change ≤ -5%
+    - ``FLAT`` — change in (-5%, +5%)
+    - ``None`` — when change_pct_week is None (insufficient data)
+    """
+    if change_pct_week is None:
+        return None
+    if change_pct_week >= MOMENTUM_UP_THRESHOLD_PCT:
+        return "UP"
+    if change_pct_week <= MOMENTUM_DOWN_THRESHOLD_PCT:
+        return "DOWN"
+    return "FLAT"
+
+
+def _recommendation_from_phase_momentum(
+    phase: LeaguePhase,
+    momentum: str | None,
+) -> str | None:
+    """Phase-aware recommendation from phase + momentum.
+
+    See the recommendation matrix in the module docstring:
+    | Phase | UP                 | DOWN            | FLAT     |
+    |-------|--------------------|-----------------|----------|
+    | EARLY | HOLD               | BUY_OPPORTUNITY | WATCH    |
+    | MID   | HOLD               | WATCH           | NEUTRAL  |
+    | LATE  | SELL_INTO_STRENGTH | SELL_NOW        | NEUTRAL  |
+
+    Returns None when momentum is None (no 7d data to base a call on).
+    """
+    if momentum is None:
+        return None
+    if phase is LeaguePhase.EARLY:
+        if momentum == "UP":
+            return REC_HOLD
+        if momentum == "DOWN":
+            return REC_BUY_OPPORTUNITY
+        return REC_WATCH
+    if phase is LeaguePhase.MID:
+        if momentum == "UP":
+            return REC_HOLD
+        if momentum == "DOWN":
+            return REC_WATCH
+        return REC_NEUTRAL
+    if phase is LeaguePhase.LATE:
+        if momentum == "UP":
+            return REC_SELL_INTO_STRENGTH
+        if momentum == "DOWN":
+            return REC_SELL_NOW
+        return REC_NEUTRAL
+    # Unknown phase — no recommendation
+    return None
+
+
+def _enrich_hint_with_live_price(
+    hint: dict[str, Any],
+    snapshot: "DataSnapshot",
+    phase: LeaguePhase,
+    *,
+    now: datetime,
+) -> None:
+    """Enrich a single hint dict with live-price fields (in-place).
+
+    Reads ``hint["tracked_currency"]`` (an api_id). When it's empty or the
+    snapshot has no data for that currency, the hint is left unchanged
+    (no live fields added). Otherwise adds:
+        - ``current_price``     (float | None)
+        - ``change_pct_week``   (float | None — 7d signed % change)
+        - ``change_pct_month``  (float | None — 30d signed % change)
+        - ``momentum``          (str | None — "UP" / "DOWN" / "FLAT")
+        - ``recommendation``    (str | None — phase-aware recommendation)
+
+    The enrichment is **additive** — existing hint fields (id, title, detail,
+    action, category, tracked_currency) are never modified. When data is
+    missing, the live fields are set to None so the pydantic model + TS type
+    always see the same shape (simpler frontend logic).
+    """
+    tracked = hint.get("tracked_currency", "")
+    # Always set the live fields so the response shape is consistent.
+    # Default to None — overwritten below if data is available.
+    hint.setdefault("current_price", None)
+    hint.setdefault("change_pct_week", None)
+    hint.setdefault("change_pct_month", None)
+    hint.setdefault("momentum", None)
+    hint.setdefault("recommendation", None)
+
+    if not tracked:
+        return
+
+    try:
+        history = snapshot.get_price_history(tracked)
+    except (AttributeError, TypeError):
+        history = []
+
+    try:
+        current_price = snapshot.get_current_price(tracked)
+    except (AttributeError, TypeError):
+        current_price = None
+
+    if current_price is None or not history:
+        return
+
+    try:
+        current_price = float(current_price)
+    except (TypeError, ValueError):
+        return
+    if current_price <= 0:
+        return
+
+    hint["current_price"] = current_price
+    hint["change_pct_week"] = _compute_change_pct(
+        current_price, history, CHANGE_WEEK_DAYS, now
+    )
+    hint["change_pct_month"] = _compute_change_pct(
+        current_price, history, CHANGE_MONTH_DAYS, now
+    )
+    hint["momentum"] = _momentum_from_change(hint["change_pct_week"])
+    hint["recommendation"] = _recommendation_from_phase_momentum(
+        phase, hint["momentum"]
+    )
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -401,6 +719,7 @@ def get_phase_hints(
     league_name: str = "",
     now: datetime | None = None,
     lang: str = "en",
+    snapshot: "DataSnapshot | None" = None,
 ) -> dict[str, Any]:
     """Build the phase-aware hints response.
 
@@ -413,8 +732,15 @@ def get_phase_hints(
         now: Optional override for "today" (for tests). Defaults to UTC now.
         lang: Locale code — "ru" returns the parallel Russian hint table
             (iter 87), anything else returns the default English table.
-            The hint `id` / `category` slugs are identical across locales,
-            so the frontend can safely switch tables by locale.
+            The hint `id` / `category` / `tracked_currency` slugs are
+            identical across locales, so the frontend can safely switch
+            tables by locale.
+        snapshot: Optional DataSnapshot for live-price enrichment (iter 110).
+            When provided, each hint with a non-empty ``tracked_currency``
+            is enriched with ``current_price`` / ``change_pct_week`` /
+            ``change_pct_month`` / ``momentum`` / ``recommendation``.
+            When None (the default), hints are returned static-only
+            (backward-compatible with pre-iter-110 callers).
 
     Returns:
         Dict with shape:
@@ -432,6 +758,16 @@ def get_phase_hints(
                         "detail": str,
                         "action": str,
                         "category": str,          # "" if no specific category
+                        "tracked_currency": str,  # "" if untracked (iter 110)
+                        # --- live-price fields (iter 110, only present when
+                        #     snapshot was passed AND hint has a tracked
+                        #     currency). When snapshot is None these keys
+                        #     are absent (backward-compat). ---
+                        "current_price": float | None,
+                        "change_pct_week": float | None,   # 7d signed %
+                        "change_pct_month": float | None,  # 30d signed %
+                        "momentum": str | None,            # UP/DOWN/FLAT
+                        "recommendation": str | None,      # phase-aware rec
                     },
                     ...
                 ],
@@ -449,7 +785,13 @@ def get_phase_hints(
         meta_table = _PHASE_META
         fallback_meta = {"label": "Unknown Phase", "summary": "League phase could not be determined."}
     meta = meta_table.get(phase, fallback_meta)
-    hints = list(hints_table.get(phase, []))
+    # Deep-copy each hint dict so we never mutate the module-level table.
+    hints = [dict(h) for h in hints_table.get(phase, [])]
+
+    # iter 110: enrich tracked hints with live prices when snapshot is provided.
+    if snapshot is not None:
+        for hint in hints:
+            _enrich_hint_with_live_price(hint, snapshot, phase, now=today)
 
     return {
         "league": league_name,
@@ -476,3 +818,19 @@ def list_phases_with_hints() -> list[LeaguePhase]:
 def hint_count_for_phase(phase: LeaguePhase) -> int:
     """Return the number of hints defined for a given phase."""
     return len(_PHASE_HINTS.get(phase, []))
+
+
+def list_tracked_hints() -> list[tuple[LeaguePhase, str, str]]:
+    """Return ``(phase, hint_id, tracked_currency)`` for every hint that
+    declares a non-empty ``tracked_currency``.
+
+    Exposed for tests so we can verify the iter-110 live-binding coverage
+    without hardcoding the ids in the test file.
+    """
+    out: list[tuple[LeaguePhase, str, str]] = []
+    for phase in LeaguePhase:
+        for hint in _PHASE_HINTS.get(phase, []):
+            tracked = hint.get("tracked_currency", "")
+            if tracked:
+                out.append((phase, hint["id"], tracked))
+    return out

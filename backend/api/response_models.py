@@ -983,12 +983,25 @@ class SpeculationBacktestResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class PhaseHintData(BaseModel):
-    """A single phase-aware hint — advisory context, not a trade signal."""
+    """A single phase-aware hint — advisory context, not a trade signal.
+
+    iter 110 (P9): optional live-price fields added. When the route handler
+    passes a DataSnapshot to ``get_phase_hints()``, each hint with a non-empty
+    ``tracked_currency`` is enriched with ``current_price`` / ``change_pct_week``
+    / ``change_pct_month`` / ``momentum`` / ``recommendation``. When no
+    snapshot is provided (or the hint is untracked), these fields are None.
+    """
     id: str = Field(description="Stable slug (e.g. 'mid-skill-gems-18-20') — for tests and future metric linkage")
     title: str = Field(description="Short label for the hint")
     detail: str = Field(description="One-sentence explanation of the pattern")
     action: str = Field(description="What the user should do (imperative)")
     category: str = Field(default="", description="Optional POE2Scout category slug for future cross-reference. Empty string if none.")
+    tracked_currency: str = Field(default="", description="iter 110: api_id of the currency this hint tracks for live-price binding (e.g. 'exalted'). Empty string = untracked hint (static only).")
+    current_price: float | None = Field(default=None, description="iter 110: current price of tracked_currency in base currency (Exalted). None when no snapshot or untracked hint.")
+    change_pct_week: float | None = Field(default=None, description="iter 110: signed % change over ~7d. None when <7d history or untracked.")
+    change_pct_month: float | None = Field(default=None, description="iter 110: signed % change over ~30d. None when <30d history or untracked.")
+    momentum: str | None = Field(default=None, description="iter 110: 'UP' (≥+5%) | 'DOWN' (≤-5%) | 'FLAT' | None. Derived from change_pct_week.")
+    recommendation: str | None = Field(default=None, description="iter 110: phase-aware recommendation — BUY_OPPORTUNITY / HOLD / WATCH / SELL_INTO_STRENGTH / SELL_NOW / NEUTRAL. None when momentum is None.")
 
 
 class PhaseHintsResponse(BaseModel):

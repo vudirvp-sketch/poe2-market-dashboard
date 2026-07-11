@@ -76,6 +76,13 @@ function makeHint(overrides: Partial<PhaseHint> = {}): PhaseHint {
       "Builds are stabilizing and players are min-maxing — demand for high-level skill gems typically peaks in MID phase.",
     action: "List 18-20 lvl gems at market; check z-score in Speculation tab.",
     category: "uncutgems",
+    // iter 110: live-price fields default to null/empty (static-only hint)
+    trackedCurrency: "",
+    currentPrice: null,
+    changePctWeek: null,
+    changePctMonth: null,
+    momentum: null,
+    recommendation: null,
     ...overrides,
   };
 }
@@ -427,5 +434,242 @@ describe("PhaseHintsWidget", () => {
     renderWidget(true);
     await screen.findByText("Skill gems 18-20 lvl — demand rising");
     expect(screen.queryByText(/ref:/)).not.toBeInTheDocument();
+  });
+
+  // ===========================================================================
+  // iter 110 — Live-price section rendering (P9 Phase-aware Investment Advisor)
+  // ===========================================================================
+
+  describe("iter 110 — live-price section", () => {
+    const livePriceResponse: PhaseHintsResponse = {
+      ...mixedResponse,
+      hints: [
+        makeHint({
+          id: "mid-triangular-arb",
+          title: "Triangular arbitrage window",
+          trackedCurrency: "divine",
+          currentPrice: 115.5,
+          changePctWeek: 12.3,
+          changePctMonth: 25.7,
+          momentum: "UP",
+          recommendation: "HOLD",
+        }),
+        makeHint({
+          id: "mid-skill-gems-18-20",
+          // untracked hint — live-price section should NOT render
+          trackedCurrency: "",
+          currentPrice: null,
+          changePctWeek: null,
+          momentum: null,
+          recommendation: null,
+        }),
+      ],
+    };
+
+    it("renders live-price section when hint has trackedCurrency + currentPrice", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const livePriceSection = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-live-price"]',
+      );
+      expect(livePriceSection).toBeTruthy();
+    });
+
+    it("does NOT render live-price section when hint is untracked", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const livePriceSection = container.querySelector(
+        '[data-testid="phase-hint-mid-skill-gems-18-20-live-price"]',
+      );
+      expect(livePriceSection).toBeNull();
+    });
+
+    it("renders current price with the tracked currency label", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const priceEl = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-current-price"]',
+      );
+      expect(priceEl).toBeTruthy();
+      expect(priceEl?.textContent).toBe("115.50");
+    });
+
+    it("renders 7d change with + sign for positive values", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const changeEl = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-change-week"]',
+      );
+      expect(changeEl).toBeTruthy();
+      expect(changeEl?.textContent).toBe("+12.3%");
+    });
+
+    it("renders 30d change when present", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const changeEl = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-change-month"]',
+      );
+      expect(changeEl).toBeTruthy();
+      expect(changeEl?.textContent).toBe("+25.7%");
+    });
+
+    it("renders momentum badge with UP label", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const momentumBadge = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-momentum"]',
+      );
+      expect(momentumBadge).toBeTruthy();
+      expect(momentumBadge?.textContent).toContain("Rising");
+    });
+
+    it("renders recommendation badge with HOLD label", async () => {
+      mockFetchApi.mockResolvedValue(livePriceResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const recBadge = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-recommendation"]',
+      );
+      expect(recBadge).toBeTruthy();
+      expect(recBadge?.textContent).toContain("HOLD");
+    });
+
+    it("renders negative 7d change with - sign and red color", async () => {
+      const fallingResponse: PhaseHintsResponse = {
+        ...mixedResponse,
+        phase: "early",
+        hints: [
+          makeHint({
+            id: "early-quick-flips",
+            title: "Quick flips on Chaos / Exalted",
+            trackedCurrency: "exalted",
+            currentPrice: 80.0,
+            changePctWeek: -15.2,
+            changePctMonth: -10.0,
+            momentum: "DOWN",
+            recommendation: "BUY_OPPORTUNITY",
+          }),
+        ],
+      };
+      mockFetchApi.mockResolvedValue(fallingResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Quick flips on Chaos / Exalted");
+      const changeEl = container.querySelector(
+        '[data-testid="phase-hint-early-quick-flips-change-week"]',
+      ) as HTMLElement | null;
+      expect(changeEl).toBeTruthy();
+      expect(changeEl?.textContent).toBe("-15.2%");
+      // Red color class for negative change
+      expect(changeEl?.className).toContain("red");
+    });
+
+    it("renders BUY_OPPORTUNITY recommendation for EARLY + DOWN", async () => {
+      const fallingResponse: PhaseHintsResponse = {
+        ...mixedResponse,
+        phase: "early",
+        hints: [
+          makeHint({
+            id: "early-quick-flips",
+            title: "Quick flips on Chaos / Exalted",
+            trackedCurrency: "exalted",
+            currentPrice: 80.0,
+            changePctWeek: -15.0,
+            momentum: "DOWN",
+            recommendation: "BUY_OPPORTUNITY",
+          }),
+        ],
+      };
+      mockFetchApi.mockResolvedValue(fallingResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Quick flips on Chaos / Exalted");
+      const recBadge = container.querySelector(
+        '[data-testid="phase-hint-early-quick-flips-recommendation"]',
+      );
+      expect(recBadge).toBeTruthy();
+      expect(recBadge?.textContent).toContain("BUY");
+    });
+
+    it("renders SELL_INTO_STRENGTH recommendation for LATE + UP", async () => {
+      const lateResponse: PhaseHintsResponse = {
+        ...mixedResponse,
+        phase: "late",
+        hints: [
+          makeHint({
+            id: "late-portfolio-hold",
+            title: "Portfolio holding (risk parity)",
+            trackedCurrency: "divine",
+            currentPrice: 150.0,
+            changePctWeek: 8.5,
+            momentum: "UP",
+            recommendation: "SELL_INTO_STRENGTH",
+          }),
+        ],
+      };
+      mockFetchApi.mockResolvedValue(lateResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Portfolio holding (risk parity)");
+      const recBadge = container.querySelector(
+        '[data-testid="phase-hint-late-portfolio-hold-recommendation"]',
+      );
+      expect(recBadge).toBeTruthy();
+      expect(recBadge?.textContent).toContain("SELL");
+    });
+
+    it("renders FLAT momentum badge when change is small", async () => {
+      const flatResponse: PhaseHintsResponse = {
+        ...mixedResponse,
+        hints: [
+          makeHint({
+            id: "mid-triangular-arb",
+            title: "Triangular arbitrage window",
+            trackedCurrency: "divine",
+            currentPrice: 100.0,
+            changePctWeek: 2.1,
+            momentum: "FLAT",
+            recommendation: "NEUTRAL",
+          }),
+        ],
+      };
+      mockFetchApi.mockResolvedValue(flatResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const momentumBadge = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-momentum"]',
+      );
+      expect(momentumBadge).toBeTruthy();
+      expect(momentumBadge?.textContent).toContain("Stable");
+    });
+
+    it("does NOT render live-price section when currentPrice is null but trackedCurrency is set", async () => {
+      const noDataResponse: PhaseHintsResponse = {
+        ...mixedResponse,
+        hints: [
+          makeHint({
+            id: "mid-triangular-arb",
+            title: "Triangular arbitrage window",
+            trackedCurrency: "divine",
+            // currentPrice is null — no snapshot data
+            currentPrice: null,
+            changePctWeek: null,
+            momentum: null,
+            recommendation: null,
+          }),
+        ],
+      };
+      mockFetchApi.mockResolvedValue(noDataResponse);
+      const { container } = renderWidget(true);
+      await screen.findByText("Triangular arbitrage window");
+      const livePriceSection = container.querySelector(
+        '[data-testid="phase-hint-mid-triangular-arb-live-price"]',
+      );
+      expect(livePriceSection).toBeNull();
+    });
   });
 });

@@ -873,7 +873,13 @@ export interface SpeculationBacktestResponse {
 // ============================================================================
 
 /** A single phase-aware hint — advisory context, NOT a trade signal.
- *  Backend (Pydantic) shape: PhaseHintData. */
+ *  Backend (Pydantic) shape: PhaseHintData.
+ *
+ *  iter 110 (P9): optional live-price fields. When the backend has a
+ *  DataSnapshot available, hints with a non-empty `trackedCurrency` are
+ *  enriched with `currentPrice` / `changePctWeek` / `changePctMonth` /
+ *  `momentum` / `recommendation`. When no snapshot is available (or the
+ *  hint is untracked), these fields are null. */
 export interface PhaseHint {
   /** Stable slug (e.g. "mid-skill-gems-18-20") — for tests + future metric linkage. */
   id: string;
@@ -885,6 +891,25 @@ export interface PhaseHint {
   action: string;
   /** Optional POE2Scout category slug for future cross-reference. Empty string if none. */
   category: string;
+  /** iter 110: api_id of the currency this hint tracks for live-price binding (e.g. "exalted"). Empty string = untracked hint. */
+  trackedCurrency: string;
+  /** iter 110: current price of trackedCurrency in base currency (Exalted). Null when no snapshot or untracked. */
+  currentPrice: number | null;
+  /** iter 110: signed % change over ~7d. Null when <7d history or untracked. */
+  changePctWeek: number | null;
+  /** iter 110: signed % change over ~30d. Null when <30d history or untracked. */
+  changePctMonth: number | null;
+  /** iter 110: "UP" (≥+5%) | "DOWN" (≤-5%) | "FLAT" | null. Derived from changePctWeek. */
+  momentum: "UP" | "DOWN" | "FLAT" | null;
+  /** iter 110: phase-aware recommendation. Null when momentum is null. */
+  recommendation:
+    | "BUY_OPPORTUNITY"
+    | "HOLD"
+    | "WATCH"
+    | "SELL_INTO_STRENGTH"
+    | "SELL_NOW"
+    | "NEUTRAL"
+    | null;
 }
 
 /** Response for GET /api/flipper/phase-hints (F6, iter 78). */

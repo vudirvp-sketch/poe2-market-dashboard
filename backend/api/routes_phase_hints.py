@@ -13,10 +13,14 @@ is a thin FastAPI wrapper that:
      days_since_reference + reference_currency.
   3. Forwards the result to `get_phase_hints()` (pure function).
 
-This endpoint does NOT depend on the DataSnapshot — the hint table is
-hardcoded in `phase_hints.py`. It will always return data_available=True
-as long as the PhaseDetector can be constructed (which it always can,
-given a league_start_datetime).
+iter 110 (P9): The route now ALSO fetches the DataSnapshot (best-effort)
+and passes it to `get_phase_hints()`. When the snapshot is available,
+each hint with a `tracked_currency` is enriched with live-price metrics
+(current_price / change_pct_week / change_pct_month / momentum /
+recommendation). When the snapshot is NOT available (e.g. upstream API
+down — KI-11), the route falls back to static-only hints. This preserves
+the "immune to KI-11" property: even with no market data, the hint table
+still renders.
 
 iter 87: Added `?lang=` query parameter. `?lang=ru` returns the parallel
 Russian hint table from `_PHASE_HINTS_RU` / `_PHASE_META_RU` in
@@ -30,6 +34,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Query
 
+from backend.api.data_snapshot import get_snapshot, get_snapshot_manager
 from backend.api.response_models import PhaseHintsResponse
 from backend.api.shared import get_phase_detector
 from backend.config import get_settings
@@ -49,8 +54,14 @@ async def get_phase_hints_route(
     Returns the current phase (early/mid/late) + phase_label +
     days_since_reference + a list of advisory hints (title, detail,
     action, category). The hints are static — they document well-known
-    league-lifecycle patterns from PRODUCT_VISION §3.4 and do not depend
-    on live market data.
+    league-lifecycle patterns from PRODUCT_VISION §3.4.
+
+    iter 110 (P9): When the DataSnapshot is available, hints with a
+    ``tracked_currency`` are enriched with live-price metrics
+    (current_price / change_pct_week / change_pct_month / momentum /
+    recommendation). When the snapshot is not available, the hints are
+    returned static-only (graceful degradation — the hint table always
+    renders, even when the upstream market API is down).
 
     Always returns data_available=True (the hint table is hardcoded).
     On an unexpected exception, returns a minimal response with empty
@@ -66,12 +77,28 @@ async def get_phase_hints_route(
     try:
         detector = get_phase_detector()
         info = detector.get_phase_info()
+
+        # iter 110: best-effort snapshot fetch for live-price enrichment.
+        # When the snapshot manager has no data yet (last_snapshot is None)
+        # we skip enrichment entirely — the hints are returned static-only.
+        # This keeps the endpoint "immune to KI-11" (upstream API 404).
+        snapshot = None
+        try:
+            snap_mgr = get_snapshot_manager()
+            if snap_mgr.last_snapshot is not None:
+                snapshot = await get_snapshot()
+        except Exception as snap_err:
+            # Snapshot fetch is best-effort — never let it break the hints.
+            logger.debug("Snapshot fetch for phase-hints enrichment failed: %s", snap_err)
+            snapshot = None
+
         return get_phase_hints(
             phase=info.phase,
             days_since_reference=info.days_since_reference,
             reference_currency=info.reference_currency,
             league_name=config.league.league_name,
             lang=lang,
+            snapshot=snapshot,
         )
     except Exception as e:
         logger.error("Phase hints computation failed: %s", e)
