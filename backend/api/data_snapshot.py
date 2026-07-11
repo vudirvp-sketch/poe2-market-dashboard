@@ -641,6 +641,36 @@ class SnapshotManager:
                 "next tick will retry): %s", e,
             )
 
+        # TD-3 (iter 129): best-effort persist detected triangular arbitrage
+        # cycles to SQLite for backtest / trend analysis. Same three-layer
+        # pattern as TD-4: pure helper computes cycles from snapshot, this
+        # block writes them, /arbitrage/triangular/history route reads them.
+        # Design doc §5.1 invariant: persistence MUST NOT block snapshot
+        # publish. A failure here (including find_triangular_arbitrage's 90s
+        # timeout) logs a warning and continues — next tick retries via
+        # INSERT OR IGNORE dedup.
+        try:
+            from backend.data.historical import get_historical_store as _get_store_td3
+            from backend.economy.triangular_cycles import compute_triangular_cycles
+
+            cycles = await compute_triangular_cycles(snapshot, config)
+            if cycles:
+                store = _get_store_td3(config)
+                written = await store.write_triangular_cycles_batch(
+                    league=league,
+                    cycles=cycles,
+                    timestamp=snapshot.fetched_at or datetime.now(timezone.utc),
+                )
+                logger.debug(
+                    "Persisted %d/%d triangular_cycles rows for league '%s'",
+                    written, len(cycles), league,
+                )
+        except Exception as e:
+            logger.warning(
+                "TD-3: triangular_cycles persistence failed (non-fatal, "
+                "next tick will retry): %s", e,
+            )
+
         return snapshot
 
     def invalidate(self) -> None:

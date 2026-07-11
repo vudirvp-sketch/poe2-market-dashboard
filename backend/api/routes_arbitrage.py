@@ -45,7 +45,12 @@ from backend.models.currency import (
 )
 from backend.economy.tiers import tier_penalty, tier_distance
 from backend.economy.events import get_event_manager
-from backend.api.response_models import FlipsResponse, TriangularResponse, OptimalCurrencyResponse
+from backend.api.response_models import (
+    FlipsResponse,
+    TriangularResponse,
+    TriangularCyclesHistoryResponse,
+    OptimalCurrencyResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -916,6 +921,114 @@ async def get_triangular_arbitrage(
         "data_available": True,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+# ---------------------------------------------------------------------------
+# TD-3 (iter 129): Triangular Cycles History — read-only endpoint over the
+# new triangular_cycles SQLite table. The write path is wired into
+# SnapshotManager._refresh() (best-effort post-publish, via the
+# backend.economy.triangular_cycles pure helper). This route is a thin
+# wrapper around HistoricalStore.read_triangular_cycles. Same thin-wrapper
+# pattern as routes_market_spreads.py (TD-4 iter 128).
+# Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §9 Phase 3.
+# ---------------------------------------------------------------------------
+
+DEFAULT_TD3_HISTORY_DAYS: int = 30
+"""Default lookback window in days for the cycle history query."""
+
+MAX_TD3_HISTORY_DAYS: int = 90
+"""Maximum lookback window (matches historical_retention_days)."""
+
+
+@router.get(
+    "/triangular/history",
+    response_model=TriangularCyclesHistoryResponse,
+)
+async def get_triangular_arbitrage_history(
+    cycle_key: str | None = Query(
+        None,
+        description=(
+            "Optional cycle_key filter, e.g. 'divine->exalted->mirror'. "
+            "The cycle_key is the sorted-unique currencies joined with '->' "
+            "(NOT directional — A->B->C and A->C->B share the same key). "
+            "When omitted, all cycles in the league are returned."
+        ),
+    ),
+    days: int = Query(
+        DEFAULT_TD3_HISTORY_DAYS,
+        ge=1,
+        le=MAX_TD3_HISTORY_DAYS,
+        description=(
+            "Lookback window in days. Default 30, max 90 (matches "
+            "historical_retention_days)."
+        ),
+    ),
+) -> dict:
+    """Read persisted triangular_cycles rows from SQLite.
+
+    Returns ``data_available=false`` with an empty ``points`` list when no
+    rows match the query (e.g. the feature just shipped and the first
+    snapshot hasn't persisted yet, or no profitable cycles were detected
+    in the lookback window). The frontend should show a "no data yet"
+    state rather than treating it as an error.
+
+    Distinct from the live ``GET /api/v1/arbitrage/triangular`` endpoint:
+    that route returns the CURRENT detected cycles (with caching via
+    pipeline_cache). This route returns the HISTORICAL persisted cycles
+    for backtest / trend analysis.
+    """
+    config = get_settings()
+    league = config.league.league_name
+
+    try:
+        from backend.data.historical import get_historical_store
+
+        store = get_historical_store(config)
+        rows = await store.read_triangular_cycles(
+            league=league,
+            cycle_key=cycle_key,
+            days=days,
+        )
+        available_cycle_keys = await store.read_triangular_cycles_keys(league=league)
+
+        points = [
+            {
+                "timestamp": row["timestamp"],
+                "cycle_key": row["cycle_key"],
+                "cycle_currencies": row["cycle_currencies"],
+                "raw_profit_pct": row["raw_profit_pct"],
+                "executable_estimate": row["executable_estimate"],
+                "executable_profit": row["executable_profit"],
+                "confidence": row["confidence"],
+                "snapshot_age_sec": row["snapshot_age_sec"],
+            }
+            for row in rows
+        ]
+
+        return {
+            "league": league,
+            "cycle_key": cycle_key,
+            "days": days,
+            "points": points,
+            "available_cycle_keys": available_cycle_keys,
+            "data_available": len(points) > 0,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logger.error(
+            "arbitrage/triangular/history read failed (league=%s, "
+            "cycle_key=%s, days=%d): %s",
+            league, cycle_key, days, e,
+        )
+        return {
+            "league": league,
+            "cycle_key": cycle_key,
+            "days": days,
+            "points": [],
+            "available_cycle_keys": [],
+            "data_available": False,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 # ---------------------------------------------------------------------------

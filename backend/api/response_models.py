@@ -1104,3 +1104,43 @@ class MarketSpreadsHistoryResponse(BaseModel):
     data_available: bool = Field(description="Whether at least one row matched the query.")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch.")
 
+
+# ---------------------------------------------------------------------------
+# Triangular Cycles History (TD-3, iter 129)
+# ---------------------------------------------------------------------------
+
+class TriangularCyclePoint(BaseModel):
+    """One persisted triangular-cycle row for a single cycle + timestamp.
+
+    Mirrors the columns of the ``triangular_cycles`` SQLite table. Numeric
+    fields use ``float | None`` / ``int | None`` so the model can represent
+    rows where the integer simulation did not find a profitable start
+    (``executable_estimate`` = 0, ``executable_profit`` = 0).
+    """
+    timestamp: str = Field(description="ISO 8601 UTC timestamp aligned to the snapshot refresh (5-min bucket).")
+    cycle_key: str = Field(description="Sorted-unique currencies joined with '->'. Example: 'divine->exalted->mirror'. Collapses rotations to one key.")
+    cycle_currencies: str = Field(description="JSON array of the cycle traversal order (closing node stripped). Example: '[\"exalted\",\"divine\",\"mirror\"]'. Lets a future analyst recover the exact rotation.")
+    raw_profit_pct: float | None = Field(default=None, description="Bellman-Ford continuous profit %, BEFORE integer quantization. Matches TriangularOpportunity.continuous_profit_pct.")
+    executable_estimate: int | None = Field(default=None, description="Min profitable starting amount from binary search. 0 when no profitable integer amount found.")
+    executable_profit: int | None = Field(default=None, description="Final amount after integer simulation. Profit = executable_profit - executable_estimate.")
+    confidence: float | None = Field(default=None, description="_compute_confidence() score (0..1), based on data freshness + volume + cycle length.")
+    snapshot_age_sec: int | None = Field(default=None, description="Seconds between snapshot.fetched_at and the persistence write. For staleness filtering.")
+
+
+class TriangularCyclesHistoryResponse(BaseModel):
+    """Response for GET /api/v1/arbitrage/triangular/history.
+
+    Returns the persisted triangular_cycles time-series for a single cycle
+    (or all cycles when ``cycle_key`` is omitted). Empty ``points`` list +
+    ``data_available=false`` when no rows match the lookback window (e.g.
+    the feature just shipped and the first snapshot hasn't persisted yet,
+    or no profitable cycles were detected in the window).
+    """
+    league: str = Field(description="League name.")
+    cycle_key: str | None = Field(default=None, description="Cycle_key filter applied to the query (e.g. 'divine->exalted->mirror'). None when no filter was applied.")
+    days: int = Field(description="Lookback window in days used for the query.")
+    points: list[TriangularCyclePoint] = Field(default_factory=list, description="Persisted cycle rows, oldest-first. Empty when no rows match.")
+    available_cycle_keys: list[str] = Field(default_factory=list, description="Distinct cycle_keys that have at least one persisted row in this league (alphabetical). Useful for the UI to populate a cycle picker. Empty when no rows exist.")
+    data_available: bool = Field(description="Whether at least one row matched the query.")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch.")
+

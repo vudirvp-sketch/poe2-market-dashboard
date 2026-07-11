@@ -7,6 +7,9 @@ Tables:
 - market_spreads: (timestamp, league, pair_key, currency_from, currency_to,
                    raw_rate, volume_24h, market_spread, total_spread,
                    momentum_factor, bfs_widening_factor)  -- TD-4 (iter 128)
+- triangular_cycles: (timestamp, league, cycle_key, cycle_currencies,
+                      raw_profit_pct, executable_estimate, executable_profit,
+                      confidence, snapshot_age_sec)  -- TD-3 (iter 129)
 
 Write: every time current prices are fetched successfully.
 Read: for any model that needs history.
@@ -96,6 +99,33 @@ CREATE INDEX IF NOT EXISTS idx_market_spreads_pair
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_market_spreads_dedup
     ON market_spreads(strftime('%Y-%m-%d %H:%M', timestamp), league, pair_key);
+
+-- TD-3 (iter 129): detected triangular arbitrage cycles per snapshot.
+-- Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §4 (Option B).
+-- Cadence: one row per (league, cycle_key, 5-min bucket) — INSERT OR IGNORE
+-- deduplicates on idx_tri_cycles_dedup. Only profitable cycles (>= 1.0%) are
+-- persisted per design doc §10 Q1 default.
+CREATE TABLE IF NOT EXISTS triangular_cycles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL,
+    league TEXT NOT NULL,
+    cycle_key TEXT NOT NULL,
+    cycle_currencies TEXT NOT NULL,
+    raw_profit_pct REAL,
+    executable_estimate INTEGER,
+    executable_profit INTEGER,
+    confidence REAL,
+    snapshot_age_sec INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_tri_cycles_ts
+    ON triangular_cycles(timestamp);
+
+CREATE INDEX IF NOT EXISTS idx_tri_cycles_key
+    ON triangular_cycles(cycle_key, league);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tri_cycles_dedup
+    ON triangular_cycles(strftime('%Y-%m-%d %H:%M', timestamp), league, cycle_key);
 """
 
 # ---------------------------------------------------------------------------
@@ -189,6 +219,7 @@ class HistoricalStore:
            (chunked to avoid holding a long write lock on large tables)
         3. Also deletes events that don't belong to the current league
         4. TD-4 (iter 128): also deletes market_spreads rows for old leagues
+        5. TD-3 (iter 129): also deletes triangular_cycles rows for old leagues
 
         P1-6 (iter 66): Chunked delete with `await db.commit()` between
         batches. Previously a single `DELETE FROM ... WHERE league = ?`
@@ -199,13 +230,15 @@ class HistoricalStore:
         db = self._db
         current_league = self._config.league.league_name
 
-        # Find distinct leagues across price_snapshots + market_spreads.
-        # TD-4 (iter 128): market_spreads may have leagues that price_snapshots
-        # doesn't (if the snapshot refresh ran but no price_snapshots write
-        # happened that tick), so union both sources.
+        # Find distinct leagues across price_snapshots + market_spreads +
+        # triangular_cycles. TD-3 (iter 129): triangular_cycles may have
+        # leagues that the other tables don't (snapshot refresh persisted
+        # cycles but the ByCategory call failed that tick), so union all
+        # three sources.
         cursor = await db.execute(
             "SELECT DISTINCT league FROM price_snapshots "
-            "UNION SELECT DISTINCT league FROM market_spreads"
+            "UNION SELECT DISTINCT league FROM market_spreads "
+            "UNION SELECT DISTINCT league FROM triangular_cycles"
         )
         rows = await cursor.fetchall()
         old_leagues = [row[0] for row in rows if row[0] != current_league]
@@ -255,6 +288,27 @@ class HistoricalStore:
                         "Pruned %d market_spreads rows from old league '%s' "
                         "(current league: '%s', chunk size: %d)",
                         total_spreads_deleted, old_league, current_league, chunk_size,
+                    )
+
+                # TD-3 (iter 129): same chunked delete for triangular_cycles.
+                total_cycles_deleted = 0
+                while True:
+                    cursor = await db.execute(
+                        "DELETE FROM triangular_cycles WHERE rowid IN ("
+                        "  SELECT rowid FROM triangular_cycles WHERE league = ? LIMIT ?"
+                        ")",
+                        (old_league, chunk_size),
+                    )
+                    deleted = cursor.rowcount
+                    total_cycles_deleted += max(deleted, 0)
+                    await db.commit()
+                    if deleted < chunk_size:
+                        break
+                if total_cycles_deleted > 0:
+                    logger.info(
+                        "Pruned %d triangular_cycles rows from old league '%s' "
+                        "(current league: '%s', chunk size: %d)",
+                        total_cycles_deleted, old_league, current_league, chunk_size,
                     )
         else:
             logger.info(
@@ -670,6 +724,139 @@ class HistoricalStore:
         return [row[0] for row in rows]
 
     # ------------------------------------------------------------------
+    # TD-3 (iter 129): Triangular Cycles Writes + Reads
+    # ------------------------------------------------------------------
+    # Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §4 + §5.1.
+    # Persists detected triangular arbitrage cycles computed by
+    # backend.economy.triangular_cycles.compute_triangular_cycles() so they
+    # can be backtested / trended. Write is best-effort from
+    # SnapshotManager._refresh() — a failure here MUST NOT block the
+    # snapshot publish (next tick will retry via INSERT OR IGNORE dedup).
+
+    async def write_triangular_cycles_batch(
+        self,
+        league: str,
+        cycles: list[dict],
+        timestamp: datetime | None = None,
+    ) -> int:
+        """Persist a batch of detected triangular arbitrage cycles.
+
+        Uses INSERT OR IGNORE so a second write within the same 5-min bucket
+        (same league + cycle_key + strftime('%Y-%m-%d %H:%M', timestamp))
+        is silently dropped — matches the price_snapshots + market_spreads
+        dedup convention.
+
+        Args:
+            league: League name.
+            cycles: List of dicts from ``compute_triangular_cycles()``. Each
+                dict must contain: cycle_key, cycle_currencies (JSON string),
+                raw_profit_pct, executable_estimate, executable_profit,
+                confidence, snapshot_age_sec.
+            timestamp: Snapshot timestamp (UTC). Defaults to now.
+
+        Returns:
+            Number of rows actually inserted (may be less than
+            ``len(cycles)`` if dedup dropped some).
+        """
+        if not cycles:
+            return 0
+        db = await self._ensure_db()
+        ts = (timestamp or datetime.now(timezone.utc)).isoformat()
+
+        rows = [
+            (
+                ts,
+                league,
+                c.get("cycle_key", ""),
+                c.get("cycle_currencies", "[]"),
+                c.get("raw_profit_pct"),
+                c.get("executable_estimate", 0),
+                c.get("executable_profit", 0),
+                c.get("confidence"),
+                c.get("snapshot_age_sec", 0),
+            )
+            for c in cycles
+        ]
+
+        cursor = await db.executemany(
+            """INSERT OR IGNORE INTO triangular_cycles
+               (timestamp, league, cycle_key, cycle_currencies,
+                raw_profit_pct, executable_estimate, executable_profit,
+                confidence, snapshot_age_sec)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            rows,
+        )
+        await db.commit()
+        return max(cursor.rowcount or 0, 0)
+
+    async def read_triangular_cycles(
+        self,
+        league: str,
+        cycle_key: str | None = None,
+        days: int = 30,
+    ) -> list[dict]:
+        """Read triangular arbitrage cycle history for a league.
+
+        Args:
+            league: League name.
+            cycle_key: Optional cycle_key filter (e.g.
+                ``"divine->exalted->mirror"``). When None, returns rows for
+                all cycles in the league.
+            days: Lookback window in days (default 30).
+
+        Returns:
+            List of dicts (oldest-first) with the same keys as the write
+            batch plus ``timestamp``. Empty list when no rows match.
+        """
+        db = await self._ensure_db()
+        params: list = [league, f"-{days}"]
+        where_cycle = " AND cycle_key = ?" if cycle_key is not None else ""
+        if cycle_key is not None:
+            params.append(cycle_key)
+
+        cursor = await db.execute(
+            f"""SELECT timestamp, league, cycle_key, cycle_currencies,
+                       raw_profit_pct, executable_estimate, executable_profit,
+                       confidence, snapshot_age_sec
+               FROM triangular_cycles
+               WHERE league = ?
+                 AND timestamp >= datetime('now', ? || ' days')
+                 {where_cycle}
+               ORDER BY timestamp ASC""",
+            params,
+        )
+        rows = await cursor.fetchall()
+        return [
+            {
+                "timestamp": row[0],
+                "league": row[1],
+                "cycle_key": row[2],
+                "cycle_currencies": row[3],
+                "raw_profit_pct": row[4],
+                "executable_estimate": row[5],
+                "executable_profit": row[6],
+                "confidence": row[7],
+                "snapshot_age_sec": row[8],
+            }
+            for row in rows
+        ]
+
+    async def read_triangular_cycles_keys(self, league: str) -> list[str]:
+        """Return the distinct cycle_keys that have at least one persisted row.
+
+        Useful for the route to enumerate available cycles without pulling
+        all rows. Ordered alphabetically.
+        """
+        db = await self._ensure_db()
+        cursor = await db.execute(
+            "SELECT DISTINCT cycle_key FROM triangular_cycles WHERE league = ? "
+            "ORDER BY cycle_key ASC",
+            (league,),
+        )
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]
+
+    # ------------------------------------------------------------------
     # Maintenance
     # ------------------------------------------------------------------
 
@@ -685,6 +872,9 @@ class HistoricalStore:
         TD-4 (iter 128): Also prunes the ``market_spreads`` table using the
         same chunked pattern. Two independent delete loops so a failure in
         one doesn't skip the other.
+
+        TD-3 (iter 129): Also prunes the ``triangular_cycles`` table with
+        the same chunked pattern. Three independent delete loops.
         """
         db = await self._ensure_db()
         days = self._retention_days
@@ -732,6 +922,28 @@ class HistoricalStore:
             logger.info(
                 "Pruned %d market_spreads rows older than %d days (chunk size: %d)",
                 total_spreads_deleted, days, chunk_size,
+            )
+
+        # TD-3 (iter 129): prune triangular_cycles with the same chunked pattern.
+        total_cycles_deleted = 0
+        while True:
+            cursor = await db.execute(
+                "DELETE FROM triangular_cycles WHERE rowid IN ("
+                "  SELECT rowid FROM triangular_cycles "
+                "  WHERE timestamp < datetime('now', ? || ' days') LIMIT ?"
+                ")",
+                (f"-{days}", chunk_size),
+            )
+            deleted = cursor.rowcount
+            total_cycles_deleted += max(deleted, 0)
+            await db.commit()
+            if deleted < chunk_size:
+                break
+
+        if total_cycles_deleted > 0:
+            logger.info(
+                "Pruned %d triangular_cycles rows older than %d days (chunk size: %d)",
+                total_cycles_deleted, days, chunk_size,
             )
 
 
