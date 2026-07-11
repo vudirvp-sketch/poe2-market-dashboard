@@ -1062,3 +1062,45 @@ class MirrorDivineArbResponse(BaseModel):
     data_available: bool = Field(description="Whether at least MIN_SAMPLE_SIZE (4) rate points fell inside the lookback window.")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch")
     days: int = Field(description="Lookback window in days used for the aggregation")
+
+
+# ---------------------------------------------------------------------------
+# Market Spreads History (TD-4, iter 128)
+# ---------------------------------------------------------------------------
+
+class MarketSpreadPoint(BaseModel):
+    """One persisted market-spread row for a single pair + timestamp.
+
+    Mirrors the columns of the ``market_spreads`` SQLite table. All numeric
+    fields are ``float | None`` so the model can represent rows where the
+    spread formula fell back to the no-volume branch (``volume_24h`` = 0
+    still produces a valid ``market_spread``).
+    """
+    timestamp: str = Field(description="ISO 8601 UTC timestamp aligned to the snapshot refresh (5-min bucket).")
+    pair_key: str = Field(description="Directional pair key, e.g. 'exalted/divine'. NOT sorted — A/B spread != B/A spread.")
+    currency_from: str = Field(description="Source currency api_id.")
+    currency_to: str = Field(description="Target currency api_id.")
+    raw_rate: float | None = Field(default=None, description="How many units of currency_to per 1 unit of currency_from.")
+    volume_24h: float | None = Field(default=None, description="24h traded volume for the pair.")
+    market_spread: float | None = Field(default=None, description="Computed market spread (liquidity + volatility), clamped to [min_market_spread, max_market_spread].")
+    total_spread: float | None = Field(default=None, description="market_spread * (1 + momentum_factor), clamped to max_total_spread.")
+    momentum_factor: float | None = Field(default=None, description="min(|exp(momentum*24) - 1|, max_momentum_factor). 0.0 when <2 price points.")
+    bfs_widening_factor: float | None = Field(default=None, description="1.0 for direct pairs (design doc §10 Q2 default). >1.0 for BFS-derived pairs (not persisted by default).")
+
+
+class MarketSpreadsHistoryResponse(BaseModel):
+    """Response for GET /api/v1/market-spreads/history.
+
+    Returns the persisted market_spreads time-series for a single pair (or
+    all pairs when ``pair`` is omitted). Empty ``points`` list + 
+    ``data_available=false`` when no rows match the lookback window (e.g.
+    the feature just shipped and the first snapshot hasn't persisted yet).
+    """
+    league: str = Field(description="League name.")
+    pair: str | None = Field(default=None, description="Pair filter applied to the query (e.g. 'exalted/divine'). None when no filter was applied.")
+    days: int = Field(description="Lookback window in days used for the query.")
+    points: list[MarketSpreadPoint] = Field(default_factory=list, description="Persisted spread rows, oldest-first. Empty when no rows match.")
+    available_pairs: list[str] = Field(default_factory=list, description="Distinct pair_keys that have at least one persisted row in this league (alphabetical). Useful for the UI to populate a pair picker. Empty when no rows exist.")
+    data_available: bool = Field(description="Whether at least one row matched the query.")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch.")
+

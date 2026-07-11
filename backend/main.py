@@ -693,6 +693,18 @@ try:
 except ImportError:
     logger.debug("Mirror/Divine Arb router not available yet")
 
+# TD-4 (iter 128): Market Spreads History — read-only endpoint over the
+# new market_spreads SQLite table. The write path is wired into
+# SnapshotManager._refresh() (best-effort post-publish). This route is a
+# thin wrapper around HistoricalStore.read_market_spreads. Pure spread
+# computation lives in backend/economy/market_spreads.py. Same thin-wrapper
+# pattern as routes_mirror_divine_arb.py.
+try:
+    from backend.api.routes_market_spreads import router as market_spreads_router
+    app.include_router(market_spreads_router)
+except ImportError:
+    logger.debug("Market Spreads router not available yet")
+
 
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.

@@ -4,6 +4,9 @@ Historical price store using SQLite.
 Tables:
 - price_snapshots: (timestamp, league, currency, price, volume_24h, bid, ask)
 - events: (event_id, event_type, description, affected_currencies, created_at, expires_at, is_active, deactivated_at)
+- market_spreads: (timestamp, league, pair_key, currency_from, currency_to,
+                   raw_rate, volume_24h, market_spread, total_spread,
+                   momentum_factor, bfs_widening_factor)  -- TD-4 (iter 128)
 
 Write: every time current prices are fetched successfully.
 Read: for any model that needs history.
@@ -64,6 +67,35 @@ CREATE TABLE IF NOT EXISTS events (
 
 CREATE INDEX IF NOT EXISTS idx_events_active
     ON events(is_active, expires_at);
+
+-- TD-4 (iter 128): market spread per direct pair per snapshot.
+-- Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §4 (Option B).
+-- Cadence: one row per (league, pair_key, 5-min bucket) — INSERT OR IGNORE
+-- deduplicates on idx_market_spreads_dedup. Only direct pairs (BFS factor = 1.0)
+-- are persisted per design doc §10 Q2 default.
+CREATE TABLE IF NOT EXISTS market_spreads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL,
+    league TEXT NOT NULL,
+    pair_key TEXT NOT NULL,
+    currency_from TEXT NOT NULL,
+    currency_to TEXT NOT NULL,
+    raw_rate REAL,
+    volume_24h REAL,
+    market_spread REAL,
+    total_spread REAL,
+    momentum_factor REAL,
+    bfs_widening_factor REAL
+);
+
+CREATE INDEX IF NOT EXISTS idx_market_spreads_ts
+    ON market_spreads(timestamp);
+
+CREATE INDEX IF NOT EXISTS idx_market_spreads_pair
+    ON market_spreads(pair_key, league);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_market_spreads_dedup
+    ON market_spreads(strftime('%Y-%m-%d %H:%M', timestamp), league, pair_key);
 """
 
 # ---------------------------------------------------------------------------
@@ -156,6 +188,7 @@ class HistoricalStore:
         2. Deletes any that don't match the currently configured league
            (chunked to avoid holding a long write lock on large tables)
         3. Also deletes events that don't belong to the current league
+        4. TD-4 (iter 128): also deletes market_spreads rows for old leagues
 
         P1-6 (iter 66): Chunked delete with `await db.commit()` between
         batches. Previously a single `DELETE FROM ... WHERE league = ?`
@@ -166,9 +199,13 @@ class HistoricalStore:
         db = self._db
         current_league = self._config.league.league_name
 
-        # Find distinct leagues in price_snapshots
+        # Find distinct leagues across price_snapshots + market_spreads.
+        # TD-4 (iter 128): market_spreads may have leagues that price_snapshots
+        # doesn't (if the snapshot refresh ran but no price_snapshots write
+        # happened that tick), so union both sources.
         cursor = await db.execute(
-            "SELECT DISTINCT league FROM price_snapshots"
+            "SELECT DISTINCT league FROM price_snapshots "
+            "UNION SELECT DISTINCT league FROM market_spreads"
         )
         rows = await cursor.fetchall()
         old_leagues = [row[0] for row in rows if row[0] != current_league]
@@ -197,6 +234,27 @@ class HistoricalStore:
                         "Pruned %d price snapshots from old league '%s' "
                         "(current league: '%s', chunk size: %d)",
                         total_deleted, old_league, current_league, chunk_size,
+                    )
+
+                # TD-4 (iter 128): same chunked delete for market_spreads.
+                total_spreads_deleted = 0
+                while True:
+                    cursor = await db.execute(
+                        "DELETE FROM market_spreads WHERE rowid IN ("
+                        "  SELECT rowid FROM market_spreads WHERE league = ? LIMIT ?"
+                        ")",
+                        (old_league, chunk_size),
+                    )
+                    deleted = cursor.rowcount
+                    total_spreads_deleted += max(deleted, 0)
+                    await db.commit()
+                    if deleted < chunk_size:
+                        break
+                if total_spreads_deleted > 0:
+                    logger.info(
+                        "Pruned %d market_spreads rows from old league '%s' "
+                        "(current league: '%s', chunk size: %d)",
+                        total_spreads_deleted, old_league, current_league, chunk_size,
                     )
         else:
             logger.info(
@@ -477,6 +535,141 @@ class HistoricalStore:
         return deleted
 
     # ------------------------------------------------------------------
+    # Market Spreads (TD-4, iter 128)
+    # ------------------------------------------------------------------
+    # Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §4 + §5.1.
+    # Persists per-pair spread metrics computed by
+    # backend.economy.market_spreads.compute_market_spreads() so they can be
+    # backtested / trended. Write is best-effort from
+    # SnapshotManager._refresh() — a failure here MUST NOT block the
+    # snapshot publish (next tick will retry via INSERT OR IGNORE dedup).
+
+    async def write_market_spreads_batch(
+        self,
+        league: str,
+        spreads: list[dict],
+        timestamp: datetime | None = None,
+    ) -> int:
+        """Persist a batch of per-pair spread records.
+
+        Uses INSERT OR IGNORE so a second write within the same 5-min bucket
+        (same league + pair_key + strftime('%Y-%m-%d %H:%M', timestamp)) is
+        silently dropped — matches the price_snapshots dedup convention.
+
+        Args:
+            league: League name.
+            spreads: List of dicts from ``compute_market_spreads()``. Each
+                dict must contain: pair_key, currency_from, currency_to,
+                raw_rate, volume_24h, market_spread, total_spread,
+                momentum_factor, bfs_widening_factor.
+            timestamp: Snapshot timestamp (UTC). Defaults to now.
+
+        Returns:
+            Number of rows actually inserted (may be less than
+            ``len(spreads)`` if dedup dropped some).
+        """
+        if not spreads:
+            return 0
+        db = await self._ensure_db()
+        ts = (timestamp or datetime.now(timezone.utc)).isoformat()
+
+        rows = [
+            (
+                ts,
+                league,
+                s.get("pair_key", ""),
+                s.get("currency_from", ""),
+                s.get("currency_to", ""),
+                s.get("raw_rate"),
+                s.get("volume_24h"),
+                s.get("market_spread"),
+                s.get("total_spread"),
+                s.get("momentum_factor"),
+                s.get("bfs_widening_factor", 1.0),
+            )
+            for s in spreads
+        ]
+
+        cursor = await db.executemany(
+            """INSERT OR IGNORE INTO market_spreads
+               (timestamp, league, pair_key, currency_from, currency_to,
+                raw_rate, volume_24h, market_spread, total_spread,
+                momentum_factor, bfs_widening_factor)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            rows,
+        )
+        await db.commit()
+        return max(cursor.rowcount or 0, 0)
+
+    async def read_market_spreads(
+        self,
+        league: str,
+        pair_key: str | None = None,
+        days: int = 30,
+    ) -> list[dict]:
+        """Read market spread history for a league (optionally one pair).
+
+        Args:
+            league: League name.
+            pair_key: Optional pair filter (e.g. ``"exalted/divine"``). When
+                None, returns rows for all pairs in the league.
+            days: Lookback window in days (default 30).
+
+        Returns:
+            List of dicts (oldest-first) with the same keys as the write
+            batch plus ``timestamp``. Empty list when no rows match.
+        """
+        db = await self._ensure_db()
+        params: list = [league, f"-{days}"]
+        where_pair = " AND pair_key = ?" if pair_key is not None else ""
+        if pair_key is not None:
+            params.append(pair_key)
+
+        cursor = await db.execute(
+            f"""SELECT timestamp, league, pair_key, currency_from, currency_to,
+                      raw_rate, volume_24h, market_spread, total_spread,
+                      momentum_factor, bfs_widening_factor
+               FROM market_spreads
+               WHERE league = ?
+                 AND timestamp >= datetime('now', ? || ' days')
+                 {where_pair}
+               ORDER BY timestamp ASC""",
+            params,
+        )
+        rows = await cursor.fetchall()
+        return [
+            {
+                "timestamp": row[0],
+                "league": row[1],
+                "pair_key": row[2],
+                "currency_from": row[3],
+                "currency_to": row[4],
+                "raw_rate": row[5],
+                "volume_24h": row[6],
+                "market_spread": row[7],
+                "total_spread": row[8],
+                "momentum_factor": row[9],
+                "bfs_widening_factor": row[10],
+            }
+            for row in rows
+        ]
+
+    async def read_market_spreads_pairs(self, league: str) -> list[str]:
+        """Return the distinct pair_keys that have at least one persisted row.
+
+        Useful for the route to enumerate available pairs without pulling
+        all rows. Ordered alphabetically.
+        """
+        db = await self._ensure_db()
+        cursor = await db.execute(
+            "SELECT DISTINCT pair_key FROM market_spreads WHERE league = ? "
+            "ORDER BY pair_key ASC",
+            (league,),
+        )
+        rows = await cursor.fetchall()
+        return [row[0] for row in rows]
+
+    # ------------------------------------------------------------------
     # Maintenance
     # ------------------------------------------------------------------
 
@@ -488,6 +681,10 @@ class HistoricalStore:
         window; a single `DELETE FROM ... WHERE timestamp < ...` would lock the
         table for seconds. Chunked delete with `commit()` between batches keeps
         concurrent reads responsive.
+
+        TD-4 (iter 128): Also prunes the ``market_spreads`` table using the
+        same chunked pattern. Two independent delete loops so a failure in
+        one doesn't skip the other.
         """
         db = await self._ensure_db()
         days = self._retention_days
@@ -513,6 +710,28 @@ class HistoricalStore:
             logger.info(
                 "Pruned %d price snapshots older than %d days (chunk size: %d)",
                 total_deleted, days, chunk_size,
+            )
+
+        # TD-4 (iter 128): prune market_spreads with the same chunked pattern.
+        total_spreads_deleted = 0
+        while True:
+            cursor = await db.execute(
+                "DELETE FROM market_spreads WHERE rowid IN ("
+                "  SELECT rowid FROM market_spreads "
+                "  WHERE timestamp < datetime('now', ? || ' days') LIMIT ?"
+                ")",
+                (f"-{days}", chunk_size),
+            )
+            deleted = cursor.rowcount
+            total_spreads_deleted += max(deleted, 0)
+            await db.commit()
+            if deleted < chunk_size:
+                break
+
+        if total_spreads_deleted > 0:
+            logger.info(
+                "Pruned %d market_spreads rows older than %d days (chunk size: %d)",
+                total_spreads_deleted, days, chunk_size,
             )
 
 

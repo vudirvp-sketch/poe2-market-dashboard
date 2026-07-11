@@ -614,6 +614,33 @@ class SnapshotManager:
                 logger.error("Tier classification failed: %s", e)
                 snapshot.tiers = {}
 
+        # TD-4 (iter 128): best-effort persist per-pair market spreads to
+        # SQLite so they can be backtested / trended. Design doc §5.1:
+        # "the persistence write MUST NOT block the snapshot publish". A
+        # failure here logs a warning and continues — the next tick will
+        # catch up via INSERT OR IGNORE dedup.
+        try:
+            from backend.data.historical import get_historical_store
+            from backend.economy.market_spreads import compute_market_spreads
+
+            spreads = compute_market_spreads(snapshot, config)
+            if spreads:
+                store = get_historical_store(config)
+                written = await store.write_market_spreads_batch(
+                    league=league,
+                    spreads=spreads,
+                    timestamp=snapshot.fetched_at or datetime.now(timezone.utc),
+                )
+                logger.debug(
+                    "Persisted %d/%d market_spreads rows for league '%s'",
+                    written, len(spreads), league,
+                )
+        except Exception as e:
+            logger.warning(
+                "TD-4: market_spreads persistence failed (non-fatal, "
+                "next tick will retry): %s", e,
+            )
+
         return snapshot
 
     def invalidate(self) -> None:
