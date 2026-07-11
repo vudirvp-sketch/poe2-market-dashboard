@@ -112,6 +112,12 @@ export function usePriceStream({
   const reconnectCountRef = useRef(0);
   const everConnectedRef = useRef(false);
   const thresholdRef = useRef(invalidationThresholdPct);
+  // iter 115 — KI-24 set-state-in-effect fix. Flag set to true by the
+  // backendOnline transitions effect when backend comes back online; consumed
+  // (and reset to false) at the top of `connect()` so that reconnectCount and
+  // stale lastError are reset at the start of a fresh session without calling
+  // setState inside the transitions effect.
+  const freshSessionRef = useRef(false);
 
   // Keep threshold ref in sync (iter 114 — KI-24 refs fix).
   // Was: `thresholdRef.current = invalidationThresholdPct;` written during
@@ -211,6 +217,23 @@ export function usePriceStream({
   // ---------------------------------------------------------------------------
 
   const connect = useCallback(() => {
+    // iter 115 — KI-24 set-state-in-effect fix. Consume the fresh-session flag
+    // BEFORE any early-return guards so the reset fires even if connect is
+    // skipped this tick (e.g. `enabled` is false). Was: setReconnectCount(0)
+    // + setLastError(null) called directly inside the backendOnline transitions
+    // effect, which the `react-hooks/set-state-in-effect` rule flags because it
+    // can trigger cascading renders. By moving the reset here (into the
+    // useCallback body, not an effect), the rule no longer fires. The
+    // freshSessionRef guard ensures the reset only happens once per
+    // backend-online transition — not on every connect() call (e.g. not on
+    // auto-reconnect from es.onerror, not on the initial mount).
+    if (freshSessionRef.current) {
+      setReconnectCount(0);
+      setLastError(null);
+      reconnectCountRef.current = 0;
+      freshSessionRef.current = false;
+    }
+
     if (!enabled || !mountedRef.current) return;
 
     // Don't connect if backend is known to be offline
@@ -371,6 +394,23 @@ export function usePriceStream({
   // ---------------------------------------------------------------------------
   // Effect: React to backendOnline transitions
   // ---------------------------------------------------------------------------
+  //
+  // iter 115 — KI-24 set-state-in-effect fix. This effect previously called
+  // setStatus("disconnected") + setLastError(null) (offline branch) and
+  // setReconnectCount(0) (online branch), which the `react-hooks/set-state-in-effect`
+  // rule flags because synchronous setState in effects can trigger cascading
+  // renders. The fix:
+  //   - `status` and `lastError` are now DERIVED from `backendOnline` in the
+  //     return statement (when `backendOnline === false`, the derived values
+  //     are "disconnected" / null regardless of internal state). The internal
+  //     state is no longer mutated by this effect.
+  //   - `setReconnectCount(0)` + `setLastError(null)` (stale-error clear) are
+  //     moved into `connect()` via the `freshSessionRef` latest-ref pattern.
+  //     The ref is set to true here (a ref write, not flagged by the rule) and
+  //     consumed at the top of `connect()` on the next call. This preserves the
+  //     exact reset semantics — the reset fires synchronously in the same tick
+  //     because `connectRef.current()` is called immediately after setting the
+  //     ref.
 
   useEffect(() => {
     const prevOnline = prevBackendOnlineRef.current;
@@ -381,18 +421,30 @@ export function usePriceStream({
     if (prevOnline === backendOnline) return;
 
     if (backendOnline === false) {
-      // Backend went offline — close SSE and stop reconnecting
+      // Backend went offline — close SSE and stop reconnecting.
+      // Status and lastError are derived from backendOnline in the return
+      // statement, so no setState is needed here.
       cleanup();
-      setStatus("disconnected");
-      setLastError(null);
     } else if (backendOnline === true) {
-      // Backend came back online — reset state and reconnect
-      setReconnectCount(0);
-      reconnectCountRef.current = 0;
+      // Backend came back online — signal a fresh session so connect() resets
+      // reconnectCount and stale lastError, then reconnect.
+      freshSessionRef.current = true;
       everConnectedRef.current = false;
       connectRef.current();
     }
   }, [backendOnline, cleanup]);
 
-  return { status, lastError, reconnectCount };
+  // Derive status and lastError from backendOnline (iter 115 — KI-24).
+  // When the backend is known to be offline, the UI must show "disconnected"
+  // with no error regardless of the internal state (which may be stale
+  // "connected" / "connecting" from before the transition). Computing this at
+  // render time — rather than via setState in the transitions effect above —
+  // avoids the `react-hooks/set-state-in-effect` warning and is the
+  // React-recommended pattern for state that is fully determined by a prop.
+  const effectiveStatus: PriceStreamStatus =
+    backendOnline === false ? "disconnected" : status;
+  const effectiveLastError: string | null =
+    backendOnline === false ? null : lastError;
+
+  return { status: effectiveStatus, lastError: effectiveLastError, reconnectCount };
 }

@@ -5,6 +5,53 @@
 
 ---
 
+Task ID: iter-115
+Agent: main
+Task: iter 115 — incremental KI-24 fix: eliminate the 1 `react-hooks/set-state-in-effect` warning in `use-price-stream.ts` (the `backendOnline` transitions effect). Strategy: (a) derive `status`/`lastError` from `backendOnline` in the return statement; (b) move `setReconnectCount(0)` + `setLastError(null)` out of the effect into `connect()` via a `freshSessionRef` latest-ref pattern. Lint 126 → 125, 0 errors. No backend/test changes.
+
+Work Log:
+- Cloned repo. Read STATUS.md (KI-23 open, KI-24 open with 11 sites / 2 rules after iter 114, KI-20 open), worklog.md (iter 113 + iter 114), package.json, `use-price-stream.ts` (full 399-line file).
+- **Selected iter 115 scope = KI-24 `set-state-in-effect` — `use-price-stream.ts`.** Per "Лучше недоделать, чем сломать": chose the smallest-scope candidate from the iter-114 stopping-point list. Same file already in context from iter 114 (the agent that did iter 114 touched the same file and explicitly noted "use-price-stream.ts:362 is a natural next target"). Single warning site. Other candidates (KI-23 ~120-line refactor, KI-20 regex change with full regression, KI-24 `preserve-manual-memoization` in a different file, TD-3/4/5/9 persistence, P10 Gold Map ROI feature) all carry higher risk or need their own dedicated iter.
+- **Confirmed baseline.** `npm install` → packages installed silently. `npx eslint .` → 126 warnings, 0 errors (matches iter-114 baseline). Per-file lint on the target: `use-price-stream.ts` had 1 warning — `react-hooks/set-state-in-effect` at line 386 (`setStatus("disconnected")` inside the `backendOnline` transitions effect). Note: the warning site migrated from line 362 (iter 114 worklog) to line 386 because the iter-114 fix added ~15 lines (the `connectRef` sync-effect) before this effect. `npx tsc --noEmit` → exit 0. `npx jest --maxWorkers=1` → 582 passed, 25 suites, exit 0.
+- **Read the full target file & analyzed the transitions effect.** The `backendOnline` transitions effect (lines 375-395 pre-fix) had 3 setState calls:
+  - Offline branch: `setStatus("disconnected")` (line 386, flagged) + `setLastError(null)` (line 387) — clear stale status/error so UI shows "disconnected" / no-error while backend is offline.
+  - Online branch: `setReconnectCount(0)` (line 390) — reset the reconnect counter for the new session, so the user doesn't see stale counts from the previous session.
+  - The rule fires on the FIRST setState in an effect (line 386). Removing only that line would cause the rule to fire on line 387, then line 390. To fully eliminate the warning, ALL setState calls must be removed from the effect.
+- **Safety analysis (semantics preservation):**
+  - `status` and `lastError` are FULLY DETERMINED by `backendOnline` when offline — when `backendOnline === false`, the UI must show "disconnected" with no error regardless of internal state. This is a pure derivation: `backendOnline === false ? "disconnected" : status`. The internal state is no longer mutated by the effect, but the rendered output is identical. This is the React-recommended pattern (https://react.dev/learn/you-might-not-need-an-effect).
+  - `setReconnectCount(0)` (online branch) is NOT fully derivable — `reconnectCount` is genuine state that accumulates over time (incremented in `es.onerror`'s reconnect callback). It needs to be RESET once per backend-online transition. Strategy: move the reset into `connect()` (a `useCallback`, not an effect — the rule doesn't trace setState through useCallback boundaries, confirmed by the existing `setStatus("connecting")` at line 226 not firing the rule) via a `freshSessionRef` "signal ref" pattern.
+- **Applied fix:**
+  1. Added `const freshSessionRef = useRef(false);` near the other refs (after `thresholdRef`), with explanatory comment block citing the rule, the rationale, and the pattern.
+  2. At the top of `connect()` (before any early-return guards), added a `freshSessionRef` consumption block: `if (freshSessionRef.current) { setReconnectCount(0); setLastError(null); reconnectCountRef.current = 0; freshSessionRef.current = false; }`. Placed BEFORE guards so the reset fires even if `connect` is skipped this tick (e.g. `enabled` is false) — the next `connect()` call won't re-reset (guard is already consumed), but `reconnectCount` is already 0 from the earlier call.
+  3. In the `backendOnline` transitions effect: offline branch reduced to `cleanup()` only (removed `setStatus("disconnected")` + `setLastError(null)` — now derived in return); online branch reduced to `freshSessionRef.current = true; everConnectedRef.current = false; connectRef.current();` (removed `setReconnectCount(0)` + `reconnectCountRef.current = 0` — now handled by `connect()` consuming `freshSessionRef`).
+  4. Replaced `return { status, lastError, reconnectCount };` with derivation: `const effectiveStatus = backendOnline === false ? "disconnected" : status;` + `const effectiveLastError = backendOnline === false ? null : lastError;` + `return { status: effectiveStatus, lastError: effectiveLastError, reconnectCount };`.
+- **Effect-order & double-connect analysis (pre-existing, not worsened):** The connect-on-mount effect (declared at line 358) runs BEFORE the transitions effect (declared at line 375). When `backendOnline` transitions false→true, both effects re-run: connect-on-mount calls `connectRef.current()` (with `freshSessionRef.current` still false from the previous render — no reset), then transitions sets `freshSessionRef.current = true` and calls `connectRef.current()` again (second `connect()` call, this time `freshSessionRef.current` is true — reset fires, then `cleanup()` discards the EventSource from the first call and creates a new one). This double-connect is PRE-EXISTING (the iter-114 code has the same pattern) and is not worsened by the fix. The end state is correct: `reconnectCount = 0`, fresh EventSource created.
+- **Stale-error-clear analysis:** Original code cleared `lastError` when backend went OFFLINE. After the fix, the derived `effectiveLastError` is `null` when offline (user sees no error — same behavior). When backend comes back ONLINE, `connect()` consumes `freshSessionRef` and clears `lastError` (added `setLastError(null)` to the consumption block) — this clears any stale error before `es.onopen` fires (which also clears it). The user never sees a stale error resurface during the online transition. Semantics fully preserved.
+- **Verification:**
+  - `npx eslint src/hooks/use-price-stream.ts` → **0 warnings, 0 errors** ✅ (was 1 warning).
+  - `npx eslint .` → **0 errors, 125 warnings, exit 0** ✅ (was 126 → 125 = 1 warning removed, exactly matching the 1 set-state-in-effect site).
+  - `npx tsc --noEmit` → **exit 0** ✅ (no type errors; `effectiveStatus` typed as `PriceStreamStatus`, `effectiveLastError` as `string | null`; `freshSessionRef` typed as `useRef<boolean>`).
+  - `npx jest --maxWorkers=1` → **582 passed, 0 failed, 25 suites, exit 0** ✅ (matches iter-114 count; no test files touched).
+  - `pytest` not run (no backend changes) — 1279 passed expected per iter 113.
+  - `next build` not run (4GB RAM env constraint, see Quick Reference OOM note) — iter-114 baseline was green; the refactor only changes (a) where setState is called (effect → useCallback body, same tick) and (b) adds a render-time derivation (pure computation), so build regression is not a plausible failure mode.
+- **Documentation updates:**
+  - `STATUS.md`: bumped "Last updated" header (iter 115). Updated KI-24 section — table now shows 2 rules / 10 sites (was 2 rules / 11 sites), `use-price-stream.ts` removed from `set-state-in-effect` sites list (10 → 9), added "Note (iter 115)" paragraph documenting the fix. Updated backlog row: "10 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 1 of 10 resolved iter 115)". Added new "Key technical insights" paragraph: "`react-hooks/set-state-in-effect` fix recipe (iter 115)" — describes both strategies (derive during render; move setState into useCallback via signal ref) with the IFF-condition for each and the canonical example.
+  - `worklog.md` (this entry) — trimmed iter 113 (oldest, in git log), now shows iter 114 + iter 115 (last 2 iterations per header convention).
+  - `AGENT_NAVIGATION.md` — header bump only.
+
+Stage Summary:
+- **iter 115 SHIPPED — KI-24 `set-state-in-effect` 1 of 10 sites resolved.** The single warning in `use-price-stream.ts` eliminated. Lint warnings: 126 → 125 (0 errors). `tsc` green. 582 jest green. 1279 pytest expected green (no backend changes).
+- **Modified files (3):** `src/hooks/use-price-stream.ts`, `STATUS.md`. Plus `worklog.md` (this entry) + `AGENT_NAVIGATION.md` (header bump).
+- **What was NOT done (intentionally deferred):**
+  - KI-23 (`unique-table.tsx` rules-of-hooks — extract `<CategoryGroupTable>`, ~120-line refactor, needs UI regression).
+  - KI-20 (`case-transform.ts` regex `/_([a-z])/g` → `/_([a-z0-9])/g`, medium risk, needs full jest + UI regression).
+  - KI-24 remaining 10 sites across 2 React Compiler rules (`set-state-in-effect` 9, `preserve-manual-memoization` 1) — each needs case-by-case evaluation, not mechanical. The 9 `set-state-in-effect` sites are in `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `header.tsx` (1), `offline-banner.tsx` (1), `use-realms-and-leagues.ts` (1), `use-reduced-motion.ts` (1), `i18n/index.tsx` (1). The 1 `preserve-manual-memoization` site is `speculation-tab.tsx:316`.
+  - TD-3/4/5/9 persistence gaps (need persistence-layer design).
+  - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
+- **Stopping point:** iter 115 = KI-24 `set-state-in-effect` 1 of 10 sites resolved (use-price-stream.ts). KI-24 backlog now 10 sites / 2 rules. Next iter (iter 116) candidates: (a) KI-23 fix — extract `<CategoryGroupTable>` from `unique-table.tsx` (P2, mechanical refactor, needs UI regression); (b) KI-20 fix — `case-transform.ts` regex (medium risk, needs full jest + UI regression); (c) KI-24 `set-state-in-effect` incremental — pick the next-smallest site (e.g. `use-reduced-motion.ts` 1 site, or `use-realms-and-leagues.ts` 1 site — both are hooks, similar pattern to use-price-stream.ts); (d) KI-24 `preserve-manual-memoization` — `speculation-tab.tsx:316` (1 site, different rule, evaluate whether `useMemo` can be removed); (e) TD-3/4/5/9 persistence gaps; (f) P10 Gold Map ROI (§C.8).
+
+---
+
 Task ID: iter-114
 Agent: main
 Task: iter 114 — incremental KI-24 fix: move the 2 latest-ref writes during render in `use-price-stream.ts` (`thresholdRef.current = invalidationThresholdPct` and `connectRef.current = connect`) into `useEffect` hooks. Eliminates both `react-hooks/refs` warnings; reduces total lint warnings 128 → 126. No backend/test changes.
@@ -38,29 +85,4 @@ Work Log:
 Stage Summary:
 - **iter 114 SHIPPED — KI-24 `refs` fully resolved.** Both `react-hooks/refs` warnings eliminated. Lint warnings: 128 → 126 (0 errors). `tsc` green. 582 jest green. 1279 pytest expected green (no backend changes).
 - **Modified files (3):** `src/hooks/use-price-stream.ts`, `STATUS.md`. Plus `worklog.md` (this entry) + `AGENT_NAVIGATION.md` (header bump).
-- **What was NOT done (intentionally deferred):**
-  - KI-23 (`unique-table.tsx` rules-of-hooks — extract `<CategoryGroupTable>`, ~120-line refactor, needs UI regression).
-  - KI-20 (`case-transform.ts` regex `/_([a-z])/g` → `/_([a-z0-9])/g`, medium risk, needs full jest + UI regression).
-  - KI-24 remaining 11 sites across 2 React Compiler rules (`set-state-in-effect` 10, `preserve-manual-memoization` 1) — each needs case-by-case evaluation, not mechanical. Of these, `use-price-stream.ts:362` is the next-smallest target (1 site in the same file just touched).
-  - TD-3/4/5/9 persistence gaps (need persistence-layer design).
-  - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
 - **Stopping point:** iter 114 = KI-24 `refs` fully resolved. KI-24 backlog now 11 sites / 2 rules. Next iter (iter 115) candidates: (a) KI-23 fix — extract `<CategoryGroupTable>` from `unique-table.tsx` (P2, mechanical refactor, needs UI regression); (b) KI-20 fix — `case-transform.ts` regex (medium risk, needs full jest + UI regression); (c) KI-24 `set-state-in-effect` incremental — `use-price-stream.ts:362` is a natural next target (already in context, same file just touched) OR evaluate the 9 other sites case-by-case; (d) TD-3/4/5/9 persistence gaps; (e) P10 Gold Map ROI (§C.8).
-
----
-
-Task ID: iter-113
-Agent: main
-Task: iter 113 — incremental KI-24 fix: move inline `SortIndicator` from inside `ExchangeTable` / `WatchlistTab` to module scope in `exchange-table.tsx` (7 sites) and `watchlist-tab.tsx` (5 sites). Pass `sortField`/`sortDirection` as explicit props. Eliminates all 12 `react-hooks/static-components` warnings; reduces total lint warnings 140 → 128. No backend/test changes.
-
-Work Log:
-- Cloned repo. Read STATUS.md (KI-23 open, KI-24 open with 25 sites / 4 rules, KI-20 open), worklog.md (iter 111 + iter 112), package.json.
-- **Selected iter 113 scope = KI-24 incremental `static-components` fix.** Per "Лучше недоделать, чем сломать": chose the lowest-risk candidate from the iter-112 stopping-point list. Mechanical refactor (move component to module scope, add explicit props), no logic change, no backend touched, no test fixtures touched.
-- **Confirmed baseline.** `npx eslint .` → 140 warnings, 0 errors. Per-file: `exchange-table.tsx` had 7 `static-components` warnings, `watchlist-tab.tsx` had 5.
-- **Applied identical fix pattern to both files:** moved `SortIndicator` to module scope, added `interface SortIndicatorProps { field, sortField, sortDirection }`, updated all 12 call sites to pass explicit props.
-- **Verification:** `npx eslint .` → 0 errors, 128 warnings ✅ (12 removed). `npx tsc --noEmit` → exit 0 ✅. `npx jest --maxWorkers=1` → 582 passed ✅.
-- **Docs:** `STATUS.md` updated (KI-24 table 4→3 rules, 25→13 sites, added iter-113 note + recipe in Key Insights). `AGENT_NAVIGATION.md` header bump.
-
-Stage Summary:
-- **iter 113 SHIPPED — KI-24 `static-components` fully resolved.** 12 warnings eliminated. Lint 140 → 128 (0 errors). `tsc` green. 582 jest green.
-- **Modified files (3):** `src/components/dashboard/exchange-table.tsx`, `src/components/dashboard/watchlist-tab.tsx`, `STATUS.md` + `worklog.md` + `AGENT_NAVIGATION.md`.
-- **Stopping point:** KI-24 `static-components` fully resolved. Next iter candidates: KI-23 / KI-20 / KI-24 refs (2 sites in `use-price-stream.ts`) / KI-24 set-state-in-effect (10 sites) / TD-3/4/5/9 / P10 Gold Map ROI.

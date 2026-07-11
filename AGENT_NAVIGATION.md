@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 114 — incremental KI-24 fix: moved 2 latest-ref writes during render in `use-price-stream.ts` (`thresholdRef.current = ...` and `connectRef.current = ...`) into `useEffect` hooks. Both `react-hooks/refs` warnings eliminated; lint 128 → 126 warnings, 0 errors. 582 jest green, tsc green. KI-24 backlog now 11 sites across 2 remaining React Compiler rules.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 115 — incremental KI-24 fix: eliminated the 1 `react-hooks/set-state-in-effect` warning in `use-price-stream.ts` by (a) deriving `status`/`lastError` from `backendOnline` in the return statement and (b) moving `setReconnectCount(0)`/`setLastError(null)` out of the transitions effect into `connect()` via a `freshSessionRef` latest-ref pattern. Lint 126 → 125 warnings, 0 errors. 582 jest green, tsc green. KI-24 backlog now 10 sites across 2 remaining React Compiler rules.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

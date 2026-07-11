@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 114 — incremental KI-24 fix: moved 2 latest-ref writes during render (`thresholdRef.current = ...` and `connectRef.current = ...` in `use-price-stream.ts`) into `useEffect` hooks. Eliminates both `react-hooks/refs` warnings. Lint 128 → 126, 0 errors. 582 jest green, tsc green, no backend/test changes. KI-24 backlog now 11 sites across 2 React Compiler rules.)
+> **Last updated:** 2026-07-11 (iter 115 — incremental KI-24 fix: eliminated the 1 `react-hooks/set-state-in-effect` warning in `use-price-stream.ts` by (a) deriving `status`/`lastError` from `backendOnline` in the return statement and (b) moving `setReconnectCount(0)`/`setLastError(null)` out of the transitions effect into `connect()` via a `freshSessionRef` latest-ref pattern. Lint 126 → 125, 0 errors. 582 jest green, tsc green, no backend/test changes. KI-24 backlog now 10 sites across 2 React Compiler rules.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -32,18 +32,20 @@
 
 ---
 
-### KI-24 — React Compiler rule migration backlog (11 sites remaining, 2 rules)
+### KI-24 — React Compiler rule migration backlog (10 sites remaining, 2 rules)
 
-**Symptom.** `npm run lint` emits 126 warnings (0 errors). Of these, 11 come from 2 new React Compiler rules shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
+**Symptom.** `npm run lint` emits 125 warnings (0 errors). Of these, 10 come from 2 new React Compiler rules shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
 
 | Rule | Count | Sites |
 |------|-------|-------|
-| `react-hooks/set-state-in-effect` | 10 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `header.tsx` (1), `offline-banner.tsx` (1), `use-price-stream.ts` (1), `use-realms-and-leagues.ts` (1), `use-reduced-motion.ts` (1), `i18n/index.tsx` (1) |
+| `react-hooks/set-state-in-effect` | 9 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `header.tsx` (1), `offline-banner.tsx` (1), `use-realms-and-leagues.ts` (1), `use-reduced-motion.ts` (1), `i18n/index.tsx` (1) |
 | `react-hooks/preserve-manual-memoization` | 1 | `speculation-tab.tsx:316` |
 
 **Note (iter 113).** `react-hooks/static-components` (12 sites, was the largest bucket) is **fully resolved** — `SortIndicator` moved to module scope in `exchange-table.tsx` (7 sites) and `watchlist-tab.tsx` (5 sites). Each usage now passes `sortField`/`sortDirection` as explicit props. The rule no longer fires anywhere.
 
 **Note (iter 114).** `react-hooks/refs` (2 sites) is **fully resolved** — both latest-ref writes in `use-price-stream.ts` (`thresholdRef.current = invalidationThresholdPct` and `connectRef.current = connect`) moved into `useEffect` hooks. The sync-effects are declared BEFORE the consuming connect-on-mount effect so declaration order guarantees the ref is updated before any reader runs. The rule no longer fires anywhere.
+
+**Note (iter 115).** `react-hooks/set-state-in-effect` reduced from 10 → 9 sites in `use-price-stream.ts`. The single site was the `backendOnline` transitions effect, which called `setStatus("disconnected")` + `setLastError(null)` (offline branch) and `setReconnectCount(0)` (online branch). Fix: (a) `status` and `lastError` are now DERIVED from `backendOnline` in the return statement (`backendOnline === false ? "disconnected" : status`) — no setState needed for the offline branch; (b) `setReconnectCount(0)` + `setLastError(null)` (stale-error clear) moved into `connect()` via a `freshSessionRef` latest-ref pattern: the ref is set to `true` in the transitions effect (a ref write, not flagged) and consumed at the top of `connect()` (a useCallback, not an effect) before any early-return guards. Semantics fully preserved — the reset still fires synchronously in the same tick because `connectRef.current()` is called immediately after setting the ref.
 
 **Impact.** None at runtime — these are performance/optimization smells flagged for React Compiler adoption. The code works correctly; the rules flag patterns the compiler can't optimize (setState in effects can cascade, manual memoization may conflict with compiler output).
 
@@ -101,7 +103,7 @@
 | ID | Priority | Notes |
 |----|----------|-------|
 | **KI-23** | P2 | `unique-table.tsx` — extract `<CategoryGroupTable>` child to fix rules-of-hooks violation. Mechanical refactor, ~120 lines. |
-| **KI-24** | P3 | 11 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114). Incremental per-file refactors (see KI-24 table above). |
+| **KI-24** | P3 | 10 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 1 of 10 resolved iter 115). Incremental per-file refactors (see KI-24 table above). |
 | **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. |
 | **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
@@ -145,3 +147,7 @@
 **`react-hooks/static-components` fix recipe (iter 113).** When the rule fires on a small inline component (e.g. `SortIndicator`), the fix is mechanical: (1) move the definition to module scope; (2) add a props interface that explicitly accepts every value the closure was capturing (typically `sortField`, `sortDirection`); (3) update every call site to pass these props. The component's render logic does NOT change. After the move, React sees a stable component type across renders, so the compiler can optimize and the subtree no longer remounts on parent re-render. Verify with `tsc --noEmit` (prop types match) + `jest` (existing snapshot/interaction tests still pass) + `eslint .` (the `static-components` warnings for that file are gone).
 
 **`react-hooks/refs` fix recipe (iter 114).** When the rule fires on a "latest-ref" pattern (`someRef.current = someProp;` written during render), the safe fix is to move the assignment into a `useEffect` whose deps array contains only the value being synced. Semantics are preserved IFF the ref is never read during render — only in event handlers or other effects. **Effect declaration order matters**: the sync-effect MUST be declared BEFORE any effect that reads the ref, because React runs effects top-to-bottom. For the canonical example, see `use-price-stream.ts:116-128` (sync `thresholdRef`) and `use-price-stream.ts:338-352` (sync `connectRef` — placed before the connect-on-mount effect at line 357 that calls `connectRef.current()`). Verify with `eslint <file>` (the `refs` warnings are gone) + `tsc --noEmit` + `jest` (existing tests still pass — they exercise the hook's external behavior, not its internal ref-sync timing).
+
+**`react-hooks/set-state-in-effect` fix recipe (iter 115).** The rule fires when `setState` is called synchronously inside a `useEffect` body. Two safe strategies depending on the pattern:
+1. **Derive during render** (preferred when the state is fully determined by a prop). If the effect's only purpose is to mirror a prop into state — e.g. `setStatus("disconnected")` when `backendOnline === false` — replace the setState with a derived value in the return statement: `const effectiveStatus = backendOnline === false ? "disconnected" : status;`. This is the React-recommended pattern (https://react.dev/learn/you-might-not-need-an-effect) and eliminates the warning entirely. Only works when the derived value is a pure function of props + existing state.
+2. **Move setState into a `useCallback` via a "signal ref"** (when the state genuinely needs to be reset on a prop transition, but is not fully derivable). Add a `useRef<boolean>(false)` "signal" flag; set it to `true` in the effect (a ref write, not flagged by the rule); consume + reset it at the top of the callback BEFORE any early-return guards so the reset fires even if the callback is skipped. The callback is called synchronously from the same effect (`cbRef.current()`), so semantics are preserved. The signal-ref guard ensures the reset fires only once per transition — not on every callback invocation. Canonical example: `use-price-stream.ts` `freshSessionRef` (set in the `backendOnline` transitions effect, consumed at the top of `connect()`). Verify with `eslint <file>` (the `set-state-in-effect` warning is gone) + `tsc --noEmit` + `jest`.
