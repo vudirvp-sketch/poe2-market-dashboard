@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 124 — TD-10 + TD-11 closed. 3 pre-existing lint warnings in `dashboard-page.tsx` fixed; 26 obsolete iter-100–118 cleanup files removed. Lint 114 → 111, 0 errors. 622 jest green, tsc green.)
+> **Last updated:** 2026-07-11 (iter 125 — `AGENT_NAVIGATION.md` deep historical trim. Section 3 rules 27–50 + Section 4 verbose iter-91-through-106 KI-closure log + 40-row duplicate quick-reference table replaced with brief pointers to `STATUS.md` as single source of truth + condensed "Common workflow recipes" subsection. File size 143KB → 67KB (~53% reduction). No production code changed; tsc green, 111 lint warnings (0 errors), 622 jest green — baselines preserved.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -13,6 +13,7 @@
 
 ## Known Issues — closed (recent)
 
+- **DOC-1** (closed iter 125): `AGENT_NAVIGATION.md` was 143KB / 341 lines — too heavy for future agents to scan. Section 3 rules 27–50 (verbose iter-by-iter feature descriptions for iter 73–101 features — Storage Value, Content Pulse, Speculation, Phase Hints, Circuit Patterns, Intraday/Weekly Patterns, Leveling Uniques, `useDashboardData` extraction, currency-names sync, i18n leakage fix, `formatLocaleDate`, shortcuts dialog sync, dead i18n key cleanup, iter 91 recon, iter 93 Best Payment, iter 94 Spread Capture, iter 95 Overheat Index) were redundant with `git log` + per-file module-level comments. Section 4 (verbose iter-91-through-106 KI-closure log + 40-row duplicate quick-reference table) duplicated `STATUS.md` (the single source of truth for KIs). Both sections replaced with brief pointers + a condensed 8-row "Common workflow recipes" subsection (operational patterns unique to AGENT_NAVIGATION.md: Russian-name sync script, locale rendering helpers, `?lang=` endpoint pattern, dead i18n key cleanup, analyst fact templates, circuit-breaker inspection, fallback-response detection). Result: 143KB → 67KB (~53% reduction), 341 → 233 lines. No production code touched.
 - **TD-10** (closed iter 124): 3 pre-existing lint warnings in `dashboard-page.tsx` — unused `ReferenceCurrency` import, unused `sseStatus` destructuring, `keyboardActions` useMemo exhaustive-deps (missing `TAB_MAP`, `openDetail`). Fix: removed the import; called `usePriceStream` without destructuring; moved `TAB_MAP` to module level (stable identity) + wrapped `setTab` in `useCallback` + added `openDetail` to deps. Lint 114 → 111.
 - **TD-11** (closed iter 124): Repo cleanup — removed 26 obsolete files: 8 `MERGE_INSTRUCTIONS_iter*.md`, 12 `git_commands_iter*.txt`, `DELETIONS.{sh,txt}`, `DELETE_obsolete_files.sh`, `README.txt`, `scripts_flipper-backend-bridge.ts.DELETED`, `scripts/DELETE_flipper-backend-bridge.ts`, stale tracked `flipper-bridge.log` (692KB, already in `.gitignore`). No code references any of these.
 - **KI-24** (closed iter 123): React Compiler `set-state-in-effect` rule migration — all 10 sites across 7 files resolved (iter 115–123). See recipes below for the patterns. Lint was 117 → 114.
