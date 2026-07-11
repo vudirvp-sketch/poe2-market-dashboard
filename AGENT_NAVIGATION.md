@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 112 — fixed KI-22: created `eslint.config.mjs` with Next.js v16 flat-config preset. `npm run lint` now passes (0 errors, 140 warnings). Fixed 6 source errors (5× prefer-const, 1× no-explicit-any). Discovered KI-23 (rules-of-hooks in unique-table.tsx — latent bug, inline-disabled) + KI-24 (25 React Compiler rule sites — downgraded to warn). 582 jest green, tsc green.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 113 — incremental KI-24 fix: moved inline `SortIndicator` from inside `ExchangeTable`/`WatchlistTab` to module scope in `exchange-table.tsx` (7 sites) + `watchlist-tab.tsx` (5 sites). All 12 `react-hooks/static-components` warnings eliminated; lint 140 → 128 warnings, 0 errors. 582 jest green, tsc green. KI-24 backlog now 13 sites across 3 remaining React Compiler rules.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

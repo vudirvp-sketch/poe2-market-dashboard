@@ -37,6 +37,32 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 // ============================================================================
 
 type SortField = "pair" | "rate" | "change" | "change7d" | "volume" | "trend" | "premium";
+type SortDirection = "asc" | "desc";
+
+// ============================================================================
+// SortIndicator — module-scope to avoid remounts on parent re-render (KI-24)
+// ============================================================================
+// iter 113 (KI-24): Previously defined inside <ExchangeTable>. The React
+// Compiler rule `react-hooks/static-components` flags this because a component
+// created during render gets a new type identity on every render, causing
+// unnecessary unmount/remount of its subtree. Stateless, so the user-visible
+// effect was negligible, but moving to module scope lets the compiler optimize.
+interface SortIndicatorProps {
+  field: SortField;
+  sortField: SortField;
+  sortDirection: SortDirection;
+}
+
+function SortIndicator({ field, sortField, sortDirection }: SortIndicatorProps) {
+  if (sortField !== field) {
+    return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground/40" aria-hidden="true" />;
+  }
+  return sortDirection === "asc" ? (
+    <ArrowUp className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
+  ) : (
+    <ArrowDown className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
+  );
+}
 
 interface ExchangeTableProps {
   pairs: ExchangePair[];
@@ -360,18 +386,6 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
     [sortField, sortDirection, setExchangeSort]
   );
 
-  // --- Render sort indicator ---
-  const SortIndicator = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground/40" aria-hidden="true" />;
-    }
-    return sortDirection === "asc" ? (
-      <ArrowUp className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
-    ) : (
-      <ArrowDown className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
-    );
-  };
-
   return (
     <div className="rounded-md border border-border overflow-hidden" data-slot="exchange-table">
       <div className="overflow-x-auto">
@@ -391,7 +405,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
               >
                 <span className="inline-flex items-center">
                   {t("pair")}
-                  <SortIndicator field="pair" />
+                  <SortIndicator field="pair" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* Rate */}
@@ -403,7 +417,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
               >
                 <span className="inline-flex items-center justify-end">
                   {t("rate")} ({getCurrencyShortName(uiState.baseCurrencyText, uiState.baseCurrencyApiId)})
-                  <SortIndicator field="rate" />
+                  <SortIndicator field="rate" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* Change */}
@@ -415,7 +429,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
               >
                 <span className="inline-flex items-center justify-end">
                   {t("change")}
-                  <SortIndicator field="change" />
+                  <SortIndicator field="change" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* 7d Change */}
@@ -443,7 +457,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <SortIndicator field="change7d" />
+                  <SortIndicator field="change7d" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* Volume */}
@@ -455,7 +469,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
               >
                 <span className="inline-flex items-center justify-end">
                   {t("volume")}
-                  <SortIndicator field="volume" />
+                  <SortIndicator field="volume" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* §11: Cross-Currency Premium */}
@@ -486,7 +500,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <SortIndicator field="premium" />
+                  <SortIndicator field="premium" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* Trend */}
@@ -498,7 +512,7 @@ export function ExchangeTable({ pairs, onPairClick, realm, league, highlightedRo
               >
                 <span className="inline-flex items-center justify-center">
                   {t("trend")}
-                  <SortIndicator field="trend" />
+                  <SortIndicator field="trend" sortField={sortField} sortDirection={sortDirection} />
                 </span>
               </th>
               {/* Compare */}

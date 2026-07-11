@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 112 — fixed KI-22: created `eslint.config.mjs` with Next.js v16 flat-config preset. `npm run lint` now passes (0 errors, 140 warnings). Fixed 6 source errors: 5× `prefer-const` in tests, 1× `no-explicit-any` in `liquid-chain-tab.tsx`. Added inline disables for 5 legitimate `require()` calls (`jest.setup.ts`, `poe2api.ts` server-only). Discovered 2 new issues: KI-23 (`react-hooks/rules-of-hooks` — `useReactTable` inside `.map()` in `unique-table.tsx`, latent bug, inline-disabled + refactor deferred), KI-24 (25 sites flagged by 4 new React Compiler rules — downgraded to `warn`). 582 jest green, tsc green, 1279 pytest green expected.)
+> **Last updated:** 2026-07-11 (iter 113 — incremental KI-24 fix: moved inline `SortIndicator` from inside `ExchangeTable`/`WatchlistTab` to module scope in `exchange-table.tsx` (7 sites) and `watchlist-tab.tsx` (5 sites). Each usage now passes `sortField`/`sortDirection` as explicit props. Lint warnings: 140 → 128 (12 `react-hooks/static-components` warnings removed). 0 errors. 582 jest green, tsc green, 1279 pytest green expected (no backend/test changes). 13 KI-24 sites remain across the other 3 React Compiler rules — deferred.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -32,25 +32,25 @@
 
 ---
 
-### KI-24 — React Compiler rule migration backlog (25 sites, 4 rules)
+### KI-24 — React Compiler rule migration backlog (13 sites remaining, 3 rules)
 
-**Symptom.** `npm run lint` emits 140 warnings (0 errors). Of these, 25 come from 4 new React Compiler rules shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
+**Symptom.** `npm run lint` emits 128 warnings (0 errors). Of these, 13 come from 3 new React Compiler rules shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
 
 | Rule | Count | Sites |
 |------|-------|-------|
-| `react-hooks/static-components` | 12 | `exchange-table.tsx` (7 — inline `SortIndicator`), `watchlist-tab.tsx` (5 — inline `SortIndicator`) |
 | `react-hooks/set-state-in-effect` | 10 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `header.tsx` (1), `offline-banner.tsx` (1), `use-price-stream.ts` (1), `use-realms-and-leagues.ts` (1), `use-reduced-motion.ts` (1), `i18n/index.tsx` (1) |
 | `react-hooks/refs` | 2 | `use-price-stream.ts:117,328` (latest-ref pattern) |
 | `react-hooks/preserve-manual-memoization` | 1 | `speculation-tab.tsx:316` |
 
-**Impact.** None at runtime — these are performance/optimization smells flagged for React Compiler adoption. The code works correctly; the rules flag patterns the compiler can't optimize (inline component defs cause remounts, setState in effects can cascade, ref writes during render bypass the compiler, manual memoization may conflict with compiler output).
+**Note (iter 113).** `react-hooks/static-components` (12 sites, was the largest bucket) is **fully resolved** — `SortIndicator` moved to module scope in `exchange-table.tsx` (7 sites) and `watchlist-tab.tsx` (5 sites). Each usage now passes `sortField`/`sortDirection` as explicit props. The rule no longer fires anywhere.
+
+**Impact.** None at runtime — these are performance/optimization smells flagged for React Compiler adoption. The code works correctly; the rules flag patterns the compiler can't optimize (setState in effects can cascade, ref writes during render bypass the compiler, manual memoization may conflict with compiler output).
 
 **Cause.** The rules are new in `eslint-plugin-react-hooks` v7 and default to "error". The codebase predates the React Compiler.
 
 **Severity.** Low — performance smells, not bugs. Downgraded to "warn" in `eslint.config.mjs` so `npm run lint` passes while keeping the sites visible.
 
 **Fix (deferred).** Refactor incrementally per-file:
-- `static-components`: move `SortIndicator` to module scope in `exchange-table.tsx` and `watchlist-tab.tsx`, pass `sortField`/`sortDirection` as props.
 - `set-state-in-effect`: most are legitimate "hydrate from localStorage / sync media query" patterns — evaluate case-by-case; some can move to `useSyncExternalStore`, others are fine as-is.
 - `refs`: the latest-ref pattern is intentional; may need `// eslint-disable` per-site or a `useLatestRef` helper.
 - `preserve-manual-memoization`: evaluate whether `useMemo` can be removed (compiler handles it).
@@ -101,7 +101,7 @@
 | ID | Priority | Notes |
 |----|----------|-------|
 | **KI-23** | P2 | `unique-table.tsx` — extract `<CategoryGroupTable>` child to fix rules-of-hooks violation. Mechanical refactor, ~120 lines. |
-| **KI-24** | P3 | 25 React Compiler rule sites — incremental per-file refactors (see KI-24 table above). |
+| **KI-24** | P3 | 13 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113). Incremental per-file refactors (see KI-24 table above). |
 | **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. |
 | **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
@@ -141,3 +141,5 @@
 **Frontend price formatting convention.** `fmtPrice`-style helpers across the dashboard should keep 2 decimals for prices `>= 1` and 4 decimals for `< 1`. The KI-21 bug was caused by an "optimization" that rounded `>= 100` to integer — this silently broke the iter-110 live-price test and was only caught when jest was finally run. If you ever feel tempted to truncate large prices to integers, add a test first.
 
 **ESLint v9 flat config (KI-22 closed iter 112).** `eslint-config-next` v16 ships native flat-config exports at `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript` — no `FlatCompat` / `@eslint/eslintrc` wrapper needed. Just spread them into your `eslint.config.mjs`. The 4 new React Compiler rules (`set-state-in-effect`, `static-components`, `preserve-manual-memoization`, `refs`) default to "error" and will break lint on any existing codebase — downgrade to "warn" in the config (see KI-24) and refactor incrementally.
+
+**`react-hooks/static-components` fix recipe (iter 113).** When the rule fires on a small inline component (e.g. `SortIndicator`), the fix is mechanical: (1) move the definition to module scope; (2) add a props interface that explicitly accepts every value the closure was capturing (typically `sortField`, `sortDirection`); (3) update every call site to pass these props. The component's render logic does NOT change. After the move, React sees a stable component type across renders, so the compiler can optimize and the subtree no longer remounts on parent re-render. Verify with `tsc --noEmit` (prop types match) + `jest` (existing snapshot/interaction tests still pass) + `eslint .` (the `static-components` warnings for that file are gone).

@@ -48,6 +48,31 @@ type SortField = "pair" | "rate" | "change" | "pnl" | "added";
 type SortDirection = "asc" | "desc";
 type GroupFilter = "all" | "gainers" | "losers";
 
+// ============================================================================
+// SortIndicator — module-scope to avoid remounts on parent re-render (KI-24)
+// ============================================================================
+// iter 113 (KI-24): Previously defined inside <WatchlistTab>. The React
+// Compiler rule `react-hooks/static-components` flags this because a component
+// created during render gets a new type identity on every render, causing
+// unnecessary unmount/remount of its subtree. Stateless, so the user-visible
+// effect was negligible, but moving to module scope lets the compiler optimize.
+interface SortIndicatorProps {
+  field: SortField;
+  sortField: SortField;
+  sortDirection: SortDirection;
+}
+
+function SortIndicator({ field, sortField, sortDirection }: SortIndicatorProps) {
+  if (sortField !== field) {
+    return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground/40" aria-hidden="true" />;
+  }
+  return sortDirection === "asc" ? (
+    <ArrowUp className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
+  ) : (
+    <ArrowDown className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
+  );
+}
+
 interface WatchlistTabProps {
   realm: string;
   league: string;
@@ -192,18 +217,6 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
     },
     [sortField]
   );
-
-  // Render sort indicator
-  const SortIndicator = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground/40" aria-hidden="true" />;
-    }
-    return sortDirection === "asc" ? (
-      <ArrowUp className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
-    ) : (
-      <ArrowDown className="h-3 w-3 ml-1 text-primary" aria-hidden="true" />
-    );
-  };
 
   // Format date added
   const formatDateAdded = (pairId: string): string => {
@@ -354,7 +367,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                   >
                     <span className="inline-flex items-center">
                       {t("pair")}
-                      <SortIndicator field="pair" />
+                      <SortIndicator field="pair" sortField={sortField} sortDirection={sortDirection} />
                     </span>
                   </th>
                   {/* Rate */}
@@ -365,7 +378,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                   >
                     <span className="inline-flex items-center justify-end">
                       {t("rate")}
-                      <SortIndicator field="rate" />
+                      <SortIndicator field="rate" sortField={sortField} sortDirection={sortDirection} />
                     </span>
                   </th>
                   {/* Change */}
@@ -376,7 +389,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                   >
                     <span className="inline-flex items-center justify-end">
                       {t("change")}
-                      <SortIndicator field="change" />
+                      <SortIndicator field="change" sortField={sortField} sortDirection={sortDirection} />
                     </span>
                   </th>
                   {/* Volume */}
@@ -391,7 +404,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                   >
                     <span className="inline-flex items-center justify-end">
                       {t("pnl")}
-                      <SortIndicator field="pnl" />
+                      <SortIndicator field="pnl" sortField={sortField} sortDirection={sortDirection} />
                     </span>
                   </th>
                   {/* Added date */}
@@ -402,7 +415,7 @@ export function WatchlistTab({ realm, league, onPairClick }: WatchlistTabProps) 
                   >
                     <span className="inline-flex items-center justify-end">
                       {t("added")}
-                      <SortIndicator field="added" />
+                      <SortIndicator field="added" sortField={sortField} sortDirection={sortDirection} />
                     </span>
                   </th>
                 </tr>
