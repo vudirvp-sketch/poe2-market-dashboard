@@ -2680,8 +2680,10 @@ export function isCircuitBreakerOpen(): boolean {
 
 if (typeof window === "undefined" && typeof globalThis !== "undefined") {
   try {
-    // Use dynamic require to avoid bundling fs in client builds
+    // Use dynamic require to avoid bundling fs in client builds.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- server-only: guarded by typeof window check; static import would let Next.js bundle fs into the client
     const _fs = require("fs") as typeof import("fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- server-only: see above
     const _path = require("path") as typeof import("path");
     const snapshotPath = _path.resolve(__dirname, "../data/cache-snapshot.json");
 

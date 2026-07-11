@@ -24,6 +24,7 @@ let polyfillRequest: (new (input: unknown, init?: unknown) => unknown) | undefin
 
 try {
   // Attempt to load undici — preferred because it's spec-compliant.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- optional CJS dynamic load in try/catch; ESM await import would need top-level await
   const undici = require("undici");
   polyfillFetch = undici.fetch as FetchImpl;
   polyfillResponse = undici.Response;

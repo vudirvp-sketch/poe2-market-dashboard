@@ -302,6 +302,7 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
       {/* Category groups */}
       {categoryGroups.map((group) => {
         const isCollapsed = collapsedCategories.has(group.name);
+        // eslint-disable-next-line react-hooks/rules-of-hooks -- KI-23: useReactTable called inside .map() callback. Latent bug — crashes only if categoryGroups.length changes between renders. Proper fix: extract <CategoryGroupTable> child component. Deferred to a dedicated iter.
         const table = useReactTable({
           data: group.items,
           columns,

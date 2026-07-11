@@ -104,7 +104,7 @@ describe("poe2api CORS proxy confirmation TTL", () => {
 
   it("confirmed proxy becomes unconfirmed after TTL expires", () => {
     let confirmed = true;
-    let lastCheck = Date.now() - CORS_PROXY_CONFIRM_TTL - 1; // 1ms past TTL
+    const lastCheck = Date.now() - CORS_PROXY_CONFIRM_TTL - 1; // 1ms past TTL
 
     // Simulate the TTL check (mirrors tryCorsProxyFallback logic)
     if (confirmed && Date.now() - lastCheck > CORS_PROXY_CONFIRM_TTL) {
@@ -116,7 +116,7 @@ describe("poe2api CORS proxy confirmation TTL", () => {
 
   it("confirmed proxy stays confirmed within TTL", () => {
     let confirmed = true;
-    let lastCheck = Date.now() - 60_000; // 1 minute ago (within 5-min TTL)
+    const lastCheck = Date.now() - 60_000; // 1 minute ago (within 5-min TTL)
 
     if (confirmed && Date.now() - lastCheck > CORS_PROXY_CONFIRM_TTL) {
       confirmed = false;
@@ -157,8 +157,8 @@ describe("poe2api CORS proxy circuit breaker interaction", () => {
     // The circuit breaker tracks DIRECT API failures, not proxy failures.
     // If the proxy also fails, we just return null — the breaker stays
     // in whatever state it was already in.
-    let circuitBreakerOpen = true;
-    let consecutiveFailures = 3;
+    const circuitBreakerOpen = true;
+    const consecutiveFailures = 3;
 
     // On proxy failure: no state change
     // (proxy failure doesn't mean direct API will succeed)

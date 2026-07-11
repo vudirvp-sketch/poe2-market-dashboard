@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import type { TranslationKeys } from "@/lib/i18n";
 import { fetchApi, fmt } from "@/lib/types";
 import type {
   LiquidChainAnalysisResponse,
@@ -228,13 +229,13 @@ function chainDisplayName(chainName: string, t: ReturnType<typeof useI18n>["t"])
   // Map config chain names to i18n keys for human-readable titles.
   // This allows future chains to have proper display names.
   // Fallback: use the raw chainName from config if no i18n mapping exists.
-  const NAMES: Record<string, string> = {
+  const NAMES: Record<string, TranslationKeys> = {
     delirium_liquids: "liquidChainTitle",
     ritual_omens: "ritualOmensTitle",
   };
   const i18nKey = NAMES[chainName];
   if (i18nKey) {
-    return t(i18nKey as any);
+    return t(i18nKey);
   }
   return chainName;
 }

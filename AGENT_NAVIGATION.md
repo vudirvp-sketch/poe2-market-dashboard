@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 111 — fixed KI-21: `fmtPrice` in `phase-hints-widget.tsx` rounded prices ≥ 100 to integer, breaking iter-110 jest live-price test. Removed the `>= 100 → toFixed(0)` branch. KI-22 documented — ESLint v9 flat config missing, `npm run lint` fails. 1279 pytest green.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 112 — fixed KI-22: created `eslint.config.mjs` with Next.js v16 flat-config preset. `npm run lint` now passes (0 errors, 140 warnings). Fixed 6 source errors (5× prefer-const, 1× no-explicit-any). Discovered KI-23 (rules-of-hooks in unique-table.tsx — latent bug, inline-disabled) + KI-24 (25 React Compiler rule sites — downgraded to warn). 582 jest green, tsc green.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

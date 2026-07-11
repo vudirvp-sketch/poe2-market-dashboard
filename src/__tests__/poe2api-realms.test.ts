@@ -72,7 +72,7 @@ describe("getRealms override logic", () => {
     defaultLeagueValue: string | undefined,
     overrides: Record<string, string>
   ): { overridden: boolean; value: string | undefined } {
-    let defaultLeague = defaultLeagueValue || undefined;
+    const defaultLeague = defaultLeagueValue || undefined;
     const overrideKey = `${realmApiId}:${defaultLeague}`;
     if (defaultLeague && overrides[overrideKey]) {
       return { overridden: true, value: overrides[overrideKey] };
