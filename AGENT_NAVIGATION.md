@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 117 — advanced KI-24 by 1 site. Refactored `header.tsx` `mounted` flag from `useState(false) + useEffect(() => setMounted(true))` to `useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot)` — eliminates 1 `set-state-in-effect` site. Added 1 defensive jest test for theme-toggle visibility. Lint 123 → 122, 0 errors. 619 jest green (was 618), tsc green. KI-24 backlog now 7 sites across 1 remaining React Compiler rule.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 120 — advanced KI-24 by 1 site. Removed dead `useEffect` sync effect from `fuzzy-search.tsx` — component is now explicitly uncontrolled w.r.t. the `value` prop (initial-value-only). Zero behavior change. Lint 120 → 119, 0 errors. 619 jest green, tsc green. **ALSO discovered KI-25: iter 119 (i18n `useSyncExternalStore` refactor) was documented in STATUS.md but never applied to the repo — next agent must RE-DO iter 119.** KI-24 backlog: 5 sites across 1 React Compiler rule (1 of which is the i18n RE-DO).).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

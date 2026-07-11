@@ -12,6 +12,23 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+// NOTE (iter 120, KI-24): This component is intentionally UNCONTROLLED with
+// respect to the `value` prop. `value` is used ONLY as the initial value of
+// `localValue` (via `useState(value)`). Subsequent external changes to `value`
+// are NOT mirrored into the input. This is the agreed contract with the parent
+// (`header.tsx` lines 239-243: "No need to sync external search changes —
+// FuzzySearch manages its own state"). The only external reset in the codebase
+// is `setSearch("")` on result selection (`dashboard-page.tsx:799`), which is
+// triggered FROM `handleResultClick` below AFTER `setLocalValue("")` runs
+// synchronously — so `localValue` is already `""` by the time the parent
+// re-renders with `value = ""`, and no sync effect is needed. The previous
+// `useEffect(() => setLocalValue(prev => prev !== value ? value : prev), [value])`
+// was dead code (the guard was always false) and triggered the
+// `react-hooks/set-state-in-effect` warning; removing it is a zero-behavior-
+// change fix. If a future feature needs to EXTERNALLY drive the input value
+// (e.g. a "populate search from URL" button), reintroduce a controlled sync —
+// but prefer the "adjust state during render with prevValue guard" recipe
+// (iter 118) over an effect, to avoid re-introducing the warning.
 import Fuse from "fuse.js";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -43,7 +60,7 @@ interface SearchItem {
 }
 
 interface FuzzySearchProps {
-  /** Current search value (controlled from parent) */
+  /** Initial search value (used on first render only — see iter 120 NOTE above). */
   value: string;
   /** Called when search value changes */
   onValueChange: (value: string) => void;
@@ -76,17 +93,15 @@ export function FuzzySearch({
   placeholder,
 }: FuzzySearchProps) {
   const { t } = useI18n();
-  const [localValue, setLocalValue] = useState(value);
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync external value changes
-  useEffect(() => {
-    setLocalValue((prev) => (prev !== value ? value : prev));
-  }, [value]);
+  // `value` is the initial value only — see the module-level NOTE (iter 120).
+  // No sync effect: the component is uncontrolled w.r.t. `value` after mount.
+  const [localValue, setLocalValue] = useState(value);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   // Build unified search index from exchange pairs and items
   const searchItems = useMemo<SearchItem[]>(() => {

@@ -5,6 +5,49 @@
 
 ---
 
+Task ID: iter-120
+Agent: main
+Task: iter 120 — incremental KI-24 fix: eliminate the 1 `react-hooks/set-state-in-effect` warning in `fuzzy-search.tsx:88` (sync prop → local state). Strategy: REMOVE the dead sync effect entirely (`useEffect(() => setLocalValue(prev => prev !== value ? value : prev), [value])`) — the component is uncontrolled w.r.t. the `value` prop after mount, and the only external reset (`setSearch("")` at `dashboard-page.tsx:799`) is triggered FROM `handleResultClick` AFTER `setLocalValue("")` runs synchronously, so the guard was always false. Zero behavior change. ALSO: discovered + documented KI-25 — iter 119 was described in a previous STATUS.md version but the code changes (i18n `useSyncExternalStore` refactor + `__resetI18nForTesting`) were NEVER applied to the repo.
+
+Work Log:
+- Cloned repo. Read STATUS.md (claimed iter 119 shipped — 5 sites remaining), worklog.md (iter 117 + iter 118), next.config.ts (React Compiler NOT enabled — confirmed), `fuzzy-search.tsx` (target), `header.tsx` (parent — lines 239-243 confirm "No need to sync external search changes"), `dashboard-page.tsx` (lines 792-800 — `onSearchResultSelect` calls `setSearch("")`).
+- **CRITICAL DISCOVERY — KI-25 (iter 119 doc/code mismatch).** STATUS.md header claimed iter 119 shipped (i18n `useSyncExternalStore` refactor + `__resetI18nForTesting` export + `jest.setup.ts` `beforeEach` reset). Verified the repo does NOT contain these changes: (a) `src/lib/i18n/index.tsx:128` still uses `setLocaleState(stored)` inside `useEffect` — the `set-state-in-effect` warning is still emitted; (b) `__resetI18nForTesting` does NOT exist anywhere in the codebase (grep returns 0 matches outside STATUS.md); (c) `jest.setup.ts` has no i18n reset; (d) `git log` latest commit is `b6790c1 iter 118` — no iter-119 commit; (e) baseline lint count is 120 (iter-118 state), NOT 119 as STATUS.md claimed. Hypothesis: the iter-119 archive was produced in a previous chat session and the STATUS.md was updated, but the actual code changes were lost or never merged by the user. Documented as KI-25 in STATUS.md before proceeding with the fuzzy-search fix.
+- **Confirmed baseline.** `npm install` → packages installed. `npx tsc --noEmit` → exit 0. `npx eslint .` → 120 warnings, 0 errors (NOT 119 as STATUS.md claimed — confirms KI-25). Per-file lint on target: `fuzzy-search.tsx` had 3 warnings — `set-state-in-effect` (line 88), `activeTab` unused, `<img>` element. Only the first is in scope (KI-24). `npx jest --maxWorkers=1` → 619 passed, 27 suites, exit 0.
+- **Recipe selection — why NOT "fully controlled" (candidate description).** The user's iter-120 brief and the iter-117/iter-118 worklog suggested "make fully controlled (remove localValue, use value prop directly)". After analysis, fully controlled is the WRONG fix: `localValue` is the user's input buffer with a 200ms debounce before reporting to the parent via `onValueChange`. Making it fully controlled would require calling `onValueChange` on every keystroke (losing the debounce) OR showing stale input (the input would lag 200ms behind typing). Both regress UX. The component's debounce exists precisely to avoid re-running `useFilteredExchangePairs` + React Query refetches on every keystroke.
+- **Recipe selection — why "remove dead sync effect" (iter 120 new recipe).** The sync effect `useEffect(() => setLocalValue(prev => prev !== value ? value : prev), [value])` was DEAD CODE: (1) The parent (`header.tsx:239-243`) explicitly says "No need to sync external search changes — FuzzySearch manages its own state". (2) The only external `setSearch` call is `setSearch("")` at `dashboard-page.tsx:799`, which is triggered FROM `handleResultClick` (line 178) AFTER `setLocalValue("")` runs synchronously — both batched in the same event handler, so by the time the effect runs, `localValue === ""` and `value === ""`, and the guard `prev !== value` is `false`. (3) Grep confirmed no other `setSearch(` call sites. Removing the effect is a zero-behavior-change fix that eliminates the warning. Documented as a NEW recipe (iter 120) in STATUS.md → Key technical insights.
+- **Applied fix to `fuzzy-search.tsx`:**
+  1. Added a 17-line module-level NOTE comment above the React import, explaining: the uncontrolled-with-initial-value contract, the parent's confirmation, the trace of why the sync is unnecessary (handleResultClick's synchronous setLocalValue("") + parent's setSearch("")), and guidance for future features that might need external sync (use iter 118's "adjust state during render" recipe, not an effect).
+  2. Removed the `useEffect(() => { setLocalValue((prev) => (prev !== value ? value : prev)); }, [value]);` block (was lines 86-89).
+  3. Added an inline comment above `useState(value)`: "`value` is the initial value only — see the module-level NOTE (iter 120). No sync effect: the component is uncontrolled w.r.t. `value` after mount."
+  4. Updated the `value` prop JSDoc from "Current search value (controlled from parent)" to "Initial search value (used on first render only — see iter 120 NOTE above)."
+  5. Kept `useEffect` import — 2 other effects still use it (outside-click handler line 244, debounce cleanup line 259). Kept `useState` import — `localValue`, `isOpen`, `selectedIndex` still use it.
+- **Verification:**
+  - `npx tsc --noEmit` → **exit 0** ✅
+  - `npx eslint src/components/dashboard/fuzzy-search.tsx` → **2 warnings, 0 errors** ✅ (was 3). The `set-state-in-effect` warning is GONE. The remaining 2 warnings (`activeTab` unused, `<img>` element) are pre-existing and out of scope (not KI-24).
+  - `npx eslint .` → **0 errors, 119 warnings, exit 0** ✅ (was 120 → 119 = 1 warning removed).
+  - `npx jest --maxWorkers=1` → **619 passed, 0 failed, 27 suites, exit 0** ✅ (unchanged — no new tests added because the component had no direct tests; the fix preserves all documented behavior).
+  - `pytest` not run (no backend changes) — 1279 passed expected per iter 113.
+  - `next build` not run (4GB RAM env constraint) — the change is a removal of a dead effect with a 17-line explanatory comment. No plausible build-regression failure mode.
+- **Documentation updates:**
+  - `STATUS.md`: rewrote the header (corrected the false iter-119 claim, documented iter 120). Added KI-25 (iter 119 doc/code mismatch) as a new open Known Issue with full diagnosis + fix plan. Updated KI-24 table — `fuzzy-search.tsx` removed from sites list, `i18n/index.tsx` RE-ADDED (was incorrectly listed as resolved), count 5 → 5 (1 removed, 1 re-added). Updated "Closed sub-rules" history — iter 120 (`fuzzy-search.tsx`) added, iter 119 (`i18n/index.tsx`) REMOVED (not actually applied). Updated backlog row KI-24: "5 of 10 resolved iter 115+116+117+118+120". Added KI-25 row to backlog (P2). Added new "Key technical insights" paragraph: "iter 120 — remove dead sync effect" recipe. Marked the iter-119 recipe as "PLANNED, NOT YET APPLIED, see KI-25" to preserve the design for the next agent.
+  - `worklog.md` (this entry) — trimmed iter 117 (oldest, now in git log), now shows iter 118 + iter 120 (last 2 iterations per header convention).
+  - `AGENT_NAVIGATION.md` — header bump only.
+
+Stage Summary:
+- **iter 120 SHIPPED — KI-24 `set-state-in-effect` 1 of 10 sites resolved (`fuzzy-search.tsx` dead sync effect removed).** Lint warnings: 120 → 119 (0 errors). `tsc` green. 619 jest green. 1279 pytest expected green (no backend changes).
+- **CRITICAL for next agent — KI-25 discovered.** iter 119 (i18n `useSyncExternalStore` refactor) was documented in STATUS.md but NEVER applied to the repo. The i18n `set-state-in-effect` warning is still live. KI-24 progress is 1 site behind what the previous STATUS.md claimed. Next agent must RE-DO iter 119 before proceeding.
+- **Modified files (4):** `src/components/dashboard/fuzzy-search.tsx`, `STATUS.md`, `worklog.md` (this entry), `AGENT_NAVIGATION.md` (header bump).
+- **What was NOT done (intentionally deferred to iter 121+):**
+  - **RE-DO iter 119 (HIGHEST PRIORITY — KI-25):** apply `useSyncExternalStore` refactor to `src/lib/i18n/index.tsx` for both `locale` and `hydrated`. Recipe preserved in STATUS.md (marked "PLANNED, NOT YET APPLIED"). Verify 28 i18n tests pass, lint drops 119 → 118.
+  - KI-24 remaining 4 `set-state-in-effect` sites AFTER iter-119-redo: `dashboard-page.tsx` (3), `use-realms-and-leagues.ts` (1).
+  - `use-realms-and-leagues.ts` (1 site, HIGH RISK — effect's purpose is to PERSIST auto-detected league to Zustand store; needs persistence-model redesign, NOT a mechanical fix).
+  - `dashboard-page.tsx` (3 sites, largest refactor — dedicated iter).
+  - TD-3/4/5/9 persistence gaps (need persistence-layer design).
+  - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
+- **Stopping point:** iter 120 = KI-24 advanced by 1 site (120 → 119 lint). KI-24 backlog now 5 sites / 1 rule (but 1 of those 5 — `i18n/index.tsx` — is a RE-DO of the lost iter 119; see KI-25). Next iter (iter 121) candidates in approximate risk order: (a) **RE-DO iter 119 — i18n `useSyncExternalStore` refactor** (KI-25, MEDIUM risk, 28 existing tests must pass, recipe already documented); (b) `use-realms-and-leagues.ts` (1 site, HIGH RISK — needs persistence-model redesign); (c) `dashboard-page.tsx` (3 sites, largest refactor — dedicated iter); (d) TD-3/4/5/9 persistence gaps; (e) P10 Gold Map ROI (§C.8).
+
+---
+
 Task ID: iter-118
 Agent: main
 Task: iter 118 — incremental KI-24 fix: eliminate the 1 `react-hooks/set-state-in-effect` warning in `offline-banner.tsx`. Strategy: replace `useEffect(() => { if (!isOnline) { setWasOffline(true); setDismissed(false); } }, [isOnline])` with the React-canonical "adjust state during render" pattern (previous-value guard). Also removed dead `wasOffline` state (set but never read). Lint 122 → 120, 0 errors. 619 jest green, tsc green.
@@ -42,48 +85,3 @@ Stage Summary:
   - TD-3/4/5/9 persistence gaps (need persistence-layer design).
   - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
 - **Stopping point:** iter 118 = KI-24 advanced by 1 site (7 → 6). KI-24 backlog now 6 sites / 1 rule. Next iter (iter 119) candidates in approximate risk order: (a) `i18n/index.tsx` (1 site, `useSyncExternalStore` for locale + `hydrated` flag — needs custom same-tab notification because `storage` event only fires in other tabs; 28 existing tests must pass); (b) `fuzzy-search.tsx` (1 site, controlled-component refactor — affects debounce UX and `handleInput`/`handleClear`/`handleResultClick`); (c) `use-realms-and-leagues.ts` (1 site, HIGH RISK — effect's purpose is to PERSIST auto-detected league to Zustand store; needs persistence-model redesign, NOT a mechanical fix); (d) `dashboard-page.tsx` (3 sites, largest refactor — dedicated iter); (e) TD-3/4/5/9 persistence gaps; (f) P10 Gold Map ROI (§C.8).
-
----
-
-Task ID: iter-117
-Agent: main
-Task: iter 117 — incremental KI-24 fix: eliminate the 1 `react-hooks/set-state-in-effect` warning in `header.tsx` (the `mounted` flag effect). Strategy: replace `useState(false) + useEffect(() => setMounted(true), [])` with `useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot)` — the canonical "is client post-hydration" pattern. Added 1 defensive jest test for theme-toggle visibility (gated by `mounted`). Lint 123 → 122, 0 errors. 619 jest green (was 618), tsc green.
-
-Work Log:
-- Cloned repo. Read STATUS.md (KI-24 open with 8 sites / 1 rule after iter 116), worklog.md (iter 115 + iter 116), next.config.ts (React Compiler NOT enabled — confirmed), and all 5 iter-117 candidate files: `use-realms-and-leagues.ts`, `i18n/index.tsx`, `header.tsx`, `offline-banner.tsx`, `fuzzy-search.tsx`.
-- **Risk analysis of all 6 remaining candidates** (per "Лучше недоделать, чем сломать"):
-  - `header.tsx:189` — `setMounted(true)` on mount. **LOWEST RISK.** Pure SSR-safety flag, only consumer is the theme-toggle button gate (line ~516). Mechanical 3-line replacement with `useSyncExternalStore`. No semantic change.
-  - `use-realms-and-leagues.ts:147` — `setLeague(autoLeague)` in auto-select effect. **HIGH RISK.** NOT a `useSyncExternalStore` candidate (despite iter-116 stopping-point speculation). The effect's purpose is to PERSIST the auto-detected league to the Zustand store (via `setLeague` → `persistLeague`). Removing the effect would break cross-session persistence of the auto-selected league. Needs a persistence-model redesign, not a mechanical fix.
-  - `i18n/index.tsx:128` — 2 setState in one effect (`setLocaleState(stored)` + `setHydrated(true)`). **MEDIUM RISK.** `useSyncExternalStore` for locale requires a custom same-tab notification mechanism (the `storage` event only fires in other tabs). Also need a separate `useSyncExternalStore` for the `hydrated` flag. 28 existing tests must continue to pass.
-  - `offline-banner.tsx:16` — 2 setState (`setWasOffline(true)` + `setDismissed(false)`). **MEDIUM RISK.** `wasOffline` is dead state (set but never read — candidate for cleanup). `setDismissed(false)` is a legitimate state reset on prop transition — signal-ref pattern (iter 115 recipe) applies, but adds complexity (ref + callback + effect vs original 3-line effect).
-  - `fuzzy-search.tsx:88` — `setLocalValue` sync prop → local state. **MEDIUM RISK.** Proper fix is to make the component fully controlled (remove `localValue`, use `value` prop directly), but this affects debounce UX and touches `handleInput`/`handleClear`/`handleResultClick`.
-  - `dashboard-page.tsx` — 3 sites. **HIGHEST RISK.** Explicitly deferred to a dedicated iter.
-- **Selected iter 117 scope = `header.tsx` only.** Per "Лучше недоделать, чем сломать": chose the single lowest-risk candidate. A clean, mechanical, well-tested fix is better than a risky multi-file iter. Deferred all other candidates to iter 118+ with documented risk analysis.
-- **Confirmed baseline.** `npm install` → packages installed silently. `npx tsc --noEmit` → exit 0. `npx eslint .` → 123 warnings, 0 errors (matches iter-116 baseline). Per-file lint on target: `header.tsx` had 3 warnings — `set-state-in-effect` at line 189 (`setMounted(true)`), `tp` unused var, `LOCALE_ORDER` missing dep. Only the first is in scope (KI-24). `npx jest --maxWorkers=1` → 618 passed, 27 suites, exit 0.
-- **Read iter-116 canonical example** (`use-reduced-motion.ts`) to follow the same `useSyncExternalStore` pattern. The header.tsx case is simpler — no external store to subscribe to, so `subscribe` is a no-op.
-- **Applied fix to `header.tsx`:**
-  1. Added `useSyncExternalStore` to the React imports (line 11).
-  2. Added 3 module-level helper functions after `phaseLabel` (before the `Header` component): `subscribeMounted()` (no-op, returns empty cleanup), `getMountedSnapshot()` (returns `true`), `getMountedServerSnapshot()` (returns `false`). Each has a JSDoc comment block explaining the pattern, the SSR/first-render/post-hydration semantics, and the rationale (gates the theme-toggle button to avoid next-themes SSR mismatch).
-  3. Replaced `const [mounted, setMounted] = useState(false); useEffect(() => { setMounted(true); }, []);` with `const mounted = useSyncExternalStore(subscribeMounted, getMountedSnapshot, getMountedServerSnapshot);` (with an inline comment referencing the module-level helpers).
-  4. `useEffect` import retained — 2 other effects still use it (lines 210, 233). `useState` import retained — `timeAgo` and `moreOpen` still use it.
-- **Added defensive test** to `src/__tests__/header-i18n.test.tsx`: new describe block "theme toggle (mounted flag via useSyncExternalStore — KI-24 iter 117)" with 1 test that renders the Header, opens the "More" menu, and verifies the theme-toggle button is visible via `findByLabelText(/Переключить на (тёмную|светлую) тему/)`. The regex matches both `switchToDarkMode` and `switchToLightMode` because the test environment's `useTheme()` (next-themes without ThemeProvider wrapper) returns `theme: "dark"`, so the button shows the "switch to light" label — the test only cares that the button is rendered, which requires `mounted = true`. Initial attempt used the exact string `"Переключить на тёмную тему"` (switchToDarkMode) — failed because the test env returns `theme = "dark"`, making the button show `switchToLightMode`. Fixed with a regex matching both.
-- **Verification:**
-  - `npx tsc --noEmit` → **exit 0** ✅
-  - `npx eslint src/components/dashboard/header.tsx` → **2 warnings, 0 errors** ✅ (was 3). The `set-state-in-effect` warning is GONE. The remaining 2 warnings (`tp` unused, `LOCALE_ORDER` missing dep) are pre-existing and out of scope (not KI-24).
-  - `npx eslint .` → **0 errors, 122 warnings, exit 0** ✅ (was 123 → 122 = 1 warning removed).
-  - `npx jest --maxWorkers=1` → **619 passed, 0 failed, 27 suites, exit 0** ✅ (was 618 + 1 new test = 619).
-  - `pytest` not run (no backend changes) — 1279 passed expected per iter 113.
-  - `next build` not run (4GB RAM env constraint) — the change is a mechanical replacement of a well-understood pattern (`useState+useEffect` → `useSyncExternalStore`) with full test coverage. No plausible build-regression failure mode.
-- **Documentation updates:**
-  - `STATUS.md`: bumped "Last updated" header (iter 117). Updated KI-24 table — `header.tsx` removed from sites list, count 8 → 7. Added new bullet to "Closed sub-rules (history)" documenting iter-117 fix. Updated backlog row: "7 React Compiler rule sites remaining (was 25 — ... `set-state-in-effect` 3 of 10 resolved iter 115+116+117 ...)". Added new "Key technical insights" paragraph: "`react-hooks/set-state-in-effect` fix for \"mounted\" flag via `useSyncExternalStore` (iter 117)" — documents the no-op `subscribe` special case for the SSR-safety `mounted` pattern.
-  - `worklog.md` (this entry) — trimmed iter 115 (oldest, now in git log), now shows iter 116 + iter 117 (last 2 iterations per header convention).
-  - `AGENT_NAVIGATION.md` — header bump only.
-
-Stage Summary:
-- **iter 117 SHIPPED — KI-24 `set-state-in-effect` 1 of 10 sites resolved (`header.tsx` `mounted` flag).** Lint warnings: 123 → 122 (0 errors). `tsc` green. 619 jest green (was 618). 1279 pytest expected green (no backend changes).
-- **Modified files (3):** `src/components/dashboard/header.tsx`, `src/__tests__/header-i18n.test.tsx`, `STATUS.md`. Plus `worklog.md` (this entry) + `AGENT_NAVIGATION.md` (header bump).
-- **What was NOT done (intentionally deferred to iter 118+):**
-  - KI-24 remaining 7 `set-state-in-effect` sites: `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `offline-banner.tsx` (1), `use-realms-and-leagues.ts` (1), `i18n/index.tsx` (1). Each needs case-by-case evaluation — see risk analysis above.
-  - TD-3/4/5/9 persistence gaps (need persistence-layer design).
-  - P10 Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done).
-- **Stopping point:** iter 117 = KI-24 advanced by 1 site (8 → 7). KI-24 backlog now 7 sites / 1 rule. Next iter (iter 118) candidates in approximate risk order: (a) `offline-banner.tsx` (1 site, signal-ref pattern — also has dead `wasOffline` state to clean up); (b) `i18n/index.tsx` (1 site, `useSyncExternalStore` for locale + `hydrated` flag — needs custom same-tab notification); (c) `fuzzy-search.tsx` (1 site, controlled-component refactor — affects debounce UX); (d) `use-realms-and-leagues.ts` (1 site, needs persistence-model redesign — NOT a mechanical fix); (e) `dashboard-page.tsx` (3 sites, largest refactor — dedicated iter); (f) TD-3/4/5/9 persistence gaps; (g) P10 Gold Map ROI (§C.8).
