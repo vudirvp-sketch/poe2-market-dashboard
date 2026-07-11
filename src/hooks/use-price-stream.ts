@@ -113,8 +113,19 @@ export function usePriceStream({
   const everConnectedRef = useRef(false);
   const thresholdRef = useRef(invalidationThresholdPct);
 
-  // Keep threshold ref in sync
-  thresholdRef.current = invalidationThresholdPct;
+  // Keep threshold ref in sync (iter 114 — KI-24 refs fix).
+  // Was: `thresholdRef.current = invalidationThresholdPct;` written during
+  // render. `react-hooks/refs` forbids ref writes during render because React
+  // Compiler cannot optimize them and they may break concurrent rendering.
+  // The ref is only read inside SSE event handlers (es.onmessage,
+  // es.addEventListener("update")) and inside `connect()` — all of which fire
+  // AFTER render — so deferring the sync to a passive effect is semantically
+  // equivalent. Effect declaration order matters: this effect is declared
+  // BEFORE the connect-on-mount effect below, so the ref is updated before
+  // any consumer reads it.
+  useEffect(() => {
+    thresholdRef.current = invalidationThresholdPct;
+  }, [invalidationThresholdPct]);
 
   // Track previous backendOnline to detect transitions
   const prevBackendOnlineRef = useRef<boolean | undefined>(backendOnline);
@@ -324,8 +335,21 @@ export function usePriceStream({
     }
   }, [enabled, backendOnline, cleanup, invalidateCaches]);
 
-  // Keep connectRef in sync
-  connectRef.current = connect;
+  // Keep connectRef in sync (iter 114 — KI-24 refs fix).
+  // Was: `connectRef.current = connect;` written during render. Same
+  // rationale as thresholdRef above: `react-hooks/refs` forbids ref writes
+  // during render. `connectRef.current` is only read inside event handlers
+  // (es.onerror) and inside the two useEffects below — all fire AFTER render.
+  // This sync-effect is declared BEFORE the connect-on-mount effect, so when
+  // `connect` identity changes (e.g. `enabled`/`backendOnline` flip), the ref
+  // is updated before the connect-on-mount effect runs and calls
+  // `connectRef.current()`. When only `connect` changes but
+  // `enabled`/`backendOnline` do not, the ref is updated silently and the
+  // existing connection stays open — preserving the latest-ref pattern's
+  // core purpose (avoid reconnecting on callback identity churn).
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   // ---------------------------------------------------------------------------
   // Effect: Connect on mount / when enabled or backendOnline changes

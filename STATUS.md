@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 113 — incremental KI-24 fix: moved inline `SortIndicator` from inside `ExchangeTable`/`WatchlistTab` to module scope in `exchange-table.tsx` (7 sites) and `watchlist-tab.tsx` (5 sites). Each usage now passes `sortField`/`sortDirection` as explicit props. Lint warnings: 140 → 128 (12 `react-hooks/static-components` warnings removed). 0 errors. 582 jest green, tsc green, 1279 pytest green expected (no backend/test changes). 13 KI-24 sites remain across the other 3 React Compiler rules — deferred.)
+> **Last updated:** 2026-07-11 (iter 114 — incremental KI-24 fix: moved 2 latest-ref writes during render (`thresholdRef.current = ...` and `connectRef.current = ...` in `use-price-stream.ts`) into `useEffect` hooks. Eliminates both `react-hooks/refs` warnings. Lint 128 → 126, 0 errors. 582 jest green, tsc green, no backend/test changes. KI-24 backlog now 11 sites across 2 React Compiler rules.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -32,19 +32,20 @@
 
 ---
 
-### KI-24 — React Compiler rule migration backlog (13 sites remaining, 3 rules)
+### KI-24 — React Compiler rule migration backlog (11 sites remaining, 2 rules)
 
-**Symptom.** `npm run lint` emits 128 warnings (0 errors). Of these, 13 come from 3 new React Compiler rules shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
+**Symptom.** `npm run lint` emits 126 warnings (0 errors). Of these, 11 come from 2 new React Compiler rules shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
 
 | Rule | Count | Sites |
 |------|-------|-------|
 | `react-hooks/set-state-in-effect` | 10 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `header.tsx` (1), `offline-banner.tsx` (1), `use-price-stream.ts` (1), `use-realms-and-leagues.ts` (1), `use-reduced-motion.ts` (1), `i18n/index.tsx` (1) |
-| `react-hooks/refs` | 2 | `use-price-stream.ts:117,328` (latest-ref pattern) |
 | `react-hooks/preserve-manual-memoization` | 1 | `speculation-tab.tsx:316` |
 
 **Note (iter 113).** `react-hooks/static-components` (12 sites, was the largest bucket) is **fully resolved** — `SortIndicator` moved to module scope in `exchange-table.tsx` (7 sites) and `watchlist-tab.tsx` (5 sites). Each usage now passes `sortField`/`sortDirection` as explicit props. The rule no longer fires anywhere.
 
-**Impact.** None at runtime — these are performance/optimization smells flagged for React Compiler adoption. The code works correctly; the rules flag patterns the compiler can't optimize (setState in effects can cascade, ref writes during render bypass the compiler, manual memoization may conflict with compiler output).
+**Note (iter 114).** `react-hooks/refs` (2 sites) is **fully resolved** — both latest-ref writes in `use-price-stream.ts` (`thresholdRef.current = invalidationThresholdPct` and `connectRef.current = connect`) moved into `useEffect` hooks. The sync-effects are declared BEFORE the consuming connect-on-mount effect so declaration order guarantees the ref is updated before any reader runs. The rule no longer fires anywhere.
+
+**Impact.** None at runtime — these are performance/optimization smells flagged for React Compiler adoption. The code works correctly; the rules flag patterns the compiler can't optimize (setState in effects can cascade, manual memoization may conflict with compiler output).
 
 **Cause.** The rules are new in `eslint-plugin-react-hooks` v7 and default to "error". The codebase predates the React Compiler.
 
@@ -52,7 +53,6 @@
 
 **Fix (deferred).** Refactor incrementally per-file:
 - `set-state-in-effect`: most are legitimate "hydrate from localStorage / sync media query" patterns — evaluate case-by-case; some can move to `useSyncExternalStore`, others are fine as-is.
-- `refs`: the latest-ref pattern is intentional; may need `// eslint-disable` per-site or a `useLatestRef` helper.
 - `preserve-manual-memoization`: evaluate whether `useMemo` can be removed (compiler handles it).
 
 **Where to fix.** See "Sites" column above. Each site is independent — can be fixed one-by-one without touching others.
@@ -101,7 +101,7 @@
 | ID | Priority | Notes |
 |----|----------|-------|
 | **KI-23** | P2 | `unique-table.tsx` — extract `<CategoryGroupTable>` child to fix rules-of-hooks violation. Mechanical refactor, ~120 lines. |
-| **KI-24** | P3 | 13 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113). Incremental per-file refactors (see KI-24 table above). |
+| **KI-24** | P3 | 11 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114). Incremental per-file refactors (see KI-24 table above). |
 | **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. |
 | **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
@@ -143,3 +143,5 @@
 **ESLint v9 flat config (KI-22 closed iter 112).** `eslint-config-next` v16 ships native flat-config exports at `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript` — no `FlatCompat` / `@eslint/eslintrc` wrapper needed. Just spread them into your `eslint.config.mjs`. The 4 new React Compiler rules (`set-state-in-effect`, `static-components`, `preserve-manual-memoization`, `refs`) default to "error" and will break lint on any existing codebase — downgrade to "warn" in the config (see KI-24) and refactor incrementally.
 
 **`react-hooks/static-components` fix recipe (iter 113).** When the rule fires on a small inline component (e.g. `SortIndicator`), the fix is mechanical: (1) move the definition to module scope; (2) add a props interface that explicitly accepts every value the closure was capturing (typically `sortField`, `sortDirection`); (3) update every call site to pass these props. The component's render logic does NOT change. After the move, React sees a stable component type across renders, so the compiler can optimize and the subtree no longer remounts on parent re-render. Verify with `tsc --noEmit` (prop types match) + `jest` (existing snapshot/interaction tests still pass) + `eslint .` (the `static-components` warnings for that file are gone).
+
+**`react-hooks/refs` fix recipe (iter 114).** When the rule fires on a "latest-ref" pattern (`someRef.current = someProp;` written during render), the safe fix is to move the assignment into a `useEffect` whose deps array contains only the value being synced. Semantics are preserved IFF the ref is never read during render — only in event handlers or other effects. **Effect declaration order matters**: the sync-effect MUST be declared BEFORE any effect that reads the ref, because React runs effects top-to-bottom. For the canonical example, see `use-price-stream.ts:116-128` (sync `thresholdRef`) and `use-price-stream.ts:338-352` (sync `connectRef` — placed before the connect-on-mount effect at line 357 that calls `connectRef.current()`). Verify with `eslint <file>` (the `refs` warnings are gone) + `tsc --noEmit` + `jest` (existing tests still pass — they exercise the hook's external behavior, not its internal ref-sync timing).
