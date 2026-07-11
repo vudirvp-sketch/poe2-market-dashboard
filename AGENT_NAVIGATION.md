@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 125 — `AGENT_NAVIGATION.md` deep historical trim. Section 3 rules 27–50 (verbose iter-by-iter feature descriptions for iter 73–101 features) replaced with one-line historical pointer to `git log`. Section 4 (verbose iter-91-through-106 KI-closure log + 40-row duplicate quick-reference table) replaced with brief pointer to `STATUS.md` as the single source of truth + condensed "Common workflow recipes" subsection (8 rows of operational patterns unique to AGENT_NAVIGATION.md). File size 143KB → 67KB (~53% reduction), 341 → 234 lines. No production code changed; tsc green, 111 lint warnings (0 errors), 622 jest green — baselines preserved.).
+> **Single entry point** for codebase navigation. Updated 2026-07-11 (iter 126 — design-docs only. Produced two architectural design-docs in new `docs/design/` directory: `TD-3-4-5-9-persistence-gaps-design.md` (covers all four persistence TDs as one coherent extension — recommends three new SQLite tables in existing `historical.db`, four-phase implementation plan) + `P10-gold-map-roi-design.md` (UX + ROI formula alignment for the Gold Map ROI calculator — click-only tab at `TAB_MAP` index 13, localStorage for gold/Div rate, reuses existing `/api/v1/arbitrage/triangular` endpoint, no new backend route for MVP). No production code touched; tsc green, 111 lint warnings (0 errors), 622 jest green — all baselines identical to iter 125.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.
@@ -226,6 +226,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
+| `docs/design/` | **Architectural design-docs (iter 126+)** — produced before any high-risk implementation. Read these BEFORE implementing the corresponding TD/P item. Current docs: `TD-3-4-5-9-persistence-gaps-design.md` (persistence-layer unification for all four persistence TDs), `P10-gold-map-roi-design.md` (Gold Map ROI UX + formula alignment). |
 | `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas |
 
 > **Note:** `REFACTOR_PLAN.md` was deleted in iter 73 (P3-7) after all P2/P3 issues were closed. `worklog.md` was deleted in iter 73 then re-created in iter 74 as the shared multi-agent work log (append-only, sections separated by `---`). For old task history before iter 73 see `git log`.

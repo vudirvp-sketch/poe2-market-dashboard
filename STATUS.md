@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 125 — `AGENT_NAVIGATION.md` deep historical trim. Section 3 rules 27–50 + Section 4 verbose iter-91-through-106 KI-closure log + 40-row duplicate quick-reference table replaced with brief pointers to `STATUS.md` as single source of truth + condensed "Common workflow recipes" subsection. File size 143KB → 67KB (~53% reduction). No production code changed; tsc green, 111 lint warnings (0 errors), 622 jest green — baselines preserved.)
+> **Last updated:** 2026-07-11 (iter 126 — design-docs only. Produced two architectural design-docs in new `docs/design/` directory: `TD-3-4-5-9-persistence-gaps-design.md` (covers all four persistence TDs as one coherent extension — recommends three new SQLite tables in existing `historical.db`, four-phase implementation plan, no implementation in this iter) + `P10-gold-map-roi-design.md` (UX + ROI formula alignment for the Gold Map ROI calculator — recommends click-only tab at `TAB_MAP` index 13, localStorage for gold/Div rate, reuses existing `/api/v1/arbitrage/triangular` endpoint, no new backend route for MVP). No production code touched; tsc green, 111 lint warnings (0 errors), 622 jest green — all baselines identical to iter 125.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -11,9 +11,19 @@
 
 ---
 
+## Design-docs (iter 126 — designs only, no implementation)
+
+| Doc | Covers | Status |
+|-----|--------|--------|
+| `docs/design/TD-3-4-5-9-persistence-gaps-design.md` | TD-3 + TD-4 + TD-5 + TD-9 — unified persistence-layer analysis. Recommends Option B: three new SQLite tables (`triangular_cycles`, `market_spreads`, `daily_stats`) in existing `historical.db`. Four-phase implementation plan (Phase 1 = TD-9 wire-only, Phase 2 = TD-4 spreads, Phase 3 = TD-3 cycles, Phase 4 = TD-5 OHLCV + backfill script). Backfill strategy per TD. Migration risk analysis (6 risks, all mitigated). Open questions deferred to implementation agent. | DESIGN COMPLETE — implementation deferred to iter 127+ (one phase per iter recommended). |
+| `docs/design/P10-gold-map-roi-design.md` | P10 Gold Map ROI — UX + ROI formula alignment. Reuses existing `/api/v1/arbitrage/triangular` endpoint (no new backend route for MVP). Tab placement: `TAB_MAP` index 13 (after `mirror-divine-arb`, click-only). Input contract: gold amount, map cost, gold/Div rate (localStorage-persisted), days, reference currency. ROI formula reconciled with §C.8 + §13 (split into gold→Div manual step + 3-way chain integer simulation). Recommendation flag thresholds (50%, 150%). ~25 i18n keys × 4 locales. ~15 jest tests planned. Three-phase implementation plan. | DESIGN COMPLETE — implementation deferred to iter 127+ (Phase 1 = MVP, Phase 2 = trend chart depends on TD-3 Phase 3, Phase 3 = optional SQLite promotion of gold rate). |
+
+---
+
 ## Known Issues — closed (recent)
 
-- **DOC-1** (closed iter 125): `AGENT_NAVIGATION.md` was 143KB / 341 lines — too heavy for future agents to scan. Section 3 rules 27–50 (verbose iter-by-iter feature descriptions for iter 73–101 features — Storage Value, Content Pulse, Speculation, Phase Hints, Circuit Patterns, Intraday/Weekly Patterns, Leveling Uniques, `useDashboardData` extraction, currency-names sync, i18n leakage fix, `formatLocaleDate`, shortcuts dialog sync, dead i18n key cleanup, iter 91 recon, iter 93 Best Payment, iter 94 Spread Capture, iter 95 Overheat Index) were redundant with `git log` + per-file module-level comments. Section 4 (verbose iter-91-through-106 KI-closure log + 40-row duplicate quick-reference table) duplicated `STATUS.md` (the single source of truth for KIs). Both sections replaced with brief pointers + a condensed 8-row "Common workflow recipes" subsection (operational patterns unique to AGENT_NAVIGATION.md: Russian-name sync script, locale rendering helpers, `?lang=` endpoint pattern, dead i18n key cleanup, analyst fact templates, circuit-breaker inspection, fallback-response detection). Result: 143KB → 67KB (~53% reduction), 341 → 233 lines. No production code touched.
+- **DOC-2** (closed iter 126): Two architectural design-docs produced in new `docs/design/` directory. TD-3/4/5/9 design recommends Option B (three new tables in existing `historical.db`) over Option A (extend `price_snapshots` — rejected due to cadence conflation) and Option C (separate `analytics.db` — rejected due to operational complexity). P10 design recommends Option A tab placement (click-only after `mirror-divine-arb`) over three other placement options analyzed. Both docs include: problem statement, current-state analysis, options matrix with pros/cons, recommended schema/placement, write-path integration, backfill strategy, retention strategy, migration risk, implementation phasing, open questions, references. No production code touched; all baselines preserved.
+- **DOC-1** (closed iter 125): `AGENT_NAVIGATION.md` was 143KB / 341 lines — too heavy for future agents to scan. Trimmed to 67KB / 233 lines by replacing verbose iter-by-iter Section 3 rules 27–50 + entire Section 4 (KI-closure log + duplicate quick-reference table) with brief pointers to `STATUS.md` + condensed 8-row "Common workflow recipes" subsection. No production code touched.
 - **TD-10** (closed iter 124): 3 pre-existing lint warnings in `dashboard-page.tsx` — unused `ReferenceCurrency` import, unused `sseStatus` destructuring, `keyboardActions` useMemo exhaustive-deps (missing `TAB_MAP`, `openDetail`). Fix: removed the import; called `usePriceStream` without destructuring; moved `TAB_MAP` to module level (stable identity) + wrapped `setTab` in `useCallback` + added `openDetail` to deps. Lint 114 → 111.
 - **TD-11** (closed iter 124): Repo cleanup — removed 26 obsolete files: 8 `MERGE_INSTRUCTIONS_iter*.md`, 12 `git_commands_iter*.txt`, `DELETIONS.{sh,txt}`, `DELETE_obsolete_files.sh`, `README.txt`, `scripts_flipper-backend-bridge.ts.DELETED`, `scripts/DELETE_flipper-backend-bridge.ts`, stale tracked `flipper-bridge.log` (692KB, already in `.gitignore`). No code references any of these.
 - **KI-24** (closed iter 123): React Compiler `set-state-in-effect` rule migration — all 10 sites across 7 files resolved (iter 115–123). See recipes below for the patterns. Lint was 117 → 114.
@@ -28,11 +38,11 @@
 
 | ID | Priority | Notes |
 |----|----------|-------|
-| **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. Needs persistence-layer design. |
-| **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. Needs persistence-layer design. |
-| **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. Needs persistence-layer design. |
-| **TD-9** | P3 | FlipsTable "Trend" sparkline uses derived `momentum × volatility` — switch to real `priceHistoryShort` when backend adds it. |
-| **P10** | P3 | Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done). |
+| **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. **Design complete iter 126** — see `docs/design/TD-3-4-5-9-persistence-gaps-design.md` Phase 3. Implementation deferred to iter 127+. |
+| **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. **Design complete iter 126** — see `docs/design/TD-3-4-5-9-persistence-gaps-design.md` Phase 2. Implementation deferred to iter 127+. |
+| **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. **Design complete iter 126** — see `docs/design/TD-3-4-5-9-persistence-gaps-design.md` Phase 4. Implementation deferred to iter 127+. |
+| **TD-9** | P3 | FlipsTable "Trend" sparkline uses derived `momentum × volatility` — switch to real `priceHistoryShort` when backend adds it. **Design complete iter 126** — see `docs/design/TD-3-4-5-9-persistence-gaps-design.md` Phase 1 (cheapest fix — no persistence needed, just wire `price_history_short` from `snapshot.price_histories` into `/flips` response). Implementation deferred to iter 127+. |
+| **P10** | P3 | Gold Map ROI (§C.8) — feature work, depends on P1 3-way flips (already done). **Design complete iter 126** — see `docs/design/P10-gold-map-roi-design.md`. Implementation deferred to iter 127+ (Phase 1 = MVP, Phase 2 = trend chart depends on TD-3 Phase 3). |
 
 ---
 
