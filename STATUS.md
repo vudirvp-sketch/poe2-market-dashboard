@@ -1,28 +1,25 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 118 — advanced KI-24 by 1 site. Refactored `offline-banner.tsx`: removed dead `wasOffline` state (set but never read) and replaced `useEffect(() => setDismissed(false))` with the "adjust state during render" pattern (previous-value guard). Eliminates 1 `set-state-in-effect` site + 1 unused-var warning. Lint 122 → 120, 0 errors. 619 jest green, tsc green. KI-24 backlog now 6 sites across 1 React Compiler rule.)
+> **Last updated:** 2026-07-11 (iter 119 — advanced KI-24 by 1 site. Refactored `src/lib/i18n/index.tsx`: replaced `useState(locale) + useEffect(setLocaleState(stored)) + useEffect(setHydrated(true))` (2 setState-in-effect warnings in one effect) with `useSyncExternalStore` for both `locale` and `hydrated`. Added module-level `hasMounted` flag flipped inside `subscribe()` + callback invocation to preserve the "first render = DEFAULT_LOCALE" invariant without setState. Exported `__resetI18nForTesting` + added `beforeEach` reset in `jest.setup.ts` to prevent test-isolation leak. Lint 120 → 119, 0 errors. 619 jest green, tsc green. KI-24 backlog now 5 sites across 1 React Compiler rule.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
 
 ## Known Issues — open
 
-### KI-24 — React Compiler rule migration backlog (6 sites remaining, 1 rule)
+### KI-24 — React Compiler rule migration backlog (5 sites remaining, 1 rule)
 
-**Symptom.** `npm run lint` emits 120 warnings (0 errors). Of these, 6 come from 1 React Compiler rule shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
+**Symptom.** `npm run lint` emits 119 warnings (0 errors). Of these, 5 come from 1 React Compiler rule shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
 
 | Rule | Count | Sites |
 |------|-------|-------|
-| `react-hooks/set-state-in-effect` | 6 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `use-realms-and-leagues.ts` (1), `i18n/index.tsx` (1) |
+| `react-hooks/set-state-in-effect` | 5 | `dashboard-page.tsx` (3), `fuzzy-search.tsx` (1), `use-realms-and-leagues.ts` (1) |
 
-**Closed sub-rules (history):**
-- `static-components` — fully resolved iter 113 (`SortIndicator` moved to module scope in `exchange-table.tsx` + `watchlist-tab.tsx`).
-- `refs` — fully resolved iter 114 (latest-ref writes moved into `useEffect` in `use-price-stream.ts`).
-- `set-state-in-effect` 1 of 10 resolved iter 115 (`use-price-stream.ts` `backendOnline` transitions effect — derived `status`/`lastError` in return + `freshSessionRef` signal-ref pattern).
-- `set-state-in-effect` 1 of 10 resolved iter 116 (`use-reduced-motion.ts` — rewritten with `useSyncExternalStore`).
-- `set-state-in-effect` 1 of 10 resolved iter 117 (`header.tsx` `mounted` flag — rewritten with `useSyncExternalStore`; canonical "is client post-hydration" pattern).
-- `set-state-in-effect` 1 of 10 resolved iter 118 (`offline-banner.tsx` — "adjust state during render" pattern with previous-value guard; also removed dead `wasOffline` state).
-- `preserve-manual-memoization` 1 of 1 resolved iter 116 (`speculation-tab.tsx:316` — `useMemo` kept with inline eslint-disable; rationale documented, React Compiler not yet enabled so removal would regress performance).
+**Closed sub-rules (5 of 10 `set-state-in-effect` sites resolved, see recipes below):**
+- `static-components` — fully resolved iter 113.
+- `refs` — fully resolved iter 114.
+- `set-state-in-effect` iter 115 (`use-price-stream.ts`), iter 116 (`use-reduced-motion.ts`), iter 117 (`header.tsx`), iter 118 (`offline-banner.tsx`), iter 119 (`i18n/index.tsx`).
+- `preserve-manual-memoization` — suppressed with rationale iter 116 (`speculation-tab.tsx`).
 
 **Impact.** None at runtime — performance/optimization smells flagged for React Compiler adoption. The code works correctly.
 
@@ -38,16 +35,11 @@
 
 ## Known Issues — closed (recent)
 
-- **KI-23** (closed iter 116): `react-hooks/rules-of-hooks` violation in `unique-table.tsx` — `useReactTable` was called INSIDE a `.map()` callback, breaking React's hook-ordering invariant when `categoryGroups.length` changed. **Fix:** extracted a `<CategoryGroupTable>` child component that calls `useReactTable` at its top level, receiving all needed values as explicit props (`group`, `columns`, `sorting`, `setSorting`, `isCollapsed`, `onToggleCollapse`, `t`, `highlightedItemId`, `onItemClick`, `onRowMouseEnter`, `rowHeight`, `fontSize`, `cellPadding`). Render output is identical to the pre-refactor inline `.map()` body. Removed the inline `eslint-disable react-hooks/rules-of-hooks` comment. The unrelated `react-hooks/incompatible-library` warning still fires on the `useReactTable` call (now at line 376 in the child component) — this is a known TanStack Table + React Compiler limitation, NOT a hooks violation.
-- **KI-20** (closed iter 116): `case-transform.ts` regex `/_([a-z])/g` skipped `_<digit>` underscores — backend fields like `delta_7d_pct` transformed to `delta_7dPct` (leftover `_`) instead of `delta7dPct`, causing silent data loss in the content-pulse widget (TS interface declared `delta7dPct` but proxy delivered `delta_7dPct`). **Fix:** changed regex to `/_([a-z0-9])/g`. Added 29 jest tests in `src/__tests__/case-transform.test.ts` covering basic snake_case, `_<digit>` regression, nested objects, arrays, mixed-case idempotency, and edge cases.
-- **KI-22** (closed iter 112): ESLint v9 flat config (`eslint.config.js`) missing → `npm run lint` failed. **Fix:** created `eslint.config.mjs` using native flat-config exports from `eslint-config-next` v16. Downgraded 4 new React Compiler rules to "warn".
-- **KI-21** (closed iter 111): `phase-hints-widget.tsx` `fmtPrice()` rounded prices `>= 100` to integer — `115.5` rendered as `"116"` instead of `"115.50"`. **Fix:** removed the `>= 100 → toFixed(0)` branch; always uses `toFixed(2)` for `>= 1` and `toFixed(4)` for `< 1`.
-- **KI-19** (closed iter 107): `scripts/DELETE_*.ts` placeholder files broke `next build`. Fix: `DELETE_obsolete_files.sh` removes the glob; `tsconfig.json` `exclude` includes `**/DELETE_*`.
-- **KI-13** (closed iter 107, **verified iter 108**): `GET /api/v1/prices/stream?threshold_pct=1` returned 400 — SSE router registered after greedy `{pair:path}` router. Fix: register `sse_router` BEFORE `prices_router` in `backend/main.py`.
-- **KI-16-deep** (closed iter 106): Turbopack NFT warning — replaced `spawn`/`spawnSync` with `exec`/`execSync` in `flipper-backend-bridge.ts`.
-- **KI-18** (closed iter 105): `pytest` hung on `test_triangular.py` — `conftest.py` patches `get_process_pool` → None.
-- **KI-15** (closed iter 103): `api.poe2scout.com` dead. Use `POE2_API_BASE_URL=https://poe2scout.com/api`.
-- **KI-11** (closed iter 102): 502 on `/api/poe2/uniques` & `/api/poe2/currencies`. Fix: route handlers catch upstream 4xx.
+- **KI-23** (closed iter 116): `react-hooks/rules-of-hooks` violation in `unique-table.tsx` — `useReactTable` called INSIDE a `.map()` callback. **Fix:** extracted `<CategoryGroupTable>` child component. (See "rules-of-hooks extraction recipe" below.)
+- **KI-20** (closed iter 116): `case-transform.ts` regex `/_([a-z])/g` skipped `_<digit>` underscores — `delta_7d_pct` → `delta_7dPct` (leftover `_`) instead of `delta7dPct`. **Fix:** regex `/_([a-z0-9])/g`. Added 29 jest tests.
+- **KI-22** (closed iter 112): ESLint v9 flat config missing → `npm run lint` failed. **Fix:** `eslint.config.mjs` with native flat-config exports from `eslint-config-next` v16. Downgraded 4 React Compiler rules to "warn".
+- **KI-21** (closed iter 111): `phase-hints-widget.tsx` `fmtPrice()` rounded `>= 100` to integer. **Fix:** always `toFixed(2)` for `>= 1`, `toFixed(4)` for `< 1`.
+- **KI-19/13/16-deep/18/15/11** (closed iter 102-107): see Quick Reference table for one-line fix summaries.
 
 ---
 
@@ -55,7 +47,7 @@
 
 | ID | Priority | Notes |
 |----|----------|-------|
-| **KI-24** | P3 | 6 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 4 of 10 resolved iter 115+116+117+118, `preserve-manual-memoization` 1 of 1 suppressed with rationale iter 116). Incremental per-file refactors (see KI-24 table above). |
+| **KI-24** | P3 | 5 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 5 of 10 resolved iter 115+116+117+118+119, `preserve-manual-memoization` 1 of 1 suppressed with rationale iter 116). Incremental per-file refactors (see KI-24 table above). |
 | **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. |
 | **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
@@ -110,6 +102,8 @@
 **`react-hooks/set-state-in-effect` fix for "mounted" flag via `useSyncExternalStore` (iter 117).** A special case of the iter-116 recipe: when the effect's ONLY purpose is to flip a `mounted` boolean from `false` → `true` after first render (the classic `useState(false) + useEffect(() => setMounted(true), [])` SSR-safety pattern, used to gate client-only UI like `next-themes`'s theme toggle), the canonical fix is `const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false)`. Here `subscribe` is a no-op (`() => () => {}`) because there is no external store — the only "transition" is the hydration boundary itself, which React handles internally by switching from `getServerSnapshot` (false) to `getSnapshot` (true) after hydration. Semantics are identical: SSR/first-render = false (matches server HTML, no hydration mismatch), post-hydration = true (client-only UI appears). This is safer than `useEffect` because React guarantees the transition without an extra render cycle. Canonical example: `header.tsx` `mounted` flag (gates the theme toggle button). Extract the three callbacks to module-level named functions for readability and self-documentation.
 
 **`react-hooks/set-state-in-effect` fix via "adjust state during render" (iter 118).** When the effect's purpose is to RESET a piece of state when a prop transitions (e.g. `setDismissed(false)` when `isOnline` goes from `true` → `false`), and there is NO callback consumer to defer into (unlike iter 115's signal-ref pattern which requires a `useCallback` called synchronously from the same effect), the canonical fix is the React-recommended "adjust state during render with a previous-value guard" pattern (ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes). Recipe: (1) Add `const [prevProp, setPrevProp] = useState(prop)` initialized to the current prop value (so the first render does NOT trigger a reset — important for hydration safety). (2) During render, check `if (prop !== prevProp) { setPrevProp(prop); if (<reset-condition>) setOtherState(<reset-value>); }`. React explicitly supports calling `setState` during render as a special case — it re-renders immediately without committing the partial state, so there is no visual flash. The `react-hooks/set-state-in-effect` rule does NOT fire because the `setState` is NOT inside a `useEffect`. (3) Trace the transition semantics to verify equivalence: online→offline, offline→online, repeat. Canonical example: `offline-banner.tsx` `dismissed` reset on `isOnline` transition. **When NOT to use this recipe:** if the state is FULLY determined by the prop (no user-action override), use iter 115's recipe 1 (derive during render) instead — no `prevProp` guard needed. **Dead-state cleanup opportunity:** when removing the effect, check for state variables that were only ever set inside it — they may be dead (set but never read) and can be removed in the same commit.
+
+**`react-hooks/set-state-in-effect` fix for external store + first-render invariant via `useSyncExternalStore` + `hasMounted` flag + `subscribe`-callback (iter 119).** When the effect's purpose is to (a) subscribe to an external store (localStorage) AND (b) preserve a "first render = DEFAULT_VALUE" invariant (to avoid hydration mismatches AND to trigger downstream effects like React Query refetches when the value transitions from the default to the stored value), the canonical fix is `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)` with a module-level `hasMounted` flag. **Key insight:** `useSyncExternalStore`'s `getServerSnapshot` is ONLY used during hydration — in non-hydration contexts (jsdom tests, client-only routes), `getSnapshot` is used from the very first render. So if `getSnapshot` reads localStorage directly, the first render uses the stored value, breaking the invariant and failing tests that assert a value transition (e.g. `phase-hints-widget.test.tsx` expects 2 fetches: one with "ru", one with "en" after hydration). Recipe: (1) Add a module-level `let hasMounted = false` flag. (2) `getSnapshot` returns `DEFAULT_VALUE` if `!hasMounted`, else reads the external store. (3) In `subscribe`, on the FIRST call, flip `hasMounted = true` AND invoke the callback (`callback()`) to schedule a re-render — this mimics the old `useEffect(() => setState(stored))` transition WITHOUT calling setState inside an effect. React's docs explicitly support calling the callback inside `subscribe` for "the store might have changed since the first render" cases. (4) Subsequent `subscribe` calls (e.g. StrictMode double-invoke) are no-ops because `hasMounted` is already true. (5) **Test isolation:** the module-level `hasMounted` flag persists across tests — export a `__reset<Module>ForTesting()` function and call it in `jest.setup.ts` `beforeEach` to reset `hasMounted` and clear listener sets. (6) `setLocale` (the explicit setter) writes to localStorage AND notifies same-tab listeners via `listeners.forEach(l => l())` — the `storage` event only fires in OTHER tabs, so same-tab consumers need the listener set. Canonical example: `src/lib/i18n/index.tsx` (`locale` + `hydrated` — 2 setState calls in one effect eliminated in a single refactor).
 
 **`react-hooks/preserve-manual-memoization` evaluation recipe (iter 116).** The rule fires when the React Compiler cannot preserve a manual `useMemo` — typically because the compiler's inferred deps are broader than the source's `deps` array (e.g. source uses `[obj?.prop]` to leverage structural sharing, but compiler infers `[obj]`). The recipe: (1) Check if React Compiler is enabled in `next.config.ts` (`experimental.reactCompiler: true`). If NOT enabled, removing `useMemo` is a PERFORMANCE REGRESSION (rebuilds the value every render). (2) Check if the memoized value is consumed in any `useEffect`/`useMemo` deps array. If NOT, removing `useMemo` is correctness-safe (just slower). (3) If compiler not enabled AND the narrow deps are intentional, KEEP the `useMemo` and add an inline `eslint-disable-next-line react-hooks/preserve-manual-memoization` with a comment explaining the rationale + when to revisit (after enabling the compiler). Canonical example: `speculation-tab.tsx:332` `flipsByApiId` (narrow dep `[flipsData?.opportunities]` leverages TanStack Query structural sharing).
 
