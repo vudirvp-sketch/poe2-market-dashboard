@@ -248,7 +248,7 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 ## 10. Backend Bridge (v1.25)
 
-The Flipper backend is managed by Next.js via the `instrumentation.ts` hook and `scripts/flipper-backend-bridge.ts`.
+The Flipper backend is managed by Next.js via the `instrumentation.ts` hook and `src/lib/flipper-backend-bridge.ts` (moved from `scripts/` in iter 105 — see STATUS.md KI-16).
 
 ### How It Works
 

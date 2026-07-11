@@ -41,6 +41,7 @@ next-env.d.ts
 server.log
 dev.log
 flipper-backend.log
+flipper-bridge.log
 
 # Prisma
 db/*.db
