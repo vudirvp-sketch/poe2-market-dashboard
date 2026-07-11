@@ -43,6 +43,7 @@ import {
   Clock,
   Calendar,
   ArrowUpDown,
+  MapPin,
 } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -151,6 +152,10 @@ export function DashboardToolbar(props: DashboardToolbarProps) {
         {/* P7 (iter 109): Mirror/Divine Arbitrage tab — single-object rate detector. */}
         <TabsTrigger value="mirror-divine-arb" className="gap-1.5" aria-label={t("tabMirrorDivineArb")}>
           <ArrowUpDown className="h-4 w-4" aria-hidden="true" /> {t("tabMirrorDivineArb")}
+        </TabsTrigger>
+        {/* P10 (iter 127): Gold Map ROI tab — Castaway run ROI calculator (click-only). */}
+        <TabsTrigger value="gold-map-roi" className="gap-1.5" aria-label={t("tabGoldMapRoi")}>
+          <MapPin className="h-4 w-4" aria-hidden="true" /> {t("tabGoldMapRoi")}
         </TabsTrigger>
         <TabsTrigger value="liquid-chain" className="gap-1.5" aria-label={t("tabLiquidChain")}>
           <Droplets className="h-4 w-4" aria-hidden="true" /> {t("tabLiquidChain")}

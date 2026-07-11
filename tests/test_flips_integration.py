@@ -420,3 +420,136 @@ class TestFlipsFullCombination:
         data = resp.json()
         assert data["total"] == 1
         assert data["opportunities"][0]["currency"] == "divine/exalted"
+
+
+# ===========================================================================
+# 7. TD-9 (iter 127) — price_history_short field on /flips response
+# ===========================================================================
+
+class TestFlipsPriceHistoryShort:
+    """TD-9 (iter 127): each opportunity in the /flips response MUST include
+    a ``price_history_short`` field — a list of ``{"date": iso, "price": float}``
+    dicts, oldest-first, up to 14 points. Empty list is valid (no history).
+
+    These tests verify the field is present + has the right shape; they
+    don't verify the slice logic itself (that's covered by
+    ``test_flips_price_history_short_helper.py``).
+    """
+
+    def test_opportunity_has_price_history_short_key(self, flips_client):
+        """The field must always be present (even when empty)."""
+        resp = flips_client.get("/api/v1/arbitrage/flips")
+        assert resp.status_code == 200
+        opp = resp.json()["opportunities"][0]
+        assert "price_history_short" in opp
+        # Default demo opps don't set price_history_short → must be [].
+        assert opp["price_history_short"] == []
+
+    def test_opportunity_with_price_history_short_is_passed_through(self, flips_client):
+        """When _build_flip_opportunities returns opps with non-empty
+        price_history_short, the route must pass it through verbatim."""
+        from backend.api import routes_arbitrage
+        from backend.data.unified_cache import get_pipeline_cache
+        from datetime import datetime, timezone
+
+        # Build an opp with 3 price-history points (oldest-first).
+        ts1 = datetime(2026, 7, 11, 12, 0, tzinfo=timezone.utc)
+        ts2 = datetime(2026, 7, 11, 12, 5, tzinfo=timezone.utc)
+        ts3 = datetime(2026, 7, 11, 12, 10, tzinfo=timezone.utc)
+        history = [
+            {"date": ts1.isoformat(), "price": 1.10},
+            {"date": ts2.isoformat(), "price": 1.15},
+            {"date": ts3.isoformat(), "price": 1.20},
+        ]
+        opp_with_history = _make_opp("divine/exalted", score=0.9, spread=0.05,
+                                      volume_24h=1000, momentum=0.01, volatility=0.02)
+        opp_with_history.price_history_short = history
+
+        with patch("backend.api.routes_arbitrage._build_flip_opportunities",
+                   new=AsyncMock(return_value=[opp_with_history])):
+            get_pipeline_cache().invalidate()
+            resp = flips_client.get("/api/v1/arbitrage/flips")
+            get_pipeline_cache().invalidate()
+
+        assert resp.status_code == 200
+        opp = resp.json()["opportunities"][0]
+        assert opp["currency"] == "divine/exalted"
+        assert opp["price_history_short"] == history
+        assert len(opp["price_history_short"]) == 3
+        # Oldest-first ordering preserved.
+        assert opp["price_history_short"][0]["price"] == 1.10
+        assert opp["price_history_short"][-1]["price"] == 1.20
+        # Date is a valid ISO 8601 string.
+        datetime.fromisoformat(opp["price_history_short"][0]["date"])
+
+    def test_price_history_short_is_always_a_list(self, flips_client):
+        """Even when an opp omits the field on the dataclass, the route
+        must NOT crash — the dataclass default_factory=list covers it."""
+        # The _DEMO_OPPS don't set price_history_short, so the dataclass
+        # default kicks in. Verify the response is a list (not None / missing).
+        resp = flips_client.get("/api/v1/arbitrage/flips")
+        data = resp.json()
+        for opp in data["opportunities"]:
+            assert isinstance(opp["price_history_short"], list)
+
+
+# ===========================================================================
+# 8. TD-9 (iter 127) — _slice_price_history_short pure-function unit tests
+# ===========================================================================
+
+class TestSlicePriceHistoryShortHelper:
+    """Cover the slice helper directly — keeps the integration tests focused
+    on field presence/shape while this covers the slice/count/empty cases."""
+
+    def test_empty_history_returns_empty_list(self):
+        from backend.api.routes_arbitrage import _slice_price_history_short
+        assert _slice_price_history_short([]) == []
+
+    def test_short_history_returned_verbatim_oldest_first(self):
+        from backend.api.routes_arbitrage import _slice_price_history_short
+        ts1 = datetime(2026, 7, 11, 12, 0, tzinfo=timezone.utc)
+        ts2 = datetime(2026, 7, 11, 12, 5, tzinfo=timezone.utc)
+        history = [(ts1, 1.10), (ts2, 1.15)]
+        result = _slice_price_history_short(history)
+        assert len(result) == 2
+        assert result[0] == {"date": ts1.isoformat(), "price": 1.10}
+        assert result[1] == {"date": ts2.isoformat(), "price": 1.15}
+
+    def test_history_longer_than_14_is_truncated_to_last_14(self):
+        from backend.api.routes_arbitrage import (
+            _slice_price_history_short,
+            FLIPS_PRICE_HISTORY_SHORT_MAX_POINTS,
+        )
+        # Build 20 points — only the last 14 should survive.
+        history = [
+            (datetime(2026, 7, 11, 12, i, tzinfo=timezone.utc), float(i))
+            for i in range(20)
+        ]
+        result = _slice_price_history_short(history)
+        assert len(result) == FLIPS_PRICE_HISTORY_SHORT_MAX_POINTS
+        # Oldest in the slice = index 6 (i.e. history[6]), newest = index 19.
+        assert result[0]["price"] == 6.0
+        assert result[-1]["price"] == 19.0
+
+    def test_exactly_14_points_returned_unchanged(self):
+        from backend.api.routes_arbitrage import _slice_price_history_short
+        history = [
+            (datetime(2026, 7, 11, 12, i, tzinfo=timezone.utc), float(i))
+            for i in range(14)
+        ]
+        result = _slice_price_history_short(history)
+        assert len(result) == 14
+        assert result[0]["price"] == 0.0
+        assert result[-1]["price"] == 13.0
+
+    def test_prices_are_coerced_to_float(self):
+        """Even if the upstream history contains ints or Decimals, the
+        helper must coerce to plain Python float for JSON safety."""
+        from backend.api.routes_arbitrage import _slice_price_history_short
+        from decimal import Decimal
+        ts = datetime(2026, 7, 11, 12, 0, tzinfo=timezone.utc)
+        result = _slice_price_history_short([(ts, Decimal("1.50"))])
+        assert len(result) == 1
+        assert result[0]["price"] == 1.50
+        assert isinstance(result[0]["price"], float)
+

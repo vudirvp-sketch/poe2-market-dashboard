@@ -59,6 +59,35 @@ _arbitrage_semaphore = asyncio.Semaphore(2)
 
 
 # ---------------------------------------------------------------------------
+# TD-9 (iter 127): slice up to 14 most-recent (timestamp, price) points for
+# the FlipsTable Trend sparkline. Mirrors speculation.py:MAX_HISTORY_POINTS.
+# Pure function so it can be unit-tested in isolation.
+# ---------------------------------------------------------------------------
+
+FLIPS_PRICE_HISTORY_SHORT_MAX_POINTS = 14
+
+
+def _slice_price_history_short(
+    history: list[tuple[datetime, float]],
+    *,
+    max_points: int = FLIPS_PRICE_HISTORY_SHORT_MAX_POINTS,
+) -> list[dict]:
+    """Slice up to ``max_points`` most-recent (timestamp, price) points.
+
+    Returns a list of ``{"date": iso_string, "price": float}`` dicts,
+    oldest-first (so the UI sparkline renders left → right chronologically).
+    Empty list when ``history`` is empty.
+    """
+    if not history:
+        return []
+    history_slice = history[-max_points:]
+    return [
+        {"date": ts.isoformat() if ts is not None else "", "price": float(price)}
+        for ts, price in history_slice
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Picklable data bundle for ProcessPoolExecutor
 # ---------------------------------------------------------------------------
 
@@ -388,6 +417,15 @@ def _build_flip_opportunities_sync(
             deviation_pct=deviation_pct,
             price_from_in_base=price_from_in_base,
             price_to_in_base=price_to_in_base,
+            # TD-9 (iter 127): attach the up-to-14 most-recent (date, price)
+            # points for currency_from so the FlipsTable sparkline can render
+            # REAL price history. Same slice pattern as speculation.py:214.
+            # Empty list when no history exists — frontend falls back to the
+            # synthetic deriveTrendSparklineData shape (kept for backward
+            # compat + zero-history edge case).
+            price_history_short=_slice_price_history_short(
+                currency_price_history_timestamped.get(rate.currency_from, []),
+            ),
         )
 
         if is_stale:
@@ -725,6 +763,11 @@ async def get_flip_opportunities(
                 "deviation_pct": round(o.deviation_pct, 4),
                 "price_from_in_base": round(o.price_from_in_base, 8),
                 "price_to_in_base": round(o.price_to_in_base, 8),
+                # TD-9 (iter 127): real price history for the FlipsTable
+                # Trend sparkline. List of {"date": iso, "price": float},
+                # oldest-first, up to 14 points. Empty when no history —
+                # frontend falls back to deriveTrendSparklineData.
+                "price_history_short": o.price_history_short,
             }
             for o in filtered
         ],

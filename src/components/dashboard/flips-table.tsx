@@ -40,7 +40,8 @@ import {
   clusterLabel,
   classifySpreadTier,
   spreadTierColor,
-  deriveTrendSparklineData,
+  getTrendSparklineData,
+  isTrendSparklineRealData,
 } from "./flips-helpers";
 import { isFlipDataSuspicious } from "@/lib/flipper-helpers";
 import { Sparkline } from "./sparkline";
@@ -442,10 +443,24 @@ export const FlipsTable = memo(function FlipsTable({
                     })()}
                   </span>
 
-                  {/* iter 94 (Q5): Trend sparkline — derived from momentum × volatility */}
-                  <span className="flex justify-center hidden lg:table-cell" title={t("flipsTrendTooltip")}>
+                  {/* TD-9 (iter 127): Trend sparkline — now renders REAL
+                      price history when priceHistoryShort is non-empty;
+                      falls back to the synthetic momentum×volatility shape
+                      when no history is available. */}
+                  <span
+                    className="flex justify-center hidden lg:table-cell"
+                    title={
+                      isTrendSparklineRealData(opp)
+                        ? t("flipsTrendTooltipReal")
+                        : t("flipsTrendTooltip")
+                    }
+                  >
                     <Sparkline
-                      data={deriveTrendSparklineData(opp.momentum, opp.volatility)}
+                      data={getTrendSparklineData({
+                        priceHistoryShort: opp.priceHistoryShort,
+                        momentum: opp.momentum,
+                        volatility: opp.volatility,
+                      })}
                       color="#94a3b8"
                       width={60}
                       height={20}

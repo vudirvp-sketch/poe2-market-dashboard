@@ -197,6 +197,12 @@ export interface FlipOpportunity {
   priceFromInBase?: number;
   /** Price of currency_to in base currency (exalted). */
   priceToInBase?: number;
+  /**
+   * TD-9 (iter 127): up to 14 most-recent (date, price) points for currency_from,
+   * oldest-first. Empty array when no price history is available (frontend
+   * sparkline falls back to deriveTrendSparklineData shape).
+   */
+  priceHistoryShort?: SpeculationPriceHistoryPoint[];
 }
 
 /** P1-1: Quantized spread result at a specific lot size */

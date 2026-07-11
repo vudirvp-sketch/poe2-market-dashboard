@@ -1,9 +1,9 @@
 # Design Doc — P10 Gold Map ROI (Castaway runs)
 
-> **Status:** UX + ROI FORMULA DESIGN ONLY (iter 126). No implementation in this iter.
-> **Owner:** main agent. **Reviewed:** pending (iter 127 implementation agent).
+> **Status:** DESIGN COMPLETE. **Phase 1 (MVP) SHIPPED iter 127.** Phase 2 (trend chart) deferred until TD-3 Phase 3 lands. Phase 3 (SQLite promotion) optional.
+> **Owner:** main agent. **Reviewed:** iter 127 implementation agent (Phase 1).
 > **Scope:** placement, input contract, ROI formula alignment, data dependencies.
-> **Out of scope:** any code change, route handler, UI component, i18n key.
+> **Out of scope (Phase 1):** trend chart (Phase 2), SQLite persistence (Phase 3), reference-currency selector (deferred — MVP shows Div only).
 
 ---
 

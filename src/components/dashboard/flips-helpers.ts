@@ -149,3 +149,47 @@ export function deriveTrendSparklineData(
   }
   return points;
 }
+
+// ---------------------------------------------------------------------------
+// TD-9 (iter 127): real price history with synthetic fallback
+// ---------------------------------------------------------------------------
+// When `priceHistoryShort` has ≥ 2 points, render the REAL price-history
+// sparkline (array of price numbers, oldest-first). Otherwise, fall back to
+// the synthetic `deriveTrendSparklineData(momentum, volatility)` shape so
+// the Sparkline cell is never empty.
+//
+// The fallback exists for two reasons:
+//   1. Zero-history opportunities (early league / fresh listing).
+//   2. The backend may omit `price_history_short` on the dataclass when no
+//      price history exists — the field is optional on the TS type.
+//
+// Ref: docs/design/TD-3-4-5-9-persistence-gaps-design.md §5.3 (Phase 1).
+
+export interface TrendSparklineInput {
+  /** Real price history from backend (TD-9). Optional + may be empty. */
+  priceHistoryShort?: { date: string; price: number }[] | null;
+  /** Price momentum — used by the synthetic fallback. */
+  momentum?: number | null;
+  /** Volatility — used by the synthetic fallback. */
+  volatility?: number | null;
+}
+
+/** Minimum number of real-history points required to skip the fallback. */
+export const FLIPS_TREND_REAL_HISTORY_MIN_POINTS = 2;
+
+export function getTrendSparklineData(input: TrendSparklineInput): number[] {
+  const real = input.priceHistoryShort;
+  if (real && real.length >= FLIPS_TREND_REAL_HISTORY_MIN_POINTS) {
+    return real.map((p) => p.price);
+  }
+  return deriveTrendSparklineData(input.momentum, input.volatility);
+}
+
+/** Returns true when the sparkline is rendering REAL price history (not the
+ *  synthetic derived shape). UI can use this to update the tooltip. */
+export function isTrendSparklineRealData(input: TrendSparklineInput): boolean {
+  return !!(
+    input.priceHistoryShort &&
+    input.priceHistoryShort.length >= FLIPS_TREND_REAL_HISTORY_MIN_POINTS
+  );
+}
