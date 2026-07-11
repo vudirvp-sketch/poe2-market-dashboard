@@ -3,14 +3,35 @@
 // Stores locale in localStorage, provides t() function with interpolation
 // and tp() function with pluralization via Intl.PluralRules
 // ============================================================================
+//
+// iter 121 (RE-DO of iter 119, see KI-25) — refactored from
+// `useState(locale) + useEffect(setLocaleState(stored)) + useEffect(setHydrated(true))`
+// to `useSyncExternalStore` for BOTH `locale` and `hydrated`. This eliminates
+// the `react-hooks/set-state-in-effect` warning (KI-24) because there is no
+// `useEffect` + `setState` pattern — the external-store subscription is
+// handled by the primitive itself.
+//
+// Key design: a module-level `hasMounted` flag preserves the "first render =
+// DEFAULT_LOCALE" invariant (to avoid hydration mismatches). `useSyncExternalStore`'s
+// `getServerSnapshot` is ONLY used during hydration — in non-hydration contexts
+// (jsdom tests, client-only routes), `getSnapshot` is used from the very first
+// render. So `getSnapshot` returns `DEFAULT_LOCALE` until `subscribe` is first
+// called (during the commit phase of `I18nProvider`), at which point `hasMounted`
+// flips to `true`, the stored locale is read, and the callback is invoked to
+// schedule a re-render — mimicking the old `useEffect(() => setState(stored))`
+// transition WITHOUT calling setState inside an effect.
+//
+// Test isolation: the module-level `hasMounted` flag persists across tests.
+// `__resetI18nForTesting()` is called in `jest.setup.ts` `beforeEach` to reset
+// `hasMounted`, `currentLocale`, and the listener set.
 "use client";
 
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
   useEffect,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import en, { type TranslationKeys } from "./locales/en";
@@ -25,19 +46,124 @@ const messages: Record<Locale, Record<TranslationKeys, string>> = { en, ru, zh, 
 
 const LOCALE_STORAGE_KEY = "poe2-locale";
 const DEFAULT_LOCALE: Locale = "ru";
+const VALID_LOCALES: Locale[] = ["en", "ru", "zh", "ko"];
+
+// ============================================================================
+// Module-level external store (iter 121 — useSyncExternalStore, KI-25/KI-24)
+// ============================================================================
+// The store holds the current locale in module scope so that locale changes
+// are visible to ALL I18nProvider instances (and useSyncExternalStore
+// subscribers) in the same JS context — same-tab sync without a `storage`
+// event listener (the `storage` event only fires in OTHER tabs).
+//
+// State machine:
+//   hasMounted = false  → getSnapshot returns DEFAULT_LOCALE (SSR / first render)
+//   hasMounted = true   → getSnapshot returns currentLocale (post-commit)
+//
+// The `hasMounted` flag flips inside `subscribeLocale` on its FIRST call
+// (which happens during I18nProvider's commit phase), and the stored locale
+// is read at that moment. The callback is then invoked to schedule a
+// re-render, mimicking the old useEffect-based hydration transition.
+
+let currentLocale: Locale = DEFAULT_LOCALE;
+let hasMounted = false;
+const listeners = new Set<() => void>();
 
 /**
- * Get initial locale WITHOUT reading localStorage during SSR.
- * During SSR (window undefined) we always return the default.
- * On the first client render we ALSO return the default to avoid
- * hydration mismatches. The real stored locale is applied in useEffect.
+ * Read the stored locale from localStorage. Returns DEFAULT_LOCALE if the
+ * stored value is missing, invalid, or if we're in SSR (no window).
  */
-function getInitialLocale(): Locale {
+function readStoredLocale(): Locale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
-  // Do NOT read localStorage here — it causes hydration mismatch
-  // because the server renders with DEFAULT_LOCALE but the client
-  // might have a different value stored.
+  try {
+    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (stored && (VALID_LOCALES as string[]).includes(stored)) {
+      return stored as Locale;
+    }
+  } catch {
+    // ignore — localStorage may be disabled (private mode, etc.)
+  }
   return DEFAULT_LOCALE;
+}
+
+function notifyListeners(): void {
+  listeners.forEach((l) => l());
+}
+
+/**
+ * Subscribe to locale changes. On the FIRST call (first client render of
+ * I18nProvider), flips `hasMounted` to true, reads the stored locale, and
+ * invokes the callback to schedule a re-render — this mimics the old
+ * `useEffect(() => setState(stored))` transition WITHOUT calling setState
+ * inside an effect. Subsequent calls (e.g. StrictMode double-invoke) are
+ * no-ops because `hasMounted` is already true.
+ */
+function subscribeLocale(callback: () => void): () => void {
+  listeners.add(callback);
+  if (!hasMounted) {
+    hasMounted = true;
+    const stored = readStoredLocale();
+    if (stored !== currentLocale) {
+      currentLocale = stored;
+    }
+    // Schedule a re-render so getSnapshot returns the stored locale.
+    callback();
+  }
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
+function getLocaleSnapshot(): Locale {
+  return hasMounted ? currentLocale : DEFAULT_LOCALE;
+}
+
+function getLocaleServerSnapshot(): Locale {
+  return DEFAULT_LOCALE;
+}
+
+// `hydrated` is derived from the same `hasMounted` flag. It uses the same
+// subscribe function so the first-call mount trigger fires once for both.
+function subscribeHydrated(callback: () => void): () => void {
+  return subscribeLocale(callback);
+}
+
+function getHydratedSnapshot(): boolean {
+  return hasMounted;
+}
+
+function getHydratedServerSnapshot(): boolean {
+  return false;
+}
+
+/**
+ * Update the locale. Writes to localStorage (same-tab — the `storage` event
+ * only fires in OTHER tabs, so same-tab consumers are notified via the
+ * listener set), updates the in-memory store, and notifies all subscribers.
+ */
+function setLocaleInternal(newLocale: Locale): void {
+  if (newLocale === currentLocale) return;
+  currentLocale = newLocale;
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+    } catch {
+      // ignore — localStorage may be disabled
+    }
+  }
+  notifyListeners();
+}
+
+/**
+ * Reset the module-level i18n store to its initial state.
+ * Exposed for test isolation — called in jest.setup.ts beforeEach so each
+ * test gets a fresh "first subscribe" behavior (hasMounted reset to false,
+ * currentLocale reset to DEFAULT_LOCALE, listeners cleared).
+ */
+export function __resetI18nForTesting(): void {
+  currentLocale = DEFAULT_LOCALE;
+  hasMounted = false;
+  listeners.clear();
 }
 
 // ============================================================================
@@ -112,40 +238,32 @@ interface I18nContextValue {
 
 export const I18nContext = createContext<I18nContextValue | null>(null);
 
-const VALID_LOCALES: Locale[] = ["en", "ru", "zh", "ko"];
-
 export function I18nProvider({ children }: { children: ReactNode }) {
-  // Always start with DEFAULT_LOCALE for consistent SSR/hydration
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
-  const [hydrated, setHydrated] = useState(false);
+  // useSyncExternalStore handles the external-store subscription without a
+  // useEffect+setState pattern, eliminating the react-hooks/set-state-in-effect
+  // warning. `locale` transitions DEFAULT_LOCALE → stored locale on first
+  // commit; `hydrated` transitions false → true on the same commit.
+  const locale = useSyncExternalStore(
+    subscribeLocale,
+    getLocaleSnapshot,
+    getLocaleServerSnapshot
+  );
+  const hydrated = useSyncExternalStore(
+    subscribeHydrated,
+    getHydratedSnapshot,
+    getHydratedServerSnapshot
+  );
 
-  // After mount, read the real locale from localStorage
+  // Update <html> lang attribute when locale changes. This effect does NOT
+  // call setState — it only mutates the DOM, so it does not trigger the
+  // react-hooks/set-state-in-effect rule. localStorage persistence is handled
+  // inside setLocaleInternal (the explicit setter), not here.
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-      if (stored && (VALID_LOCALES as string[]).includes(stored)) {
-        if (stored !== DEFAULT_LOCALE) {
-          setLocaleState(stored as Locale);
-        }
-      }
-    } catch {
-      // ignore
-    }
-    setHydrated(true);
-  }, []);
-
-  // Persist locale changes to localStorage + update <html> lang
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-    } catch {
-      // ignore
-    }
     document.documentElement.lang = locale;
   }, [locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {
-    setLocaleState(newLocale);
+    setLocaleInternal(newLocale);
   }, []);
 
   const t = useCallback(

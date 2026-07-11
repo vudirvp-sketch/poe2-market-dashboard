@@ -3,6 +3,14 @@
 // ============================================================================
 import "@testing-library/jest-dom";
 
+// iter 121 (RE-DO of iter 119, KI-25) — reset the module-level i18n store
+// before each test so each test gets a fresh "first subscribe" behavior
+// (hasMounted reset to false, currentLocale reset to DEFAULT_LOCALE, listeners
+// cleared). Without this, the first test that mounts I18nProvider flips
+// hasMounted to true, and subsequent tests would skip the localStorage read
+// in subscribeLocale, breaking hydration assertions.
+import { __resetI18nForTesting } from "@/lib/i18n";
+
 // ---- fetch / Response / Request / Headers polyfill ----
 // Node 18+ provides these natively on globalThis, but jsdom (used as the
 // jest testEnvironment) does NOT expose them in its sandbox. Tests that
@@ -151,6 +159,8 @@ Object.defineProperty(window, "localStorage", { value: localStorageMock });
 // Reset localStorage before each test
 beforeEach(() => {
   window.localStorage.clear();
+  // Reset the i18n module-level store (iter 121, KI-25) — see import comment above.
+  __resetI18nForTesting();
 });
 
 // ---- Mock next-themes (used by Header) ----

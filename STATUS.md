@@ -1,47 +1,26 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-11 (iter 120 — advanced KI-24 by 1 site. Removed dead `useEffect(() => setLocalValue(prev => prev !== value ? value : prev), [value])` sync effect from `fuzzy-search.tsx` — the guard was always false because the only external `setSearch("")` (`dashboard-page.tsx:799`) is triggered FROM `handleResultClick` AFTER `setLocalValue("")` runs synchronously. Component is now explicitly uncontrolled w.r.t. the `value` prop (initial-value-only). Zero behavior change. Lint 120 → 119, 0 errors. 619 jest green, tsc green. **ALSO: discovered + documented KI-25 — iter 119 was described in a previous STATUS.md version but the code changes (i18n `useSyncExternalStore` refactor + `__resetI18nForTesting`) were NEVER applied to the repo. The i18n warning is still present. Next agent must RE-DO iter 119 before proceeding.**)
+> **Last updated:** 2026-07-11 (iter 121 — RE-DO of iter 119 (KI-25 closed). Refactored `src/lib/i18n/index.tsx` from `useState(locale) + useEffect(setLocaleState(stored)) + useEffect(setHydrated(true))` to `useSyncExternalStore` for both `locale` and `hydrated`. Added module-level `hasMounted` flag + `subscribeLocale` first-call pattern + `__resetI18nForTesting()` export + `beforeEach` reset in `jest.setup.ts`. Eliminates the i18n `set-state-in-effect` warning. Lint 119 → 118, 0 errors. 619 jest green, tsc green.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
 
 ## Known Issues — open
 
-### KI-25 — iter 119 documentation/code mismatch (i18n refactor lost)
+### KI-24 — React Compiler rule migration backlog (4 sites remaining, 1 rule)
 
-**Symptom.** A previous STATUS.md version (and the user's iter-120 brief) claimed iter 119 was "ОТГРУЖЕНО" (shipped): refactoring `src/lib/i18n/index.tsx` to replace `useState(locale) + useEffect(setLocaleState(stored)) + useEffect(setHydrated(true))` with `useSyncExternalStore` for both `locale` and `hydrated`, plus exporting `__resetI18nForTesting` + adding `beforeEach` reset in `jest.setup.ts`.
-
-**Reality (verified iter 120).** The repo does NOT contain these changes:
-- `src/lib/i18n/index.tsx` still uses the pre-iter-119 `useState + useEffect` pattern (line 128: `setLocaleState(stored as Locale)` inside `useEffect` — the `set-state-in-effect` warning is still emitted).
-- `__resetI18nForTesting` does NOT exist anywhere in the codebase (grep returns 0 matches outside STATUS.md).
-- `jest.setup.ts` has no `beforeEach` i18n reset.
-- `git log` latest commit is `b6790c1 iter 118` — no iter-119 commit exists.
-- Lint count is 119 (iter-118 base = 120, minus 1 for iter-120 fuzzy-search fix), NOT 119-from-iter-119.
-
-**Hypothesis.** The iter-119 archive was produced in a previous chat session and the STATUS.md was updated, but the actual code changes were either lost or never merged by the user. The previous agent's STATUS.md header described work that wasn't in the code.
-
-**Impact.** The i18n `set-state-in-effect` warning is still live. KI-24 progress is 1 site behind what STATUS.md claimed.
-
-**Fix (next iter).** RE-DO iter 119 from scratch: apply the `useSyncExternalStore` refactor to `src/lib/i18n/index.tsx` for both `locale` and `hydrated`, add the module-level `hasMounted` flag + `subscribe`-callback pattern, export `__resetI18nForTesting`, add `beforeEach` reset in `jest.setup.ts`. The iter-119 recipe is preserved below in "Key technical insights" (see "iter 119 (PLANNED, not yet applied)"). Verify: 28 i18n tests pass, lint drops 119 → 118.
-
-**Severity.** Medium — documentation drift; no runtime impact, but KI-24 tracking is inaccurate until re-applied.
-
----
-
-### KI-24 — React Compiler rule migration backlog (5 sites remaining, 1 rule)
-
-**Symptom.** `npm run lint` emits 119 warnings (0 errors). Of these, 5 come from 1 React Compiler rule shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
+**Symptom.** `npm run lint` emits 118 warnings (0 errors). Of these, 4 come from 1 React Compiler rule shipped with `eslint-plugin-react-hooks` v7 / `eslint-config-next` v16:
 
 | Rule | Count | Sites |
 |------|-------|-------|
-| `react-hooks/set-state-in-effect` | 5 | `dashboard-page.tsx` (3), `i18n/index.tsx` (1), `use-realms-and-leagues.ts` (1) |
+| `react-hooks/set-state-in-effect` | 4 | `dashboard-page.tsx` (3), `use-realms-and-leagues.ts` (1) |
 
-> **Note:** `fuzzy-search.tsx` was removed from this list in iter 120 (see recipe below). `i18n/index.tsx` is STILL listed because iter 119 was never applied to the code (see KI-25).
+> **Note:** `i18n/index.tsx` was removed from this list in iter 121 (RE-DO of iter 119, KI-25 closed — see recipe below). `fuzzy-search.tsx` was removed in iter 120.
 
-**Closed sub-rules (5 of 10 `set-state-in-effect` sites resolved, see recipes below):**
+**Closed sub-rules (6 of 10 `set-state-in-effect` sites resolved, see recipes below):**
 - `static-components` — fully resolved iter 113.
 - `refs` — fully resolved iter 114.
-- `set-state-in-effect` iter 115 (`use-price-stream.ts`), iter 116 (`use-reduced-motion.ts`), iter 117 (`header.tsx`), iter 118 (`offline-banner.tsx`), iter 120 (`fuzzy-search.tsx`).
+- `set-state-in-effect` iter 115 (`use-price-stream.ts`), iter 116 (`use-reduced-motion.ts`), iter 117 (`header.tsx`), iter 118 (`offline-banner.tsx`), iter 120 (`fuzzy-search.tsx`), iter 121 (`i18n/index.tsx`).
 - `preserve-manual-memoization` — suppressed with rationale iter 116 (`speculation-tab.tsx`).
 
 **Impact.** None at runtime — performance/optimization smells flagged for React Compiler adoption. The code works correctly.
@@ -58,6 +37,7 @@
 
 ## Known Issues — closed (recent)
 
+- **KI-25** (closed iter 121): iter 119 i18n `useSyncExternalStore` refactor was documented in a previous STATUS.md version but never applied to the repo (discovered iter 120). **Fix (iter 121):** RE-DO iter 119 from scratch — applied `useSyncExternalStore` to `src/lib/i18n/index.tsx` for both `locale` and `hydrated`, added module-level `hasMounted` flag + `subscribeLocale` first-call pattern, exported `__resetI18nForTesting()`, added `beforeEach` reset in `jest.setup.ts`. 619 jest green, lint 119 → 118.
 - **KI-23** (closed iter 116): `react-hooks/rules-of-hooks` violation in `unique-table.tsx` — `useReactTable` called INSIDE a `.map()` callback. **Fix:** extracted `<CategoryGroupTable>` child component.
 - **KI-20** (closed iter 116): `case-transform.ts` regex `/_([a-z])/g` skipped `_<digit>` underscores — `delta_7d_pct` → `delta_7dPct` (leftover `_`) instead of `delta7dPct`. **Fix:** regex `/_([a-z0-9])/g`. Added 29 jest tests.
 - **KI-22** (closed iter 112): ESLint v9 flat config missing → `npm run lint` failed. **Fix:** `eslint.config.mjs` with native flat-config exports from `eslint-config-next` v16. Downgraded 4 React Compiler rules to "warn".
@@ -70,8 +50,7 @@
 
 | ID | Priority | Notes |
 |----|----------|-------|
-| **KI-24** | P3 | 5 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 5 of 10 resolved iter 115+116+117+118+120, `preserve-manual-memoization` 1 of 1 suppressed with rationale iter 116). Incremental per-file refactors (see KI-24 table above). |
-| **KI-25** | P2 | iter 119 i18n refactor was documented but never applied to the repo. RE-DO iter 119 before proceeding with other KI-24 sites. See KI-25 section above. |
+| **KI-24** | P3 | 4 React Compiler rule sites remaining (was 25 — `static-components` fully resolved iter 113, `refs` fully resolved iter 114, `set-state-in-effect` 6 of 10 resolved iter 115+116+117+118+120+121, `preserve-manual-memoization` 1 of 1 suppressed with rationale iter 116). Incremental per-file refactors (see KI-24 table above). |
 | **TD-3** | P3 | Triangular arbitrage no persistence — cannot backtest `executable_estimate`. |
 | **TD-4** | P3 | `market_spread` not persisted in HistoricalStore. |
 | **TD-5** | P3 | `DailyStatsHistory` POE2Scout endpoint (ready OHLCV) not used. |
@@ -129,7 +108,7 @@
 
 **`react-hooks/set-state-in-effect` fix via "remove dead sync effect" (iter 120).** When the effect's ONLY purpose is to mirror a prop into local state (`setLocalValue(prev => prev !== value ? value : prev)`), but the component is effectively UNCONTROLLED w.r.t. that prop after mount (the prop is used only as the initial value via `useState(value)`), AND every external update to the prop is ALREADY accompanied by a synchronous local-state update from the same call site (so the guard `prev !== value` is always false and the effect is dead code), the canonical fix is to **remove the effect entirely**. Recipe: (1) Grep for all `setX(` call sites for the parent's state that feeds the prop — confirm every external reset is triggered FROM a handler that ALSO synchronously sets the local state. (2) Check the parent's comments — if it says "X manages its own state", that's a strong signal the sync effect is dead. (3) Remove the effect. (4) Add a module-level comment documenting the uncontrolled-with-initial-value contract + the trace of why the sync is unnecessary, so a future developer doesn't reintroduce it. (5) Update the prop's JSDoc from "Current value (controlled)" to "Initial value (used on first render only)". Canonical example: `fuzzy-search.tsx` — the `value` prop is the initial value; `handleResultClick` calls `setLocalValue("")` synchronously BEFORE the parent's `setSearch("")` (triggered via `onResultSelect`) re-renders with `value = ""`, so the sync effect's guard was always false. **When NOT to use this recipe:** if there's ANY code path where the parent updates the prop WITHOUT a corresponding synchronous local-state update (e.g. a "populate from URL" feature), the sync is needed — use iter 118's "adjust state during render" recipe instead, or make the component fully controlled (but beware of debounce-UX regressions for input components).
 
-**`react-hooks/set-state-in-effect` fix for external store + first-render invariant via `useSyncExternalStore` + `hasMounted` flag (iter 119 — PLANNED, NOT YET APPLIED, see KI-25).** When the effect's purpose is to (a) subscribe to an external store (localStorage) AND (b) preserve a "first render = DEFAULT_VALUE" invariant (to avoid hydration mismatches AND to trigger downstream effects like React Query refetches when the value transitions from the default to the stored value), the canonical fix is `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)` with a module-level `hasMounted` flag. **Key insight:** `useSyncExternalStore`'s `getServerSnapshot` is ONLY used during hydration — in non-hydration contexts (jsdom tests, client-only routes), `getSnapshot` is used from the very first render. So if `getSnapshot` reads localStorage directly, the first render uses the stored value, breaking the invariant and failing tests that assert a value transition. Recipe: (1) Add a module-level `let hasMounted = false` flag. (2) `getSnapshot` returns `DEFAULT_VALUE` if `!hasMounted`, else reads the external store. (3) In `subscribe`, on the FIRST call, flip `hasMounted = true` AND invoke the callback (`callback()`) to schedule a re-render — this mimics the old `useEffect(() => setState(stored))` transition WITHOUT calling setState inside an effect. (4) Subsequent `subscribe` calls (e.g. StrictMode double-invoke) are no-ops because `hasMounted` is already true. (5) **Test isolation:** the module-level `hasMounted` flag persists across tests — export a `__reset<Module>ForTesting()` function and call it in `jest.setup.ts` `beforeEach` to reset `hasMounted` and clear listener sets. (6) `setLocale` (the explicit setter) writes to localStorage AND notifies same-tab listeners via `listeners.forEach(l => l())` — the `storage` event only fires in OTHER tabs, so same-tab consumers need the listener set. **Target:** `src/lib/i18n/index.tsx` (`locale` + `hydrated` — 2 setState calls in one effect to eliminate in a single refactor). **Status:** NOT applied — see KI-25.
+**`react-hooks/set-state-in-effect` fix for external store + first-render invariant via `useSyncExternalStore` + `hasMounted` flag (iter 121, KI-25 closed — RE-DO of iter 119).** When the effect's purpose is to (a) subscribe to an external store (localStorage) AND (b) preserve a "first render = DEFAULT_VALUE" invariant (to avoid hydration mismatches AND to trigger downstream effects like React Query refetches when the value transitions from the default to the stored value), the canonical fix is `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)` with a module-level `hasMounted` flag. **Key insight:** `useSyncExternalStore`'s `getServerSnapshot` is ONLY used during hydration — in non-hydration contexts (jsdom tests, client-only routes), `getSnapshot` is used from the very first render. So if `getSnapshot` reads localStorage directly, the first render uses the stored value, breaking the invariant and failing tests that assert a value transition. Recipe: (1) Add a module-level `let hasMounted = false` flag + `let currentLocale = DEFAULT_LOCALE` + `const listeners = new Set<() => void>()`. (2) `getSnapshot` returns `DEFAULT_VALUE` if `!hasMounted`, else reads `currentLocale`. (3) In `subscribe`, on the FIRST call, flip `hasMounted = true`, read the external store into `currentLocale`, AND invoke the callback (`callback()`) to schedule a re-render — this mimics the old `useEffect(() => setState(stored))` transition WITHOUT calling setState inside an effect. (4) Subsequent `subscribe` calls (e.g. StrictMode double-invoke) are no-ops because `hasMounted` is already true — they just add the callback to the listener set. (5) **Test isolation:** the module-level `hasMounted` flag persists across tests — export a `__reset<Module>ForTesting()` function and call it in `jest.setup.ts` `beforeEach` to reset `hasMounted`, `currentLocale`, and clear the listener set. (6) `setLocale` (the explicit setter) writes to localStorage AND notifies same-tab listeners via `listeners.forEach(l => l())` — the `storage` event only fires in OTHER tabs, so same-tab consumers need the listener set. (7) The DOM-mutation side-effect (`document.documentElement.lang = locale`) can stay in a `useEffect` — it does NOT call setState, so the `set-state-in-effect` rule does NOT fire. **Canonical example:** `src/lib/i18n/index.tsx` — `locale` + `hydrated` (2 setState calls in one effect eliminated in a single refactor). Verify: `eslint <file>` (warning gone) + `tsc --noEmit` + `jest` (26 i18n tests + 13 header-i18n tests pass, 619 total green) + `eslint .` (lint 119 → 118).
 
 **`react-hooks/preserve-manual-memoization` evaluation recipe (iter 116).** The rule fires when the React Compiler cannot preserve a manual `useMemo` — typically because the compiler's inferred deps are broader than the source's `deps` array (e.g. source uses `[obj?.prop]` to leverage structural sharing, but compiler infers `[obj]`). The recipe: (1) Check if React Compiler is enabled in `next.config.ts` (`experimental.reactCompiler: true`). If NOT enabled, removing `useMemo` is a PERFORMANCE REGRESSION (rebuilds the value every render). (2) Check if the memoized value is consumed in any `useEffect`/`useMemo` deps array. If NOT, removing `useMemo` is correctness-safe (just slower). (3) If compiler not enabled AND the narrow deps are intentional, KEEP the `useMemo` and add an inline `eslint-disable-next-line react-hooks/preserve-manual-memoization` with a comment explaining the rationale + when to revisit (after enabling the compiler). Canonical example: `speculation-tab.tsx:332` `flipsByApiId` (narrow dep `[flipsData?.opportunities]` leverages TanStack Query structural sharing).
 
