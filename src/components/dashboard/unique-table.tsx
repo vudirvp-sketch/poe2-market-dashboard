@@ -19,7 +19,7 @@ import { fmt, fmtChange, fetchApi } from "@/lib/types";
 import type { PoeItem, PoeItemHistoryPoint } from "@/lib/types";
 import { formatPrice } from "@/lib/utils";
 import { useDashboardStore } from "@/lib/store";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKeys } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 
@@ -300,129 +300,195 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
       </div>
 
       {/* Category groups */}
-      {categoryGroups.map((group) => {
-        const isCollapsed = collapsedCategories.has(group.name);
-        // eslint-disable-next-line react-hooks/rules-of-hooks -- KI-23: useReactTable called inside .map() callback. Latent bug — crashes only if categoryGroups.length changes between renders. Proper fix: extract <CategoryGroupTable> child component. Deferred to a dedicated iter.
-        const table = useReactTable({
-          data: group.items,
-          columns,
-          state: { sorting },
-          onSortingChange: setSorting,
-          getCoreRowModel: getCoreRowModel(),
-          getSortedRowModel: getSortedRowModel(),
-        });
-        const rows = table.getRowModel().rows;
+      {/* KI-23 (fixed iter 116): each category group is rendered by a dedicated
+          <CategoryGroupTable> child component so that `useReactTable` is called
+          at the TOP LEVEL of the child (not inside a `.map()` callback). This
+          preserves React's hook-ordering invariant — the number of hooks no
+          longer varies with `categoryGroups.length`. */}
+      {categoryGroups.map((group) => (
+        <CategoryGroupTable
+          key={group.name}
+          group={group}
+          columns={columns}
+          sorting={sorting}
+          setSorting={setSorting}
+          isCollapsed={collapsedCategories.has(group.name)}
+          onToggleCollapse={() => toggleCategoryCollapse(group.name)}
+          t={t}
+          highlightedItemId={highlightedItemId}
+          onItemClick={onItemClick}
+          onRowMouseEnter={handleRowMouseEnter}
+          rowHeight={rowHeight}
+          fontSize={fontSize}
+          cellPadding={cellPadding}
+        />
+      ))}
+    </div>
+  );
+}
 
-        return (
-          <div
-            key={group.name}
-            className="rounded-md border border-border overflow-hidden"
-            role="region"
-            aria-label={t("ariaUniqueItems", { "0": group.displayName })}
-          >
-            {/* §2.2: Collapsible category header */}
-            <button
-              className="w-full flex items-center gap-2 px-3 py-2 bg-muted/60 hover:bg-muted/80 transition-colors text-left"
-              onClick={() => toggleCategoryCollapse(group.name)}
-              aria-expanded={!isCollapsed}
-              aria-controls={`category-${group.name}`}
-            >
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              )}
-              <span className="font-medium text-sm">{group.displayName}</span>
-              <span className="text-xs text-muted-foreground">({group.items.length})</span>
-            </button>
+// ============================================================================
+// CategoryGroupTable — per-category child component (extracted iter 116, KI-23).
+//
+// Calls `useReactTable` at the top level (NOT inside a callback). Receives all
+// needed values as explicit props from the parent `UniqueTable`. This fixes
+// the previous `react-hooks/rules-of-hooks` violation where `useReactTable`
+// was called inside `categoryGroups.map(...)`, which broke React's
+// hook-ordering invariant when `categoryGroups.length` changed between renders.
+//
+// The render output is identical to the pre-refactor inline `.map()` body —
+// only the structure changed (callback → child component).
+// ============================================================================
 
-            {/* Table (hidden when collapsed) */}
-            {!isCollapsed && (
-              <div className="overflow-x-auto">
-                <table className={`w-full ${fontSize}`} role="table" id={`category-${group.name}`}>
-                  <thead className="sticky top-0 z-10">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <tr
-                        key={headerGroup.id}
-                        className="border-b border-border bg-muted/80 backdrop-blur-sm"
-                      >
-                        {headerGroup.headers.map((header) => (
-                          <th
-                            key={header.id}
-                            className={`${cellPadding} font-medium ${
-                              header.column.getCanSort() ? "cursor-pointer select-none" : ""
-                            } ${
-                              header.id === "name"
-                                ? "text-left sticky left-0 bg-muted/80 z-[5]"
-                                : header.id === "trend"
-                                ? "text-center w-[100px]"
-                                : header.id === "compare"
-                                ? "w-[40px]"
-                                : "text-right"
-                            }`}
-                            onClick={header.column.getToggleSortingHandler()}
-                            aria-sort={
-                              header.column.getIsSorted() === "asc"
-                                ? "ascending"
-                                : header.column.getIsSorted() === "desc"
-                                ? "descending"
-                                : undefined
-                            }
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                          </th>
-                        ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${
-                          row.original.id === highlightedItemId ? 'search-highlight' : ''
-                        }`}
-                        style={{ height: `${rowHeight}px` }}
-                        data-item-id={row.original.id}
-                        onClick={() => onItemClick(row.original)}
-                        onMouseEnter={() => handleRowMouseEnter(row.original)}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            onItemClick(row.original);
-                          }
-                        }}
-                        role="row"
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <td
-                            key={cell.id}
-                            className={`${cellPadding} ${
-                              cell.column.id === "name"
-                                ? "sticky left-0 bg-background z-[5]"
-                                : cell.column.id === "trend"
-                                ? "text-center"
-                                : cell.column.id === "compare"
-                                ? "text-center"
-                                : "text-right"
-                            }`}
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        );
-      })}
+interface CategoryGroupTableProps {
+  group: CategoryGroup;
+  columns: ColumnDef<PoeItem>[];
+  sorting: SortingState;
+  setSorting: React.Dispatch<React.SetStateAction<SortingState>>;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+  highlightedItemId?: string | null;
+  onItemClick: (item: PoeItem) => void;
+  onRowMouseEnter: (item: PoeItem) => void;
+  rowHeight: number;
+  fontSize: string;
+  cellPadding: string;
+}
+
+function CategoryGroupTable({
+  group,
+  columns,
+  sorting,
+  setSorting,
+  isCollapsed,
+  onToggleCollapse,
+  t,
+  highlightedItemId,
+  onItemClick,
+  onRowMouseEnter,
+  rowHeight,
+  fontSize,
+  cellPadding,
+}: CategoryGroupTableProps) {
+  // Hook is now called at the TOP LEVEL of the component — no longer inside a
+  // `.map()` callback. This satisfies `react-hooks/rules-of-hooks`.
+  const table = useReactTable({
+    data: group.items,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+  const rows = table.getRowModel().rows;
+
+  return (
+    <div
+      className="rounded-md border border-border overflow-hidden"
+      role="region"
+      aria-label={t("ariaUniqueItems", { "0": group.displayName })}
+    >
+      {/* §2.2: Collapsible category header */}
+      <button
+        className="w-full flex items-center gap-2 px-3 py-2 bg-muted/60 hover:bg-muted/80 transition-colors text-left"
+        onClick={onToggleCollapse}
+        aria-expanded={!isCollapsed}
+        aria-controls={`category-${group.name}`}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+        )}
+        <span className="font-medium text-sm">{group.displayName}</span>
+        <span className="text-xs text-muted-foreground">({group.items.length})</span>
+      </button>
+
+      {/* Table (hidden when collapsed) */}
+      {!isCollapsed && (
+        <div className="overflow-x-auto">
+          <table className={`w-full ${fontSize}`} role="table" id={`category-${group.name}`}>
+            <thead className="sticky top-0 z-10">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr
+                  key={headerGroup.id}
+                  className="border-b border-border bg-muted/80 backdrop-blur-sm"
+                >
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className={`${cellPadding} font-medium ${
+                        header.column.getCanSort() ? "cursor-pointer select-none" : ""
+                      } ${
+                        header.id === "name"
+                          ? "text-left sticky left-0 bg-muted/80 z-[5]"
+                          : header.id === "trend"
+                          ? "text-center w-[100px]"
+                          : header.id === "compare"
+                          ? "w-[40px]"
+                          : "text-right"
+                      }`}
+                      onClick={header.column.getToggleSortingHandler()}
+                      aria-sort={
+                        header.column.getIsSorted() === "asc"
+                          ? "ascending"
+                          : header.column.getIsSorted() === "desc"
+                          ? "descending"
+                          : undefined
+                      }
+                    >
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${
+                    row.original.id === highlightedItemId ? 'search-highlight' : ''
+                  }`}
+                  style={{ height: `${rowHeight}px` }}
+                  data-item-id={row.original.id}
+                  onClick={() => onItemClick(row.original)}
+                  onMouseEnter={() => onRowMouseEnter(row.original)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onItemClick(row.original);
+                    }
+                  }}
+                  role="row"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={`${cellPadding} ${
+                        cell.column.id === "name"
+                          ? "sticky left-0 bg-background z-[5]"
+                          : cell.column.id === "trend"
+                          ? "text-center"
+                          : cell.column.id === "compare"
+                          ? "text-center"
+                          : "text-right"
+                      }`}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

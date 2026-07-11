@@ -313,6 +313,22 @@ export function SpeculationTab({ backendOnline }: SpeculationTabProps) {
   // for the same from-currency, pick the one with the highest score (most
   // actionable). This is a heuristic — the joins are best-effort since
   // /flips indexes on PAIRS while /speculation indexes on ITEMS.
+  //
+  // KI-24 evaluation (iter 116): `react-hooks/preserve-manual-memoization` fires
+  // here because the React Compiler infers `flipsData` as the dep, but the source
+  // uses the narrower `[flipsData?.opportunities]`. The narrow dep is INTENTIONAL
+  // — it leverages TanStack Query's structural sharing so the Map only rebuilds
+  // when the `opportunities` array reference actually changes (not on every
+  // `flipsData` parent-ref change). Removing the `useMemo` would be SAFE for
+  // correctness (the result is only consumed during render at line ~508, no
+  // downstream effect/useMemo deps read this ref), but would rebuild the Map on
+  // every render — a performance regression since React Compiler is NOT enabled
+  // in `next.config.ts` (no `reactCompiler: true` in `experimental`). The
+  // eslint-disable silences the warning until the compiler is enabled; at that
+  // point the `useMemo` can be removed entirely (the compiler will memoize the
+  // Map automatically, and the structural-sharing benefit is preserved because
+  // the compiler tracks property access precisely).
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- KI-24: narrow dep leverages TanStack structural sharing; useMemo kept because React Compiler is not enabled (would rebuild Map every render). Revisit after enabling reactCompiler in next.config.ts.
   const flipsByApiId = useMemo(() => {
     const map = new Map<string, FlipOpportunity>();
     if (!flipsData?.opportunities) return map;

@@ -13,9 +13,14 @@
  * Does NOT transform:
  *   - Keys that are already camelCase (idempotent)
  *   - Values that are not objects or arrays
+ *
+ * KI-20 (fixed iter 116): regex now matches `_<digit>` as well as `_<letter>`,
+ * so backend fields like `delta_7d_pct` correctly become `delta7dPct` (was
+ * `delta_7dPct` with a leftover underscore). The previous `/_([a-z])/g` only
+ * matched underscore followed by a lowercase letter, leaving digits untouched.
  */
 export function toCamelCase(str: string): string {
-  return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  return str.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 }
 
 export function transformKeys(obj: unknown): unknown {
