@@ -1,20 +1,15 @@
-# iter 135 — files to `git rm` after extracting this archive.
+# iter 136 — files to `git rm` after extracting this archive.
 #
-# These files were deleted in iter 135 and are NOT included in the
+# These files were deleted in iter 136 and are NOT included in the
 # archive. Run the following commands from your repo root BEFORE
 # running `git add -A`:
 #
-#   git rm MERGE_INSTRUCTIONS_iter133.md
-#   git rm MERGE_INSTRUCTIONS_iter134.md
-#   git rm _DELETED/MERGE_INSTRUCTIONS_iter133.md.DELETED
-#   git rm _DELETED/README_iter124.md.DELETED
-#   rmdir _DELETED  # if the directory is now empty
+#   git rm ITER135_README.md
+#   git rm DELETIONS.txt
 #
 # Alternatively, just run `git add -A` after extracting — git will
 # automatically stage the deletions when it detects the files are gone
 # from the working tree.
 
-MERGE_INSTRUCTIONS_iter133.md
-MERGE_INSTRUCTIONS_iter134.md
-_DELETED/MERGE_INSTRUCTIONS_iter133.md.DELETED
-_DELETED/README_iter124.md.DELETED
+ITER135_README.md
+DELETIONS.txt

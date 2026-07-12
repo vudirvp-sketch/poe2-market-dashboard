@@ -41,6 +41,21 @@ from backend.data.historical import HistoricalStore, reset_historical_store
 from backend.models.currency import CurrencyInfo, ExchangeRate
 
 
+def _run(coro):
+    """Run a coroutine on a fresh event loop (Python 3.14+ compatible).
+
+    Replaces ``asyncio.get_event_loop().run_until_complete(coro)`` which
+    was removed in Python 3.14 (raises ``RuntimeError: There is no
+    current event loop in thread 'MainThread'`` when no loop is running).
+    Each call creates a fresh loop via ``asyncio.run`` — safe for
+    HistoricalStore because aiosqlite connections support cross-loop
+    usage (each ``await`` binds the Future to the caller's loop, and the
+    aiosqlite worker thread posts results back via
+    ``loop.call_soon_threadsafe``). See KI-28 in STATUS.md.
+    """
+    return asyncio.run(coro)
+
+
 # ---------------------------------------------------------------------------
 # Shared fixtures + helpers
 # ---------------------------------------------------------------------------
@@ -735,7 +750,7 @@ class TestDailyStatsRoute:
         """No SQLite rows + provider returns None → empty response."""
         client, store, mock_provider = route_client
         # Initialize store so reads don't fail.
-        asyncio.get_event_loop().run_until_complete(store.init())
+        _run(store.init())
         try:
             resp = client.get("/api/v1/items/42/daily-stats")
             assert resp.status_code == 200
@@ -745,7 +760,7 @@ class TestDailyStatsRoute:
             assert data["item_id"] == 42
             assert data["source"] == "empty"
         finally:
-            asyncio.get_event_loop().run_until_complete(store.close())
+            _run(store.close())
 
     def test_fresh_sqlite_served_from_cache(self, route_client):
         """When SQLite has fresh rows (today), source='sqlite'."""
@@ -763,7 +778,7 @@ class TestDailyStatsRoute:
                      "average": 1.5, "volume": 100},
                 ],
             )
-        asyncio.get_event_loop().run_until_complete(_seed())
+        _run(_seed())
         try:
             # Patch is_daily_stats_fresh to return True for this test
             # (since the seeded date may not be "today" in the test env).
@@ -778,7 +793,7 @@ class TestDailyStatsRoute:
             # Provider should NOT have been called.
             mock_provider.get_daily_stats.assert_not_called()
         finally:
-            asyncio.get_event_loop().run_until_complete(store.close())
+            _run(store.close())
 
     def test_stale_sqlite_triggers_provider_fetch(self, route_client):
         """When SQLite is stale, lazy-fetch from provider + persist."""
@@ -792,7 +807,7 @@ class TestDailyStatsRoute:
                 rows=[{"date": "2026-01-01", "item_id": 42, "api_id": "divine",
                        "close": 1.0}],
             )
-        asyncio.get_event_loop().run_until_complete(_seed())
+        _run(_seed())
 
         # Provider returns fresh data.
         mock_provider.get_daily_stats = AsyncMock(
@@ -819,7 +834,7 @@ class TestDailyStatsRoute:
             # Provider was called.
             mock_provider.get_daily_stats.assert_called_once()
         finally:
-            asyncio.get_event_loop().run_until_complete(store.close())
+            _run(store.close())
 
     def test_provider_failure_falls_back_to_sqlite(self, route_client):
         """When provider raises, fall back to whatever SQLite has."""
@@ -832,7 +847,7 @@ class TestDailyStatsRoute:
                 rows=[{"date": "2026-01-01", "item_id": 42, "api_id": "divine",
                        "close": 1.0}],
             )
-        asyncio.get_event_loop().run_until_complete(_seed())
+        _run(_seed())
 
         # Provider raises.
         mock_provider.get_daily_stats = AsyncMock(side_effect=ConnectionError("API down"))
@@ -850,22 +865,22 @@ class TestDailyStatsRoute:
             # provider_rows path falls through to the SQLite read).
             assert data["source"] == "sqlite"
         finally:
-            asyncio.get_event_loop().run_until_complete(store.close())
+            _run(store.close())
 
     def test_item_id_path_param_validation(self, route_client):
         """item_id must be >= 1."""
         client, store, _ = route_client
-        asyncio.get_event_loop().run_until_complete(store.init())
+        _run(store.init())
         try:
             # 0 and -1 should be 422 (path param ge=1 validation).
             assert client.get("/api/v1/items/0/daily-stats").status_code == 422
         finally:
-            asyncio.get_event_loop().run_until_complete(store.close())
+            _run(store.close())
 
     def test_day_count_query_param_validation(self, route_client):
         """day_count must be 1..365."""
         client, store, _ = route_client
-        asyncio.get_event_loop().run_until_complete(store.init())
+        _run(store.init())
         try:
             assert client.get(
                 "/api/v1/items/42/daily-stats?day_count=0",
@@ -881,7 +896,7 @@ class TestDailyStatsRoute:
                 "/api/v1/items/42/daily-stats?day_count=365",
             ).status_code == 200
         finally:
-            asyncio.get_event_loop().run_until_complete(store.close())
+            _run(store.close())
 
 
 # ===========================================================================
