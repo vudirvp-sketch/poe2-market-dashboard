@@ -5,6 +5,46 @@
 
 ---
 
+Task ID: iter-141
+Agent: main
+Task: iter 141 — `docs/DATA_FLOW.md` full audit. Per the iter-140 stop point: candidate (a) `docs/DATA_FLOW.md` §1–§6, §8–§10 audit (especially §9 tab list drift). Chose this — lowest risk (no source-code changes), well-decomposable, and §9 was a confirmed drift since iter 139.
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 140 SHIPPED), `worklog.md` (iter 140 + iter 139), `AGENT_NAVIGATION.md` §1–§3.
+- Re-verified the canonical references against live code:
+  - `backend/api/data_snapshot.py:53-87` — `DataSnapshot` has 9 fields (`exchange_rates`, `currencies: dict[str, dict]`, `currency_metadata`, `price_histories`, `current_prices`, `prices_in_base`, `tiers`, `fetched_at`, `valid`). Doc claimed 6 wrong fields (`league`, `rates`, `currencies: list`, `bfs_pricing`, `snapshot_age_seconds`).
+  - `backend/data/historical.py` — 5 SQLite tables (`price_snapshots`, `events`, `market_spreads` [TD-4], `triangular_cycles` [TD-3], `daily_stats` [TD-5]). Doc claimed 3 (incl. non-existent `prices_history`).
+  - `backend/scheduler.py:280-315` — 4 scheduler jobs (`price_snapshot`, `event_pruning`, `model_persistence`, `daily_stats_refresh` [TD-5]). Doc claimed 3.
+  - `src/components/dashboard/dashboard-page.tsx:211` — `TAB_MAP` has 16 entries. Doc §9 claimed 10 (incl. phantom `Arbitrage` [removed iter 92 KI-7] and `Graph` [removed iter 87]).
+  - `src/app/api/flipper/**/route.ts` — 34 actual files. §7.1 had 38 entries (4 phantom + 1 duplicate added by iter 140).
+  - `RecipeArb` — grep confirmed code is gone (doc §4.3 listed it as analytics module).
+- **`docs/DATA_FLOW.md` audit (8 sections, 1 header):**
+  - **§3.2 Flipper Analytics** — fixed 2 backend URLs (`/api/health` → `/api/v1/health`, `/api/phase` → `/api/v1/phase`). Added 15 missing newer endpoints (iter 75–131) in abbreviated form. Added "Backend-only routes" note listing 4 routes that have no Next.js proxy file (`/api/v1/health/ping`, `/api/v1/events/summary`, `/api/v1/market-spreads/history`, `/api/v1/items/{item_id}/daily-stats`).
+  - **§4.1 Provider → SnapshotManager** — updated pipeline steps: `snapshot.rates` → `snapshot.exchange_rates`, `snapshot.bfs_pricing` → `snapshot.prices_in_base` (BFS now inside step 2, not step 4). Updated step descriptions to match actual `_refresh()` order.
+  - **§4.2 DataSnapshot Dataclass** — rewrote completely. 9 correct fields with type hints + key conventions. Added note that `league` lives on `SnapshotManager._config` (NOT on dataclass) and `snapshot_age_seconds` is computed by `SnapshotManager`.
+  - **§4.3 Analytics Pipeline** — removed dead `RecipeArb` line. Added note explaining removal.
+  - **§4.4 HistoricalStore (SQLite)** — rewrote table list (3→5: added `market_spreads`, `triangular_cycles`, `daily_stats`; removed non-existent `prices_history`). Added 12 new methods (write_market_spreads_batch/read_market_spreads/read_market_spreads_pairs, write_triangular_cycles_batch/read_triangular_cycles/read_triangular_cycles_keys, write_daily_stats_batch/read_daily_stats/read_daily_stats_latest_date/read_daily_stats_items, plus write_events_batch, get_latest_prices).
+  - **§4.5 Scheduler Jobs** — added 4th job `daily_stats_refresh` (1 hour, TD-5 iter 131).
+  - **§7.1 Frontend Routes** — removed 4 phantom entries that iter 140 added without verifying (`health/ping/route.ts`, `events/summary/route.ts`, `market-spreads/history/route.ts` — backend-only, no proxy file exists; `optimal-currency/route.ts` was duplicated at lines 506 + 515, removed the duplicate). Replaced them with inline `# Note:` comments. Added "Verified iter 141: 34 route.ts files = 34 entries after cleanup" line.
+  - **§9 Data → Component Mapping** — rewrote completely. 10 entries → 16 entries (matching actual `TAB_MAP`). Each row now includes the actual component filename (verified via `grep -E "export (function|const) <Name>" src/components/dashboard/`). Added "Removed tabs" note documenting phantom `Arbitrage` + `Graph` removals.
+  - **Header** — bumped version 1.1 → 1.2, updated date stamp + summary.
+- **Final verification:** `pytest tests/ --ignore=tests/e2e -q` → **1466 passed, 0 failed, 0 errors**. 0 source-code changes this iter — only docs.
+
+Stage Summary:
+- **iter 141 SHIPPED — `docs/DATA_FLOW.md` full audit complete.** 1 doc file updated (`docs/DATA_FLOW.md`) with 8 section rewrites. ~30 individual drift items resolved. 0 source-code changes. 1466 pytest green (0 regressions — confirmed since no `.py`/`.ts`/`.tsx` was touched).
+- **Modified files (1 doc + 2 meta-docs):** `docs/DATA_FLOW.md`, `STATUS.md` (header bump), `worklog.md` (this entry). `AGENT_NAVIGATION.md` header NOT bumped this iter (no changes to its content — the §1–§3 read was context only).
+- **What was NOT done (intentionally deferred to iter 142+):**
+  - **`docs/DATA_FLOW.md` §1, §2, §5, §6, §8, §10** — light-touch audit only (cosmetic, no major drift found). §2 POE2Scout API endpoints + §5 Field Transformation Reference would benefit from a deeper cross-check against `backend/api/provider.py` and `src/lib/poe2api.ts` respectively — candidate for iter 142.
+  - **`docs/ARCHITECTURE.md` (303 lines)** — not audited this iter.
+  - **`docs/MARKET_PLAYBOOK.md` (355 lines)** — not audited this iter.
+  - **`docs/CORS_PROXY_GUIDE.md` (181 lines)** — not audited this iter.
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. Iter 141 only verified the component filename + primary data source per tab. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 143+.
+  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+- **Stopping point:** iter 141 = `docs/DATA_FLOW.md` full audit (8 sections, ~30 drift items). Next iter candidates: (a) `docs/ARCHITECTURE.md` + `docs/MARKET_PLAYBOOK.md` + `docs/CORS_PROXY_GUIDE.md` audit (next logical docs batch); (b) deep cross-check of `docs/DATA_FLOW.md` §2 (POE2Scout API) against `backend/api/provider.py` + §5 (Field Transformation) against `src/lib/poe2api.ts`; (c) per-tab UX/logic deep-audit; (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
+
+---
+
 Task ID: iter-140
 Agent: main
 Task: iter 140 — docs deep-audit. Per the iter-139 stop point: candidates were (c) per-tab UX/logic deep-audit OR (d) docs deep-audit of DATA_FLOW/BACKEND_GUIDE/DATA_CONTRACTS. Chose (d) — lower risk (no source-code changes) and well-decomposable.
@@ -41,43 +81,3 @@ Stage Summary:
   - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
   - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
 - **Stopping point:** iter 140 = docs deep-audit pass (3 doc files, 26 drift items). Next iter candidates: (a) `docs/DATA_FLOW.md` §1–§6, §8–§10 audit (especially §9 tab list drift); (b) `docs/ARCHITECTURE.md` + `docs/MARKET_PLAYBOOK.md` + `docs/CORS_PROXY_GUIDE.md` audit; (c) per-tab UX/logic deep-audit; (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
-
----
-
-Task ID: iter-139
-Agent: main
-Task: iter 139 — repo cleanup pass. Per the iter-138 stop point: "далее можно начать 'чистить' репозиторий от мусора, проверять каждую вкладку и систему на упущения и ошибки и шаг за шагом палировать проект." Goal: remove dead/legacy files, fix doc drift, audit dashboard tabs for omissions — without breaking anything.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 138 SHIPPED — F1 periodic re-run no-op), `worklog.md` (iter 137 + iter 138), `AGENT_NAVIGATION.md` (243 lines, 74KB), `README.md`, `README_iter138.md`.
-- Created `.venv` and installed `requirements.txt` (incl. `aiosqlite`). Ran full `pytest tests/ --ignore=tests/e2e` → **1466 passed** (vs the 1289 quoted in iter 138 docs — the 6 aiosqlite-dependent modules now also run, adding 164 + 13 from `test_scheduler.py`). This is the new baseline; iter 138's "skip `test_scheduler.py`" instruction in README.md was stale.
-- **Audit — dead files:**
-  - `README_iter138.md` — iter-specific README that duplicates the iter-138 entry already in `worklog.md`. Removed.
-  - `scripts/cleanup_dead_i18n_keys.py` — iter-89 one-shot, `DEAD_KEY_NAMES` list hardcoded for the iter-87 Currency Graph tab removal. Already applied. Path `LOCALE_DIR = Path("/home/z/my-project/repo/...")` doesn't exist in any checkout. Removed.
-  - `scripts/fix_duplicate_comments.py` — iter-89 one-shot bugfix for the above. Already applied. Removed.
-  - `scripts/restore_blank_lines.py` — iter-89 one-shot bugfix for the above. Already applied. Removed.
-- **Audit — doc drift in `AGENT_NAVIGATION.md` §5 API table:** Cross-referenced the table against the live FastAPI route surface (via `TestClient(app).get('/openapi.json')` → 38 `/api/v1/*` paths). Found 5 routes that shipped in recent iterations but were missing from the table:
-  - `/api/v1/arbitrage/triangular/history` (TD-3 Phase 3, iter 129)
-  - `/api/v1/market-spreads/history` (TD-4 Phase 2, iter 128)
-  - `/api/v1/mirror-divine-arb` (P7, iter 109)
-  - `/api/v1/leveling-uniques` (P9, iter 110)
-  - `/api/v1/items/{item_id}/daily-stats` (TD-5 Phase 4, iter 131)
-  Added all 5 with iter references + `data_available: false` semantics.
-- **Audit — doc drift in `AGENT_NAVIGATION.md` §6 Documentation Map:** Design-docs entry said "Phase 1 SHIPPED iter 127, Phases 2/3/4 deferred" — but all 4 phases shipped (iter 127/128/129/131). P10 entry said "Phase 2 deferred" — but Phase 2 shipped iter 132. Updated both to reflect current state.
-- **Audit — `AGENT_NAVIGATION.md` recipe drift:** The "Remove dead i18n keys" recipe said `Run scripts/cleanup_dead_i18n_keys.py` — but that script was a one-shot with hardcoded keys, now deleted. Replaced with a manual pattern: `grep -rn "t('keyName')" src/` — if zero hits in `.tsx`/`.ts`, the key is dead. Also fixed the F1 translation recipe to point at `--fetch-ru-by-item` (not the broken `--fetch-ru` per KI-30) and mention the parallel runner + TS-mirror regen step.
-- **Audit — `README.md` test command:** Removed the stale `--ignore=tests/test_scheduler.py` flag. `test_scheduler.py` passes fine when `aiosqlite` is installed (which it is, via `requirements.txt`).
-- **Audit — `STATUS.md` aiosqlite Quick Reference row:** Rephrased from "Pre-existing env issue — aiosqlite not installed. pip install aiosqlite." to "Env-setup issue — aiosqlite missing from active venv. Run `pip install -r requirements.txt` (or `pip install aiosqlite`). With aiosqlite installed, the full suite is 1466 pytest green." — makes it clear this is a setup omission, not a code bug.
-- **Audit — dashboard tabs:** Verified `TAB_MAP` (16 entries in `dashboard-page.tsx:211`) matches the 16 `TabsTrigger` values in `dashboard-toolbar.tsx` matches the 16 `TabsContent` blocks. All wired. No TODO/FIXME/HACK markers in `src/` (only a single `TODO` in `poe2api.ts:1273` — a known temporary league-name override waiting for an upstream POE2Scout fix, not actionable).
-- **Final verification:** `pytest tests/ --ignore=tests/e2e` → **1466 passed, 0 failed, 0 errors**. 0 regressions vs iter 138 baseline (the 164 + 13 new passes are the previously-skipped aiosqlite modules).
-
-Stage Summary:
-- **iter 139 SHIPPED — repo cleanup pass complete.** 4 dead files removed (`README_iter138.md` + 3 iter-89 one-shot scripts). 5 missing API routes added to AGENT_NAVIGATION.md §5. Design-docs status corrected in §6. i18n-cleanup recipe rewritten as a manual pattern. README test command fixed. STATUS.md aiosqlite row clarified. 1466 pytest green (0 regressions).
-- **Modified files (3 docs only — no source/data changes):** `AGENT_NAVIGATION.md` (header bump + §5 + §6 + 2 recipes), `README.md` (test command), `STATUS.md` (last-updated + aiosqlite row).
-- **Deleted files (4):** `README_iter138.md`, `scripts/cleanup_dead_i18n_keys.py`, `scripts/fix_duplicate_comments.py`, `scripts/restore_blank_lines.py`.
-- **What was NOT done (intentionally deferred to iter 140+):**
-  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-  - **Jest tests** not run in this env (no `npm install`) — but no `.ts`/`.tsx` files were modified, so jest results would be identical to iter 138.
-  - **Dashboard tab deep-audit** — only a structural sanity check (TAB_MAP ↔ TabsTrigger ↔ TabsContent parity + TODO/FIXME scan) was done this iter. A full per-tab UX/logic audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is a candidate for iter 140+.
-  - **Docs deep-audit** — only AGENT_NAVIGATION.md §5/§6 drift was fixed. `docs/DATA_FLOW.md` (739 lines), `docs/BACKEND_GUIDE.md` (354 lines), `docs/DATA_CONTRACTS.md` (386 lines) not audited this iter.
-- **Stopping point:** iter 139 = repo cleanup pass (4 deletions + 3 doc fixes). Next iter candidates: (a) re-run F1 pipeline after a patch / monthly; (b) TD-3 runtime log verification (requires prod access); (c) per-tab UX/logic deep-audit; (d) docs deep-audit of DATA_FLOW/BACKEND_GUIDE/DATA_CONTRACTS for further drift; (e) any new bugs the user identifies.

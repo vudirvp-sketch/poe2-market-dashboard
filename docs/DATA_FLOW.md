@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Flow Reference
 
-> **Version:** 1.1 | **Date:** 2026-07-12 (iter 140 — doc-drift audit: §7.1 flipper proxy map and §7.2 backend route map — `/api/*` → `/api/v1/*` prefix drift fixed, 16 missing newer endpoints added, SSE route-order note added. §1–§6, §8–§10 not audited this iter — candidate for iter 141.)
+> **Version:** 1.2 | **Date:** 2026-07-12 (iter 141 — DATA_FLOW full audit: §3.2 (added 15 missing newer endpoints + fixed 2 backend URLs), §4.1 (snapshot field names: `rates`→`exchange_rates`, `bfs_pricing`→`prices_in_base`), §4.2 (DataSnapshot dataclass — 5 wrong fields → 9 correct fields), §4.3 (removed dead `RecipeArb`), §4.4 (HistoricalStore tables 3→5 + 12 new methods), §4.5 (scheduler jobs 3→4), §7.1 (removed 4 phantom proxy routes that iter 140 added without verifying + 1 duplicate, added backend-only note), §9 (Data→Component Mapping 10→16 tabs: removed 2 phantom tabs `Arbitrage`/`Graph`, added 8 missing tabs). 1466 pytest green, 0 source-code changes.)
 
 ---
 
@@ -133,11 +133,11 @@ Browser
 ```
 Browser
   → GET /api/flipper/health
-  → flipper-proxy.ts → fetch(FLIPPER_API_URL + "/api/health")
+  → flipper-proxy.ts → fetch(FLIPPER_API_URL + "/api/v1/health")
   → return: FlipperHealthResponse
 
   → GET /api/flipper/phase
-  → flipper-proxy.ts → fetch(FLIPPER_API_URL + "/api/phase")
+  → flipper-proxy.ts → fetch(FLIPPER_API_URL + "/api/v1/phase")
   → return: FlipperPhaseResponse { phase, daysSinceRef, league, dataAvailable }
 
   → GET /api/flipper/prices
@@ -218,7 +218,30 @@ Browser
 
   → POST /api/flipper/events/{id}/deactivate
   → flipper-proxy.ts → routes_events.py
+
+  # ── Newer endpoints (iter 75–131) — same proxy pattern, abbreviated ──
+  → GET /api/flipper/health/circuit-breakers     → routes_health (main.py)
+  → GET /api/flipper/prices/stream (SSE)         → routes_sse.py (KI-13: registered before /prices/{pair})
+  → GET /api/flipper/triangular/history          → routes_arbitrage.py (TD-3 iter 129)
+  → GET /api/flipper/storage-value/{c}/history    → routes_storage_value.py
+  → GET /api/flipper/content-pulse                → routes_content_pulse.py (F3 iter 75)
+  → GET /api/flipper/speculation                  → routes_speculation.py (F5 iter 77)
+  → GET /api/flipper/speculation/backtest         → routes_speculation_backtest.py (F5 iter 79)
+  → GET /api/flipper/phase-hints                  → routes_phase_hints.py (F6 iter 78)
+  → GET /api/flipper/circuit-patterns             → routes_circuit_patterns.py (F7/P8 iter 97)
+  → GET /api/flipper/intraday-patterns            → routes_intraday_patterns.py (P4 iter 98)
+  → GET /api/flipper/weekly-patterns              → routes_weekly_patterns.py (P5 iter 99)
+  → GET /api/flipper/mirror-divine-arb            → routes_mirror_divine_arb.py (P7 iter 109)
+  → GET /api/flipper/leveling-uniques             → routes_leveling_uniques.py (P9 iter 110)
+  → GET /api/flipper/liquid-chain                 → routes_liquid_chain.py (analysis + opportunities)
+  → POST /api/flipper/batch                       → routes_batch.py
 ```
+
+**Backend-only routes (no Next.js proxy file — called directly or not exposed):**
+- `/api/v1/health/ping` — called directly from `flipper-proxy.ts:191` (bypasses proxy layer; ultra-lightweight plain-text "ok" response).
+- `/api/v1/events/summary` — backend-only, no proxy.
+- `/api/v1/market-spreads/history` (TD-4 iter 128) — backend-only, no proxy.
+- `/api/v1/items/{item_id}/daily-stats` (TD-5 iter 131) — backend-only, no proxy.
 
 **Real-time updates (SSE only — WS removed iter 58):**
 
@@ -264,10 +287,12 @@ Poe2ScoutProvider
   │
   └── SnapshotManager._refresh()
         │
-        1. get_exchange_rates() → snapshot.rates
-        2. get_currency_metadata() → snapshot.currencies
-        3. For each currency: get_historical_prices() → snapshot.price_histories
-        4. BFS transitive pricing for currencies without direct base pair → snapshot.bfs_pricing
+        1. get_exchange_rates() → snapshot.exchange_rates
+        2. Build prices_in_base from exchange rates + BFS transitive pricing
+           for currencies without direct base pair → snapshot.prices_in_base
+        3. get_all_currencies_with_prices() (ByCategory, ~15 requests)
+           → snapshot.currencies + currency_metadata + price_histories + current_prices
+        4. Fill missing price histories for SnapshotPair currencies not in ByCategory
         5. Apply clustering (KMeans) → CurrencyClusterer
         6. Compute momentum/volatility/acceleration → PriceMomentumTracker
         7. Tier classification via classify_currencies() → snapshot.tiers
@@ -278,19 +303,25 @@ Poe2ScoutProvider
 
 ### 4.2 DataSnapshot Dataclass
 
+Verified against `backend/api/data_snapshot.py:53-87` (iter 141):
+
 ```python
 @dataclass
 class DataSnapshot:
-    league: str
-    fetched_at: datetime
-    rates: dict[str, SnapshotPair]          # key: "currency1/currency2"
-    currencies: list[CurrencyItem]
-    price_histories: dict[str, list[PriceLogEntry]]  # key: api_id
-    bfs_pricing: dict[str, float]           # transitive mid_price via BFS
-    snapshot_age_seconds: float
+    exchange_rates: dict[str, ExchangeRate] = field(default_factory=dict)   # key: "from/to"
+    currencies: dict[str, dict] = field(default_factory=dict)                # key: api_id.lower()
+    currency_metadata: list[CurrencyInfo] = field(default_factory=list)
+    price_histories: dict[str, list[PricePoint]] = field(default_factory=dict)  # key: api_id.lower()
+    current_prices: dict[str, float] = field(default_factory=dict)           # key: api_id.lower()
+    prices_in_base: dict[str, float] = field(default_factory=dict)           # transitive mid_price via BFS
+    tiers: dict[str, CurrencyTier] = field(default_factory=dict)             # key: api_id.lower()
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    valid: bool = False
 ```
 
-**BFS transitive pricing:** When no direct pair exists between a currency and the base (exalted), mid_price is computed via breadth-first search through existing pairs.
+**Note:** `league` is NOT stored on the dataclass — it lives on `SnapshotManager._config`. `snapshot_age_seconds` is computed by `SnapshotManager` (now - `fetched_at`), not stored.
+
+**BFS transitive pricing:** When no direct pair exists between a currency and the base (exalted), mid_price is computed via `_compute_transitive_prices()` (BFS through intermediate currencies that already have a base price).
 
 ### 4.3 Analytics Pipeline
 
@@ -302,20 +333,30 @@ DataSnapshot
   ├── PortfolioOptimizer → allocation + correlation (Ledoit-Wolf shrinkage)
   ├── AnomalyDetector → anomaly indicators (Z-score, MACD, RSI, STL, momentum)
   ├── PhaseDetector → EARLY/MID/LATE (based on league_start_date)
-  ├── EventManager → active events + scoring penalties
-  └── RecipeArb → vendor recipe profit calculations (gold fees excluded)
+  └── EventManager → active events + scoring penalties
 ```
+
+**Note:** `RecipeArb` was removed from the codebase (vendor recipe profit calculations no longer exist as a separate analytics module).
 
 ### 4.4 HistoricalStore (SQLite)
 
 ```
 HistoricalStore (historical.db)
   │
-  ├── init() → Create tables: prices_history, events, price_snapshots
-  │     (10s timeout for startup resilience)
-  ├── append_price_snapshot(league, rates) → INSERT ON CONFLICT UPDATE
-  ├── get_price_history(currency, days) → SELECT WHERE currency=? AND timestamp>?
-  ├── save_event(event) / load_events() / prune_expired_events()
+  ├── init() → Create 5 tables (10s timeout for startup resilience):
+  │     1. price_snapshots      — league+currency+timestamp price rows
+  │     2. events               — StoredEvent persistence
+  │     3. market_spreads       — TD-4 iter 128
+  │     4. triangular_cycles    — TD-3 iter 129
+  │     5. daily_stats          — TD-5 iter 131 (OHLCV daily history)
+  │
+  ├── write_price_snapshot(s) / write_price_snapshots_batch(s) → INSERT ON CONFLICT UPDATE
+  ├── get_price_history(currency, days) / get_latest_prices(league)
+  ├── write_event(e) / write_events_batch(es) / read_active_events() / prune_expired_events()
+  ├── write_market_spreads_batch(s) / read_market_spreads(...) / read_market_spreads_pairs(league)  [TD-4]
+  ├── write_triangular_cycles_batch(s) / read_triangular_cycles(...) / read_triangular_cycles_keys(league)  [TD-3]
+  ├── write_daily_stats_batch(s) / read_daily_stats(...) / read_daily_stats_latest_date(league)
+  │     / read_daily_stats_items(league)  [TD-5]
   └── _prune_old_league_data(league) → Remove data from previous leagues on startup
 ```
 
@@ -323,9 +364,10 @@ HistoricalStore (historical.db)
 
 | Job | Interval | Function |
 |-----|----------|----------|
-| price_snapshot | 30 min | Fetch prices + persist to SQLite |
+| price_snapshot | 30 min | Fetch prices + persist to SQLite (`price_snapshots` table) |
 | event_pruning | 15 min | Prune expired events from memory + SQLite |
 | model_persistence | 30 min | Save LightGBM models to disk |
+| daily_stats_refresh | 1 hour | Refresh DailyStatsHistory for top-N items (TD-5 iter 131) |
 
 All intervals configurable in `config.yaml` → `scheduler:` section.
 
@@ -493,8 +535,8 @@ poe2/                               # Direct POE2Scout proxy (no backend)
 
 flipper/                            # FastAPI backend proxy
   health/route.ts                  → GET /api/v1/health
-  health/ping/route.ts             → GET /api/v1/health/ping
   health/circuit-breakers/route.ts → GET /api/v1/health/circuit-breakers
+  # Note: /api/v1/health/ping is called DIRECTLY from flipper-proxy.ts (no proxy file)
   phase/route.ts                   → GET /api/v1/phase
   currencies/route.ts              → GET /api/v1/currencies
   prices/route.ts                  → GET /api/v1/prices
@@ -503,7 +545,6 @@ flipper/                            # FastAPI backend proxy
   flips/route.ts                   → GET /api/v1/arbitrage/flips
   triangular/route.ts              → GET /api/v1/arbitrage/triangular
   triangular/history/route.ts      → GET /api/v1/arbitrage/triangular/history (TD-3 iter 129)
-  optimal-currency/route.ts        → GET /api/v1/arbitrage/optimal-currency
   tiers/route.ts                   → GET /api/v1/tiers
   anomalies/route.ts               → GET /api/v1/anomalies
   storage-value/[currency]/route.ts        → GET /api/v1/storage-value/{currency}
@@ -514,6 +555,7 @@ flipper/                            # FastAPI backend proxy
   analyst/summary/route.ts         → GET /api/v1/analyst/summary
   optimal-currency/route.ts        → GET /api/v1/arbitrage/optimal-currency
   portfolio/correlation/route.ts   → GET /api/v1/portfolio/correlation
+  # Note: events/summary is backend-only (no proxy file)
   content-pulse/route.ts           → GET /api/v1/content-pulse (F3 iter 75)
   speculation/route.ts             → GET /api/v1/speculation (F5 iter 77)
   speculation/backtest/route.ts    → GET /api/v1/speculation/backtest (F5 iter 79)
@@ -523,14 +565,15 @@ flipper/                            # FastAPI backend proxy
   weekly-patterns/route.ts         → GET /api/v1/weekly-patterns (P5 iter 99)
   mirror-divine-arb/route.ts       → GET /api/v1/mirror-divine-arb (P7 iter 109)
   leveling-uniques/route.ts        → GET /api/v1/leveling-uniques (P9 iter 110)
-  market-spreads/history/route.ts  → GET /api/v1/market-spreads/history (TD-4 iter 128)
+  # Note: market-spreads/history is backend-only (no proxy file) — TD-4 iter 128
   liquid-chain/route.ts            → GET /api/v1/liquid-chain/{analysis|opportunities}
   batch/route.ts                   → POST /api/v1/batch
   events/route.ts                  → GET/POST /api/v1/events
-  events/summary/route.ts          → GET /api/v1/events/summary
   events/[eventId]/route.ts        → GET/DELETE /api/v1/events/{id}
   events/[eventId]/deactivate/route.ts → POST /api/v1/events/{id}/deactivate
 ```
+
+**Verified iter 141:** 34 `route.ts` files under `src/app/api/flipper/` (vs §7.1 listing = 34 entries after cleanup). Backend-only routes that have no proxy file: `/api/v1/health/ping`, `/api/v1/events/summary`, `/api/v1/market-spreads/history`, `/api/v1/items/{item_id}/daily-stats`.
 
 ### 7.2 Backend Routes (FastAPI `backend/api/`)
 
@@ -648,18 +691,30 @@ routes_batch.py             # /api/v1/batch (POST)
 
 ## 9. Data → Component Mapping
 
-| Tab | Components | Data Sources |
-|-----|-----------|-------------|
-| **Overview** | `MarketOverview`, `MarketHeatmap` | `/api/poe2/overview`, realm/league selectors |
-| **Currencies** | `VirtualCurrencyGrid`, `DetailDialog` | `/api/poe2/currencies`, `/api/poe2/items/{id}/History`, `/api/poe2/items/{id}/DailyStatsHistory` |
-| **Uniques** | `UniqueTable`, `DetailDialog` | `/api/poe2/uniques`, same detail endpoints |
-| **Exchange** | `ExchangeTable`, `PairDetailDialog` | `/api/poe2/exchange`, `/api/poe2/currencies/Pairs/{c1}/{c2}/History`, reference currencies |
-| **Arbitrage** | `ArbitrageTab` | `/api/flipper/health`, `/api/flipper/flips`, `/api/flipper/triangular` |
-| **Flips** | `FlipsTab`, `FlipsDetailDialog` | `/api/flipper/flips`, `/api/flipper/tiers`, `/api/flipper/events`, `/api/flipper/storage-value/{c}` |
-| **Optimizer** | `OptimizerTab` | `/api/flipper/optimizer/path`, `/api/flipper/optimizer/matrix` |
-| **Analyst** | `AnalystTab` | `/api/flipper/analyst/summary`, `/api/poe2/analyst-fallback` (no backend) |
-| **Graph** | `CurrencyGraphTab`, `ComparativeChart` | `/api/flipper/currencies`, `/api/flipper/storage-value/{c}` |
-| **Watchlist** | `WatchlistTab` | Exchange pair data via fetchApi, Zustand store (persisted) |
+Verified against `src/components/dashboard/dashboard-page.tsx` `TAB_MAP` (16 entries, iter 141):
+
+| # | Tab | Component file | Data Sources |
+|---|-----|----------------|-------------|
+| 1 | **Overview** | `overview-tab-content.tsx` | `/api/poe2/overview`, realm/league selectors |
+| 2 | **Currencies** | `currencies-tab-content.tsx` | `/api/poe2/currencies`, `/api/poe2/items/{id}/History`, `/api/poe2/items/{id}/DailyStatsHistory` |
+| 3 | **Uniques** | `uniques-tab-content.tsx` | `/api/poe2/uniques`, same detail endpoints |
+| 4 | **Exchange** | `exchange-tab-content.tsx` | `/api/poe2/exchange`, `/api/poe2/currencies/Pairs/{c1}/{c2}/History`, reference currencies |
+| 5 | **Flips** | `flips-tab.tsx` | `/api/flipper/flips`, `/api/flipper/tiers`, `/api/flipper/events`, `/api/flipper/storage-value/{c}` |
+| 6 | **Optimizer** | `optimizer-tab.tsx` | `/api/flipper/optimizer/path`, `/api/flipper/optimizer/matrix` |
+| 7 | **Analyst** | `analyst-tab.tsx` | `/api/flipper/analyst/summary`, `/api/poe2/analyst-fallback` (no backend) |
+| 8 | **Storage Value** (F2) | `storage-value-tab.tsx` | `/api/flipper/storage-value/{c}`, `/api/flipper/storage-value/{c}/history` |
+| 9 | **Speculation** (F5) | `speculation-tab.tsx` | `/api/flipper/speculation`, `/api/flipper/speculation/backtest` |
+| 10 | **Circuit Patterns** (F7/P8) | `circuit-patterns-tab.tsx` | `/api/flipper/circuit-patterns` |
+| 11 | **Intraday Patterns** (P4) | `intraday-patterns-tab.tsx` | `/api/flipper/intraday-patterns` |
+| 12 | **Weekly Patterns** (P5) | `weekly-patterns-tab.tsx` | `/api/flipper/weekly-patterns` |
+| 13 | **Mirror/Divine Arb** (P7) | `mirror-divine-arb-tab.tsx` | `/api/flipper/mirror-divine-arb` |
+| 14 | **Gold Map ROI** (P10) | `gold-map-roi-tab.tsx` | `/api/flipper/triangular`, `/api/flipper/triangular/history` |
+| 15 | **Liquid Chain** | `liquid-chain-tab.tsx` | `/api/flipper/liquid-chain` (analysis) |
+| 16 | **Watchlist** | `watchlist-tab.tsx` | Exchange pair data via fetchApi, Zustand store (persisted) |
+
+**Removed tabs (phantom entries from pre-iter 141 docs):**
+- `Arbitrage` — removed iter 92 (KI-7), was dead (`Flips` tab now covers this).
+- `Graph` (`CurrencyGraphTab`) — removed iter 87.
 
 **Utility components:**
 

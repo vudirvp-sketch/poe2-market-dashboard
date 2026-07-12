@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-12 (iter 140 — docs deep-audit pass: fixed route-prefix drift `/api/*` → `/api/v1/*` across `docs/BACKEND_GUIDE.md`, `docs/DATA_CONTRACTS.md`, `docs/DATA_FLOW.md` §7; updated HistoricalStore tables (3→5), scheduler jobs (3→4), tests count (14→42), DataSnapshot dataclass fields; added 16 missing newer endpoints (TD-3/4/5 history, F3/F5/F6/F7/P4/P5/P7/P9 routes). 1466 pytest green, 0 source-code changes.)
+> **Last updated:** 2026-07-12 (iter 141 — `docs/DATA_FLOW.md` full audit of §3.2, §4.1, §4.2, §4.3, §4.4, §4.5, §7.1, §9: fixed DataSnapshot dataclass (5 wrong fields → 9 correct), HistoricalStore tables (3→5), scheduler jobs (3→4), removed dead `RecipeArb`, fixed §7.1 (4 phantom proxy routes that iter 140 added without verifying + 1 duplicate), §9 tab map (10→16 actual tabs, removed 2 phantom `Arbitrage`/`Graph`), added 15 missing newer endpoints to §3.2. 1466 pytest green, 0 source-code changes.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
