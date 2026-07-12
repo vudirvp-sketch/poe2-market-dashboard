@@ -1,0 +1,276 @@
+{
+  "generated_at": "2026-07-12T19:21:21+0000",
+  "summary": {
+    "total_audited": 634,
+    "match": 601,
+    "mismatch": 32,
+    "no_poe2db_page": 0,
+    "no_cyrillic": 1
+  },
+  "mismatches": [
+    {
+      "api_id": "fracturing-orb",
+      "en_name": "Fracturing Orb",
+      "category_api_id": "currency",
+      "our_ru": "Сфера раскалывания",
+      "poe2db_ru": "Раскалывающая сфера",
+      "poe2db_url": "https://poe2db.tw/ru/Fracturing_Orb"
+    },
+    {
+      "api_id": "annul",
+      "en_name": "Orb of Annulment",
+      "category_api_id": "currency",
+      "our_ru": "Сфера аннулирования",
+      "poe2db_ru": "Сфера отмены",
+      "poe2db_url": "https://poe2db.tw/ru/Orb_of_Annulment"
+    },
+    {
+      "api_id": "gcp",
+      "en_name": "Gemcutter's Prism",
+      "category_api_id": "currency",
+      "our_ru": "Призма резчика камней",
+      "poe2db_ru": "Призма камнереза",
+      "poe2db_url": "https://poe2db.tw/ru/Gemcutters_Prism"
+    },
+    {
+      "api_id": "vaal",
+      "en_name": "Vaal Orb",
+      "category_api_id": "currency",
+      "our_ru": "Сфера Ваала",
+      "poe2db_ru": "Сфера ваал",
+      "poe2db_url": "https://poe2db.tw/ru/Vaal_Orb"
+    },
+    {
+      "api_id": "bauble",
+      "en_name": "Glassblower's Bauble",
+      "category_api_id": "currency",
+      "our_ru": "Стеклодувная бусина",
+      "poe2db_ru": "Стекольная масса",
+      "poe2db_url": "https://poe2db.tw/ru/Glassblowers_Bauble"
+    },
+    {
+      "api_id": "scrap",
+      "en_name": "Armourer's Scrap",
+      "category_api_id": "currency",
+      "our_ru": "Кусок брони",
+      "poe2db_ru": "Деталь доспеха",
+      "poe2db_url": "https://poe2db.tw/ru/Armourers_Scrap"
+    },
+    {
+      "api_id": "exalted",
+      "en_name": "Exalted Orb",
+      "category_api_id": "currency",
+      "our_ru": "Благородная сфера",
+      "poe2db_ru": "Сфера возвышения",
+      "poe2db_url": "https://poe2db.tw/ru/Exalted_Orb"
+    },
+    {
+      "api_id": "whetstone",
+      "en_name": "Blacksmith's Whetstone",
+      "category_api_id": "currency",
+      "our_ru": "Точильный камень кузнеца",
+      "poe2db_ru": "Точильный камень",
+      "poe2db_url": "https://poe2db.tw/ru/Blacksmiths_Whetstone"
+    },
+    {
+      "api_id": "alch",
+      "en_name": "Orb of Alchemy",
+      "category_api_id": "currency",
+      "our_ru": "Сфера алхимика",
+      "poe2db_ru": "Сфера алхимии",
+      "poe2db_url": "https://poe2db.tw/ru/Orb_of_Alchemy"
+    },
+    {
+      "api_id": "regal",
+      "en_name": "Regal Orb",
+      "category_api_id": "currency",
+      "our_ru": "Коронованная сфера",
+      "poe2db_ru": "Сфера царей",
+      "poe2db_url": "https://poe2db.tw/ru/Regal_Orb"
+    },
+    {
+      "api_id": "aug",
+      "en_name": "Orb of Augmentation",
+      "category_api_id": "currency",
+      "our_ru": "Сфера дополнения",
+      "poe2db_ru": "Сфера усиления",
+      "poe2db_url": "https://poe2db.tw/ru/Orb_of_Augmentation"
+    },
+    {
+      "api_id": "transmutation-shard",
+      "en_name": "Transmutation Shard",
+      "category_api_id": "currency",
+      "our_ru": "Осколок сферы превращения",
+      "poe2db_ru": "Осколок превращения",
+      "poe2db_url": "https://poe2db.tw/ru/Transmutation_Shard"
+    },
+    {
+      "api_id": "regal-shard",
+      "en_name": "Regal Shard",
+      "category_api_id": "currency",
+      "our_ru": "Осколок коронованной сферы",
+      "poe2db_ru": "Осколок царей",
+      "poe2db_url": "https://poe2db.tw/ru/Regal_Shard"
+    },
+    {
+      "api_id": "astrids-creativity",
+      "en_name": "Astrid's Creativity",
+      "category_api_id": "runes",
+      "our_ru": "Творчество Астрид",
+      "poe2db_ru": "Изобретательность Астрид",
+      "poe2db_url": "https://poe2db.tw/ru/Astrids_Creativity"
+    },
+    {
+      "api_id": "xopecs-soul-core-of-power",
+      "en_name": "Xopec's Soul Core of Power",
+      "category_api_id": "ultimatum",
+      "our_ru": "Ядро души мощи Шопека",
+      "poe2db_ru": "Ядро душ могущества Шопека",
+      "poe2db_url": "https://poe2db.tw/ru/Xopecs_Soul_Core_of_Power"
+    },
+    {
+      "api_id": "soul-core-of-azcapa",
+      "en_name": "Soul Core of Azcapa",
+      "category_api_id": "ultimatum",
+      "our_ru": "Ядро души Ацкапы",
+      "poe2db_ru": "Ядро душ Азкапы",
+      "poe2db_url": "https://poe2db.tw/ru/Soul_Core_of_Azcapa"
+    },
+    {
+      "api_id": "soul-core-of-quipolatl",
+      "en_name": "Soul Core of Quipolatl",
+      "category_api_id": "ultimatum",
+      "our_ru": "Ядро души Киполатля",
+      "poe2db_ru": "Ядро душ Квиполатля",
+      "poe2db_url": "https://poe2db.tw/ru/Soul_Core_of_Quipolatl"
+    },
+    {
+      "api_id": "soul-core-of-zalatl",
+      "en_name": "Soul Core of Zalatl",
+      "category_api_id": "ultimatum",
+      "our_ru": "Ядро души Салатля",
+      "poe2db_ru": "Ядро душ Залатля",
+      "poe2db_url": "https://poe2db.tw/ru/Soul_Core_of_Zalatl"
+    },
+    {
+      "api_id": "opilotis-soul-core-of-assault",
+      "en_name": "Opiloti's Soul Core of Assault",
+      "category_api_id": "ultimatum",
+      "our_ru": "Ядро души натиска Опилоти",
+      "poe2db_ru": "Ядро душ нападения Опилоти",
+      "poe2db_url": "https://poe2db.tw/ru/Opilotis_Soul_Core_of_Assault"
+    },
+    {
+      "api_id": "soul-core-of-opiloti",
+      "en_name": "Soul Core of Opiloti",
+      "category_api_id": "ultimatum",
+      "our_ru": "Ядро души Опилоти",
+      "poe2db_ru": "Ядро душ Опилоти",
+      "poe2db_url": "https://poe2db.tw/ru/Soul_Core_of_Opiloti"
+    },
+    {
+      "api_id": "raven-touched-shard",
+      "en_name": "Raven-Touched Shard",
+      "category_api_id": "ritual",
+      "our_ru": "Осколок, тронутый вороном",
+      "poe2db_ru": "Осколок Ворона",
+      "poe2db_url": "https://poe2db.tw/ru/Raven-Touched_Shard"
+    },
+    {
+      "api_id": "head-of-the-king",
+      "en_name": "Head of the King",
+      "category_api_id": "ritual",
+      "our_ru": "Голова короля",
+      "poe2db_ru": "Голова Хозяина",
+      "poe2db_url": "https://poe2db.tw/ru/Head_of_the_King"
+    },
+    {
+      "api_id": "the-trialmasters-reliquary-key",
+      "en_name": "The Trialmaster's Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Ключ реликвария Мастера испытаний",
+      "poe2db_ru": "Ключ от Реликвария Мастера испытаний",
+      "poe2db_url": "https://poe2db.tw/ru/The_Trialmasters_Reliquary_Key"
+    },
+    {
+      "api_id": "xeshts-reliquary-key",
+      "en_name": "Xesht's Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Ключ реликвария Кшета",
+      "poe2db_ru": "Ключ от Реликвария Ксешта",
+      "poe2db_url": "https://poe2db.tw/ru/Xeshts_Reliquary_Key"
+    },
+    {
+      "api_id": "the-arbiters-reliquary-key",
+      "en_name": "The Arbiter's Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Ключ реликвария Арбитра",
+      "poe2db_ru": "Ключ от Реликвария Арбитра",
+      "poe2db_url": "https://poe2db.tw/ru/The_Arbiters_Reliquary_Key"
+    },
+    {
+      "api_id": "tangmazus-reliquary-key",
+      "en_name": "Tangmazu's Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Ключ реликвария Тангмазу",
+      "poe2db_ru": "Ключ от Реликвария Тангмазу",
+      "poe2db_url": "https://poe2db.tw/ru/Tangmazus_Reliquary_Key"
+    },
+    {
+      "api_id": "olroths-reliquary-key",
+      "en_name": "Olroth's Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Ключ реликвария Олрота",
+      "poe2db_ru": "Ключ от Реликвария Олрота",
+      "poe2db_url": "https://poe2db.tw/ru/Olroths_Reliquary_Key"
+    },
+    {
+      "api_id": "ritualistic-reliquary-key",
+      "en_name": "Ritualistic Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Ритуалистический ключ реликвария",
+      "poe2db_ru": "Ключ от Ритуального Реликвария",
+      "poe2db_url": "https://poe2db.tw/ru/Ritualistic_Reliquary_Key"
+    },
+    {
+      "api_id": "twilight-reliquary-key",
+      "en_name": "Twilight Reliquary Key",
+      "category_api_id": "vaultkeys",
+      "our_ru": "Сумеречный ключ реликвария",
+      "poe2db_ru": "Ключ от Сумеречного Реликвария",
+      "poe2db_url": "https://poe2db.tw/ru/Twilight_Reliquary_Key"
+    },
+    {
+      "api_id": "uul-netols-embrace",
+      "en_name": "Uul-Netol's Embrace",
+      "category_api_id": "lineagesupportgems",
+      "our_ru": "Объятие Уул-Нетола",
+      "poe2db_ru": "Объятия Уул-Нетол",
+      "poe2db_url": "https://poe2db.tw/ru/Uul-Netols_Embrace"
+    },
+    {
+      "api_id": "voranas-siege",
+      "en_name": "Vorana's Siege",
+      "category_api_id": "lineagesupportgems",
+      "our_ru": "Сага Вораны",
+      "poe2db_ru": "Осада Вораны",
+      "poe2db_url": "https://poe2db.tw/ru/Voranas_Siege"
+    },
+    {
+      "api_id": "olroths-conviction",
+      "en_name": "Olroth's Conviction",
+      "category_api_id": "lineagesupportgems",
+      "our_ru": "Сага Олрота",
+      "poe2db_ru": "Убеждённость Олрота",
+      "poe2db_url": "https://poe2db.tw/ru/Olroths_Conviction"
+    }
+  ],
+  "no_poe2db_page": [],
+  "no_cyrillic": [
+    {
+      "api_id": "aldurs-saga",
+      "en_name": "Aldur's Saga",
+      "poe2db_title": "Aldurs_Saga - PoE2DB, Path of Exile Wiki ru"
+    }
+  ]
+}

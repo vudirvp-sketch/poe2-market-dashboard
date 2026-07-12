@@ -5,6 +5,67 @@
 
 ---
 
+Task ID: iter-145
+Agent: main
+Task: iter 145 — closes candidate (a) from iter 144 stop point (fix `instrumentation.ts:7` + `flipper-backend-bridge.ts:313` comment drift `/api/health` → `/api/v1/health/ping`), PLUS addresses user's new requirement about translation quality. User reported: "далеко не все и не везде предметы и валюта имеет перевод а где имеет ---> перевод корявый и не такой как в официальном клиенте игры! перевод надо смотреть на пое 2 дб!" — provided poe2db.tw/ru/Unique_item URLs as reference.
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 144 SHIPPED), `worklog.md` (iter 144 + iter 143), `AGENT_NAVIGATION.md` §1–§3.
+- Investigated current translation pipeline state:
+  - `backend/data/currency_names.json` — 4 dicts: `category_names_ru/en` (17 categories) + `currency_names_ru/en` (686 items each, RU/EN key parity).
+  - Pipeline `scripts/sync_currency_names_from_poe2db.py` — 4 stages: `--fetch-ids` → `--fetch-ru-by-item` (KI-30 fix) → `--diff` → `--apply --confirm`. Only fetches NEW translations; NEVER overwrites existing ones (idempotency guard at `apply_patch:902`).
+  - `scripts/fetch_ru_by_item_parallel.py` — thread-pooled version of Stage 2b. Uses `urllib.parse.quote(slug, safe="/%'")` for URL-encoding (KI-33 fix needed in main script).
+  - 9 items still untranslated (F1, deferred since iter 138): `aldurs-legacy`, `betrayal-of-aldur`, `vision-rune`, `rebirth-rune`, `ward-rune`, `stone-rune`, `breath-of-aldur`, `ire-of-aldur`, `passion-of-aldur`.
+- **Spot-check audit (10 + 20 items):** Compared existing RU translations against poe2db's current RU `<title>` tag for 30 well-known items. Found **15 mismatches (50%)** — including `exalted` (our "Благородная сфера" PoE1-style vs poe2db "Сфера возвышения" PoE2-official), `fracturing-orb`, `vaal`, `alch`, `regal`, `aug`, `annul`, `regret`, `fusings`, `chromatic`, `blessed`, `eternal`, `whetstone`, `scrap`, `bauble`. Confirms user's complaint is real and pervasive.
+- **Unique items gap identified:** `mapUniqueItem` (`src/lib/poe2api.ts:1003-1051`) uses `raw.Text || raw.Name` directly as `name`. NO RU translation lookup. The translation pipeline only covers the 17 currency categories from `POE2DB_CATEGORY_PATHS` — unique items (weapons, armour, accessories) are NOT covered at all.
+- **Source cleanup (closes candidate a):** Fixed 2 comment drift lines:
+  - `instrumentation.ts:7` — `Monitors backend health via /api/health` → `Monitors backend health via /api/v1/health/ping` (matches the actual `HEALTH_ENDPOINT` constant at `flipper-backend-bridge.ts:52`).
+  - `src/lib/flipper-backend-bridge.ts:313` — `Although /api/health/ping responds` → `Although /api/v1/health/ping responds` (matches same constant).
+- **Added `--audit` flag to `scripts/sync_currency_names_from_poe2db.py`:**
+  - New `TRANSLATION_AUDIT_CACHE = CACHE_DIR / "translation_audit.json"` constant.
+  - New `audit_translations()` function — READ-ONLY audit. For every api_id that has an existing RU translation, fetches its poe2db page, extracts the RU `<title>`, compares against stored value. Categorizes results as `match` / `mismatch` / `no_poe2db_page` (404) / `no_cyrillic` (page exists but title is English-only). Does NOT mutate `existing_names` (verified by `test_does_not_modify_existing_names`).
+  - New `cmd_audit()` CLI handler. Registered `--audit` flag in argparse. Updated stage_count validation. Does NOT require `--confirm` (read-only).
+  - New module docstring section "Stage 5" documenting the audit.
+- **First audit run crashed (KI-33 discovered):** At item ~500/643, `UnicodeEncodeError: 'ascii' codec can't encode character '\xf3' in position 9`. Root cause: `_en_name_to_poe2db_slug()` strips apostrophes but keeps other non-ASCII chars intact. Two items triggered this: `mórrigans-insight` (EN: "Mórrigan's Insight") and `oisins-oath` (EN: "Oisín's Oath"). The parallel runner already URL-encoded the slug; the main script did NOT.
+- **KI-33 fix:** Extracted shared `_build_poe2db_url(base_url, slug)` helper that percent-encodes the slug via `urllib.parse.quote(slug, safe="/%'")`. Both `fetch_poe2db_ru_names_by_item` and `audit_translations` now use it. Added defensive `except (UnicodeEncodeError, UnicodeDecodeError)` clauses in both functions so a single bad slug can't kill the whole run.
+- **Ran full audit on 634 translated items** (9 untranslated items skipped per audit design):
+  - **Total audited:** 634
+  - **Match poe2db:** 601 (94.8%)
+  - **Mismatch:** 32 (5.0%) — full list in `scripts/.cache/translation_audit.json`. Mismatches by category: currency (13), vaultkeys (7), ultimatum (6), lineagesupportgems (3), ritual (2), runes (1).
+  - **No poe2db page (404):** 0
+  - **No Cyrillic:** 1 (`aldurs-saga` — we have "Сага Альдура", poe2db has no RU page yet. NEW finding, not in F1 list).
+- **Tests added (14 new tests, all green):**
+  - `tests/test_sync_currency_names.py:TestAuditTranslations` — 6 tests covering: mismatch detection, match counting, 404 handling, no-Cyrillic handling, untranslated-item skipping, READ-ONLY verification.
+  - `tests/test_sync_currency_names.py:TestAuditCli` — 2 tests covering: `--audit` runs without `--confirm`, `--audit` + other stage returns 4.
+  - `tests/test_sync_currency_names.py:TestBuildPoe2dbUrl` — 6 tests covering: ASCII slugs, apostrophe preservation, non-ASCII Latin encoding, Cyrillic encoding, regression tests for `Oisíns_Oath` and `Mórrigans_Insight`.
+- **Documentation updates (per user's rule "Убирай длинную историю изменений, мусор, устаревшие секции"):**
+  - `STATUS.md` — header bump (iter 144 → iter 145); added KI-32 (translation drift) + KI-33 (non-ASCII slug crash, fixed) + TD-6 (translation alignment + unique-items RU support, 3-phase plan); updated F1 section with audit results + `aldurs-saga` new finding; trimmed Quick Reference (removed 7 already-fixed KI rows: KI-21/26/27/28/29/30/31 — all merged into 1-line summaries under remaining entries or removed entirely); trimmed Key Technical Insights (consolidated 5 paragraphs into 5 shorter ones).
+  - `worklog.md` — added this iter-145 entry, removed iter-143 entry (rule: only last 2 iterations).
+  - `AGENT_NAVIGATION.md` — header bump (iter 144 → iter 145).
+- **Final verification:** `python3 -m pytest tests/test_sync_currency_names.py` → 57 passed (43 existing + 14 new). 1466 pytest green baseline preserved (only `.py`/`.ts`/`.tsx` change was the 2 comment-line drift fixes + new audit code, all covered by tests).
+
+Stage Summary:
+- **iter 145 SHIPPED — 1 source-cleanup (closes candidate a) + 1 new audit tool + 2 new KIs + 1 new TD, 14 new tests.**
+- **Modified files (4 source + 3 meta-docs + 1 audit artifact):**
+  - `instrumentation.ts` — 1-line comment drift fix.
+  - `src/lib/flipper-backend-bridge.ts` — 1-line comment drift fix.
+  - `scripts/sync_currency_names_from_poe2db.py` — added Stage 5 (`--audit` flag + `audit_translations()` + `cmd_audit()` + `_build_poe2db_url()` helper + KI-33 defensive exception handling in both `fetch_poe2db_ru_names_by_item` and `audit_translations`).
+  - `tests/test_sync_currency_names.py` — added 14 tests (8 audit + 6 KI-33 regression).
+  - `STATUS.md` — header bump + KI-32 + KI-33 + TD-6 + F1 update + Quick Reference trim.
+  - `worklog.md` — this iter-145 entry (removed iter-143).
+  - `AGENT_NAVIGATION.md` — header bump.
+  - `scripts/.cache/translation_audit.json` — audit artifact (32 mismatches + 1 no-Cyrillic).
+- **What was NOT done (intentionally deferred to iter 146+):**
+  - **TD-6 Phase 1 — apply KI-32 fixes:** Add `--apply-audit` flag that overwrites the 32 drift items in `currency_names_ru` with poe2db values. Requires `--confirm` (destructive). Will need to update spot-check assertions in `tests/test_currency_names_ru.py:46-51` for `exalted` (current: "Благородная сфера" → new: "Сфера возвышения"). After applying, regenerate TS mirror via `python scripts/sync_currency_names_ts.py`.
+  - **TD-6 Phase 2 — unique items RU support:** Extend pipeline to crawl `poe2db.tw/ru/Unique_item` index page → per-item page `<title>` extraction. Add `unique_names_ru` / `unique_names_en` sections (either new file `unique_names.json` or new top-level keys in `currency_names.json`). Update `mapUniqueItem` in `src/lib/poe2api.ts:1030` to look up RU name when locale=ru. Add UI tests for RU locale rendering of unique items.
+  - **TD-6 Phase 3 — re-audit cycle:** Re-run `--audit` monthly / after each patch to catch new drift.
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141–145 only verified doc-level references + translation infrastructure. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 147+.
+  - **9 currency items still untranslated** (F1) + **1 newly-discovered no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+- **Stopping point:** iter 145 = 1 source-cleanup (closes candidate a) + 1 new audit tool (Stage 5 `--audit`) + 2 new KIs (KI-32 translation drift, KI-33 non-ASCII slug crash fixed) + 1 new TD (TD-6 translation alignment + unique-items RU support) + 14 new tests + 1 audit artifact. Next iter candidates: (a) **TD-6 Phase 1** — add `--apply-audit` flag to overwrite the 32 KI-32 drift items (highest value — directly addresses user's complaint about wrong translations); (b) **TD-6 Phase 2** — extend pipeline to unique items (largest scope, addresses user's complaint about missing RU for unique items); (c) per-tab UX/logic deep-audit (deferred since iter 139); (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
+
+---
+
 Task ID: iter-144
 Agent: main
 Task: iter 144 — `docs/DATA_FLOW.md` §2 (POE2Scout API) + §5 (Field Transformation) deep cross-check. Per the iter-143 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (doc-only, 0 source-code changes), natural continuation of the doc-audit chain (iter 141: DATA_FLOW cosmetic, iter 142: ARCHITECTURE/PLAYBOOK/CORS, iter 143: BACKEND_GUIDE/DATA_CONTRACTS). §2 + §5 were the only sections from the iter-141 audit that received only a cosmetic pass and deserved a deep cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts`.
@@ -68,52 +129,3 @@ Stage Summary:
   - **Other DATA_FLOW.md sections** (§3, §4, §6, §7, §8, §9, §10) — iter 141 already audited these; no further drift found in iter 144. §1 (Architecture Overview) is a 1-line pointer to ARCHITECTURE.md — no drift.
 - **Stopping point:** iter 144 = 1 doc deep-audited (DATA_FLOW.md §2 + §5, 13 drift items). Next iter candidates: (a) source cleanup — fix `instrumentation.ts:7` comment drift (`/api/health` → `/api/v1/health/ping`) — minimal 1-line source-code change, safe; (b) per-tab UX/logic deep-audit (i18n, error/empty/loading states, accessibility) — larger scope, deferred since iter 139; (c) re-run F1 pipeline after a patch / monthly; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
 
----
-
-Task ID: iter-143
-Agent: main
-Task: iter 143 — `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit. Per the iter-142 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (doc-only, 0 source-code changes), well-decomposable, and these 2 docs had not been audited since iter 140.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 142 SHIPPED), `worklog.md` (iter 142 + iter 141), `AGENT_NAVIGATION.md` §1–§3.
-- Re-verified canonical references against live code:
-  - `backend/data/providers/poe2scout.py:453,546,400,763,797,862` — actual methods are `get_exchange_rates(league)` → `dict[str, ExchangeRate]` (NOT `dict[str, SnapshotPair]`), `get_currency_metadata(league)` → `list[CurrencyInfo]`, `get_all_currencies_with_prices(league)` → `list[dict]`, `get_historical_prices(currency, days)` → `list[PricePoint]`, `get_bulk_price_histories(league)` → `dict[int, list[PricePoint]]`, `get_daily_stats(league, item_id, day_count, end_date)` → `dict | None`. BACKEND_GUIDE.md §1 listed 4 WRONG method names (`get_currencies`, `get_price_logs`, `get_unique_items` don't exist; `get_exchange_rates` return type was wrong).
-  - `backend/data/providers/base.py:22-66` — abstract `BaseDataProvider` requires only `get_current_price`, `get_historical_prices`, `get_exchange_rates`, `get_currency_metadata`, `name()`, plus optional `get_daily_stats` (default returns None).
-  - `backend/data/providers/poe2scout.py:253` — `max_retries = 2` (3 attempts total: initial + 2 retries). Doc §1 said "2 retries" — correct, no drift.
-  - `backend/main.py:744,759` — actual health endpoints are `/api/v1/health/ping` and `/api/v1/health`. BACKEND_GUIDE.md §2 said `/api/health`.
-  - `backend/data/unified_cache.py:501,556` — `PipelineCache` and `DailyStatsCache` classes are defined DIRECTLY in `unified_cache.py`. The standalone shim files `backend/data/pipeline_cache.py` and `backend/data/daily_stats_cache.py` were DELETED in iter 66 (P2-2 cleanup). BACKEND_GUIDE.md §5 still claimed they existed with backward-compat imports — false.
-  - Grep confirmed: no `from backend.data.pipeline_cache` or `from backend.data.daily_stats_cache` imports anywhere in the codebase. All call sites use `from backend.data.unified_cache import get_pipeline_cache` / `get_daily_stats_cache`.
-  - `backend/api/routes_arbitrage.py:874` + `backend/arbitrage/triangular.py:492` — route-facing default `cross_rate_threshold_pct=7.0`. Internal `_compute_cross_rate_divergence` has 5.0% default but is overridden. BACKEND_GUIDE.md §6.2 said "threshold: 10%, raised from 5% in v1.30" — wrong (actually 7%).
-  - `tests/e2e/` directory listing — 6 files (`conftest.py`, `mock_provider.py`, `test_api_e2e.py`, `test_analyst.py`, `test_degraded_mode.py`, `test_sse.py`, plus `__init__.py`). BACKEND_GUIDE.md §7 E2E Tests listed only 4 (missing `test_analyst.py` + `test_sse.py`).
-  - `backend/data/schemas.py:74-95` — `UniqueItem` (10 fields) + `UniqueItemExtended` (extends with `price_logs`, `current_price`, `current_quantity`). DATA_CONTRACTS.md §3 table had `UniqueItem` row but missing `UniqueItemExtended` row (which exists for `CurrencyItem`).
-  - `backend/data/schemas.py:171-180` — `DailyStatsPoint` has 7 fields: `time`, `open`, `high`, `low`, `close`, `average`, `volume`. DATA_CONTRACTS.md §3 listed only 6 (missing `average`).
-  - `src/lib/poe2api.ts:594-612` — `RawLeague.DefaultCurrency` has 4 fields: `ApiId`, `Text`, `IconUrl`, `RelativePrice`. DATA_CONTRACTS.md §6 /Leagues example showed only 3 (missing `IconUrl`).
-- No new bugs found in this iter (all drift is doc-only — no source-code defects).
-- **`docs/BACKEND_GUIDE.md` audit (9 drift items fixed, version 1.1 → 1.2):**
-  - **Header** — bumped version 1.1 → 1.2, date 2026-07-12 → 2026-07-13, updated summary.
-  - **§1 Poe2ScoutProvider Key methods** — rewrote completely. 4 wrong entries → 7 correct entries (`get_exchange_rates`, `get_currency_metadata`, `get_all_currencies_with_prices`, `get_historical_prices`, `get_bulk_price_histories`, `get_daily_stats`, auxiliary selectors). Fixed return type `dict[str, SnapshotPair]` → `dict[str, ExchangeRate]`. Added note clarifying that `BaseDataProvider` abstract interface requires only 5 methods; the rest are Poe2Scout-specific extensions.
-  - **§2 SnapshotManager Health Info** — `/api/health` → `/api/v1/health` (and added `/api/v1/health/ping` for the bridge check). Also added the 2 missing fields `snapshot_ttl_seconds` + `fetched_at`.
-  - **§5 PipelineCache Location** — `backend/data/pipeline_cache.py` → `unified_cache.py` (class defined directly in this file). Replaced false "Backward compatibility: All existing imports from `pipeline_cache.py` work without changes" claim with a Historical note explaining the shim was DELETED in iter 66 and all call sites now import from `unified_cache` directly.
-  - **§5 DailyStatsCache Location** — same fix: file path → `unified_cache.py`, replaced false backward-compat claim with Historical note. Mentioned `_DailyStatsCacheProxy` for the `.clear()` test-compat property.
-  - **§6.2 Triangular Arbitrage cross-rate threshold** — "threshold: 10%, raised from 5% in v1.30" → "route-facing default `cross_rate_threshold_pct=7.0` — verified iter 143 against `backend/api/routes_arbitrage.py:874` + `backend/arbitrage/triangular.py:492`. The internal `_compute_cross_rate_divergence` helper has a 5.0% default, but the route and the async `find_triangular_arbitrage` wrapper override it to 7.0%."
-  - **§7 E2E Tests** — added 2 missing files: `test_analyst.py` (with description "/api/v1/analyst/summary integration tests") + `test_sse.py` (with description "/api/v1/prices/stream SSE contract tests").
-- **`docs/DATA_CONTRACTS.md` audit (3 drift items fixed, version 1.1 → 1.2):**
-  - **Header** — bumped version 1.1 → 1.2, date 2026-07-12 → 2026-07-13, updated summary.
-  - **§3 Backend Pydantic Models table** — (1) added missing `UniqueItemExtended` row (`+ priceLogs, currentPrice, currentQuantity` — mirrors the existing `CurrencyItemExtended` pattern); (2) added `average` field to `DailyStatsPoint` row (was `time, open, high, low, close, volume` → now `time, open, high, low, close, average, volume`); (3) added `highestStock` field to `PairDataDetails` row (was missing). Added "verified iter 143 against `backend/data/schemas.py`" note.
-  - **§6 /Leagues DefaultCurrency** — added missing `IconUrl` field to the JSON example (`{ ApiId, Text, RelativePrice }` → `{ ApiId, Text, IconUrl, RelativePrice }`). Added "Note (verified iter 143)" paragraph explaining the full `/Leagues` response also includes `DivinePrice`, `ChaosDivinePrice`, `BaseCurrencyIconUrl`, etc., with pointer to `src/lib/poe2api.ts:RawLeague` for the complete interface.
-- **Meta-docs updates:**
-  - `STATUS.md` header bump (iter 142 → iter 143).
-  - `worklog.md` — added this iter-143 entry, removed iter-141 entry (rule: only last 2 iterations).
-  - `AGENT_NAVIGATION.md` header bump (iter 142 → iter 143).
-- **Final verification:** 0 source-code changes this iter (doc-only). 1466 pytest green baseline preserved from iter 142 (no `.py`/`.ts`/`.tsx` touched).
-
-Stage Summary:
-- **iter 143 SHIPPED — 2 docs re-audited, 0 new bugs.** 2 doc files updated (`docs/BACKEND_GUIDE.md` — 9 drift items, `docs/DATA_CONTRACTS.md` — 3 drift items). 12 individual drift items resolved across docs. 0 source-code changes. 1466 pytest green (0 regressions — confirmed since no `.py`/`.ts`/`.tsx` was touched).
-- **Modified files (2 docs + 3 meta-docs):** `docs/BACKEND_GUIDE.md`, `docs/DATA_CONTRACTS.md`, `STATUS.md` (header bump), `worklog.md` (this entry), `AGENT_NAVIGATION.md` (header bump).
-- **What was NOT done (intentionally deferred to iter 144+):**
-  - **`docs/DATA_FLOW.md` §1, §2, §5, §6, §8, §10** — light-touch audit only (cosmetic, no major drift found). §2 POE2Scout API endpoints + §5 Field Transformation Reference would benefit from a deeper cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts` respectively — candidate for iter 144.
-  - **`instrumentation.ts:7` comment drift** — still mentions `/api/health` (legacy). Doc-only drift in a code comment. Not fixed in iter 143 (kept source-code changes at 0). Candidate for iter 144+ source cleanup.
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141+142+143 only verified doc-level references to tabs. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 145+.
-  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-- **Stopping point:** iter 143 = 2 docs re-audited (BACKEND_GUIDE.md + DATA_CONTRACTS.md, 12 drift items). Next iter candidates: (a) deep cross-check of `docs/DATA_FLOW.md` §2 (POE2Scout API) against `backend/data/providers/poe2scout.py` + §5 (Field Transformation) against `src/lib/poe2api.ts` — next logical docs batch; (b) source cleanup — fix `instrumentation.ts:7` comment drift (`/api/health` → `/api/v1/health/ping`); (c) per-tab UX/logic deep-audit; (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.

@@ -156,6 +156,7 @@ CACHE_SNAPSHOT_PATH = REPO_ROOT / "src" / "data" / "cache-snapshot.json"
 POE2SCOUT_ITEMS_CACHE = CACHE_DIR / "poe2scout_items.json"
 POE2DB_RU_CACHE = CACHE_DIR / "poe2db_ru_names.json"
 PATCH_CACHE = CACHE_DIR / "currency_names_patch.json"
+TRANSLATION_AUDIT_CACHE = CACHE_DIR / "translation_audit.json"
 
 DEFAULT_POE2SCOUT_BASE = "https://poe2scout.com/api"
 DEFAULT_POE2DB_BASE = "https://poe2db.tw"
@@ -605,6 +606,24 @@ def _en_name_to_poe2db_slug(en_name: str) -> str:
     return s.replace(" ", "_")
 
 
+def _build_poe2db_url(base_url: str, slug: str) -> str:
+    """Build a poe2db URL with the slug URL-encoded.
+
+    KI-33 fix (iter 145): non-ASCII characters in EN names (e.g. "Mórrigan's
+    Insight", "Oisín's Oath") must be percent-encoded before being sent to
+    urlopen, otherwise urllib raises UnicodeEncodeError ('ascii' codec can't
+    encode). The slug function above strips apostrophes but keeps other non-
+    ASCII chars (Cyrillic, accented Latin, etc.) intact — those need encoding.
+
+    We use `urllib.parse.quote` with `safe="/%"` so slashes and percent signs
+    in the override table pass through unchanged. Apostrophes are already
+    stripped by `_en_name_to_poe2db_slug` before this function is called,
+    but defensive-quote them too in case an override entry contains one.
+    """
+    encoded = urllib.parse.quote(slug, safe="/%'")
+    return f"{base_url.rstrip('/')}/ru/{encoded}"
+
+
 def _extract_ru_name_from_title(html_text: str) -> str | None:
     """Extract the Russian item name from a poe2db item page's <title> tag.
 
@@ -702,7 +721,7 @@ def fetch_poe2db_ru_names_by_item(
         slug = _POE2DB_URL_SLUG_OVERRIDES.get(api_id) or _en_name_to_poe2db_slug(en_name)
         if not slug:
             continue
-        url = f"{base}/ru/{slug}"
+        url = _build_poe2db_url(base, slug)  # KI-33: URL-encode non-ASCII chars
 
         if i % 25 == 0 or i == len(to_fetch):
             log.info("  [%d/%d] %s -> %s", i, len(to_fetch), en_name, url)
@@ -720,6 +739,11 @@ def fetch_poe2db_ru_names_by_item(
             continue
         except urllib.error.URLError as e:
             log.warning("  URLError %s for %s — skipping", e.reason, url)
+            time.sleep(rate_limit_delay)
+            continue
+        except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            # KI-33: defensive — if a slug still slips through with bad chars
+            log.warning("  UnicodeError %s for %s (slug=%r) — skipping", e, url, slug)
             time.sleep(rate_limit_delay)
             continue
 
@@ -920,6 +944,143 @@ def apply_patch(patch: dict[str, Any], existing_names: dict[str, dict[str, str]]
             skipped += 1
 
     return added, conflicts, skipped
+
+
+# ---------------------------------------------------------------------------
+# Stage 5 — audit existing translations against poe2db (iter 145, KI-32)
+# ---------------------------------------------------------------------------
+
+def audit_translations(
+    *,
+    base_url: str,
+    poe2scout_items: list[dict[str, str]],
+    existing_names: dict[str, dict[str, str]],
+    rate_limit_delay: float = 0.2,
+) -> dict[str, Any]:
+    """Compare every existing RU translation against poe2db's current RU title.
+
+    This is the KI-32 audit. For every api_id that already has a RU translation
+    in currency_names.json, fetch its poe2db page and compare the <title> tag's
+    Russian name against the stored value.
+
+    READ-ONLY — does NOT modify currency_names.json. Writes the report to
+    scripts/.cache/translation_audit.json.
+
+    Returns a dict with structure:
+        {
+          "generated_at": ISO,
+          "summary": {
+            "total_audited": N,
+            "match": N,
+            "mismatch": N,
+            "no_poe2db_page": N,
+            "no_cyrillic": N,        # poe2db page exists but title is English-only
+          },
+          "mismatches": [
+            {
+              "api_id": "...",
+              "en_name": "...",
+              "category_api_id": "...",
+              "our_ru": "...",
+              "poe2db_ru": "...",
+              "poe2db_url": "...",
+            },
+            ...
+          ],
+          "no_poe2db_page": [ list of {api_id, en_name, attempted_url} ],
+          "no_cyrillic": [ list of {api_id, en_name, poe2db_title} ],
+        }
+    """
+    base = base_url.rstrip("/")
+    existing_ru = existing_names["currency_names_ru"]
+
+    summary = {
+        "total_audited": 0,
+        "match": 0,
+        "mismatch": 0,
+        "no_poe2db_page": 0,
+        "no_cyrillic": 0,
+    }
+    mismatches: list[dict[str, str]] = []
+    no_poe2db_page: list[dict[str, str]] = []
+    no_cyrillic: list[dict[str, str]] = []
+
+    for i, item in enumerate(poe2scout_items, 1):
+        api_id = item["api_id"]
+        en_name = item["en_name"]
+        category = item["category_api_id"]
+        our_ru = existing_ru.get(api_id)
+        if not our_ru:
+            # Not yet translated — not part of this audit (covered by F1 pipeline).
+            continue
+        summary["total_audited"] += 1
+
+        slug = _POE2DB_URL_SLUG_OVERRIDES.get(api_id) or _en_name_to_poe2db_slug(en_name)
+        if not slug:
+            summary["no_poe2db_page"] += 1
+            no_poe2db_page.append({
+                "api_id": api_id, "en_name": en_name, "attempted_url": "<empty slug>",
+            })
+            continue
+        url = _build_poe2db_url(base, slug)  # KI-33: URL-encode non-ASCII chars
+
+        if i % 25 == 0 or i == len(poe2scout_items):
+            log.info("  [%d/%d] auditing %s -> %s", i, len(poe2scout_items), en_name, url)
+
+        try:
+            html_text = _http_get_html(url)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                summary["no_poe2db_page"] += 1
+                no_poe2db_page.append({
+                    "api_id": api_id, "en_name": en_name, "attempted_url": url,
+                })
+                time.sleep(rate_limit_delay)
+                continue
+            log.warning("  HTTP %d for %s — skipping", e.code, url)
+            time.sleep(rate_limit_delay)
+            continue
+        except urllib.error.URLError as e:
+            log.warning("  URLError %s for %s — skipping", e.reason, url)
+            time.sleep(rate_limit_delay)
+            continue
+        except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            # KI-33: defensive — if a slug still slips through with bad chars
+            log.warning("  UnicodeError %s for %s (slug=%r) — skipping", e, url, slug)
+            time.sleep(rate_limit_delay)
+            continue
+
+        poe2db_ru = _extract_ru_name_from_title(html_text)
+        if poe2db_ru is None:
+            # Page exists but title doesn't contain Cyrillic → poe2db has no RU translation yet.
+            summary["no_cyrillic"] += 1
+            title_match = _POE2DB_TITLE_RE.search(html_text)
+            title = title_match.group("title").strip() if title_match else ""
+            no_cyrillic.append({
+                "api_id": api_id, "en_name": en_name, "poe2db_title": title,
+            })
+        elif poe2db_ru == our_ru:
+            summary["match"] += 1
+        else:
+            summary["mismatch"] += 1
+            mismatches.append({
+                "api_id": api_id,
+                "en_name": en_name,
+                "category_api_id": category,
+                "our_ru": our_ru,
+                "poe2db_ru": poe2db_ru,
+                "poe2db_url": url,
+            })
+
+        time.sleep(rate_limit_delay)
+
+    return {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime()),
+        "summary": summary,
+        "mismatches": mismatches,
+        "no_poe2db_page": no_poe2db_page,
+        "no_cyrillic": no_cyrillic,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1195,6 +1356,68 @@ def cmd_apply(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_audit(args: argparse.Namespace) -> int:
+    """Stage 5 (iter 145, KI-32) — audit existing translations against poe2db.
+
+    READ-ONLY. Does NOT modify currency_names.json. Fetches each item's poe2db
+    page and compares the current RU <title> against the stored RU translation.
+    Writes a structured report to scripts/.cache/translation_audit.json.
+
+    Requires scripts/.cache/poe2scout_items.json (Stage 1 output) to know which
+    api_ids + EN names to audit. If missing, run --fetch-ids (or
+    --from-cache-snapshot) first.
+    """
+    base_url = args.poe2db_base_url
+    log.info("Stage 5 — auditing existing RU translations against poe2db")
+    log.info("  Base URL: %s", base_url)
+
+    if not POE2SCOUT_ITEMS_CACHE.exists():
+        log.error("Missing %s — run --fetch-ids (or --from-cache-snapshot) first.",
+                  POE2SCOUT_ITEMS_CACHE)
+        return 4
+    if not CURRENCY_NAMES_PATH.exists():
+        log.error("Missing %s — run from the repo root.", CURRENCY_NAMES_PATH)
+        return 2
+
+    with POE2SCOUT_ITEMS_CACHE.open(encoding="utf-8") as f:
+        poe2scout_data = json.load(f)
+    with CURRENCY_NAMES_PATH.open(encoding="utf-8") as f:
+        existing_names = json.load(f)
+
+    try:
+        report = audit_translations(
+            base_url=base_url,
+            poe2scout_items=poe2scout_data["items"],
+            existing_names=existing_names,
+            rate_limit_delay=args.rate_limit_delay,
+        )
+    except urllib.error.URLError as e:
+        log.error("Network error during audit_translations: %s", e)
+        return 1
+
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    with TRANSLATION_AUDIT_CACHE.open("w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    s = report["summary"]
+    log.info("Stage 5 COMPLETE — audit report written to %s",
+             TRANSLATION_AUDIT_CACHE.relative_to(REPO_ROOT))
+    log.info("  Summary:")
+    log.info("    Total audited:        %d", s["total_audited"])
+    log.info("    Match poe2db:         %d", s["match"])
+    log.info("    Mismatch poe2db:      %d  (candidates for refresh)", s["mismatch"])
+    log.info("    No poe2db page (404): %d", s["no_poe2db_page"])
+    log.info("    No Cyrillic in title: %d  (poe2db page exists but no RU translation)",
+             s["no_cyrillic"])
+    log.info("  Next steps:")
+    log.info("    1. Review %s", TRANSLATION_AUDIT_CACHE.relative_to(REPO_ROOT))
+    log.info("    2. Inspect 'mismatches' array — these are existing translations")
+    log.info("       that differ from poe2db's current RU title.")
+    log.info("    3. To apply corrections: edit currency_names.json directly")
+    log.info("       (future: --apply-audit flag will automate this — see TD-6).")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="sync_currency_names_from_poe2db.py",
@@ -1214,6 +1437,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Stage 3: compute patch of proposed new translations.")
     parser.add_argument("--apply", action="store_true",
                         help="Stage 4: apply patch to backend/data/currency_names.json (requires --confirm).")
+    parser.add_argument("--audit", action="store_true",
+                        help="Stage 5 (iter 145, KI-32): READ-ONLY audit of existing RU translations against poe2db current RU <title>. Writes scripts/.cache/translation_audit.json. Does NOT modify currency_names.json.")
     parser.add_argument("--confirm", action="store_true",
                         help="Confirmation flag for --apply (without it, --apply is a no-op).")
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -1245,7 +1470,7 @@ def main(argv: list[str] | None = None) -> int:
     # Validate stage selection
     stage_count = sum([
         args.fetch_ids, args.from_cache_snapshot, args.fetch_ru, args.fetch_ru_by_item,
-        args.diff, args.apply,
+        args.diff, args.apply, args.audit,
     ])
     if stage_count == 0:
         parser.print_help()
@@ -1265,6 +1490,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_fetch_ru(args)
     if args.fetch_ru_by_item:
         return cmd_fetch_ru_by_item(args)
+    if args.audit:
+        return cmd_audit(args)
     if args.diff:
         return cmd_diff(args)
     if args.apply:

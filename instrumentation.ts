@@ -4,7 +4,7 @@
  * This file starts the Flipper Python backend as a managed child process
  * via the flipper-backend-bridge module. The bridge:
  * - Auto-detects and uses .venv Python if available
- * - Monitors backend health via /api/health
+ * - Monitors backend health via /api/v1/health/ping
  * - Auto-restarts on crash (up to 5 times in 60s)
  * - Cleans up on Next.js shutdown
  *

@@ -584,3 +584,253 @@ class TestKi29UrlEncoding:
         assert any("%20" in url and "Runes%20of%20Aldur" in url for url in captured_urls), (
             f"Expected URL-encoded league name, got: {captured_urls[:3]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# audit_translations (iter 145, KI-32)
+# ---------------------------------------------------------------------------
+
+class TestAuditTranslations:
+    """Tests for the KI-32 audit_translations function (iter 145).
+
+    The audit compares every existing RU translation against poe2db's current
+    RU <title>. These tests use monkeypatched _http_get_html to avoid real
+    network calls.
+    """
+
+    def setup_method(self):
+        self.poe2scout_items = [
+            {"api_id": "exalted", "en_name": "Exalted Orb", "category_api_id": "currency"},
+            {"api_id": "divine", "en_name": "Divine Orb", "category_api_id": "currency"},
+            {"api_id": "unknown-item", "en_name": "Unknown Item", "category_api_id": "currency"},
+        ]
+        self.existing_names = {
+            "currency_names_ru": {
+                "exalted": "Благородная сфера",  # will mismatch poe2db's "Сфера возвышения"
+                "divine": "Божественная сфера",  # will match poe2db
+            },
+            "currency_names_en": {
+                "exalted": "Exalted Orb",
+                "divine": "Divine Orb",
+            },
+        }
+
+    def _make_html(self, ru_name: str | None) -> str:
+        """Build a poe2db-style <title> HTML page for testing."""
+        if ru_name is None:
+            # Page exists but title has no Cyrillic (poe2db has no RU translation yet)
+            return '<title>Exalted_Orb - PoE2DB, Path of Exile Wiki ru</title>'
+        return f'<title>{ru_name} - PoE2DB, Path of Exile Wiki ru</title>'
+
+    def test_detects_mismatch(self, monkeypatch):
+        """When our RU differs from poe2db's RU, the item is flagged as mismatch."""
+        def fake_get_html(url: str) -> str:
+            if "Exalted_Orb" in url:
+                return self._make_html("Сфера возвышения")
+            if "Divine_Orb" in url:
+                return self._make_html("Божественная сфера")
+            raise AssertionError(f"unexpected url: {url}")
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get_html)
+
+        report = sync.audit_translations(
+            base_url="https://poe2db.tw",
+            poe2scout_items=self.poe2scout_items[:2],
+            existing_names=self.existing_names,
+            rate_limit_delay=0,
+        )
+        assert report["summary"]["total_audited"] == 2
+        assert report["summary"]["match"] == 1  # divine
+        assert report["summary"]["mismatch"] == 1  # exalted
+        assert len(report["mismatches"]) == 1
+        assert report["mismatches"][0]["api_id"] == "exalted"
+        assert report["mismatches"][0]["our_ru"] == "Благородная сфера"
+        assert report["mismatches"][0]["poe2db_ru"] == "Сфера возвышения"
+
+    def test_counts_match(self, monkeypatch):
+        """When our RU equals poe2db's RU, the item is counted as match (not in mismatches)."""
+        def fake_get_html(url: str) -> str:
+            return self._make_html("Божественная сфера")
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get_html)
+
+        report = sync.audit_translations(
+            base_url="https://poe2db.tw",
+            poe2scout_items=[self.poe2scout_items[1]],  # divine only
+            existing_names=self.existing_names,
+            rate_limit_delay=0,
+        )
+        assert report["summary"]["total_audited"] == 1
+        assert report["summary"]["match"] == 1
+        assert report["summary"]["mismatch"] == 0
+        assert report["mismatches"] == []
+
+    def test_handles_404_no_poe2db_page(self, monkeypatch):
+        """404 from poe2db is recorded as 'no_poe2db_page' (not mismatch)."""
+        def fake_get_html(url: str) -> str:
+            raise sync.urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get_html)
+
+        report = sync.audit_translations(
+            base_url="https://poe2db.tw",
+            poe2scout_items=[self.poe2scout_items[0]],  # exalted
+            existing_names=self.existing_names,
+            rate_limit_delay=0,
+        )
+        assert report["summary"]["total_audited"] == 1
+        assert report["summary"]["no_poe2db_page"] == 1
+        assert report["summary"]["mismatch"] == 0
+        assert len(report["no_poe2db_page"]) == 1
+        assert report["no_poe2db_page"][0]["api_id"] == "exalted"
+
+    def test_handles_no_cyrillic_title(self, monkeypatch):
+        """If poe2db page exists but title has no Cyrillic, count as 'no_cyrillic'."""
+        def fake_get_html(url: str) -> str:
+            return self._make_html(None)  # English-only title
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get_html)
+
+        report = sync.audit_translations(
+            base_url="https://poe2db.tw",
+            poe2scout_items=[self.poe2scout_items[0]],  # exalted
+            existing_names=self.existing_names,
+            rate_limit_delay=0,
+        )
+        assert report["summary"]["total_audited"] == 1
+        assert report["summary"]["no_cyrillic"] == 1
+        assert report["summary"]["mismatch"] == 0
+        assert len(report["no_cyrillic"]) == 1
+
+    def test_skips_untranslated_items(self, monkeypatch):
+        """Items without an existing RU translation are skipped (not part of audit)."""
+        # 'unknown-item' has no RU translation in existing_names
+        calls: list[str] = []
+
+        def fake_get_html(url: str) -> str:
+            calls.append(url)
+            return self._make_html("Что-то")
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get_html)
+
+        report = sync.audit_translations(
+            base_url="https://poe2db.tw",
+            poe2scout_items=self.poe2scout_items,  # all 3
+            existing_names=self.existing_names,  # only exalted + divine
+            rate_limit_delay=0,
+        )
+        # 'unknown-item' should NOT be audited (no existing RU translation)
+        assert report["summary"]["total_audited"] == 2
+        assert not any("Unknown_Item" in c for c in calls), (
+            f"untranslated item should not have been fetched: {calls}"
+        )
+
+    def test_does_not_modify_existing_names(self, monkeypatch):
+        """Audit is READ-ONLY — existing_names must be unchanged after audit."""
+        original = json.loads(json.dumps(self.existing_names))
+
+        def fake_get_html(url: str) -> str:
+            return self._make_html("Другое имя")  # always mismatch
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get_html)
+
+        sync.audit_translations(
+            base_url="https://poe2db.tw",
+            poe2scout_items=self.poe2scout_items[:2],
+            existing_names=self.existing_names,
+            rate_limit_delay=0,
+        )
+        assert self.existing_names == original, (
+            "audit_translations must NOT mutate existing_names (READ-ONLY)"
+        )
+
+
+class TestAuditCli:
+    """CLI-level tests for the --audit flag (iter 145)."""
+
+    def test_audit_requires_no_confirm_flag(self, monkeypatch, tmp_path):
+        """--audit should run without --confirm (it's READ-ONLY, no destructive op)."""
+        # This is a smoke test — just ensure the CLI argument parses.
+        # Full network-mocked behavior is covered by TestAuditTranslations.
+        captured_argv: list[list[str]] = []
+
+        def fake_cmd_audit(args):
+            captured_argv.append(getattr(args, "audit", False))
+            return 0
+
+        monkeypatch.setattr(sync, "cmd_audit", fake_cmd_audit)
+
+        rc = sync.main(["--audit"])
+        assert rc == 0
+        assert captured_argv == [True]
+
+    def test_audit_with_other_stage_returns_4(self, monkeypatch):
+        """--audit combined with --diff should be rejected (exactly one stage)."""
+        rc = sync.main(["--audit", "--diff"])
+        assert rc == 4
+
+
+# ---------------------------------------------------------------------------
+# _build_poe2db_url (iter 145, KI-33 fix)
+# ---------------------------------------------------------------------------
+
+class TestBuildPoe2dbUrl:
+    """KI-33 fix (iter 145): non-ASCII chars in slug must be URL-encoded.
+
+    Prior to iter 145, the audit crashed with UnicodeEncodeError on items
+    like "Mórrigan's Insight" (api_id: mórrigans-insight) and "Oisín's Oath"
+    (api_id: oisins-oath) because the slug contained non-ASCII chars that
+    urlopen couldn't encode as ASCII.
+    """
+
+    def test_ascii_slug_passes_through_unchanged(self):
+        url = sync._build_poe2db_url("https://poe2db.tw", "Mirror_of_Kalandra")
+        assert url == "https://poe2db.tw/ru/Mirror_of_Kalandra"
+
+    def test_apostrophe_in_slug_is_preserved(self):
+        """Override table may contain apostrophes — they should NOT be percent-encoded
+        (poe2db returns 404 for %27), matching the behavior of
+        fetch_ru_by_item_parallel.py:53.
+        """
+        url = sync._build_poe2db_url("https://poe2db.tw", "Atziri's_Communion")
+        # Apostrophe should be preserved as-is
+        assert "/ru/Atziri's_Communion" in url
+
+    def test_non_ascii_latin_chars_are_percent_encoded(self):
+        """KI-33: 'Mórrigans_Insight' contains 'ó' (U+00F3) which must be percent-encoded."""
+        url = sync._build_poe2db_url("https://poe2db.tw", "Mórrigans_Insight")
+        # 'ó' should be encoded as %C3%B3 (UTF-8)
+        assert "%C3%B3" in url
+        # The raw 'ó' character must NOT appear in the URL
+        assert "ó" not in url
+
+    def test_non_ascii_cyrillic_chars_are_percent_encoded(self):
+        """Cyrillic chars (if any make it into the slug) must also be encoded."""
+        url = sync._build_poe2db_url("https://poe2db.tw", "Тест_Item")
+        # Should NOT contain raw Cyrillic chars
+        assert "Т" not in url
+        assert "е" not in url
+        assert "с" not in url
+        assert "т" not in url
+        # Should contain percent-encoded UTF-8 bytes
+        assert "%" in url
+
+    def test_oisins_oath_does_not_crash(self):
+        """Regression test: 'Oisíns_Oath' was one of the 2 items that crashed
+        the audit before the KI-33 fix.
+        """
+        url = sync._build_poe2db_url("https://poe2db.tw", "Oisíns_Oath")
+        # Must be a valid URL (no raw non-ASCII chars)
+        assert "í" not in url
+        assert "/ru/" in url
+        # Verify it can be encoded as ASCII (which urlopen requires)
+        url.encode("ascii")  # should not raise
+
+    def test_morrigans_insight_does_not_crash(self):
+        """Regression test: 'Mórrigans_Insight' was one of the 2 items that crashed
+        the audit before the KI-33 fix.
+        """
+        url = sync._build_poe2db_url("https://poe2db.tw", "Mórrigans_Insight")
+        assert "ó" not in url
+        assert "/ru/" in url
+        url.encode("ascii")  # should not raise

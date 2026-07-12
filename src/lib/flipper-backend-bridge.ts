@@ -310,7 +310,7 @@ function scheduleRestart(): void {
 async function checkHealth(): Promise<boolean> {
   try {
     const controller = new AbortController();
-    // 15s timeout — increased from 10s. Although /api/health/ping responds
+    // 15s timeout — increased from 10s. Although /api/v1/health/ping responds
     // in <1ms normally, during ProcessPoolExecutor process spawn (cold start
     // of worker processes) the event loop may briefly stall. 15s gives ample
     // headroom without risking "stuck process" false detections.
