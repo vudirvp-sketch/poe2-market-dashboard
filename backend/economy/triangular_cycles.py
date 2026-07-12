@@ -80,11 +80,16 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from backend.api.data_snapshot import DataSnapshot
 from backend.arbitrage.triangular import find_triangular_arbitrage
 from backend.config import AppConfig
+
+if TYPE_CHECKING:
+    # Type-only import to avoid runtime circular dependency.
+    # PipelineCache is only used as a parameter annotation.
+    from backend.data.unified_cache import PipelineCache
 
 logger = logging.getLogger(__name__)
 
@@ -157,12 +162,75 @@ def _safe_snapshot_age_sec(snapshot_time: datetime | None) -> int:
     return max(0, int((now - snapshot_time).total_seconds()))
 
 
+# ---------------------------------------------------------------------------
+# TD-3 pipeline_cache optimization (iter 134)
+#
+# ``build_cross_rate_warning`` was extracted verbatim from the live
+# ``/api/v1/arbitrage/triangular`` route (``routes_arbitrage.py:878-898``)
+# so the persistence path (``_refresh()`` → ``compute_triangular_cycles``)
+# and the live route produce IDENTICAL ``cross_rate_warning`` shapes.
+#
+# This is the parity guarantee for the TD-3 pipeline_cache optimization:
+# when ``_refresh()`` populates ``pipeline_cache`` with
+# ``(opportunities, cross_rate_warning)``, the route's cache hit must
+# return the same dict the route itself would have produced. Any drift
+# between the two call sites would silently serve a malformed warning
+# from the cache.
+#
+# If you edit this function, also update the inline construction in
+# ``routes_arbitrage.py`` (or, better, replace it with a call to this
+# helper — see the route's TD-3-iter-134 refactor).
+# ---------------------------------------------------------------------------
+
+
+def build_cross_rate_warning(suspicious_triples: list) -> dict | None:
+    """Build the ``cross_rate_warning`` dict from ``suspicious_triples``.
+
+    Pure helper extracted from ``routes_arbitrage.py:878-898``. Mirrors
+    the route's inline construction verbatim so the persistence path
+    and the live route produce identical warning shapes (TD-3 iter 134
+    parity guarantee).
+
+    Args:
+        suspicious_triples: list of triples (each a 3-tuple/list of
+            currency names) returned by ``find_triangular_arbitrage``.
+
+    Returns:
+        dict with keys ``suspicious_triples_count``,
+        ``affected_currencies``, ``affected_currencies_total``,
+        ``message`` — or ``None`` when ``suspicious_triples`` is empty.
+    """
+    if not suspicious_triples:
+        return None
+    affected_currencies: set[str] = set()
+    for triple in suspicious_triples:
+        affected_currencies.update(triple)
+    # iter 92 (KI-9): Truncate to top-5 + "and N more" to avoid
+    # sending 100+ currency names to the frontend.
+    sorted_affected = sorted(affected_currencies)
+    top_5 = sorted_affected[:5]
+    remaining = len(sorted_affected) - 5
+    affected_display = top_5 if remaining <= 0 else top_5 + [f"and {remaining} more"]
+    return {
+        "suspicious_triples_count": len(suspicious_triples),
+        "affected_currencies": affected_display,
+        "affected_currencies_total": len(sorted_affected),
+        "message": (
+            f"{len(suspicious_triples)} currency triples have >7% "
+            "cross-rate divergence (implied vs direct rates). "
+            "Some detected cycles may be false positives from "
+            "inconsistent relative_price data between pairs."
+        ),
+    }
+
+
 async def compute_triangular_cycles(
     snapshot: DataSnapshot,
     config: AppConfig,
     *,
     min_profit_pct: float = DEFAULT_MIN_PROFIT_PCT,
     cross_rate_threshold_pct: float = DEFAULT_CROSS_RATE_THRESHOLD_PCT,
+    pipeline_cache: PipelineCache | None = None,
 ) -> list[dict]:
     """Compute triangular arbitrage cycles for persistence.
 
@@ -176,6 +244,19 @@ async def compute_triangular_cycles(
     This matches the design doc §5.1 invariant: persistence MUST NOT
     block the snapshot publish.
 
+    TD-3 pipeline_cache optimization (iter 134): when ``pipeline_cache``
+    is provided, the function ALSO populates the live
+    ``/api/v1/arbitrage/triangular`` route's cache so the route gets a
+    cache hit on the first request after a refresh. This eliminates the
+    doubled compute cost where ``find_triangular_arbitrage`` previously
+    ran BOTH in ``_refresh`` (for SQLite persistence) AND in the route
+    on first-request cache miss. The cache key
+    ``f"triangular_arbitrage_{min_profit_pct}"`` and value shape
+    ``(opportunities, cross_rate_warning)`` MUST match
+    ``routes_arbitrage.py:860`` and ``routes_arbitrage.py:901``. The put
+    is best-effort: a failure logs a warning and continues — the route
+    will recompute on cache miss (same as pre-optimization behavior).
+
     Args:
         snapshot: The current DataSnapshot (built by SnapshotManager._refresh).
         config: AppConfig (currently unused — reserved for future
@@ -187,6 +268,11 @@ async def compute_triangular_cycles(
             ``routes_arbitrage.py:794``).
         cross_rate_threshold_pct: Cross-rate divergence threshold
             (default 7.0, matches ``routes_arbitrage.py:867``).
+        pipeline_cache: When provided, populated with
+            ``(opportunities, cross_rate_warning)`` under key
+            ``f"triangular_arbitrage_{min_profit_pct}"`` (matches the
+            live route's cache key). Default ``None`` = no side effect
+            (back-compat for existing tests/callers).
 
     Returns:
         List of dicts with keys: ``cycle_key``, ``cycle_currencies``,
@@ -223,6 +309,38 @@ async def compute_triangular_cycles(
             "refresh (non-fatal, returning empty cycles list): %s", e,
         )
         return []
+
+    # TD-3 pipeline_cache optimization (iter 134): populate the live
+    # /triangular route's cache directly from the refresh path. See
+    # the function docstring for the parity requirements. The put is
+    # best-effort: a failure here logs a warning and continues — the
+    # route will recompute on cache miss (same as pre-optimization).
+    #
+    # The cache is populated REGARDLESS of whether ``opportunities`` is
+    # empty: the live route also populates the cache on every cache miss
+    # (see routes_arbitrage.py:901, which is outside any ``if
+    # opportunities:`` guard), so we mirror that behavior to keep the
+    # cache hit/miss semantics identical.
+    if pipeline_cache is not None:
+        try:
+            cross_rate_warning = build_cross_rate_warning(result.suspicious_triples)
+            cache_key = f"triangular_arbitrage_{min_profit_pct}"
+            pipeline_cache.put(
+                cache_key,
+                (result.opportunities, cross_rate_warning),
+            )
+            logger.debug(
+                "TD-3 cache: populated pipeline_cache key=%s with %d "
+                "opportunities (cross_rate_warning=%s)",
+                cache_key,
+                len(result.opportunities),
+                "present" if cross_rate_warning else "none",
+            )
+        except Exception as cache_err:
+            logger.warning(
+                "TD-3 cache: pipeline_cache.put failed (non-fatal, "
+                "route will recompute on miss): %s", cache_err,
+            )
 
     opportunities = result.opportunities
     if not opportunities:

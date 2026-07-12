@@ -657,6 +657,414 @@ class TestComputeTriangularCyclesErrorHandling:
 
 
 # ===========================================================================
+# 1b. build_cross_rate_warning — pure helper parity tests (iter 134)
+# ===========================================================================
+
+class TestBuildCrossRateWarning:
+    """Verify ``build_cross_rate_warning`` produces the same dict shape as
+    the inline construction in ``routes_arbitrage.py:878-898`` (TD-3 iter 134
+    parity guarantee). If any of these tests fail, the pipeline_cache
+    optimization is BROKEN — the live route would serve a malformed warning
+    from the cache instead of recomputing it."""
+
+    def test_empty_returns_none(self):
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        assert build_cross_rate_warning([]) is None
+
+    def test_single_triple_builds_warning(self):
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([("divine", "exalted", "mirror")])
+        assert warning is not None
+        assert warning["suspicious_triples_count"] == 1
+        assert warning["affected_currencies"] == ["divine", "exalted", "mirror"]
+        assert warning["affected_currencies_total"] == 3
+        assert "1 currency triples have >7%" in warning["message"]
+
+    def test_multiple_triples_aggregates_currencies(self):
+        """Two triples sharing a currency → union of all unique currencies."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([
+            ("divine", "exalted", "mirror"),
+            ("divine", "chaos", "regal"),
+        ])
+        assert warning["suspicious_triples_count"] == 2
+        # affected_currencies is sorted alphabetically
+        assert warning["affected_currencies"] == ["chaos", "divine", "exalted", "mirror", "regal"]
+        assert warning["affected_currencies_total"] == 5
+        assert "2 currency triples have >7%" in warning["message"]
+
+    def test_more_than_five_currencies_truncates_with_and_n_more(self):
+        """Iter 92 (KI-9): when > 5 currencies, show top-5 + 'and N more'."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([
+            ("a", "b", "c"),
+            ("d", "e", "f"),
+            ("g", "h", "i"),
+        ])
+        # 9 unique currencies → top-5 + "and 4 more"
+        assert warning["affected_currencies"] == ["a", "b", "c", "d", "e", "and 4 more"]
+        assert warning["affected_currencies_total"] == 9
+
+    def test_exactly_five_currencies_no_truncation(self):
+        """Edge case: exactly 5 currencies → no 'and N more' suffix."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([
+            ("a", "b", "c"),
+            ("d", "e", "a"),
+        ])
+        # 5 unique currencies → no truncation
+        assert warning["affected_currencies"] == ["a", "b", "c", "d", "e"]
+        assert "and" not in warning["affected_currencies"]
+        assert warning["affected_currencies_total"] == 5
+
+    def test_six_currencies_truncates_with_and_1_more(self):
+        """Edge case: 6 currencies → top-5 + 'and 1 more'."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([
+            ("a", "b", "c"),
+            ("d", "e", "f"),
+        ])
+        assert warning["affected_currencies"] == ["a", "b", "c", "d", "e", "and 1 more"]
+        assert warning["affected_currencies_total"] == 6
+
+    def test_message_text_matches_route_inline_construction(self):
+        """Parity guarantee — the message string must be byte-identical to
+        what routes_arbitrage.py:878-898 produced before the iter 134
+        refactor. Any drift here means the live route and the cache
+        populate path would serve different warnings."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([("a", "b", "c")])
+        # This is the EXACT message string from routes_arbitrage.py pre-refactor
+        expected_message = (
+            "1 currency triples have >7% "
+            "cross-rate divergence (implied vs direct rates). "
+            "Some detected cycles may be false positives from "
+            "inconsistent relative_price data between pairs."
+        )
+        assert warning["message"] == expected_message
+
+    def test_warning_dict_has_exactly_four_keys(self):
+        """Schema stability — the warning dict must have exactly the four
+        keys the frontend expects. Adding/removing a key is a breaking
+        change that requires a frontend coord."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([("a", "b", "c")])
+        assert set(warning.keys()) == {
+            "suspicious_triples_count",
+            "affected_currencies",
+            "affected_currencies_total",
+            "message",
+        }
+
+    def test_triples_as_lists_also_works(self):
+        """Defensive: ``find_triangular_arbitrage`` returns tuples, but the
+        helper should also accept lists (in case the internal repr changes)."""
+        from backend.economy.triangular_cycles import build_cross_rate_warning
+        warning = build_cross_rate_warning([["a", "b", "c"]])
+        assert warning is not None
+        assert warning["affected_currencies"] == ["a", "b", "c"]
+
+
+# ===========================================================================
+# 1c. compute_triangular_cycles pipeline_cache population tests (iter 134)
+# ===========================================================================
+
+class TestComputeTriangularCyclesPipelineCache:
+    """Verify the TD-3 iter 134 pipeline_cache optimization: when
+    ``pipeline_cache`` is provided, ``compute_triangular_cycles`` populates
+    the live /triangular route's cache so the route gets a cache hit on
+    first request after a refresh (eliminates doubled compute cost)."""
+
+    @pytest.mark.asyncio
+    async def test_no_pipeline_cache_no_side_effect(self):
+        """Back-compat: when pipeline_cache=None (default), no put happens."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_result = TriangularResult(opportunities=[], suspicious_triples=[])
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            await compute_triangular_cycles(snapshot, config)  # no pipeline_cache
+
+        # Default pipeline_cache=None → put MUST NOT be called
+        mock_cache.put.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_put_called_with_default_key(self):
+        """When pipeline_cache is provided, put is called with the default
+        cache key ``triangular_arbitrage_1.0`` (matches routes_arbitrage.py:860)."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_opp = _make_triangular_opportunity(
+            cycle=["exalted", "divine", "mirror", "exalted"],
+        )
+        fake_result = TriangularResult(
+            opportunities=[fake_opp],
+            suspicious_triples=[("divine", "exalted", "mirror")],
+        )
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        mock_cache.put.assert_called_once()
+        call_args = mock_cache.put.call_args
+        assert call_args.args[0] == "triangular_arbitrage_1.0"
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_put_called_with_custom_min_profit_pct_key(self):
+        """Custom min_profit_pct → cache key includes the custom value."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_result = TriangularResult(opportunities=[], suspicious_triples=[])
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            await compute_triangular_cycles(
+                snapshot, config, min_profit_pct=2.5, pipeline_cache=mock_cache,
+            )
+
+        mock_cache.put.assert_called_once()
+        assert mock_cache.put.call_args.args[0] == "triangular_arbitrage_2.5"
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_value_is_opportunities_cross_rate_warning_tuple(self):
+        """Cache value shape MUST match routes_arbitrage.py:901
+        ``(opportunities, cross_rate_warning)``. This is the parity guarantee."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_opp = _make_triangular_opportunity(
+            cycle=["exalted", "divine", "mirror", "exalted"],
+        )
+        fake_triples = [("divine", "exalted", "mirror")]
+        fake_result = TriangularResult(
+            opportunities=[fake_opp],
+            suspicious_triples=fake_triples,
+        )
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        call_args = mock_cache.put.call_args
+        cached_value = call_args.args[1]
+        # Shape: 2-tuple (opportunities, cross_rate_warning)
+        assert isinstance(cached_value, tuple)
+        assert len(cached_value) == 2
+        # First element: the SAME opportunities list (not a copy/transform)
+        # — the route reads it directly via cached_tri.value[0]
+        assert cached_value[0] is fake_result.opportunities
+        # Second element: cross_rate_warning dict (or None)
+        assert cached_value[1] is not None
+        assert cached_value[1]["suspicious_triples_count"] == 1
+        assert cached_value[1]["affected_currencies"] == ["divine", "exalted", "mirror"]
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_populated_even_when_no_opportunities(self):
+        """When opportunities=[], cache is STILL populated — mirrors the
+        live route, which always populates the cache on cache miss
+        (routes_arbitrage.py:901 is outside any ``if opportunities:`` guard).
+        Otherwise the route would have a cache miss, recompute, and get
+        the same empty result."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_result = TriangularResult(opportunities=[], suspicious_triples=[])
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            result = await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        # Return value is [] (no cycles to persist) BUT cache WAS populated
+        assert result == []
+        mock_cache.put.assert_called_once()
+        cached_value = mock_cache.put.call_args.args[1]
+        assert cached_value[0] == []  # empty opportunities
+        assert cached_value[1] is None  # no suspicious_triples → no warning
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_populated_with_warning_when_no_opportunities_but_suspicious(self):
+        """Edge case: opportunities=[] BUT suspicious_triples non-empty →
+        cache still populated, warning still built. The route would do the
+        same (the warning is independent of opportunities)."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_triples = [("divine", "exalted", "mirror")]
+        fake_result = TriangularResult(
+            opportunities=[],
+            suspicious_triples=fake_triples,
+        )
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        mock_cache.put.assert_called_once()
+        cached_value = mock_cache.put.call_args.args[1]
+        assert cached_value[0] == []  # no opportunities
+        assert cached_value[1] is not None  # warning IS built
+        assert cached_value[1]["suspicious_triples_count"] == 1
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_not_populated_when_find_triangular_arbitrage_fails(self):
+        """When find_triangular_arbitrage raises, the cache is NOT populated
+        (the function returns [] early before the cache.put block). The
+        route will recompute on its next request — same as pre-optimization."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(side_effect=RuntimeError("simulated timeout")),
+        ):
+            result = await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        assert result == []
+        mock_cache.put.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_not_populated_when_no_exchange_rates(self):
+        """When snapshot has no exchange rates, the function returns []
+        early (before find_triangular_arbitrage is even called). The cache
+        is NOT populated — the route will handle this case independently."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+
+        snapshot = _make_snapshot(rates={})
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        result = await compute_triangular_cycles(
+            snapshot, config, pipeline_cache=mock_cache,
+        )
+
+        assert result == []
+        mock_cache.put.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_pipeline_cache_put_failure_does_not_break_compute(self):
+        """Best-effort: when pipeline_cache.put raises, the function still
+        returns the cycles (the route will recompute on its cache miss —
+        same as pre-optimization). Matches the design doc §5.1 invariant
+        that persistence MUST NOT block the snapshot publish."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        mock_cache.put.side_effect = RuntimeError("cache backend down")
+        fake_opp = _make_triangular_opportunity(
+            cycle=["exalted", "divine", "mirror", "exalted"],
+        )
+        fake_result = TriangularResult(
+            opportunities=[fake_opp],
+            suspicious_triples=[],
+        )
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            result = await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        # Cache.put raised but the function still returned the cycles
+        assert len(result) == 1
+        assert result[0]["cycle_key"] == "divine->exalted->mirror"
+        mock_cache.put.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cached_opportunities_are_same_object_not_copy(self):
+        """Performance: the cached opportunities list is the SAME object
+        returned by find_triangular_arbitrage (no copy/transform). The
+        route reads it directly via cached_tri.value[0] and serializes it
+        to dicts — copying would waste memory."""
+        from backend.economy.triangular_cycles import compute_triangular_cycles
+        from backend.arbitrage.triangular import TriangularResult
+
+        rates = {"exalted/divine": _make_rate("exalted", "divine", 0.1)}
+        snapshot = _make_snapshot(rates=rates)
+        config = _make_config()
+
+        mock_cache = MagicMock()
+        fake_opp = _make_triangular_opportunity(
+            cycle=["exalted", "divine", "mirror", "exalted"],
+        )
+        fake_result = TriangularResult(
+            opportunities=[fake_opp],
+            suspicious_triples=[],
+        )
+        with patch(
+            "backend.economy.triangular_cycles.find_triangular_arbitrage",
+            new=AsyncMock(return_value=fake_result),
+        ):
+            await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=mock_cache,
+            )
+
+        cached_value = mock_cache.put.call_args.args[1]
+        # Identity check — same object, not a copy
+        assert cached_value[0] is fake_result.opportunities
+
+
+# ===========================================================================
 # 2. HistoricalStore triangular_cycles persistence tests
 # ===========================================================================
 

@@ -30,6 +30,7 @@ from backend.economy.momentum import PriceMomentumTracker
 from backend.arbitrage.scorer import compute_opportunity_score, compute_quantized_analysis
 from backend.arbitrage.quick_filter import quick_filter
 from backend.arbitrage.triangular import find_triangular_arbitrage
+from backend.economy.triangular_cycles import build_cross_rate_warning
 from backend.economy.clustering_helpers import (
     prepare_clustering_data,
     run_clustering_sync as _run_clustering_sync,
@@ -874,28 +875,15 @@ async def get_triangular_arbitrage(
         opportunities = result.opportunities
         suspicious_triples = result.suspicious_triples
 
-        cross_rate_warning = None
-        if suspicious_triples:
-            affected_currencies = set()
-            for triple in suspicious_triples:
-                affected_currencies.update(triple)
-            # iter 92 (KI-9): Truncate to top-5 + "and N more" to avoid
-            # sending 100+ currency names to the frontend.
-            sorted_affected = sorted(affected_currencies)
-            top_5 = sorted_affected[:5]
-            remaining = len(sorted_affected) - 5
-            affected_display = top_5 if remaining <= 0 else top_5 + [f"and {remaining} more"]
-            cross_rate_warning = {
-                "suspicious_triples_count": len(suspicious_triples),
-                "affected_currencies": affected_display,
-                "affected_currencies_total": len(sorted_affected),
-                "message": (
-                    f"{len(suspicious_triples)} currency triples have >7% "
-                    "cross-rate divergence (implied vs direct rates). "
-                    "Some detected cycles may be false positives from "
-                    "inconsistent relative_price data between pairs."
-                ),
-            }
+        # TD-3 iter 134: build_cross_rate_warning extracted to
+        # backend.economy.triangular_cycles so the persistence path
+        # (_refresh → compute_triangular_cycles) and this live route
+        # produce IDENTICAL warning shapes. This is the parity guarantee
+        # for the pipeline_cache optimization: when _refresh() populates
+        # pipeline_cache with (opportunities, cross_rate_warning), this
+        # route's cache hit must return the same dict the route itself
+        # would have produced.
+        cross_rate_warning = build_cross_rate_warning(suspicious_triples)
 
         # Cache the result: store (opportunities, cross_rate_warning) tuple
         pipeline_cache.put(cache_key, (opportunities, cross_rate_warning))

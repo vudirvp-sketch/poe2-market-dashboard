@@ -649,11 +649,21 @@ class SnapshotManager:
         # publish. A failure here (including find_triangular_arbitrage's 90s
         # timeout) logs a warning and continues — next tick retries via
         # INSERT OR IGNORE dedup.
+        #
+        # TD-3 pipeline_cache optimization (iter 134): also pass
+        # ``pipeline_cache`` so ``compute_triangular_cycles`` populates the
+        # live /triangular route's cache directly from the refresh path.
+        # This eliminates the doubled compute cost where
+        # find_triangular_arbitrage previously ran BOTH here AND in the
+        # route on first-request cache miss. Backend-only, no UI impact.
         try:
             from backend.data.historical import get_historical_store as _get_store_td3
             from backend.economy.triangular_cycles import compute_triangular_cycles
+            from backend.data.unified_cache import get_pipeline_cache as _get_pc_td3
 
-            cycles = await compute_triangular_cycles(snapshot, config)
+            cycles = await compute_triangular_cycles(
+                snapshot, config, pipeline_cache=_get_pc_td3(),
+            )
             if cycles:
                 store = _get_store_td3(config)
                 written = await store.write_triangular_cycles_batch(
