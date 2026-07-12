@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-13 (iter 142 — `docs/ARCHITECTURE.md` + `docs/MARKET_PLAYBOOK.md` + `docs/CORS_PROXY_GUIDE.md` audit: ARCHITECTURE.md (12 drift items — tabs 10→16, DataSnapshot fields, HistoricalStore tables 3→5, scheduler jobs 3→4, poe2api.ts circuit breaker thresholds, Graph tab phantom removed, /api/health → /api/v1/health/ping, P10 Gold Map ROI tab added); MARKET_PLAYBOOK.md (P10 marked SHIPPED, sections C.1–C.7 iter-by-iter detail trimmed 355→205 lines); CORS_PROXY_GUIDE.md (poe2api.ts circuit breaker open duration 30s → 60s, cache TTL clarified as 60s fresh / 30min stale). New bug KI-31 found + fixed: `.env.example` shipped with dead `api.poe2scout.com` URL. 1466 pytest green, 1 source-code change (`.env.example` only).)
+> **Last updated:** 2026-07-13 (iter 143 — `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit: BACKEND_GUIDE.md (9 drift items — §1 Poe2Scout provider method signatures 4 wrong → 4 correct, §2 /api/health → /api/v1/health, §5 PipelineCache/DailyStatsCache locations rewrite — shim files deleted iter 66, facades live in unified_cache.py, §6.2 triangular cross-rate threshold 10% → 7%, §7 E2E tests 4 → 6 files); DATA_CONTRACTS.md (3 drift items — §3 added UniqueItemExtended row + average field on DailyStatsPoint, §6 /Leagues DefaultCurrency missing IconUrl). 0 new bugs. 1466 pytest green, 0 source-code changes (doc-only iter).)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---

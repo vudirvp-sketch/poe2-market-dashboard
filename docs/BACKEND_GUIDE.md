@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Backend Guide
 
-> **Version:** 1.1 | **Date:** 2026-07-12 (iter 140 — doc-drift audit: HistoricalStore tables list, scheduler jobs count, optimizer/analyst route prefixes, tests file count, missing newer-endpoint references)
+> **Version:** 1.2 | **Date:** 2026-07-13 (iter 143 — doc-drift re-audit: §1 Poe2Scout provider method signatures (4 wrong → 4 correct), §2 /api/health → /api/v1/health, §5 PipelineCache/DailyStatsCache locations (deleted shim files in iter 66 — facades live in unified_cache.py), §6.2 triangular cross-rate threshold 10% → 7%, §7 E2E tests list 4 → 6 files)
 
 ---
 
@@ -17,11 +17,16 @@
 - CORS proxy fallback: if primary URL fails, retries through `cors_proxy_url` (from `config.yaml` or `POE2SCOUT_CORS_PROXY_URL` env var)
 - All API calls use league name as path parameter (ShortName format, e.g., "runes")
 
-**Key methods:**
-- `get_exchange_rates(league)` → `dict[str, SnapshotPair]` — all trading pairs
-- `get_currencies(league, category)` → `list[CurrencyItemExtended]` — paginated
-- `get_price_logs(league, currency_id)` → `list[PriceLogEntry]` — historical prices
-- `get_unique_items(league, category)` → `list[UniqueItemExtended]` — unique items
+**Key methods** (verified iter 143 against `backend/data/providers/poe2scout.py`):
+- `get_exchange_rates(league)` → `dict[str, ExchangeRate]` — all trading pairs (1 request to `/SnapshotPairs`)
+- `get_currency_metadata(league)` → `list[CurrencyInfo]` — currency metadata (cached 1h on the provider instance)
+- `get_all_currencies_with_prices(league)` → `list[dict]` — paginated `ByCategory` call across all configured categories; returns raw dicts with `api_id`, `text`, `category_api_id`, `icon_url`, `current_price`, `price_logs`, etc.
+- `get_historical_prices(currency, days)` → `list[PricePoint]` — single-currency price history (fallback for currencies missing from `ByCategory`)
+- `get_bulk_price_histories(league)` → `dict[int, list[PricePoint]]` — bulk variant by `ItemId`
+- `get_daily_stats(league, item_id, day_count, end_date)` → `dict | None` — daily OHLCV (TD-5 iter 131)
+- `get_realms()` / `get_leagues()` / `get_reference_currencies(league)` / `get_snapshot_history(...)` / `get_pair_history(...)` — auxiliary selectors used by the Next.js proxy routes
+
+> The abstract `BaseDataProvider` interface (in `backend/data/providers/base.py`) requires only `get_current_price`, `get_historical_prices`, `get_exchange_rates`, `get_currency_metadata`, and `name()`. The other methods above are Poe2Scout-specific extensions.
 
 ### OfficialTradeProvider (Fallback)
 
@@ -59,7 +64,8 @@ Periodic Refresh:
 Health Info:
   - snapshot_valid, snapshot_stale, snapshot_age_seconds
   - exchange_rates_count, currencies_count, price_histories_count
-  - Exposed via /api/health endpoint
+  - snapshot_ttl_seconds, fetched_at
+  - Exposed via /api/v1/health endpoint (and /api/v1/health/ping for the lightweight bridge check)
 ```
 
 **BFS Transitive Pricing:**
@@ -128,7 +134,7 @@ Single TTL + LRU cache supporting both sync and async access patterns. All entri
 
 ### PipelineCache (facade)
 
-**Location:** `backend/data/pipeline_cache.py` → `unified_cache.py`
+**Location:** `backend/data/unified_cache.py` — class `PipelineCache` (defined directly in this file, NOT a separate shim)
 
 Thin facade over UnifiedCache with namespace="pipeline". Provides the same interface as the original PipelineCache:
 
@@ -137,11 +143,11 @@ Thin facade over UnifiedCache with namespace="pipeline". Provides the same inter
 - `invalidate(key=None)` → None
 - `stats()` → dict
 
-**Backward compatibility:** All existing imports from `pipeline_cache.py` work without changes.
+> **Historical note (verified iter 143):** The standalone `backend/data/pipeline_cache.py` shim file was DELETED in iter 66 (P2-2 cleanup). All call sites now import directly from `backend.data.unified_cache` (e.g. `from backend.data.unified_cache import get_pipeline_cache`). The `PipelineCache` class definition lives inside `unified_cache.py` as a facade over the shared `UnifiedCache` singleton.
 
 ### DailyStatsCache (facade)
 
-**Location:** `backend/data/daily_stats_cache.py` → `unified_cache.py`
+**Location:** `backend/data/unified_cache.py` — class `DailyStatsCache` (defined directly in this file, NOT a separate shim)
 
 Thin facade over UnifiedCache with namespace="daily_stats". Provides the same interface as the original DailyStatsCache:
 
@@ -149,7 +155,7 @@ Thin facade over UnifiedCache with namespace="daily_stats". Provides the same in
 - `invalidate()` → None
 - `stats()` → dict
 
-**Backward compatibility:** All existing imports from `daily_stats_cache.py` work without changes. The `_cache` property returns a proxy object that supports `.clear()` for test compatibility.
+> **Historical note (verified iter 143):** The standalone `backend/data/daily_stats_cache.py` shim file was DELETED in iter 66 (P2-2 cleanup). All call sites now import directly from `backend.data.unified_cache` (e.g. `from backend.data.unified_cache import get_daily_stats_cache`). The `DailyStatsCache` class definition lives inside `unified_cache.py`. The `_cache` property returns a `_DailyStatsCacheProxy` that supports `.clear()` for test compatibility.
 
 ### ModelStore
 
@@ -186,7 +192,7 @@ score = raw_spread × fill_probability × momentum_penalty × vol_penalty × pha
 
 - Bellman-Ford algorithm for negative cycle detection
 - Volume-based spread estimation for edge weights
-- Cross-rate divergence filtering to remove false positives (threshold: 10%, raised from 5% in v1.30)
+- Cross-rate divergence filtering to remove false positives (route-facing default `cross_rate_threshold_pct=7.0` — verified iter 143 against `backend/api/routes_arbitrage.py:874` + `backend/arbitrage/triangular.py:492`. The internal `_compute_cross_rate_divergence` helper has a 5.0% default, but the route and the async `find_triangular_arbitrage` wrapper override it to 7.0%.)
 - Integer simulation validation (P1-2): verifies profit at integer amounts
 - **Async with executor offload (v1.30):** `find_triangular_arbitrage()` is `async def` and offloads ALL CPU-bound work (Bellman-Ford + cross-rate validation + integer simulation) to a thread via `loop.run_in_executor()`. The sync implementation lives in `_find_triangular_arbitrage_sync()`. This prevents the O(V*V*E) loop from blocking the asyncio event loop and triggering circuit breaker failures.
 
@@ -365,7 +371,9 @@ tests/e2e/
 ├── conftest.py           — Shared fixtures (mock provider, test client)
 ├── mock_provider.py      — Mock Poe2ScoutProvider for deterministic tests
 ├── test_api_e2e.py       — Full API endpoint integration tests
-└── test_degraded_mode.py — Backend behavior when provider is unreachable
+├── test_analyst.py       — /api/v1/analyst/summary integration tests
+├── test_degraded_mode.py — Backend behavior when provider is unreachable
+└── test_sse.py           — /api/v1/prices/stream SSE contract tests
 ```
 
 ### Key Fixtures

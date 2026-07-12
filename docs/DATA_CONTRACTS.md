@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Contracts
 
-> **Version:** 1.1 | **Date:** 2026-07-12 (iter 140 — doc-drift audit: §4.2 backend route prefixes /api/* → /api/v1/*, fixed tier + benchmarks route paths, added 16 missing newer endpoints, §5 DataSnapshot fields updated to actual dataclass)
+> **Version:** 1.2 | **Date:** 2026-07-13 (iter 143 — doc-drift re-audit: §3 added missing `UniqueItemExtended` row + `average` field on `DailyStatsPoint`, §6 /Leagues `DefaultCurrency` missing `IconUrl` field)
 
 ---
 
@@ -256,7 +256,7 @@ class FlipperApiError extends Error {
 
 ## 3. Backend Pydantic Models (schemas.py)
 
-Key models with PascalCase serialization:
+Key models with PascalCase serialization (verified iter 143 against `backend/data/schemas.py`):
 
 | Model | Key Fields | Used By |
 |-------|-----------|---------|
@@ -264,11 +264,12 @@ Key models with PascalCase serialization:
 | `CurrencyItem` | `apiId`, `text`, `iconUrl`, `categoryApiId` | Currency metadata |
 | `CurrencyItemExtended` | + `priceLogs`, `currentPrice`, `currentQuantity` | Currency with prices |
 | `UniqueItem` | `name`, `text`, `categoryApiId`, `isChanceable` | Unique items |
+| `UniqueItemExtended` | + `priceLogs`, `currentPrice`, `currentQuantity` | Unique items with prices (returned by `/UniqueItems/{cat}`) |
 | `SnapshotPair` | `currencyOne`, `currencyTwo`, `currencyOneData`, `currencyTwoData` | Exchange pairs |
-| `PairDataDetails` | `valueTraded`, `relativePrice`, `stockValue`, `volumeTraded` | Per-currency pair data |
+| `PairDataDetails` | `valueTraded`, `relativePrice`, `stockValue`, `volumeTraded`, `highestStock` | Per-currency pair data |
 | `RealmOption` | `value`, `label`, `defaultLeagueValue` | Realm selectors |
 | `LeagueInfo` | `value`, `shortName`, `isCurrent`, `defaultCurrency` | League selectors |
-| `DailyStatsPoint` | `time`, `open`, `high`, `low`, `close`, `volume` | OHLCV data |
+| `DailyStatsPoint` | `time`, `open`, `high`, `low`, `close`, `average`, `volume` | OHLCV data (TD-5) |
 
 ## 4. API Endpoint Contracts
 
@@ -403,11 +404,13 @@ These are the raw API shapes BEFORE PascalCase→camelCase transformation:
       "IsCurrent": true,
       "BaseCurrencyApiId": "exalted",
       "BaseCurrencyText": "Exalted Orb",
-      "DefaultCurrency": { "ApiId": "exalted", "Text": "Exalted Orb", "RelativePrice": 1.0 }
+      "DefaultCurrency": { "ApiId": "exalted", "Text": "Exalted Orb", "IconUrl": null, "RelativePrice": 1.0 }
     }
   ]
 }
 ```
+
+> **Note (verified iter 143):** The full `/Leagues` response also includes `DivinePrice`, `ChaosDivinePrice`, `BaseCurrencyIconUrl`, `ExaltedCurrencyText`/`ExaltedCurrencyIconUrl`, `DivineCurrencyText`/`DivineCurrencyIconUrl`, `ChaosCurrencyText`/`ChaosCurrencyIconUrl`. Only the key fields are shown above — see `src/lib/poe2api.ts:RawLeague` for the complete interface.
 
 ### /SnapshotPairs (PascalCase — transformed)
 ```json

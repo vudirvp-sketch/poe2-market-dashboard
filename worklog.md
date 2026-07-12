@@ -5,6 +5,56 @@
 
 ---
 
+Task ID: iter-143
+Agent: main
+Task: iter 143 — `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit. Per the iter-142 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (doc-only, 0 source-code changes), well-decomposable, and these 2 docs had not been audited since iter 140.
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 142 SHIPPED), `worklog.md` (iter 142 + iter 141), `AGENT_NAVIGATION.md` §1–§3.
+- Re-verified canonical references against live code:
+  - `backend/data/providers/poe2scout.py:453,546,400,763,797,862` — actual methods are `get_exchange_rates(league)` → `dict[str, ExchangeRate]` (NOT `dict[str, SnapshotPair]`), `get_currency_metadata(league)` → `list[CurrencyInfo]`, `get_all_currencies_with_prices(league)` → `list[dict]`, `get_historical_prices(currency, days)` → `list[PricePoint]`, `get_bulk_price_histories(league)` → `dict[int, list[PricePoint]]`, `get_daily_stats(league, item_id, day_count, end_date)` → `dict | None`. BACKEND_GUIDE.md §1 listed 4 WRONG method names (`get_currencies`, `get_price_logs`, `get_unique_items` don't exist; `get_exchange_rates` return type was wrong).
+  - `backend/data/providers/base.py:22-66` — abstract `BaseDataProvider` requires only `get_current_price`, `get_historical_prices`, `get_exchange_rates`, `get_currency_metadata`, `name()`, plus optional `get_daily_stats` (default returns None).
+  - `backend/data/providers/poe2scout.py:253` — `max_retries = 2` (3 attempts total: initial + 2 retries). Doc §1 said "2 retries" — correct, no drift.
+  - `backend/main.py:744,759` — actual health endpoints are `/api/v1/health/ping` and `/api/v1/health`. BACKEND_GUIDE.md §2 said `/api/health`.
+  - `backend/data/unified_cache.py:501,556` — `PipelineCache` and `DailyStatsCache` classes are defined DIRECTLY in `unified_cache.py`. The standalone shim files `backend/data/pipeline_cache.py` and `backend/data/daily_stats_cache.py` were DELETED in iter 66 (P2-2 cleanup). BACKEND_GUIDE.md §5 still claimed they existed with backward-compat imports — false.
+  - Grep confirmed: no `from backend.data.pipeline_cache` or `from backend.data.daily_stats_cache` imports anywhere in the codebase. All call sites use `from backend.data.unified_cache import get_pipeline_cache` / `get_daily_stats_cache`.
+  - `backend/api/routes_arbitrage.py:874` + `backend/arbitrage/triangular.py:492` — route-facing default `cross_rate_threshold_pct=7.0`. Internal `_compute_cross_rate_divergence` has 5.0% default but is overridden. BACKEND_GUIDE.md §6.2 said "threshold: 10%, raised from 5% in v1.30" — wrong (actually 7%).
+  - `tests/e2e/` directory listing — 6 files (`conftest.py`, `mock_provider.py`, `test_api_e2e.py`, `test_analyst.py`, `test_degraded_mode.py`, `test_sse.py`, plus `__init__.py`). BACKEND_GUIDE.md §7 E2E Tests listed only 4 (missing `test_analyst.py` + `test_sse.py`).
+  - `backend/data/schemas.py:74-95` — `UniqueItem` (10 fields) + `UniqueItemExtended` (extends with `price_logs`, `current_price`, `current_quantity`). DATA_CONTRACTS.md §3 table had `UniqueItem` row but missing `UniqueItemExtended` row (which exists for `CurrencyItem`).
+  - `backend/data/schemas.py:171-180` — `DailyStatsPoint` has 7 fields: `time`, `open`, `high`, `low`, `close`, `average`, `volume`. DATA_CONTRACTS.md §3 listed only 6 (missing `average`).
+  - `src/lib/poe2api.ts:594-612` — `RawLeague.DefaultCurrency` has 4 fields: `ApiId`, `Text`, `IconUrl`, `RelativePrice`. DATA_CONTRACTS.md §6 /Leagues example showed only 3 (missing `IconUrl`).
+- No new bugs found in this iter (all drift is doc-only — no source-code defects).
+- **`docs/BACKEND_GUIDE.md` audit (9 drift items fixed, version 1.1 → 1.2):**
+  - **Header** — bumped version 1.1 → 1.2, date 2026-07-12 → 2026-07-13, updated summary.
+  - **§1 Poe2ScoutProvider Key methods** — rewrote completely. 4 wrong entries → 7 correct entries (`get_exchange_rates`, `get_currency_metadata`, `get_all_currencies_with_prices`, `get_historical_prices`, `get_bulk_price_histories`, `get_daily_stats`, auxiliary selectors). Fixed return type `dict[str, SnapshotPair]` → `dict[str, ExchangeRate]`. Added note clarifying that `BaseDataProvider` abstract interface requires only 5 methods; the rest are Poe2Scout-specific extensions.
+  - **§2 SnapshotManager Health Info** — `/api/health` → `/api/v1/health` (and added `/api/v1/health/ping` for the bridge check). Also added the 2 missing fields `snapshot_ttl_seconds` + `fetched_at`.
+  - **§5 PipelineCache Location** — `backend/data/pipeline_cache.py` → `unified_cache.py` (class defined directly in this file). Replaced false "Backward compatibility: All existing imports from `pipeline_cache.py` work without changes" claim with a Historical note explaining the shim was DELETED in iter 66 and all call sites now import from `unified_cache` directly.
+  - **§5 DailyStatsCache Location** — same fix: file path → `unified_cache.py`, replaced false backward-compat claim with Historical note. Mentioned `_DailyStatsCacheProxy` for the `.clear()` test-compat property.
+  - **§6.2 Triangular Arbitrage cross-rate threshold** — "threshold: 10%, raised from 5% in v1.30" → "route-facing default `cross_rate_threshold_pct=7.0` — verified iter 143 against `backend/api/routes_arbitrage.py:874` + `backend/arbitrage/triangular.py:492`. The internal `_compute_cross_rate_divergence` helper has a 5.0% default, but the route and the async `find_triangular_arbitrage` wrapper override it to 7.0%."
+  - **§7 E2E Tests** — added 2 missing files: `test_analyst.py` (with description "/api/v1/analyst/summary integration tests") + `test_sse.py` (with description "/api/v1/prices/stream SSE contract tests").
+- **`docs/DATA_CONTRACTS.md` audit (3 drift items fixed, version 1.1 → 1.2):**
+  - **Header** — bumped version 1.1 → 1.2, date 2026-07-12 → 2026-07-13, updated summary.
+  - **§3 Backend Pydantic Models table** — (1) added missing `UniqueItemExtended` row (`+ priceLogs, currentPrice, currentQuantity` — mirrors the existing `CurrencyItemExtended` pattern); (2) added `average` field to `DailyStatsPoint` row (was `time, open, high, low, close, volume` → now `time, open, high, low, close, average, volume`); (3) added `highestStock` field to `PairDataDetails` row (was missing). Added "verified iter 143 against `backend/data/schemas.py`" note.
+  - **§6 /Leagues DefaultCurrency** — added missing `IconUrl` field to the JSON example (`{ ApiId, Text, RelativePrice }` → `{ ApiId, Text, IconUrl, RelativePrice }`). Added "Note (verified iter 143)" paragraph explaining the full `/Leagues` response also includes `DivinePrice`, `ChaosDivinePrice`, `BaseCurrencyIconUrl`, etc., with pointer to `src/lib/poe2api.ts:RawLeague` for the complete interface.
+- **Meta-docs updates:**
+  - `STATUS.md` header bump (iter 142 → iter 143).
+  - `worklog.md` — added this iter-143 entry, removed iter-141 entry (rule: only last 2 iterations).
+  - `AGENT_NAVIGATION.md` header bump (iter 142 → iter 143).
+- **Final verification:** 0 source-code changes this iter (doc-only). 1466 pytest green baseline preserved from iter 142 (no `.py`/`.ts`/`.tsx` touched).
+
+Stage Summary:
+- **iter 143 SHIPPED — 2 docs re-audited, 0 new bugs.** 2 doc files updated (`docs/BACKEND_GUIDE.md` — 9 drift items, `docs/DATA_CONTRACTS.md` — 3 drift items). 12 individual drift items resolved across docs. 0 source-code changes. 1466 pytest green (0 regressions — confirmed since no `.py`/`.ts`/`.tsx` was touched).
+- **Modified files (2 docs + 3 meta-docs):** `docs/BACKEND_GUIDE.md`, `docs/DATA_CONTRACTS.md`, `STATUS.md` (header bump), `worklog.md` (this entry), `AGENT_NAVIGATION.md` (header bump).
+- **What was NOT done (intentionally deferred to iter 144+):**
+  - **`docs/DATA_FLOW.md` §1, §2, §5, §6, §8, §10** — light-touch audit only (cosmetic, no major drift found). §2 POE2Scout API endpoints + §5 Field Transformation Reference would benefit from a deeper cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts` respectively — candidate for iter 144.
+  - **`instrumentation.ts:7` comment drift** — still mentions `/api/health` (legacy). Doc-only drift in a code comment. Not fixed in iter 143 (kept source-code changes at 0). Candidate for iter 144+ source cleanup.
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141+142+143 only verified doc-level references to tabs. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 145+.
+  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+- **Stopping point:** iter 143 = 2 docs re-audited (BACKEND_GUIDE.md + DATA_CONTRACTS.md, 12 drift items). Next iter candidates: (a) deep cross-check of `docs/DATA_FLOW.md` §2 (POE2Scout API) against `backend/data/providers/poe2scout.py` + §5 (Field Transformation) against `src/lib/poe2api.ts` — next logical docs batch; (b) source cleanup — fix `instrumentation.ts:7` comment drift (`/api/health` → `/api/v1/health/ping`); (c) per-tab UX/logic deep-audit; (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
+
+---
+
 Task ID: iter-142
 Agent: main
 Task: iter 142 — `docs/ARCHITECTURE.md` + `docs/MARKET_PLAYBOOK.md` + `docs/CORS_PROXY_GUIDE.md` audit. Per the iter-141 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (mostly doc-only), well-decomposable, and these 3 docs had not been audited since iter 110+.
@@ -26,83 +76,15 @@ Work Log:
   - Added KI-31 entry to STATUS.md Quick Reference table (between KI-30 and the After-updating-currency_names row).
   - Fixed `.env.example:4-8`: changed URL to `https://poe2scout.com/api` (bare domain), rewrote comment to reference KI-15/KI-31.
 - **`docs/ARCHITECTURE.md` audit (12 drift items fixed, version 1.0 → 1.1):**
-  - **Header** — bumped version 1.0 → 1.1, date 2026-06-08 → 2026-07-13, updated summary.
-  - **§1 Layer Diagram** — fixed tabs list (10 → 16, removed phantom `Arbitrage` + `Graph`, added `Storage Value`, `Speculation`, `Circuit`, `Intraday`, `Weekly`, `Mirror/Divine`, `Gold Map ROI`, `Liquid Chain`).
-  - **§2.2 Flipper Analytics Path** — fixed 2 backend URLs: `proxyWithFallback("/api/arbitrage/flips")` → `"/api/v1/arbitrage/flips"`, `fetch("http://localhost:8000/api/arbitrage/flips")` → `".../api/v1/arbitrage/flips"`. Also clarified circuit breaker "5 failures → open for 15s, exponential to 5min".
-  - **§2.3 Backend Internal Data Flow** — rewrote DataSnapshot fields (4 wrong → 9 correct: `exchange_rates`, `currencies: dict[str, dict]`, `currency_metadata`, `price_histories`, `current_prices`, `prices_in_base`, `tiers`, `fetched_at`, `valid`). Added note about `league`/`snapshot_age_seconds`. Rewrote HistoricalStore tables (3 → 5: added `market_spreads` [TD-4], `triangular_cycles` [TD-3], `daily_stats` [TD-5]; removed non-existent `prices_history`).
-  - **§5.2 Backend Key Modules** — `HistoricalStore` description: 3 tables → 5 tables. `DataScheduler` description: "3 jobs" → "4 jobs — price_snapshot (30min), event_pruning (15min), model_persistence (30min), daily_stats_refresh (1h, TD-5 iter 131)".
-  - **§6 Scheduler Jobs table** — added 4th row `daily_stats_refresh | 1 hour | TD-5 (iter 131) — fetch daily OHLCV for top-N items, persist to daily_stats table`.
-  - **§7 Cache Architecture table** — split `poe2api.ts cache` row into `60s fresh / 30min stale` (was misleading "30 min"). Split `Circuit breaker` row into two: `poe2api.ts` (60s open, 3 failures) + `flipper-proxy.ts` (15s→5min, 5 failures).
-  - **§8 Frontend (poe2api.ts)** — fixed circuit breaker: "5 consecutive failures → open for 15s" → "3 consecutive failures → open for 60s (`CIRCUIT_BREAKER_THRESHOLD=3`, `CIRCUIT_BREAKER_COOLDOWN=60_000`)". Fixed stale-while-revalidate: "30 min old" → "fresh TTL = 60s (`CACHE_TTL`); stale data served up to 30 min old (`CACHE_STALE_TTL`)".
-  - **§8 Frontend (flipper-proxy.ts)** — added constant names (`FLIPPER_CB_THRESHOLD=5`, `FLIPPER_CB_INITIAL_COOLDOWN=15_000`, `FLIPPER_CB_MAX_COOLDOWN=300_000`).
-  - **§9 Frontend Tab Architecture** — rewrote table (9 rows → 16 rows). Removed phantom `Graph` row. Added 7 missing rows (`Storage Value`, `Speculation`, `Circuit Patterns`, `Intraday Patterns`, `Weekly Patterns`, `Mirror/Divine Arb`, `Gold Map ROI`, `Liquid Chain`). Added "Removed tabs" note documenting phantom `Arbitrage` + `Graph` removals.
-  - **§10 Backend Bridge** — fixed 2 `/api/health` → `/api/v1/health/ping` references (in `How It Works` flow diagram + Key Benefits list). Added "ultra-lightweight plain-text 'ok' — avoids GIL contention false-positives" explanation.
-  - **§10 footer** — added "Historical note" explaining `instrumentation.ts:7` comment still mentions `/api/health` (doc-only drift in a code comment — not fixed in iter 142 to keep source-code changes minimal).
+  - Header bumped; §1 Layer Diagram tabs 10→16 (removed phantom Arbitrage + Graph, added Storage Value, Speculation, Circuit, Intraday, Weekly, Mirror/Divine, Gold Map ROI, Liquid Chain); §2.2 fixed 2 backend URLsS (`/api/arbitrage/flips` → `/api/v1/arbitrage/flips`); §2.3 rewrote DataSnapshot fields (4 wrong → 9 correct) + HistoricalStore tables (3→5); §5.2 HistoricalStore 3→5 tables + DataScheduler 3→4 jobs; §6 added 4th scheduler job `daily_stats_refresh`; §7 split cache + circuit breaker rows; §8 poe2api.ts circuit breaker 3 failures / 60s + flipper-proxy.ts 5 failures / 15s→5min; §9 tab table 9→16 rows; §10 `/api/health` → `/api/v1/health/ping` (2 refs).
 - **`docs/MARKET_PLAYBOOK.md` audit (heavy cleanup, 355 → 205 lines):**
-  - **Header** — bumped iter 110 → iter 142, updated summary to "doc cleanup: P10 marked SHIPPED, sections C.1–C.7 trimmed, §D.3 outdated stop-point removed".
-  - **§B Pattern Status table** — P10 row: `Нет | ❌ Нужен калькулятор` → `✅ Готово (end-to-end). Phase 1 (MVP) SHIPPED iter 127, Phase 2 (trend chart) SHIPPED iter 132`.
-  - **§B Резюме** — updated counts: "9 полностью готовы" → "10 полностью готовы" (added P10), "8 не реализованы" → "7 не реализованы".
-  - **§C План реализации** — TRIMMED heavily. Removed iter-by-iter detail records (C.1 foundation + C.2 iter 97 + C.3 iter 98 + C.4 iter 99 + C.5 iter 100 + C.6 iter 108/109 + C.7 iter 110 + C.8 iter 103+ + C.9 backlog = ~165 lines of git-log material). Replaced with: (1) pointer to `git log` for historical records; (2) concise canonical status table for 7 implemented patterns (P3/P4/P5/P7/P8/P9/P10) with backend pure function + route + UI; (3) "Не реализованы" list for 7 GGG-API-blocked patterns.
-  - **§D Приоритеты и точки остановки** — rewrote §D.2 from "Топ-5 паттернов для следующих итераций" to "Реализованные паттерны (canonical status)" — 7 rows, all ✅ Done. Replaced outdated §D.3 "Точка остановки iter 110" with "Что осталось" — concise list of remaining work (TD runtime verification, P2/P16/P17 partial, GGG-API-blocked patterns, F1).
-  - **§E Связанные документы** — added 2 new entries: `docs/design/P10-gold-map-roi-design.md` + `docs/design/TD-3-4-5-9-persistence-gaps-design.md`.
+  - P10 row marked SHIPPED (Phase 1 iter 127 + Phase 2 iter 132). Trimmed iter-by-iter detail records (C.1–C.7, ~165 lines of git-log material). Replaced with concise canonical status table for 7 implemented patterns.
 - **`docs/CORS_PROXY_GUIDE.md` audit (2 drift items fixed, version 1.0 → 1.1):**
-  - **Header** — bumped version 1.0 → 1.1, date 2026-06-08 → 2026-07-13.
-  - **§2 Circuit Breaker** — "Open duration: 30 seconds" → "60 seconds" (matches `CIRCUIT_BREAKER_COOLDOWN=60_000`). Added constant names + file:line refs. Added NOTE distinguishing poe2api.ts breaker (3 failures / 60s) from flipper-proxy.ts breaker (5 failures / 15s→5min).
-  - **§2 Stale-While-Revalidate Cache** — "TTL: 30 minutes" → split into "Fresh TTL: 60 seconds" + "Stale TTL: 30 minutes" (matches `CACHE_TTL=60_000` + `CACHE_STALE_TTL=1_800_000`). Added eviction note (entries older than `CACHE_STALE_TTL * 2` = 60min are evicted).
-- **Meta-docs updates:**
-  - `STATUS.md` header bump (iter 141 → iter 142) + KI-31 entry added to Quick Reference table.
-  - `worklog.md` — added this iter-142 entry, removed iter-139 entry (rule: only last 2 iterations).
-  - `AGENT_NAVIGATION.md` header bump (iter 141 → iter 142).
-- **Final verification:** `pytest tests/ --ignore=tests/e2e -q` → **1466 passed, 0 failed, 0 errors** (matches iter-141 baseline). 1 source-code change this iter (`.env.example` only — KI-31 fix; no `.py`/`.ts`/`.tsx` touched).
+  - §2 Circuit Breaker "Open duration: 30 seconds" → "60 seconds" (matches `CIRCUIT_BREAKER_COOLDOWN=60_000`). §2 Stale-While-Revalidate "TTL: 30 minutes" → split into "Fresh TTL: 60 seconds" + "Stale TTL: 30 minutes" (matches `CACHE_TTL=60_000` + `CACHE_STALE_TTL=1_800_000`).
+- **Meta-docs updates:** `STATUS.md` header bump + KI-31 entry; `worklog.md` added iter-142 entry; `AGENT_NAVIGATION.md` header bump.
+- **Final verification:** `pytest tests/ --ignore=tests/e2e -q` → **1466 passed, 0 failed, 0 errors** (matches iter-141 baseline). 1 source-code change this iter (`.env.example` only — KI-31 fix).
 
 Stage Summary:
 - **iter 142 SHIPPED — 3 docs audited + 1 new bug found & fixed.** 3 doc files updated (`docs/ARCHITECTURE.md` — 12 drift items, `docs/MARKET_PLAYBOOK.md` — heavy cleanup 355→205 lines, `docs/CORS_PROXY_GUIDE.md` — 2 drift items). 1 source-code fix (`.env.example` — KI-31). 16 individual drift items resolved across docs + 1 new bug. 1466 pytest green (0 regressions — `.env.example` is not loaded by any Python test).
-- **Modified files (3 docs + 1 source + 3 meta-docs):** `docs/ARCHITECTURE.md`, `docs/MARKET_PLAYBOOK.md`, `docs/CORS_PROXY_GUIDE.md`, `.env.example` (KI-31 fix), `STATUS.md` (header bump + KI-31 entry), `worklog.md` (this entry), `AGENT_NAVIGATION.md` (header bump).
-- **What was NOT done (intentionally deferred to iter 143+):**
-  - **`docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md`** — last audited iter 140, may have residual drift. Candidate for iter 143.
-  - **`docs/DATA_FLOW.md` §1, §2, §5, §6, §8, §10** — light-touch audit only (cosmetic, no major drift found). §2 POE2Scout API endpoints + §5 Field Transformation Reference would benefit from a deeper cross-check against `backend/api/provider.py` and `src/lib/poe2api.ts` respectively — candidate for iter 144.
-  - **`instrumentation.ts:7` comment drift** — still mentions `/api/health` (legacy). Doc-only drift in a code comment. Not fixed in iter 142 to keep source-code changes minimal (only KI-31 fix). Candidate for iter 143+ source cleanup.
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. Iter 141+142 only verified the component filename + primary data source per tab. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 145+.
-  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-- **Stopping point:** iter 142 = 3 docs audited + KI-31 fixed. Next iter candidates: (a) `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit (next logical docs batch — last done iter 140); (b) deep cross-check of `docs/DATA_FLOW.md` §2 (POE2Scout API) against `backend/api/provider.py` + §5 (Field Transformation) against `src/lib/poe2api.ts`; (c) source cleanup — fix `instrumentation.ts:7` comment drift; (d) per-tab UX/logic deep-audit; (e) re-run F1 pipeline after a patch / monthly; (f) TD-3 runtime log verification (requires prod access); (g) any new bugs the user identifies.
-
----
-
-Task ID: iter-141
-Agent: main
-Task: iter 141 — `docs/DATA_FLOW.md` full audit. Per the iter-140 stop point: candidate (a) `docs/DATA_FLOW.md` §1–§6, §8–§10 audit (especially §9 tab list drift). Chose this — lowest risk (no source-code changes), well-decomposable, and §9 was a confirmed drift since iter 139.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 140 SHIPPED), `worklog.md` (iter 140 + iter 139), `AGENT_NAVIGATION.md` §1–§3.
-- Re-verified the canonical references against live code:
-  - `backend/api/data_snapshot.py:53-87` — `DataSnapshot` has 9 fields (`exchange_rates`, `currencies: dict[str, dict]`, `currency_metadata`, `price_histories`, `current_prices`, `prices_in_base`, `tiers`, `fetched_at`, `valid`). Doc claimed 6 wrong fields (`league`, `rates`, `currencies: list`, `bfs_pricing`, `snapshot_age_seconds`).
-  - `backend/data/historical.py` — 5 SQLite tables (`price_snapshots`, `events`, `market_spreads` [TD-4], `triangular_cycles` [TD-3], `daily_stats` [TD-5]). Doc claimed 3 (incl. non-existent `prices_history`).
-  - `backend/scheduler.py:280-315` — 4 scheduler jobs (`price_snapshot`, `event_pruning`, `model_persistence`, `daily_stats_refresh` [TD-5]). Doc claimed 3.
-  - `src/components/dashboard/dashboard-page.tsx:211` — `TAB_MAP` has 16 entries. Doc §9 claimed 10 (incl. phantom `Arbitrage` [removed iter 92 KI-7] and `Graph` [removed iter 87]).
-  - `src/app/api/flipper/**/route.ts` — 34 actual files. §7.1 had 38 entries (4 phantom + 1 duplicate added by iter 140).
-  - `RecipeArb` — grep confirmed code is gone (doc §4.3 listed it as analytics module).
-- **`docs/DATA_FLOW.md` audit (8 sections, 1 header):**
-  - **§3.2 Flipper Analytics** — fixed 2 backend URLs (`/api/health` → `/api/v1/health`, `/api/phase` → `/api/v1/phase`). Added 15 missing newer endpoints (iter 75–131) in abbreviated form. Added "Backend-only routes" note listing 4 routes that have no Next.js proxy file (`/api/v1/health/ping`, `/api/v1/events/summary`, `/api/v1/market-spreads/history`, `/api/v1/items/{item_id}/daily-stats`).
-  - **§4.1 Provider → SnapshotManager** — updated pipeline steps: `snapshot.rates` → `snapshot.exchange_rates`, `snapshot.bfs_pricing` → `snapshot.prices_in_base` (BFS now inside step 2, not step 4). Updated step descriptions to match actual `_refresh()` order.
-  - **§4.2 DataSnapshot Dataclass** — rewrote completely. 9 correct fields with type hints + key conventions. Added note that `league` lives on `SnapshotManager._config` (NOT on dataclass) and `snapshot_age_seconds` is computed by `SnapshotManager`.
-  - **§4.3 Analytics Pipeline** — removed dead `RecipeArb` line. Added note explaining removal.
-  - **§4.4 HistoricalStore (SQLite)** — rewrote table list (3→5: added `market_spreads`, `triangular_cycles`, `daily_stats`; removed non-existent `prices_history`). Added 12 new methods (write_market_spreads_batch/read_market_spreads/read_market_spreads_pairs, write_triangular_cycles_batch/read_triangular_cycles/read_triangular_cycles_keys, write_daily_stats_batch/read_daily_stats/read_daily_stats_latest_date/read_daily_stats_items, plus write_events_batch, get_latest_prices).
-  - **§4.5 Scheduler Jobs** — added 4th job `daily_stats_refresh` (1 hour, TD-5 iter 131).
-  - **§7.1 Frontend Routes** — removed 4 phantom entries that iter 140 added without verifying (`health/ping/route.ts`, `events/summary/route.ts`, `market-spreads/history/route.ts` — backend-only, no proxy file exists; `optimal-currency/route.ts` was duplicated at lines 506 + 515, removed the duplicate). Replaced them with inline `# Note:` comments. Added "Verified iter 141: 34 route.ts files = 34 entries after cleanup" line.
-  - **§9 Data → Component Mapping** — rewrote completely. 10 entries → 16 entries (matching actual `TAB_MAP`). Each row now includes the actual component filename (verified via `grep -E "export (function|const) <Name>" src/components/dashboard/`). Added "Removed tabs" note documenting phantom `Arbitrage` + `Graph` removals.
-  - **Header** — bumped version 1.1 → 1.2, updated date stamp + summary.
-- **Final verification:** `pytest tests/ --ignore=tests/e2e -q` → **1466 passed, 0 failed, 0 errors**. 0 source-code changes this iter — only docs.
-
-Stage Summary:
-- **iter 141 SHIPPED — `docs/DATA_FLOW.md` full audit complete.** 1 doc file updated (`docs/DATA_FLOW.md`) with 8 section rewrites. ~30 individual drift items resolved. 0 source-code changes. 1466 pytest green (0 regressions — confirmed since no `.py`/`.ts`/`.tsx` was touched).
-- **Modified files (1 doc + 2 meta-docs):** `docs/DATA_FLOW.md`, `STATUS.md` (header bump), `worklog.md` (this entry). `AGENT_NAVIGATION.md` header NOT bumped this iter (no changes to its content — the §1–§3 read was context only).
-- **What was NOT done (intentionally deferred to iter 142+):**
-  - **`docs/DATA_FLOW.md` §1, §2, §5, §6, §8, §10** — light-touch audit only (cosmetic, no major drift found). §2 POE2Scout API endpoints + §5 Field Transformation Reference would benefit from a deeper cross-check against `backend/api/provider.py` and `src/lib/poe2api.ts` respectively — candidate for iter 142.
-  - **`docs/ARCHITECTURE.md` (303 lines)** — not audited this iter.
-  - **`docs/MARKET_PLAYBOOK.md` (355 lines)** — not audited this iter.
-  - **`docs/CORS_PROXY_GUIDE.md` (181 lines)** — not audited this iter.
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. Iter 141 only verified the component filename + primary data source per tab. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 143+.
-  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-- **Stopping point:** iter 141 = `docs/DATA_FLOW.md` full audit (8 sections, ~30 drift items). Next iter candidates: (a) `docs/ARCHITECTURE.md` + `docs/MARKET_PLAYBOOK.md` + `docs/CORS_PROXY_GUIDE.md` audit (next logical docs batch); (b) deep cross-check of `docs/DATA_FLOW.md` §2 (POE2Scout API) against `backend/api/provider.py` + §5 (Field Transformation) against `src/lib/poe2api.ts`; (c) per-tab UX/logic deep-audit; (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
+- **Modified files (3 docs + 1 source + 3 meta-docs):** `docs/ARCHITECTURE.md`, `docs/MARKET_PLAYBOOK.md`, `docs/CORS_PROXY_GUIDE.md`, `.env.example` (KI-31 fix), `STATUS.md`, `worklog.md`, `AGENT_NAVIGATION.md`.
+- **What was NOT done (intentionally deferred to iter 143+):** `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit (DONE iter 143); `docs/DATA_FLOW.md` §2 + §5 deep cross-check; `instrumentation.ts:7` comment drift; per-tab UX/logic deep-audit; F1 re-run; TD-3 runtime log verification.
