@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-12T10:26:51+0000",
+  "generated_at": "2026-07-12T11:15:29+0000",
   "source": "https://poe2scout.com/api/poe2/Leagues/Runes of Aldur",
   "count": 643,
   "items": [
@@ -84,6 +84,11 @@
       "category_api_id": "currency"
     },
     {
+      "api_id": "chance-shard",
+      "en_name": "Chance Shard",
+      "category_api_id": "currency"
+    },
+    {
       "api_id": "chance",
       "en_name": "Orb of Chance",
       "category_api_id": "currency"
@@ -94,23 +99,18 @@
       "category_api_id": "currency"
     },
     {
-      "api_id": "greater-exalted-orb",
-      "en_name": "Greater Exalted Orb",
-      "category_api_id": "currency"
-    },
-    {
       "api_id": "etcher",
       "en_name": "Arcanist's Etcher",
       "category_api_id": "currency"
     },
     {
-      "api_id": "greater-regal-orb",
-      "en_name": "Greater Regal Orb",
+      "api_id": "greater-exalted-orb",
+      "en_name": "Greater Exalted Orb",
       "category_api_id": "currency"
     },
     {
-      "api_id": "greater-jewellers-orb",
-      "en_name": "Greater Jeweller's Orb",
+      "api_id": "greater-regal-orb",
+      "en_name": "Greater Regal Orb",
       "category_api_id": "currency"
     },
     {
@@ -124,6 +124,11 @@
       "category_api_id": "currency"
     },
     {
+      "api_id": "greater-jewellers-orb",
+      "en_name": "Greater Jeweller's Orb",
+      "category_api_id": "currency"
+    },
+    {
       "api_id": "scrap",
       "en_name": "Armourer's Scrap",
       "category_api_id": "currency"
@@ -131,6 +136,11 @@
     {
       "api_id": "exalted",
       "en_name": "Exalted Orb",
+      "category_api_id": "currency"
+    },
+    {
+      "api_id": "whetstone",
+      "en_name": "Blacksmith's Whetstone",
       "category_api_id": "currency"
     },
     {
@@ -144,11 +154,6 @@
       "category_api_id": "currency"
     },
     {
-      "api_id": "whetstone",
-      "en_name": "Blacksmith's Whetstone",
-      "category_api_id": "currency"
-    },
-    {
       "api_id": "aug",
       "en_name": "Orb of Augmentation",
       "category_api_id": "currency"
@@ -156,11 +161,6 @@
     {
       "api_id": "greater-orb-of-transmutation",
       "en_name": "Greater Orb of Transmutation",
-      "category_api_id": "currency"
-    },
-    {
-      "api_id": "chance-shard",
-      "en_name": "Chance Shard",
       "category_api_id": "currency"
     },
     {
@@ -204,13 +204,13 @@
       "category_api_id": "fragments"
     },
     {
-      "api_id": "origin-core",
-      "en_name": "Origin Core",
+      "api_id": "faded-crisis-fragment",
+      "en_name": "Faded Crisis Fragment",
       "category_api_id": "fragments"
     },
     {
-      "api_id": "faded-crisis-fragment",
-      "en_name": "Faded Crisis Fragment",
+      "api_id": "origin-core",
+      "en_name": "Origin Core",
       "category_api_id": "fragments"
     },
     {
@@ -284,6 +284,11 @@
       "category_api_id": "runes"
     },
     {
+      "api_id": "perfect-stone-rune",
+      "en_name": "Perfect Stone Rune",
+      "category_api_id": "runes"
+    },
+    {
       "api_id": "serles-triumph",
       "en_name": "Serle's Triumph",
       "category_api_id": "runes"
@@ -294,8 +299,8 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "perfect-rebirth-rune",
-      "en_name": "Perfect Rebirth Rune",
+      "api_id": "perfect-ward-rune",
+      "en_name": "Perfect Ward Rune",
       "category_api_id": "runes"
     },
     {
@@ -304,8 +309,33 @@
       "category_api_id": "runes"
     },
     {
+      "api_id": "perfect-rebirth-rune",
+      "en_name": "Perfect Rebirth Rune",
+      "category_api_id": "runes"
+    },
+    {
       "api_id": "perfect-body-rune",
       "en_name": "Perfect Body Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "perfect-resolve-rune",
+      "en_name": "Perfect Resolve Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "perfect-inspiration-rune",
+      "en_name": "Perfect Inspiration Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "perfect-mind-rune",
+      "en_name": "Perfect Mind Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "perfect-vision-rune",
+      "en_name": "Perfect Vision Rune",
       "category_api_id": "runes"
     },
     {
@@ -319,28 +349,8 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "perfect-vision-rune",
-      "en_name": "Perfect Vision Rune",
-      "category_api_id": "runes"
-    },
-    {
       "api_id": "perfect-robust-rune",
       "en_name": "Perfect Robust Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "perfect-mind-rune",
-      "en_name": "Perfect Mind Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "perfect-inspiration-rune",
-      "en_name": "Perfect Inspiration Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "perfect-ward-rune",
-      "en_name": "Perfect Ward Rune",
       "category_api_id": "runes"
     },
     {
@@ -349,18 +359,8 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "perfect-resolve-rune",
-      "en_name": "Perfect Resolve Rune",
-      "category_api_id": "runes"
-    },
-    {
       "api_id": "greater-rune-of-leadership",
       "en_name": "Greater Rune of Leadership",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "perfect-glacial-rune",
-      "en_name": "Perfect Glacial Rune",
       "category_api_id": "runes"
     },
     {
@@ -369,13 +369,8 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "perfect-stone-rune",
-      "en_name": "Perfect Stone Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-rune-of-tithing",
-      "en_name": "Greater Rune of Tithing",
+      "api_id": "perfect-glacial-rune",
+      "en_name": "Perfect Glacial Rune",
       "category_api_id": "runes"
     },
     {
@@ -389,8 +384,8 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-rune-of-alacrity",
-      "en_name": "Greater Rune of Alacrity",
+      "api_id": "greater-rune-of-tithing",
+      "en_name": "Greater Rune of Tithing",
       "category_api_id": "runes"
     },
     {
@@ -399,303 +394,13 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "charging-rune",
-      "en_name": "Charging Rune",
+      "api_id": "warding-rune-of-annihilation",
+      "en_name": "Warding Rune of Annihilation",
       "category_api_id": "runes"
     },
     {
-      "api_id": "uhtreds-sidereus",
-      "en_name": "Uhtred's Sidereus",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-consistency",
-      "en_name": "Rune of Consistency",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-reach",
-      "en_name": "Rune of Reach",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "resolve-rune",
-      "en_name": "Resolve Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-foundations",
-      "en_name": "Rune of Foundations",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "iron-rune",
-      "en_name": "Iron Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-vitality",
-      "en_name": "Rune of Vitality",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "courtesan-mannans-rune-of-cruelty",
-      "en_name": "Courtesan Mannan's Rune of Cruelty",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "robust-rune",
-      "en_name": "Robust Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-reinforcement",
-      "en_name": "Warding Rune of Reinforcement",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "lesser-robust-rune",
-      "en_name": "Lesser Robust Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "hedgewitch-assandras-rune-of-wisdom",
-      "en_name": "Hedgewitch Assandra's Rune of Wisdom",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-desperation",
-      "en_name": "Warding Rune of Desperation",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-the-prism",
-      "en_name": "Rune of the Prism",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "body-rune",
-      "en_name": "Body Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "medveds-tending",
-      "en_name": "Medved's Tending",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "voranas-carnage",
-      "en_name": "Vorana's Carnage",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "lesser-adept-rune",
-      "en_name": "Lesser Adept Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-ward-rune",
-      "en_name": "Greater Ward Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-rune-of-nobility",
-      "en_name": "Greater Rune of Nobility",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-acrobatics",
-      "en_name": "Rune of Acrobatics",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "ancient-rune-of-the-titan",
-      "en_name": "Ancient Rune of the Titan",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "ancient-rune-of-detonation",
-      "en_name": "Ancient Rune of Detonation",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "storm-rune",
-      "en_name": "Storm Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "betrayal-of-aldur",
-      "en_name": "Betrayal of Aldur",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "lesser-resolve-rune",
-      "en_name": "Lesser Resolve Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-the-blossom",
-      "en_name": "Rune of the Blossom",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "katlas-gloom",
-      "en_name": "Katla's Gloom",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "craiceanns-rune-of-warding",
-      "en_name": "Craiceann's Rune of Warding",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-renown",
-      "en_name": "Rune of Renown",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-heart",
-      "en_name": "Warding Rune of Heart",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "vision-rune",
-      "en_name": "Vision Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "thane-grannells-rune-of-mastery",
-      "en_name": "Thane Grannell's Rune of Mastery",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "saqawals-rune-of-the-sky",
-      "en_name": "Saqawal's Rune of the Sky",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rebirth-rune",
-      "en_name": "Rebirth Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "glacial-rune",
-      "en_name": "Glacial Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "ancient-rune-of-splinters",
-      "en_name": "Ancient Rune of Splinters",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "farruls-rune-of-the-chase",
-      "en_name": "Farrul's Rune of the Chase",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "mind-rune",
-      "en_name": "Mind Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "craiceanns-rune-of-recovery",
-      "en_name": "Craiceann's Rune of Recovery",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "the-greatwolfs-rune-of-willpower",
-      "en_name": "The Greatwolf's Rune of Willpower",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "fenumus-rune-of-draining",
-      "en_name": "Fenumus' Rune of Draining",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-nourishment",
-      "en_name": "Warding Rune of Nourishment",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "breath-of-aldur",
-      "en_name": "Breath of Aldur",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-hollowing",
-      "en_name": "Warding Rune of Hollowing",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-adept-rune",
-      "en_name": "Greater Adept Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-accumulation",
-      "en_name": "Rune of Accumulation",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "thruds-might",
-      "en_name": "Thrud's Might",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "lesser-iron-rune",
-      "en_name": "Lesser Iron Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "lesser-body-rune",
-      "en_name": "Lesser Body Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "fenumus-rune-of-spinning",
-      "en_name": "Fenumus' Rune of Spinning",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "countess-seskes-rune-of-archery",
-      "en_name": "Countess Seske's Rune of Archery",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "fenumus-rune-of-agony",
-      "en_name": "Fenumus' Rune of Agony",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-charging-rune",
-      "en_name": "Greater Charging Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "ward-rune",
-      "en_name": "Ward Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "rune-of-the-hunt",
-      "en_name": "Rune of the Hunt",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-stability",
-      "en_name": "Warding Rune of Stability",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "desert-rune",
-      "en_name": "Desert Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "ancient-rune-of-decay",
-      "en_name": "Ancient Rune of Decay",
+      "api_id": "greater-rune-of-alacrity",
+      "en_name": "Greater Rune of Alacrity",
       "category_api_id": "runes"
     },
     {
@@ -704,38 +409,73 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-equinox",
-      "en_name": "Warding Rune of Equinox",
+      "api_id": "resolve-rune",
+      "en_name": "Resolve Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "adept-rune",
-      "en_name": "Adept Rune",
+      "api_id": "uhtreds-sidereus",
+      "en_name": "Uhtred's Sidereus",
       "category_api_id": "runes"
     },
     {
-      "api_id": "thane-myrks-rune-of-summer",
-      "en_name": "Thane Myrk's Rune of Summer",
+      "api_id": "body-rune",
+      "en_name": "Body Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-glancing",
-      "en_name": "Warding Rune of Glancing",
+      "api_id": "lesser-robust-rune",
+      "en_name": "Lesser Robust Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "rune-of-culmination",
-      "en_name": "Rune of Culmination",
+      "api_id": "iron-rune",
+      "en_name": "Iron Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "the-greatwolfs-rune-of-claws",
-      "en_name": "The Greatwolf's Rune of Claws",
+      "api_id": "warding-rune-of-reinforcement",
+      "en_name": "Warding Rune of Reinforcement",
       "category_api_id": "runes"
     },
     {
-      "api_id": "thane-lelds-rune-of-spring",
-      "en_name": "Thane Leld's Rune of Spring",
+      "api_id": "rune-of-consistency",
+      "en_name": "Rune of Consistency",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rune-of-renown",
+      "en_name": "Rune of Renown",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "courtesan-mannans-rune-of-cruelty",
+      "en_name": "Courtesan Mannan's Rune of Cruelty",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-ward-rune",
+      "en_name": "Greater Ward Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "hedgewitch-assandras-rune-of-wisdom",
+      "en_name": "Hedgewitch Assandra's Rune of Wisdom",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rune-of-foundations",
+      "en_name": "Rune of Foundations",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "robust-rune",
+      "en_name": "Robust Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-desperation",
+      "en_name": "Warding Rune of Desperation",
       "category_api_id": "runes"
     },
     {
@@ -744,63 +484,138 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-robust-rune",
-      "en_name": "Greater Robust Rune",
+      "api_id": "storm-rune",
+      "en_name": "Storm Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "thane-girts-rune-of-wildness",
-      "en_name": "Thane Girt's Rune of Wildness",
+      "api_id": "katlas-gloom",
+      "en_name": "Katla's Gloom",
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-annihilation",
-      "en_name": "Warding Rune of Annihilation",
+      "api_id": "medveds-tending",
+      "en_name": "Medved's Tending",
       "category_api_id": "runes"
     },
     {
-      "api_id": "lesser-glacial-rune",
-      "en_name": "Lesser Glacial Rune",
+      "api_id": "warding-rune-of-heart",
+      "en_name": "Warding Rune of Heart",
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-armature",
-      "en_name": "Warding Rune of Armature",
+      "api_id": "rune-of-vitality",
+      "en_name": "Rune of Vitality",
       "category_api_id": "runes"
     },
     {
-      "api_id": "lesser-storm-rune",
-      "en_name": "Lesser Storm Rune",
+      "api_id": "greater-rune-of-nobility",
+      "en_name": "Greater Rune of Nobility",
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-vision-rune",
-      "en_name": "Greater Vision Rune",
+      "api_id": "voranas-carnage",
+      "en_name": "Vorana's Carnage",
       "category_api_id": "runes"
     },
     {
-      "api_id": "farruls-rune-of-grace",
-      "en_name": "Farrul's Rune of Grace",
+      "api_id": "ancient-rune-of-detonation",
+      "en_name": "Ancient Rune of Detonation",
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-mind-rune",
-      "en_name": "Greater Mind Rune",
+      "api_id": "rune-of-acrobatics",
+      "en_name": "Rune of Acrobatics",
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-inspiration-rune",
-      "en_name": "Greater Inspiration Rune",
+      "api_id": "lesser-resolve-rune",
+      "en_name": "Lesser Resolve Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "saqawals-rune-of-memory",
-      "en_name": "Saqawal's Rune of Memory",
+      "api_id": "adept-rune",
+      "en_name": "Adept Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-body-rune",
-      "en_name": "Greater Body Rune",
+      "api_id": "vision-rune",
+      "en_name": "Vision Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "thruds-might",
+      "en_name": "Thrud's Might",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "farruls-rune-of-the-chase",
+      "en_name": "Farrul's Rune of the Chase",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "craiceanns-rune-of-warding",
+      "en_name": "Craiceann's Rune of Warding",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "desert-rune",
+      "en_name": "Desert Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-adept-rune",
+      "en_name": "Lesser Adept Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-equinox",
+      "en_name": "Warding Rune of Equinox",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-adept-rune",
+      "en_name": "Greater Adept Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-stability",
+      "en_name": "Warding Rune of Stability",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rune-of-the-blossom",
+      "en_name": "Rune of the Blossom",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "saqawals-rune-of-the-sky",
+      "en_name": "Saqawal's Rune of the Sky",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-iron-rune",
+      "en_name": "Lesser Iron Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ancient-rune-of-decay",
+      "en_name": "Ancient Rune of Decay",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rune-of-the-hunt",
+      "en_name": "Rune of the Hunt",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-body-rune",
+      "en_name": "Lesser Body Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "the-greatwolfs-rune-of-claws",
+      "en_name": "The Greatwolf's Rune of Claws",
       "category_api_id": "runes"
     },
     {
@@ -809,33 +624,13 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-protection",
-      "en_name": "Warding Rune of Protection",
+      "api_id": "countess-seskes-rune-of-archery",
+      "en_name": "Countess Seske's Rune of Archery",
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-iron-rune",
-      "en_name": "Greater Iron Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-desert-rune",
-      "en_name": "Greater Desert Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-salvaging",
-      "en_name": "Warding Rune of Salvaging",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "passion-of-aldur",
-      "en_name": "Passion of Aldur",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "farruls-rune-of-the-hunt",
-      "en_name": "Farrul's Rune of the Hunt",
+      "api_id": "glacial-rune",
+      "en_name": "Glacial Rune",
       "category_api_id": "runes"
     },
     {
@@ -844,28 +639,168 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "lesser-inspiration-rune",
-      "en_name": "Lesser Inspiration Rune",
+      "api_id": "rune-of-accumulation",
+      "en_name": "Rune of Accumulation",
       "category_api_id": "runes"
     },
     {
-      "api_id": "rune-of-confrontation",
-      "en_name": "Rune of Confrontation",
+      "api_id": "thane-grannells-rune-of-mastery",
+      "en_name": "Thane Grannell's Rune of Mastery",
       "category_api_id": "runes"
     },
     {
-      "api_id": "ancient-rune-of-retaliation",
-      "en_name": "Ancient Rune of Retaliation",
+      "api_id": "rune-of-reach",
+      "en_name": "Rune of Reach",
       "category_api_id": "runes"
     },
     {
-      "api_id": "greater-rebirth-rune",
-      "en_name": "Greater Rebirth Rune",
+      "api_id": "rune-of-the-prism",
+      "en_name": "Rune of the Prism",
       "category_api_id": "runes"
     },
     {
-      "api_id": "ancient-rune-of-witchcraft",
-      "en_name": "Ancient Rune of Witchcraft",
+      "api_id": "inspiration-rune",
+      "en_name": "Inspiration Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "fenumus-rune-of-spinning",
+      "en_name": "Fenumus' Rune of Spinning",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "saqawals-rune-of-memory",
+      "en_name": "Saqawal's Rune of Memory",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-glancing",
+      "en_name": "Warding Rune of Glancing",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-nourishment",
+      "en_name": "Warding Rune of Nourishment",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rebirth-rune",
+      "en_name": "Rebirth Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-charging-rune",
+      "en_name": "Greater Charging Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ancient-rune-of-the-titan",
+      "en_name": "Ancient Rune of the Titan",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-protection",
+      "en_name": "Warding Rune of Protection",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "the-greatwolfs-rune-of-willpower",
+      "en_name": "The Greatwolf's Rune of Willpower",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ward-rune",
+      "en_name": "Ward Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-desert-rune",
+      "en_name": "Lesser Desert Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "fenumus-rune-of-agony",
+      "en_name": "Fenumus' Rune of Agony",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-storm-rune",
+      "en_name": "Lesser Storm Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "craiceanns-rune-of-recovery",
+      "en_name": "Craiceann's Rune of Recovery",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-mind-rune",
+      "en_name": "Greater Mind Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "thane-myrks-rune-of-summer",
+      "en_name": "Thane Myrk's Rune of Summer",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-armature",
+      "en_name": "Warding Rune of Armature",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "thane-girts-rune-of-wildness",
+      "en_name": "Thane Girt's Rune of Wildness",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "thane-lelds-rune-of-spring",
+      "en_name": "Thane Leld's Rune of Spring",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-glacial-rune",
+      "en_name": "Lesser Glacial Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "passion-of-aldur",
+      "en_name": "Passion of Aldur",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "fenumus-rune-of-draining",
+      "en_name": "Fenumus' Rune of Draining",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-symbiosis",
+      "en_name": "Warding Rune of Symbiosis",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "farruls-rune-of-grace",
+      "en_name": "Farrul's Rune of Grace",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-iron-rune",
+      "en_name": "Greater Iron Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "farruls-rune-of-the-hunt",
+      "en_name": "Farrul's Rune of the Hunt",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-salvaging",
+      "en_name": "Warding Rune of Salvaging",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-hollowing",
+      "en_name": "Warding Rune of Hollowing",
       "category_api_id": "runes"
     },
     {
@@ -874,28 +809,118 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "ancient-rune-of-discovery",
-      "en_name": "Ancient Rune of Discovery",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "ancient-rune-of-the-horde",
-      "en_name": "Ancient Rune of the Horde",
-      "category_api_id": "runes"
-    },
-    {
       "api_id": "greater-glacial-rune",
       "en_name": "Greater Glacial Rune",
       "category_api_id": "runes"
     },
     {
-      "api_id": "lesser-ward-rune",
-      "en_name": "Lesser Ward Rune",
+      "api_id": "greater-robust-rune",
+      "en_name": "Greater Robust Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "betrayal-of-aldur",
+      "en_name": "Betrayal of Aldur",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "charging-rune",
+      "en_name": "Charging Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-inspiration-rune",
+      "en_name": "Lesser Inspiration Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-inspiration-rune",
+      "en_name": "Greater Inspiration Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ancient-rune-of-splinters",
+      "en_name": "Ancient Rune of Splinters",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rune-of-confrontation",
+      "en_name": "Rune of Confrontation",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ancient-rune-of-discovery",
+      "en_name": "Ancient Rune of Discovery",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-resolve-rune",
+      "en_name": "Greater Resolve Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-rebirth-rune",
+      "en_name": "Lesser Rebirth Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "rune-of-culmination",
+      "en_name": "Rune of Culmination",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-bodyguards",
+      "en_name": "Warding Rune of Bodyguards",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-rebirth-rune",
+      "en_name": "Greater Rebirth Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-body-rune",
+      "en_name": "Greater Body Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-desert-rune",
+      "en_name": "Greater Desert Rune",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ancient-rune-of-retaliation",
+      "en_name": "Ancient Rune of Retaliation",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "breath-of-aldur",
+      "en_name": "Breath of Aldur",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "warding-rune-of-obsession",
+      "en_name": "Warding Rune of Obsession",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "ancient-rune-of-witchcraft",
+      "en_name": "Ancient Rune of Witchcraft",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "greater-storm-rune",
+      "en_name": "Greater Storm Rune",
       "category_api_id": "runes"
     },
     {
       "api_id": "warding-rune-of-courage",
       "en_name": "Warding Rune of Courage",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "lesser-ward-rune",
+      "en_name": "Lesser Ward Rune",
       "category_api_id": "runes"
     },
     {
@@ -919,13 +944,18 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-bodyguards",
-      "en_name": "Warding Rune of Bodyguards",
+      "api_id": "ancient-rune-of-the-horde",
+      "en_name": "Ancient Rune of the Horde",
       "category_api_id": "runes"
     },
     {
       "api_id": "ancient-rune-of-animosity",
       "en_name": "Ancient Rune of Animosity",
+      "category_api_id": "runes"
+    },
+    {
+      "api_id": "mind-rune",
+      "en_name": "Mind Rune",
       "category_api_id": "runes"
     },
     {
@@ -939,33 +969,13 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "inspiration-rune",
-      "en_name": "Inspiration Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-resolve-rune",
-      "en_name": "Greater Resolve Rune",
-      "category_api_id": "runes"
-    },
-    {
       "api_id": "lady-hestras-rune-of-winter",
       "en_name": "Lady Hestra's Rune of Winter",
       "category_api_id": "runes"
     },
     {
-      "api_id": "warding-rune-of-obsession",
-      "en_name": "Warding Rune of Obsession",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "warding-rune-of-symbiosis",
-      "en_name": "Warding Rune of Symbiosis",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "greater-storm-rune",
-      "en_name": "Greater Storm Rune",
+      "api_id": "greater-vision-rune",
+      "en_name": "Greater Vision Rune",
       "category_api_id": "runes"
     },
     {
@@ -974,19 +984,14 @@
       "category_api_id": "runes"
     },
     {
-      "api_id": "lesser-rebirth-rune",
-      "en_name": "Lesser Rebirth Rune",
-      "category_api_id": "runes"
-    },
-    {
-      "api_id": "lesser-desert-rune",
-      "en_name": "Lesser Desert Rune",
-      "category_api_id": "runes"
-    },
-    {
       "api_id": "greater-stone-rune",
       "en_name": "Greater Stone Rune",
       "category_api_id": "runes"
+    },
+    {
+      "api_id": "essence-of-enhancement",
+      "en_name": "Essence of Enhancement",
+      "category_api_id": "essences"
     },
     {
       "api_id": "lesser-essence-of-opulence",
@@ -1009,23 +1014,13 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-opulence",
-      "en_name": "Essence of Opulence",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "lesser-essence-of-alacrity",
-      "en_name": "Lesser Essence of Alacrity",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-enhancement",
-      "en_name": "Essence of Enhancement",
-      "category_api_id": "essences"
-    },
-    {
       "api_id": "essence-of-the-infinite",
       "en_name": "Essence of the Infinite",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "essence-of-opulence",
+      "en_name": "Essence of Opulence",
       "category_api_id": "essences"
     },
     {
@@ -1044,13 +1039,18 @@
       "category_api_id": "essences"
     },
     {
+      "api_id": "essence-of-abrasion",
+      "en_name": "Essence of Abrasion",
+      "category_api_id": "essences"
+    },
+    {
       "api_id": "lesser-essence-of-battle",
       "en_name": "Lesser Essence of Battle",
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-abrasion",
-      "en_name": "Essence of Abrasion",
+      "api_id": "essence-of-thawing",
+      "en_name": "Essence of Thawing",
       "category_api_id": "essences"
     },
     {
@@ -1059,8 +1059,23 @@
       "category_api_id": "essences"
     },
     {
+      "api_id": "essence-of-haste",
+      "en_name": "Essence of Haste",
+      "category_api_id": "essences"
+    },
+    {
       "api_id": "lesser-essence-of-command",
       "en_name": "Lesser Essence of Command",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "essence-of-electricity",
+      "en_name": "Essence of Electricity",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "essence-of-insulation",
+      "en_name": "Essence of Insulation",
       "category_api_id": "essences"
     },
     {
@@ -1069,23 +1084,8 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-the-body",
-      "en_name": "Essence of the Body",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-grounding",
-      "en_name": "Perfect Essence of Grounding",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-haste",
-      "en_name": "Perfect Essence of Haste",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-thawing",
-      "en_name": "Perfect Essence of Thawing",
+      "api_id": "perfect-essence-of-enhancement",
+      "en_name": "Perfect Essence of Enhancement",
       "category_api_id": "essences"
     },
     {
@@ -1099,43 +1099,13 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-insanity",
-      "en_name": "Essence of Insanity",
+      "api_id": "essence-of-alacrity",
+      "en_name": "Essence of Alacrity",
       "category_api_id": "essences"
     },
     {
-      "api_id": "lesser-essence-of-haste",
-      "en_name": "Lesser Essence of Haste",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-the-abyss",
-      "en_name": "Essence of the Abyss",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-sorcery",
-      "en_name": "Essence of Sorcery",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-grounding",
-      "en_name": "Essence of Grounding",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-enhancement",
-      "en_name": "Perfect Essence of Enhancement",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-thawing",
-      "en_name": "Essence of Thawing",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "lesser-essence-of-the-body",
-      "en_name": "Lesser Essence of the Body",
+      "api_id": "perfect-essence-of-grounding",
+      "en_name": "Perfect Essence of Grounding",
       "category_api_id": "essences"
     },
     {
@@ -1144,23 +1114,23 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-battle",
-      "en_name": "Perfect Essence of Battle",
+      "api_id": "essence-of-insanity",
+      "en_name": "Essence of Insanity",
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-abrasion",
-      "en_name": "Perfect Essence of Abrasion",
+      "api_id": "essence-of-the-body",
+      "en_name": "Essence of the Body",
       "category_api_id": "essences"
     },
     {
-      "api_id": "lesser-essence-of-electricity",
-      "en_name": "Lesser Essence of Electricity",
+      "api_id": "essence-of-the-abyss",
+      "en_name": "Essence of the Abyss",
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-ruin",
-      "en_name": "Perfect Essence of Ruin",
+      "api_id": "essence-of-command",
+      "en_name": "Essence of Command",
       "category_api_id": "essences"
     },
     {
@@ -1169,23 +1139,28 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "lesser-essence-of-flames",
-      "en_name": "Lesser Essence of Flames",
+      "api_id": "perfect-essence-of-battle",
+      "en_name": "Perfect Essence of Battle",
       "category_api_id": "essences"
     },
     {
-      "api_id": "greater-essence-of-seeking",
-      "en_name": "Greater Essence of Seeking",
+      "api_id": "perfect-essence-of-haste",
+      "en_name": "Perfect Essence of Haste",
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-command",
-      "en_name": "Perfect Essence of Command",
+      "api_id": "lesser-essence-of-electricity",
+      "en_name": "Lesser Essence of Electricity",
       "category_api_id": "essences"
     },
     {
-      "api_id": "greater-essence-of-insulation",
-      "en_name": "Greater Essence of Insulation",
+      "api_id": "essence-of-grounding",
+      "en_name": "Essence of Grounding",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "perfect-essence-of-ruin",
+      "en_name": "Perfect Essence of Ruin",
       "category_api_id": "essences"
     },
     {
@@ -1194,18 +1169,43 @@
       "category_api_id": "essences"
     },
     {
+      "api_id": "perfect-essence-of-command",
+      "en_name": "Perfect Essence of Command",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "lesser-essence-of-flames",
+      "en_name": "Lesser Essence of Flames",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "perfect-essence-of-abrasion",
+      "en_name": "Perfect Essence of Abrasion",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "perfect-essence-of-ice",
+      "en_name": "Perfect Essence of Ice",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "perfect-essence-of-the-mind",
+      "en_name": "Perfect Essence of the Mind",
+      "category_api_id": "essences"
+    },
+    {
       "api_id": "lesser-essence-of-insulation",
       "en_name": "Lesser Essence of Insulation",
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-haste",
-      "en_name": "Essence of Haste",
+      "api_id": "essence-of-battle",
+      "en_name": "Essence of Battle",
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-sorcery",
-      "en_name": "Perfect Essence of Sorcery",
+      "api_id": "greater-essence-of-alacrity",
+      "en_name": "Greater Essence of Alacrity",
       "category_api_id": "essences"
     },
     {
@@ -1214,18 +1214,23 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "greater-essence-of-haste",
-      "en_name": "Greater Essence of Haste",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "greater-essence-of-grounding",
-      "en_name": "Greater Essence of Grounding",
+      "api_id": "greater-essence-of-seeking",
+      "en_name": "Greater Essence of Seeking",
       "category_api_id": "essences"
     },
     {
       "api_id": "greater-essence-of-ruin",
       "en_name": "Greater Essence of Ruin",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "perfect-essence-of-seeking",
+      "en_name": "Perfect Essence of Seeking",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "lesser-essence-of-haste",
+      "en_name": "Lesser Essence of Haste",
       "category_api_id": "essences"
     },
     {
@@ -1239,38 +1244,13 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "greater-essence-of-abrasion",
-      "en_name": "Greater Essence of Abrasion",
+      "api_id": "greater-essence-of-haste",
+      "en_name": "Greater Essence of Haste",
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-battle",
-      "en_name": "Essence of Battle",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-seeking",
-      "en_name": "Perfect Essence of Seeking",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-the-mind",
-      "en_name": "Perfect Essence of the Mind",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "greater-essence-of-sorcery",
-      "en_name": "Greater Essence of Sorcery",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "greater-essence-of-enhancement",
-      "en_name": "Greater Essence of Enhancement",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-ruin",
-      "en_name": "Essence of Ruin",
+      "api_id": "perfect-essence-of-thawing",
+      "en_name": "Perfect Essence of Thawing",
       "category_api_id": "essences"
     },
     {
@@ -1279,8 +1259,33 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-command",
-      "en_name": "Essence of Command",
+      "api_id": "perfect-essence-of-sorcery",
+      "en_name": "Perfect Essence of Sorcery",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "essence-of-sorcery",
+      "en_name": "Essence of Sorcery",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "greater-essence-of-insulation",
+      "en_name": "Greater Essence of Insulation",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "greater-essence-of-grounding",
+      "en_name": "Greater Essence of Grounding",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "essence-of-ruin",
+      "en_name": "Essence of Ruin",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "greater-essence-of-sorcery",
+      "en_name": "Greater Essence of Sorcery",
       "category_api_id": "essences"
     },
     {
@@ -1299,6 +1304,11 @@
       "category_api_id": "essences"
     },
     {
+      "api_id": "perfect-essence-of-electricity",
+      "en_name": "Perfect Essence of Electricity",
+      "category_api_id": "essences"
+    },
+    {
       "api_id": "essence-of-flames",
       "en_name": "Essence of Flames",
       "category_api_id": "essences"
@@ -1314,28 +1324,13 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "essence-of-electricity",
-      "en_name": "Essence of Electricity",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-insulation",
-      "en_name": "Essence of Insulation",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "essence-of-alacrity",
-      "en_name": "Essence of Alacrity",
-      "category_api_id": "essences"
-    },
-    {
       "api_id": "perfect-essence-of-insulation",
       "en_name": "Perfect Essence of Insulation",
       "category_api_id": "essences"
     },
     {
-      "api_id": "greater-essence-of-alacrity",
-      "en_name": "Greater Essence of Alacrity",
+      "api_id": "lesser-essence-of-alacrity",
+      "en_name": "Lesser Essence of Alacrity",
       "category_api_id": "essences"
     },
     {
@@ -1344,28 +1339,23 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-ice",
-      "en_name": "Perfect Essence of Ice",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "perfect-essence-of-electricity",
-      "en_name": "Perfect Essence of Electricity",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "greater-essence-of-flames",
-      "en_name": "Greater Essence of Flames",
-      "category_api_id": "essences"
-    },
-    {
-      "api_id": "greater-essence-of-the-infinite",
-      "en_name": "Greater Essence of the Infinite",
+      "api_id": "greater-essence-of-enhancement",
+      "en_name": "Greater Essence of Enhancement",
       "category_api_id": "essences"
     },
     {
       "api_id": "greater-essence-of-command",
       "en_name": "Greater Essence of Command",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "greater-essence-of-abrasion",
+      "en_name": "Greater Essence of Abrasion",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "greater-essence-of-the-infinite",
+      "en_name": "Greater Essence of the Infinite",
       "category_api_id": "essences"
     },
     {
@@ -1379,13 +1369,23 @@
       "category_api_id": "essences"
     },
     {
-      "api_id": "perfect-essence-of-flames",
-      "en_name": "Perfect Essence of Flames",
+      "api_id": "lesser-essence-of-the-body",
+      "en_name": "Lesser Essence of the Body",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "greater-essence-of-flames",
+      "en_name": "Greater Essence of Flames",
       "category_api_id": "essences"
     },
     {
       "api_id": "greater-essence-of-the-body",
       "en_name": "Greater Essence of the Body",
+      "category_api_id": "essences"
+    },
+    {
+      "api_id": "perfect-essence-of-flames",
+      "en_name": "Perfect Essence of Flames",
       "category_api_id": "essences"
     },
     {
@@ -1414,13 +1414,13 @@
       "category_api_id": "ultimatum"
     },
     {
-      "api_id": "soul-core-of-zalatl",
-      "en_name": "Soul Core of Zalatl",
+      "api_id": "citaqualotls-soul-core-of-foulness",
+      "en_name": "Citaqualotl's Soul Core of Foulness",
       "category_api_id": "ultimatum"
     },
     {
-      "api_id": "soul-core-of-cholotl",
-      "en_name": "Soul Core of Cholotl",
+      "api_id": "soul-core-of-zalatl",
+      "en_name": "Soul Core of Zalatl",
       "category_api_id": "ultimatum"
     },
     {
@@ -1434,8 +1434,8 @@
       "category_api_id": "ultimatum"
     },
     {
-      "api_id": "citaqualotls-soul-core-of-foulness",
-      "en_name": "Citaqualotl's Soul Core of Foulness",
+      "api_id": "soul-core-of-cholotl",
+      "en_name": "Soul Core of Cholotl",
       "category_api_id": "ultimatum"
     },
     {
@@ -1454,13 +1454,18 @@
       "category_api_id": "ultimatum"
     },
     {
+      "api_id": "soul-core-of-citaqualotl",
+      "en_name": "Soul Core of Citaqualotl",
+      "category_api_id": "ultimatum"
+    },
+    {
       "api_id": "soul-core-of-jiquani",
       "en_name": "Soul Core of Jiquani",
       "category_api_id": "ultimatum"
     },
     {
-      "api_id": "soul-core-of-citaqualotl",
-      "en_name": "Soul Core of Citaqualotl",
+      "api_id": "soul-core-of-ticaba",
+      "en_name": "Soul Core of Ticaba",
       "category_api_id": "ultimatum"
     },
     {
@@ -1469,8 +1474,28 @@
       "category_api_id": "ultimatum"
     },
     {
+      "api_id": "soul-core-of-tacati",
+      "en_name": "Soul Core of Tacati",
+      "category_api_id": "ultimatum"
+    },
+    {
+      "api_id": "atmohuas-soul-core-of-retreat",
+      "en_name": "Atmohua's Soul Core of Retreat",
+      "category_api_id": "ultimatum"
+    },
+    {
       "api_id": "soul-core-of-atmohua",
       "en_name": "Soul Core of Atmohua",
+      "category_api_id": "ultimatum"
+    },
+    {
+      "api_id": "soul-core-of-tzamoto",
+      "en_name": "Soul Core of Tzamoto",
+      "category_api_id": "ultimatum"
+    },
+    {
+      "api_id": "soul-core-of-puhuarte",
+      "en_name": "Soul Core of Puhuarte",
       "category_api_id": "ultimatum"
     },
     {
@@ -1481,36 +1506,6 @@
     {
       "api_id": "soul-core-of-xopec",
       "en_name": "Soul Core of Xopec",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "soul-core-of-tacati",
-      "en_name": "Soul Core of Tacati",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "zalatls-soul-core-of-insulation",
-      "en_name": "Zalatl's Soul Core of Insulation",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "soul-core-of-ticaba",
-      "en_name": "Soul Core of Ticaba",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "soul-core-of-puhuarte",
-      "en_name": "Soul Core of Puhuarte",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "soul-core-of-tzamoto",
-      "en_name": "Soul Core of Tzamoto",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "atmohuas-soul-core-of-retreat",
-      "en_name": "Atmohua's Soul Core of Retreat",
       "category_api_id": "ultimatum"
     },
     {
@@ -1529,6 +1524,16 @@
       "category_api_id": "ultimatum"
     },
     {
+      "api_id": "zalatls-soul-core-of-insulation",
+      "en_name": "Zalatl's Soul Core of Insulation",
+      "category_api_id": "ultimatum"
+    },
+    {
+      "api_id": "cholotls-soul-core-of-war",
+      "en_name": "Cholotl's Soul Core of War",
+      "category_api_id": "ultimatum"
+    },
+    {
       "api_id": "topotantes-soul-core-of-dampening",
       "en_name": "Topotante's Soul Core of Dampening",
       "category_api_id": "ultimatum"
@@ -1541,11 +1546,6 @@
     {
       "api_id": "uromotis-soul-core-of-attenuation",
       "en_name": "Uromoti's Soul Core of Attenuation",
-      "category_api_id": "ultimatum"
-    },
-    {
-      "api_id": "cholotls-soul-core-of-war",
-      "en_name": "Cholotl's Soul Core of War",
       "category_api_id": "ultimatum"
     },
     {
@@ -1594,8 +1594,8 @@
       "category_api_id": "expedition"
     },
     {
-      "api_id": "thaumaturgic-flux-9",
-      "en_name": "Thaumaturgic Flux (Level 9)",
+      "api_id": "emergent-instinct",
+      "en_name": "Emergent Instinct",
       "category_api_id": "expedition"
     },
     {
@@ -1604,18 +1604,13 @@
       "category_api_id": "expedition"
     },
     {
-      "api_id": "emergent-protection",
-      "en_name": "Emergent Protection",
-      "category_api_id": "expedition"
-    },
-    {
       "api_id": "thaumaturgic-flux-10",
       "en_name": "Thaumaturgic Flux (Level 10)",
       "category_api_id": "expedition"
     },
     {
-      "api_id": "emergent-instinct",
-      "en_name": "Emergent Instinct",
+      "api_id": "emergent-protection",
+      "en_name": "Emergent Protection",
       "category_api_id": "expedition"
     },
     {
@@ -1629,6 +1624,11 @@
       "category_api_id": "expedition"
     },
     {
+      "api_id": "thaumaturgic-flux-11",
+      "en_name": "Thaumaturgic Flux (Level 11)",
+      "category_api_id": "expedition"
+    },
+    {
       "api_id": "thaumaturgic-flux-17",
       "en_name": "Thaumaturgic Flux (Level 17)",
       "category_api_id": "expedition"
@@ -1639,18 +1639,8 @@
       "category_api_id": "expedition"
     },
     {
-      "api_id": "carved-mischief",
-      "en_name": "Carved Mischief",
-      "category_api_id": "expedition"
-    },
-    {
       "api_id": "blazing-flux",
       "en_name": "Blazing Flux",
-      "category_api_id": "expedition"
-    },
-    {
-      "api_id": "crackling-flux",
-      "en_name": "Crackling Flux",
       "category_api_id": "expedition"
     },
     {
@@ -1659,13 +1649,8 @@
       "category_api_id": "expedition"
     },
     {
-      "api_id": "thaumaturgic-flux-14",
-      "en_name": "Thaumaturgic Flux (Level 14)",
-      "category_api_id": "expedition"
-    },
-    {
-      "api_id": "medveds-saga",
-      "en_name": "Medved's Saga",
+      "api_id": "thaumaturgic-flux-9",
+      "en_name": "Thaumaturgic Flux (Level 9)",
       "category_api_id": "expedition"
     },
     {
@@ -1674,13 +1659,33 @@
       "category_api_id": "expedition"
     },
     {
-      "api_id": "thaumaturgic-flux-13",
-      "en_name": "Thaumaturgic Flux (Level 13)",
+      "api_id": "crackling-flux",
+      "en_name": "Crackling Flux",
       "category_api_id": "expedition"
     },
     {
-      "api_id": "thaumaturgic-flux-15",
-      "en_name": "Thaumaturgic Flux (Level 15)",
+      "api_id": "carved-mischief",
+      "en_name": "Carved Mischief",
+      "category_api_id": "expedition"
+    },
+    {
+      "api_id": "medveds-saga",
+      "en_name": "Medved's Saga",
+      "category_api_id": "expedition"
+    },
+    {
+      "api_id": "thaumaturgic-flux-18",
+      "en_name": "Thaumaturgic Flux (Level 18)",
+      "category_api_id": "expedition"
+    },
+    {
+      "api_id": "thaumaturgic-flux-14",
+      "en_name": "Thaumaturgic Flux (Level 14)",
+      "category_api_id": "expedition"
+    },
+    {
+      "api_id": "thaumaturgic-flux-13",
+      "en_name": "Thaumaturgic Flux (Level 13)",
       "category_api_id": "expedition"
     },
     {
@@ -1694,18 +1699,13 @@
       "category_api_id": "expedition"
     },
     {
-      "api_id": "thaumaturgic-flux-18",
-      "en_name": "Thaumaturgic Flux (Level 18)",
-      "category_api_id": "expedition"
-    },
-    {
-      "api_id": "thaumaturgic-flux-11",
-      "en_name": "Thaumaturgic Flux (Level 11)",
-      "category_api_id": "expedition"
-    },
-    {
       "api_id": "thaumaturgic-flux-19",
       "en_name": "Thaumaturgic Flux (Level 19)",
+      "category_api_id": "expedition"
+    },
+    {
+      "api_id": "thaumaturgic-flux-15",
+      "en_name": "Thaumaturgic Flux (Level 15)",
       "category_api_id": "expedition"
     },
     {
@@ -1754,6 +1754,16 @@
       "category_api_id": "ritual"
     },
     {
+      "api_id": "omen-of-the-hunt",
+      "en_name": "Omen of the Hunt",
+      "category_api_id": "ritual"
+    },
+    {
+      "api_id": "omen-of-secret-compartments",
+      "en_name": "Omen of Secret Compartments",
+      "category_api_id": "ritual"
+    },
+    {
       "api_id": "omen-of-sanctification",
       "en_name": "Omen of Sanctification",
       "category_api_id": "ritual"
@@ -1769,13 +1779,8 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "omen-of-secret-compartments",
-      "en_name": "Omen of Secret Compartments",
-      "category_api_id": "ritual"
-    },
-    {
-      "api_id": "omen-of-the-hunt",
-      "en_name": "Omen of the Hunt",
+      "api_id": "omen-of-the-blessed",
+      "en_name": "Omen of the Blessed",
       "category_api_id": "ritual"
     },
     {
@@ -1784,18 +1789,13 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "omen-of-the-blessed",
-      "en_name": "Omen of the Blessed",
+      "api_id": "omen-of-chaotic-monsters",
+      "en_name": "Omen of Chaotic Monsters",
       "category_api_id": "ritual"
     },
     {
       "api_id": "omen-of-dextral-crystallisation",
       "en_name": "Omen of Dextral Crystallisation",
-      "category_api_id": "ritual"
-    },
-    {
-      "api_id": "omen-of-chaotic-monsters",
-      "en_name": "Omen of Chaotic Monsters",
       "category_api_id": "ritual"
     },
     {
@@ -1814,11 +1814,6 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "omen-of-answered-prayers",
-      "en_name": "Omen of Answered Prayers",
-      "category_api_id": "ritual"
-    },
-    {
       "api_id": "idol-of-eramir",
       "en_name": "Idol of Eramir",
       "category_api_id": "ritual"
@@ -1829,13 +1824,18 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "idol-of-the-martyr",
-      "en_name": "Idol of the Martyr",
+      "api_id": "omen-of-answered-prayers",
+      "en_name": "Omen of Answered Prayers",
       "category_api_id": "ritual"
     },
     {
-      "api_id": "omen-of-the-sovereign",
-      "en_name": "Omen of the Sovereign",
+      "api_id": "idol-of-the-sycophant",
+      "en_name": "Idol of the Sycophant",
+      "category_api_id": "ritual"
+    },
+    {
+      "api_id": "idol-of-the-martyr",
+      "en_name": "Idol of the Martyr",
       "category_api_id": "ritual"
     },
     {
@@ -1854,11 +1854,6 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "idol-of-the-sycophant",
-      "en_name": "Idol of the Sycophant",
-      "category_api_id": "ritual"
-    },
-    {
       "api_id": "omen-of-amelioration",
       "en_name": "Omen of Amelioration",
       "category_api_id": "ritual"
@@ -1869,8 +1864,8 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "idol-of-oak",
-      "en_name": "Idol of Oak",
+      "api_id": "idol-of-kraityn",
+      "en_name": "Idol of Kraityn",
       "category_api_id": "ritual"
     },
     {
@@ -1884,8 +1879,8 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "idol-of-kraityn",
-      "en_name": "Idol of Kraityn",
+      "api_id": "idol-of-oak",
+      "en_name": "Idol of Oak",
       "category_api_id": "ritual"
     },
     {
@@ -1904,6 +1899,21 @@
       "category_api_id": "ritual"
     },
     {
+      "api_id": "idol-of-yeena",
+      "en_name": "Idol of Yeena",
+      "category_api_id": "ritual"
+    },
+    {
+      "api_id": "idol-of-greust",
+      "en_name": "Idol of Greust",
+      "category_api_id": "ritual"
+    },
+    {
+      "api_id": "omen-of-the-sovereign",
+      "en_name": "Omen of the Sovereign",
+      "category_api_id": "ritual"
+    },
+    {
       "api_id": "omen-of-dextral-necromancy",
       "en_name": "Omen of Dextral Necromancy",
       "category_api_id": "ritual"
@@ -1914,23 +1924,23 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "idol-of-greust",
-      "en_name": "Idol of Greust",
-      "category_api_id": "ritual"
-    },
-    {
       "api_id": "omen-of-sinistral-necromancy",
       "en_name": "Omen of Sinistral Necromancy",
       "category_api_id": "ritual"
     },
     {
-      "api_id": "idol-of-yeena",
-      "en_name": "Idol of Yeena",
+      "api_id": "snake-idol",
+      "en_name": "Snake Idol",
       "category_api_id": "ritual"
     },
     {
-      "api_id": "omen-of-putrefaction",
-      "en_name": "Omen of Putrefaction",
+      "api_id": "omen-of-refreshment",
+      "en_name": "Omen of Refreshment",
+      "category_api_id": "ritual"
+    },
+    {
+      "api_id": "omen-of-the-liege",
+      "en_name": "Omen of the Liege",
       "category_api_id": "ritual"
     },
     {
@@ -1944,18 +1954,8 @@
       "category_api_id": "ritual"
     },
     {
-      "api_id": "omen-of-refreshment",
-      "en_name": "Omen of Refreshment",
-      "category_api_id": "ritual"
-    },
-    {
-      "api_id": "snake-idol",
-      "en_name": "Snake Idol",
-      "category_api_id": "ritual"
-    },
-    {
-      "api_id": "omen-of-the-liege",
-      "en_name": "Omen of the Liege",
+      "api_id": "omen-of-putrefaction",
+      "en_name": "Omen of Putrefaction",
       "category_api_id": "ritual"
     },
     {
@@ -1974,13 +1974,13 @@
       "category_api_id": "vaultkeys"
     },
     {
-      "api_id": "tangmazus-reliquary-key",
-      "en_name": "Tangmazu's Reliquary Key",
+      "api_id": "the-arbiters-reliquary-key",
+      "en_name": "The Arbiter's Reliquary Key",
       "category_api_id": "vaultkeys"
     },
     {
-      "api_id": "the-arbiters-reliquary-key",
-      "en_name": "The Arbiter's Reliquary Key",
+      "api_id": "tangmazus-reliquary-key",
+      "en_name": "Tangmazu's Reliquary Key",
       "category_api_id": "vaultkeys"
     },
     {
@@ -2024,11 +2024,6 @@
       "category_api_id": "breach"
     },
     {
-      "api_id": "refined-tuls-catalyst",
-      "en_name": "Refined Tul's Catalyst",
-      "category_api_id": "breach"
-    },
-    {
       "api_id": "refined-carapace-catalyst",
       "en_name": "Refined Carapace Catalyst",
       "category_api_id": "breach"
@@ -2044,18 +2039,8 @@
       "category_api_id": "breach"
     },
     {
-      "api_id": "refined-xophs-catalyst",
-      "en_name": "Refined Xoph's Catalyst",
-      "category_api_id": "breach"
-    },
-    {
-      "api_id": "refined-eshs-catalyst",
-      "en_name": "Refined Esh's Catalyst",
-      "category_api_id": "breach"
-    },
-    {
-      "api_id": "refined-uul-netols-catalyst",
-      "en_name": "Refined Uul-Netol's Catalyst",
+      "api_id": "refined-tuls-catalyst",
+      "en_name": "Refined Tul's Catalyst",
       "category_api_id": "breach"
     },
     {
@@ -2064,8 +2049,23 @@
       "category_api_id": "breach"
     },
     {
+      "api_id": "refined-xophs-catalyst",
+      "en_name": "Refined Xoph's Catalyst",
+      "category_api_id": "breach"
+    },
+    {
+      "api_id": "refined-uul-netols-catalyst",
+      "en_name": "Refined Uul-Netol's Catalyst",
+      "category_api_id": "breach"
+    },
+    {
       "api_id": "reaver-catalyst",
       "en_name": "Reaver Catalyst",
+      "category_api_id": "breach"
+    },
+    {
+      "api_id": "refined-eshs-catalyst",
+      "en_name": "Refined Esh's Catalyst",
       "category_api_id": "breach"
     },
     {
@@ -2089,18 +2089,13 @@
       "category_api_id": "breach"
     },
     {
-      "api_id": "necrotic-catalyst",
-      "en_name": "Necrotic Catalyst",
-      "category_api_id": "breach"
-    },
-    {
       "api_id": "eshs-catalyst",
       "en_name": "Esh's Catalyst",
       "category_api_id": "breach"
     },
     {
-      "api_id": "chayulas-catalyst",
-      "en_name": "Chayula's Catalyst",
+      "api_id": "necrotic-catalyst",
+      "en_name": "Necrotic Catalyst",
       "category_api_id": "breach"
     },
     {
@@ -2109,13 +2104,8 @@
       "category_api_id": "breach"
     },
     {
-      "api_id": "carapace-catalyst",
-      "en_name": "Carapace Catalyst",
-      "category_api_id": "breach"
-    },
-    {
-      "api_id": "uul-netols-catalyst",
-      "en_name": "Uul-Netol's Catalyst",
+      "api_id": "chayulas-catalyst",
+      "en_name": "Chayula's Catalyst",
       "category_api_id": "breach"
     },
     {
@@ -2124,8 +2114,18 @@
       "category_api_id": "breach"
     },
     {
+      "api_id": "carapace-catalyst",
+      "en_name": "Carapace Catalyst",
+      "category_api_id": "breach"
+    },
+    {
       "api_id": "flesh-catalyst",
       "en_name": "Flesh Catalyst",
+      "category_api_id": "breach"
+    },
+    {
+      "api_id": "uul-netols-catalyst",
+      "en_name": "Uul-Netol's Catalyst",
       "category_api_id": "breach"
     },
     {
@@ -2174,8 +2174,8 @@
       "category_api_id": "abyss"
     },
     {
-      "api_id": "gnawed-jawbone",
-      "en_name": "Gnawed Jawbone",
+      "api_id": "gnawed-collarbone",
+      "en_name": "Gnawed Collarbone",
       "category_api_id": "abyss"
     },
     {
@@ -2184,23 +2184,23 @@
       "category_api_id": "abyss"
     },
     {
-      "api_id": "preserved-rib",
-      "en_name": "Preserved Rib",
-      "category_api_id": "abyss"
-    },
-    {
-      "api_id": "gnawed-collarbone",
-      "en_name": "Gnawed Collarbone",
-      "category_api_id": "abyss"
-    },
-    {
-      "api_id": "preserved-jawbone",
-      "en_name": "Preserved Jawbone",
+      "api_id": "gnawed-jawbone",
+      "en_name": "Gnawed Jawbone",
       "category_api_id": "abyss"
     },
     {
       "api_id": "gnawed-rib",
       "en_name": "Gnawed Rib",
+      "category_api_id": "abyss"
+    },
+    {
+      "api_id": "preserved-rib",
+      "en_name": "Preserved Rib",
+      "category_api_id": "abyss"
+    },
+    {
+      "api_id": "preserved-jawbone",
+      "en_name": "Preserved Jawbone",
       "category_api_id": "abyss"
     },
     {
@@ -2249,18 +2249,8 @@
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-skill-gem-7",
-      "en_name": "Uncut Skill Gem (Level 7)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-spirit-gem-7",
-      "en_name": "Uncut Spirit Gem (Level 7)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-spirit-gem-5",
-      "en_name": "Uncut Spirit Gem (Level 5)",
+      "api_id": "uncut-spirit-gem-11",
+      "en_name": "Uncut Spirit Gem (Level 11)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2269,8 +2259,33 @@
       "category_api_id": "uncutgems"
     },
     {
+      "api_id": "uncut-spirit-gem-7",
+      "en_name": "Uncut Spirit Gem (Level 7)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-7",
+      "en_name": "Uncut Skill Gem (Level 7)",
+      "category_api_id": "uncutgems"
+    },
+    {
       "api_id": "uncut-spirit-gem-10",
       "en_name": "Uncut Spirit Gem (Level 10)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-spirit-gem-5",
+      "en_name": "Uncut Spirit Gem (Level 5)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-9",
+      "en_name": "Uncut Skill Gem (Level 9)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-spirit-gem-6",
+      "en_name": "Uncut Spirit Gem (Level 6)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2284,38 +2299,8 @@
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-spirit-gem-11",
-      "en_name": "Uncut Spirit Gem (Level 11)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-spirit-gem-6",
-      "en_name": "Uncut Spirit Gem (Level 6)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-spirit-gem-18",
-      "en_name": "Uncut Spirit Gem (Level 18)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-9",
-      "en_name": "Uncut Skill Gem (Level 9)",
-      "category_api_id": "uncutgems"
-    },
-    {
       "api_id": "uncut-spirit-gem-12",
       "en_name": "Uncut Spirit Gem (Level 12)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-10",
-      "en_name": "Uncut Skill Gem (Level 10)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-11",
-      "en_name": "Uncut Skill Gem (Level 11)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2324,38 +2309,18 @@
       "category_api_id": "uncutgems"
     },
     {
+      "api_id": "uncut-spirit-gem-18",
+      "en_name": "Uncut Spirit Gem (Level 18)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-11",
+      "en_name": "Uncut Skill Gem (Level 11)",
+      "category_api_id": "uncutgems"
+    },
+    {
       "api_id": "uncut-skill-gem-5",
       "en_name": "Uncut Skill Gem (Level 5)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-12",
-      "en_name": "Uncut Skill Gem (Level 12)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-support-gem-3",
-      "en_name": "Uncut Support Gem (Level 3)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-2",
-      "en_name": "Uncut Skill Gem (Level 2)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-support-gem-4",
-      "en_name": "Uncut Support Gem (Level 4)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-16",
-      "en_name": "Uncut Skill Gem (Level 16)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-15",
-      "en_name": "Uncut Skill Gem (Level 15)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2364,18 +2329,8 @@
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-skill-gem-3",
-      "en_name": "Uncut Skill Gem (Level 3)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-14",
-      "en_name": "Uncut Skill Gem (Level 14)",
-      "category_api_id": "uncutgems"
-    },
-    {
-      "api_id": "uncut-skill-gem-13",
-      "en_name": "Uncut Skill Gem (Level 13)",
+      "api_id": "uncut-support-gem-3",
+      "en_name": "Uncut Support Gem (Level 3)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2384,18 +2339,43 @@
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-skill-gem-4",
-      "en_name": "Uncut Skill Gem (Level 4)",
+      "api_id": "uncut-skill-gem-2",
+      "en_name": "Uncut Skill Gem (Level 2)",
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-support-gem-5",
-      "en_name": "Uncut Support Gem (Level 5)",
+      "api_id": "uncut-skill-gem-12",
+      "en_name": "Uncut Skill Gem (Level 12)",
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-skill-gem-17",
-      "en_name": "Uncut Skill Gem (Level 17)",
+      "api_id": "uncut-support-gem-4",
+      "en_name": "Uncut Support Gem (Level 4)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-15",
+      "en_name": "Uncut Skill Gem (Level 15)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-13",
+      "en_name": "Uncut Skill Gem (Level 13)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-16",
+      "en_name": "Uncut Skill Gem (Level 16)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-10",
+      "en_name": "Uncut Skill Gem (Level 10)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-14",
+      "en_name": "Uncut Skill Gem (Level 14)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2404,13 +2384,33 @@
       "category_api_id": "uncutgems"
     },
     {
-      "api_id": "uncut-skill-gem-18",
-      "en_name": "Uncut Skill Gem (Level 18)",
+      "api_id": "uncut-skill-gem-3",
+      "en_name": "Uncut Skill Gem (Level 3)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-support-gem-5",
+      "en_name": "Uncut Support Gem (Level 5)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-4",
+      "en_name": "Uncut Skill Gem (Level 4)",
       "category_api_id": "uncutgems"
     },
     {
       "api_id": "uncut-support-gem-1",
       "en_name": "Uncut Support Gem (Level 1)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-17",
+      "en_name": "Uncut Skill Gem (Level 17)",
+      "category_api_id": "uncutgems"
+    },
+    {
+      "api_id": "uncut-skill-gem-18",
+      "en_name": "Uncut Skill Gem (Level 18)",
       "category_api_id": "uncutgems"
     },
     {
@@ -2439,13 +2439,13 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "seraphs-heart",
-      "en_name": "Seraph's Heart",
+      "api_id": "her-declaration",
+      "en_name": "Her Declaration",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "her-declaration",
-      "en_name": "Her Declaration",
+      "api_id": "seraphs-heart",
+      "en_name": "Seraph's Heart",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2529,33 +2529,13 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "cathas-brilliance",
-      "en_name": "Catha's Brilliance",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
       "api_id": "atziris-allure",
       "en_name": "Atziri's Allure",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "mórrigans-insight",
-      "en_name": "Mórrigan's Insight",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "amanamus-tithe",
-      "en_name": "Amanamu's Tithe",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "medveds-felling",
-      "en_name": "Medved's Felling",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "xibaquas-rending",
-      "en_name": "Xibaqua's Rending",
+      "api_id": "cathas-brilliance",
+      "en_name": "Catha's Brilliance",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2564,33 +2544,23 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "siones-temper",
-      "en_name": "Sione's Temper",
+      "api_id": "amanamus-tithe",
+      "en_name": "Amanamu's Tithe",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "ailiths-chimes",
-      "en_name": "Ailith's Chimes",
+      "api_id": "xibaquas-rending",
+      "en_name": "Xibaqua's Rending",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "kalisas-crescendo",
-      "en_name": "Kalisa's Crescendo",
+      "api_id": "medveds-felling",
+      "en_name": "Medved's Felling",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "uhtreds-constellation",
-      "en_name": "Uhtred's Constellation",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "morganas-tempest",
-      "en_name": "Morgana's Tempest",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "styrns-ferocity",
-      "en_name": "Styrn's Ferocity",
+      "api_id": "mórrigans-insight",
+      "en_name": "Mórrigan's Insight",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2599,23 +2569,8 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "uhtreds-rite",
-      "en_name": "Uhtred's Rite",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "tasalios-rhythm",
-      "en_name": "Tasalio's Rhythm",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "doedres-undoing",
-      "en_name": "Doedre's Undoing",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "zarokhs-refrain",
-      "en_name": "Zarokh's Refrain",
+      "api_id": "siones-temper",
+      "en_name": "Sione's Temper",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2624,8 +2579,33 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "brutus-brain",
-      "en_name": "Brutus' Brain",
+      "api_id": "styrns-ferocity",
+      "en_name": "Styrn's Ferocity",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "ailiths-chimes",
+      "en_name": "Ailith's Chimes",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "doedres-undoing",
+      "en_name": "Doedre's Undoing",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "morganas-tempest",
+      "en_name": "Morgana's Tempest",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "uhtreds-constellation",
+      "en_name": "Uhtred's Constellation",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "uhtreds-rite",
+      "en_name": "Uhtred's Rite",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2634,68 +2614,13 @@
       "category_api_id": "lineagesupportgems"
     },
     {
+      "api_id": "zarokhs-refrain",
+      "en_name": "Zarokh's Refrain",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
       "api_id": "hayoxis-fulmination",
       "en_name": "Hayoxi's Fulmination",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "styrns-mountain",
-      "en_name": "Styrn's Mountain",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "kulemaks-dominion",
-      "en_name": "Kulemak's Dominion",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "oisins-oath",
-      "en_name": "Oisín's Oath",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "olroths-hubris",
-      "en_name": "Olroth's Hubris",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "einhars-beastrite",
-      "en_name": "Einhar's Beastrite",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "kurgals-leash",
-      "en_name": "Kurgal's Leash",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "cirels-cultivation",
-      "en_name": "Cirel's Cultivation",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "zerphis-infamy",
-      "en_name": "Zerphi's Infamy",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "tuls-avalanche",
-      "en_name": "Tul's Avalanche",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "bhatairs-vengeance",
-      "en_name": "Bhatair's Vengeance",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "romiras-requital",
-      "en_name": "Romira's Requital",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "dominus-grasp",
-      "en_name": "Dominus' Grasp",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2704,43 +2629,33 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "tecrods-revenge",
-      "en_name": "Tecrod's Revenge",
+      "api_id": "einhars-beastrite",
+      "en_name": "Einhar's Beastrite",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "paquates-pact",
-      "en_name": "Paquate's Pact",
+      "api_id": "brutus-brain",
+      "en_name": "Brutus' Brain",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "uruks-smelting",
-      "en_name": "Uruk's Smelting",
+      "api_id": "zerphis-infamy",
+      "en_name": "Zerphi's Infamy",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "tangmazus-thurible",
-      "en_name": "Tangmazu's Thurible",
+      "api_id": "kulemaks-dominion",
+      "en_name": "Kulemak's Dominion",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "kaoms-madness",
-      "en_name": "Kaom's Madness",
+      "api_id": "styrns-mountain",
+      "en_name": "Styrn's Mountain",
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "atziris-impatience",
-      "en_name": "Atziri's Impatience",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "vilentas-propulsion",
-      "en_name": "Vilenta's Propulsion",
-      "category_api_id": "lineagesupportgems"
-    },
-    {
-      "api_id": "rathas-assault",
-      "en_name": "Ratha's Assault",
+      "api_id": "cirels-cultivation",
+      "en_name": "Cirel's Cultivation",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2749,8 +2664,63 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "vruuns-inevitability",
-      "en_name": "Vruun's Inevitability",
+      "api_id": "kalisas-crescendo",
+      "en_name": "Kalisa's Crescendo",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "kurgals-leash",
+      "en_name": "Kurgal's Leash",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "tuls-avalanche",
+      "en_name": "Tul's Avalanche",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "kaoms-madness",
+      "en_name": "Kaom's Madness",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "paquates-pact",
+      "en_name": "Paquate's Pact",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "oisins-oath",
+      "en_name": "Oisín's Oath",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "atziris-impatience",
+      "en_name": "Atziri's Impatience",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "dominus-grasp",
+      "en_name": "Dominus' Grasp",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "tangmazus-thurible",
+      "en_name": "Tangmazu's Thurible",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "tecrods-revenge",
+      "en_name": "Tecrod's Revenge",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "uruks-smelting",
+      "en_name": "Uruk's Smelting",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "tasalios-rhythm",
+      "en_name": "Tasalio's Rhythm",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2759,8 +2729,33 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "varashtas-blessing",
-      "en_name": "Varashta's Blessing",
+      "api_id": "rathas-assault",
+      "en_name": "Ratha's Assault",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "vilentas-propulsion",
+      "en_name": "Vilenta's Propulsion",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "olroths-hubris",
+      "en_name": "Olroth's Hubris",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "romiras-requital",
+      "en_name": "Romira's Requital",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "bhatairs-vengeance",
+      "en_name": "Bhatair's Vengeance",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "vruuns-inevitability",
+      "en_name": "Vruun's Inevitability",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2769,8 +2764,8 @@
       "category_api_id": "lineagesupportgems"
     },
     {
-      "api_id": "tacatis-ire",
-      "en_name": "Tacati's Ire",
+      "api_id": "varashtas-blessing",
+      "en_name": "Varashta's Blessing",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2786,6 +2781,11 @@
     {
       "api_id": "tawhoas-tending",
       "en_name": "Tawhoa's Tending",
+      "category_api_id": "lineagesupportgems"
+    },
+    {
+      "api_id": "tacatis-ire",
+      "en_name": "Tacati's Ire",
       "category_api_id": "lineagesupportgems"
     },
     {
@@ -2814,8 +2814,8 @@
       "category_api_id": "delirium"
     },
     {
-      "api_id": "concentrated-liquid-fear",
-      "en_name": "Concentrated Liquid Fear",
+      "api_id": "ancient-potent-liquid-ferocity",
+      "en_name": "Ancient Potent Liquid Ferocity",
       "category_api_id": "delirium"
     },
     {
@@ -2824,18 +2824,8 @@
       "category_api_id": "delirium"
     },
     {
-      "api_id": "ancient-potent-liquid-ferocity",
-      "en_name": "Ancient Potent Liquid Ferocity",
-      "category_api_id": "delirium"
-    },
-    {
-      "api_id": "ancient-liquid-disgust",
-      "en_name": "Ancient Liquid Disgust",
-      "category_api_id": "delirium"
-    },
-    {
-      "api_id": "ancient-concentrated-liquid-isolation",
-      "en_name": "Ancient Concentrated Liquid Isolation",
+      "api_id": "concentrated-liquid-fear",
+      "en_name": "Concentrated Liquid Fear",
       "category_api_id": "delirium"
     },
     {
@@ -2844,23 +2834,23 @@
       "category_api_id": "delirium"
     },
     {
+      "api_id": "ancient-concentrated-liquid-isolation",
+      "en_name": "Ancient Concentrated Liquid Isolation",
+      "category_api_id": "delirium"
+    },
+    {
       "api_id": "potent-liquid-melancholy",
       "en_name": "Potent Liquid Melancholy",
       "category_api_id": "delirium"
     },
     {
+      "api_id": "ancient-liquid-disgust",
+      "en_name": "Ancient Liquid Disgust",
+      "category_api_id": "delirium"
+    },
+    {
       "api_id": "liquid-despair",
       "en_name": "Liquid Despair",
-      "category_api_id": "delirium"
-    },
-    {
-      "api_id": "ancient-concentrated-liquid-fear",
-      "en_name": "Ancient Concentrated Liquid Fear",
-      "category_api_id": "delirium"
-    },
-    {
-      "api_id": "diluted-liquid-greed",
-      "en_name": "Diluted Liquid Greed",
       "category_api_id": "delirium"
     },
     {
@@ -2874,8 +2864,8 @@
       "category_api_id": "delirium"
     },
     {
-      "api_id": "liquid-envy",
-      "en_name": "Liquid Envy",
+      "api_id": "ancient-concentrated-liquid-fear",
+      "en_name": "Ancient Concentrated Liquid Fear",
       "category_api_id": "delirium"
     },
     {
@@ -2884,8 +2874,8 @@
       "category_api_id": "delirium"
     },
     {
-      "api_id": "diluted-liquid-ire",
-      "en_name": "Diluted Liquid Ire",
+      "api_id": "liquid-envy",
+      "en_name": "Liquid Envy",
       "category_api_id": "delirium"
     },
     {
@@ -2901,6 +2891,16 @@
     {
       "api_id": "ancient-liquid-paranoia",
       "en_name": "Ancient Liquid Paranoia",
+      "category_api_id": "delirium"
+    },
+    {
+      "api_id": "diluted-liquid-ire",
+      "en_name": "Diluted Liquid Ire",
+      "category_api_id": "delirium"
+    },
+    {
+      "api_id": "diluted-liquid-greed",
+      "en_name": "Diluted Liquid Greed",
       "category_api_id": "delirium"
     },
     {
@@ -2934,11 +2934,6 @@
       "category_api_id": "incursion"
     },
     {
-      "api_id": "quipolatls-thesis",
-      "en_name": "Quipolatl's Thesis",
-      "category_api_id": "incursion"
-    },
-    {
       "api_id": "architects-orb",
       "en_name": "Architect's Orb",
       "category_api_id": "incursion"
@@ -2951,6 +2946,11 @@
     {
       "api_id": "vaal-cultivation-orb",
       "en_name": "Vaal Cultivation Orb",
+      "category_api_id": "incursion"
+    },
+    {
+      "api_id": "quipolatls-thesis",
+      "en_name": "Quipolatl's Thesis",
       "category_api_id": "incursion"
     },
     {
@@ -2979,13 +2979,28 @@
       "category_api_id": "idol"
     },
     {
-      "api_id": "rabbit-idol",
-      "en_name": "Rabbit Idol",
+      "api_id": "idol-of-thruldana",
+      "en_name": "Idol of Thruldana",
+      "category_api_id": "idol"
+    },
+    {
+      "api_id": "idol-of-maxarius",
+      "en_name": "Idol of Maxarius",
       "category_api_id": "idol"
     },
     {
       "api_id": "idol-of-eeshta",
       "en_name": "Idol of Eeshta",
+      "category_api_id": "idol"
+    },
+    {
+      "api_id": "rabbit-idol",
+      "en_name": "Rabbit Idol",
+      "category_api_id": "idol"
+    },
+    {
+      "api_id": "owl-idol",
+      "en_name": "Owl Idol",
       "category_api_id": "idol"
     },
     {
@@ -3009,38 +3024,18 @@
       "category_api_id": "idol"
     },
     {
-      "api_id": "idol-of-maxarius",
-      "en_name": "Idol of Maxarius",
-      "category_api_id": "idol"
-    },
-    {
-      "api_id": "primate-idol",
-      "en_name": "Primate Idol",
-      "category_api_id": "idol"
-    },
-    {
       "api_id": "bear-idol",
       "en_name": "Bear Idol",
       "category_api_id": "idol"
     },
     {
-      "api_id": "idol-of-thruldana",
-      "en_name": "Idol of Thruldana",
-      "category_api_id": "idol"
-    },
-    {
-      "api_id": "stag-idol",
-      "en_name": "Stag Idol",
-      "category_api_id": "idol"
-    },
-    {
-      "api_id": "owl-idol",
-      "en_name": "Owl Idol",
-      "category_api_id": "idol"
-    },
-    {
       "api_id": "ox-idol",
       "en_name": "Ox Idol",
+      "category_api_id": "idol"
+    },
+    {
+      "api_id": "primate-idol",
+      "en_name": "Primate Idol",
       "category_api_id": "idol"
     },
     {
@@ -3059,8 +3054,23 @@
       "category_api_id": "idol"
     },
     {
+      "api_id": "stag-idol",
+      "en_name": "Stag Idol",
+      "category_api_id": "idol"
+    },
+    {
       "api_id": "celestial-alloy",
       "en_name": "Celestial Alloy",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "veridical-starlit-ore",
+      "en_name": "Veridical Starlit Ore",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "the-runebinders-alloy",
+      "en_name": "The Runebinder's Alloy",
       "category_api_id": "verisium"
     },
     {
@@ -3074,58 +3084,8 @@
       "category_api_id": "verisium"
     },
     {
-      "api_id": "veridical-starlit-ore",
-      "en_name": "Veridical Starlit Ore",
-      "category_api_id": "verisium"
-    },
-    {
       "api_id": "olroths-crest-of-the-sun",
       "en_name": "Olroth's Crest of the Sun",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "adaptive-alloy",
-      "en_name": "Adaptive Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "transcendent-alloy",
-      "en_name": "Transcendent Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "liquid-verisium",
-      "en_name": "Liquid Verisium",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "the-runebinders-alloy",
-      "en_name": "The Runebinder's Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "protective-alloy",
-      "en_name": "Protective Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "mystic-alloy",
-      "en_name": "Mystic Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "prismatic-alloy",
-      "en_name": "Prismatic Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "expansive-alloy",
-      "en_name": "Expansive Alloy",
-      "category_api_id": "verisium"
-    },
-    {
-      "api_id": "cyclonic-alloy",
-      "en_name": "Cyclonic Alloy",
       "category_api_id": "verisium"
     },
     {
@@ -3134,8 +3094,43 @@
       "category_api_id": "verisium"
     },
     {
+      "api_id": "transcendent-alloy",
+      "en_name": "Transcendent Alloy",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "adaptive-alloy",
+      "en_name": "Adaptive Alloy",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "expansive-alloy",
+      "en_name": "Expansive Alloy",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "liquid-verisium",
+      "en_name": "Liquid Verisium",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "mystic-alloy",
+      "en_name": "Mystic Alloy",
+      "category_api_id": "verisium"
+    },
+    {
       "api_id": "runic-alloy",
       "en_name": "Runic Alloy",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "protective-alloy",
+      "en_name": "Protective Alloy",
+      "category_api_id": "verisium"
+    },
+    {
+      "api_id": "cyclonic-alloy",
+      "en_name": "Cyclonic Alloy",
       "category_api_id": "verisium"
     },
     {
@@ -3149,6 +3144,11 @@
       "category_api_id": "verisium"
     },
     {
+      "api_id": "voranas-crest-of-the-scythe",
+      "en_name": "Vorana's Crest of the Scythe",
+      "category_api_id": "verisium"
+    },
+    {
       "api_id": "swift-alloy",
       "en_name": "Swift Alloy",
       "category_api_id": "verisium"
@@ -3159,8 +3159,8 @@
       "category_api_id": "verisium"
     },
     {
-      "api_id": "voranas-crest-of-the-scythe",
-      "en_name": "Vorana's Crest of the Scythe",
+      "api_id": "prismatic-alloy",
+      "en_name": "Prismatic Alloy",
       "category_api_id": "verisium"
     },
     {
@@ -3189,6 +3189,11 @@
       "category_api_id": "vaal"
     },
     {
+      "api_id": "kamasas-orb-of-sacrifice",
+      "en_name": "Kamasa's Orb of Sacrifice",
+      "category_api_id": "vaal"
+    },
+    {
       "api_id": "kopecs-orb-of-sacrifice",
       "en_name": "Kopec's Orb of Sacrifice",
       "category_api_id": "vaal"
@@ -3196,11 +3201,6 @@
     {
       "api_id": "vaal-blacksmiths-infuser",
       "en_name": "Vaal Blacksmith's Infuser",
-      "category_api_id": "vaal"
-    },
-    {
-      "api_id": "kamasas-orb-of-sacrifice",
-      "en_name": "Kamasa's Orb of Sacrifice",
       "category_api_id": "vaal"
     },
     {
