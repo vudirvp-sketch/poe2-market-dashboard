@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-12 (iter 138 — periodic re-run of the F1 translation pipeline. poe2scout: 643 items (unchanged), poe2db: 0 new RU translations for the 9 previously-untranslated items. Data is in sync — no patches to apply. 1289 pytest green.)
+> **Last updated:** 2026-07-12 (iter 139 — repo cleanup pass: deleted 4 dead files (`README_iter138.md` + 3 iter-89 one-shot scripts), fixed 5 missing routes in AGENT_NAVIGATION.md §5 API table, fixed design-docs status in §6, updated i18n-cleanup recipe, fixed README test command, clarified aiosqlite env-recovery row below. 1466 pytest green with aiosqlite installed.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---
@@ -62,7 +62,7 @@ poe2db has the pages but no Russian translation — titles are English-only. Re-
 | All API calls return 404; dashboard empty | **KI-15** — `.env.local` has dead `api.poe2scout.com`. Use `POE2_API_BASE_URL=https://poe2scout.com/api` | `.env.local`, `start.bat`, `start.sh` |
 | `next build` warns "Encountered unexpected file in NFT list ... flipper-backend-bridge.ts" | **KI-16-deep** (fixed iter 106) — bridge must use `exec`/`execSync`, not `spawn`/`spawnSync`. No `fs`/`path` imports. | `instrumentation.ts`, `src/lib/flipper-backend-bridge.ts` |
 | `pytest` hangs on `test_triangular.py` | **KI-18** (fixed iter 105) — check `tests/conftest.py` patches `get_process_pool` → None | `tests/conftest.py` |
-| 6 pytest modules fail on collection (`test_daily_stats_persistence`, `test_market_spreads*`, `test_scheduler`, `test_triangular_cycles*`) | Pre-existing env issue — `aiosqlite` not installed. `pip install aiosqlite`. Does NOT indicate a regression. | env-only |
+| 6 pytest modules fail on collection (`test_daily_stats_persistence`, `test_market_spreads*`, `test_scheduler`, `test_triangular_cycles*`) | Env-setup issue — `aiosqlite` missing from active venv. Run `pip install -r requirements.txt` (or `pip install aiosqlite`). With aiosqlite installed, the full suite is **1466 pytest green** (vs 1289 with the 6 modules skipped). Does NOT indicate a regression. | env-only |
 | `/optimizer/path` returns empty path with `data_available: true` | Profitable arbitrage cycle detected — fall back to `direct_rate` | `backend/api/routes_optimizer.py:_bellman_ford` |
 | SQLite `near "LIMIT": syntax error` | Use `rowid IN (SELECT ... LIMIT ?)` pattern | `backend/data/historical.py:_prune_old_league_data` |
 | FlipsTable "Trend" sparkline shows `—` instead of a line | By design (iter 135) — sparkline renders REAL `price_history_short` (≥ 2 points required). The synthetic `momentum × volatility` fallback was REMOVED as misleading. | `src/components/dashboard/flips-helpers.ts:getTrendSparklineData`, `sparkline.tsx:115-116` |

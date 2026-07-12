@@ -78,7 +78,7 @@ POE2_API_BASE_URL=https://poe2scout.com/api
 npm install && npm run dev          # Frontend на :3000
 PYTHONPATH=. .venv/bin/python -m uvicorn backend.main:app --reload --port 8000  # Backend
 
-pytest tests/ --ignore=tests/e2e --ignore=tests/test_scheduler.py
+pytest tests/ --ignore=tests/e2e    # Backend tests (требуется aiosqlite из requirements.txt)
 npx jest
 npx tsc --noEmit
 ```

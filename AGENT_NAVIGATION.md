@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-12 (iter 138 — periodic re-run of the F1 translation pipeline. poe2scout: 643 items (unchanged from iter 137), poe2db: 0 new RU translations for the 9 previously-untranslated items (`aldurs-legacy`, `betrayal-of-aldur`, `vision-rune`, `rebirth-rune`, `ward-rune`, `stone-rune`, `breath-of-aldur`, `ire-of-aldur`, `passion-of-aldur`). Data is in sync — no patches to apply. 1289 pytest green. See `STATUS.md` for current state.).
+> **Single entry point** for codebase navigation. Updated 2026-07-12 (iter 139 — repo cleanup pass: deleted 4 dead files (`README_iter138.md` + 3 iter-89 one-shot scripts), fixed 5 missing routes in §5 API table, fixed design-docs status in §6, updated i18n-cleanup recipe to a manual pattern, fixed README test command, clarified aiosqlite env-recovery row in STATUS.md. 1466 pytest green with aiosqlite installed.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.
@@ -158,11 +158,11 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 
 | Task | Recipe |
 |------|--------|
-| Add a new Russian currency/item translation | Use `scripts/sync_currency_names_from_poe2db.py` (4-stage pipeline: `--fetch-ids` → `--fetch-ru` → `--diff` → `--apply --confirm`). After `--apply`, bump count assertions in `tests/test_currency_names_ru.py` (lines 30-33). Manual one-off edits to `backend/data/currency_names.json` are allowed, but bulk imports MUST go through the script. See invariant #24. |
+| Add a new Russian currency/item translation | Use `scripts/sync_currency_names_from_poe2db.py` (4-stage pipeline: `--fetch-ids` → `--fetch-ru-by-item` → `--diff` → `--apply --confirm`). **Do NOT use `--fetch-ru`** — it's broken per KI-30 (category-page parser matches infobox stat rows). For speed, use `scripts/fetch_ru_by_item_parallel.py` (thread-pooled, ~1s when only a few items need fetching). After `--apply`, run `python scripts/sync_currency_names_ts.py` to regenerate the TS mirror, then bump count assertions in `tests/test_currency_names_ru.py`. See invariant #24. |
 | Render a localized currency name / category slug in a frontend component | Use `getCurrencyDisplayName(apiId, locale)` / `getCategoryDisplayName(slug, locale)` from `src/lib/currency-names.ts`. Always provide a fallback (`?? apiId` or `\|\| upstreamText`) — the helper returns `null` when the api_id isn't in the mapping. Pull `locale` from `useI18n().locale`. |
 | Render a localized date / datetime | Use `formatLocaleDate(value, locale, opts?)` or `formatLocaleDateTime(value, locale)` from `src/lib/utils.ts`. Inline `toLocaleDateString("en-US", ...)` is FORBIDDEN — see iter 88 invariant. |
 | Add `?lang=` support to a backend hint endpoint | Add `lang: str = Query("en", ...)` to the FastAPI route signature, forward to the pure function. Keep a parallel Russian table (`_XXX_RU`) with the SAME `id`/`category` slugs. Add the `lang` query param to the Next.js proxy route too. Frontend widget pulls `locale` from `useI18n()`, maps to `lang`, includes in `queryKey`, passes as query param to `fetchApi`. (iter 87 pattern.) |
-| Remove dead i18n keys after a tab/dialog/feature removal | Run `scripts/cleanup_dead_i18n_keys.py` — removes dead `tabXxx`/`fallbackXxx`/feature-specific keys from all 4 locale files. Leaves a `REMOVED iter NN` comment marker in place of the old section header. (iter 89 pattern.) |
+| Remove dead i18n keys after a tab/dialog/feature removal | Manual pattern (iter 89 recipe — the one-shot `cleanup_dead_i18n_keys.py` was deleted iter 139 as it had hardcoded keys + a stale path). For each key in `src/lib/i18n/locales/*.ts`: `grep -rn "t('keyName')" src/` — if zero hits in `.tsx`/`.ts` files, the key is dead and can be removed from all 4 locale files (en/ru/zh/ko). Leave a `// REMOVED iter NN — <reason>` comment marker in place of the old section header so future agents see the deletion was intentional. |
 | Add a new analyst fact template | Backend sends `template_id` + `params`; frontend formats via i18n keys (see `backend/api/routes_analyst.py` + `src/lib/i18n/locales/*.json` `analystFact*`). Old clients fall back to `text`. See iter 88 invariant #40(b). |
 | Inspect circuit-breaker state | `GET /api/flipper/health/circuit-breakers` — JSON snapshot of per-endpoint CB state. (P2-6 iter 67.) |
 | Frontend shows fallback data — detect it | Check `X-Flipper-Fallback` header via `isFlipperFallbackResponse(res)` / `getFlipperFallbackOriginalStatus(res)` from `src/lib/flipper-proxy.ts`. (P2-8 iter 69.) |
@@ -183,6 +183,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 | GET | `/api/v1/benchmarks/{currency}` | Historical benchmarks |
 | GET | `/api/v1/arbitrage/flips` | Scored flip opportunities (**P2-4 iter 67**: +`max_score`, `min_spread`, `max_spread`, `cluster`, `currency`, `sort_by`, `sort_dir`) |
 | GET | `/api/v1/arbitrage/triangular` | Triangular arbitrage cycles |
+| GET | `/api/v1/arbitrage/triangular/history` | **TD-3 Phase 3 (iter 129)** — persisted triangular cycle snapshots for backtesting. Returns `data_available: false` when table empty (refresh hasn't run yet / no profitable cycles in stable markets). |
 | GET | `/api/v1/arbitrage/optimal-currency` | Optimal payment currency |
 | POST | `/api/v1/batch` | Batch multiple GET requests |
 | POST | `/api/v1/events` | Create event |
@@ -200,6 +201,10 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 | GET | `/api/v1/portfolio/correlation` | Correlation matrix |
 | GET | `/api/v1/liquid-chain/analysis` | Liquid chain analysis |
 | GET | `/api/v1/liquid-chain/opportunities` | Liquid chain opportunities |
+| GET | `/api/v1/market-spreads/history` | **TD-4 Phase 2 (iter 128)** — persisted market spread snapshots. Returns `data_available: false` when table empty (wait 5 min for snapshot refresh). |
+| GET | `/api/v1/mirror-divine-arb` | **P7 (iter 109)** — Mirror/Divine arbitrage rate detector. Returns `data_available: false` when scheduler hasn't collected ≥ 4 Mirror + Divine snapshots. |
+| GET | `/api/v1/leveling-uniques` | **P9 (iter 110)** — leveling-uniques lifecycle widget data. |
+| GET | `/api/v1/items/{item_id}/daily-stats` | **TD-5 Phase 4 (iter 131)** — daily OHLCV per item. Returns `data_available: false` when item_id unknown / hourly refresh hasn't run / lazy-fetch provider call failed. |
 | GET | `/api/v1/content-pulse` | **F3 (iter 75)** — per-category turnover + 7d/30d rolling + top movers |
 | GET | `/api/v1/speculation` | **F5 (iter 77)** — per-item z-score + BUY/SELL/HOLD signals. Query: `days` (1-90, default 30), `limit` (1-500, default 50), `signal` (ALL/BUY/SELL/HOLD, default ALL). |
 | GET | `/api/v1/speculation/backtest` | **F5 follow-up (iter 79)** — backtest z-score signals on historical price_logs. Query: `eval_days_ago` (1-365, default 14), `holding_days` (1-90, default 7), `lookback_days` (1-90, default 30), `limit` (1-500, default 50), `signal` (ALL/BUY/SELL/HOLD, default ALL). Returns per-trade results + per-signal aggregates (win_rate, mean/median/best/worst return_pct). Backend-only — no frontend UI yet. |
@@ -234,7 +239,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
-| `docs/design/` | **Architectural design-docs (iter 126+)** — produced before any high-risk implementation. Read these BEFORE implementing the corresponding TD/P item. Current docs: `TD-3-4-5-9-persistence-gaps-design.md` (persistence-layer unification for all four persistence TDs — **Phase 1 SHIPPED iter 127**, Phases 2/3/4 deferred), `P10-gold-map-roi-design.md` (Gold Map ROI UX + formula alignment — **Phase 1 MVP SHIPPED iter 127**, Phase 2 deferred until TD-3 Phase 3 lands). |
+| `docs/design/` | **Architectural design-docs (iter 126+)** — produced before any high-risk implementation. Read these BEFORE implementing the corresponding TD/P item. Current docs: `TD-3-4-5-9-persistence-gaps-design.md` (persistence-layer unification for TD-3/4/5/9 — **ALL 4 PHASES SHIPPED** iter 127/128/129/131; kept as historical reference), `P10-gold-map-roi-design.md` (Gold Map ROI UX + formula — **Phase 1 MVP iter 127 + Phase 2 trend chart iter 132 SHIPPED**; Phase 3 SQLite promotion optional). |
 | `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas |
 
 > **Note:** `REFACTOR_PLAN.md` was deleted in iter 73 (P3-7) after all P2/P3 issues were closed. `worklog.md` was deleted in iter 73 then re-created in iter 74 as the shared multi-agent work log (append-only, sections separated by `---`). For old task history before iter 73 see `git log`.
