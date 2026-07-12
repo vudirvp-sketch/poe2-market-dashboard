@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Flow Reference
 
-> **Version:** 1.2 | **Date:** 2026-07-12 (iter 141 — DATA_FLOW full audit: §3.2 (added 15 missing newer endpoints + fixed 2 backend URLs), §4.1 (snapshot field names: `rates`→`exchange_rates`, `bfs_pricing`→`prices_in_base`), §4.2 (DataSnapshot dataclass — 5 wrong fields → 9 correct fields), §4.3 (removed dead `RecipeArb`), §4.4 (HistoricalStore tables 3→5 + 12 new methods), §4.5 (scheduler jobs 3→4), §7.1 (removed 4 phantom proxy routes that iter 140 added without verifying + 1 duplicate, added backend-only note), §9 (Data→Component Mapping 10→16 tabs: removed 2 phantom tabs `Arbitrage`/`Graph`, added 8 missing tabs). 1466 pytest green, 0 source-code changes.)
+> **Version:** 1.3 | **Date:** 2026-07-13 (iter 144 — DATA_FLOW §2 + §5 deep cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts`: §2 (endpoint #17 path params aligned to `{CurrencyOneItemId}/{CurrencyTwoItemId}` per §2 path-params section; added note marking endpoints #2/#3/#21 as available-but-not-consumed by app), §5.1 (RawUniqueItem: removed phantom `ApiId` field — code at `poe2api.ts:1025` explicitly notes uniques have NO ApiId; fixed `ItemMetadata`/`IsChanceable` types on both Raw interfaces to match code; mapping table: fixed `id` priority order `ItemId || CurrencyItemId/UniqueItemId` — was reversed, split `apiId` rule for currencies vs uniques, added `relativePrice` fallback-to-currentPrice note), §5.2 (added 3 missing fields `currency1CategoryApiId`/`currency2CategoryApiId`/`currency2RelativePrice`; fixed `relativePrice` — doc said `price ?? 0` but code does NOT coalesce to 0; noted null-initialization for change/changePercent/sevenDayChange/sevenDayChangePercent/history). 13 drift items resolved. 1466 pytest green, 0 source-code changes.)
 
 ---
 
@@ -43,11 +43,13 @@ Browser → Next.js (port 3000)
 | 14 | `/{Realm}/Leagues/{LeagueName}/Items/PriceHistory` | Bulk price histories | PascalCase |
 | 15 | `/{Realm}/Leagues/{LeagueName}/Currencies/ByCategory` | Currencies (paginated) | PascalCase |
 | 16 | `/{Realm}/Leagues/{LeagueName}/Currencies/{ApiId}` | Single currency | PascalCase |
-| 17 | `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{C1}/{C2}/History` | Exchange pair history | PascalCase |
+| 17 | `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History` | Exchange pair history | PascalCase |
 | 18 | `/{Realm}/Leagues/{LeagueName}/Uniques/ByCategory` | Uniques (paginated) | PascalCase |
 | 19 | `/` | Root | — |
 | 20 | `/health/live` | Liveness probe | — |
 | 21 | `/health/ready` | Readiness probe | — |
+
+**Note (verified iter 144):** Endpoints #2 (`/Realms/{Realm}/Filters`), #3 (`/Realms/{Realm}/LandingSplashInfo`), and #21 (`/health/ready`) exist in the POE2Scout API spec (per Swagger at `poe2scout.com/api/swagger`) but are NOT consumed by either the frontend (`src/lib/poe2api.ts`) or the backend (`backend/data/providers/poe2scout.py`). They are listed here for completeness. Endpoint #20 (`/health/live`) is consumed by `getHealth()` in `poe2api.ts:1187`.
 
 **Path parameters:** PascalCase in spec — `{Realm}`, `{LeagueName}`, `{ItemId}`, `{CurrencyOneItemId}`, `{CurrencyTwoItemId}`. Base URL already includes `/api`.
 
@@ -391,48 +393,58 @@ interface RawCurrencyItem {
   Text: string;               // e.g. "Divine Orb"
   CategoryApiId: string;      // e.g. "currency"
   IconUrl: string | null;
-  ItemMetadata?: any;
+  ItemMetadata: Record<string, unknown> | null;
   PriceLogs: (RawPriceLogEntry | null)[];  // ⚠️ NEWEST FIRST!
   CurrentPrice: number | null;
   CurrentQuantity: number | null;
 }
 
 // RawUniqueItem (from /Uniques/ByCategory)
+// ⚠️ NOTE (verified iter 144): RawUniqueItem has NO ApiId field (unlike RawCurrencyItem).
+//    CategoryApiId is shared by ALL items in the same category, so it cannot
+//    serve as a unique identifier. Code uses String(ItemId || UniqueItemId)
+//    as the apiId substitute — see mapUniqueItem() comment in poe2api.ts:1025.
 interface RawUniqueItem {
   UniqueItemId: number;       // ⚠️ Different from CurrencyItemId!
   ItemId: number;
-  ApiId: string;
   Text: string;               // Primary name
   Name: string;               // Fallback name: Text || Name
   CategoryApiId: string;
   Type: string;               // Mapped to PoeItem.type
   IconUrl: string | null;
-  IsChanceable?: boolean;
-  ItemMetadata?: any;
+  IsChanceable: boolean | null;
+  ItemMetadata: Record<string, unknown> | null;
   PriceLogs: (RawPriceLogEntry | null)[];  // ⚠️ NEWEST FIRST!
   CurrentPrice: number | null;
   CurrentQuantity: number | null;
 }
 
 // Mapping: RawCurrencyItem / RawUniqueItem → PoeItem
-//   id              = String(CurrencyItemId || UniqueItemId || ItemId)
-//   apiId           = ApiId
+//   id              = String(ItemId || CurrencyItemId)        [currencies]
+//                     String(ItemId || UniqueItemId)          [uniques]
+//                     ⚠️ ItemId takes PRIORITY — verified iter 144 against
+//                        poe2api.ts:977 (mapCurrencyItem) and :1024 (mapUniqueItem).
+//   apiId           = ApiId                                   [currencies]
+//                     String(ItemId || UniqueItemId)          [uniques — NO ApiId field!]
 //   name            = Text (or Text || Name for uniques)
 //   type            = CategoryApiId (or Type for uniques)
 //   category        = CategoryApiId
 //   iconUrl         = IconUrl
 //   price           = CurrentPrice
 //   chaosEquivalentRate = CurrentPrice (chaos-equivalent rate)
-//   relativePrice   = CurrentPrice / referencePrice
-//   change          = currentPrice - computePreviousPrice(PriceLogs)
+//   relativePrice   = referencePrice && currentPrice
+//                       ? currentPrice / referencePrice
+//                       : currentPrice
+//                     ⚠️ falls back to currentPrice when referencePrice is missing
+//   change          = currentPrice - computePreviousPrice(PriceLogs) — null if either is null
 //   changePercent   = computeChangePercent(PriceLogs) — 24h
-//   volume          = computeVolume24h(PriceLogs)
-//   sevenDayPriceChange = currentPrice - computePrevious7dPrice(PriceLogs)
+//   volume          = computeVolume24h(PriceLogs) ?? 0
+//   sevenDayPriceChange = currentPrice - computePrevious7dPrice(PriceLogs) — null if either is null
 //   sevenDayPriceChangePercent = compute7dChangePercent(PriceLogs)
 //   history         = mapPriceLogs(PriceLogs)
 //   dailyStats      = null (fetched separately)
-//   lowConfidence   = CurrentQuantity < 5
-//   listingCount    = CurrentQuantity
+//   lowConfidence   = (CurrentQuantity ?? 0) < 5
+//   listingCount    = CurrentQuantity ?? 0
 //   baseType        = null (not in API)
 //   links           = null
 //   variant         = null
@@ -445,23 +457,28 @@ interface RawUniqueItem {
 // Source: RawSnapshotPair → Destination: ExchangePair
 
 // Mapping: RawSnapshotPair → ExchangePair
-//   id                  = String(CurrencyExchangeSnapshotPairId)
-//   currency1Id         = CurrencyOne.ApiId (e.g. "divine")
-//   currency1Name       = CurrencyOne.Text
-//   currency1IconUrl    = CurrencyOne.IconUrl
-//   currency1ItemId     = CurrencyOne.ItemId  ⚠️ NUMERIC! Use for history API
-//   currency2Id         = CurrencyTwo.ApiId
-//   currency2Name       = CurrencyTwo.Text
-//   currency2IconUrl    = CurrencyTwo.IconUrl
-//   currency2ItemId     = CurrencyTwo.ItemId
-//   price               = safeParseFloat(CurrencyOneData.RelativePrice) — null for "0E-8"
-//   relativePrice       = price ?? 0
-//   volume              = CurrencyOneData.VolumeTraded
-//   change              = Enriched later via buildCurrencyChangeMap()
-//   changePercent       = Enriched later via buildCurrencyChangeMap()
-//   sevenDayChange      = Enriched later via buildCurrencyChangeMap()
-//   sevenDayChangePercent = Enriched later via buildCurrencyChangeMap()
-//   history             = Fetched on demand
+//   id                      = String(CurrencyExchangeSnapshotPairId)
+//   currency1Id             = CurrencyOne.ApiId (e.g. "divine")
+//   currency1Name           = CurrencyOne.Text
+//   currency1IconUrl        = CurrencyOne.IconUrl
+//   currency1ItemId         = CurrencyOne.ItemId  ⚠️ NUMERIC! Use for history API
+//   currency1CategoryApiId  = CurrencyOne.CategoryApiId || ""
+//   currency2Id             = CurrencyTwo.ApiId
+//   currency2Name           = CurrencyTwo.Text
+//   currency2IconUrl        = CurrencyTwo.IconUrl
+//   currency2ItemId         = CurrencyTwo.ItemId
+//   currency2CategoryApiId  = CurrencyTwo.CategoryApiId || ""
+//   price                   = safeParseFloat(CurrencyOneData.RelativePrice) — null for "0E-8"
+//   relativePrice           = safeParseFloat(CurrencyOneData.RelativePrice)
+//                             ⚠️ NOT `price ?? 0` — code at poe2api.ts:1171 assigns relPrice1
+//                             directly; can be null. Doc previously claimed `?? 0` fallback — wrong.
+//   currency2RelativePrice  = safeParseFloat(CurrencyTwoData.RelativePrice)  // needed for cross-rate
+//   volume                  = CurrencyOneData.VolumeTraded ?? 0
+//   change                  = null (initialized) → Enriched later via buildCurrencyChangeMap()
+//   changePercent           = null (initialized) → Enriched later via buildCurrencyChangeMap()
+//   sevenDayChange          = null (initialized) → Enriched later via buildCurrencyChangeMap()
+//   sevenDayChangePercent   = null (initialized) → Enriched later via buildCurrencyChangeMap()
+//   history                 = null (initialized) → Fetched on demand
 ```
 
 **⚠️ CRITICAL:** Use `currency1ItemId` (numeric) for history API calls, NOT `currency1Id` (string ApiId).

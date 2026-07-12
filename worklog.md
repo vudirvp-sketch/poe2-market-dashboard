@@ -5,6 +5,71 @@
 
 ---
 
+Task ID: iter-144
+Agent: main
+Task: iter 144 — `docs/DATA_FLOW.md` §2 (POE2Scout API) + §5 (Field Transformation) deep cross-check. Per the iter-143 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (doc-only, 0 source-code changes), natural continuation of the doc-audit chain (iter 141: DATA_FLOW cosmetic, iter 142: ARCHITECTURE/PLAYBOOK/CORS, iter 143: BACKEND_GUIDE/DATA_CONTRACTS). §2 + §5 were the only sections from the iter-141 audit that received only a cosmetic pass and deserved a deep cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts`.
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 143 SHIPPED), `worklog.md` (iter 143 + iter 142), `AGENT_NAVIGATION.md` §1–§3.
+- Re-verified canonical references against live code:
+  - `backend/data/providers/poe2scout.py:417-418` — `get_historical_prices(currency: str, days)` calls `f"{self._league_path()}/Currencies/{currency}"`. The path parameter is an ApiId string (e.g. "divine"). DATA_FLOW.md §2 table row #16 said `/{Realm}/Leagues/{LeagueName}/Currencies/{ApiId}` — correct, no drift.
+  - `backend/data/providers/poe2scout.py:707-720` — `get_pair_history(currency_one_item_id: int, currency_two_item_id: int)` calls `f".../Currencies/Pairs/{currency_one_item_id}/{currency_two_item_id}/History"`. Parameters are NUMERIC ItemIds. DATA_FLOW.md §2 table row #17 used generic `{C1}/{C2}` shorthand — INCONSISTENT with §2 path-params section (line 54) which explicitly names them `{CurrencyOneItemId}/{CurrencyTwoItemId}`. Aligned table to match path-params section.
+  - `src/lib/poe2api.ts:618-630` — `RawCurrencyItem` interface has `ItemMetadata: Record<string, unknown> | null` (strict TS type). DATA_FLOW.md §5.1 said `ItemMetadata?: any` — legacy loose typing. Fixed.
+  - `src/lib/poe2api.ts:639-652` — `RawUniqueItem` interface has NO `ApiId` field. Has `IsChanceable: boolean | null` and `ItemMetadata: Record<string, unknown> | null`. DATA_FLOW.md §5.1 listed `ApiId: string` as a field — WRONG. Code comment at `poe2api.ts:1025` explicitly notes: "BUG FIX: Unique items don't have an ApiId field in the POE2Scout API. CategoryApiId is shared by ALL items in the same category... Use ItemId as a stable, unique identifier instead." Removed phantom ApiId, added explanatory note, fixed IsChanceable/ItemMetadata types.
+  - `src/lib/poe2api.ts:977` (mapCurrencyItem) — `id: String(item.ItemId || item.CurrencyItemId)` — ItemId takes PRIORITY. DATA_FLOW.md §5.1 mapping table said `id = String(CurrencyItemId || UniqueItemId || ItemId)` — priority REVERSED (and incorrectly mixed CurrencyItemId/UniqueItemId into a single rule).
+  - `src/lib/poe2api.ts:1024` (mapUniqueItem) — `id: String(raw.ItemId || raw.UniqueItemId)` — ItemId takes PRIORITY.
+  - `src/lib/poe2api.ts:978` (mapCurrencyItem) — `apiId: item.ApiId` — correct for currencies.
+  - `src/lib/poe2api.ts:1029` (mapUniqueItem) — `apiId: String(raw.ItemId || raw.UniqueItemId)` — NOT ApiId (uniques have no ApiId field). DATA_FLOW.md §5.1 mapping table presented `apiId = ApiId` as a single unified rule — MISLEADING. Split into two rules: currencies use ApiId, uniques use String(ItemId || UniqueItemId).
+  - `src/lib/poe2api.ts:960,1008` — `const relPrice = referencePrice && currentPrice ? currentPrice / referencePrice : currentPrice;`. DATA_FLOW.md §5.1 said `relativePrice = CurrentPrice / referencePrice` — didn't mention the fallback to `currentPrice` when `referencePrice` is missing. Added note.
+  - `src/lib/poe2api.ts:1148-1180` (mapSnapshotPair) — returns 15 fields. DATA_FLOW.md §5.2 mapping table listed only 12 — MISSING 3: `currency1CategoryApiId` (line 1164), `currency2CategoryApiId` (line 1169), `currency2RelativePrice` (line 1172, comment: "price of currency2 in base currency — needed for cross-rate"). Added all 3.
+  - `src/lib/poe2api.ts:1171` — `relativePrice: relPrice1` — direct assignment, can be null. DATA_FLOW.md §5.2 said `relativePrice = price ?? 0` — WRONG, code does NOT coalesce to 0. Fixed.
+  - `src/lib/poe2api.ts:1174-1178` — `change`, `changePercent`, `sevenDayChange`, `sevenDayChangePercent`, `history` all initialized to `null`. DATA_FLOW.md §5.2 said these are "Enriched later via buildCurrencyChangeMap()" / "Fetched on demand" — didn't mention null initialization. Added "null (initialized)" prefix.
+  - `src/lib/poe2api.ts:580-587` — `RawRealm` interface uses snake_case (`value`, `label`, `game_api_id`, `realm_api_id`, `trade_api_path`, `default_league_value`). DATA_FLOW.md §5.3 "/Realms stays snake_case" — correct, no drift.
+  - `src/lib/case-transform.ts:22-24` — `toCamelCase` regex `/_([a-z0-9])/g`. Verified all 12 example transformations in §5.4 against this regex: `volume_24h → volume24h` ✓, `mid_price → midPrice` ✓, `quantized_analysis → quantizedAnalysis` ✓, `tier_distance → tierDistance` ✓, `alert_score → alertScore` ✓, `triggered_indicators → triggeredIndicators` ✓, `is_confirmed → isConfirmed` ✓, `current_price → currentPrice` ✓, `projected_price → projectedPrice` ✓, `risk_discount → riskDiscount` ✓, `adjusted_price → adjustedPrice` ✓, `net_value → netValue` ✓. All accurate.
+  - `backend/models/currency.py:82-290` — verified all 12 source field names from §5.4 exist in backend models (`volume_24h`, `mid_price`, `quantized_analysis`, `tier_distance`, `alert_score`, `triggered_indicators`, `is_confirmed`, `current_price`, `projected_price`, `risk_discount`, `adjusted_price`, `net_value`). All present.
+  - Grep confirmed: endpoints `/Realms/{Realm}/Filters`, `/Realms/{Realm}/LandingSplashInfo`, `/health/ready` are mentioned ONLY in DATA_FLOW.md — not consumed by any code (frontend or backend). Added a note in §2 marking them as available-but-not-consumed.
+- No new bugs found in this iter (all drift is doc-only — no source-code defects).
+- **`docs/DATA_FLOW.md` §2 audit (2 drift items fixed):**
+  - **Header** — bumped version 1.2 → 1.3, date 2026-07-12 → 2026-07-13, updated summary.
+  - **§2 table row #17** — `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{C1}/{C2}/History` → `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History` (aligned with §2 path-params section line 54 which already used these exact names).
+  - **§2 note added** — after table, before "Path parameters": clarifies that endpoints #2 (`/Realms/{Realm}/Filters`), #3 (`/Realms/{Realm}/LandingSplashInfo`), and #21 (`/health/ready`) exist in the POE2Scout API spec but are NOT consumed by the app; endpoint #20 (`/health/live`) IS consumed by `getHealth()` in `poe2api.ts:1187`.
+- **`docs/DATA_FLOW.md` §5.1 audit (7 drift items fixed):**
+  - **RawCurrencyItem interface** — `ItemMetadata?: any` → `ItemMetadata: Record<string, unknown> | null` (matches `poe2api.ts:626`).
+  - **RawUniqueItem interface** — removed phantom `ApiId: string` field (RawUniqueItem has NO ApiId per `poe2api.ts:639-652`); added explanatory note referencing `poe2api.ts:1025` comment; `IsChanceable?: boolean` → `IsChanceable: boolean | null`; `ItemMetadata?: any` → `ItemMetadata: Record<string, unknown> | null`.
+  - **Mapping table `id` field** — `String(CurrencyItemId || UniqueItemId || ItemId)` → split into two rules: `String(ItemId || CurrencyItemId)` [currencies] + `String(ItemId || UniqueItemId)` [uniques]. Added note: "⚠️ ItemId takes PRIORITY — verified iter 144 against poe2api.ts:977 (mapCurrencyItem) and :1024 (mapUniqueItem)."
+  - **Mapping table `apiId` field** — `ApiId` (single rule) → split: `ApiId` [currencies] + `String(ItemId || UniqueItemId)` [uniques — NO ApiId field!].
+  - **Mapping table `relativePrice` field** — `CurrentPrice / referencePrice` → `referencePrice && currentPrice ? currentPrice / referencePrice : currentPrice` with note "⚠️ falls back to currentPrice when referencePrice is missing".
+  - **Mapping table `change` field** — added "— null if either is null" suffix (matches null-guard at `poe2api.ts:965-968`).
+  - **Mapping table `volume` field** — `computeVolume24h(PriceLogs)` → `computeVolume24h(PriceLogs) ?? 0` (matches `poe2api.ts:988`).
+  - **Mapping table `sevenDayPriceChange` field** — added "— null if either is null" suffix.
+  - **Mapping table `lowConfidence` field** — `CurrentQuantity < 5` → `(CurrentQuantity ?? 0) < 5` (matches `poe2api.ts:993`).
+  - **Mapping table `listingCount` field** — `CurrentQuantity` → `CurrentQuantity ?? 0` (matches `poe2api.ts:994`).
+- **`docs/DATA_FLOW.md` §5.2 audit (4 drift items fixed):**
+  - **Added 3 missing fields** — `currency1CategoryApiId = CurrencyOne.CategoryApiId || ""`, `currency2CategoryApiId = CurrencyTwo.CategoryApiId || ""`, `currency2RelativePrice = safeParseFloat(CurrencyTwoData.RelativePrice)` (with comment "needed for cross-rate").
+  - **Fixed `relativePrice`** — `price ?? 0` → `safeParseFloat(CurrencyOneData.RelativePrice)` with note "⚠️ NOT `price ?? 0` — code at poe2api.ts:1171 assigns relPrice1 directly; can be null. Doc previously claimed `?? 0` fallback — wrong."
+  - **Fixed `volume`** — `CurrencyOneData.VolumeTraded` → `CurrencyOneData.VolumeTraded ?? 0` (matches `poe2api.ts:1154`).
+  - **Noted null-initialization** — `change`, `changePercent`, `sevenDayChange`, `sevenDayChangePercent`, `history` all prefixed with "null (initialized) →" to clarify they start as null before enrichment.
+- **§5.3 (Case Transform Rules) — no drift found.** All 3 rules verified correct against code.
+- **§5.4 (Flipper Proxy Transform) — no drift found.** All 12 example transformations verified against `case-transform.ts:22-24` regex and `backend/models/currency.py` field names.
+- **Meta-docs updates:**
+  - `STATUS.md` header bump (iter 143 → iter 144).
+  - `worklog.md` — added this iter-144 entry, removed iter-142 entry (rule: only last 2 iterations).
+  - `AGENT_NAVIGATION.md` header bump (iter 143 → iter 144).
+- **Final verification:** 0 source-code changes this iter (doc-only). 1466 pytest green baseline preserved from iter 143 (no `.py`/`.ts`/`.tsx` touched).
+
+Stage Summary:
+- **iter 144 SHIPPED — 1 doc deep-audited (§2 + §5), 0 new bugs.** 1 doc file updated (`docs/DATA_FLOW.md` — 13 drift items across §2 + §5.1 + §5.2). 0 source-code changes. 1466 pytest green (0 regressions — confirmed since no `.py`/`.ts`/`.tsx` was touched).
+- **Modified files (1 doc + 3 meta-docs):** `docs/DATA_FLOW.md`, `STATUS.md` (header bump), `worklog.md` (this entry), `AGENT_NAVIGATION.md` (header bump).
+- **What was NOT done (intentionally deferred to iter 145+):**
+  - **`instrumentation.ts:7` comment drift** — still mentions `/api/health` (legacy). Doc-only drift in a code comment. Not fixed in iter 144 (kept source-code changes at 0). Candidate for iter 145+ source cleanup. Minimal change (1 line).
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141+142+143+144 only verified doc-level references to tabs. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 145+.
+  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+  - **Other DATA_FLOW.md sections** (§3, §4, §6, §7, §8, §9, §10) — iter 141 already audited these; no further drift found in iter 144. §1 (Architecture Overview) is a 1-line pointer to ARCHITECTURE.md — no drift.
+- **Stopping point:** iter 144 = 1 doc deep-audited (DATA_FLOW.md §2 + §5, 13 drift items). Next iter candidates: (a) source cleanup — fix `instrumentation.ts:7` comment drift (`/api/health` → `/api/v1/health/ping`) — minimal 1-line source-code change, safe; (b) per-tab UX/logic deep-audit (i18n, error/empty/loading states, accessibility) — larger scope, deferred since iter 139; (c) re-run F1 pipeline after a patch / monthly; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
+
+---
+
 Task ID: iter-143
 Agent: main
 Task: iter 143 — `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit. Per the iter-142 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (doc-only, 0 source-code changes), well-decomposable, and these 2 docs had not been audited since iter 140.
@@ -52,39 +117,3 @@ Stage Summary:
   - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
   - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
 - **Stopping point:** iter 143 = 2 docs re-audited (BACKEND_GUIDE.md + DATA_CONTRACTS.md, 12 drift items). Next iter candidates: (a) deep cross-check of `docs/DATA_FLOW.md` §2 (POE2Scout API) against `backend/data/providers/poe2scout.py` + §5 (Field Transformation) against `src/lib/poe2api.ts` — next logical docs batch; (b) source cleanup — fix `instrumentation.ts:7` comment drift (`/api/health` → `/api/v1/health/ping`); (c) per-tab UX/logic deep-audit; (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
-
----
-
-Task ID: iter-142
-Agent: main
-Task: iter 142 — `docs/ARCHITECTURE.md` + `docs/MARKET_PLAYBOOK.md` + `docs/CORS_PROXY_GUIDE.md` audit. Per the iter-141 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (mostly doc-only), well-decomposable, and these 3 docs had not been audited since iter 110+.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 141 SHIPPED), `worklog.md` (iter 141 + iter 140), `AGENT_NAVIGATION.md` §1–§6.
-- Re-verified canonical references against live code:
-  - `backend/api/data_snapshot.py:53-87` — `DataSnapshot` has 9 fields (`exchange_rates`, `currencies: dict[str, dict]`, `currency_metadata`, `price_histories`, `current_prices`, `prices_in_base`, `tiers`, `fetched_at`, `valid`). ARCHITECTURE.md §2.3 claimed 4 wrong fields (`rates`, `bfs_pricing`, `currencies: list`, `price_histories: PriceLogEntry[]`).
-  - `backend/data/historical.py:44-145` — 5 SQLite tables (`price_snapshots`, `events`, `market_spreads`, `triangular_cycles`, `daily_stats`). ARCHITECTURE.md §2.3 + §5.2 claimed 3 (incl. non-existent `prices_history`).
-  - `backend/scheduler.py:280-320` — 4 scheduler jobs (added `daily_stats_refresh` iter 131). ARCHITECTURE.md §6 claimed 3.
-  - `src/components/dashboard/dashboard-page.tsx:211` — `TAB_MAP` has 16 entries. ARCHITECTURE.md §1 Layer Diagram + §9 tab table claimed 10 (incl. phantom `Arbitrage` [removed iter 92 KI-7] and `Graph` [removed iter 87]).
-  - `src/lib/poe2api.ts:114,112,71,72` — `CIRCUIT_BREAKER_THRESHOLD=3`, `CIRCUIT_BREAKER_COOLDOWN=60_000` (60s, NOT 30s), `CACHE_TTL=60_000` (fresh), `CACHE_STALE_TTL=1_800_000` (30min stale). CORS_PROXY_GUIDE.md §2 claimed "Open duration: 30 seconds" + "TTL: 30 minutes" (conflated fresh + stale).
-  - `src/lib/flipper-proxy.ts:36-38` — `FLIPPER_CB_THRESHOLD=5`, `FLIPPER_CB_INITIAL_COOLDOWN=15_000`, `FLIPPER_CB_MAX_COOLDOWN=300_000`. ARCHITECTURE.md §8 confused poe2api.ts breaker (3 failures / 60s) with flipper-proxy.ts breaker (5 failures / 15s→5min).
-  - `src/lib/flipper-backend-bridge.ts:52` — `HEALTH_ENDPOINT = ${BACKEND_URL}/api/v1/health/ping`. ARCHITECTURE.md §10 said `/api/health` (missing `/v1` + `/ping`).
-  - `src/app/api/flipper/flips/route.ts:21` — proxies to `/api/v1/arbitrage/flips`. ARCHITECTURE.md §2.2 said `/api/arbitrage/flips` (missing `/v1`).
-  - P10 Gold Map ROI — `src/components/dashboard/gold-map-roi-tab.tsx` + `gold-map-roi-calculator.tsx` + `gold-map-roi-trend-chart.tsx` all exist. STATUS.md confirmed Phase 1 SHIPPED iter 127, Phase 2 SHIPPED iter 132. MARKET_PLAYBOOK.md §B + §C.8 still said "❌ Не реализовано / на roadmap".
-  - `.env.example:7` — `POE2_API_BASE_URL=https://api.poe2scout.com/api`. STATUS.md KI-15 + `src/lib/poe2api.ts:5-9` confirm `api.` subdomain is DEAD (404 for every endpoint). **New bug found — KI-31.**
-- **KI-31 documented + fixed FIRST (per user rule: "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксий"):**
-  - Added KI-31 entry to STATUS.md Quick Reference table (between KI-30 and the After-updating-currency_names row).
-  - Fixed `.env.example:4-8`: changed URL to `https://poe2scout.com/api` (bare domain), rewrote comment to reference KI-15/KI-31.
-- **`docs/ARCHITECTURE.md` audit (12 drift items fixed, version 1.0 → 1.1):**
-  - Header bumped; §1 Layer Diagram tabs 10→16 (removed phantom Arbitrage + Graph, added Storage Value, Speculation, Circuit, Intraday, Weekly, Mirror/Divine, Gold Map ROI, Liquid Chain); §2.2 fixed 2 backend URLsS (`/api/arbitrage/flips` → `/api/v1/arbitrage/flips`); §2.3 rewrote DataSnapshot fields (4 wrong → 9 correct) + HistoricalStore tables (3→5); §5.2 HistoricalStore 3→5 tables + DataScheduler 3→4 jobs; §6 added 4th scheduler job `daily_stats_refresh`; §7 split cache + circuit breaker rows; §8 poe2api.ts circuit breaker 3 failures / 60s + flipper-proxy.ts 5 failures / 15s→5min; §9 tab table 9→16 rows; §10 `/api/health` → `/api/v1/health/ping` (2 refs).
-- **`docs/MARKET_PLAYBOOK.md` audit (heavy cleanup, 355 → 205 lines):**
-  - P10 row marked SHIPPED (Phase 1 iter 127 + Phase 2 iter 132). Trimmed iter-by-iter detail records (C.1–C.7, ~165 lines of git-log material). Replaced with concise canonical status table for 7 implemented patterns.
-- **`docs/CORS_PROXY_GUIDE.md` audit (2 drift items fixed, version 1.0 → 1.1):**
-  - §2 Circuit Breaker "Open duration: 30 seconds" → "60 seconds" (matches `CIRCUIT_BREAKER_COOLDOWN=60_000`). §2 Stale-While-Revalidate "TTL: 30 minutes" → split into "Fresh TTL: 60 seconds" + "Stale TTL: 30 minutes" (matches `CACHE_TTL=60_000` + `CACHE_STALE_TTL=1_800_000`).
-- **Meta-docs updates:** `STATUS.md` header bump + KI-31 entry; `worklog.md` added iter-142 entry; `AGENT_NAVIGATION.md` header bump.
-- **Final verification:** `pytest tests/ --ignore=tests/e2e -q` → **1466 passed, 0 failed, 0 errors** (matches iter-141 baseline). 1 source-code change this iter (`.env.example` only — KI-31 fix).
-
-Stage Summary:
-- **iter 142 SHIPPED — 3 docs audited + 1 new bug found & fixed.** 3 doc files updated (`docs/ARCHITECTURE.md` — 12 drift items, `docs/MARKET_PLAYBOOK.md` — heavy cleanup 355→205 lines, `docs/CORS_PROXY_GUIDE.md` — 2 drift items). 1 source-code fix (`.env.example` — KI-31). 16 individual drift items resolved across docs + 1 new bug. 1466 pytest green (0 regressions — `.env.example` is not loaded by any Python test).
-- **Modified files (3 docs + 1 source + 3 meta-docs):** `docs/ARCHITECTURE.md`, `docs/MARKET_PLAYBOOK.md`, `docs/CORS_PROXY_GUIDE.md`, `.env.example` (KI-31 fix), `STATUS.md`, `worklog.md`, `AGENT_NAVIGATION.md`.
-- **What was NOT done (intentionally deferred to iter 143+):** `docs/BACKEND_GUIDE.md` + `docs/DATA_CONTRACTS.md` re-audit (DONE iter 143); `docs/DATA_FLOW.md` §2 + §5 deep cross-check; `instrumentation.ts:7` comment drift; per-tab UX/logic deep-audit; F1 re-run; TD-3 runtime log verification.
