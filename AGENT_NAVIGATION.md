@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-12 (iter 129 — TD-3 Phase 3 SHIPPED. New `triangular_cycles` SQLite table + `compute_triangular_cycles()` pure helper + best-effort write in `SnapshotManager._refresh()` (after TD-4 block) + `GET /api/v1/arbitrage/triangular/history` route + 49 pytest. 1376 pytest green (1327 baseline + 49 new), 0 regressions. Frontend untouched. TD-4 Phase 2 three-layer template confirmed to generalize.).
+> **Single entry point** for codebase navigation. Updated 2026-07-12 (iter 133 — KI-26-audit COMPLETE + KI-27 closed. Audited all 17 `replace(tzinfo=utc)` call sites in `backend/`: 3 UNSAFE → fixed in `lifecycle.py:days_since_reference` + `arbitrage/triangular.py:_compute_confidence` (KI-27); 14 SAFE (read naive UTC from SQLite/POE2Scout). 4 new pytest regression tests. 1436 pytest green in both UTC and UTC+5, 0 regressions. Backend-only. See `STATUS.md` § "KI-26-audit" for the full per-site classification.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.

@@ -110,11 +110,20 @@ class PhaseDetector:
         current = now or datetime.now(timezone.utc)
         reference = self._reference_date()
 
-        # Ensure both datetimes are timezone-aware for correct subtraction
+        # Ensure both datetimes are timezone-aware for correct subtraction.
+        # KI-27 (iter 133, KI-26-audit): use ``astimezone(timezone.utc)`` for
+        # naive inputs — this interprets them as system-local time and converts
+        # to UTC. The previous ``replace(tzinfo=timezone.utc)`` just relabelled
+        # the wall-clock value as UTC without converting, producing a future
+        # timestamp in non-UTC timezones (same latent bug as KI-26). Both
+        # ``current`` and ``reference`` CAN arrive as naive: ``current`` when a
+        # caller passes ``now`` from ``datetime.now()`` without tz, and
+        # ``reference`` when ``patch_reset_date`` was set from a naive API
+        # request body (pydantic accepts naive ISO strings).
         if current.tzinfo is None:
-            current = current.replace(tzinfo=timezone.utc)
+            current = current.astimezone(timezone.utc)
         if reference.tzinfo is None:
-            reference = reference.replace(tzinfo=timezone.utc)
+            reference = reference.astimezone(timezone.utc)
 
         delta = current - reference
         return max(0, math.floor(delta.total_seconds() / 86400))

@@ -142,8 +142,14 @@ def _compute_confidence(
     freshness = 1.0  # assume fresh if no timestamp provided
     if snapshot_time is not None:
         now = datetime.now(timezone.utc)
+        # KI-27 (iter 133, KI-26-audit): use ``astimezone(timezone.utc)`` for
+        # naive ``snapshot_time`` — this interprets it as system-local time and
+        # converts to UTC. The previous ``replace(tzinfo=timezone.utc)`` just
+        # relabelled the wall-clock value as UTC without converting, producing
+        # a future timestamp in non-UTC timezones and clamping freshness to 0
+        # (same latent bug as KI-26 in triangular_cycles._safe_snapshot_age_sec).
         if snapshot_time.tzinfo is None:
-            snapshot_time = snapshot_time.replace(tzinfo=timezone.utc)
+            snapshot_time = snapshot_time.astimezone(timezone.utc)
         minutes_since = (now - snapshot_time).total_seconds() / 60.0
         freshness = max(0.0, 1.0 - (minutes_since / 60.0))
 

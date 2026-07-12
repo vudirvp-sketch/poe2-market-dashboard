@@ -265,5 +265,68 @@ class TestNonResetEventTypes:
         assert detector.current_phase(now) == LeaguePhase.MID
 
 
+class TestNaiveDatetimeTimezoneHandling:
+    """Regression tests for KI-27 (iter 133, KI-26-audit).
+
+    The previous implementation used ``replace(tzinfo=timezone.utc)`` on naive
+    datetimes, which just relabels wall-clock as UTC without converting. The
+    fix uses ``astimezone(timezone.utc)`` which interprets naive as
+    system-local and converts to UTC (same fix pattern as KI-26 in
+    ``triangular_cycles._safe_snapshot_age_sec``).
+
+    These tests verify that naive ``now`` and naive ``patch_reset_date``
+    inputs are handled correctly: the result is a sensible positive value
+    (NOT clamped to 0, which was the original KI-26 symptom in non-UTC
+    timezones), and matches what ``astimezone(timezone.utc)`` produces.
+    """
+
+    def test_naive_current_datetime_uses_astimezone(self):
+        """A naive ``now`` must be interpreted as system-local time and
+        converted to UTC, not relabelled as UTC wall-clock.
+
+        We assert the result matches the explicit
+        ``naive.astimezone(timezone.utc)`` conversion — this catches the
+        regression in non-UTC timezones (where ``replace(tzinfo=utc)``
+        would produce a different, wrong answer).
+        """
+        league_start = datetime(2025, 1, 15, 0, 0, 0, tzinfo=timezone.utc)
+        detector = PhaseDetector(league_start, _make_config())
+
+        naive_now = datetime(2025, 1, 20, 0, 0, 0)  # no tzinfo
+        result = detector.days_since_reference(naive_now)
+
+        # Expected: floor((naive_now.astimezone(utc) - league_start) / 86400)
+        expected = max(
+            0,
+            int((naive_now.astimezone(timezone.utc) - league_start).total_seconds() // 86400),
+        )
+        assert result == expected, (
+            f"KI-27 regression: naive 'now' produced days_since_reference="
+            f"{result}, expected {expected} (from astimezone conversion)."
+        )
+
+    def test_naive_patch_reset_date_uses_astimezone(self):
+        """A naive ``patch_reset_date`` (typical for an API request body that
+        omitted the ``Z`` suffix) must be interpreted as system-local time.
+        """
+        league_start = datetime(2025, 1, 15, 0, 0, 0, tzinfo=timezone.utc)
+        detector = PhaseDetector(league_start, _make_config())
+
+        naive_patch = datetime(2025, 2, 4, 12, 0, 0)  # no tzinfo
+        detector.reset_for_major_patch(naive_patch)
+
+        aware_now = datetime(2025, 2, 24, 12, 0, 0, tzinfo=timezone.utc)
+        result = detector.days_since_reference(aware_now)
+
+        expected = max(
+            0,
+            int((aware_now - naive_patch.astimezone(timezone.utc)).total_seconds() // 86400),
+        )
+        assert result == expected, (
+            f"KI-27 regression: naive patch_reset_date produced "
+            f"days_since_reference={result}, expected {expected}."
+        )
+
+
 # Import EventType for TestNonResetEventTypes
 from backend.models.currency import EventType
