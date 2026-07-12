@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Flow Reference
 
-> **Version:** 1.0 | **Date:** 2026-06-08
+> **Version:** 1.1 | **Date:** 2026-07-12 (iter 140 — doc-drift audit: §7.1 flipper proxy map and §7.2 backend route map — `/api/*` → `/api/v1/*` prefix drift fixed, 16 missing newer endpoints added, SSE route-order note added. §1–§6, §8–§10 not audited this iter — candidate for iter 141.)
 
 ---
 
@@ -492,44 +492,79 @@ poe2/                               # Direct POE2Scout proxy (no backend)
   overview/route.ts                → Combined: getExchangeSnapshot + getSnapshotHistory + getReferenceCurrencies
 
 flipper/                            # FastAPI backend proxy
-  health/route.ts                  → GET /api/health
-  phase/route.ts                   → GET /api/phase
-  currencies/route.ts              → GET /api/currencies
-  prices/route.ts                  → GET /api/prices
-  heatmap/route.ts                 → GET /api/prices/heatmap
-  flips/route.ts                   → GET /api/arbitrage/flips
-  triangular/route.ts             → GET /api/arbitrage/triangular
-  tiers/route.ts                   → GET /api/tiers
-  anomalies/route.ts              → GET /api/anomalies
-  storage-value/[currency]/route.ts → GET /api/storage-value/{currency}
-  benchmarks/[currency]/route.ts  → GET /api/benchmarks/{currency_api_id}
-  optimizer/path/route.ts         → GET /api/optimizer/path
-  optimizer/matrix/route.ts       → GET /api/optimizer/matrix
-  analyst/summary/route.ts        → GET /api/analyst/summary
-  optimal-currency/route.ts       → GET /api/arbitrage/optimal-currency
-  portfolio/correlation/route.ts  → GET /api/portfolio/correlation
-  events/route.ts                 → GET/POST /api/events
-  events/[eventId]/route.ts       → GET/DELETE /api/events/{id}
-  events/[eventId]/deactivate/route.ts → POST /api/events/{id}/deactivate
+  health/route.ts                  → GET /api/v1/health
+  health/ping/route.ts             → GET /api/v1/health/ping
+  health/circuit-breakers/route.ts → GET /api/v1/health/circuit-breakers
+  phase/route.ts                   → GET /api/v1/phase
+  currencies/route.ts              → GET /api/v1/currencies
+  prices/route.ts                  → GET /api/v1/prices
+  prices/stream/route.ts           → GET /api/v1/prices/stream (SSE)
+  heatmap/route.ts                 → GET /api/v1/prices/heatmap
+  flips/route.ts                   → GET /api/v1/arbitrage/flips
+  triangular/route.ts              → GET /api/v1/arbitrage/triangular
+  triangular/history/route.ts      → GET /api/v1/arbitrage/triangular/history (TD-3 iter 129)
+  optimal-currency/route.ts        → GET /api/v1/arbitrage/optimal-currency
+  tiers/route.ts                   → GET /api/v1/tiers
+  anomalies/route.ts               → GET /api/v1/anomalies
+  storage-value/[currency]/route.ts        → GET /api/v1/storage-value/{currency}
+  storage-value/[currency]/history/route.ts → GET /api/v1/storage-value/{currency}/history
+  benchmarks/[currency]/route.ts   → GET /api/v1/benchmarks/{currency_api_id}
+  optimizer/path/route.ts          → GET /api/v1/optimizer/path
+  optimizer/matrix/route.ts        → GET /api/v1/optimizer/matrix
+  analyst/summary/route.ts         → GET /api/v1/analyst/summary
+  optimal-currency/route.ts        → GET /api/v1/arbitrage/optimal-currency
+  portfolio/correlation/route.ts   → GET /api/v1/portfolio/correlation
+  content-pulse/route.ts           → GET /api/v1/content-pulse (F3 iter 75)
+  speculation/route.ts             → GET /api/v1/speculation (F5 iter 77)
+  speculation/backtest/route.ts    → GET /api/v1/speculation/backtest (F5 iter 79)
+  phase-hints/route.ts             → GET /api/v1/phase-hints (F6 iter 78)
+  circuit-patterns/route.ts        → GET /api/v1/circuit-patterns (F7/P8 iter 97)
+  intraday-patterns/route.ts       → GET /api/v1/intraday-patterns (P4 iter 98)
+  weekly-patterns/route.ts         → GET /api/v1/weekly-patterns (P5 iter 99)
+  mirror-divine-arb/route.ts       → GET /api/v1/mirror-divine-arb (P7 iter 109)
+  leveling-uniques/route.ts        → GET /api/v1/leveling-uniques (P9 iter 110)
+  market-spreads/history/route.ts  → GET /api/v1/market-spreads/history (TD-4 iter 128)
+  liquid-chain/route.ts            → GET /api/v1/liquid-chain/{analysis|opportunities}
+  batch/route.ts                   → POST /api/v1/batch
+  events/route.ts                  → GET/POST /api/v1/events
+  events/summary/route.ts          → GET /api/v1/events/summary
+  events/[eventId]/route.ts        → GET/DELETE /api/v1/events/{id}
+  events/[eventId]/deactivate/route.ts → POST /api/v1/events/{id}/deactivate
 ```
 
 ### 7.2 Backend Routes (FastAPI `backend/api/`)
 
 ```
-main.py                  # /api/health
-routes_prices.py         # /api/phase, /api/currencies, /api/prices,
-                         # /api/prices/heatmap, /api/tiers,
-                         # /api/benchmarks/{currency_api_id}
-routes_optimizer.py      # /api/optimizer/path, /api/optimizer/matrix
-routes_analyst.py        # /api/analyst/summary
-routes_arbitrage.py      # /api/arbitrage/flips, /api/arbitrage/triangular,
-                         # /api/arbitrage/optimal-currency
-routes_events.py         # /api/events (GET/POST), /api/events/summary,
-                         # /api/events/{id} (GET/DELETE),
-                         # /api/events/{id}/deactivate (POST)
-routes_anomalies.py      # /api/anomalies
-routes_storage_value.py  # /api/storage-value/{currency}
-routes_portfolio.py      # /api/portfolio/correlation (ACTIVE)
+main.py                  # /api/v1/health, /api/v1/health/ping, /api/v1/health/circuit-breakers
+routes_prices.py         # /api/v1/phase, /api/v1/currencies, /api/v1/prices,
+                         # /api/v1/prices/heatmap, /api/v1/tiers,
+                         # /api/v1/benchmarks/{currency_api_id}
+routes_optimizer.py      # /api/v1/optimizer/path, /api/v1/optimizer/matrix
+routes_analyst.py        # /api/v1/analyst/summary
+routes_arbitrage.py      # /api/v1/arbitrage/flips, /api/v1/arbitrage/triangular,
+                         # /api/v1/arbitrage/triangular/history (TD-3 iter 129),
+                         # /api/v1/arbitrage/optimal-currency
+routes_events.py         # /api/v1/events (GET/POST), /api/v1/events/summary,
+                         # /api/v1/events/{id} (GET/DELETE),
+                         # /api/v1/events/{id}/deactivate (POST)
+routes_anomalies.py      # /api/v1/anomalies
+routes_storage_value.py  # /api/v1/storage-value/{currency},
+                         # /api/v1/storage-value/{currency}/history
+routes_portfolio.py      # /api/v1/portfolio/correlation (ACTIVE)
+routes_sse.py            # /api/v1/prices/stream (SSE — KI-13: registered before /api/v1/prices/{pair})
+routes_content_pulse.py  # /api/v1/content-pulse (F3 iter 75)
+routes_speculation.py    # /api/v1/speculation (F5 iter 77)
+routes_speculation_backtest.py  # /api/v1/speculation/backtest (F5 iter 79)
+routes_phase_hints.py    # /api/v1/phase-hints (F6 iter 78)
+routes_circuit_patterns.py  # /api/v1/circuit-patterns (F7/P8 iter 97)
+routes_intraday_patterns.py # /api/v1/intraday-patterns (P4 iter 98)
+routes_weekly_patterns.py   # /api/v1/weekly-patterns (P5 iter 99)
+routes_mirror_divine_arb.py # /api/v1/mirror-divine-arb (P7 iter 109)
+routes_leveling_uniques.py  # /api/v1/leveling-uniques (P9 iter 110)
+routes_market_spreads.py    # /api/v1/market-spreads/history (TD-4 iter 128)
+routes_daily_stats.py       # /api/v1/items/{item_id}/daily-stats (TD-5 iter 131 — backend-only, no proxy)
+routes_liquid_chain.py      # /api/v1/liquid-chain/analysis, /api/v1/liquid-chain/opportunities
+routes_batch.py             # /api/v1/batch (POST)
 ```
 
 **Note:** `routes_auth.py`, `routes_ws.py`, and `routes_scanner.py` have been **deleted** — `routes_auth.py` was dead code (removed earlier); `routes_ws.py` was removed in iter 58 (P0-2 + P1-1 + P1-2); `routes_scanner.py` was deprecated in iter 67 and removed in iter 68 (P2-4 follow-up — its filter/sort params now live on `/api/v1/arbitrage/flips`). See STATUS.md §Fixed.

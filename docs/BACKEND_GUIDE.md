@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Backend Guide
 
-> **Version:** 1.0 | **Date:** 2026-06-08
+> **Version:** 1.1 | **Date:** 2026-07-12 (iter 140 — doc-drift audit: HistoricalStore tables list, scheduler jobs count, optimizer/analyst route prefixes, tests file count, missing newer-endpoint references)
 
 ---
 
@@ -72,17 +72,22 @@ When a currency has no direct trading pair with the base currency (exalted), the
 
 SQLite database (`historical.db`) for persistent time-series storage.
 
-**Tables:**
-- `prices_history` — timestamped price records for scheduler snapshots
+**Tables** (5 — verified iter 140 against `backend/data/historical.py`):
+- `price_snapshots` — periodic full snapshot archive (scheduler)
 - `events` — persisted event flags (dual-write with EventManager)
-- `price_snapshots` — periodic full snapshot archive
+- `market_spreads` — TD-4 Phase 2 (iter 128) — per-snapshot spread metrics
+- `triangular_cycles` — TD-3 Phase 3 (iter 129) — per-snapshot triangular arbitrage cycles
+- `daily_stats` — TD-5 Phase 4 (iter 131) — per-item daily OHLCV (lazy-fetch + hourly scheduler refresh)
 
 **Key methods:**
 - `init()` — Create tables if not exist (with 10s timeout for startup resilience)
-- `append_price_snapshot(league, rates)` — Write current prices
-- `get_price_history(currency, hours)` — Read historical prices
-- `prune_expired_events()` — Remove expired events from SQLite
-- `_prune_old_league_data(league)` — Remove data from previous leagues on startup
+- `write_price_snapshot(...)` / `write_price_snapshots_batch(...)` — append snapshot rows
+- `get_price_history(currency, hours)` / `get_latest_prices(...)` — read historical prices
+- `write_event(...)` / `write_events_batch(...)` / `read_active_events(...)` / `prune_expired_events()` — events dual-write
+- `write_market_spreads_batch(...)` / `read_market_spreads(...)` / `read_market_spreads_pairs(...)` — TD-4 (iter 128)
+- `write_triangular_cycles_batch(...)` / `read_triangular_cycles(...)` / `read_triangular_cycles_keys(...)` — TD-3 (iter 129)
+- `write_daily_stats_batch(...)` / `read_daily_stats(...)` / `read_daily_stats_items(...)` / `read_daily_stats_latest_date(...)` — TD-5 (iter 131)
+- `_prune_old_league_data(league)` / `_prune_old_records(...)` — retention
 
 **Startup behavior:** If `init()` fails or times out, the backend continues without history (degraded mode). See Fix 9 in `main.py`.
 
@@ -90,13 +95,14 @@ SQLite database (`historical.db`) for persistent time-series storage.
 
 **Location:** `backend/scheduler.py`
 
-APScheduler-based background scheduler running 3 jobs:
+APScheduler-based background scheduler running **4 jobs** (TD-5 added job #4 in iter 131):
 
 | Job | Interval | Purpose |
 |-----|----------|---------|
-| `price_snapshot` | 30 min | Fetch current prices via provider + persist to SQLite |
-| `event_pruning` | 15 min | Prune expired events from memory + SQLite |
-| `model_persistence` | 30 min | Save LightGBM models to disk |
+| `price_snapshot` | 30 min (config: `price_snapshot_interval_minutes`) | Fetch current prices via provider + persist to SQLite |
+| `event_pruning` | 15 min (config: `event_pruning_interval_minutes`) | Prune expired events from memory + SQLite |
+| `model_persistence` | 30 min (config: `model_persistence_interval_minutes`) | Save LightGBM models to disk |
+| `daily_stats_refresh` | 1 hour (config: `daily_stats_refresh_interval_hours`) | TD-5 (iter 131) — fetch daily OHLCV for top-N items + persist to `daily_stats` SQLite table |
 
 **Configuration:** All intervals are defined in `config.yaml` under `scheduler:` section.
 
@@ -268,8 +274,8 @@ Pre-filters currency pairs by:
 Dijkstra-based optimal currency conversion path finder. Given a source currency, target currency, and amount, finds the path that maximizes output by exploring the graph of all available exchange rates.
 
 **Endpoints:**
-- `GET /api/optimizer/path` — Find optimal conversion path for a given currency pair and amount
-- `GET /api/optimizer/matrix` — Get the effective rate matrix for all currency pairs
+- `GET /api/v1/optimizer/path` — Find optimal conversion path for a given currency pair and amount
+- `GET /api/v1/optimizer/matrix` — Get the effective rate matrix for all currency pairs
 
 **Algorithm:** Dijkstra shortest-path on `-log(rate)` weights. Note: when rates > 1, `-log(rate)` produces negative weights which violate Dijkstra's precondition — this can produce suboptimal paths in certain edge cases (known issue, tracked for future fix with Bellman-Ford).
 
@@ -282,7 +288,7 @@ League analyst summary endpoint that provides an overview of the current market 
 - Anomaly highlights
 - League facts (phase, tier distribution, top movers)
 
-**Endpoint:** `GET /api/analyst/summary`
+**Endpoint:** `GET /api/v1/analyst/summary`
 
 **Frontend fallback:** When the backend is offline, `/api/poe2/analyst-fallback` provides a lightweight version computed entirely in Next.js using cached POE2Scout data.
 
@@ -308,25 +314,49 @@ Computes historical benchmark statistics for individual currencies: mean, median
 
 **Location:** `tests/`
 
-### Unit Tests (14 files)
+### Unit Tests (42 files — verified iter 140)
 
 ```
 tests/
-├── test_anomaly.py           — Anomaly detection indicators
-├── test_benchmarks.py         — Historical benchmark calculations
-├── test_clustering.py         — KMeans currency clustering
-├── test_daily_stats_history.py — Daily stats cache + history
-├── test_events.py             — Event management + expiry
-├── test_lifecycle.py          — Phase detection (EARLY/MID/LATE)
-├── test_model_store.py        — LightGBM model persistence
-├── test_momentum.py           — Price momentum calculations
-├── test_new_params.py         — New config parameters
-├── test_pipeline_cache_degraded.py — Pipeline cache in degraded mode
-├── test_scheduler.py          — APScheduler job execution
-├── test_scorer.py             — Opportunity scoring
-├── test_storage_value.py      — Hold/sell decisions
-└── test_triangular.py         — Bellman-Ford cycle detection
+├── test_anomaly.py                       — Anomaly detection indicators
+├── test_benchmarks.py                    — Historical benchmark calculations
+├── test_circuit_patterns.py              — F7 / P8 trajectory classification
+├── test_clustering.py / test_clustering_helpers.py — KMeans currency clustering
+├── test_compression.py                   — Response compression middleware
+├── test_content_pulse.py                 — F3 per-category turnover
+├── test_currency_names_ru.py             — F1 RU translations parity
+├── test_daily_stats_history.py           — TD-5 daily stats cache + history
+├── test_daily_stats_persistence.py       — TD-5 SQLite persistence
+├── test_events.py                        — Event management + expiry
+├── test_flips_filters.py / test_flips_integration.py — /flips filter/sort + e2e
+├── test_intraday_patterns.py             — P4 time-of-day patterns
+├── test_leveling_uniques.py              — P9 lifecycle widget
+├── test_lifecycle.py                     — Phase detection (EARLY/MID/LATE)
+├── test_liquid_chain.py                  — Liquid chain analysis
+├── test_market_spreads.py / test_market_spreads_route.py — TD-4 persistence + route
+├── test_mirror_divine_arb.py             — P7 Mirror/Divine arbitrage
+├── test_model_store.py                   — LightGBM model persistence
+├── test_momentum.py                      — Price momentum calculations
+├── test_new_params.py                    — New config parameters
+├── test_optimal_currency.py              — Optimal payment route
+├── test_phase_hints.py                   — F6 phase-aware hints
+├── test_pickle_safety.py                 — DataSnapshot pickle safety
+├── test_pipeline_cache_degraded.py       — Pipeline cache in degraded mode
+├── test_pricing.py                       — BFS transitive pricing + 24h-ago lookup
+├── test_routes_events_invalidation.py    — Event cache invalidation
+├── test_routes_optimizer.py              — Optimizer path + matrix
+├── test_scheduler.py                     — APScheduler job execution (4 jobs incl. daily_stats_refresh)
+├── test_scorer.py                        — Opportunity scoring
+├── test_snapshot_atomic_swap.py          — SnapshotManager atomic swap
+├── test_speculation.py / test_speculation_backtest.py — F5 z-score signals + backtest
+├── test_storage_value.py / test_storage_value_history.py — Hold/sell + history
+├── test_sync_currency_names.py           — F1 pipeline (fetch-ids / fetch-ru-by-item / diff / apply)
+├── test_triangular.py                    — Bellman-Ford cycle detection
+├── test_triangular_cycles.py / test_triangular_cycles_route.py — TD-3 persistence + route
+└── test_weekly_patterns.py               — P5 weekday/weekend patterns
 ```
+
+> **Note on test count:** The full suite is **1466 pytest green** when `aiosqlite` is installed in the venv (the 6 persistence/scheduler modules require it). Without `aiosqlite`, those 6 modules are skipped and the suite reports 1289 passed. See `STATUS.md` Quick Reference for the env-recovery row.
 
 ### E2E Tests
 

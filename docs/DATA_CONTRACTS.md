@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Contracts
 
-> **Version:** 1.0 | **Date:** 2026-06-08
+> **Version:** 1.1 | **Date:** 2026-07-12 (iter 140 — doc-drift audit: §4.2 backend route prefixes /api/* → /api/v1/*, fixed tier + benchmarks route paths, added 16 missing newer endpoints, §5 DataSnapshot fields updated to actual dataclass)
 
 ---
 
@@ -290,47 +290,88 @@ Key models with PascalCase serialization:
 
 | Endpoint | Backend Route | Response Type | Transform |
 |----------|--------------|---------------|-----------|
-| `/api/flipper/health` | `GET /api/health` | `FlipperHealthResponse` | snake→camel |
-| `/api/flipper/phase` | `GET /api/phase` | `FlipperPhaseResponse` | snake→camel |
-| `/api/flipper/currencies` | `GET /api/currencies` | `CurrencyItem[]` | snake→camel |
-| `/api/flipper/prices` | `GET /api/prices` | `{ rates, currencies, ... }` | snake→camel |
-| `/api/flipper/heatmap` | `GET /api/prices/heatmap` | `HeatmapData` | snake→camel |
-| `/api/flipper/flips` | `GET /api/arbitrage/flips` | `FlipsResponse` | snake→camel |
-| `/api/flipper/triangular` | `GET /api/arbitrage/triangular` | `TriangularResponse` | snake→camel |
-| `/api/flipper/events` | `GET/POST /api/events` | `Event[]` | snake→camel |
-| `/api/flipper/events/[id]` | `GET/DELETE /api/events/{id}` | `Event` | snake→camel |
-| `/api/flipper/events/[id]/deactivate` | `POST /api/events/{id}/deactivate` | `Event` | snake→camel |
-| `/api/flipper/anomalies` | `GET /api/anomalies` | `AnomalyResponse` | snake→camel |
-| `/api/flipper/storage-value/[c]` | `GET /api/storage-value/{c}` | `StorageValueResponse` | snake→camel |
-| `/api/flipper/tiers` | `GET /api/prices/tiers` | `TiersResponse` | snake→camel |
-| `/api/flipper/benchmarks/[c]` | `GET /api/prices/benchmarks/{c}` | `BenchmarksResponse` | snake→camel |
-| `/api/flipper/optimizer/path` | `GET /api/optimizer/path` | `OptimizerPathResponse` | snake→camel |
-| `/api/flipper/optimizer/matrix` | `GET /api/optimizer/matrix` | `OptimizerMatrixResponse` | snake→camel |
-| `/api/flipper/analyst/summary` | `GET /api/analyst/summary` | `AnalystSummaryResponse` | snake→camel |
-| `/api/flipper/optimal-currency` | `GET /api/arbitrage/optimal-currency` | `OptimalPaymentResult` | snake→camel |
-| `/api/flipper/portfolio/correlation` | `GET /api/portfolio/correlation` | `CorrelationResponse` | snake→camel |
+| `/api/flipper/health` | `GET /api/v1/health` | `FlipperHealthResponse` | snake→camel |
+| `/api/flipper/health/ping` | `GET /api/v1/health/ping` | `{ status }` | snake→camel |
+| `/api/flipper/health/circuit-breakers` | `GET /api/v1/health/circuit-breakers` | circuit-breaker JSON | snake→camel |
+| `/api/flipper/phase` | `GET /api/v1/phase` | `FlipperPhaseResponse` | snake→camel |
+| `/api/flipper/currencies` | `GET /api/v1/currencies` | `CurrencyItem[]` | snake→camel |
+| `/api/flipper/prices` | `GET /api/v1/prices` | `{ rates, currencies, ... }` | snake→camel |
+| `/api/flipper/heatmap` | `GET /api/v1/prices/heatmap` | `HeatmapData` | snake→camel |
+| `/api/flipper/flips` | `GET /api/v1/arbitrage/flips` | `FlipsResponse` | snake→camel |
+| `/api/flipper/triangular` | `GET /api/v1/arbitrage/triangular` | `TriangularResponse` | snake→camel |
+| `/api/flipper/triangular/history` | `GET /api/v1/arbitrage/triangular/history` | `TriangularHistoryResponse` (TD-3 iter 129) | snake→camel |
+| `/api/flipper/events` | `GET/POST /api/v1/events` | `Event[]` | snake→camel |
+| `/api/flipper/events/summary` | `GET /api/v1/events/summary` | `EventSummaryResponse` | snake→camel |
+| `/api/flipper/events/[id]` | `GET/DELETE /api/v1/events/{id}` | `Event` | snake→camel |
+| `/api/flipper/events/[id]/deactivate` | `POST /api/v1/events/{id}/deactivate` | `Event` | snake→camel |
+| `/api/flipper/anomalies` | `GET /api/v1/anomalies` | `AnomalyResponse` | snake→camel |
+| `/api/flipper/storage-value/[c]` | `GET /api/v1/storage-value/{c}` | `StorageValueResponse` | snake→camel |
+| `/api/flipper/storage-value/[c]/history` | `GET /api/v1/storage-value/{c}/history` | `StorageValueHistoryResponse` | snake→camel |
+| `/api/flipper/tiers` | `GET /api/v1/tiers` | `TiersResponse` | snake→camel |
+| `/api/flipper/benchmarks/[c]` | `GET /api/v1/benchmarks/{currency_api_id}` | `BenchmarksResponse` | snake→camel |
+| `/api/flipper/optimizer/path` | `GET /api/v1/optimizer/path` | `OptimizerPathResponse` | snake→camel |
+| `/api/flipper/optimizer/matrix` | `GET /api/v1/optimizer/matrix` | `OptimizerMatrixResponse` | snake→camel |
+| `/api/flipper/analyst/summary` | `GET /api/v1/analyst/summary` | `AnalystSummaryResponse` | snake→camel |
+| `/api/flipper/optimal-currency` | `GET /api/v1/arbitrage/optimal-currency` | `OptimalPaymentResult` | snake→camel |
+| `/api/flipper/portfolio/correlation` | `GET /api/v1/portfolio/correlation` | `CorrelationResponse` | snake→camel |
+| `/api/flipper/content-pulse` | `GET /api/v1/content-pulse` | `ContentPulseResponse` (F3 iter 75) | snake→camel |
+| `/api/flipper/speculation` | `GET /api/v1/speculation` | `SpeculationResponse` (F5 iter 77) | snake→camel |
+| `/api/flipper/speculation/backtest` | `GET /api/v1/speculation/backtest` | `SpeculationBacktestResponse` (F5 iter 79) | snake→camel |
+| `/api/flipper/phase-hints` | `GET /api/v1/phase-hints` | `PhaseHintsResponse` (F6 iter 78) | snake→camel |
+| `/api/flipper/circuit-patterns` | `GET /api/v1/circuit-patterns` | `CircuitPatternsResponse` (F7/P8 iter 97) | snake→camel |
+| `/api/flipper/intraday-patterns` | `GET /api/v1/intraday-patterns` | `IntradayPatternsResponse` (P4 iter 98) | snake→camel |
+| `/api/flipper/weekly-patterns` | `GET /api/v1/weekly-patterns` | `WeeklyPatternsResponse` (P5 iter 99) | snake→camel |
+| `/api/flipper/mirror-divine-arb` | `GET /api/v1/mirror-divine-arb` | `MirrorDivineArbResponse` (P7 iter 109) | snake→camel |
+| `/api/flipper/leveling-uniques` | `GET /api/v1/leveling-uniques` | `LevelingUniquesResponse` (P9 iter 110) | snake→camel |
+| `/api/flipper/market-spreads/history` | `GET /api/v1/market-spreads/history` | `MarketSpreadsHistoryResponse` (TD-4 iter 128) | snake→camel |
+| `/api/flipper/liquid-chain/analysis` | `GET /api/v1/liquid-chain/analysis` | `LiquidChainAnalysisResponse` | snake→camel |
+| `/api/flipper/liquid-chain/opportunities` | `GET /api/v1/liquid-chain/opportunities` | `LiquidChainOpportunitiesResponse` | snake→camel |
+| `/api/flipper/batch` | `POST /api/v1/batch` | batched response | snake→camel |
+
+> **Note on `/api/v1/items/{item_id}/daily-stats` (TD-5 iter 131):** Backend-only — no frontend proxy and no current consumer in `src/`. The route is exercised by the scheduler's `daily_stats_refresh` job (hourly) and by `tests/test_daily_stats_*.py`. Frontend integration is a candidate for a future iter.
 
 **Backend-only (no frontend proxy):**
 
-None — all backend endpoints are reachable via the frontend proxy. (The standalone `/api/v1/scanner/scan` endpoint was removed in iter 68 — its filter/sort params are now on `/api/v1/arbitrage/flips`.)
+- `/api/v1/items/{item_id}/daily-stats` (TD-5 iter 131) — see note above. (The standalone `/api/v1/scanner/scan` endpoint was removed in iter 68 — its filter/sort params are now on `/api/v1/arbitrage/flips`.)
 
 ## 5. DataSnapshot Dataclass (Backend)
 
-The central data structure in the FastAPI backend, built by `SnapshotManager`:
+The central data structure in the FastAPI backend, built by `SnapshotManager` (verified iter 140 against `backend/api/data_snapshot.py`):
 
 ```python
 @dataclass
 class DataSnapshot:
-    league: str
+    # Exchange rates from SnapshotPairs — key: "currency1/currency2"
+    exchange_rates: dict[str, ExchangeRate]
+
+    # All currencies with their price logs from ByCategory — key: api_id (lowercase)
+    currencies: dict[str, dict]
+
+    # Currency metadata (api_id -> CurrencyInfo)
+    currency_metadata: list[CurrencyInfo]
+
+    # Price histories derived from ByCategory price_logs — key: api_id (lowercase)
+    price_histories: dict[str, list[PricePoint]]
+
+    # Current prices: api_id -> current_price
+    current_prices: dict[str, float]
+
+    # Prices in base currency (from SnapshotPairs relative_price + BFS transitive)
+    prices_in_base: dict[str, float]
+
+    # P1-3: Currency tier classifications
+    tiers: dict[str, CurrencyTier]
+
+    # Timestamps
     fetched_at: datetime
-    rates: dict[str, SnapshotPair]      # key: "currency1/currency2"
-    currencies: list[CurrencyItem]
-    price_histories: dict[str, list[PriceLogEntry]]  # key: api_id
-    bfs_pricing: dict[str, float]       # transitive mid_price via BFS
-    snapshot_age_seconds: float
+
+    # Whether the snapshot is valid (has at least some data)
+    valid: bool
 ```
 
-**BFS transitive pricing:** When no direct pair exists between currency A and the base currency (exalted), the mid_price is computed via breadth-first search through existing pairs. This ensures every currency has a price relative to the base, even without a direct market.
+**BFS transitive pricing** (in `backend/economy/pricing.py:compute_transitive_prices`): When no direct pair exists between currency A and the base currency (exalted), the mid_price is computed via breadth-first search through existing pairs. The result populates `prices_in_base` (formerly `bfs_pricing`).
+
+> **Historical note:** `snapshot_age_seconds` is NOT a DataSnapshot field — it is computed live by `SnapshotManager` from `fetched_at` and exposed via the `/api/v1/health` endpoint. The dataclass is intentionally minimal; derived metrics live on the manager.
 
 ## 6. POE2Scout API Response Shapes (Reference)
 

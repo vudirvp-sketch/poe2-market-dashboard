@@ -1,6 +1,6 @@
 # STATUS.md — Known Issues & Quick Reference
 
-> **Last updated:** 2026-07-12 (iter 139 — repo cleanup pass: deleted 4 dead files (`README_iter138.md` + 3 iter-89 one-shot scripts), fixed 5 missing routes in AGENT_NAVIGATION.md §5 API table, fixed design-docs status in §6, updated i18n-cleanup recipe, fixed README test command, clarified aiosqlite env-recovery row below. 1466 pytest green with aiosqlite installed.)
+> **Last updated:** 2026-07-12 (iter 140 — docs deep-audit pass: fixed route-prefix drift `/api/*` → `/api/v1/*` across `docs/BACKEND_GUIDE.md`, `docs/DATA_CONTRACTS.md`, `docs/DATA_FLOW.md` §7; updated HistoricalStore tables (3→5), scheduler jobs (3→4), tests count (14→42), DataSnapshot dataclass fields; added 16 missing newer endpoints (TD-3/4/5 history, F3/F5/F6/F7/P4/P5/P7/P9 routes). 1466 pytest green, 0 source-code changes.)
 > Single source of truth for known bugs and frequent problems. Update BEFORE fixing any issue.
 
 ---

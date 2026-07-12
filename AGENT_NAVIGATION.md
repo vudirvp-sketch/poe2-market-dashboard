@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Agent Navigation Guide
 
-> **Single entry point** for codebase navigation. Updated 2026-07-12 (iter 139 — repo cleanup pass: deleted 4 dead files (`README_iter138.md` + 3 iter-89 one-shot scripts), fixed 5 missing routes in §5 API table, fixed design-docs status in §6, updated i18n-cleanup recipe to a manual pattern, fixed README test command, clarified aiosqlite env-recovery row in STATUS.md. 1466 pytest green with aiosqlite installed.).
+> **Single entry point** for codebase navigation. Updated 2026-07-12 (iter 140 — docs deep-audit pass: fixed route-prefix drift `/api/*` → `/api/v1/*` across `docs/BACKEND_GUIDE.md`, `docs/DATA_CONTRACTS.md`, `docs/DATA_FLOW.md` §7; updated HistoricalStore tables (3→5), scheduler jobs (3→4), tests count (14→42), DataSnapshot dataclass fields; added 16 missing newer endpoints. 1466 pytest green, 0 source-code changes.).
 > **Known issues live in [`STATUS.md`](./STATUS.md)** — check there before fixing anything.
 > **Product direction lives in [`PRODUCT_VISION.md`](./PRODUCT_VISION.md)** — read it before proposing features.
 > **Market patterns & roadmap live in [`docs/MARKET_PLAYBOOK.md`](./docs/MARKET_PLAYBOOK.md)** — read it before proposing new pattern detectors.
