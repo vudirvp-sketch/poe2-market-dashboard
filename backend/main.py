@@ -706,6 +706,20 @@ except ImportError:
     logger.debug("Market Spreads router not available yet")
 
 
+# TD-5 (iter 131): Daily Stats History — read-only endpoint over the new
+# daily_stats SQLite table, with a lazy-fetch fallback to the POE2Scout
+# DailyStatsHistory provider endpoint. The write path has TWO entry points:
+# (a) the lazy-fetch fallback in this route, and (b) the background
+# scheduler task `DataScheduler.refresh_daily_stats` (registered in
+# scheduler.py). Pure transform lives in backend/economy/daily_stats.py.
+# Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §5.2 + §9 Phase 4.
+try:
+    from backend.api.routes_daily_stats import router as daily_stats_router
+    app.include_router(daily_stats_router)
+except ImportError:
+    logger.debug("Daily Stats router not available yet")
+
+
 # ---------------------------------------------------------------------------
 # Pre-import modules used by health check to avoid lazy import overhead.
 # These imports happen once at module load time, so the health endpoint

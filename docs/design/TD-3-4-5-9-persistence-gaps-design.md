@@ -1,9 +1,8 @@
 # Design Doc — TD-3 / TD-4 / TD-5 / TD-9 Persistence Gaps
 
-> **Status:** DESIGN COMPLETE. **Phase 1 (TD-9) SHIPPED iter 127.** Phases 2/3/4 deferred to iter 128+.
+> **Status:** ALL PHASES SHIPPED. Phase 1 (TD-9) iter 127. Phase 2 (TD-4) iter 128. Phase 3 (TD-3) iter 129. Phase 4 (TD-5) iter 131.
 > **Owner:** main agent. **Reviewed:** iter 127 implementation agent (Phase 1).
 > **Scope:** architectural analysis of four related persistence gaps.
-> **Out of scope (Phase 1):** schema migration, new tables, new endpoints — all of these are Phase 2/3/4.
 
 ---
 

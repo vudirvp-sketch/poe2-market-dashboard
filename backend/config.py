@@ -40,6 +40,10 @@ class DataConfig(BaseModel):
     cache_ttl_metadata_hours: int = 1
     rate_limit_per_second: float = 1.0
     historical_retention_days: int = 90
+    # TD-5 (iter 131): daily OHLCV retention — longer than the 90-day
+    # snapshot window because daily candles are smaller (~80 bytes/row)
+    # and more valuable for long-term backtest. Design doc §7.
+    daily_stats_retention_days: int = 365
 
 
 class LeagueConfig(BaseModel):
@@ -170,6 +174,12 @@ class SchedulerConfig(BaseModel):
     model_retrain_interval_hours: int = 6
     model_persistence_interval_minutes: int = 30
     event_pruning_interval_minutes: int = 15
+    # TD-5 (iter 131): daily OHLCV background refresh. Runs once per hour,
+    # picks the top-N most-traded items by volume_24h from the latest
+    # snapshot, and refreshes their daily OHLCV from POE2Scout. Design
+    # doc §5.2 strategy 2. N is bounded to avoid hammering the API.
+    daily_stats_refresh_interval_hours: int = 1
+    daily_stats_top_n_items: int = 50
 
 
 class TierBoundaryConfig(BaseModel):

@@ -10,10 +10,14 @@ Tables:
 - triangular_cycles: (timestamp, league, cycle_key, cycle_currencies,
                       raw_profit_pct, executable_estimate, executable_profit,
                       confidence, snapshot_age_sec)  -- TD-3 (iter 129)
+- daily_stats: (date, league, item_id, api_id, open, high, low, close,
+                average, volume)  -- TD-5 (iter 131)
 
 Write: every time current prices are fetched successfully.
 Read: for any model that needs history.
 Retention: configurable, default 90 days. Older records pruned on startup.
+daily_stats uses a longer 365-day retention (design doc §7) — daily candles
+are smaller and more valuable for long-term backtest.
 
 Migration (v1→v2): column `price_chaos` renamed to `price` because the stored
 value is in the league's base currency (Exalted for PoE2), not necessarily
@@ -126,6 +130,40 @@ CREATE INDEX IF NOT EXISTS idx_tri_cycles_key
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tri_cycles_dedup
     ON triangular_cycles(strftime('%Y-%m-%d %H:%M', timestamp), league, cycle_key);
+
+-- TD-5 (iter 131): daily OHLCV per item, cached from POE2Scout
+-- DailyStatsHistory. Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md
+-- §4 (Option B schema) + §5.2 (lazy fetch + background refresh) + §6.3 (backfill).
+-- Cadence: DAILY (one row per (date, league, item_id)) — NOT 5-min. The
+-- POE2Scout DailyStatsHistory endpoint returns one candle per UTC day, and
+-- may revise a day's candle after publication, so we use INSERT OR REPLACE
+-- (NOT INSERT OR IGNORE — design doc §4.2). The dedup unique index is on
+-- (date, league, item_id); a re-fetch for the same day overwrites the row.
+-- `api_id` is populated from DataSnapshot.currency_metadata for cross-joining
+-- with price_snapshots (design doc §4.5). May be NULL for items not in the
+-- current snapshot (e.g. items that were delisted but still have history).
+CREATE TABLE IF NOT EXISTS daily_stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,                 -- YYYY-MM-DD (UTC, per POE2Scout convention)
+    league TEXT NOT NULL,
+    item_id INTEGER NOT NULL,           -- POE2Scout numeric ItemId (matches ByCategory)
+    api_id TEXT,                        -- lowercase api_id for cross-joining with price_snapshots
+    open REAL,
+    high REAL,
+    low REAL,
+    close REAL,
+    average REAL,
+    volume REAL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_stats_dedup
+    ON daily_stats(date, league, item_id);
+
+CREATE INDEX IF NOT EXISTS idx_daily_stats_item
+    ON daily_stats(item_id, league, date);
+
+CREATE INDEX IF NOT EXISTS idx_daily_stats_api_id
+    ON daily_stats(api_id, league, date);
 """
 
 # ---------------------------------------------------------------------------
@@ -220,6 +258,7 @@ class HistoricalStore:
         3. Also deletes events that don't belong to the current league
         4. TD-4 (iter 128): also deletes market_spreads rows for old leagues
         5. TD-3 (iter 129): also deletes triangular_cycles rows for old leagues
+        6. TD-5 (iter 131): also deletes daily_stats rows for old leagues
 
         P1-6 (iter 66): Chunked delete with `await db.commit()` between
         batches. Previously a single `DELETE FROM ... WHERE league = ?`
@@ -230,15 +269,15 @@ class HistoricalStore:
         db = self._db
         current_league = self._config.league.league_name
 
-        # Find distinct leagues across price_snapshots + market_spreads +
-        # triangular_cycles. TD-3 (iter 129): triangular_cycles may have
-        # leagues that the other tables don't (snapshot refresh persisted
-        # cycles but the ByCategory call failed that tick), so union all
-        # three sources.
+        # Find distinct leagues across all per-league tables. TD-5 (iter 131):
+        # daily_stats added to the union — it may have leagues the other
+        # tables don't (backfill script ran for a league that was later
+        # switched away from).
         cursor = await db.execute(
             "SELECT DISTINCT league FROM price_snapshots "
             "UNION SELECT DISTINCT league FROM market_spreads "
-            "UNION SELECT DISTINCT league FROM triangular_cycles"
+            "UNION SELECT DISTINCT league FROM triangular_cycles "
+            "UNION SELECT DISTINCT league FROM daily_stats"
         )
         rows = await cursor.fetchall()
         old_leagues = [row[0] for row in rows if row[0] != current_league]
@@ -309,6 +348,27 @@ class HistoricalStore:
                         "Pruned %d triangular_cycles rows from old league '%s' "
                         "(current league: '%s', chunk size: %d)",
                         total_cycles_deleted, old_league, current_league, chunk_size,
+                    )
+
+                # TD-5 (iter 131): same chunked delete for daily_stats.
+                total_daily_deleted = 0
+                while True:
+                    cursor = await db.execute(
+                        "DELETE FROM daily_stats WHERE rowid IN ("
+                        "  SELECT rowid FROM daily_stats WHERE league = ? LIMIT ?"
+                        ")",
+                        (old_league, chunk_size),
+                    )
+                    deleted = cursor.rowcount
+                    total_daily_deleted += max(deleted, 0)
+                    await db.commit()
+                    if deleted < chunk_size:
+                        break
+                if total_daily_deleted > 0:
+                    logger.info(
+                        "Pruned %d daily_stats rows from old league '%s' "
+                        "(current league: '%s', chunk size: %d)",
+                        total_daily_deleted, old_league, current_league, chunk_size,
                     )
         else:
             logger.info(
@@ -857,6 +917,162 @@ class HistoricalStore:
         return [row[0] for row in rows]
 
     # ------------------------------------------------------------------
+    # TD-5 (iter 131): Daily Stats (OHLCV) Writes + Reads
+    # ------------------------------------------------------------------
+    # Design doc: docs/design/TD-3-4-5-9-persistence-gaps-design.md §4 + §5.2.
+    # Persists daily OHLCV candles fetched from POE2Scout
+    # DailyStatsHistory so they can be backtested / trended without
+    # re-hitting the API. Write happens from TWO paths:
+    #   (a) the lazy-fetch fallback in the /items/{item_id}/daily-stats route
+    #       (when SQLite has no fresh row for that item), and
+    #   (b) the background scheduler task `_refresh_daily_stats_loop` that
+    #       refreshes the top-N most-traded items once per hour.
+    # Both paths call ``write_daily_stats_batch`` with rows produced by
+    # ``backend.economy.daily_stats.transform_daily_stats`` (pure helper).
+    # Uses INSERT OR REPLACE (NOT INSERT OR IGNORE) because POE2Scout may
+    # revise a day's candle after publication (design doc §4.2).
+
+    async def write_daily_stats_batch(
+        self,
+        league: str,
+        rows: list[dict],
+    ) -> int:
+        """Persist a batch of daily OHLCV rows for one league.
+
+        Uses INSERT OR REPLACE so a re-fetch for the same ``(date, league,
+        item_id)`` overwrites the existing row — POE2Scout may revise a
+        day's candle after publication (design doc §4.2). This is the
+        key difference from ``write_market_spreads_batch`` /
+        ``write_triangular_cycles_batch`` which use INSERT OR IGNORE.
+
+        Args:
+            league: League name.
+            rows: List of dicts from ``transform_daily_stats()``. Each
+                dict must contain: date (YYYY-MM-DD), item_id (int),
+                api_id (str | None), open, high, low, close, average,
+                volume. ``date`` must be a UTC calendar date — POE2Scout
+                publishes one candle per UTC day.
+
+        Returns:
+            Number of rows written (INSERT OR REPLACE counts both inserts
+            and overwrites). 0 when ``rows`` is empty.
+        """
+        if not rows:
+            return 0
+        db = await self._ensure_db()
+
+        sql_rows = [
+            (
+                r.get("date", ""),
+                league,
+                int(r.get("item_id", 0)),
+                r.get("api_id"),
+                r.get("open"),
+                r.get("high"),
+                r.get("low"),
+                r.get("close"),
+                r.get("average"),
+                r.get("volume"),
+            )
+            for r in rows
+        ]
+
+        cursor = await db.executemany(
+            """INSERT OR REPLACE INTO daily_stats
+               (date, league, item_id, api_id,
+                open, high, low, close, average, volume)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            sql_rows,
+        )
+        await db.commit()
+        return max(cursor.rowcount or 0, 0)
+
+    async def read_daily_stats(
+        self,
+        league: str,
+        item_id: int,
+        day_count: int = 30,
+    ) -> list[dict]:
+        """Read daily OHLCV history for one item in one league.
+
+        Args:
+            league: League name.
+            item_id: POE2Scout numeric ItemId.
+            day_count: Lookback window in days (default 30). Rows are
+                filtered by ``date >= date('now', '-N days')`` where N is
+                ``day_count``. Note: this is a CALENDAR-date filter, not
+                a timestamp filter — POE2Scout dates are UTC YYYY-MM-DD.
+
+        Returns:
+            List of dicts (oldest-first) with keys: date, league, item_id,
+            api_id, open, high, low, close, average, volume. Empty list
+            when no rows match.
+        """
+        db = await self._ensure_db()
+        cursor = await db.execute(
+            """SELECT date, league, item_id, api_id, open, high, low,
+                      close, average, volume
+               FROM daily_stats
+               WHERE league = ? AND item_id = ?
+                 AND date >= date('now', ? || ' days')
+               ORDER BY date ASC""",
+            (league, item_id, f"-{day_count}"),
+        )
+        rows = await cursor.fetchall()
+        return [
+            {
+                "date": row[0],
+                "league": row[1],
+                "item_id": row[2],
+                "api_id": row[3],
+                "open": row[4],
+                "high": row[5],
+                "low": row[6],
+                "close": row[7],
+                "average": row[8],
+                "volume": row[9],
+            }
+            for row in rows
+        ]
+
+    async def read_daily_stats_latest_date(
+        self,
+        league: str,
+        item_id: int,
+    ) -> str | None:
+        """Return the latest ``date`` (YYYY-MM-DD) persisted for an item.
+
+        Used by the route's lazy-fetch freshness check: if the latest row
+        is from today or yesterday, serve from SQLite; otherwise fetch
+        from POE2Scout and persist (design doc §5.2 strategy 1).
+
+        Returns None when no rows exist for ``(league, item_id)``.
+        """
+        db = await self._ensure_db()
+        cursor = await db.execute(
+            "SELECT MAX(date) FROM daily_stats WHERE league = ? AND item_id = ?",
+            (league, item_id),
+        )
+        row = await cursor.fetchone()
+        return row[0] if row and row[0] else None
+
+    async def read_daily_stats_items(self, league: str) -> list[tuple[int, str | None]]:
+        """Return distinct ``(item_id, api_id)`` pairs with at least one row.
+
+        Useful for the route to enumerate available items without pulling
+        all rows. Ordered by item_id ascending. ``api_id`` may be NULL
+        for items not in the current snapshot.
+        """
+        db = await self._ensure_db()
+        cursor = await db.execute(
+            "SELECT DISTINCT item_id, api_id FROM daily_stats "
+            "WHERE league = ? ORDER BY item_id ASC",
+            (league,),
+        )
+        rows = await cursor.fetchall()
+        return [(row[0], row[1]) for row in rows]
+
+    # ------------------------------------------------------------------
     # Maintenance
     # ------------------------------------------------------------------
 
@@ -875,9 +1091,16 @@ class HistoricalStore:
 
         TD-3 (iter 129): Also prunes the ``triangular_cycles`` table with
         the same chunked pattern. Three independent delete loops.
+
+        TD-5 (iter 131): Also prunes the ``daily_stats`` table with the
+        same chunked pattern, but using a LONGER retention window
+        (``data.daily_stats_retention_days``, default 365) because daily
+        candles are smaller and more valuable for long-term backtest
+        (design doc §7). Four independent delete loops.
         """
         db = await self._ensure_db()
         days = self._retention_days
+        daily_stats_days = self._config.data.daily_stats_retention_days
         chunk_size = 1000
         total_deleted = 0
 
@@ -944,6 +1167,31 @@ class HistoricalStore:
             logger.info(
                 "Pruned %d triangular_cycles rows older than %d days (chunk size: %d)",
                 total_cycles_deleted, days, chunk_size,
+            )
+
+        # TD-5 (iter 131): prune daily_stats with the same chunked pattern,
+        # but using the longer daily_stats_retention_days window. Note:
+        # daily_stats uses a `date` column (YYYY-MM-DD), not a timestamp,
+        # so the filter is `date < date('now', '-N days')` (calendar date).
+        total_daily_deleted = 0
+        while True:
+            cursor = await db.execute(
+                "DELETE FROM daily_stats WHERE rowid IN ("
+                "  SELECT rowid FROM daily_stats "
+                "  WHERE date < date('now', ? || ' days') LIMIT ?"
+                ")",
+                (f"-{daily_stats_days}", chunk_size),
+            )
+            deleted = cursor.rowcount
+            total_daily_deleted += max(deleted, 0)
+            await db.commit()
+            if deleted < chunk_size:
+                break
+
+        if total_daily_deleted > 0:
+            logger.info(
+                "Pruned %d daily_stats rows older than %d days (chunk size: %d)",
+                total_daily_deleted, daily_stats_days, chunk_size,
             )
 
 

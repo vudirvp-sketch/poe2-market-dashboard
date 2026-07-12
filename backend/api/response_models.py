@@ -1144,3 +1144,50 @@ class TriangularCyclesHistoryResponse(BaseModel):
     data_available: bool = Field(description="Whether at least one row matched the query.")
     fetched_at: str = Field(description="ISO 8601 timestamp of data fetch.")
 
+
+# ---------------------------------------------------------------------------
+# Daily Stats History (TD-5, iter 131)
+# ---------------------------------------------------------------------------
+
+class DailyStatsPoint(BaseModel):
+    """One persisted daily OHLCV row for a single (date, league, item_id).
+
+    Mirrors the columns of the ``daily_stats`` SQLite table. OHLCV fields
+    use ``float | None`` so the model can represent days where POE2Scout
+    returned null (no trades that day).
+    """
+    date: str = Field(description="UTC calendar date (YYYY-MM-DD) per POE2Scout convention. One candle per UTC day.")
+    item_id: int = Field(description="POE2Scout numeric ItemId. Matches the ByCategory response and the DailyStatsHistory URL path param.")
+    api_id: str | None = Field(default=None, description="lowercase api_id for cross-joining with price_snapshots. None when the item is not in the current snapshot (e.g. delisted but still has history).")
+    open: float | None = Field(default=None, description="Day's open price in the league's base currency. None when POE2Scout returned null (no trades).")
+    high: float | None = Field(default=None, description="Day's high price.")
+    low: float | None = Field(default=None, description="Day's low price.")
+    close: float | None = Field(default=None, description="Day's close price. The canonical 'price' for the day — used by backtests.")
+    average: float | None = Field(default=None, description="Day's average price.")
+    volume: float | None = Field(default=None, description="Day's trade volume.")
+
+
+class DailyStatsHistoryResponse(BaseModel):
+    """Response for GET /api/v1/items/{item_id}/daily-stats.
+
+    Returns the persisted daily_stats time-series for one item. Empty
+    ``points`` list + ``data_available=false`` when no rows match the
+    lookback window (e.g. the item has never been backfilled, or the
+    lookback is too long).
+
+    The route reads from SQLite first. On a miss (no fresh rows), it
+    falls back to the POE2Scout provider and persists the fetched rows
+    for next time. The ``source`` field tells the caller which path
+    served the response — useful for debugging the lazy-fetch behavior.
+    """
+    league: str = Field(description="League name.")
+    item_id: int = Field(description="POE2Scout numeric ItemId (the path param).")
+    api_id: str | None = Field(default=None, description="api_id resolved from the snapshot's currency_metadata. None when the item is not in the current snapshot.")
+    day_count: int = Field(description="Lookback window in days used for the query.")
+    points: list[DailyStatsPoint] = Field(default_factory=list, description="Daily OHLCV rows, oldest-first. Empty when no rows match.")
+    available_item_ids: list[int] = Field(default_factory=list, description="Distinct item_ids that have at least one persisted row in this league. Useful for the UI to populate an item picker. Empty when no rows exist.")
+    data_available: bool = Field(description="Whether at least one row matched the query.")
+    source: str = Field(description="Where the data came from: 'sqlite' (served from cache), 'provider' (lazy-fetched from POE2Scout and persisted), or 'empty' (no data from either source).")
+    fetched_at: str = Field(description="ISO 8601 timestamp of data fetch.")
+
+

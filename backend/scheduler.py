@@ -12,6 +12,10 @@ Jobs:
     - price_snapshot: Fetch current prices and write to HistoricalStore
     - event_pruning: Prune expired events from memory and SQLite
     - model_persistence: Save LightGBM models to disk periodically
+    - daily_stats_refresh (TD-5 iter 131): Refresh daily OHLCV for the
+      top-N most-traded items from POE2Scout DailyStatsHistory into the
+      daily_stats SQLite table. Runs once per hour (configurable). Design
+      doc §5.2 strategy 2.
 """
 
 from __future__ import annotations
@@ -175,6 +179,79 @@ class DataScheduler:
             logger.error("Scheduler: model persistence failed: %s", e)
             return 0
 
+    async def refresh_daily_stats(self) -> int:
+        """TD-5 (iter 131): Refresh daily OHLCV for top-N most-traded items.
+
+        Picks the top-N items by 24h trade volume from the latest snapshot
+        (via ``pick_top_items_by_volume``), fetches each item's daily OHLCV
+        from POE2Scout ``DailyStatsHistory``, and persists the rows to the
+        ``daily_stats`` SQLite table. Rate-limited to 1 request/sec to
+        respect POE2Scout's polite policy (design doc §6.3 + §8.3).
+
+        Best-effort: a failure on one item (network error, 4xx) logs a
+        debug message and continues to the next item. Returns the total
+        number of rows persisted across all items.
+
+        Returns:
+            Number of daily_stats rows persisted, or 0 on failure / when
+            the snapshot has no exchange rates.
+        """
+        try:
+            from backend.economy.daily_stats import (
+                pick_top_items_by_volume,
+                transform_daily_stats,
+            )
+
+            league = self._config.league.league_name
+            top_n = self._config.scheduler.daily_stats_top_n_items
+
+            snapshot = await _get_snapshot()
+            items = pick_top_items_by_volume(snapshot, n=top_n)
+            if not items:
+                logger.debug(
+                    "Scheduler: daily_stats refresh skipped — no items "
+                    "with item_id in snapshot (league=%s, top_n=%d)",
+                    league, top_n,
+                )
+                return 0
+
+            total_rows = 0
+            day_count = 30  # match the route default; 30 days is enough
+            # for the scheduler's hourly refresh — the lazy-fetch in the
+            # route handles longer lookbacks on demand.
+
+            for item_id, api_id in items:
+                try:
+                    raw = await self._provider.get_daily_stats(
+                        league=league,
+                        item_id=item_id,
+                        day_count=day_count,
+                    )
+                    rows = transform_daily_stats(raw, league, item_id, api_id)
+                    if rows:
+                        written = await self._store.write_daily_stats_batch(
+                            league=league, rows=rows,
+                        )
+                        total_rows += max(written, 0)
+                except Exception as item_err:
+                    logger.debug(
+                        "Scheduler: daily_stats refresh failed for "
+                        "item_id=%d api_id=%s (non-fatal, continuing): %s",
+                        item_id, api_id, item_err,
+                    )
+                    continue
+
+            logger.info(
+                "Scheduler: daily_stats refresh — %d items, %d rows persisted "
+                "(league=%s)",
+                len(items), total_rows, league,
+            )
+            return total_rows
+
+        except Exception as e:
+            logger.error("Scheduler: daily_stats refresh failed: %s", e)
+            return 0
+
     def start(self) -> None:
         """Start the background scheduler.
 
@@ -229,14 +306,28 @@ class DataScheduler:
             misfire_grace_time=300,
         )
 
+        # Job 4 (TD-5 iter 131): Daily Stats refresh — fetch daily OHLCV
+        # for the top-N most-traded items from POE2Scout and persist to
+        # the daily_stats SQLite table. Runs once per hour (configurable).
+        # Design doc §5.2 strategy 2.
+        self._scheduler.add_job(
+            self.refresh_daily_stats,
+            IntervalTrigger(hours=scheduler_config.daily_stats_refresh_interval_hours),
+            id="daily_stats_refresh",
+            name="Refresh daily OHLCV for top-N items",
+            max_instances=1,
+            misfire_grace_time=600,
+        )
+
         self._scheduler.start()
         logger.info(
             "Scheduler: started with %d jobs "
-            "(price=%dm, prune=%dm, model=%dm)",
-            3,
+            "(price=%dm, prune=%dm, model=%dm, daily_stats=%dh)",
+            4,
             scheduler_config.price_snapshot_interval_minutes,
             scheduler_config.event_pruning_interval_minutes,
             scheduler_config.model_persistence_interval_minutes,
+            scheduler_config.daily_stats_refresh_interval_hours,
         )
 
     def shutdown(self, wait: bool = False) -> None:

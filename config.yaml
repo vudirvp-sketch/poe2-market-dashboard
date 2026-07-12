@@ -17,6 +17,10 @@ data:
   cache_ttl_metadata_hours: 1
   rate_limit_per_second: 1
   historical_retention_days: 90
+  # TD-5 (iter 131): daily OHLCV retention — longer than the 90-day snapshot
+  # window because daily candles are smaller (~80 bytes/row) and more
+  # valuable for long-term backtest. Design doc §7.
+  daily_stats_retention_days: 365
 
 league:
   league_name: "runes"               # Runes of Aldur — current league (ShortName from API)
@@ -151,6 +155,12 @@ scheduler:
   model_retrain_interval_hours: 6         # LightGBM retraining check
   model_persistence_interval_minutes: 30  # Save LightGBM models to disk
   event_pruning_interval_minutes: 15      # Prune expired events
+  # TD-5 (iter 131): daily OHLCV background refresh. Runs once per hour,
+  # picks the top-N most-traded items by volume_24h from the latest
+  # snapshot, and refreshes their daily OHLCV from POE2Scout. Design
+  # doc §5.2 strategy 2.
+  daily_stats_refresh_interval_hours: 1
+  daily_stats_top_n_items: 50
 
 # P1-3: Currency tier classification boundaries based on RelativePrice ONLY.
 # Do NOT hardcode currency names — different leagues have different RelativePrice values.
