@@ -1432,6 +1432,19 @@ const ko: Record<TranslationKeys, string> = {
   goldMapMinStartWarning: "골드 금액({0} Div)이 이 사이클의 최소 수익 시작액({1} Div)보다 적습니다 — 더 큰 금액을 시도하거나 더 나은 사이클을 기다리세요.",
   goldMapNoCycleAvailable: "수익성 3-way 체인 없음",
   goldMapNoCycleFallback: "직접 gold→Div 변환 사용 (3-way 배수 없음).",
+  goldMapTrendTitle: "ROI 트렌드 (최고 3-way 사이클)",
+  goldMapTrendSubtitle: "최근 {0}일간 최고 사이클 순이익 %",
+  goldMapTrendLoading: "사이클 이력 로딩 중...",
+  goldMapTrendError: "사이클 이력을 불러오지 못했습니다. 백엔드에 문제가 있을 수 있습니다.",
+  goldMapTrendOffline: "사이클 이력은 분석 백엔드가 필요합니다.",
+  goldMapTrendEmpty: "아직 사이클 이력이 없습니다 — 트렌드가 나타나려면 스냅샷이 몇 시간 동안 실행되어야 합니다.",
+  goldMapTrendLegendBestCycle: "최고 사이클 수익 %",
+  goldMapTrendLegendZero: "손익분기점 (0%)",
+  goldMapTrendPointCount: "{0}개 스냅샷",
+  goldMapTrendCycleKeysCount: "{0}개 고유 사이클 추적 중",
+  goldMapTrendFetchedAt: "가져온 시각: {0}",
+  goldMapTrendDaysLabel: "조회 기간",
+  goldMapTrendDaysValue: "{0}일",
 };
 
 export default ko;

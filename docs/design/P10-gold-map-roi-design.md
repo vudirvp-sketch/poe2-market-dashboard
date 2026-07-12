@@ -1,9 +1,9 @@
 # Design Doc — P10 Gold Map ROI (Castaway runs)
 
-> **Status:** DESIGN COMPLETE. **Phase 1 (MVP) SHIPPED iter 127.** Phase 2 (trend chart) deferred until TD-3 Phase 3 lands. Phase 3 (SQLite promotion) optional.
-> **Owner:** main agent. **Reviewed:** iter 127 implementation agent (Phase 1).
+> **Status:** DESIGN COMPLETE. **Phase 1 (MVP) SHIPPED iter 127. Phase 2 (trend chart) SHIPPED iter 132.** Phase 3 (SQLite promotion) optional.
+> **Owner:** main agent. **Reviewed:** iter 127 implementation agent (Phase 1), iter 132 implementation agent (Phase 2).
 > **Scope:** placement, input contract, ROI formula alignment, data dependencies.
-> **Out of scope (Phase 1):** trend chart (Phase 2), SQLite persistence (Phase 3), reference-currency selector (deferred — MVP shows Div only).
+> **Out of scope (Phase 1):** trend chart (Phase 2 — SHIPPED iter 132), SQLite persistence (Phase 3), reference-currency selector (deferred — MVP shows Div only).
 
 ---
 
@@ -485,8 +485,11 @@ already have their own test coverage (`tests/test_triangular.py`,
 
 1. **Should the trend chart ship disabled in MVP, or be hidden entirely
    until TD-3 lands?**
-   *Default: ship disabled with a tooltip — keeps the layout stable when
-   TD-3 lands later.*
+   *Resolved iter 127:* shipped **neither** — the MVP simply did not include
+   the trend chart at all (no placeholder, no disabled card). The chart was
+   added in iter 132 (Phase 2) once TD-3 Phase 3 landed. This avoided the
+   "disabled UI lying around" trap — the chart only renders once it has real
+   data to show.
 
 2. **Should the gold rate be per-league or global?**
    *Default: per-league. Different leagues have different gold economies
@@ -511,7 +514,7 @@ already have their own test coverage (`tests/test_triangular.py`,
 
 ## 12. Implementation phasing (suggested for iter 127+)
 
-### Phase 1 (MVP, no trend chart) — ~1 iter
+### Phase 1 (MVP, no trend chart) — SHIPPED iter 127
 - Build `gold-map-roi-tab.tsx` + `gold-map-roi-calculator.tsx`.
 - Wire to existing `/api/v1/arbitrage/triangular` endpoint.
 - localStorage persistence for inputs.
@@ -519,11 +522,15 @@ already have their own test coverage (`tests/test_triangular.py`,
 - ~15 jest tests.
 - Add to `TAB_MAP` at index 13 (Option A placement).
 
-### Phase 2 (trend chart) — depends on TD-3 Phase 3
-- Add `gold-map-roi-trend-chart.tsx` (greyed out in Phase 1).
-- Wire to the new `/api/v1/arbitrage/triangular/history` endpoint
-  (defined in `docs/design/TD-3-4-5-9-persistence-gaps-design.md` Phase 3).
-- ~5 additional jest tests for the chart.
+### Phase 2 (trend chart) — SHIPPED iter 132
+- Added `gold-map-roi-trend-chart.tsx` (SVG, dependency-free — same pattern as `storage-value-history-chart.tsx`).
+- Wired to the new `/api/flipper/triangular/history` proxy route (proxies to FastAPI `GET /api/v1/arbitrage/triangular/history` from TD-3 Phase 3, iter 129).
+- **Chart signal decision:** the chart plots the **best-cycle `raw_profit_pct`** per timestamp (deduped to highest non-null profit per 5-min snapshot bucket), NOT the computed `expected_div`. Rationale: `expected_div` depends on user inputs (`goldAmount`, `mapCost`, `goldPerDiv`) that have no historical persistence — those are localStorage values for "now", not a time-series. The historical signal we DO have is `raw_profit_pct`, which is exactly the multiplier the live calculator consumes. The user can mentally map "higher line = better ROI window" without us pretending to know their historical gold_per_div rate.
+- Added Days selector (1/7/14/30/90, default 7) + dashed zero-line + point-count footer + available-cycle-keys count.
+- New TS types `TriangularCycleHistoryPoint` + `TriangularCyclesHistoryResponse` (camelCase, mirrored from backend pydantic).
+- Pure helper `pickBestPerTimestamp(points)` exported for unit tests.
+- 13 new jest tests (5 pure-helper + 8 component), 698 total green, 0 regressions. `tsc --noEmit` clean. ESLint clean.
+- 13 new i18n keys × 4 locales (1243 total per locale — parity preserved).
 
 ### Phase 3 (gold rate SQLite promotion) — optional, only if adoption is high
 - Add `gold_rates` table to `historical.py` (couples to TD-* design-doc).

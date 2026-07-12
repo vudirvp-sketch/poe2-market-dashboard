@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { fetchApi, type TriangularResponse } from "@/lib/types";
 import { GoldMapRoiCalculator } from "./gold-map-roi-calculator";
+import { GoldMapRoiTrendChart } from "./gold-map-roi-trend-chart";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -154,6 +155,11 @@ export function GoldMapRoiTab({ backendOnline }: GoldMapRoiTabProps) {
         isError={isError}
         backendOnline={backendOnline}
       />
+
+      {/* Trend chart (P10 Phase 2, iter 132) — historical best-cycle
+          profitability from /api/flipper/triangular/history. Renders
+          inside the same backendOnline gate as the calculator. */}
+      <GoldMapRoiTrendChart backendOnline={backendOnline} />
 
       {/* Footer with fetched-at timestamp + cycle count */}
       {data?.fetchedAt && (

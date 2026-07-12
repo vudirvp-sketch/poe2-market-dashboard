@@ -1368,6 +1368,19 @@ const ru: Record<TranslationKeys, string> = {
   goldMapMinStartWarning: "Ваша сумма gold ({0} Div) ниже минимального прибыльного старта ({1} Div) для этой цепочки — попробуйте большую сумму или дождитесь лучшего цикла.",
   goldMapNoCycleAvailable: "нет прибыльной 3-way цепочки",
   goldMapNoCycleFallback: "Используется прямая конвертация gold→Div (без множителя 3-way).",
+  goldMapTrendTitle: "Тренд ROI (лучший 3-way цикл)",
+  goldMapTrendSubtitle: "Прибыль лучшего цикла (%) за последние {0} дн.",
+  goldMapTrendLoading: "Загрузка истории циклов...",
+  goldMapTrendError: "Не удалось загрузить историю циклов. Возможны проблемы с бэкендом.",
+  goldMapTrendOffline: "История циклов требует работающего бэкенда аналитики.",
+  goldMapTrendEmpty: "Истории циклов пока нет — снапшот должен поработать несколько часов, прежде чем появятся тренды.",
+  goldMapTrendLegendBestCycle: "Прибыль лучшего цикла, %",
+  goldMapTrendLegendZero: "Безубыточность (0%)",
+  goldMapTrendPointCount: "{0} снапшотов",
+  goldMapTrendCycleKeysCount: "Отслеживается {0} уникальных циклов",
+  goldMapTrendFetchedAt: "Получено: {0}",
+  goldMapTrendDaysLabel: "Окно ретроспективы",
+  goldMapTrendDaysValue: "{0} дн.",
 };
 
 export default ru;

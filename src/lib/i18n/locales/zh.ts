@@ -1432,6 +1432,19 @@ const zh: Record<TranslationKeys, string> = {
   goldMapMinStartWarning: "你的 gold 金额({0} Div)低于此循环的最低盈利起步({1} Div) — 尝试更大金额或等待更好的循环。",
   goldMapNoCycleAvailable: "无盈利 3-way 链",
   goldMapNoCycleFallback: "回退到直接 gold→Div 转换(无 3-way 乘数)。",
+  goldMapTrendTitle: "ROI 趋势(最佳 3-way 循环)",
+  goldMapTrendSubtitle: "最近 {0} 天最佳循环的原始利润 %",
+  goldMapTrendLoading: "正在加载循环历史...",
+  goldMapTrendError: "获取循环历史失败。后端可能遇到问题。",
+  goldMapTrendOffline: "循环历史需要分析后端。",
+  goldMapTrendEmpty: "暂无循环历史 — 快照需要运行几小时后才会出现趋势。",
+  goldMapTrendLegendBestCycle: "最佳循环利润 %",
+  goldMapTrendLegendZero: "盈亏平衡点 (0%)",
+  goldMapTrendPointCount: "{0} 个快照",
+  goldMapTrendCycleKeysCount: "追踪 {0} 个不同循环",
+  goldMapTrendFetchedAt: "获取时间:{0}",
+  goldMapTrendDaysLabel: "回溯窗口",
+  goldMapTrendDaysValue: "{0} 天",
 };
 
 export default zh;

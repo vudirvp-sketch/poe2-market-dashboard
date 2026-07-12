@@ -1438,6 +1438,19 @@ const en = {
   goldMapMinStartWarning: "Your gold amount ({0} Div) is below the minimum profitable start ({1} Div) for this cycle — try a larger amount or wait for a better cycle.",
   goldMapNoCycleAvailable: "no profitable 3-way chain available",
   goldMapNoCycleFallback: "Falling back to direct gold→Div conversion (no 3-way multiplier).",
+  goldMapTrendTitle: "ROI trend (best 3-way cycle)",
+  goldMapTrendSubtitle: "Best cycle raw profit % over the last {0} days",
+  goldMapTrendLoading: "Loading cycle history...",
+  goldMapTrendError: "Failed to fetch cycle history. The backend may be experiencing issues.",
+  goldMapTrendOffline: "Cycle history requires the analytics backend.",
+  goldMapTrendEmpty: "No cycle history yet — the snapshot needs to run for a few hours before trends appear.",
+  goldMapTrendLegendBestCycle: "Best cycle profit %",
+  goldMapTrendLegendZero: "Break-even (0%)",
+  goldMapTrendPointCount: "{0} snapshots",
+  goldMapTrendCycleKeysCount: "{0} distinct cycles tracked",
+  goldMapTrendFetchedAt: "Fetched: {0}",
+  goldMapTrendDaysLabel: "Lookback window",
+  goldMapTrendDaysValue: "{0} days",
 } as const;
 
 export default en;

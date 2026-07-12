@@ -281,6 +281,67 @@ export interface TriangularResponse {
   crossRateWarning?: CrossRateWarning | null;
 }
 
+// ============================================================================
+// Triangular arbitrage history (TD-3 Phase 3, iter 129)
+// ============================================================================
+
+/** A single persisted triangular-cycle row from GET /api/flipper/triangular/history.
+ *
+ *  Mirrors the backend pydantic model `TriangularCyclePoint` in
+ *  `backend/api/response_models.py`. Numeric fields are `number | null`
+ *  because the integer simulation may not find a profitable start
+ *  (`executable_estimate = 0`, `executable_profit = 0`). */
+export interface TriangularCycleHistoryPoint {
+  /** ISO 8601 UTC timestamp aligned to the snapshot refresh (5-min bucket). */
+  timestamp: string;
+  /** Sorted-unique currencies joined with '->'. Example: 'divine->exalted->mirror'.
+   *  Collapses rotations to one key (A->B->C->A and A->C->B->A share the same key). */
+  cycleKey: string;
+  /** JSON array of the cycle traversal order (closing node stripped).
+   *  Example: '["exalted","divine","mirror"]'. Lets a future analyst recover
+   *  the exact rotation. */
+  cycleCurrencies: string;
+  /** Bellman-Ford continuous profit %, BEFORE integer quantization.
+   *  Matches TriangularCycle.continuousProfitPct. May be null for legacy rows. */
+  rawProfitPct: number | null;
+  /** Min profitable starting amount from binary search. 0 when no profitable
+   *  integer amount found. May be null for legacy rows. */
+  executableEstimate: number | null;
+  /** Final amount after integer simulation. Profit = executableProfit - executableEstimate.
+   *  May be null for legacy rows. */
+  executableProfit: number | null;
+  /** _compute_confidence() score (0..1), based on data freshness + volume + cycle length.
+   *  May be null for legacy rows. */
+  confidence: number | null;
+  /** Seconds between snapshot.fetched_at and the persistence write. For staleness filtering.
+   *  May be null for legacy rows. */
+  snapshotAgeSec: number | null;
+}
+
+/** Response shape from GET /api/flipper/triangular/history.
+ *
+ *  Empty `points` list + `dataAvailable=false` when no rows match the lookback
+ *  window (e.g. the feature just shipped and the first snapshot hasn't
+ *  persisted yet, or no profitable cycles were detected in the window). */
+export interface TriangularCyclesHistoryResponse {
+  league: string;
+  /** Cycle_key filter applied to the query (e.g. 'divine->exalted->mirror').
+   *  Null when no filter was applied. */
+  cycleKey: string | null;
+  /** Lookback window in days used for the query. */
+  days: number;
+  /** Persisted cycle rows, oldest-first. Empty when no rows match. */
+  points: TriangularCycleHistoryPoint[];
+  /** Distinct cycle_keys that have at least one persisted row in this league
+   *  (alphabetical). Useful for the UI to populate a cycle picker. Empty when
+   *  no rows exist. */
+  availableCycleKeys: string[];
+  /** Whether at least one row matched the query. */
+  dataAvailable: boolean;
+  /** ISO 8601 timestamp of data fetch. */
+  fetchedAt: string;
+}
+
 /** Response shape from GET /api/flipper/health */
 export interface FlipperHealthResponse {
   status: "ok" | "degraded" | "error" | "offline";
