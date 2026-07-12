@@ -44,6 +44,7 @@ import type {
   ReferenceCurrency,
   OHLCVCandle,
 } from "./types";
+import { enNameToUniqueSlug, getUniqueRuName } from "./currency-names";
 
 // ---------- Configurable API Base URL ----------
 export const BASE_URL = process.env.POE2_API_BASE_URL || "https://poe2scout.com/api";
@@ -1020,6 +1021,15 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
       ? currentPrice - previous7dPrice
       : null;
 
+  // iter 147 (TD-6 phase 2): look up Russian name from poe2db slug.
+  // Unique items have no ApiId, so we derive the poe2db URL slug from the
+  // English name (e.g. "Brynhand's Mark" → "Brynhands_Mark") and look it up
+  // in UNIQUE_NAMES_RU. Returns null when no mapping exists — callers should
+  // fall back to `raw.Text || raw.Name` (the English name).
+  const enName = raw.Text || raw.Name;
+  const uniqueSlug = enNameToUniqueSlug(enName);
+  const nameRu = uniqueSlug ? getUniqueRuName(uniqueSlug) : null;
+
   return {
     id: String(raw.ItemId || raw.UniqueItemId),
     // BUG FIX: Unique items don't have an ApiId field in the POE2Scout API.
@@ -1027,7 +1037,8 @@ function mapUniqueItem(raw: RawUniqueItem, referencePrice?: number): PoeItem {
     // which breaks deduplication, ComparativeChart correlation lookups, and
     // benchmark calls. Use ItemId as a stable, unique identifier instead.
     apiId: String(raw.ItemId || raw.UniqueItemId),
-    name: raw.Text || raw.Name,
+    name: enName,
+    nameRu,
     type: raw.Type || "",
     category: raw.CategoryApiId || "",
     iconUrl: raw.IconUrl,

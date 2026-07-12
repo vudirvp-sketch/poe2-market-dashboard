@@ -5,6 +5,96 @@
 
 ---
 
+Task ID: iter-147
+Agent: main
+Task: iter 147 — TD-6 phase 2. Extends translation pipeline to unique items (weapons, armour, accessories). User complaint (iter 145): "перевод корявый и не такой как в официальном клиенте игры!" — iter 146 fixed 32 currency drift items; iter 147 closes the 2nd half of the complaint: unique items had NO Russian translation at all (only the 17 currency categories were covered).
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 146 SHIPPED — KI-32 closed, 32 currency drift items fixed), `worklog.md` (iter 146 + iter 145), `AGENT_NAVIGATION.md` §1 + invariant #24.
+- Inspected current state:
+  - `backend/data/currency_names.json` — 4 top-level keys: `category_names_ru/en` (17) + `currency_names_ru/en` (686 each). NO unique-item translations.
+  - `src/lib/poe2api.ts:1003-1051` — `mapUniqueItem` sets `name: raw.Text || raw.Name` (English only, no RU lookup).
+  - `src/components/dashboard/unique-table.tsx:131` — displays `item.name` directly (no locale awareness).
+  - Pipeline `scripts/sync_currency_names_from_poe2db.py` — 6 stages (1/2/2b/3/4/5/6) covering currency only.
+- Verified poe2db unique-item index is reachable: `curl https://poe2db.tw/ru/Unique_item` → HTTP 200, 1.2 MB HTML. Found 446 `<span class="uniqueName">` entries. Each item is wrapped in `<a class="UniqueItem" href="/ru/SLUG"><span class="uniqueName">RU_NAME</span><span class="uniqueTypeLine">BASE_TYPE</span></a>`. Also fetched `/us/Unique_item` for EN names — same structure.
+- **Designed keying strategy:** Unique items have NO ApiId in poe2scout (see `mapUniqueItem` comment at `poe2api.ts:1025-1029`). Keyed by poe2db URL slug (e.g. `Brynhands_Mark`). Slug derived from EN name via the existing `_en_name_to_poe2db_slug` logic (strip apostrophes + spaces→underscores). This makes the lookup `O(1)` and matches the poe2db href exactly.
+- **Added Stage 7 `--fetch-unique-ru`** to `scripts/sync_currency_names_from_poe2db.py`:
+  - New constants `UNIQUE_NAMES_CACHE = CACHE_DIR / "poe2db_unique_names.json"`, `POE2DB_UNIQUE_INDEX_PATH_RU = "/ru/Unique_item"`, `POE2DB_UNIQUE_INDEX_PATH_EN = "/us/Unique_item"`.
+  - New regex `_POE2DB_UNIQUE_LINK_RE` matching `<a class="UniqueItem" href="..."> <span class="uniqueName">NAME</span>`.
+  - New `parse_poe2db_unique_index_html(html_text)` → list of `{slug, name}` dicts. Slug = last path segment of href, URL-decoded (`urllib.parse.unquote`), deduped.
+  - New `fetch_poe2db_unique_names(base_url)` — fetches RU + EN index pages, joins on slug, returns `{summary, items: [{slug, en_name, ru_name}]}`. Items present in only one language have the other set to None.
+  - New `cmd_fetch_unique_ru(args)` CLI handler. Defensive `try/except ValueError` around `UNIQUE_NAMES_CACHE.relative_to(REPO_ROOT)` (same pattern as iter 146 `cmd_apply_audit`).
+- **Added Stage 8 `--apply-unique --confirm`**:
+  - New `apply_unique(unique_data, existing_names) -> (added, updated, skipped_no_change, skipped_partial)`. Mutates `existing_names["unique_names_ru"]` and `["unique_names_en"]` (creates them if absent). For each entry: ADD if slug is new + both names present; SKIP if idempotent match; UPDATE if values differ (drift refresh); SKIP if partial (only one name).
+  - New `cmd_apply_unique(args)` CLI handler. Pre-flight: validate existing `currency_names_ru/en` key parity. Post-flight: validate `unique_names_ru/en` parity. Atomic write via `.json.tmp` + rename.
+- **Updated module docstring** with Stage 7 + Stage 8 sections. Added usage examples for the unique-items pipeline + the monthly drift-refresh workflow.
+- **Registered `--fetch-unique-ru` + `--apply-unique` flags** in argparse; added to `stage_count` sum; added dispatch branches. Updated `--confirm` help text to mention all three destructive flags (`--apply` / `--apply-audit` / `--apply-unique`).
+- **Ran the pipeline:**
+  - `python scripts/sync_currency_names_from_poe2db.py --fetch-unique-ru` → "Stage 7 COMPLETE — joined 446 unique items" (RU 446 entries, EN 445 entries, 1 EN-only: `Demigods_Virtue` — RU name present, EN missing in poe2db index).
+  - `python scripts/sync_currency_names_from_poe2db.py --apply-unique --confirm` → "Stage 8 COMPLETE — 445 added, 0 updated, 0 skipped (no change), 1 skipped (partial)." The 1 partial skip is `Demigods_Virtue` (we want both names or neither — defensive).
+  - Verified `currency_names.json` now has `unique_names_ru` (445 entries) and `unique_names_en` (445 entries), key parity preserved.
+- **Updated `scripts/sync_currency_names_ts.py`** to emit `UNIQUE_NAMES_RU`/`UNIQUE_NAMES_EN` records + 4 new helper functions:
+  - `enNameToUniqueSlug(enName)` — mirrors Python `_en_name_to_poe2db_slug` exactly (strip apostrophes + curly variants, replace spaces with underscores, preserve other chars including non-ASCII Latin).
+  - `getUniqueRuName(slug)` / `getUniqueEnName(slug)` — direct slug → name lookup.
+  - `getUniqueDisplayName(enName, locale)` — convenience: convert EN name → slug → look up localized name. Returns null when no mapping exists.
+  - Added unique_names_ru/en key parity check (parallel to the existing currency/category checks).
+  - Updated `print()` summary line to include "+ N unique items".
+- **Ran `python scripts/sync_currency_names_ts.py`** → "Wrote src/lib/currency-names.ts — 686 RU + 686 EN + 17 categories + 445 unique items". Verified `UNIQUE_NAMES_RU` map at line 1462, `enNameToUniqueSlug` at line 2468, `getUniqueDisplayName` at line 2504.
+- **Updated `src/lib/types.ts`** — added `nameRu?: string | null` field to `PoeItem` interface (optional, backward-compat — existing PoeItem literals don't need updating). Documented that this field is for unique items only (currencies use `getCurrencyDisplayName(apiId, locale)` at render time instead).
+- **Updated `src/lib/poe2api.ts`:**
+  - Added import: `import { enNameToUniqueSlug, getUniqueRuName } from "./currency-names";`
+  - `mapUniqueItem` now computes `enName = raw.Text || raw.Name`, derives `uniqueSlug = enNameToUniqueSlug(enName)`, looks up `nameRu = getUniqueRuName(uniqueSlug)`, and sets `name: enName, nameRu` in the returned PoeItem.
+- **Updated `src/components/dashboard/unique-table.tsx`:**
+  - Changed `const { t } = useI18n()` → `const { t, locale } = useI18n()` (need locale to decide RU vs EN).
+  - Changed `<span className="font-medium">{item.name}</span>` → `<span>{locale === "ru" && item.nameRu ? item.nameRu : item.name}</span>` with explanatory comment.
+- **Added 26 new tests:**
+  - `tests/test_sync_currency_names.py:TestParsePoe2dbUniqueIndexHtml` (7 tests): basic anchor, multiple anchors, dedupes duplicate slugs, unescapes HTML entities, URL-decodes %27 in slugs, ignores non-UniqueItem anchors, empty HTML.
+  - `tests/test_sync_currency_names.py:TestFetchPoe2dbUniqueNames` (2 tests): joins RU+EN on slug, partial items tracked in summary.
+  - `tests/test_sync_currency_names.py:TestApplyUnique` (8 tests): adds new entries, creates unique_names keys if absent, idempotent rerun, updates on drift, skips partial entries, preserves RU/EN parity, doesn't touch currency_names, empty items.
+  - `tests/test_sync_currency_names.py:TestApplyUniqueCli` (4 tests): without --confirm returns 4, with other stage returns 4, missing cache returns 4, full pipeline on synthetic data.
+  - `tests/test_sync_currency_names.py:TestFetchUniqueRuCli` (2 tests): with other stage returns 4, full pipeline with monkeypatched `_http_get_html`.
+  - `tests/test_currency_names_ru.py` (3 new tests): `test_unique_names_dicts_load_and_are_non_empty`, `test_unique_names_ru_and_en_keys_match`, `test_unique_names_spot_check` (verifies `Brynhands_Mark` → `Клеймо Бринханда`).
+- **Iter 1 test run failure → fix:** 2 tests failed initially:
+  1. `test_handles_relative_href` — my regex requires href starting with `/`, but the test used relative href `Brynhands_Mark`. Inspected actual poe2db HTML — hrefs are always absolute (`/ru/...`). Removed the test (wrong assumption).
+  2. `test_fetch_unique_ru_runs_full_pipeline` — `UNIQUE_NAMES_CACHE.relative_to(REPO_ROOT)` raised `ValueError` when cache is in `tmp_path`. Applied the same fix as iter 146's `cmd_apply_audit`: `try/except ValueError` around `.relative_to()` in `cmd_fetch_unique_ru`.
+- **Iter 2 test run:** 102 tests in `test_currency_names_ru.py` + `test_sync_currency_names.py` all green.
+- **Final verification:**
+  - `pytest tests/` (full suite) → **1518 passed** (was 1492 in iter 146; +26 new tests). Zero regressions.
+  - `npx tsc --noEmit` → clean (no type errors). The optional `nameRu?: string | null` field doesn't break existing PoeItem literals.
+  - `npx jest --silent` → 690 passed (was 690 in iter 146). Zero regressions.
+  - `npx eslint` on modified TS files → 0 errors, 6 pre-existing warnings (all unrelated to this iter: unused `useRef`/`fmt`, missing dep, `<img>` element, React Compiler incompatible-library warning).
+- **Documentation updates:**
+  - `STATUS.md` — header bump (iter 146 → iter 147); TD-6 row updated (Phase 2 SHIPPED iter 147); F1 row updated to mention `Demigods_Virtue` partial unique item; Quick Reference "unique items show English" row updated (was "deferred", now "SHIPPED iter 147"); Key Technical Insights "Translation pipeline" section expanded from 6 stages to 8 stages + added `enNameToUniqueSlug` mention; pytest baseline bumped 1492 → 1518.
+  - `worklog.md` — added this iter-147 entry; removed iter-145 entry (rule: only last 2 iterations).
+  - `AGENT_NAVIGATION.md` — header bump (iter 146 → iter 147); invariant #24 updated (mention unique-items support + Stage 7/8); workflow recipe for "Add a new Russian currency/item translation" updated (6-stage → 8-stage pipeline description).
+
+Stage Summary:
+- **iter 147 SHIPPED — TD-6 phase 2 complete. 445 unique items translated, 26 new tests, 1518 pytest + 690 Jest green.**
+- **Modified files (5 source + 2 tests + 3 docs + 1 cache artifact):**
+  - `scripts/sync_currency_names_from_poe2db.py` — added Stage 7 (`--fetch-unique-ru` + `parse_poe2db_unique_index_html` + `fetch_poe2db_unique_names` + `cmd_fetch_unique_ru`) + Stage 8 (`--apply-unique` + `apply_unique` + `cmd_apply_unique`) + module docstring update + argparse registration + dispatch + usage examples.
+  - `scripts/sync_currency_names_ts.py` — emit `UNIQUE_NAMES_RU`/`UNIQUE_NAMES_EN` records + 4 new helper functions (`enNameToUniqueSlug`, `getUniqueRuName`, `getUniqueEnName`, `getUniqueDisplayName`) + unique_names key parity check + updated print summary.
+  - `backend/data/currency_names.json` — added `unique_names_ru` (445 entries) + `unique_names_en` (445 entries) sections. Existing `currency_names_ru/en` and `category_names_ru/en` untouched.
+  - `src/lib/currency-names.ts` — regenerated from JSON (auto-generated file). New `UNIQUE_NAMES_RU` map (line 1462) + `UNIQUE_NAMES_EN` map (line 1914) + 4 helper functions.
+  - `src/lib/poe2api.ts` — added import from `./currency-names`; `mapUniqueItem` now populates `nameRu` via slug lookup.
+  - `src/lib/types.ts` — added `nameRu?: string | null` field to `PoeItem` interface (optional, backward-compat).
+  - `src/components/dashboard/unique-table.tsx` — uses `locale` from `useI18n()`; renders `item.nameRu ?? item.name` when `locale === "ru"`.
+  - `tests/test_sync_currency_names.py` — added 23 new tests (7 parser + 2 fetch join + 8 apply_unique + 4 apply-unique CLI + 2 fetch-unique-ru CLI).
+  - `tests/test_currency_names_ru.py` — added 3 new tests (unique_names load + key parity + spot-check).
+  - `STATUS.md` — header bump + TD-6 phase 2 SHIPPED + F1 partial unique item note + Quick Reference updated + Key Technical Insights expanded (6 stages → 8 stages) + pytest baseline 1492 → 1518.
+  - `worklog.md` — this iter-147 entry (removed iter-145).
+  - `AGENT_NAVIGATION.md` — header bump + invariant #24 + workflow recipe updated.
+  - `scripts/.cache/poe2db_unique_names.json` — Stage 7 cache artifact (445 joined items + 1 partial).
+- **What was NOT done (intentionally deferred to iter 148+):**
+  - **Other UI components still show EN for unique items** — only `unique-table.tsx` was updated to use `item.nameRu`. The following still render `item.name` directly: `comparison-dialog.tsx`, `comparative-chart.tsx`, `pair-comparison-dialog.tsx`, `leveling-uniques-widget.tsx`, `fuzzy-search.tsx` (search index uses EN). Future iter can extend `nameRu` usage to these components. No regression — they show EN, same as before iter 147.
+  - **`Demigods_Virtue` partial unique item** — poe2db has RU (`Добродетель полубога`) but no EN in the index. Skipped by Stage 8 (we want both names or neither). Re-run `--fetch-unique-ru` after a poe2db update to pick it up.
+  - **TD-6 Phase 3 — re-audit cycle** — re-run `--fetch-unique-ru` + `--apply-unique --confirm` monthly / after each patch to pick up new unique items. With iter 147's pipeline, this is now a 3-command workflow: `--fetch-unique-ru` → review cache → `--apply-unique --confirm` → `python scripts/sync_currency_names_ts.py`.
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141–147 only verified doc-level references + translation infrastructure. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 148+.
+  - **9 currency items still untranslated** (F1) + **1 no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+- **Stopping point:** iter 147 = TD-6 phase 2 complete (445 unique items translated via new `--fetch-unique-ru` + `--apply-unique` pipeline, 26 new tests, 1518 pytest + 690 Jest green). Next iter candidates: (a) extend `nameRu` usage to other UI components (comparison-dialog, comparative-chart, leveling-uniques-widget) — small scope, finishes the unique-items RU story; (b) per-tab UX/logic deep-audit (deferred since iter 139); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
+
+---
+
 Task ID: iter-146
 Agent: main
 Task: iter 146 — TD-6 phase 1 / KI-32 fix. Closes candidate (a) from iter 145 stop point: add `--apply-audit` flag to `scripts/sync_currency_names_from_poe2db.py` (Stage 6 of the translation pipeline). Reads `scripts/.cache/translation_audit.json` (iter-145 Stage 5 output, 32 mismatches), overwrites every mismatch entry's value in `currency_names_ru` with the `poe2db_ru` value from the report. Requires `--confirm`. Does NOT touch `currency_names_en`. Then regenerate TS mirror + update spot-check assertions + add tests + update docs.
@@ -58,64 +148,3 @@ Stage Summary:
   - **9 currency items still untranslated** (F1) + **1 no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
   - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
 - **Stopping point:** iter 146 = TD-6 phase 1 complete + KI-32 closed (32 drift items fixed via new `--apply-audit` flag, 12 new tests, 1492 pytest green). Next iter candidates: (a) **TD-6 Phase 2** — extend pipeline to unique items (largest scope, addresses user's 2nd complaint about missing RU for unique items); (b) per-tab UX/logic deep-audit (deferred since iter 139); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
-
----
-
-Task ID: iter-145
-Agent: main
-Task: iter 145 — closes candidate (a) from iter 144 stop point (fix `instrumentation.ts:7` + `flipper-backend-bridge.ts:313` comment drift `/api/health` → `/api/v1/health/ping`), PLUS addresses user's new requirement about translation quality. User reported: "далеко не все и не везде предметы и валюта имеет перевод а где имеет ---> перевод корявый и не такой как в официальном клиенте игры! перевод надо смотреть на пое 2 дб!" — provided poe2db.tw/ru/Unique_item URLs as reference.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 144 SHIPPED), `worklog.md` (iter 144 + iter 143), `AGENT_NAVIGATION.md` §1–§3.
-- Investigated current translation pipeline state:
-  - `backend/data/currency_names.json` — 4 dicts: `category_names_ru/en` (17 categories) + `currency_names_ru/en` (686 items each, RU/EN key parity).
-  - Pipeline `scripts/sync_currency_names_from_poe2db.py` — 4 stages: `--fetch-ids` → `--fetch-ru-by-item` (KI-30 fix) → `--diff` → `--apply --confirm`. Only fetches NEW translations; NEVER overwrites existing ones (idempotency guard at `apply_patch:902`).
-  - `scripts/fetch_ru_by_item_parallel.py` — thread-pooled version of Stage 2b. Uses `urllib.parse.quote(slug, safe="/%'")` for URL-encoding (KI-33 fix needed in main script).
-  - 9 items still untranslated (F1, deferred since iter 138): `aldurs-legacy`, `betrayal-of-aldur`, `vision-rune`, `rebirth-rune`, `ward-rune`, `stone-rune`, `breath-of-aldur`, `ire-of-aldur`, `passion-of-aldur`.
-- **Spot-check audit (10 + 20 items):** Compared existing RU translations against poe2db's current RU `<title>` tag for 30 well-known items. Found **15 mismatches (50%)** — including `exalted` (our "Благородная сфера" PoE1-style vs poe2db "Сфера возвышения" PoE2-official), `fracturing-orb`, `vaal`, `alch`, `regal`, `aug`, `annul`, `regret`, `fusings`, `chromatic`, `blessed`, `eternal`, `whetstone`, `scrap`, `bauble`. Confirms user's complaint is real and pervasive.
-- **Unique items gap identified:** `mapUniqueItem` (`src/lib/poe2api.ts:1003-1051`) uses `raw.Text || raw.Name` directly as `name`. NO RU translation lookup. The translation pipeline only covers the 17 currency categories from `POE2DB_CATEGORY_PATHS` — unique items (weapons, armour, accessories) are NOT covered at all.
-- **Source cleanup (closes candidate a):** Fixed 2 comment drift lines:
-  - `instrumentation.ts:7` — `Monitors backend health via /api/health` → `Monitors backend health via /api/v1/health/ping` (matches the actual `HEALTH_ENDPOINT` constant at `flipper-backend-bridge.ts:52`).
-  - `src/lib/flipper-backend-bridge.ts:313` — `Although /api/health/ping responds` → `Although /api/v1/health/ping responds` (matches same constant).
-- **Added `--audit` flag to `scripts/sync_currency_names_from_poe2db.py`:**
-  - New `TRANSLATION_AUDIT_CACHE = CACHE_DIR / "translation_audit.json"` constant.
-  - New `audit_translations()` function — READ-ONLY audit. For every api_id that has an existing RU translation, fetches its poe2db page, extracts the RU `<title>`, compares against stored value. Categorizes results as `match` / `mismatch` / `no_poe2db_page` (404) / `no_cyrillic` (page exists but title is English-only). Does NOT mutate `existing_names` (verified by `test_does_not_modify_existing_names`).
-  - New `cmd_audit()` CLI handler. Registered `--audit` flag in argparse. Updated stage_count validation. Does NOT require `--confirm` (read-only).
-  - New module docstring section "Stage 5" documenting the audit.
-- **First audit run crashed (KI-33 discovered):** At item ~500/643, `UnicodeEncodeError: 'ascii' codec can't encode character '\xf3' in position 9`. Root cause: `_en_name_to_poe2db_slug()` strips apostrophes but keeps other non-ASCII chars intact. Two items triggered this: `mórrigans-insight` (EN: "Mórrigan's Insight") and `oisins-oath` (EN: "Oisín's Oath"). The parallel runner already URL-encoded the slug; the main script did NOT.
-- **KI-33 fix:** Extracted shared `_build_poe2db_url(base_url, slug)` helper that percent-encodes the slug via `urllib.parse.quote(slug, safe="/%'")`. Both `fetch_poe2db_ru_names_by_item` and `audit_translations` now use it. Added defensive `except (UnicodeEncodeError, UnicodeDecodeError)` clauses in both functions so a single bad slug can't kill the whole run.
-- **Ran full audit on 634 translated items** (9 untranslated items skipped per audit design):
-  - **Total audited:** 634
-  - **Match poe2db:** 601 (94.8%)
-  - **Mismatch:** 32 (5.0%) — full list in `scripts/.cache/translation_audit.json`. Mismatches by category: currency (13), vaultkeys (7), ultimatum (6), lineagesupportgems (3), ritual (2), runes (1).
-  - **No poe2db page (404):** 0
-  - **No Cyrillic:** 1 (`aldurs-saga` — we have "Сага Альдура", poe2db has no RU page yet. NEW finding, not in F1 list).
-- **Tests added (14 new tests, all green):**
-  - `tests/test_sync_currency_names.py:TestAuditTranslations` — 6 tests covering: mismatch detection, match counting, 404 handling, no-Cyrillic handling, untranslated-item skipping, READ-ONLY verification.
-  - `tests/test_sync_currency_names.py:TestAuditCli` — 2 tests covering: `--audit` runs without `--confirm`, `--audit` + other stage returns 4.
-  - `tests/test_sync_currency_names.py:TestBuildPoe2dbUrl` — 6 tests covering: ASCII slugs, apostrophe preservation, non-ASCII Latin encoding, Cyrillic encoding, regression tests for `Oisíns_Oath` and `Mórrigans_Insight`.
-- **Documentation updates (per user's rule "Убирай длинную историю изменений, мусор, устаревшие секции"):**
-  - `STATUS.md` — header bump (iter 144 → iter 145); added KI-32 (translation drift) + KI-33 (non-ASCII slug crash, fixed) + TD-6 (translation alignment + unique-items RU support, 3-phase plan); updated F1 section with audit results + `aldurs-saga` new finding; trimmed Quick Reference (removed 7 already-fixed KI rows: KI-21/26/27/28/29/30/31 — all merged into 1-line summaries under remaining entries or removed entirely); trimmed Key Technical Insights (consolidated 5 paragraphs into 5 shorter ones).
-  - `worklog.md` — added this iter-145 entry, removed iter-143 entry (rule: only last 2 iterations).
-  - `AGENT_NAVIGATION.md` — header bump (iter 144 → iter 145).
-- **Final verification:** `python3 -m pytest tests/test_sync_currency_names.py` → 57 passed (43 existing + 14 new). 1466 pytest green baseline preserved (only `.py`/`.ts`/`.tsx` change was the 2 comment-line drift fixes + new audit code, all covered by tests).
-
-Stage Summary:
-- **iter 145 SHIPPED — 1 source-cleanup (closes candidate a) + 1 new audit tool + 2 new KIs + 1 new TD, 14 new tests.**
-- **Modified files (4 source + 3 meta-docs + 1 audit artifact):**
-  - `instrumentation.ts` — 1-line comment drift fix.
-  - `src/lib/flipper-backend-bridge.ts` — 1-line comment drift fix.
-  - `scripts/sync_currency_names_from_poe2db.py` — added Stage 5 (`--audit` flag + `audit_translations()` + `cmd_audit()` + `_build_poe2db_url()` helper + KI-33 defensive exception handling in both `fetch_poe2db_ru_names_by_item` and `audit_translations`).
-  - `tests/test_sync_currency_names.py` — added 14 tests (8 audit + 6 KI-33 regression).
-  - `STATUS.md` — header bump + KI-32 + KI-33 + TD-6 + F1 update + Quick Reference trim.
-  - `worklog.md` — this iter-145 entry (removed iter-143).
-  - `AGENT_NAVIGATION.md` — header bump.
-  - `scripts/.cache/translation_audit.json` — audit artifact (32 mismatches + 1 no-Cyrillic).
-- **What was NOT done (intentionally deferred to iter 146+):**
-  - **TD-6 Phase 1 — apply KI-32 fixes:** Add `--apply-audit` flag that overwrites the 32 drift items in `currency_names_ru` with poe2db values. Requires `--confirm` (destructive). Will need to update spot-check assertions in `tests/test_currency_names_ru.py:46-51` for `exalted` (current: "Благородная сфера" → new: "Сфера возвышения"). After applying, regenerate TS mirror via `python scripts/sync_currency_names_ts.py`.
-  - **TD-6 Phase 2 — unique items RU support:** Extend pipeline to crawl `poe2db.tw/ru/Unique_item` index page → per-item page `<title>` extraction. Add `unique_names_ru` / `unique_names_en` sections (either new file `unique_names.json` or new top-level keys in `currency_names.json`). Update `mapUniqueItem` in `src/lib/poe2api.ts:1030` to look up RU name when locale=ru. Add UI tests for RU locale rendering of unique items.
-  - **TD-6 Phase 3 — re-audit cycle:** Re-run `--audit` monthly / after each patch to catch new drift.
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141–145 only verified doc-level references + translation infrastructure. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 147+.
-  - **9 currency items still untranslated** (F1) + **1 newly-discovered no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-- **Stopping point:** iter 145 = 1 source-cleanup (closes candidate a) + 1 new audit tool (Stage 5 `--audit`) + 2 new KIs (KI-32 translation drift, KI-33 non-ASCII slug crash fixed) + 1 new TD (TD-6 translation alignment + unique-items RU support) + 14 new tests + 1 audit artifact. Next iter candidates: (a) **TD-6 Phase 1** — add `--apply-audit` flag to overwrite the 32 KI-32 drift items (highest value — directly addresses user's complaint about wrong translations); (b) **TD-6 Phase 2** — extend pipeline to unique items (largest scope, addresses user's complaint about missing RU for unique items); (c) per-tab UX/logic deep-audit (deferred since iter 139); (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.

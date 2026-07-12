@@ -42,12 +42,19 @@ def main() -> int:
     cat_en = data["category_names_en"]
     cur_ru = data["currency_names_ru"]
     cur_en = data["currency_names_en"]
+    # unique_names_ru/en are optional (added iter 147, TD-6 phase 2).
+    # If absent, emit empty maps so the TS file still compiles.
+    uniq_ru = data.get("unique_names_ru", {})
+    uniq_en = data.get("unique_names_en", {})
 
     if set(cat_ru.keys()) != set(cat_en.keys()):
         print("ERROR: category_names_ru/en key drift in JSON", file=sys.stderr)
         return 1
     if set(cur_ru.keys()) != set(cur_en.keys()):
         print("ERROR: currency_names_ru/en key drift in JSON", file=sys.stderr)
+        return 1
+    if set(uniq_ru.keys()) != set(uniq_en.keys()):
+        print("ERROR: unique_names_ru/en key drift in JSON", file=sys.stderr)
         return 1
 
     lines: list[str] = []
@@ -108,6 +115,24 @@ def main() -> int:
     lines.append("const CATEGORY_NAMES_EN: Record<string, string> = {")
     for key in cat_en:
         lines.append(f"  {ts_escape(key)}: {ts_escape(cat_en[key])},")
+    lines.append("};")
+    lines.append("")
+    lines.append("// ---------------------------------------------------------------------------")
+    lines.append("// poe2db slug → Russian unique-item name (offline fallback, iter 147 TD-6 phase 2)")
+    lines.append("// ---------------------------------------------------------------------------")
+    lines.append("")
+    lines.append("const UNIQUE_NAMES_RU: Record<string, string> = {")
+    for key in uniq_ru:
+        lines.append(f"  {ts_escape(key)}: {ts_escape(uniq_ru[key])},")
+    lines.append("};")
+    lines.append("")
+    lines.append("// ---------------------------------------------------------------------------")
+    lines.append("// poe2db slug → English unique-item name (offline fallback, iter 147 TD-6 phase 2)")
+    lines.append("// ---------------------------------------------------------------------------")
+    lines.append("")
+    lines.append("const UNIQUE_NAMES_EN: Record<string, string> = {")
+    for key in uniq_en:
+        lines.append(f"  {ts_escape(key)}: {ts_escape(uniq_en[key])},")
     lines.append("};")
     lines.append("")
     # Append the helper functions from the existing file
@@ -194,13 +219,80 @@ export function getCurrencyPairDisplayName(
   const to = lookup(parts[1]) ?? parts[1];
   return `${from}/${to}`;
 }
+
+// ---------------------------------------------------------------------------
+// Unique-item name helpers (iter 147, TD-6 phase 2)
+//
+// Unique items (weapons, armour, accessories) have NO ApiId in the
+// POE2Scout API — see mapUniqueItem in src/lib/poe2api.ts. They're keyed
+// by poe2db URL slug instead (e.g. "Brynhands_Mark"). The slug is derived
+// from the EN name by stripping apostrophes and replacing spaces with
+// underscores — matching the Python `_en_name_to_poe2db_slug` helper in
+// scripts/sync_currency_names_from_poe2db.py.
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a poe2scout English item name to its poe2db URL slug.
+ * Mirrors Python `_en_name_to_poe2db_slug` exactly:
+ *   - Strip apostrophes (ASCII + curly variants)
+ *   - Replace spaces with underscores
+ *   - Preserve other chars (incl. non-ASCII Latin like "Mórrigan")
+ * Examples:
+ *   "Brynhand's Mark" → "Brynhands_Mark"
+ *   "Mirror of Kalandra" → "Mirror_of_Kalandra"
+ *   "Mórrigan's Insight" → "Mórrigans_Insight"
+ */
+export function enNameToUniqueSlug(enName: string): string {
+  if (!enName) return "";
+  return enName
+    .replace(/['\u2018\u2019\u201b\u2032]/g, "")
+    .replace(/ /g, "_");
+}
+
+/**
+ * Get the Russian display name for a unique item by poe2db slug.
+ * Returns null if the slug isn't in the mapping.
+ */
+export function getUniqueRuName(slug: string): string | null {
+  if (!slug) return null;
+  return UNIQUE_NAMES_RU[slug] ?? null;
+}
+
+/**
+ * Get the English display name for a unique item by poe2db slug.
+ * Returns null if the slug isn't in the mapping.
+ */
+export function getUniqueEnName(slug: string): string | null {
+  if (!slug) return null;
+  return UNIQUE_NAMES_EN[slug] ?? null;
+}
+
+/**
+ * Localize a unique-item name based on the active locale.
+ * Accepts the EN name from POE2Scout's `Text` field, converts it to a
+ * poe2db slug, and looks up the localized name. Returns null when no
+ * mapping exists — callers should fall back to the EN name.
+ *
+ * Usage in mapUniqueItem:
+ *   const enName = raw.Text || raw.Name;
+ *   const ruName = getUniqueDisplayName(enName, "ru");
+ *   // name: locale === "ru" ? (ruName ?? enName) : enName
+ */
+export function getUniqueDisplayName(
+  enName: string,
+  locale: string = "ru",
+): string | null {
+  const slug = enNameToUniqueSlug(enName);
+  if (!slug) return null;
+  return locale === "ru" ? getUniqueRuName(slug) : getUniqueEnName(slug);
+}
 """)
 
     content = "\n".join(lines)
     TS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with TS_PATH.open("w", encoding="utf-8") as f:
         f.write(content)
-    print(f"Wrote {TS_PATH.relative_to(REPO_ROOT)} — {len(cur_ru)} RU + {len(cur_en)} EN + {len(cat_ru)} categories")
+    print(f"Wrote {TS_PATH.relative_to(REPO_ROOT)} — {len(cur_ru)} RU + {len(cur_en)} EN + {len(cat_ru)} categories + {len(uniq_ru)} unique items")
     return 0
 
 

@@ -1141,3 +1141,416 @@ class TestApplyAuditCli:
         assert "Stage 6 COMPLETE" in caplog.text
         assert "1 applied" in caplog.text
 
+
+# ===========================================================================
+# Stage 7 — parse_poe2db_unique_index_html (iter 147, TD-6 phase 2)
+# ===========================================================================
+
+class TestParsePoe2dbUniqueIndexHtml:
+    """Tests for the parser of poe2db's unique-item index page.
+
+    The parser extracts {slug, name} pairs from anchors like:
+      <a class="UniqueItem" href="/ru/Brynhands_Mark"><span class="uniqueName">Клеймо Бринханда</span></a>
+    """
+
+    def test_parses_basic_anchor(self):
+        html_text = (
+            '<div><a class="UniqueItem" href="/ru/Brynhands_Mark">'
+            '<span class="uniqueName">Клеймо Бринханда</span>'
+            '<span class="uniqueTypeLine">Деревянная дубинка</span></a></div>'
+        )
+        result = sync.parse_poe2db_unique_index_html(html_text)
+        assert len(result) == 1
+        assert result[0] == {"slug": "Brynhands_Mark", "name": "Клеймо Бринханда"}
+
+    def test_parses_multiple_anchors(self):
+        html_text = (
+            '<a class="UniqueItem" href="/ru/Frostbreath"><span class="uniqueName">Ледяное дыхание</span></a>'
+            '<a class="UniqueItem" href="/ru/Andvarius"><span class="uniqueName">Андвариус</span></a>'
+        )
+        result = sync.parse_poe2db_unique_index_html(html_text)
+        assert len(result) == 2
+        slugs = [r["slug"] for r in result]
+        names = [r["name"] for r in result]
+        assert "Frostbreath" in slugs
+        assert "Andvarius" in slugs
+        assert "Ледяное дыхание" in names
+        assert "Андвариус" in names
+
+    def test_dedupes_duplicate_slugs(self):
+        """Defensive: if the same slug appears twice, keep only the first."""
+        html_text = (
+            '<a class="UniqueItem" href="/ru/Dupe_Item"><span class="uniqueName">Первый</span></a>'
+            '<a class="UniqueItem" href="/ru/Dupe_Item"><span class="uniqueName">Второй</span></a>'
+        )
+        result = sync.parse_poe2db_unique_index_html(html_text)
+        assert len(result) == 1
+        assert result[0]["name"] == "Первый"
+
+    def test_unescapes_html_entities_in_name(self):
+        """poe2db names may contain HTML entities like &amp; — must unescape."""
+        html_text = (
+            '<a class="UniqueItem" href="/ru/Some_Item">'
+            '<span class="uniqueName">Меч &amp; магия</span></a>'
+        )
+        result = sync.parse_poe2db_unique_index_html(html_text)
+        assert result[0]["name"] == "Меч & магия"
+
+    def test_url_decodes_percent_encoded_slug(self):
+        """Some poe2db slugs contain %27 (encoded apostrophe) — decode it."""
+        # Note: most poe2db unique-item slugs have apostrophes STRIPPED, but
+        # defensive: if a %27 slips through, decode it.
+        html_text = (
+            '<a class="UniqueItem" href="/ru/Atziris%27Acuity">'
+            '<span class="uniqueName">Проницательность Ацири</span></a>'
+        )
+        result = sync.parse_poe2db_unique_index_html(html_text)
+        assert len(result) == 1
+        assert result[0]["slug"] == "Atziris'Acuity"
+
+    def test_ignores_non_uniqueitem_anchors(self):
+        """Anchors without class='UniqueItem' must be ignored (nav links etc.)."""
+        html_text = (
+            '<a class="dropdown-item" href="/ru/Items">Предмет</a>'
+            '<a class="UniqueItem" href="/ru/Real_Item"><span class="uniqueName">Реальный</span></a>'
+            '<a class="gemitem" href="/ru/Some_Gem">Камень</a>'
+        )
+        result = sync.parse_poe2db_unique_index_html(html_text)
+        assert len(result) == 1
+        assert result[0]["slug"] == "Real_Item"
+
+    def test_empty_html_returns_empty_list(self):
+        assert sync.parse_poe2db_unique_index_html("") == []
+        assert sync.parse_poe2db_unique_index_html("<html></html>") == []
+
+
+# ===========================================================================
+# Stage 7 — fetch_poe2db_unique_names (join logic)
+# ===========================================================================
+
+class TestFetchPoe2dbUniqueNames:
+    """Tests for fetch_poe2db_unique_names() — the RU/EN index join.
+
+    These tests monkeypatch _http_get_html to avoid real network calls.
+    """
+
+    def test_joins_ru_and_en_on_slug(self, monkeypatch):
+        """Items present in both RU and EN index pages are joined correctly."""
+        ru_html = (
+            '<a class="UniqueItem" href="/ru/Item_One"><span class="uniqueName">Первый</span></a>'
+            '<a class="UniqueItem" href="/ru/Item_Two"><span class="uniqueName">Второй</span></a>'
+        )
+        en_html = (
+            '<a class="UniqueItem" href="/us/Item_One"><span class="uniqueName">First</span></a>'
+            '<a class="UniqueItem" href="/us/Item_Two"><span class="uniqueName">Second</span></a>'
+        )
+        calls = []
+
+        def fake_get(url, *args, **kwargs):
+            calls.append(url)
+            if "/ru/Unique_item" in url:
+                return ru_html
+            if "/us/Unique_item" in url:
+                return en_html
+            raise AssertionError(f"unexpected URL: {url}")
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get)
+        result = sync.fetch_poe2db_unique_names(base_url="https://poe2db.tw")
+
+        assert result["summary"]["ru_page_count"] == 2
+        assert result["summary"]["en_page_count"] == 2
+        assert result["summary"]["joined"] == 2
+        assert result["summary"]["ru_only"] == 0
+        assert result["summary"]["en_only"] == 0
+
+        items_by_slug = {e["slug"]: e for e in result["items"]}
+        assert items_by_slug["Item_One"] == {
+            "slug": "Item_One", "en_name": "First", "ru_name": "Первый",
+        }
+        assert items_by_slug["Item_Two"] == {
+            "slug": "Item_Two", "en_name": "Second", "ru_name": "Второй",
+        }
+
+    def test_partial_items_tracked_in_summary(self, monkeypatch):
+        """Items present in only one language are kept but counted in summary."""
+        ru_html = (
+            '<a class="UniqueItem" href="/ru/Only_RU"><span class="uniqueName">Только русский</span></a>'
+            '<a class="UniqueItem" href="/ru/Both"><span class="uniqueName">Оба</span></a>'
+        )
+        en_html = (
+            '<a class="UniqueItem" href="/us/Both"><span class="uniqueName">Both</span></a>'
+            '<a class="UniqueItem" href="/us/Only_EN"><span class="uniqueName">English only</span></a>'
+        )
+
+        def fake_get(url, *args, **kwargs):
+            return ru_html if "/ru/Unique_item" in url else en_html
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get)
+        result = sync.fetch_poe2db_unique_names(base_url="https://poe2db.tw")
+
+        assert result["summary"]["ru_only"] == 1  # Only_RU
+        assert result["summary"]["en_only"] == 1  # Only_EN
+        assert result["summary"]["joined"] == 3   # Union: Both + Only_RU + Only_EN
+
+        items_by_slug = {e["slug"]: e for e in result["items"]}
+        assert items_by_slug["Only_RU"]["en_name"] is None
+        assert items_by_slug["Only_EN"]["ru_name"] is None
+
+
+# ===========================================================================
+# Stage 8 — apply_unique
+# ===========================================================================
+
+class TestApplyUnique:
+    """Tests for apply_unique() — writes unique-item names to JSON in memory."""
+
+    def setup_method(self):
+        self.existing_names = {
+            "category_names_ru": {"currency": "Валюта"},
+            "category_names_en": {"currency": "Currency"},
+            "currency_names_ru": {"exalted": "Сфера возвышения"},
+            "currency_names_en": {"exalted": "Exalted Orb"},
+        }
+
+    def test_adds_new_entries_to_both_maps(self):
+        """New slugs are added to both unique_names_ru and unique_names_en."""
+        unique_data = {
+            "items": [
+                {"slug": "Brynhands_Mark", "en_name": "Brynhand's Mark", "ru_name": "Клеймо Бринханда"},
+                {"slug": "Frostbreath", "en_name": "Frostbreath", "ru_name": "Ледяное дыхание"},
+            ]
+        }
+        added, updated, skipped_no_change, skipped_partial = sync.apply_unique(
+            unique_data, self.existing_names
+        )
+        assert added == 2
+        assert updated == 0
+        assert skipped_no_change == 0
+        assert skipped_partial == 0
+        assert self.existing_names["unique_names_ru"]["Brynhands_Mark"] == "Клеймо Бринханда"
+        assert self.existing_names["unique_names_en"]["Brynhands_Mark"] == "Brynhand's Mark"
+        assert self.existing_names["unique_names_ru"]["Frostbreath"] == "Ледяное дыхание"
+
+    def test_creates_unique_names_keys_if_absent(self):
+        """If unique_names_ru/en don't exist yet, they're created."""
+        assert "unique_names_ru" not in self.existing_names
+        unique_data = {"items": [
+            {"slug": "X", "en_name": "X", "ru_name": "Икс"},
+        ]}
+        sync.apply_unique(unique_data, self.existing_names)
+        assert "unique_names_ru" in self.existing_names
+        assert "unique_names_en" in self.existing_names
+        assert self.existing_names["unique_names_ru"]["X"] == "Икс"
+
+    def test_idempotent_rerun_is_noop(self):
+        """Re-running apply_unique with the same data is a no-op."""
+        unique_data = {"items": [
+            {"slug": "X", "en_name": "X", "ru_name": "Икс"},
+        ]}
+        sync.apply_unique(unique_data, self.existing_names)
+        # Second run — no change
+        added, updated, skipped_no_change, skipped_partial = sync.apply_unique(
+            unique_data, self.existing_names
+        )
+        assert added == 0
+        assert updated == 0
+        assert skipped_no_change == 1
+        assert skipped_partial == 0
+
+    def test_updates_existing_entries_on_drift(self):
+        """If slug exists with different values, both RU and EN are overwritten."""
+        # First populate
+        unique_data = {"items": [
+            {"slug": "X", "en_name": "X", "ru_name": "Икс"},
+        ]}
+        sync.apply_unique(unique_data, self.existing_names)
+        # Now simulate drift — poe2db updated the RU translation
+        drifted_data = {"items": [
+            {"slug": "X", "en_name": "X Updated", "ru_name": "Икс обновлённый"},
+        ]}
+        added, updated, skipped_no_change, skipped_partial = sync.apply_unique(
+            drifted_data, self.existing_names
+        )
+        assert added == 0
+        assert updated == 1
+        assert skipped_no_change == 0
+        assert self.existing_names["unique_names_ru"]["X"] == "Икс обновлённый"
+        assert self.existing_names["unique_names_en"]["X"] == "X Updated"
+
+    def test_skips_partial_entries(self):
+        """Entries with only EN or only RU name are skipped (not half-translated)."""
+        unique_data = {"items": [
+            {"slug": "Both", "en_name": "Both", "ru_name": "Оба"},
+            {"slug": "Only_EN", "en_name": "Only EN", "ru_name": None},
+            {"slug": "Only_RU", "en_name": None, "ru_name": "Только русский"},
+            {"slug": "Empty", "en_name": None, "ru_name": None},
+        ]}
+        added, updated, skipped_no_change, skipped_partial = sync.apply_unique(
+            unique_data, self.existing_names
+        )
+        assert added == 1  # Only "Both" was added
+        assert skipped_partial == 3
+        assert "Only_EN" not in self.existing_names.get("unique_names_ru", {})
+        assert "Only_RU" not in self.existing_names.get("unique_names_ru", {})
+        assert "Empty" not in self.existing_names.get("unique_names_ru", {})
+
+    def test_preserves_ru_en_key_parity(self):
+        """unique_names_ru and unique_names_en always have the same set of keys."""
+        unique_data = {"items": [
+            {"slug": "A", "en_name": "A", "ru_name": "А"},
+            {"slug": "B", "en_name": "B", "ru_name": "Б"},
+            {"slug": "C", "en_name": "C", "ru_name": "Ц"},
+        ]}
+        sync.apply_unique(unique_data, self.existing_names)
+        ru_keys = set(self.existing_names["unique_names_ru"].keys())
+        en_keys = set(self.existing_names["unique_names_en"].keys())
+        assert ru_keys == en_keys == {"A", "B", "C"}
+
+    def test_does_not_touch_currency_names(self):
+        """apply_unique must NOT mutate currency_names_ru/en or category_names_*."""
+        currency_ru_before = dict(self.existing_names["currency_names_ru"])
+        currency_en_before = dict(self.existing_names["currency_names_en"])
+        cat_ru_before = dict(self.existing_names["category_names_ru"])
+        cat_en_before = dict(self.existing_names["category_names_en"])
+
+        unique_data = {"items": [
+            {"slug": "X", "en_name": "X", "ru_name": "Икс"},
+        ]}
+        sync.apply_unique(unique_data, self.existing_names)
+
+        assert self.existing_names["currency_names_ru"] == currency_ru_before
+        assert self.existing_names["currency_names_en"] == currency_en_before
+        assert self.existing_names["category_names_ru"] == cat_ru_before
+        assert self.existing_names["category_names_en"] == cat_en_before
+
+    def test_empty_items_returns_zeros(self):
+        added, updated, skipped_no_change, skipped_partial = sync.apply_unique(
+            {"items": []}, self.existing_names
+        )
+        assert (added, updated, skipped_no_change, skipped_partial) == (0, 0, 0, 0)
+
+
+# ===========================================================================
+# Stage 8 — apply_unique CLI
+# ===========================================================================
+
+class TestApplyUniqueCli:
+    """CLI-level tests for the --apply-unique flag (iter 147)."""
+
+    def test_apply_unique_without_confirm_returns_4(self, caplog):
+        """--apply-unique requires --confirm (destructive on drift)."""
+        with caplog.at_level("ERROR"):
+            rc = sync.main(["--apply-unique"])
+        assert rc == 4
+        assert "--apply-unique requires --confirm" in caplog.text
+
+    def test_apply_unique_with_other_stage_returns_4(self, capsys):
+        """--apply-unique combined with --audit should be rejected (exactly one stage)."""
+        rc = sync.main(["--apply-unique", "--audit", "--confirm"])
+        assert rc == 4
+
+    def test_apply_unique_missing_cache_returns_4(self, monkeypatch, caplog):
+        """If scripts/.cache/poe2db_unique_names.json doesn't exist, return 4."""
+        fake_path = sync.Path("/tmp/__definitely_does_not_exist_apply_unique_test__.json")
+        monkeypatch.setattr(sync, "UNIQUE_NAMES_CACHE", fake_path)
+
+        with caplog.at_level("ERROR"):
+            rc = sync.main(["--apply-unique", "--confirm"])
+        assert rc == 4
+        assert "run --fetch-unique-ru first" in caplog.text
+
+    def test_apply_unique_runs_full_pipeline_on_synthetic_data(self, monkeypatch, tmp_path, caplog):
+        """End-to-end: synthetic unique-names cache + synthetic currency_names.json +
+        monkeypatched CURRENCY_NAMES_PATH → verify file is written with the new entries.
+        """
+        # 1. Synthetic unique-names cache
+        unique_cache = tmp_path / "poe2db_unique_names.json"
+        unique_cache.write_text(json.dumps({
+            "summary": {"joined": 1, "ru_only": 0, "en_only": 0},
+            "items": [
+                {
+                    "slug": "Brynhands_Mark",
+                    "en_name": "Brynhand's Mark",
+                    "ru_name": "Клеймо Бринханда",
+                },
+            ],
+        }), encoding="utf-8")
+        monkeypatch.setattr(sync, "UNIQUE_NAMES_CACHE", unique_cache)
+
+        # 2. Synthetic currency_names.json (no unique_names_* yet)
+        names_path = tmp_path / "currency_names.json"
+        names_path.write_text(json.dumps({
+            "category_names_ru": {"currency": "Валюта"},
+            "category_names_en": {"currency": "Currency"},
+            "currency_names_ru": {"exalted": "Сфера возвышения"},
+            "currency_names_en": {"exalted": "Exalted Orb"},
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        monkeypatch.setattr(sync, "CURRENCY_NAMES_PATH", names_path)
+
+        with caplog.at_level("INFO"):
+            rc = sync.main(["--apply-unique", "--confirm"])
+        assert rc == 0
+
+        # 3. Verify file was written with new unique_names_* sections
+        with names_path.open(encoding="utf-8") as f:
+            result = json.load(f)
+        assert "unique_names_ru" in result
+        assert "unique_names_en" in result
+        assert result["unique_names_ru"]["Brynhands_Mark"] == "Клеймо Бринханда"
+        assert result["unique_names_en"]["Brynhands_Mark"] == "Brynhand's Mark"
+        # Existing currency_names_ru/en untouched
+        assert result["currency_names_ru"]["exalted"] == "Сфера возвышения"
+        assert result["currency_names_en"]["exalted"] == "Exalted Orb"
+
+        assert "Stage 8 COMPLETE" in caplog.text
+        assert "1 added" in caplog.text
+
+
+# ===========================================================================
+# Stage 7 — fetch-unique-ru CLI
+# ===========================================================================
+
+class TestFetchUniqueRuCli:
+    """CLI-level tests for the --fetch-unique-ru flag (iter 147)."""
+
+    def test_fetch_unique_ru_with_other_stage_returns_4(self, capsys):
+        """--fetch-unique-ru combined with --audit should be rejected."""
+        rc = sync.main(["--fetch-unique-ru", "--audit"])
+        assert rc == 4
+
+    def test_fetch_unique_ru_runs_full_pipeline(self, monkeypatch, tmp_path, caplog):
+        """End-to-end: monkeypatch _http_get_html + UNIQUE_NAMES_CACHE → verify
+        the cache file is written with joined RU+EN entries.
+        """
+        ru_html = (
+            '<a class="UniqueItem" href="/ru/Test_Item"><span class="uniqueName">Тестовый предмет</span></a>'
+        )
+        en_html = (
+            '<a class="UniqueItem" href="/us/Test_Item"><span class="uniqueName">Test Item</span></a>'
+        )
+
+        def fake_get(url, *args, **kwargs):
+            if "/ru/Unique_item" in url:
+                return ru_html
+            if "/us/Unique_item" in url:
+                return en_html
+            raise AssertionError(f"unexpected URL: {url}")
+
+        monkeypatch.setattr(sync, "_http_get_html", fake_get)
+        cache_path = tmp_path / "poe2db_unique_names.json"
+        monkeypatch.setattr(sync, "UNIQUE_NAMES_CACHE", cache_path)
+
+        with caplog.at_level("INFO"):
+            rc = sync.main(["--fetch-unique-ru"])
+        assert rc == 0
+
+        with cache_path.open(encoding="utf-8") as f:
+            result = json.load(f)
+        assert result["summary"]["joined"] == 1
+        assert result["items"][0] == {
+            "slug": "Test_Item",
+            "en_name": "Test Item",
+            "ru_name": "Тестовый предмет",
+        }
+        assert "Stage 7 COMPLETE" in caplog.text
+

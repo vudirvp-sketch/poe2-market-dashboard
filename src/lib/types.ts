@@ -35,6 +35,11 @@ export interface PoeItem {
   id: string;
   apiId: string;
   name: string;
+  /** Russian name for unique items (looked up from poe2db slug via
+   *  UNIQUE_NAMES_RU in src/lib/currency-names.ts). Null for currencies
+   *  (currencies use getCurrencyDisplayName(apiId, locale) at render time
+   *  instead). Added iter 147 (TD-6 phase 2). */
+  nameRu?: string | null;
   type: string;
   category: string;
   iconUrl: string | null;

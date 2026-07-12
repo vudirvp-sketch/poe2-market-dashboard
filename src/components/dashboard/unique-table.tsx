@@ -43,7 +43,7 @@ interface CategoryGroup {
 }
 
 export function UniqueTable({ items, onItemClick, realm, league, referenceCurrency, highlightedItemId }: UniqueTableProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [density, setDensity] = useState<DensityMode>("comfortable");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
@@ -128,7 +128,12 @@ export function UniqueTable({ items, onItemClick, realm, league, referenceCurren
                 <Shield className={`${isCompact ? "w-6 h-6" : "w-8 h-8"} text-muted-foreground`} aria-hidden="true" />
               )}
               <div>
-                <span className="font-medium">{item.name}</span>
+                <span className="font-medium">
+                  {/* iter 147 (TD-6 phase 2): use Russian name from poe2db
+                      lookup when locale=ru and the name is available;
+                      otherwise fall back to the upstream English name. */}
+                  {locale === "ru" && item.nameRu ? item.nameRu : item.name}
+                </span>
                 <span className="text-muted-foreground ml-1 text-xs">
                   {item.type}
                 </span>

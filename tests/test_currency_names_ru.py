@@ -9,8 +9,13 @@ Scope:
   - Round-trip: every key in CURRENCY_NAMES_RU also exists in CURRENCY_NAMES_EN
     (the TS-side mirror file already enforces this; we enforce it on the
     Python side too so the two can't drift silently)
+  - iter 147 (TD-6 phase 2): unique_names_ru/en sections also load and
+    maintain RU/EN key parity. Spot-check a well-known unique item.
 """
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 from backend.data.currency_names_ru import (
     CATEGORY_NAMES_EN,
@@ -22,6 +27,16 @@ from backend.data.currency_names_ru import (
     get_en_name,
     get_ru_name,
 )
+
+
+# Load unique_names_ru/en directly from JSON (the loader module doesn't
+# expose them yet — they were added iter 147 / TD-6 phase 2 and the loader
+# was intentionally kept thin to avoid changing its public API).
+_JSON_PATH = Path(__file__).resolve().parent.parent / "backend" / "data" / "currency_names.json"
+with _JSON_PATH.open(encoding="utf-8") as _fh:
+    _DATA = json.load(_fh)
+UNIQUE_NAMES_RU: dict[str, str] = _DATA.get("unique_names_ru", {})
+UNIQUE_NAMES_EN: dict[str, str] = _DATA.get("unique_names_en", {})
 
 
 def test_dicts_load_from_json_and_are_non_empty():
@@ -91,3 +106,39 @@ def test_hinekoras_lock_is_translated():
     # calls out explicitly — make sure its translation is always present.
     assert get_ru_name("hinekoras-lock") == "Прядь Хинекоры"
     assert get_en_name("hinekoras-lock") == "Hinekora's Lock"
+
+
+# ---------------------------------------------------------------------------
+# iter 147 (TD-6 phase 2) — unique_items_ru/en parity + spot-checks
+# ---------------------------------------------------------------------------
+
+def test_unique_names_dicts_load_and_are_non_empty():
+    # iter 147 (TD-6 phase 2): 445 unique items added via
+    # `sync_currency_names_from_poe2db.py --fetch-unique-ru` + `--apply-unique`.
+    # If you re-run the pipeline and counts change, bump these in the same PR.
+    assert len(UNIQUE_NAMES_RU) >= 400, (
+        f"unique_names_ru has {len(UNIQUE_NAMES_RU)} entries — expected ≥400. "
+        "Re-run --fetch-unique-ru + --apply-unique if poe2db added new items."
+    )
+    assert len(UNIQUE_NAMES_EN) == len(UNIQUE_NAMES_RU), (
+        "unique_names_ru and unique_names_en must have the same number of entries"
+    )
+
+
+def test_unique_names_ru_and_en_keys_match():
+    """The two unique-items maps must cover exactly the same slugs."""
+    ru_keys = set(UNIQUE_NAMES_RU.keys())
+    en_keys = set(UNIQUE_NAMES_EN.keys())
+    assert ru_keys == en_keys, (
+        f"Unique RU/EN key drift — only-RU: {ru_keys - en_keys}, "
+        f"only-EN: {en_keys - ru_keys}"
+    )
+
+
+def test_unique_names_spot_check():
+    # Spot-check a well-known unique item: Brynhand's Mark is the first item
+    # on poe2db's Unique_item index page. Verified iter 147 against
+    # https://poe2db.tw/ru/Brynhands_Mark — RU name "Клеймо Бринханда".
+    assert UNIQUE_NAMES_RU.get("Brynhands_Mark") == "Клеймо Бринханда"
+    assert UNIQUE_NAMES_EN.get("Brynhands_Mark") == "Brynhand's Mark"
+

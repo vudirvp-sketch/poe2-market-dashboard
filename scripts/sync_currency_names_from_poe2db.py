@@ -71,6 +71,27 @@ Each stage is a separate subcommand. Outputs are cached as JSON files under
     tests/test_currency_names_ru.py if any of the spot-checked api_ids
     (exalted, divine, mirror) were in the mismatch list.
 
+  Stage 7 — --fetch-unique-ru  (iter 147, TD-6 phase 2)
+    Fetches poe2db's unique-item INDEX pages in both RU and EN:
+      - {base_url}/ru/Unique_item  → list of {slug, ru_name}
+      - {base_url}/us/Unique_item  → list of {slug, en_name}
+    The parser regex targets <a class="UniqueItem" href="..."><span
+    class="uniqueName">NAME</span></a>. Joins on slug. Writes
+    `scripts/.cache/poe2db_unique_names.json`. Does NOT modify
+    currency_names.json — that's Stage 8. Only 2 HTTP calls (fast:
+    <5s). Unique items have NO ApiId in poe2scout (see mapUniqueItem
+    in src/lib/poe2api.ts), so they're keyed by poe2db URL slug.
+
+  Stage 8 — --apply-unique  (iter 147, TD-6 phase 2)
+    Reads scripts/.cache/poe2db_unique_names.json (Stage 7 output) and
+    adds/updates entries in currency_names.json's `unique_names_ru` and
+    `unique_names_en` sections. Requires --confirm. Idempotent.
+    RU/EN key parity preserved by construction (slugs added to both
+    maps simultaneously). After --apply-unique, run
+    `python scripts/sync_currency_names_ts.py` to regenerate the TS
+    mirror (the TS sync script emits UNIQUE_NAMES_RU/EN + helper
+    getUniqueRuName/getUniqueEnName/getUniqueDisplayName).
+
 ------------------------------------------------------------------------------
 FALLBACK MODE — --from-cache-snapshot
 ------------------------------------------------------------------------------
@@ -106,6 +127,17 @@ USAGE EXAMPLES
 
   # Verify a patch without applying it (default — --apply requires --confirm):
   python scripts/sync_currency_names_from_poe2db.py --diff --verbose
+
+  # Unique items pipeline (iter 147, TD-6 phase 2) — independent of stages 1-6:
+  python scripts/sync_currency_names_from_poe2db.py --fetch-unique-ru
+  python scripts/sync_currency_names_from_poe2db.py --apply-unique --confirm
+  python scripts/sync_currency_names_ts.py
+
+  # Monthly drift refresh for currency (iter 146 workflow):
+  python scripts/sync_currency_names_from_poe2db.py --audit
+  # ... review scripts/.cache/translation_audit.json ...
+  python scripts/sync_currency_names_from_poe2db.py --apply-audit --confirm
+  python scripts/sync_currency_names_ts.py
 
 ------------------------------------------------------------------------------
 EXIT CODES
@@ -180,6 +212,7 @@ POE2SCOUT_ITEMS_CACHE = CACHE_DIR / "poe2scout_items.json"
 POE2DB_RU_CACHE = CACHE_DIR / "poe2db_ru_names.json"
 PATCH_CACHE = CACHE_DIR / "currency_names_patch.json"
 TRANSLATION_AUDIT_CACHE = CACHE_DIR / "translation_audit.json"
+UNIQUE_NAMES_CACHE = CACHE_DIR / "poe2db_unique_names.json"
 
 DEFAULT_POE2SCOUT_BASE = "https://poe2scout.com/api"
 DEFAULT_POE2DB_BASE = "https://poe2db.tw"
@@ -222,6 +255,12 @@ HTTP_RETRIES = 3
 HTTP_RETRY_DELAYS = [1.0, 2.0, 4.0]  # exponential backoff
 HTTP_RATE_LIMIT_COOLDOWN = 5.0  # extra pause on 429
 HTTP_USER_AGENT = "PoE2-Market-Dashboard-SyncScript/1.0 (maintainer tool; contact: project maintainers)"
+
+# poe2db.tw unique item index pages (iter 147, TD-6 phase 2).
+# Each page lists every unique item with a hyperlink to its per-item page.
+# We parse the index for {slug, name} pairs in both languages and join on slug.
+POE2DB_UNIQUE_INDEX_PATH_RU = "/ru/Unique_item"
+POE2DB_UNIQUE_INDEX_PATH_EN = "/us/Unique_item"
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -1181,6 +1220,224 @@ def apply_audit(
 
 
 # ---------------------------------------------------------------------------
+# Stage 7 — fetch unique-item RU+EN names from poe2db index (iter 147, TD-6 phase 2)
+# ---------------------------------------------------------------------------
+
+# Matches the per-item anchor on the poe2db unique-item index page:
+#   <a class="UniqueItem" data-hover="..." href="/ru/Brynhands_Mark"><span class="uniqueName">Клеймо Бринханда</span> <span class="uniqueTypeLine">Деревянная дубинка</span></a>
+# We capture the slug (from href) and the name (from <span class="uniqueName">).
+# The slug is the canonical key for joining RU ↔ EN entries.
+_POE2DB_UNIQUE_LINK_RE = re.compile(
+    r'<a[^>]*class="UniqueItem"[^>]*href="(?P<href>/[^"]+)"[^>]*>'
+    r'\s*<span[^>]*class="uniqueName"[^>]*>(?P<name>[^<]+)</span>',
+    re.IGNORECASE,
+)
+
+
+def parse_poe2db_unique_index_html(html_text: str) -> list[dict[str, str]]:
+    """Parse a poe2db unique-item index page and extract {slug, name} pairs.
+
+    The poe2db index page (https://poe2db.tw/ru/Unique_item or /us/Unique_item)
+    lists every unique item as a card with an anchor like:
+
+        <a class="UniqueItem" href="/ru/Brynhands_Mark">
+          <span class="uniqueName">Клеймо Бринханда</span>
+          <span class="uniqueTypeLine">Деревянная дубинка</span>
+        </a>
+
+    We extract the canonical slug (last path segment of href, e.g.
+    "Brynhands_Mark") and the displayed name (e.g. "Клеймо Бринханда"
+    in RU or "Brynhand's Mark" in EN).
+
+    Args:
+        html_text: Full HTML source of the poe2db unique-item index page.
+
+    Returns:
+        List of `{"slug": str, "name": str}` dicts. The slug is unencoded
+        (e.g. "Brynhands_Mark", not URL-percent-encoded). Duplicate slugs
+        are collapsed to their first occurrence (defensive — the index
+        page shouldn't have dupes, but a layout change could cause it).
+    """
+    results: list[dict[str, str]] = []
+    seen_slugs: set[str] = set()
+    for m in _POE2DB_UNIQUE_LINK_RE.finditer(html_text):
+        href = m.group("href")
+        name = html.unescape(m.group("name").strip())
+        if not href or not name:
+            continue
+        # Extract slug from href: "/ru/Brynhands_Mark" → "Brynhands_Mark"
+        # Some hrefs are absolute ("/ru/..."), some relative ("Brynhands_Mark").
+        slug = href.rsplit("/", 1)[-1]
+        if not slug:
+            continue
+        # URL-decode the slug (some slugs contain %27 etc.)
+        slug = urllib.parse.unquote(slug)
+        if slug in seen_slugs:
+            continue
+        seen_slugs.add(slug)
+        results.append({"slug": slug, "name": name})
+    return results
+
+
+def fetch_poe2db_unique_names(*, base_url: str) -> dict[str, Any]:
+    """Fetch unique-item EN+RU names by parsing poe2db's index pages.
+
+    Hits two URLs:
+      1. {base_url}/ru/Unique_item — gives {slug → RU name}
+      2. {base_url}/us/Unique_item — gives {slug → EN name}
+
+    Joins on slug. Items present in only one language are still returned
+    but with the missing name set to None (so callers can detect partial
+    coverage).
+
+    Returns a dict with structure:
+        {
+          "generated_at": ISO,
+          "source": "{base_url}/ru/Unique_item + {base_url}/us/Unique_item",
+          "summary": {
+            "ru_page_count": N,
+            "en_page_count": N,
+            "joined": N,
+            "ru_only": N,
+            "en_only": N,
+          },
+          "items": [
+            {"slug": "...", "en_name": "..." | null, "ru_name": "..." | null},
+            ...
+          ]
+        }
+    """
+    base = base_url.rstrip("/")
+    ru_url = f"{base}{POE2DB_UNIQUE_INDEX_PATH_RU}"
+    en_url = f"{base}{POE2DB_UNIQUE_INDEX_PATH_EN}"
+
+    log.info("  Fetching RU unique-item index: %s", ru_url)
+    ru_html = _http_get_html(ru_url)
+    ru_entries = parse_poe2db_unique_index_html(ru_html)
+    log.info("    Parsed %d RU entries", len(ru_entries))
+
+    log.info("  Fetching EN unique-item index: %s", en_url)
+    en_html = _http_get_html(en_url)
+    en_entries = parse_poe2db_unique_index_html(en_html)
+    log.info("    Parsed %d EN entries", len(en_entries))
+
+    ru_by_slug = {e["slug"]: e["name"] for e in ru_entries}
+    en_by_slug = {e["slug"]: e["name"] for e in en_entries}
+
+    all_slugs = set(ru_by_slug.keys()) | set(en_by_slug.keys())
+    items: list[dict[str, str | None]] = []
+    ru_only = 0
+    en_only = 0
+    for slug in sorted(all_slugs):
+        ru_name = ru_by_slug.get(slug)
+        en_name = en_by_slug.get(slug)
+        if ru_name and not en_name:
+            en_only += 1
+        elif en_name and not ru_name:
+            ru_only += 1
+        items.append({"slug": slug, "en_name": en_name, "ru_name": ru_name})
+
+    return {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime()),
+        "source": f"{ru_url} + {en_url}",
+        "summary": {
+            "ru_page_count": len(ru_entries),
+            "en_page_count": len(en_entries),
+            "joined": len(items),
+            "ru_only": ru_only,
+            "en_only": en_only,
+        },
+        "items": items,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Stage 8 — apply unique-item names to currency_names.json (iter 147, TD-6 phase 2)
+# ---------------------------------------------------------------------------
+
+
+def apply_unique(
+    unique_data: dict[str, Any],
+    existing_names: dict[str, dict[str, str]],
+) -> tuple[int, int, int, int]:
+    """Apply unique-item name pairs to the in-memory existing_names dict.
+
+    Mutates `existing_names["unique_names_ru"]` and
+    `existing_names["unique_names_en"]` in place (creating them if absent).
+    Returns (added, updated, skipped_no_change, skipped_partial).
+
+    For each entry in `unique_data["items"]`:
+      - If slug is missing from both unique_names_ru and unique_names_en
+        AND both en_name and ru_name are present: ADD the entry.
+        → `added` += 1
+      - If slug is already present and BOTH values match the cache: skip
+        (idempotent).
+        → `skipped_no_change` += 1
+      - If slug is already present but at least one value differs: UPDATE
+        with the new values (overwrite both). This refreshes drift.
+        → `updated` += 1
+      - If only one of en_name/ru_name is present (partial): skip with a
+        warning (we don't want half-translated entries).
+        → `skipped_partial` += 1
+
+    Keys unique_names_ru and unique_names_en are kept in lock-step — a
+    slug is added to/removed from both simultaneously. RU/EN parity is
+    preserved by construction.
+
+    Does NOT touch currency_names_ru / currency_names_en / category_names_*.
+    """
+    if "unique_names_ru" not in existing_names:
+        existing_names["unique_names_ru"] = {}
+    if "unique_names_en" not in existing_names:
+        existing_names["unique_names_en"] = {}
+
+    existing_ru = existing_names["unique_names_ru"]
+    existing_en = existing_names["unique_names_en"]
+
+    added = 0
+    updated = 0
+    skipped_no_change = 0
+    skipped_partial = 0
+
+    for entry in unique_data.get("items", []):
+        slug = entry.get("slug")
+        en_name = entry.get("en_name")
+        ru_name = entry.get("ru_name")
+
+        if not slug:
+            skipped_partial += 1
+            continue
+        if not en_name or not ru_name:
+            # Partial translation — skip (we want both names or neither).
+            log.warning("  slug %s has partial names (en=%r, ru=%r) — skipping",
+                        slug, en_name, ru_name)
+            skipped_partial += 1
+            continue
+
+        cur_ru = existing_ru.get(slug)
+        cur_en = existing_en.get(slug)
+
+        if cur_ru is None and cur_en is None:
+            # New entry — add to both maps.
+            existing_ru[slug] = ru_name
+            existing_en[slug] = en_name
+            added += 1
+        elif cur_ru == ru_name and cur_en == en_name:
+            # Idempotent re-run — no change.
+            skipped_no_change += 1
+        else:
+            # Existing entry with different values — refresh (overwrite both
+            # to keep RU/EN in lock-step).
+            log.info("  slug %s — updating (ru: %r→%r, en: %r→%r)",
+                     slug, cur_ru, ru_name, cur_en, en_name)
+            existing_ru[slug] = ru_name
+            existing_en[slug] = en_name
+            updated += 1
+
+    return added, updated, skipped_no_change, skipped_partial
+
+
+# ---------------------------------------------------------------------------
 # Main CLI
 # ---------------------------------------------------------------------------
 
@@ -1600,6 +1857,137 @@ def cmd_apply_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_fetch_unique_ru(args: argparse.Namespace) -> int:
+    """Stage 7 (iter 147, TD-6 phase 2) — fetch unique-item EN+RU names.
+
+    Fetches poe2db's unique-item index pages in both RU and EN, parses them
+    for {slug, name} pairs, joins on slug, and writes the joined result to
+    scripts/.cache/poe2db_unique_names.json. Does NOT modify
+    currency_names.json — that's --apply-unique.
+
+    Only 2 HTTP calls (RU index + EN index). Fast (typically <5s).
+    """
+    base_url = args.poe2db_base_url
+    log.info("Stage 7 — fetching unique-item names from poe2db index pages")
+    log.info("  Base URL: %s", base_url)
+
+    try:
+        result = fetch_poe2db_unique_names(base_url=base_url)
+    except urllib.error.URLError as e:
+        log.error("Network error during fetch_poe2db_unique_names: %s", e)
+        return 1
+
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    with UNIQUE_NAMES_CACHE.open("w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+
+    s = result["summary"]
+    # Display path: prefer repo-relative, fall back to absolute if the path
+    # isn't under REPO_ROOT (e.g. when invoked from a tmp_path in tests).
+    try:
+        cache_display = UNIQUE_NAMES_CACHE.relative_to(REPO_ROOT)
+    except ValueError:
+        cache_display = UNIQUE_NAMES_CACHE
+    log.info("Stage 7 COMPLETE — joined %d unique items written to %s",
+             s["joined"], cache_display)
+    log.info("  Summary:")
+    log.info("    RU index entries:    %d", s["ru_page_count"])
+    log.info("    EN index entries:    %d", s["en_page_count"])
+    log.info("    Joined (RU ∩ EN):    %d", s["joined"])
+    log.info("    RU-only (no EN):     %d", s["ru_only"])
+    log.info("    EN-only (no RU):     %d", s["en_only"])
+    log.info("  Next steps:")
+    log.info("    1. Review %s", cache_display)
+    log.info("    2. Apply: python scripts/sync_currency_names_from_poe2db.py --apply-unique --confirm")
+    log.info("    3. Regenerate TS: python scripts/sync_currency_names_ts.py")
+    return 0
+
+
+def cmd_apply_unique(args: argparse.Namespace) -> int:
+    """Stage 8 (iter 147, TD-6 phase 2) — apply unique-item names to JSON.
+
+    Reads scripts/.cache/poe2db_unique_names.json (Stage 7 output) and
+    adds/updates entries in currency_names.json's `unique_names_ru` and
+    `unique_names_en` sections. Requires --confirm (destructive — overwrites
+    existing translations on drift).
+
+    Idempotent: re-running with the same cache is a no-op (every entry falls
+    into the `skipped_no_change` bucket).
+
+    RU/EN key parity is preserved by construction (slugs are added to/updated
+    in both maps simultaneously).
+    """
+    if not args.confirm:
+        log.error("--apply-unique requires --confirm flag (destructive — overwrites existing translations on drift).")
+        log.error("  Re-run with: --apply-unique --confirm")
+        return 4
+
+    log.info("Stage 8 — applying unique-item names to backend/data/currency_names.json")
+
+    if not UNIQUE_NAMES_CACHE.exists():
+        log.error("Missing %s — run --fetch-unique-ru first.", UNIQUE_NAMES_CACHE)
+        return 4
+    if not CURRENCY_NAMES_PATH.exists():
+        log.error("Missing %s — run from the repo root.", CURRENCY_NAMES_PATH)
+        return 2
+
+    with UNIQUE_NAMES_CACHE.open(encoding="utf-8") as f:
+        unique_data = json.load(f)
+    with CURRENCY_NAMES_PATH.open(encoding="utf-8") as f:
+        existing_names = json.load(f)
+
+    # Pre-flight: validate existing currency_names_ru/en key parity (same guard
+    # as --apply). Does NOT validate unique_names_ru/en parity (apply_unique
+    # guarantees it by construction).
+    ru_keys = set(existing_names.get("currency_names_ru", {}).keys())
+    en_keys = set(existing_names.get("currency_names_en", {}).keys())
+    if ru_keys != en_keys:
+        diff_ru = ru_keys - en_keys
+        diff_en = en_keys - ru_keys
+        log.error("Pre-existing currency_names_ru/en key drift — refusing to apply.")
+        log.error("  only-RU: %s", sorted(diff_ru)[:5])
+        log.error("  only-EN: %s", sorted(diff_en)[:5])
+        return 3
+
+    cache_count = len(unique_data.get("items", []))
+    log.info("  Cache: %d unique-item entries", cache_count)
+
+    added, updated, skipped_no_change, skipped_partial = apply_unique(unique_data, existing_names)
+
+    # Post-flight: validate unique_names_ru/en parity (defense in depth).
+    if "unique_names_ru" in existing_names and "unique_names_en" in existing_names:
+        uru = set(existing_names["unique_names_ru"].keys())
+        uen = set(existing_names["unique_names_en"].keys())
+        if uru != uen:
+            log.error("Post-apply unique_names_ru/en key drift — aborting write.")
+            return 3
+
+    # Write back atomically.
+    tmp_path = CURRENCY_NAMES_PATH.with_suffix(".json.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(existing_names, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    tmp_path.replace(CURRENCY_NAMES_PATH)
+
+    try:
+        display_path = CURRENCY_NAMES_PATH.relative_to(REPO_ROOT)
+    except ValueError:
+        display_path = CURRENCY_NAMES_PATH
+
+    log.info("Stage 8 COMPLETE — %d added, %d updated, %d skipped (no change), %d skipped (partial).",
+             added, updated, skipped_no_change, skipped_partial)
+    log.info("  Wrote: %s", display_path)
+    if "unique_names_ru" in existing_names:
+        log.info("  New unique_names counts: ru=%d, en=%d",
+                 len(existing_names["unique_names_ru"]),
+                 len(existing_names["unique_names_en"]))
+    if added > 0 or updated > 0:
+        log.info("  NEXT:")
+        log.info("    1. python scripts/sync_currency_names_ts.py  (regenerate TS mirror)")
+        log.info("    2. pytest tests/test_currency_names_ru.py tests/test_sync_currency_names.py")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="sync_currency_names_from_poe2db.py",
@@ -1623,8 +2011,12 @@ def main(argv: list[str] | None = None) -> int:
                         help="Stage 5 (iter 145, KI-32): READ-ONLY audit of existing RU translations against poe2db current RU <title>. Writes scripts/.cache/translation_audit.json. Does NOT modify currency_names.json.")
     parser.add_argument("--apply-audit", action="store_true",
                         help="Stage 6 (iter 146, TD-6 phase 1): apply audit corrections — overwrite every mismatch entry in currency_names_ru with poe2db_ru value from scripts/.cache/translation_audit.json. Requires --confirm (destructive). Run --audit first.")
+    parser.add_argument("--fetch-unique-ru", action="store_true",
+                        help="Stage 7 (iter 147, TD-6 phase 2): fetch unique-item EN+RU name pairs from poe2db's unique-item index pages. Writes scripts/.cache/poe2db_unique_names.json. Only 2 HTTP calls (RU index + EN index). Does NOT modify currency_names.json.")
+    parser.add_argument("--apply-unique", action="store_true",
+                        help="Stage 8 (iter 147, TD-6 phase 2): apply unique-item names to currency_names.json's unique_names_ru/en sections. Reads scripts/.cache/poe2db_unique_names.json. Requires --confirm (destructive on drift). Run --fetch-unique-ru first.")
     parser.add_argument("--confirm", action="store_true",
-                        help="Confirmation flag for --apply and --apply-audit (without it, both are no-ops).")
+                        help="Confirmation flag for --apply, --apply-audit, and --apply-unique (without it, all three are no-ops).")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output (show every patch entry in --diff).")
     parser.add_argument("--rate-limit-delay", type=float, default=0.5,
@@ -1655,6 +2047,7 @@ def main(argv: list[str] | None = None) -> int:
     stage_count = sum([
         args.fetch_ids, args.from_cache_snapshot, args.fetch_ru, args.fetch_ru_by_item,
         args.diff, args.apply, args.audit, args.apply_audit,
+        args.fetch_unique_ru, args.apply_unique,
     ])
     if stage_count == 0:
         parser.print_help()
@@ -1678,6 +2071,10 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_audit(args)
     if args.apply_audit:
         return cmd_apply_audit(args)
+    if args.fetch_unique_ru:
+        return cmd_fetch_unique_ru(args)
+    if args.apply_unique:
+        return cmd_apply_unique(args)
     if args.diff:
         return cmd_diff(args)
     if args.apply:

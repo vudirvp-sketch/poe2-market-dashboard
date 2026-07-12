@@ -1,0 +1,2243 @@
+{
+  "generated_at": "2026-07-12T20:39:57+0000",
+  "source": "https://poe2db.tw/ru/Unique_item + https://poe2db.tw/us/Unique_item",
+  "summary": {
+    "ru_page_count": 446,
+    "en_page_count": 445,
+    "joined": 446,
+    "ru_only": 0,
+    "en_only": 1
+  },
+  "items": [
+    {
+      "slug": "Ab_Aeterno",
+      "en_name": "Ab Aeterno",
+      "ru_name": "Извечные"
+    },
+    {
+      "slug": "Adonias_Ego",
+      "en_name": "Adonia's Ego",
+      "ru_name": "Эго Адонии"
+    },
+    {
+      "slug": "Aerisvanes_Wings",
+      "en_name": "Aerisvane's Wings",
+      "ru_name": "Крылья Эрисвейна"
+    },
+    {
+      "slug": "Against_the_Darkness",
+      "en_name": "Against the Darkness",
+      "ru_name": "Противление тьме"
+    },
+    {
+      "slug": "Alkem_Eira",
+      "en_name": "Alkem Eira",
+      "ru_name": "Альким Эира"
+    },
+    {
+      "slug": "Alphas_Howl",
+      "en_name": "Alpha's Howl",
+      "ru_name": "Вой Альфы"
+    },
+    {
+      "slug": "Amor_Mandragora",
+      "en_name": "Amor Mandragora",
+      "ru_name": "Амор Мандрагора"
+    },
+    {
+      "slug": "Andvarius",
+      "en_name": "Andvarius",
+      "ru_name": "Андвариус"
+    },
+    {
+      "slug": "Apeps_Supremacy",
+      "en_name": "Apep's Supremacy",
+      "ru_name": "Главенство Апепа"
+    },
+    {
+      "slug": "Apron_of_Emiran",
+      "en_name": "Apron of Emiran",
+      "ru_name": "Передник Эмирана"
+    },
+    {
+      "slug": "Arakaalis_Gift",
+      "en_name": "Arakaali's Gift",
+      "ru_name": "Дар Аракаали"
+    },
+    {
+      "slug": "Arvils_Wheel",
+      "en_name": "Arvil's Wheel",
+      "ru_name": "Колесо Арвила"
+    },
+    {
+      "slug": "Ashrend",
+      "en_name": "Ashrend",
+      "ru_name": "Пепел"
+    },
+    {
+      "slug": "Asphyxias_Wrath",
+      "en_name": "Asphyxia's Wrath",
+      "ru_name": "Гнев Асфиксии"
+    },
+    {
+      "slug": "Assailum",
+      "en_name": "Assailum",
+      "ru_name": "Приют агрессора"
+    },
+    {
+      "slug": "Astramentis",
+      "en_name": "Astramentis",
+      "ru_name": "Астраментис"
+    },
+    {
+      "slug": "Atsaks_Sight",
+      "en_name": "Atsak's Sight",
+      "ru_name": "Взор Ацака"
+    },
+    {
+      "slug": "Atziris_Acuity",
+      "en_name": "Atziri's Acuity",
+      "ru_name": "Проницательность Атзири"
+    },
+    {
+      "slug": "Atziris_Contempt",
+      "en_name": "Atziri's Contempt",
+      "ru_name": "Пренебрежение Атзири"
+    },
+    {
+      "slug": "Atziris_Disdain",
+      "en_name": "Atziri's Disdain",
+      "ru_name": "Презрение Атзири"
+    },
+    {
+      "slug": "Atziris_Rule",
+      "en_name": "Atziri's Rule",
+      "ru_name": "Закон Атзири"
+    },
+    {
+      "slug": "Atziris_Splendour",
+      "en_name": "Atziri's Splendour",
+      "ru_name": "Величие Атзири"
+    },
+    {
+      "slug": "Atziris_Step",
+      "en_name": "Atziri's Step",
+      "ru_name": "Поступь Атзири"
+    },
+    {
+      "slug": "Aurseize",
+      "en_name": "Aurseize",
+      "ru_name": "Златохваты"
+    },
+    {
+      "slug": "Beacon_of_Azis",
+      "en_name": "Beacon of Azis",
+      "ru_name": "Сигнал Азиса"
+    },
+    {
+      "slug": "Beetlebite",
+      "en_name": "Beetlebite",
+      "ru_name": "Жучиный укус"
+    },
+    {
+      "slug": "Beiras_Anguish",
+      "en_name": "Beira's Anguish",
+      "ru_name": "Боль Бейры"
+    },
+    {
+      "slug": "Belly_of_the_Beast",
+      "en_name": "Belly of the Beast",
+      "ru_name": "Брюхо Зверя"
+    },
+    {
+      "slug": "Bereks_Grip",
+      "en_name": "Berek's Grip",
+      "ru_name": "Уловка Берека"
+    },
+    {
+      "slug": "Bereks_Pass",
+      "en_name": "Berek's Pass",
+      "ru_name": "Прыть Берека"
+    },
+    {
+      "slug": "Bereks_Respite",
+      "en_name": "Berek's Respite",
+      "ru_name": "Передышка Берека"
+    },
+    {
+      "slug": "Beyond_Reach",
+      "en_name": "Beyond Reach",
+      "ru_name": "За гранью"
+    },
+    {
+      "slug": "Bijouborne",
+      "en_name": "Bijouborne",
+      "ru_name": "Цацконосец"
+    },
+    {
+      "slug": "Birth_of_Fury",
+      "en_name": "Birth of Fury",
+      "ru_name": "Рождение ярости"
+    },
+    {
+      "slug": "Birthright_Buckle",
+      "en_name": "Birthright Buckle",
+      "ru_name": "Пряжка первородства"
+    },
+    {
+      "slug": "Bitterbloom",
+      "en_name": "Bitterbloom",
+      "ru_name": "Жестокое цветение"
+    },
+    {
+      "slug": "Black_Sun_Crest",
+      "en_name": "Black Sun Crest",
+      "ru_name": "Гребень чёрного солнца"
+    },
+    {
+      "slug": "Blackbraid",
+      "en_name": "Blackbraid",
+      "ru_name": "Чёрное плетение"
+    },
+    {
+      "slug": "Blackflame",
+      "en_name": "Blackflame",
+      "ru_name": "Чёрное пламя"
+    },
+    {
+      "slug": "Blackgleam",
+      "en_name": "Blackgleam",
+      "ru_name": "Отсвет мрака"
+    },
+    {
+      "slug": "Blackheart",
+      "en_name": "Blackheart",
+      "ru_name": "Чёрное сердце"
+    },
+    {
+      "slug": "Blistering_Bond",
+      "en_name": "Blistering Bond",
+      "ru_name": "Жгучий перстень"
+    },
+    {
+      "slug": "Blood_Price",
+      "en_name": "Blood Price",
+      "ru_name": "Кровавая цена"
+    },
+    {
+      "slug": "Blood_of_the_Warrior",
+      "en_name": "Blood of the Warrior",
+      "ru_name": "Кровь каруи"
+    },
+    {
+      "slug": "Bloodbarrier",
+      "en_name": "Bloodbarrier",
+      "ru_name": "Кровавый заслон"
+    },
+    {
+      "slug": "Blueflame_Bracers",
+      "en_name": "Blueflame Bracers",
+      "ru_name": "Браслеты синего пламени"
+    },
+    {
+      "slug": "Bones_of_Ullr",
+      "en_name": "Bones of Ullr",
+      "ru_name": "Кости Уллра"
+    },
+    {
+      "slug": "Brain_Rattler",
+      "en_name": "Brain Rattler",
+      "ru_name": "Мозготряс"
+    },
+    {
+      "slug": "Bramblejack",
+      "en_name": "Bramblejack",
+      "ru_name": "Колючий панцирь"
+    },
+    {
+      "slug": "Breath_of_the_Mountains",
+      "en_name": "Breath of the Mountains",
+      "ru_name": "Дыханье гор"
+    },
+    {
+      "slug": "Briarpatch",
+      "en_name": "Briarpatch",
+      "ru_name": "Терновники"
+    },
+    {
+      "slug": "Briskwrap",
+      "en_name": "Briskwrap",
+      "ru_name": "Ремни проворства"
+    },
+    {
+      "slug": "Bristleboar",
+      "en_name": "Bristleboar",
+      "ru_name": "Ощетинившийся вепрь"
+    },
+    {
+      "slug": "Bronzebeard",
+      "en_name": "Bronzebeard",
+      "ru_name": "Бронзовая борода"
+    },
+    {
+      "slug": "Brutus_Lead_Sprinkler",
+      "en_name": "Brutus' Lead Sprinkler",
+      "ru_name": "Крапило Изувера"
+    },
+    {
+      "slug": "Brynhands_Mark",
+      "en_name": "Brynhand's Mark",
+      "ru_name": "Клеймо Бринханда"
+    },
+    {
+      "slug": "Bursting_Decay",
+      "en_name": "Bursting Decay",
+      "ru_name": "Взрывное разложение"
+    },
+    {
+      "slug": "Bushwhack",
+      "en_name": "Bushwhack",
+      "ru_name": "Кустоломы"
+    },
+    {
+      "slug": "Byrnabas",
+      "en_name": "Byrnabas",
+      "ru_name": "Барнабас"
+    },
+    {
+      "slug": "Cadiros_Gambit",
+      "en_name": "Cadiro's Gambit",
+      "ru_name": "Гамбит Кадиро"
+    },
+    {
+      "slug": "Calgyras_Arc",
+      "en_name": "Calgyra's Arc",
+      "ru_name": "Дуга Кальгиры"
+    },
+    {
+      "slug": "Call_of_the_Brotherhood",
+      "en_name": "Call of the Brotherhood",
+      "ru_name": "Зов братьев"
+    },
+    {
+      "slug": "Candlemaker",
+      "en_name": "Candlemaker",
+      "ru_name": "Свечеделы"
+    },
+    {
+      "slug": "Carnage_Heart",
+      "en_name": "Carnage Heart",
+      "ru_name": "Сердце бойни"
+    },
+    {
+      "slug": "Carrion_Call",
+      "en_name": "Carrion Call",
+      "ru_name": "Трупный зов"
+    },
+    {
+      "slug": "Cat_O_Nine_Tails",
+      "en_name": "Cat O' Nine Tails",
+      "ru_name": "Кошка-девятихвостка"
+    },
+    {
+      "slug": "Chainsting",
+      "en_name": "Chainsting",
+      "ru_name": "Цепное жало"
+    },
+    {
+      "slug": "Chernobogs_Pillar",
+      "en_name": "Chernobog's Pillar",
+      "ru_name": "Столп Чернобога"
+    },
+    {
+      "slug": "Chober_Chaber",
+      "en_name": "Chober Chaber",
+      "ru_name": "Стук-Постук"
+    },
+    {
+      "slug": "Choir_of_the_Storm",
+      "en_name": "Choir of the Storm",
+      "ru_name": "Хор бури"
+    },
+    {
+      "slug": "Clear_Skies",
+      "en_name": "Clear Skies",
+      "ru_name": "Ясное небо"
+    },
+    {
+      "slug": "Cloak_of_Defiance",
+      "en_name": "Cloak of Defiance",
+      "ru_name": "Накидка непокорности"
+    },
+    {
+      "slug": "Cloak_of_Flame",
+      "en_name": "Cloak of Flame",
+      "ru_name": "Накидка пламени"
+    },
+    {
+      "slug": "Coat_of_Red",
+      "en_name": "Coat of Red",
+      "ru_name": "Алый покров"
+    },
+    {
+      "slug": "Collapsing_Horizon",
+      "en_name": "Collapsing Horizon",
+      "ru_name": "Рухнувший горизонт"
+    },
+    {
+      "slug": "Constricting_Command",
+      "en_name": "Constricting Command",
+      "ru_name": "Удушающее веление"
+    },
+    {
+      "slug": "Controlled_Metamorphosis",
+      "en_name": "Controlled Metamorphosis",
+      "ru_name": "Управляемый метаморфоз"
+    },
+    {
+      "slug": "Cornathaum",
+      "en_name": "Cornathaum",
+      "ru_name": "Рогатый колпак"
+    },
+    {
+      "slug": "Corona_of_the_Red_Sun",
+      "en_name": "Corona of the Red Sun",
+      "ru_name": "Корона красного солнца"
+    },
+    {
+      "slug": "Corpsewade",
+      "en_name": "Corpsewade",
+      "ru_name": "Ядоброды"
+    },
+    {
+      "slug": "Cospris_Will",
+      "en_name": "Cospri's Will",
+      "ru_name": "Воля Коспри"
+    },
+    {
+      "slug": "Couture_of_Crimson",
+      "en_name": "Couture of Crimson",
+      "ru_name": "Алое облачение"
+    },
+    {
+      "slug": "Cowards_Legacy",
+      "en_name": "Coward's Legacy",
+      "ru_name": "Наследие труса"
+    },
+    {
+      "slug": "Cracklecreep",
+      "en_name": "Cracklecreep",
+      "ru_name": "Трескучий пожар"
+    },
+    {
+      "slug": "Crest_of_Ardura",
+      "en_name": "Crest of Ardura",
+      "ru_name": "Герб Ардура"
+    },
+    {
+      "slug": "Crown_of_Eyes",
+      "en_name": "Crown of Eyes",
+      "ru_name": "Корона глаз"
+    },
+    {
+      "slug": "Crown_of_Thorns",
+      "en_name": "Crown of Thorns",
+      "ru_name": "Терновый венец"
+    },
+    {
+      "slug": "Crown_of_the_Pale_King",
+      "en_name": "Crown of the Pale King",
+      "ru_name": "Корона Бледного царя"
+    },
+    {
+      "slug": "Crown_of_the_Victor",
+      "en_name": "Crown of the Victor",
+      "ru_name": "Корона победителя"
+    },
+    {
+      "slug": "Cruel_Hegemony",
+      "en_name": "Cruel Hegemony",
+      "ru_name": "Жестокая гегемония"
+    },
+    {
+      "slug": "Cursecarver",
+      "en_name": "Cursecarver",
+      "ru_name": "Резчик проклятий"
+    },
+    {
+      "slug": "Daevatas_Wind",
+      "en_name": "Daevata's Wind",
+      "ru_name": "Ветер Дэваты"
+    },
+    {
+      "slug": "Darkness_Enthroned",
+      "en_name": "Darkness Enthroned",
+      "ru_name": "Воцарившаяся тьма"
+    },
+    {
+      "slug": "Darkray_Vectors",
+      "en_name": "Darkray Vectors",
+      "ru_name": "Несущие тьму"
+    },
+    {
+      "slug": "Death_Articulated",
+      "en_name": "Death Articulated",
+      "ru_name": "Суставчатая смерть"
+    },
+    {
+      "slug": "Death_Rush",
+      "en_name": "Death Rush",
+      "ru_name": "Смертельная спешка"
+    },
+    {
+      "slug": "Deathblow",
+      "en_name": "Deathblow",
+      "ru_name": "Смертельный удар"
+    },
+    {
+      "slug": "Deathrattle",
+      "en_name": "Deathrattle",
+      "ru_name": "Предсмертный хрип"
+    },
+    {
+      "slug": "Deaths_Harp",
+      "en_name": "Death's Harp",
+      "ru_name": "Арфа смерти"
+    },
+    {
+      "slug": "Decree_of_Acuity",
+      "en_name": "Decree of Acuity",
+      "ru_name": "Указ о проницательности"
+    },
+    {
+      "slug": "Decree_of_Flight",
+      "en_name": "Decree of Flight",
+      "ru_name": "Указ о полёте"
+    },
+    {
+      "slug": "Decree_of_Loyalty",
+      "en_name": "Decree of Loyalty",
+      "ru_name": "Указ о верности"
+    },
+    {
+      "slug": "Defiance_of_Destiny",
+      "en_name": "Defiance of Destiny",
+      "ru_name": "Непокорность судьбе"
+    },
+    {
+      "slug": "Deidbell",
+      "en_name": "Deidbell",
+      "ru_name": "Колокол мёртвых"
+    },
+    {
+      "slug": "Demigods_Virtue",
+      "en_name": null,
+      "ru_name": "Добродетель полубога"
+    },
+    {
+      "slug": "Demon_Stitcher",
+      "en_name": "Demon Stitcher",
+      "ru_name": "Сшиватель демонов"
+    },
+    {
+      "slug": "Dionadair",
+      "en_name": "Dionadair",
+      "ru_name": "Защитник"
+    },
+    {
+      "slug": "Doedres_Damning",
+      "en_name": "Doedre's Damning",
+      "ru_name": "Проклятие Доэдре"
+    },
+    {
+      "slug": "Doedres_Tenure",
+      "en_name": "Doedre's Tenure",
+      "ru_name": "Власть Доэдре"
+    },
+    {
+      "slug": "Doomfletch",
+      "en_name": "Doomfletch",
+      "ru_name": "Стрелы рока"
+    },
+    {
+      "slug": "Doomgate",
+      "en_name": "Doomgate",
+      "ru_name": "Врата Рока"
+    },
+    {
+      "slug": "Doryanis_Prototype",
+      "en_name": "Doryani's Prototype",
+      "ru_name": "Прототип Дориани"
+    },
+    {
+      "slug": "Double_Vision",
+      "en_name": "Double Vision",
+      "ru_name": "Двойное видение"
+    },
+    {
+      "slug": "Dreadfist",
+      "en_name": "Dreadfist",
+      "ru_name": "Охваты ужаса"
+    },
+    {
+      "slug": "Dream_Fragments",
+      "en_name": "Dream Fragments",
+      "ru_name": "Осколки снов"
+    },
+    {
+      "slug": "Drillneck",
+      "en_name": "Drillneck",
+      "ru_name": "Пронзатель шей"
+    },
+    {
+      "slug": "Duality",
+      "en_name": "Duality",
+      "ru_name": "Двойственность"
+    },
+    {
+      "slug": "Dunkelhalt",
+      "en_name": "Dunkelhalt",
+      "ru_name": "Тёмная хватка"
+    },
+    {
+      "slug": "Dusk_Vigil",
+      "en_name": "Dusk Vigil",
+      "ru_name": "Сумеречный дозор"
+    },
+    {
+      "slug": "Dustbloom",
+      "en_name": "Dustbloom",
+      "ru_name": "Хрупкое цветение"
+    },
+    {
+      "slug": "Earthbound",
+      "en_name": "Earthbound",
+      "ru_name": "Грозоотвод"
+    },
+    {
+      "slug": "Edyrns_Tusks",
+      "en_name": "Edyrn's Tusks",
+      "ru_name": "Бивни Эдирна"
+    },
+    {
+      "slug": "Effigy_of_Cruelty",
+      "en_name": "Effigy of Cruelty",
+      "ru_name": "Жестокое чучело"
+    },
+    {
+      "slug": "Elevore",
+      "en_name": "Elevore",
+      "ru_name": "Поедатель стихий"
+    },
+    {
+      "slug": "Empires_Grasp",
+      "en_name": "Empire's Grasp",
+      "ru_name": "Имперская хватка"
+    },
+    {
+      "slug": "Enezuns_Charge",
+      "en_name": "Enezun's Charge",
+      "ru_name": "Марш Инедзуна"
+    },
+    {
+      "slug": "Enfolding_Dawn",
+      "en_name": "Enfolding Dawn",
+      "ru_name": "Окутывающий рассвет"
+    },
+    {
+      "slug": "Erians_Cobble",
+      "en_name": "Erian's Cobble",
+      "ru_name": "Шишак Эриана"
+    },
+    {
+      "slug": "Eshteras_Path",
+      "en_name": "Eshtera's Path",
+      "ru_name": "Путь Эштеры"
+    },
+    {
+      "slug": "Essentia_Sanguis",
+      "en_name": "Essentia Sanguis",
+      "ru_name": "Эссентия Сангиус"
+    },
+    {
+      "slug": "Eventide_Petals",
+      "en_name": "Eventide Petals",
+      "ru_name": "Закатные лепестки"
+    },
+    {
+      "slug": "Evergrasping_Ring",
+      "en_name": "Evergrasping Ring",
+      "ru_name": "Вечноцепкий перстень"
+    },
+    {
+      "slug": "Eye_of_Chayula",
+      "en_name": "Eye of Chayula",
+      "ru_name": "Глаз Чаюлы"
+    },
+    {
+      "slug": "Eyes_of_the_Runefather",
+      "en_name": "Eyes of the Runefather",
+      "ru_name": "Глаза Рунного отца"
+    },
+    {
+      "slug": "Ezomyte_Peak",
+      "en_name": "Ezomyte Peak",
+      "ru_name": "Триумф эзомита"
+    },
+    {
+      "slug": "Facebreaker",
+      "en_name": "Facebreaker",
+      "ru_name": "Мордобои"
+    },
+    {
+      "slug": "Fairgraves_Curse",
+      "en_name": "Fairgraves' Curse",
+      "ru_name": "Проклятие Фейргрейвса"
+    },
+    {
+      "slug": "Feathered_Fortress",
+      "en_name": "Feathered Fortress",
+      "ru_name": "Пернатая крепость"
+    },
+    {
+      "slug": "Fireflower",
+      "en_name": "Fireflower",
+      "ru_name": "Пламенный цветок"
+    },
+    {
+      "slug": "Fixation_of_Yix",
+      "en_name": "Fixation of Yix",
+      "ru_name": "Одержимость Ийи"
+    },
+    {
+      "slug": "Flesh_Crucible",
+      "en_name": "Flesh Crucible",
+      "ru_name": "Горн плоти"
+    },
+    {
+      "slug": "Font_of_Power",
+      "en_name": "Font of Power",
+      "ru_name": "Купель силы"
+    },
+    {
+      "slug": "For_Utopia",
+      "en_name": "For Utopia",
+      "ru_name": "За Утопию"
+    },
+    {
+      "slug": "Forgotten_Warden",
+      "en_name": "Forgotten Warden",
+      "ru_name": "Забытый смотритель"
+    },
+    {
+      "slug": "Forsaken_Bangle",
+      "en_name": "Forsaken Bangle",
+      "ru_name": "Браслет отречения"
+    },
+    {
+      "slug": "Foxshade",
+      "en_name": "Foxshade",
+      "ru_name": "Лисья тень"
+    },
+    {
+      "slug": "Freedom_of_Faith",
+      "en_name": "Freedom of Faith",
+      "ru_name": "Свобода веры"
+    },
+    {
+      "slug": "From_Nothing",
+      "en_name": "From Nothing",
+      "ru_name": "Из ничего"
+    },
+    {
+      "slug": "Frostbreath",
+      "en_name": "Frostbreath",
+      "ru_name": "Ледяное дыхание"
+    },
+    {
+      "slug": "Fury_of_the_King",
+      "en_name": "Fury of the King",
+      "ru_name": "Ярость Хозяина"
+    },
+    {
+      "slug": "Gamblesprint",
+      "en_name": "Gamblesprint",
+      "ru_name": "Дух азарта"
+    },
+    {
+      "slug": "Geofris_Sanctuary",
+      "en_name": "Geofri's Sanctuary",
+      "ru_name": "Прибежище Джофри"
+    },
+    {
+      "slug": "Ghostmarch",
+      "en_name": "Ghostmarch",
+      "ru_name": "Марш призраков"
+    },
+    {
+      "slug": "Ghostwrithe",
+      "en_name": "Ghostwrithe",
+      "ru_name": "Призрачные изгибы"
+    },
+    {
+      "slug": "Gifts_from_Above",
+      "en_name": "Gifts from Above",
+      "ru_name": "Дары небес"
+    },
+    {
+      "slug": "Glimpse_of_Chaos",
+      "en_name": "Glimpse of Chaos",
+      "ru_name": "Взгляд хаоса"
+    },
+    {
+      "slug": "Gloamgown",
+      "en_name": "Gloamgown",
+      "ru_name": "Сумрачный кафтан"
+    },
+    {
+      "slug": "Gloomform",
+      "en_name": "Gloomform",
+      "ru_name": "Мрачная форма"
+    },
+    {
+      "slug": "Glowswarm",
+      "en_name": "Glowswarm",
+      "ru_name": "Светлячок"
+    },
+    {
+      "slug": "Goldrim",
+      "en_name": "Goldrim",
+      "ru_name": "Золотой колпак"
+    },
+    {
+      "slug": "Goregirdle",
+      "en_name": "Goregirdle",
+      "ru_name": "Кровавый кушак"
+    },
+    {
+      "slug": "Grand_Spectrum",
+      "en_name": "Grand Spectrum",
+      "ru_name": "Великий образ"
+    },
+    {
+      "slug": "Gravebind",
+      "en_name": "Gravebind",
+      "ru_name": "Могильные узы"
+    },
+    {
+      "slug": "Greeds_Embrace",
+      "en_name": "Greed's Embrace",
+      "ru_name": "Объятия жадности"
+    },
+    {
+      "slug": "Greymake",
+      "en_name": "Greymake",
+      "ru_name": "Серый мрак"
+    },
+    {
+      "slug": "Grip_of_Kulemak",
+      "en_name": "Grip of Kulemak",
+      "ru_name": "Хватка Кулемака"
+    },
+    {
+      "slug": "Grip_of_Winter",
+      "en_name": "Grip of Winter",
+      "ru_name": "Хватка зимы"
+    },
+    {
+      "slug": "Guiding_Palm_of_the_Eye",
+      "en_name": "Guiding Palm of the Eye",
+      "ru_name": "Направляющая длань ока"
+    },
+    {
+      "slug": "Guiding_Palm_of_the_Heart",
+      "en_name": "Guiding Palm of the Heart",
+      "ru_name": "Направляющая длань сердца"
+    },
+    {
+      "slug": "Guiding_Palm_of_the_Mind",
+      "en_name": "Guiding Palm of the Mind",
+      "ru_name": "Направляющая длань разума"
+    },
+    {
+      "slug": "Hand_of_Wisdom_and_Action",
+      "en_name": "Hand of Wisdom and Action",
+      "ru_name": "Длань мудрости и деяния"
+    },
+    {
+      "slug": "Hateforge",
+      "en_name": "Hateforge",
+      "ru_name": "Кузня ненависти"
+    },
+    {
+      "slug": "Headhunter",
+      "en_name": "Headhunter",
+      "ru_name": "Охотник за головами"
+    },
+    {
+      "slug": "Heart_of_the_Well",
+      "en_name": "Heart of the Well",
+      "ru_name": "Сердце Колодца"
+    },
+    {
+      "slug": "Heartbound_Loop",
+      "en_name": "Heartbound Loop",
+      "ru_name": "Сердечная связь"
+    },
+    {
+      "slug": "Heatshiver",
+      "en_name": "Heatshiver",
+      "ru_name": "Лёд и пламень"
+    },
+    {
+      "slug": "Heroic_Tragedy",
+      "en_name": "Heroic Tragedy",
+      "ru_name": "Трагедия героев"
+    },
+    {
+      "slug": "Hinekoras_Sight",
+      "en_name": "Hinekora's Sight",
+      "ru_name": "Взгляд Хинекоры"
+    },
+    {
+      "slug": "Hoghunt",
+      "en_name": "Hoghunt",
+      "ru_name": "Кабаний промысел"
+    },
+    {
+      "slug": "Horns_of_Bynden",
+      "en_name": "Horns of Bynden",
+      "ru_name": "Рога Биндена"
+    },
+    {
+      "slug": "Horrors_Flight",
+      "en_name": "Horror's Flight",
+      "ru_name": "Полёт ужаса"
+    },
+    {
+      "slug": "Hrimnors_Hymn",
+      "en_name": "Hrimnor's Hymn",
+      "ru_name": "Гимн Гримнора"
+    },
+    {
+      "slug": "Hyrris_Ire",
+      "en_name": "Hyrri's Ire",
+      "ru_name": "Ярость Хайрри"
+    },
+    {
+      "slug": "Hyssegs_Claw",
+      "en_name": "Hysseg's Claw",
+      "ru_name": "Коготь Гиссега"
+    },
+    {
+      "slug": "Icefang_Orbit",
+      "en_name": "Icefang Orbit",
+      "ru_name": "Перстень ледяного клыка"
+    },
+    {
+      "slug": "Icetomb",
+      "en_name": "Icetomb",
+      "ru_name": "Ледяной склеп"
+    },
+    {
+      "slug": "Idle_Hands",
+      "en_name": "Idle Hands",
+      "ru_name": "Праздные руки"
+    },
+    {
+      "slug": "Idol_of_Uldurn",
+      "en_name": "Idol of Uldurn",
+      "ru_name": "Идол Улдурна"
+    },
+    {
+      "slug": "Igniferis",
+      "en_name": "Igniferis",
+      "ru_name": "Игниферис"
+    },
+    {
+      "slug": "Immaculate_Adherence",
+      "en_name": "Immaculate Adherence",
+      "ru_name": "Безукоризненная приверженность"
+    },
+    {
+      "slug": "Indigon",
+      "en_name": "Indigon",
+      "ru_name": "Индигон"
+    },
+    {
+      "slug": "Ingenuity",
+      "en_name": "Ingenuity",
+      "ru_name": "Находчивость"
+    },
+    {
+      "slug": "Innsmouth",
+      "en_name": "Innsmouth",
+      "ru_name": "Иннсмут"
+    },
+    {
+      "slug": "Ironbound",
+      "en_name": "Ironbound",
+      "ru_name": "Железное плечо"
+    },
+    {
+      "slug": "Irongrasp",
+      "en_name": "Irongrasp",
+      "ru_name": "Железная хватка"
+    },
+    {
+      "slug": "Ironride",
+      "en_name": "Ironride",
+      "ru_name": "Железный наездник"
+    },
+    {
+      "slug": "Jarngreipr",
+      "en_name": "Jarngreipr",
+      "ru_name": "Ярнгрейпр"
+    },
+    {
+      "slug": "Kalandras_Touch",
+      "en_name": "Kalandra's Touch",
+      "ru_name": "Касание Каландры"
+    },
+    {
+      "slug": "Kaltenhalt",
+      "en_name": "Kaltenhalt",
+      "ru_name": "Кальтенхалт"
+    },
+    {
+      "slug": "Kaoms_Heart",
+      "en_name": "Kaom's Heart",
+      "ru_name": "Сердце Каома"
+    },
+    {
+      "slug": "Keelhaul",
+      "en_name": "Keelhaul",
+      "ru_name": "Килевание"
+    },
+    {
+      "slug": "Keeper_of_the_Arc",
+      "en_name": "Keeper of the Arc",
+      "ru_name": "Хранитель свода"
+    },
+    {
+      "slug": "Killjoy",
+      "en_name": "Killjoy",
+      "ru_name": "Брюзга"
+    },
+    {
+      "slug": "Kingsguard",
+      "en_name": "Kingsguard",
+      "ru_name": "Хранитель царей"
+    },
+    {
+      "slug": "Kitokos_Current",
+      "en_name": "Kitoko's Current",
+      "ru_name": "Поток Китоко"
+    },
+    {
+      "slug": "Laviangas_Spirits",
+      "en_name": "Lavianga's Spirits",
+      "ru_name": "Дух Лавианги"
+    },
+    {
+      "slug": "Leer_Cast",
+      "en_name": "Leer Cast",
+      "ru_name": "Маска труппы хитрецов"
+    },
+    {
+      "slug": "Legionstride",
+      "en_name": "Legionstride",
+      "ru_name": "Поступь легиона"
+    },
+    {
+      "slug": "Leopolds_Applause",
+      "en_name": "Leopold's Applause",
+      "ru_name": "Рукоплескание Леопольда"
+    },
+    {
+      "slug": "Levinstone",
+      "en_name": "Levinstone",
+      "ru_name": "Молнекамень"
+    },
+    {
+      "slug": "Lifesprig",
+      "en_name": "Lifesprig",
+      "ru_name": "Живой побег"
+    },
+    {
+      "slug": "Lightning_Coil",
+      "en_name": "Lightning Coil",
+      "ru_name": "Электрошок"
+    },
+    {
+      "slug": "Ligurium_Talisman",
+      "en_name": "Ligurium Talisman",
+      "ru_name": "Лигурский талисман"
+    },
+    {
+      "slug": "Liminal_Coil",
+      "en_name": "Liminal Coil",
+      "ru_name": "Световая катушка"
+    },
+    {
+      "slug": "Lioneyes_Glare",
+      "en_name": "Lioneye's Glare",
+      "ru_name": "Взор Львиного глаза"
+    },
+    {
+      "slug": "Lochtonial_Caress",
+      "en_name": "Lochtonial Caress",
+      "ru_name": "Ласка Локтона"
+    },
+    {
+      "slug": "Loreweave",
+      "en_name": "Loreweave",
+      "ru_name": "Плетение преданий"
+    },
+    {
+      "slug": "Luminous_Pace",
+      "en_name": "Luminous Pace",
+      "ru_name": "Поступь света"
+    },
+    {
+      "slug": "Lycosidae",
+      "en_name": "Lycosidae",
+      "ru_name": "Паук-волк"
+    },
+    {
+      "slug": "Mageblood",
+      "en_name": "Mageblood",
+      "ru_name": "Волшебная кровь"
+    },
+    {
+      "slug": "Mahuxotls_Machination",
+      "en_name": "Mahuxotl's Machination",
+      "ru_name": "Махинации Махушотля"
+    },
+    {
+      "slug": "Maligaros_Virtuosity",
+      "en_name": "Maligaro's Virtuosity",
+      "ru_name": "Виртуозность Малигаро"
+    },
+    {
+      "slug": "Marohi_Erqi",
+      "en_name": "Marohi Erqi",
+      "ru_name": "Марохи Эрки"
+    },
+    {
+      "slug": "Mask_of_the_Sanguimancer",
+      "en_name": "Mask of the Sanguimancer",
+      "ru_name": "Маска кровоманта"
+    },
+    {
+      "slug": "Mask_of_the_Stitched_Demon",
+      "en_name": "Mask of the Stitched Demon",
+      "ru_name": "Маска Сшитого Демона"
+    },
+    {
+      "slug": "Mastered_Domain",
+      "en_name": "Mastered Domain",
+      "ru_name": "Освоенное владение"
+    },
+    {
+      "slug": "Matsya",
+      "en_name": "Matsya",
+      "ru_name": "Матсья"
+    },
+    {
+      "slug": "Megalomaniac",
+      "en_name": "Megalomaniac",
+      "ru_name": "Мания величия"
+    },
+    {
+      "slug": "Meginords_Girdle",
+      "en_name": "Meginord's Girdle",
+      "ru_name": "Ремень Мегинорда"
+    },
+    {
+      "slug": "Melting_Maelstrom",
+      "en_name": "Melting Maelstrom",
+      "ru_name": "Тающая круговерть"
+    },
+    {
+      "slug": "Midnight_Braid",
+      "en_name": "Midnight Braid",
+      "ru_name": "Полуночная тесьма"
+    },
+    {
+      "slug": "Mind_of_the_Council",
+      "en_name": "Mind of the Council",
+      "ru_name": "Разум Совета"
+    },
+    {
+      "slug": "Mings_Heart",
+      "en_name": "Ming's Heart",
+      "ru_name": "Сердце Мина"
+    },
+    {
+      "slug": "Mist_Whisper",
+      "en_name": "Mist Whisper",
+      "ru_name": "Шёпот в тумане"
+    },
+    {
+      "slug": "Mjölner",
+      "en_name": "Mjölner",
+      "ru_name": "Мьёльнир"
+    },
+    {
+      "slug": "Morior_Invictus",
+      "en_name": "Morior Invictus",
+      "ru_name": "Мориор Инвиктус"
+    },
+    {
+      "slug": "Murkshaft",
+      "en_name": "Murkshaft",
+      "ru_name": "Болотный черенок"
+    },
+    {
+      "slug": "Myris_Uxor",
+      "en_name": "Myris Uxor",
+      "ru_name": "Мирис Уксор"
+    },
+    {
+      "slug": "Nascent_Hope",
+      "en_name": "Nascent Hope",
+      "ru_name": "Зарождающаяся надежда"
+    },
+    {
+      "slug": "Nazirs_Judgement",
+      "en_name": "Nazir's Judgement",
+      "ru_name": "Правосудие Назира"
+    },
+    {
+      "slug": "Nebuloch",
+      "en_name": "Nebuloch",
+      "ru_name": "Туманность"
+    },
+    {
+      "slug": "Necromantle",
+      "en_name": "Necromantle",
+      "ru_name": "Некромантия"
+    },
+    {
+      "slug": "Ngamahus_Chosen",
+      "en_name": "Ngamahu's Chosen",
+      "ru_name": "Избранник Нгамаху"
+    },
+    {
+      "slug": "Nightfall",
+      "en_name": "Nightfall",
+      "ru_name": "Наступление ночи"
+    },
+    {
+      "slug": "Nightscale",
+      "en_name": "Nightscale",
+      "ru_name": "Хваты ночи"
+    },
+    {
+      "slug": "Nocturne",
+      "en_name": "Nocturne",
+      "ru_name": "Ноктюрн"
+    },
+    {
+      "slug": "Northpaw",
+      "en_name": "Northpaw",
+      "ru_name": "Северные лапы"
+    },
+    {
+      "slug": "Oaksworn",
+      "en_name": "Oaksworn",
+      "ru_name": "Старый дуб"
+    },
+    {
+      "slug": "Oberns_Bastion",
+      "en_name": "Obern's Bastion",
+      "ru_name": "Бастион Оберна"
+    },
+    {
+      "slug": "Olroths_Resolve",
+      "en_name": "Olroth's Resolve",
+      "ru_name": "Решительность Олрота"
+    },
+    {
+      "slug": "Olrovasara",
+      "en_name": "Olrovasara",
+      "ru_name": "Олровасара"
+    },
+    {
+      "slug": "Opportunity",
+      "en_name": "Opportunity",
+      "ru_name": "Перспектива"
+    },
+    {
+      "slug": "Original_Sin",
+      "en_name": "Original Sin",
+      "ru_name": "Первородный грех"
+    },
+    {
+      "slug": "Painters_Servant",
+      "en_name": "Painter's Servant",
+      "ru_name": "Подручный творца"
+    },
+    {
+      "slug": "Palm_of_the_Dreamer",
+      "en_name": "Palm of the Dreamer",
+      "ru_name": "Длань Спящего"
+    },
+    {
+      "slug": "Pariahs_Embrace",
+      "en_name": "Pariah's Embrace",
+      "ru_name": "Объятья парии"
+    },
+    {
+      "slug": "Perandus_Seal",
+      "en_name": "Perandus Seal",
+      "ru_name": "Печатка Перандусов"
+    },
+    {
+      "slug": "Perfidy",
+      "en_name": "Perfidy",
+      "ru_name": "Вероломство"
+    },
+    {
+      "slug": "Periphery",
+      "en_name": "Periphery",
+      "ru_name": "Периферия"
+    },
+    {
+      "slug": "Pillar_of_the_Caged_God",
+      "en_name": "Pillar of the Caged God",
+      "ru_name": "Опора пленённого бога"
+    },
+    {
+      "slug": "Plaguefinger",
+      "en_name": "Plaguefinger",
+      "ru_name": "Чумной перст"
+    },
+    {
+      "slug": "Polcirkeln",
+      "en_name": "Polcirkeln",
+      "ru_name": "Полярный круг"
+    },
+    {
+      "slug": "Powertread",
+      "en_name": "Powertread",
+      "ru_name": "Энергоступы"
+    },
+    {
+      "slug": "Pragmatism",
+      "en_name": "Pragmatism",
+      "ru_name": "Прагматизм"
+    },
+    {
+      "slug": "Prayers_for_Rain",
+      "en_name": "Prayers for Rain",
+      "ru_name": "Мольбы о дожде"
+    },
+    {
+      "slug": "Prism_Guardian",
+      "en_name": "Prism Guardian",
+      "ru_name": "Призматический страж"
+    },
+    {
+      "slug": "Prism_of_Belief",
+      "en_name": "Prism of Belief",
+      "ru_name": "Призма убеждений"
+    },
+    {
+      "slug": "Prized_Pain",
+      "en_name": "Prized Pain",
+      "ru_name": "Заветная боль"
+    },
+    {
+      "slug": "Quatls_Molt",
+      "en_name": "Quatl's Molt",
+      "ru_name": "Шкура Коатля"
+    },
+    {
+      "slug": "Quecholli",
+      "en_name": "Quecholli",
+      "ru_name": "Кечолли"
+    },
+    {
+      "slug": "Queen_of_the_Forest",
+      "en_name": "Queen of the Forest",
+      "ru_name": "Царица леса"
+    },
+    {
+      "slug": "Quill_Rain",
+      "en_name": "Quill Rain",
+      "ru_name": "Ливень перьев"
+    },
+    {
+      "slug": "Radiant_Grief",
+      "en_name": "Radiant Grief",
+      "ru_name": "Светлая скорбь"
+    },
+    {
+      "slug": "Rampart_Raptor",
+      "en_name": "Rampart Raptor",
+      "ru_name": "Хищник бастиона"
+    },
+    {
+      "slug": "Rathpith_Globe",
+      "en_name": "Rathpith Globe",
+      "ru_name": "Сфера мёртвых"
+    },
+    {
+      "slug": "Rearguard",
+      "en_name": "Rearguard",
+      "ru_name": "Закрытая спина"
+    },
+    {
+      "slug": "Redblade_Banner",
+      "en_name": "Redblade Banner",
+      "ru_name": "Знамя Красных сабель"
+    },
+    {
+      "slug": "Redemption",
+      "en_name": "Redemption",
+      "ru_name": "Искупление"
+    },
+    {
+      "slug": "Redflare_Conduit",
+      "en_name": "Redflare Conduit",
+      "ru_name": "Проводник красного пламени"
+    },
+    {
+      "slug": "Revered_Resin",
+      "en_name": "Revered Resin",
+      "ru_name": "Почтенная смола"
+    },
+    {
+      "slug": "Reverie",
+      "en_name": "Reverie",
+      "ru_name": "Грёза"
+    },
+    {
+      "slug": "Rise_of_the_Phoenix",
+      "en_name": "Rise of the Phoenix",
+      "ru_name": "Возрождение Феникса"
+    },
+    {
+      "slug": "Rite_of_Passage",
+      "en_name": "Rite of Passage",
+      "ru_name": "Обряд инициации"
+    },
+    {
+      "slug": "Rondel_de_Ezo",
+      "en_name": "Rondel de Ezo",
+      "ru_name": "Рондель де Эзо"
+    },
+    {
+      "slug": "Rondel_of_Fragility",
+      "en_name": "Rondel of Fragility",
+      "ru_name": "Круг уязвимости"
+    },
+    {
+      "slug": "Runeseekers_Call",
+      "en_name": "Runeseeker's Call",
+      "ru_name": "Клич искателя рун"
+    },
+    {
+      "slug": "Ryslathas_Coil",
+      "en_name": "Ryslatha's Coil",
+      "ru_name": "Моток Рюслаты"
+    },
+    {
+      "slug": "Sacred_Flame",
+      "en_name": "Sacred Flame",
+      "ru_name": "Священное пламя"
+    },
+    {
+      "slug": "Sacrosanctum",
+      "en_name": "Sacrosanctum",
+      "ru_name": "Святейший Собор"
+    },
+    {
+      "slug": "Sadists_Mercy",
+      "en_name": "Sadist's Mercy",
+      "ru_name": "Милосердие садиста"
+    },
+    {
+      "slug": "Saffells_Frame",
+      "en_name": "Saffell's Frame",
+      "ru_name": "Самоделка Саффелла"
+    },
+    {
+      "slug": "Safrins_Resolve",
+      "en_name": "Safrin's Resolve",
+      "ru_name": "Решимость Сафрина"
+    },
+    {
+      "slug": "Saithas_Spear",
+      "en_name": "Saitha's Spear",
+      "ru_name": "Копьё Саитхи"
+    },
+    {
+      "slug": "Sands_of_Silk",
+      "en_name": "Sands of Silk",
+      "ru_name": "Шёлковые пески"
+    },
+    {
+      "slug": "Sandstorm_Visage",
+      "en_name": "Sandstorm Visage",
+      "ru_name": "Образ песчаной бури"
+    },
+    {
+      "slug": "Sanguine_Diviner",
+      "en_name": "Sanguine Diviner",
+      "ru_name": "Алый прорицатель"
+    },
+    {
+      "slug": "Sanguis_Heroum",
+      "en_name": "Sanguis Heroum",
+      "ru_name": "Кровавый героизм"
+    },
+    {
+      "slug": "Scolds_Bridle",
+      "en_name": "Scold's Bridle",
+      "ru_name": "Уздечка ворчуньи"
+    },
+    {
+      "slug": "Sculpted_Suffering",
+      "en_name": "Sculpted Suffering",
+      "ru_name": "Точёное страдание"
+    },
+    {
+      "slug": "Season_of_the_Hunt",
+      "en_name": "Season of the Hunt",
+      "ru_name": "Сезон охоты"
+    },
+    {
+      "slug": "Seed_of_Cataclysm",
+      "en_name": "Seed of Cataclysm",
+      "ru_name": "Семя Катаклизма"
+    },
+    {
+      "slug": "Seeing_Stars",
+      "en_name": "Seeing Stars",
+      "ru_name": "Звездочёт"
+    },
+    {
+      "slug": "Serles_Grit",
+      "en_name": "Serle's Grit",
+      "ru_name": "Выдержка Серли"
+    },
+    {
+      "slug": "Serpents_Egg",
+      "en_name": "Serpent's Egg",
+      "ru_name": "Змеиное яйцо"
+    },
+    {
+      "slug": "Serpents_Lesson",
+      "en_name": "Serpent's Lesson",
+      "ru_name": "Урок змеи"
+    },
+    {
+      "slug": "Shackles_of_the_Wretched",
+      "en_name": "Shackles of the Wretched",
+      "ru_name": "Оковы убогих"
+    },
+    {
+      "slug": "Shankgonne",
+      "en_name": "Shankgonne",
+      "ru_name": "Запасная мортира"
+    },
+    {
+      "slug": "Shavronnes_Satchel",
+      "en_name": "Shavronne's Satchel",
+      "ru_name": "Пояс Шавронн"
+    },
+    {
+      "slug": "Shyaba",
+      "en_name": "Shyaba",
+      "ru_name": "Шиба"
+    },
+    {
+      "slug": "Sierran_Inheritance",
+      "en_name": "Sierran Inheritance",
+      "ru_name": "Наследие Сиерры"
+    },
+    {
+      "slug": "Silks_of_Veneration",
+      "en_name": "Silks of Veneration",
+      "ru_name": "Шелка преклонения"
+    },
+    {
+      "slug": "Silverthorne",
+      "en_name": "Silverthorne",
+      "ru_name": "Серебряный шип"
+    },
+    {
+      "slug": "Sine_Aequo",
+      "en_name": "Sine Aequo",
+      "ru_name": "Непревзойдённость"
+    },
+    {
+      "slug": "Sire_of_Shards",
+      "en_name": "Sire of Shards",
+      "ru_name": "Повелитель осколков"
+    },
+    {
+      "slug": "Skin_of_the_Loyal",
+      "en_name": "Skin of the Loyal",
+      "ru_name": "Кожа верных"
+    },
+    {
+      "slug": "Skysliver",
+      "en_name": "Skysliver",
+      "ru_name": "Небесный осколок"
+    },
+    {
+      "slug": "Slivertongue",
+      "en_name": "Slivertongue",
+      "ru_name": "Змеиный язык"
+    },
+    {
+      "slug": "Snakebite",
+      "en_name": "Snakebite",
+      "ru_name": "Укус змеи"
+    },
+    {
+      "slug": "Snakepit",
+      "en_name": "Snakepit",
+      "ru_name": "Серпентарий"
+    },
+    {
+      "slug": "Solus_Ipse",
+      "en_name": "Solus Ipse",
+      "ru_name": "Солипсист"
+    },
+    {
+      "slug": "Soul_Mantle",
+      "en_name": "Soul Mantle",
+      "ru_name": "Покров духа"
+    },
+    {
+      "slug": "Soul_Tether",
+      "en_name": "Soul Tether",
+      "ru_name": "Оковы души"
+    },
+    {
+      "slug": "Spire_of_Ire",
+      "en_name": "Spire of Ire",
+      "ru_name": "Виток гнева"
+    },
+    {
+      "slug": "Spiteful_Floret",
+      "en_name": "Spiteful Floret",
+      "ru_name": "Злобное соцветие"
+    },
+    {
+      "slug": "Splinter_of_Lorrata",
+      "en_name": "Splinter of Lorrata",
+      "ru_name": "Осколок Лоратты"
+    },
+    {
+      "slug": "Splinterheart",
+      "en_name": "Splinterheart",
+      "ru_name": "Заноза в сердце"
+    },
+    {
+      "slug": "Split_Personality",
+      "en_name": "Split Personality",
+      "ru_name": "Раздвоение личности"
+    },
+    {
+      "slug": "Starkonjas_Head",
+      "en_name": "Starkonja's Head",
+      "ru_name": "Голова Старконжи"
+    },
+    {
+      "slug": "Stone_of_Lazhwar",
+      "en_name": "Stone of Lazhwar",
+      "ru_name": "Камень Лазвара"
+    },
+    {
+      "slug": "Strugglescream",
+      "en_name": "Strugglescream",
+      "ru_name": "Крик борьбы"
+    },
+    {
+      "slug": "Sunsplinter",
+      "en_name": "Sunsplinter",
+      "ru_name": "Осколок солнца"
+    },
+    {
+      "slug": "Surefooted_Sigil",
+      "en_name": "Surefooted Sigil",
+      "ru_name": "Медальон твёрдого шага"
+    },
+    {
+      "slug": "Surge_of_the_Tide",
+      "en_name": "Surge of the Tide",
+      "ru_name": "Прилив волны"
+    },
+    {
+      "slug": "Svalinn",
+      "en_name": "Svalinn",
+      "ru_name": "Свалинн"
+    },
+    {
+      "slug": "Sylvans_Effigy",
+      "en_name": "Sylvan's Effigy",
+      "ru_name": "Чучело сильвана"
+    },
+    {
+      "slug": "Tabula_Rasa",
+      "en_name": "Tabula Rasa",
+      "ru_name": "Табула раса"
+    },
+    {
+      "slug": "Tangletongue",
+      "en_name": "Tangletongue",
+      "ru_name": "Плетёный язык"
+    },
+    {
+      "slug": "Taryns_Shiver",
+      "en_name": "Taryn's Shiver",
+      "ru_name": "Дрожь Тарина"
+    },
+    {
+      "slug": "Temporalis",
+      "en_name": "Temporalis",
+      "ru_name": "Темпоралис"
+    },
+    {
+      "slug": "Tetzlapokals_Desire",
+      "en_name": "Tetzlapokal's Desire",
+      "ru_name": "Желание Тецлапокаля"
+    },
+    {
+      "slug": "The_Adorned",
+      "en_name": "The Adorned",
+      "ru_name": "Былой блеск"
+    },
+    {
+      "slug": "The_Anvil",
+      "en_name": "The Anvil",
+      "ru_name": "Наковальня"
+    },
+    {
+      "slug": "The_Auspex",
+      "en_name": "The Auspex",
+      "ru_name": "Ауспик"
+    },
+    {
+      "slug": "The_Barrow_Dweller",
+      "en_name": "The Barrow Dweller",
+      "ru_name": "Страж кургана"
+    },
+    {
+      "slug": "The_Black_Cat",
+      "en_name": "The Black Cat",
+      "ru_name": "Чёрная кошка"
+    },
+    {
+      "slug": "The_Black_Doubt",
+      "en_name": "The Black Doubt",
+      "ru_name": "Мрачные сомнения"
+    },
+    {
+      "slug": "The_Black_Insignia",
+      "en_name": "The Black Insignia",
+      "ru_name": "Чёрный герб"
+    },
+    {
+      "slug": "The_Blood_Thorn",
+      "en_name": "The Blood Thorn",
+      "ru_name": "Кровавый шип"
+    },
+    {
+      "slug": "The_Brass_Dome",
+      "en_name": "The Brass Dome",
+      "ru_name": "Латунный свод"
+    },
+    {
+      "slug": "The_Bringer_of_Rain",
+      "en_name": "The Bringer of Rain",
+      "ru_name": "Несущий дождь"
+    },
+    {
+      "slug": "The_Burden_of_Leadership",
+      "en_name": "The Burden of Leadership",
+      "ru_name": "Бремя лидерства"
+    },
+    {
+      "slug": "The_Burden_of_Shadows",
+      "en_name": "The Burden of Shadows",
+      "ru_name": "Гнёт теней"
+    },
+    {
+      "slug": "The_Burrower",
+      "en_name": "The Burrower",
+      "ru_name": "Землекоп"
+    },
+    {
+      "slug": "The_Changing_Seasons",
+      "en_name": "The Changing Seasons",
+      "ru_name": "Сменяющиеся сезоны"
+    },
+    {
+      "slug": "The_Coming_Calamity",
+      "en_name": "The Coming Calamity",
+      "ru_name": "Грядущее бедствие"
+    },
+    {
+      "slug": "The_Covenant",
+      "en_name": "The Covenant",
+      "ru_name": "Договор"
+    },
+    {
+      "slug": "The_Dancing_Mirage",
+      "en_name": "The Dancing Mirage",
+      "ru_name": "Танцующий мираж"
+    },
+    {
+      "slug": "The_Dark_Defiler",
+      "en_name": "The Dark Defiler",
+      "ru_name": "Тёмный осквернитель"
+    },
+    {
+      "slug": "The_Desperate_Alliance",
+      "en_name": "The Desperate Alliance",
+      "ru_name": "Отчаянный союз"
+    },
+    {
+      "slug": "The_Devouring_Diadem",
+      "en_name": "The Devouring Diadem",
+      "ru_name": "Пожирающая диадема"
+    },
+    {
+      "slug": "The_Empty_Roar",
+      "en_name": "The Empty Roar",
+      "ru_name": "Полый рык"
+    },
+    {
+      "slug": "The_Eternal_Spark",
+      "en_name": "The Eternal Spark",
+      "ru_name": "Вечная искра"
+    },
+    {
+      "slug": "The_Everlasting_Gaze",
+      "en_name": "The Everlasting Gaze",
+      "ru_name": "Вечный взор"
+    },
+    {
+      "slug": "The_Fall_of_the_Axe",
+      "en_name": "The Fall of the Axe",
+      "ru_name": "Падение топора"
+    },
+    {
+      "slug": "The_Flesh_Poppet",
+      "en_name": "The Flesh Poppet",
+      "ru_name": "Кукла из плоти"
+    },
+    {
+      "slug": "The_Gnashing_Sash",
+      "en_name": "The Gnashing Sash",
+      "ru_name": "Зубастый кушак"
+    },
+    {
+      "slug": "The_Grand_Project",
+      "en_name": "The Grand Project",
+      "ru_name": "Великий план"
+    },
+    {
+      "slug": "The_Hammer_of_Faith",
+      "en_name": "The Hammer of Faith",
+      "ru_name": "Молот веры"
+    },
+    {
+      "slug": "The_Hollow_Mask",
+      "en_name": "The Hollow Mask",
+      "ru_name": "Полая маска"
+    },
+    {
+      "slug": "The_Infinite_Pursuit",
+      "en_name": "The Infinite Pursuit",
+      "ru_name": "Бесконечная погоня"
+    },
+    {
+      "slug": "The_Knight-errant",
+      "en_name": "The Knight-errant",
+      "ru_name": "Странствующий рыцарь"
+    },
+    {
+      "slug": "The_Last_Flame",
+      "en_name": "The Last Flame",
+      "ru_name": "Последнее пламя"
+    },
+    {
+      "slug": "The_Last_Lament",
+      "en_name": "The Last Lament",
+      "ru_name": "Последняя песнь"
+    },
+    {
+      "slug": "The_Lethal_Draw",
+      "en_name": "The Lethal Draw",
+      "ru_name": "Смертельный натяг"
+    },
+    {
+      "slug": "The_Masters_Reach",
+      "en_name": "The Master's Reach",
+      "ru_name": "Власть Хозяина"
+    },
+    {
+      "slug": "The_Mutable_Star",
+      "en_name": "The Mutable Star",
+      "ru_name": "Изменчивая звезда"
+    },
+    {
+      "slug": "The_Ordained",
+      "en_name": "The Ordained",
+      "ru_name": "Рукоположенные"
+    },
+    {
+      "slug": "The_Pandemonius",
+      "en_name": "The Pandemonius",
+      "ru_name": "Обитель демонов"
+    },
+    {
+      "slug": "The_Peacemakers_Draught",
+      "en_name": "The Peacemaker's Draught",
+      "ru_name": "Вытяжка миротворца"
+    },
+    {
+      "slug": "The_Prisoners_Manacles",
+      "en_name": "The Prisoner's Manacles",
+      "ru_name": "Кандалы узника"
+    },
+    {
+      "slug": "The_Rat_Cage",
+      "en_name": "The Rat Cage",
+      "ru_name": "Крысиная клетка"
+    },
+    {
+      "slug": "The_Ravens_Flock",
+      "en_name": "The Raven's Flock",
+      "ru_name": "Стая Ворона"
+    },
+    {
+      "slug": "The_Searing_Touch",
+      "en_name": "The Searing Touch",
+      "ru_name": "Опаляющее касание"
+    },
+    {
+      "slug": "The_Sentry",
+      "en_name": "The Sentry",
+      "ru_name": "Часовой"
+    },
+    {
+      "slug": "The_Smiling_Knight",
+      "en_name": "The Smiling Knight",
+      "ru_name": "Улыбающийся рыцарь"
+    },
+    {
+      "slug": "The_Sunken_Vessel",
+      "en_name": "The Sunken Vessel",
+      "ru_name": "Затонувшее судно"
+    },
+    {
+      "slug": "The_Surrender",
+      "en_name": "The Surrender",
+      "ru_name": "Отречение"
+    },
+    {
+      "slug": "The_Taming",
+      "en_name": "The Taming",
+      "ru_name": "Укрощение"
+    },
+    {
+      "slug": "The_Three_Dragons",
+      "en_name": "The Three Dragons",
+      "ru_name": "Три дракона"
+    },
+    {
+      "slug": "The_Unborn_Lich",
+      "en_name": "The Unborn Lich",
+      "ru_name": "Нерождённый лич"
+    },
+    {
+      "slug": "The_Unleashed",
+      "en_name": "The Unleashed",
+      "ru_name": "Высвобожденный"
+    },
+    {
+      "slug": "The_Vertex",
+      "en_name": "The Vertex",
+      "ru_name": "Вертекс"
+    },
+    {
+      "slug": "The_Vile_Knight",
+      "en_name": "The Vile Knight",
+      "ru_name": "Подлый рыцарь"
+    },
+    {
+      "slug": "The_Whispering_Ice",
+      "en_name": "The Whispering Ice",
+      "ru_name": "Шепчущий лёд"
+    },
+    {
+      "slug": "The_Wicked_Quill",
+      "en_name": "The Wicked Quill",
+      "ru_name": "Жестокое перо"
+    },
+    {
+      "slug": "Thiefs_Torment",
+      "en_name": "Thief's Torment",
+      "ru_name": "Воровская мука"
+    },
+    {
+      "slug": "Threaded_Light",
+      "en_name": "Threaded Light",
+      "ru_name": "Нить света"
+    },
+    {
+      "slug": "Thrillsteel",
+      "en_name": "Thrillsteel",
+      "ru_name": "Стальной раж"
+    },
+    {
+      "slug": "Thunderfist",
+      "en_name": "Thunderfist",
+      "ru_name": "Громовой кулак"
+    },
+    {
+      "slug": "Tidebreaker",
+      "en_name": "Tidebreaker",
+      "ru_name": "Волнолом"
+    },
+    {
+      "slug": "Titanrot_Cataphract",
+      "en_name": "Titanrot Cataphract",
+      "ru_name": "Ржавый катафракт"
+    },
+    {
+      "slug": "Trampletoe",
+      "en_name": "Trampletoe",
+      "ru_name": "Плоскостопы"
+    },
+    {
+      "slug": "Treefingers",
+      "en_name": "Treefingers",
+      "ru_name": "Древохваты"
+    },
+    {
+      "slug": "Trenchtimbre",
+      "en_name": "Trenchtimbre",
+      "ru_name": "Траншейный звон"
+    },
+    {
+      "slug": "Trephina",
+      "en_name": "Trephina",
+      "ru_name": "Трефина"
+    },
+    {
+      "slug": "Twisted_Empyrean",
+      "en_name": "Twisted Empyrean",
+      "ru_name": "Искажённая твердь"
+    },
+    {
+      "slug": "Tyrannys_Grip",
+      "en_name": "Tyranny's Grip",
+      "ru_name": "Хватка тирании"
+    },
+    {
+      "slug": "Uhtreds_Chalice",
+      "en_name": "Uhtred's Chalice",
+      "ru_name": "Чаша Утреда"
+    },
+    {
+      "slug": "Umbilicus_Immortalis",
+      "en_name": "Umbilicus Immortalis",
+      "ru_name": "Умбиликус Имморталис"
+    },
+    {
+      "slug": "Undying_Hate",
+      "en_name": "Undying Hate",
+      "ru_name": "Вечная ненависть"
+    },
+    {
+      "slug": "Unforeseen_Consequences",
+      "en_name": "Unforeseen Consequences",
+      "ru_name": "Непредвиденные последствия"
+    },
+    {
+      "slug": "Ungils_Harmony",
+      "en_name": "Ungil's Harmony",
+      "ru_name": "Гармония Ангила"
+    },
+    {
+      "slug": "Valakos_Roar",
+      "en_name": "Valako's Roar",
+      "ru_name": "Рёв Валако"
+    },
+    {
+      "slug": "Valakos_Vice",
+      "en_name": "Valako's Vice",
+      "ru_name": "Порок Валако"
+    },
+    {
+      "slug": "Veil_of_the_Night",
+      "en_name": "Veil of the Night",
+      "ru_name": "Покров ночи"
+    },
+    {
+      "slug": "Veilpiercer",
+      "en_name": "Veilpiercer",
+      "ru_name": "Пронзатель завесы"
+    },
+    {
+      "slug": "Venopuncture",
+      "en_name": "Venopuncture",
+      "ru_name": "Ядовитый надрез"
+    },
+    {
+      "slug": "Ventors_Gamble",
+      "en_name": "Ventor's Gamble",
+      "ru_name": "Игра Вентора"
+    },
+    {
+      "slug": "Vestige_of_Darkness",
+      "en_name": "Vestige of Darkness",
+      "ru_name": "Наследие Тьмы"
+    },
+    {
+      "slug": "Vigilant_View",
+      "en_name": "Vigilant View",
+      "ru_name": "Бдительный взор"
+    },
+    {
+      "slug": "Vis_Mortis",
+      "en_name": "Vis Mortis",
+      "ru_name": "Сила смерти"
+    },
+    {
+      "slug": "Visage_of_Ayah",
+      "en_name": "Visage of Ayah",
+      "ru_name": "Лик Айи"
+    },
+    {
+      "slug": "Visions_of_Paradise",
+      "en_name": "Visions of Paradise",
+      "ru_name": "Видения Рая"
+    },
+    {
+      "slug": "Voices",
+      "en_name": "Voices",
+      "ru_name": "Голоса"
+    },
+    {
+      "slug": "Volls_Protector",
+      "en_name": "Voll's Protector",
+      "ru_name": "Защитник Волла"
+    },
+    {
+      "slug": "Voltaxic_Rift",
+      "en_name": "Voltaxic Rift",
+      "ru_name": "Раскаты хаоса"
+    },
+    {
+      "slug": "Waistgate",
+      "en_name": "Waistgate",
+      "ru_name": "Врата на талии"
+    },
+    {
+      "slug": "Wake_of_Destruction",
+      "en_name": "Wake of Destruction",
+      "ru_name": "Зачинщики разрушений"
+    },
+    {
+      "slug": "Wandering_Reliquary",
+      "en_name": "Wandering Reliquary",
+      "ru_name": "Блуждающий реликварий"
+    },
+    {
+      "slug": "Wanderlust",
+      "en_name": "Wanderlust",
+      "ru_name": "Странники"
+    },
+    {
+      "slug": "Waveshaper",
+      "en_name": "Waveshaper",
+      "ru_name": "Ваятель волн"
+    },
+    {
+      "slug": "Whisper_of_the_Brotherhood",
+      "en_name": "Whisper of the Brotherhood",
+      "ru_name": "Шёпот братства"
+    },
+    {
+      "slug": "Widowhail",
+      "en_name": "Widowhail",
+      "ru_name": "Вдовья доля"
+    },
+    {
+      "slug": "Widows_Reign",
+      "en_name": "Widow's Reign",
+      "ru_name": "Правление вдовы"
+    },
+    {
+      "slug": "Window_to_Paradise",
+      "en_name": "Window to Paradise",
+      "ru_name": "Окно в рай"
+    },
+    {
+      "slug": "Windscream",
+      "en_name": "Windscream",
+      "ru_name": "Вопли ветра"
+    },
+    {
+      "slug": "Wings_of_Caelyn",
+      "en_name": "Wings of Caelyn",
+      "ru_name": "Крылья Кейлин"
+    },
+    {
+      "slug": "Wondertrap",
+      "en_name": "Wondertrap",
+      "ru_name": "Ведущие к чудесам"
+    },
+    {
+      "slug": "Wraeclast_Besieged",
+      "en_name": "Wraeclast Besieged",
+      "ru_name": "Рэкласт под осадой"
+    },
+    {
+      "slug": "Wulfsbane",
+      "en_name": "Wulfsbane",
+      "ru_name": "Погибель Вульфа"
+    },
+    {
+      "slug": "Xophs_Blood",
+      "en_name": "Xoph's Blood",
+      "ru_name": "Кровь Ксофа"
+    },
+    {
+      "slug": "Yoke_of_Suffering",
+      "en_name": "Yoke of Suffering",
+      "ru_name": "Бремя страданий"
+    },
+    {
+      "slug": "Yriels_Fostering",
+      "en_name": "Yriel's Fostering",
+      "ru_name": "Воспитание Ириэла"
+    },
+    {
+      "slug": "Zaidas_Longevity",
+      "en_name": "Zaida's Longevity",
+      "ru_name": "Долгожительство Заиды"
+    },
+    {
+      "slug": "Zerphis_Genesis",
+      "en_name": "Zerphi's Genesis",
+      "ru_name": "Зарождение Зерфи"
+    },
+    {
+      "slug": "Zerphis_Serape",
+      "en_name": "Zerphi's Serape",
+      "ru_name": "Сарапе Зерфи"
+    }
+  ]
+}
