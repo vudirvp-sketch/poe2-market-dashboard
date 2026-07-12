@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-11 (iter 110 — P9 Phase-aware Investment Advisor: live-price binding for phase hints. `phase_hints.py` extended with optional `snapshot` param + enrichment logic. 3 hints tracked (exalted/divine). 1266 pytest green. KI-20 documented.)
+> **Last updated:** 2026-07-13 (iter 142 — doc cleanup: P10 Gold Map ROI marked SHIPPED, sections C.1–C.7 iter-by-iter detail trimmed to concise pointer to git log, §D.3 outdated iter-110 stop-point removed.)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -117,7 +117,7 @@
 | **P7** Mirror ↔ Divine arb | `backend/economy/mirror_divine_arb.py` (iter 108) + `routes_mirror_divine_arb.py` + Next.js proxy + UI tab (iter 109) | ✅ Готово (end-to-end). Backend: pure function `compute_mirror_divine_arb()` (70 pytest) + API route `/api/v1/mirror-divine-arb` + Next.js proxy + TS types. Single-object response (Mirror:Divine = one market). UI (iter 109): `mirror-divine-arb-tab.tsx` — single-card render with current rate / z-score / deviation / signal+action badges / sparkline + 7/14/30/90-day selector. 42 i18n keys × 4 locales. Profit threshold = 100 Div per Mirror (per playbook). |
 | **P8** Trajectory classification | `backend/economy/circuit_patterns.py` (iter 96) + `routes_circuit_patterns.py` + UI tab `circuit-patterns-tab.tsx` (iter 97) | ✅ Готово. Pure function (75 unit-тестов) + API route `/api/v1/circuit-patterns` + Next.js proxy + UI tab с бейджами траекторий и mini-sparkline + i18n × 4 locales (47 ключей × 4) + 20 jest-тестов + 4 pytest route smoke-теста. |
 | **P9** Phase-aware investment | `phase_hints.py` (iter 78 + iter 110 live-price binding) | ✅ Готово (iter 110). Static table 4 hints/phase + live-price enrichment: 3 hints tracked (exalted/divine) with current_price / change_pct_week / change_pct_month / momentum / phase-aware recommendation. |
-| **P10** Gold Map ROI | Нет | ❌ Нужен калькулятор. Зависит от P1 (3-way flips). |
+| **P10** Gold Map ROI | `backend/economy/triangular_cycles.py` (TD-3) + `src/components/dashboard/gold-map-roi-tab.tsx` + `gold-map-roi-calculator.tsx` + `gold-map-roi-trend-chart.tsx` | ✅ Готово (end-to-end). Phase 1 (MVP) SHIPPED iter 127 — calculator reuses `/api/v1/arbitrage/triangular` best 3-way rate. Phase 2 (trend chart) SHIPPED iter 132 — reuses `/api/v1/arbitrage/triangular/history` (TD-3 SQLite persistence). See `docs/design/P10-gold-map-roi-design.md`. |
 | **P11** Megalomaniac / +3 Prism scanner | Нет | ❌ Требует GGG trade API (фильтрация по аффиксам). |
 | **P12** Tablet resell | Нет | ❌ Требует item-level данных, которых POE2Scout не отдаёт. |
 | **P13** Crafting Profit Discovery | Нет | ❌ Требует GGG trade API. |
@@ -130,171 +130,30 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 9 полностью готовы (P1, P3, P4, P5, P7, P8, P9, P18, частично P16/P17).
+- 10 полностью готовы (P1, P3, P4, P5, P7, P8, P9, P10, P18, частично P16/P17).
 - 3 частично готовы (P2, P16, P17) — нужна доработка.
-- 8 не реализованы. Из них:
-  - **P10** — реализуем на текущих данных (зависит от P1). На roadmap.
+- 7 не реализованы. Из них:
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
 
 ---
 
 ## C. План реализации (что и как добавлять)
 
-### C.1. iter 96 — Circuit Patterns (P8) — foundation
-**Что.** Pure function `compute_circuit_patterns(snapshot, config, days=30) -> dict`. Классифицирует траекторию каждой валюты в один из 7 архетипов.
+> **iter-by-iter detail records trimmed iter 142** — исторические записи реализации P3/P4/P5/P7/P8/P9/P10 (итеры 96–110, 127, 132) находятся в `git log` (коммиты с тегами `iter 96` … `iter 132`). Ниже — только канонический статус каждого паттерна, реализованного на текущих данных POE2Scout.
 
-**Архетипы:**
-- `EXPONENTIAL_GROWTH` — лог-линейная регрессия цены от времени, R² ≥ 0.7, slope > 0, total growth > 50% за окно. Пример: Chaos Orbs на Week 1+.
-- `LINEAR_GROWTH` — линейная регрессия, R² ≥ 0.7, slope > 0, total growth 10–50%.
-- `PEAK_THEN_DECLINE` — есть явный пик внутри окна, после пика спад ≥ 20%. Пример: leveling uniques.
-- `MEAN_REVERTING` — коэффициент вариации < 0.15, нет тренда.
-- `VOLATILE` — коэффициент вариации > 0.5, нет явного тренда. Пример: Annulment Orbs.
-- `DECLINING` — линейная регрессия, R² ≥ 0.7, slope < 0, total decline > 10%.
-- `STABLE` — коэффициент вариации 0.15–0.5, нет тренда.
+### Реализованные паттерны (canonical status)
 
-**Возвращаемые поля на валюту:**
-- `api_id`, `text`, `category`
-- `trajectory` (один из 7 типов)
-- `total_change_pct` (first → last за окно)
-- `recent_slope_pct_per_day` (slope × 100)
-- `volatility_cv` (std / mean)
-- `r_squared` (качество фиттинга)
-- `days_since_peak` (для PEAK_THEN_DECLINE; None иначе)
-- `recommended_action` (`HOLD_FOR_GROWTH` / `SELL_NOW` / `AVOID` / `WATCH` / `NEUTRAL`)
-- `sample_size` (число price_logs в окне)
+| Паттерн | iter | Backend pure function | Route handler | UI tab/widget |
+|---------|------|----------------------|---------------|---------------|
+| **P8** Circuit Patterns | 96–97 | `backend/economy/circuit_patterns.py:compute_circuit_patterns(snapshot, config, *, days=30, limit=50, trajectory_filter="ALL", now=None)` — 7 архетипов (EXPONENTIAL_GROWTH / LINEAR_GROWTH / PEAK_THEN_DECLINE / MEAN_REVERTING / VOLATILE / DECLINING / STABLE) + recommended_action. 75 pytest. | `GET /api/v1/circuit-patterns?days=&limit=&trajectory=` | `circuit-patterns-tab.tsx` — filter chips (ALL + 7 архетипов) + days selector (7/14/30/90) + per-row trajectory badge + mini-sparkline. 20 jest. |
+| **P4** Intraday Patterns | 98 | `backend/economy/intraday_patterns.py:compute_intraday_patterns(snapshot, config, *, days=14, limit=50, now=None)` — per-UTC-hour aggregation 0..23 + buy/sell window detection + intraday_range_pct (≥10% = significant). 89 pytest. | `GET /api/v1/intraday-patterns?days=&limit=` | `intraday-patterns-tab.tsx` — heatmap (currencies × UTC hours) + buy/sell window badges. 23 jest. |
+| **P5** Weekly Patterns | 99 | `backend/economy/weekly_patterns.py:compute_weekly_patterns(snapshot, config, *, weeks=4, limit=50, now=None)` — per-ISO-weekday aggregation 1..7 + buy/sell day detection + weekday_delta_pct. 99 pytest. | `GET /api/v1/weekly-patterns?weeks=&limit=` | `weekly-patterns-tab.tsx` — heatmap (currencies × 7 weekdays) + buy/sell day badges. 25 jest. |
+| **P3** Leveling Uniques | 100 | `backend/economy/leveling_uniques.py:compute_leveling_uniques_lifecycle(phase, days_since_reference, *, reference_currency="", league_name="", now=None, lang="en")` — static table of 10 leveling uniques + PRE_PEAK/AT_PEAK/POST_PEAK stage + BUY_OR_HOLD/SELL_NOW/AVOID_BUYING recommendation + heuristic est. price. Immune to KI-11 (uses PhaseDetector only). 86 pytest. | `GET /api/v1/leveling-uniques?lang=en\|ru` | `leveling-uniques-widget.tsx` (на Overview) — table with stage + recommendation badges. 28 jest. |
+| **P7** Mirror/Divine Arb | 108–109 | `backend/economy/mirror_divine_arb.py:compute_mirror_divine_arb(snapshot, config, *, days=30, mirror_api_id="mirror", divine_api_id="divine", now=None)` — single-object response, z-score signal (SELL_MIRROR_BUY_DIVINE / SELL_DIVINE_BUY_MIRROR / NEUTRAL), profit_potential_per_mirror_div (≥100 Div = actionable). 70 pytest. | `GET /api/v1/mirror-divine-arb?days=` | `mirror-divine-arb-tab.tsx` — single-card render with rate / z / deviation / sparkline + 7/14/30/90-day selector. 42 i18n keys × 4. |
+| **P9** Phase-aware Investment | 78 + 110 | `backend/economy/phase_hints.py:get_phase_hints(phase, days_since_reference, *, reference_currency="", league_name="", now=None, lang="en", snapshot=None)` — static table 4 hints/phase × 3 phases + optional live-price enrichment (current_price / change_pct_week / change_pct_month / momentum / recommendation) when snapshot provided. 3 of 12 hints tracked (exalted/divine). 109 pytest (61 original + 48 iter-110 enrichment). | `GET /api/v1/phase-hints` | `phase-hints-widget.tsx` (на Overview) — HintRow renders live-price section when trackedCurrency + currentPrice available. 13 jest. |
+| **P10** Gold Map ROI | 127 + 132 | Reuses `backend/economy/triangular_cycles.py` (TD-3) for best 3-way rate. No new backend module. | `GET /api/v1/arbitrage/triangular` (live) + `GET /api/v1/arbitrage/triangular/history` (TD-3 SQLite persistence) | `gold-map-roi-tab.tsx` + `gold-map-roi-calculator.tsx` (Phase 1, iter 127) + `gold-map-roi-trend-chart.tsx` (Phase 2, iter 132 — dependency-free SVG line chart, reuses pattern from `storage-value-history-chart.tsx`). |
 
-**Действие по архетипу:**
-| Архетип | recommended_action | Логика |
-|---------|--------------------|--------|
-| EXPONENTIAL_GROWTH | HOLD_FOR_GROWTH | Цена растёт экспоненциально — не продавать |
-| LINEAR_GROWTH | HOLD_FOR_GROWTH | Растёт, но медленнее |
-| PEAK_THEN_DECLINE | SELL_NOW | Пик пройден, начинается спад |
-| MEAN_REVERTING | NEUTRAL | Нет тренда |
-| VOLATILE | WATCH | Высокая волатильность — возможен arb, но рискованно |
-| DECLINING | AVOID | Падает — не хранить |
-| STABLE | NEUTRAL | Стабильно |
-
-**Где живёт.** `backend/economy/circuit_patterns.py` — pure function. `tests/test_circuit_patterns.py` — полный coverage.
-
-**Что НЕ входит в iter 96.** API route, UI, i18n — чтобы не сломать прод. Это iter 97.
-
-### C.2. iter 97 — Circuit Patterns: API route + UI ✅ DONE
-**Что было сделано.**
-- Backend: `backend/api/routes_circuit_patterns.py` (thin wrapper по образцу `routes_speculation.py`). Поддерживает query-params `days` (1..90, default 30), `limit` (1..500, default 50), `trajectory` (ALL | один из 7 архетипов). При ошибке или отсутствии snapshot возвращает `data_available=false` с пустым patterns list.
-- Backend: Pydantic-модели `CircuitPatternData` + `CircuitPatternsResponse` в `backend/api/response_models.py`. Включая поле `price_history_short` (до 14 последних price points для mini-sparkline в UI).
-- Backend: pure function `compute_circuit_patterns()` в `backend/economy/circuit_patterns.py` расширена — теперь возвращает `price_history_short` на каждой валюте (additive change, существующие 75 тестов остались зелёными).
-- Backend: router зарегистрирован в `backend/main.py` (через `try/except ImportError` обёртку, как все остальные).
-- Next.js proxy: `src/app/api/flipper/circuit-patterns/route.ts` (по образцу `speculation/route.ts`).
-- TypeScript-типы: `CircuitPattern`, `CircuitPatternsResponse`, `CircuitTrajectory`, `CircuitRecommendedAction` в `src/lib/types.ts`.
-- UI: новая вкладка `src/components/dashboard/circuit-patterns-tab.tsx` (по образцу `speculation-tab.tsx`, но проще — без backtest panel). Filter chips (ALL + 7 архетипов), days selector (7/14/30/90), per-row trajectory badge + recommended_action badge + total_change_pct + mini-sparkline + статы (sampleSize / slope / vol / R² / current / daysSincePeak).
-- UI: вкладка встроена в `dashboard-page.tsx` (dynamic import, `TAB_MAP` entry на idx 9, `TabsContent` после speculation), в `dashboard-toolbar.tsx` (TabsTrigger с иконкой `Activity`), в `shortcuts-dialog.tsx` (shortcut "0" → Circuits, Liquid Chain + Watchlist теперь click-only).
-- i18n: 47 новых ключей × 4 locales (en/ru/zh/ko) — все локали имеют parity.
-- Tests: 20 jest-тестов в `src/__tests__/circuit-patterns-tab.test.tsx` (offline / loading / error / no-data / patterns rendering / filter chips / days selector / sparkline / filter click / daysSincePeak / etc.) + 4 pytest route smoke-теста в `tests/test_circuit_patterns.py::TestRouteHandler`.
-
-**Проверка.** Все 452 jest-тестов зелёные. Все 79 pytest-тестов в `test_circuit_patterns.py` зелёные (75 оригинальных + 4 новых route smoke). tsc --noEmit зелёный (на момент создания UI tab; последующие правки были тривиальными JSX-изменениями, валидированы через ts-jest).
-
-### C.3. iter 98 — Time-of-Day Pattern Detector (P4) ✅ DONE
-**Что было сделано.**
-- Backend: `backend/economy/intraday_patterns.py` — pure function `compute_intraday_patterns(snapshot, config, *, days=14, limit=50, now=None)`. Для каждой валюты: агрегация price_logs по UTC часу (0..23) за последние N дней → hourly mean/std/count. Buy window = час с min mean. Sell window = час с max mean. `has_significant_pattern` = `intraday_range_pct >= 10%` (|sell_mean - buy_mean| / overall_mean × 100). Фильтры: `MIN_SAMPLE_SIZE=4` total points AND `MIN_HOURS_COVERED=2` distinct hours. 89 pytest-тестов в `tests/test_intraday_patterns.py` (10 test classes covering pure helpers + end-to-end + route handler smoke tests).
-- Backend: `backend/api/routes_intraday_patterns.py` — thin wrapper (по образцу `routes_circuit_patterns.py`). Query-params `days` (1..90, default 14), `limit` (1..500, default 50). При ошибке/отсутствии snapshot возвращает `data_available=false` с пустым patterns list.
-- Backend: Pydantic-модели `IntradayHourlyStat` + `IntradayPatternData` + `IntradayPatternsResponse` в `backend/api/response_models.py`. `hourly_stats` — всегда 24 entries (один на UTC час 0..23), пустые часы имеют `mean=None, std=None, count=0`.
-- Backend: router зарегистрирован в `backend/main.py` (через `try/except ImportError` обёртку).
-- Next.js proxy: `src/app/api/flipper/intraday-patterns/route.ts` (по образцу `circuit-patterns/route.ts`).
-- TypeScript-типы: `IntradayHourlyStat`, `IntradayPattern`, `IntradayPatternsResponse` в `src/lib/types.ts`.
-- UI: новая вкладка `src/components/dashboard/intraday-patterns-tab.tsx`. Heatmap (rows = currencies, cols = UTC hours 0..23) — dependency-free SVG/CSS (нет recharts). Cell color = deviation от overall_mean (emerald ≥5% below = buy zone, red ≥5% above = sell zone, muted = neutral/no data). Buy window cell highlighted with emerald ring, sell window cell with amber ring. Filter "Significant only" (скрывает валюты с range < 10%). Days selector (7/14/30/90, default 14). Stats line (sampleSize · overallMean · currentPrice · buyMean · sellMean). Legend (6 swatches). 23 jest-теста в `src/__tests__/intraday-patterns-tab.test.tsx`.
-- UI: вкладка встроена в `dashboard-page.tsx` (dynamic import, `TAB_MAP` entry на idx 10 — после circuit-patterns, `TabsContent` после circuit-patterns), в `dashboard-toolbar.tsx` (TabsTrigger с иконкой `Clock`). В `shortcuts-dialog.tsx` обновлён комментарий — Intraday Patterns теперь click-only (idx 10, вне 10 shortcut slots 1-9+0).
-- i18n: 43 новых ключа × 4 locales (en/ru/zh/ko) — все локали имеют parity.
-- Tests: 23 jest + 4 pytest route smoke — все зелёные. Regression-чек: все 475 jest + 963 pytest зелёные. tsc --noEmit зелёный.
-
-**Проверка.** Все 475 jest-тестов зелёные (было 452, +23 новых). Все 963 pytest-тестов зелёные (было 874, +89 новых в test_intraday_patterns.py). tsc --noEmit зелёный. Backend route registration verified — `/api/v1/intraday-patterns` appears in `app.routes`.
-
-### C.4. iter 99 — Weekday/Weekend Pattern Detector (P5) ✅ DONE
-**Что было сделано.**
-- Backend: `backend/economy/weekly_patterns.py` — pure function `compute_weekly_patterns(snapshot, config, *, weeks=4, limit=50, now=None)`. Для каждой валюты: агрегация price_logs по ISO weekday (1=Mon..7=Sun) за последние N недель → daily mean/std/count. Buy day = будний день с min mean. Sell day = день с max mean. `has_significant_pattern` = `weekly_range_pct >= 10%` (|sell_mean - buy_mean| / overall_mean × 100). Дополнительно: `weekday_delta_pct` = signed % difference `(weekend_mean - weekday_mean) / overall_mean × 100` (positive = выходные дороже, negative = будни дороже). Фильтры: `MIN_SAMPLE_SIZE=4` total points AND `MIN_DAYS_COVERED=2` distinct weekdays. 99 pytest-тестов в `tests/test_weekly_patterns.py` (12 test classes covering pure helpers + end-to-end + route handler smoke tests).
-- Backend: `backend/api/routes_weekly_patterns.py` — thin wrapper (по образцу `routes_intraday_patterns.py`). Query-params `weeks` (1..26, default 4), `limit` (1..500, default 50). При ошибке/отсутствии snapshot возвращает `data_available=false` с пустым patterns list.
-- Backend: Pydantic-модели `WeeklyDailyStat` + `WeeklyPatternData` + `WeeklyPatternsResponse` в `backend/api/response_models.py`. `daily_stats` — всегда 7 entries (один на ISO weekday 1..7 Mon..Sun), пустые дни имеют `mean=None, std=None, count=0`.
-- Backend: router зарегистрирован в `backend/main.py` (через `try/except ImportError` обёртку).
-- Next.js proxy: `src/app/api/flipper/weekly-patterns/route.ts` (по образцу `intraday-patterns/route.ts`).
-- TypeScript-типы: `WeeklyDailyStat`, `WeeklyPattern`, `WeeklyPatternsResponse` в `src/lib/types.ts`.
-- UI: новая вкладка `src/components/dashboard/weekly-patterns-tab.tsx`. Heatmap (rows = currencies, cols = 7 weekdays Mon-Sun) — dependency-free SVG/CSS (нет recharts). Cell color = deviation от overall_mean (emerald ≥5% below = buy zone, red ≥5% above = sell zone, muted = neutral/no data). Buy day cell highlighted with emerald ring, sell day cell with amber ring. Filter "Significant only" (скрывает валюты с range < 10%). Weeks selector (1/2/4/8/12/26, default 4). Stats line (sampleSize · overallMean · currentPrice · buyMean · sellMean · Δ weekend). Legend (6 swatches). 25 jest-тестов в `src/__tests__/weekly-patterns-tab.test.tsx`.
-- UI: вкладка встроена в `dashboard-page.tsx` (dynamic import, `TAB_MAP` entry на idx 11 — после intraday-patterns, `TabsContent` после intraday-patterns), в `dashboard-toolbar.tsx` (TabsTrigger с иконкой `Calendar`). В `shortcuts-dialog.tsx` обновлён комментарий — Weekly Patterns теперь click-only (idx 11, вне 10 shortcut slots 1-9+0).
-- i18n: 50 новых ключей × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 7 weekday name keys (Mon/Tue/Wed/Thu/Fri/Sat/Sun) localized.
-- Tests: 25 jest + 4 pytest route smoke — все зелёные. Regression-чек: 267 pytest (99 weekly + 89 intraday + 79 circuit) + 292 smoke (pricing/speculation/phase_hints/content_pulse/events/momentum/lifecycle) зелёные. Babel syntax-check 11 modified/new TS/TSX files → all OK.
-
-**Проверка.** Все 99 pytest-тестов в `test_weekly_patterns.py` зелёные (12 test classes: TestExtractPricePoints × 16, TestFilterToWeeks × 5, TestMeanAndStd × 7, TestGroupByWeekday × 5, TestDailyStats × 6, TestOverallMean × 3, TestFindBuySellDays × 5, TestWeeklyRangePct × 8, TestWeekdayDeltaPct × 7, TestDaysCovered × 4, TestComputeWeeklyPatternsEndToEnd × 29, TestRouteHandler × 4). Babel syntax-check всех 11 изменённых/новых TS/TSX-файлов → OK. tsc --noEmit и jest не запускались в среде итерации из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM для полного regression-чека.
-
-### C.5. iter 100 — Leveling Uniques Lifecycle (P3) ✅ Done
-**Что.** Виджет на Overview: «сейчас Day N лиги → окна продаж leveling уников». Использует PhaseDetector + статичная таблица известных leveling уников с их типичным паттерном. Без GGG trade API — только метрика цены.
-
-**Реализация (iter 100):**
-- **Backend pure function:** `backend/economy/leveling_uniques.py` — `compute_leveling_uniques_lifecycle(phase, days_since_reference, *, reference_currency="", league_name="", now=None, lang="en")`. Статичная таблица из 10 leveling уников (Polcirkeln Sapphire Ring, Megalomaniac Diamond, Wall of Brambles, Mana Leech Support, Feeding Frenzy Support, Echoes of Worldstone, Mind of the Council, Boots of Momentum, Wings of Entropy, Soul Tether Amulet) с `peak_day` / `peak_price_exalted` / `decay_pct` / `pattern` / `notes`. Для каждого уника вычисляет:
-  - `current_lifecycle_stage`: `PRE_PEAK` (days < peak_day) / `AT_PEAK` (peak_day ≤ days ≤ peak_day + 1, 2-day window) / `POST_PEAK` (days > peak_day + 1).
-  - `recommendation`: `BUY_OR_HOLD` (PRE_PEAK) / `SELL_NOW` (AT_PEAK) / `AVOID_BUYING` (POST_PEAK).
-  - `estimated_current_price_exalted`: piecewise-linear heuristic (NOT live market price). PRE_PEAK: interp from 0.5×peak (Day 0) to peak (peak_day). AT_PEAK: hold at peak. POST_PEAK: linear decay from peak to (1-decay/100)×peak by Day 7.
-  - `days_until_peak`: positive (days to wait), 0 (in AT_PEAK window), negative (days since peak ended).
-- **Backend route:** `backend/api/routes_leveling_uniques.py` — thin wrapper `GET /api/v1/leveling-uniques?lang=en`. Использует `get_phase_detector()` singleton (как `routes_phase_hints.py`). Не зависит от DataSnapshot → иммунен к KI-11 (upstream API 404).
-- **Pydantic models:** `LevelingUniqueData` + `LevelingUniquesResponse` в `response_models.py`.
-- **Next.js proxy:** `src/app/api/flipper/leveling-uniques/route.ts` — forwards `lang`. Returns empty `uniques: []` + `dataAvailable: false` when backend offline.
-- **TS types:** `LevelingUnique`, `LevelingUniquesResponse`, `LevelingUniqueStage`, `LevelingUniqueRecommendation` в `src/lib/types.ts`.
-- **UI widget:** `src/components/dashboard/leveling-uniques-widget.tsx` — карточка на Overview (между PhaseHintsWidget и MarketOverview). Header: TrendingUp icon + title + Day N + item count + reference currency. Summary line: зависит от доминирующей стадии (AT_PEAK → "X item(s) at peak demand — SELL NOW..." / PRE_PEAK → "...still rising toward peak..." / POST_PEAK → "...past peak — AVOID BUYING..."). Таблица: 5 колонок (Item / Stage / Est. Price / Peak Day / Action). Каждая строка: name + notes (line-clamp-2) + stage badge (PRE_PEAK=blue, AT_PEAK=amber, POST_PEAK=muted) + est price ("~X.X exa") + peak day short ("Day N · X.X exa") + recommendation badge (BUY/HOLD=emerald, SELL NOW=red, AVOID BUYING=muted). Disclaimer о heuristic pricing. Footer: fetched-at timestamp + stage breakdown counts.
-- **Wiring:** `overview-tab-content.tsx` — новый ErrorBoundary + LevelingUniquesWidget между PhaseHints и MarketOverview.
-- **i18n:** 31 новый ключ × 4 locales (en/ru/zh/ko) — все локали имеют parity. Включая 3 stage label keys + 4 recommendation label keys + 5 column header keys + 3 summary keys + disclaimer.
-- **Tests:** 86 pytest (9 TestStaticTableIntegrity + 28 TestLifecycleStage + 4 TestRecommendation + 14 TestEstimateCurrentPrice + 3 TestDaysUntilPeak + 18 TestComputeLevelingUniquesLifecycle + 5 TestRussianLocalization + 4 TestRouteHandler = 86) — все зелёные. Regression-чек: 343 pytest (99 weekly + 89 intraday + 79 circuit + 58 phase_hints + 15 lifecycle + 3 shared) зелёные. 275 smoke тестов (pricing/speculation/content_pulse/events/storage_value/anomaly) зелёные. Babel syntax-check 9 modified/new TS/TSX файлов → all OK. tsc --noEmit и jest не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue, требует 8GB+ RAM.
-
-### C.6. iter 108 + iter 109 — Mirror/Divine Arb Detector (P7) ✅ End-to-end DONE
-**Что.** Анализирует курс Mirror:Divine (mirror_price / divine_price) за lookback-окно и flagged окна, где курс отклонился от historical mean достаточно, чтобы arb "swap-then-swap-back" был прибыльным для chase-уников (≥ 1 Mirror). Использует существующие `price_histories` из DataSnapshot (не требует нового API).
-
-**Реализация (iter 108):**
-- **Backend pure function:** `backend/economy/mirror_divine_arb.py` — `compute_mirror_divine_arb(snapshot, config, *, days=30, mirror_api_id="mirror", divine_api_id="divine", now=None)`. Для каждого timestamp в mirror_history находит ближайший divine_price (24h tolerance — reuses `_find_nearest_price` from `storage_value_history.py`). Считает rate series, фильтрует по lookback window, вычисляет:
-  - `current_rate` — most recent rate (Div per Mirror)
-  - `mean_rate` / `std_rate` (sample, ddof=1) — historical baseline
-  - `min_rate` / `max_rate` — observed range
-  - `z_score` — `(current - mean) / std` (None when std == 0)
-  - `deviation_pct` — signed % deviation from mean
-  - `profit_potential_per_mirror_div` — `|current - mean|` в Div (arb profit per 1-Mirror item)
-  - `signal`: `SELL_MIRROR_BUY_DIVINE` (z ≥ +1.5) / `SELL_DIVINE_BUY_MIRROR` (z ≤ -1.5) / `NEUTRAL`
-  - `is_actionable` — `profit_potential_per_mirror_div >= 100` (PROFIT_THRESHOLD_DIV per playbook)
-  - `recommended_action`: `EXECUTE_ARB` (actionable AND |z| ≥ 1.5) / `WATCH` (actionable AND |z| in [1.0, 1.5)) / `HOLD`
-  - `price_history_short` — up to 14 most-recent rate points (oldest-first) for UI sparkline
-- **Backend route:** `backend/api/routes_mirror_divine_arb.py` — thin wrapper `GET /api/v1/mirror-divine-arb?days=N`. Same pattern as `routes_circuit_patterns.py`. Returns `data_available=false` with all-None fields when snapshot not loaded or < MIN_SAMPLE_SIZE (4) rate points.
-- **Pydantic models:** `MirrorDivineArbRatePoint` + `MirrorDivineArbResponse` в `response_models.py`.
-- **Router registration:** `backend/main.py` — registered after `leveling_uniques_router`, wrapped in `try/except ImportError`.
-- **Next.js proxy:** `src/app/api/flipper/mirror-divine-arb/route.ts` — forwards `days` param. Returns empty fallback with `dataAvailable: false` when backend offline.
-- **TS types:** `MirrorDivineArbSignal` / `MirrorDivineArbAction` / `MirrorDivineArbRatePoint` / `MirrorDivineArbResponse` в `src/lib/types.ts`.
-- **Tests:** 70 pytest в `tests/test_mirror_divine_arb.py` (8 test classes: TestExtractRateSeries × 11, TestFilterToWindow × 6, TestMeanStdZscore × 11, TestSignalFromZscore × 7, TestRecommendedAction × 8, TestComputeMirrorDivineArbEmpty × 4, TestComputeMirrorDivineArbSteady × 2, TestComputeMirrorDivineArbSpike × 3, TestComputeMirrorDivineArbWatch × 1, TestComputeMirrorDivineArbPriceHistoryShort × 2, TestComputeMirrorDivineArbDefensive × 13, TestRouteHandler × 2). Regression: 1218 pytest green (было 1161 в iter 107, +70 новых −13 test_scheduler из-за missing aiosqlite в среде итерации).
-- **UI tab (iter 109):** `src/components/dashboard/mirror-divine-arb-tab.tsx` — single-object card render (NOT a per-currency list — Mirror:Divine is one market). Layout: signal+action badge row → hero metrics block (current rate / z-score / deviation) → profit+actionable row → 5-cell stats grid (mean/std/min/max/sample size) → rate sparkline → footer (fetched at / sample size / window). Days selector 7/14/30/90 (default 30). 42 i18n keys × 4 locales (en/ru/zh/ko). Wired into `dashboard-page.tsx` (TAB_MAP idx 12, lazy-loaded via next/dynamic, TabsContent + ErrorBoundary), `dashboard-toolbar.tsx` (new TabsTrigger with `ArrowUpDown` icon), `shortcuts-dialog.tsx` (comment updated — click-only, no shortcut slot).
-
-**Проверка.** Все 1218 pytest-тестов зелёные (включая 70 новых для P7). Backend router registration verified — `/api/v1/mirror-divine-arb` appears in `app.routes`. tsc/jest regression не запускались из-за OOM-killer при `npm install` (4GB RAM, no swap) — Known Issue с iter 99. TS files syntax-checked (balanced braces/parens), types match Python response models 1:1.
-
-### C.7. iter 110 — Phase-aware Investment Advisor (P9) ✅ DONE
-**Что.** Расширить `phase_hints.py`: динамические подсказки на основе текущего дня лиги + live цен. Каждый hint с `tracked_currency` обогащается метриками: current_price / change_pct_week / change_pct_month / momentum / phase-aware recommendation.
-
-**Реализация (iter 110):**
-- **Backend pure function extension:** `backend/economy/phase_hints.py` — `get_phase_hints()` теперь принимает optional `snapshot: DataSnapshot | None = None`. Когда snapshot предоставлен, каждый hint с непустым `tracked_currency` обогащается 5 полями: `current_price` / `change_pct_week` (7d signed %) / `change_pct_month` (30d signed %) / `momentum` (UP/DOWN/FLAT) / `recommendation` (phase-aware). Когда snapshot=None, hints возвращаются static-only (backward-compat — все 61 pre-iter-110 тест остались зелёными).
-- **Tracked currencies:** 3 of 12 hints имеют `tracked_currency` — `early-quick-flips` → "exalted", `mid-triangular-arb` → "divine", `late-portfolio-hold` → "divine". Hints про уники (Temporalis) и category-items (vault keys, breach catalysts) оставлены untracked — их api_ids ненадёжно в currency snapshot.
-- **Momentum thresholds:** UP ≥ +5%, DOWN ≤ -5%, FLAT между. `MOMENTUM_UP_THRESHOLD_PCT=5.0`, `MOMENTUM_DOWN_THRESHOLD_PCT=-5.0`.
-- **Recommendation matrix (phase × momentum):**
-  | Phase | UP | DOWN | FLAT |
-  |-------|-----|------|------|
-  | EARLY | HOLD | BUY_OPPORTUNITY | WATCH |
-  | MID | HOLD | WATCH | NEUTRAL |
-  | LATE | SELL_INTO_STRENGTH | SELL_NOW | NEUTRAL |
-  Rationale: EARLY + DOWN = покупка на просадке (валюта восстановится). LATE + UP = продажа на силе (до конца лиги). MID = hold-and-watch.
-- **Nearest-price lookup:** `_find_price_near()` — 24h tolerance (совпадает с `storage_value_history._find_nearest_price` и `mirror_divine_arb._extract_rate_series`).
-- **Backend route:** `backend/api/routes_phase_hints.py` — best-effort snapshot fetch. Если snapshot manager не имеет данных (last_snapshot is None) или get_snapshot() падает — enrichment пропускается, hints возвращаются static-only. Сохраняет "immune to KI-11" свойство.
-- **Pydantic model:** `PhaseHintData` в `response_models.py` — добавлены 6 optional полей (tracked_currency, current_price, change_pct_week, change_pct_month, momentum, recommendation). Все default=None.
-- **TS types:** `PhaseHint` в `src/lib/types.ts` — mirror pydantic model. `trackedCurrency: string`, `currentPrice/changePctWeek/changePctMonth: number | null`, `momentum: "UP"|"DOWN"|"FLAT"|null`, `recommendation: ...|null`.
-- **UI widget:** `src/components/dashboard/phase-hints-widget.tsx` — `HintRow` теперь рендерит live-price секцию (current price + 7d change + 30d change + momentum badge + recommendation badge) когда `trackedCurrency` непустой AND `currentPrice !== null`. 5 helper-функций: `momentumBadgeClass` / `momentumLabelKey` / `recommendationBadgeClass` / `recommendationLabelKey` / `fmtSignedPct` / `fmtPrice`. Цветовое кодирование: emerald для UP/BUY, red для DOWN/SELL, amber для WATCH, violet для HOLD, muted для NEUTRAL/FLAT.
-- **i18n:** 12 новых ключей × 4 locales (en/ru/ko/zh) — momentum labels (Rising/Falling/Stable), recommendation labels (BUY — dip opportunity / HOLD / WATCH / SELL — into strength / SELL NOW / NEUTRAL), change labels (Price / 7d / 30d). Parity: 1191 keys × 4 locales.
-- **Tests:** 48 новых pytest (7 test classes: TestListTrackedHints × 5, TestFindPriceNear × 6, TestComputeChangePct × 7, TestMomentumFromChange × 6, TestRecommendationFromPhaseMomentum × 10 [parametrized 9 + 1 none], TestGetPhaseHintsWithSnapshot × 10, TestRouteHandlerWithSnapshot × 4) + 13 новых jest-тестов в `phase-hints-widget.test.tsx` (live-price section rendering: tracked/untracked/positive/negative/FLAT/BUY_OPPORTUNITY/SELL_INTO_STRENGTH/no-data). Regression: 1266 pytest green (было 1218 в iter 109, +48 новых).
-- **KI-20 documented:** Found that `case-transform.ts` regex `/_([a-z])/g` does NOT transform `_<digit>` patterns (e.g. `delta_7d_pct` → `delta_7dPct` instead of `delta7dPct`). Latent bug in content-pulse widget. Iter 110 new code AVOIDS the bug by using clean field names (`change_pct_week` / `change_pct_month` instead of `change_pct_7d`). Fix deferred (risky — needs full jest + UI regression).
-
-**Что НЕ входит в iter 110.** Tracked currencies для uniques (Temporalis) — нужны GGG trade API или item-level данные. Расширение tracked coverage на vault keys / breach catalysts — нужно проверить api_ids в snapshot.
-
-### C.8. iter 103+ — Gold Map ROI (P10)
-**Что.** Калькулятор. Ввод: gold amount, map cost. Вывод: expected Div через best 3-way flip. Использует `triangular.py` для нахождения best rate.
-
-### C.9. Backlog (требуют GGG trade API)
+### Не реализованы (требуют GGG trade API)
 - P6 Priority Listing Arb — нужен GGG trade API.
 - P11 Megalomaniac scanner — нужен GGG trade API (affix-фильтры).
 - P12 Tablet resell — нужен GGG trade API.
@@ -303,7 +162,7 @@
 - P19 Meta gem demand divergence — нужен GGG trade API.
 - P20 Skill gem quality crafting — нужен GGG trade API.
 
-Эти паттерны **не** на roadmap, пока GGG trade API не интегрирован (отдельная задача — OAuth2 + rate-limit handling, см. KI-1 note в PRODUCT_VISION.md).
+Эти паттерны **не** на roadmap, пока GGG trade API не интегрирован (отдельная задача — OAuth2 + rate-limit handling, см. KI-1 note в `PRODUCT_VISION.md`).
 
 ---
 
@@ -315,41 +174,32 @@
 3. **Actionability** (даёт конкретный сигнал игроку).
 4. **Self-contained** (минимальный риск сломать прод).
 
-### D.2. Топ-5 паттернов для следующих итераций
-| Ранг | Паттерн | iter | Риск | Статус |
-|------|---------|------|------|--------|
-| 1 | P8 Trajectory classification | 96–97 | Низкий (pure function + thin UI) | ✅ Done |
-| 2 | P4 Time-of-day | 98 | Низкий (новая колонка в existing price_logs) | ✅ Done |
-| 3 | P5 Weekday/weekend | 99 | Низкий (аналогично P4) | ✅ Done |
-| 4 | P3 Leveling uniques | 100 | Средний (статичная таблица) | ✅ Done |
-| 5 | P7 Mirror/Divine arb | 108 (backend) / 109 (UI) | Средний (расширяет existing модуль) | ✅ Done |
+### D.2. Реализованные паттерны (canonical status)
+| Ранг | Паттерн | iter | Статус |
+|------|---------|------|--------|
+| 1 | P8 Trajectory classification | 96–97 | ✅ Done |
+| 2 | P4 Time-of-day | 98 | ✅ Done |
+| 3 | P5 Weekday/weekend | 99 | ✅ Done |
+| 4 | P3 Leveling uniques | 100 | ✅ Done |
+| 5 | P7 Mirror/Divine arb | 108–109 | ✅ Done |
+| 6 | P9 Phase-aware investment | 78 + 110 | ✅ Done |
+| 7 | P10 Gold Map ROI | 127 + 132 | ✅ Done |
 
-### D.3. Точка остановки iter 110
-**Сделано (iter 110):**
-- Backend P9 Phase-aware Investment Advisor: `phase_hints.py` расширен optional `snapshot` param + enrichment logic (current_price / change_pct_week / change_pct_month / momentum / recommendation). 3 of 12 hints tracked (exalted/divine). Recommendation matrix: phase × momentum → BUY_OPPORTUNITY / HOLD / WATCH / SELL_INTO_STRENGTH / SELL_NOW / NEUTRAL.
-- Route handler `routes_phase_hints.py`: best-effort snapshot fetch с graceful fallback (static-only hints когда snapshot недоступен — preserves "immune to KI-11").
-- Pydantic model `PhaseHintData`: 6 new optional fields (all default=None).
-- TS types `PhaseHint`: mirror pydantic model.
-- UI widget `phase-hints-widget.tsx`: `HintRow` рендерит live-price секцию (price + 7d/30d change + momentum badge + recommendation badge) когда trackedCurrency + currentPrice available.
-- i18n: 12 новых ключей × 4 locales (en/ru/ko/zh) — parity 1191 keys × 4.
-- Tests: 48 новых pytest (7 test classes) + 13 новых jest-тестов. Regression: 1266 pytest green (было 1218, +48).
-- KI-20 documented: case-transform `_<digit>` bug found, not fixed (risky). Iter 110 new code AVOIDS the bug by using clean field names.
-- Документация: `STATUS.md`, `docs/MARKET_PLAYBOOK.md`, `worklog.md`, `AGENT_NAVIGATION.md` обновлены.
-
-**НЕ сделано (на iter 111+):**
-- TD-3/4/5/9 — persistence gaps (не блокируют, на roadmap).
-- P10 Gold Map ROI (§C.8) — калькулятор, зависит от P1 (3-way flips, готово).
-- KI-20 fix — `case-transform.ts` regex `/_([a-z])/g` → `/_([a-z0-9])/g` (risky, needs full regression).
-- tsc/jest regression — Known Issue с iter 99 (OOM-killer при `npm install`, нужно 8GB+ RAM).
-- Расширение tracked coverage (vault keys, breach catalysts, uniques) — нужно проверить api_ids в snapshot.
-
-**Проверка.** Все 1266 pytest-тестов зелёные (48 новых P9 + 1218 regression; 13 test_scheduler пропущены из-за missing aiosqlite). i18n parity verified programmatically (1191 keys × 4 locales). TS files syntax-checked (balanced braces/parens — ko/zh false-positives are pre-existing CJK artifact in verification script, not real errors).
+### D.3. Что осталось
+- **TD-3/4/5/9** — persistence gaps. TD-3/4/5 SHIPPED iter 128–131, runtime log verification pending (requires prod access).
+- **P2** Rate lifecycle visualization — partial (speculation.py + phase_hints.py), нужна «миграция курсов» widget.
+- **P16** Reinvestment ranking — partial (storage_value.py), нужен ranking-виджет.
+- **P17** New Season Items autodetect — partial (events.py patch tracking), автодетект новых api_id не реализован.
+- **P6, P11–P14, P19, P20** — требуют GGG official trade API (OAuth2).
+- **F1** — 9 предметов без poe2db RU-страницы — re-run pipeline после патча / ежемесячно.
 
 ---
 
 ## E. Связанные документы
 - `PRODUCT_VISION.md` — продуктовое видение (§3.7 — Circuit Patterns).
-- `STATUS.md` — Known Issues + TD backlog (iter 110: P9 live-price binding done, KI-20 documented).
-- `AGENT_NAVIGATION.md` — навигация по коду (entry для `phase_hints.py` + `routes_phase_hints.py` + `phase-hints-widget.tsx` — iter 110 enrichment).
+- `STATUS.md` — Known Issues + TD backlog.
+- `AGENT_NAVIGATION.md` — навигация по коду.
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.
+- `docs/design/P10-gold-map-roi-design.md` — P10 Gold Map ROI design doc (Phases 1+2 SHIPPED).
+- `docs/design/TD-3-4-5-9-persistence-gaps-design.md` — TD-3/4/5/9 unified persistence-layer analysis (ALL PHASES SHIPPED).

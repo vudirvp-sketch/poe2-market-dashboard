@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Architecture
 
-> **Version:** 1.0 | **Date:** 2026-06-08
+> **Version:** 1.1 | **Date:** 2026-07-13 (iter 142 audit — fixed 12 drift items: tabs list 10→16, DataSnapshot fields, HistoricalStore tables 3→5, scheduler jobs 3→4, poe2api.ts circuit breaker thresholds, Graph tab phantom removed, /api/health → /api/v1/health/ping, P10 Gold Map ROI tab added.)
 
 ---
 
@@ -10,8 +10,10 @@
 +------------------------------------------------------------------+
 |                      Browser (Client)                             |
 |  React 19, Next.js 16, TypeScript, Tailwind CSS 4                |
-|  Tabs: Overview | Currencies | Uniques | Exchange | Arbitrage    |
-|        Flips | Optimizer | Analyst | Graph | Watchlist              |
+|  Tabs (16): Overview | Currencies | Uniques | Exchange | Flips   |
+|        Optimizer | Analyst | Storage Value | Speculation           |
+|        Circuit | Intraday | Weekly | Mirror/Divine | Gold Map ROI |
+|        Liquid Chain | Watchlist                              |
 +------------------------------------------------------------------+
 |                     Next.js Proxy Layer                           |
 |  /api/poe2/*     → POE2Scout API (server-side fetch + cache)    |
@@ -61,9 +63,9 @@ Browser
 Browser
   → fetchApi("/api/flipper/flips")
   → Next.js proxy route (src/app/api/flipper/flips/route.ts)
-  → flipper-proxy.ts: proxyWithFallback("/api/arbitrage/flips")
-      → Circuit breaker check (5 failures → open for 15s)
-      → fetch("http://localhost:8000/api/arbitrage/flips")
+  → flipper-proxy.ts: proxyWithFallback("/api/v1/arbitrage/flips")
+      → Circuit breaker check (5 failures → open for 15s, exponential to 5min)
+      → fetch("http://localhost:8000/api/v1/arbitrage/flips")
       ↓ on 503/502/422
       → Error type classification (backend_offline, insufficient_data, etc.)
       → Graceful UI fallback message
@@ -83,11 +85,18 @@ Browser
 ```
 Poe2ScoutProvider (httpx AsyncClient)
   → fetch_exchange_rates(league)
-  → DataSnapshot (TTL-cached by SnapshotManager)
-      ├── rates: dict[str, SnapshotPair]   (bid/ask/mid_price)
-      ├── bfs_pricing: dict[str, float]    (transitive mid_price via BFS)
-      ├── currencies: list[CurrencyItem]
-      └── price_histories: dict[str, PriceLogEntry[]]
+  → DataSnapshot (TTL-cached by SnapshotManager) — 9 fields:
+      ├── exchange_rates: dict[str, ExchangeRate]   (bid/ask/mid_price)
+      ├── currencies: dict[str, dict]               (api_id → raw ByCategory dict)
+      ├── currency_metadata: list[CurrencyInfo]
+      ├── price_histories: dict[str, list[PricePoint]]
+      ├── current_prices: dict[str, float]
+      ├── prices_in_base: dict[str, float]           (BFS transitive mid_price)
+      ├── tiers: dict[str, CurrencyTier]
+      ├── fetched_at: datetime
+      └── valid: bool
+  (NOTE: `league` lives on SnapshotManager._config, NOT on the dataclass.
+   `snapshot_age_seconds` is computed by SnapshotManager from `fetched_at`.)
   → Scorer → FlipOpportunity[] (raw_spread × fill_prob × penalties × phase)
   → Triangular → TriangularCycle[] (Bellman-Ford negative cycles)
   → Portfolio → allocation + correlation matrix (Ledoit-Wolf shrinkage)
@@ -95,10 +104,12 @@ Poe2ScoutProvider (httpx AsyncClient)
   → PhaseDetector → EARLY/MID/LATE (based on league_start_date)
   → EventManager → active events + scoring penalties
 
-HistoricalStore (SQLite: historical.db)
-  ├── prices_history     — time-series for scheduler snapshots
-  ├── events             — persisted event flags (dual-write with EventManager)
-  └── price_snapshots    — periodic snapshot archive
+HistoricalStore (SQLite: historical.db) — 5 tables:
+  ├── price_snapshots       — periodic snapshot archive (scheduler job 1)
+  ├── events                — persisted event flags (dual-write with EventManager)
+  ├── market_spreads        — TD-4 (iter 128) per-pair spread persistence
+  ├── triangular_cycles    — TD-3 (iter 129) triangular arb cycle persistence
+  └── daily_stats           — TD-5 (iter 131) OHLCV daily statistics
 
 PipelineCache (TTL in-memory) — caches expensive analytics computations
 DailyStatsCache (LRU + TTL)   — OHLCV daily statistics
@@ -165,12 +176,12 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | `Poe2ScoutProvider` | `backend/data/providers/poe2scout.py` | Primary data provider (httpx AsyncClient, semaphore=5, rate_limit_lock, 2 retries on 429) |
 | `OfficialTradeProvider` | `backend/data/providers/official.py` | OAuth2 fallback provider (rarely used) |
 | `SnapshotManager` | `backend/api/data_snapshot.py` | TTL-cached DataSnapshot with periodic refresh |
-| `HistoricalStore` | `backend/data/historical.py` | SQLite store (prices_history, events, price_snapshots) |
+| `HistoricalStore` | `backend/data/historical.py` | SQLite store (5 tables: price_snapshots, events, market_spreads, triangular_cycles, daily_stats) |
 | `PipelineCache` | `backend/data/pipeline_cache.py` → `unified_cache.py` | TTL-based analytics result cache (facade over UnifiedCache) |
 | `DailyStatsCache` | `backend/data/daily_stats_cache.py` → `unified_cache.py` | LRU + TTL OHLCV statistics cache (facade over UnifiedCache) |
 | `UnifiedCache` | `backend/data/unified_cache.py` | Shared LRU + stale store, namespace-scoped TTL (Phase 1.2) |
 | `ModelStore` | `backend/predictors/model_store.py` | LightGBM model persistence to disk |
-| `DataScheduler` | `backend/scheduler.py` | APScheduler: price snapshots, event pruning, model persistence |
+| `DataScheduler` | `backend/scheduler.py` | APScheduler: 4 jobs — price_snapshot (30min), event_pruning (15min), model_persistence (30min), daily_stats_refresh (1h, TD-5 iter 131) |
 | `Scorer` | `backend/arbitrage/scorer.py` | Opportunity scoring + quantized analysis |
 | `TriangularArb` | `backend/arbitrage/triangular.py` | Bellman-Ford negative cycle detection |
 | `PortfolioOptimizer` | `backend/arbitrage/portfolio.py` | Risk parity, min-variance, efficient frontier |
@@ -190,9 +201,10 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 | Job | Interval | Function |
 |-----|----------|----------|
-| price_snapshot | 30 min | Fetch current prices + persist to SQLite |
+| price_snapshot | 30 min | Fetch current prices + persist to SQLite (`price_snapshots` table) |
 | event_pruning | 15 min | Prune expired events from memory + SQLite |
 | model_persistence | 30 min | Save LightGBM models to disk |
+| daily_stats_refresh | 1 hour | TD-5 (iter 131) — fetch daily OHLCV for top-N items, persist to `daily_stats` table |
 
 ## 7. Cache Architecture
 
@@ -204,21 +216,22 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | UnifiedCache | `unified_cache.py` | Namespace-scoped | namespace:key | In-memory OrderedDict + LRUDict stale store |
 | ├ PipelineCache | `pipeline_cache.py` (facade) | Configurable | endpoint+params | Delegates to UnifiedCache ns="pipeline" |
 | └ DailyStatsCache | `daily_stats_cache.py` (facade) | 1 hour | currency+league | Delegates to UnifiedCache ns="daily_stats" |
-| poe2api.ts cache | `src/lib/poe2api.ts` | 30 min | URL path | In-memory Map |
-| Circuit breaker | `flipper-proxy.ts` | 15s initial (grows to 5min) | Backend URL | Failure counter |
+| poe2api.ts cache | `src/lib/poe2api.ts` | 60s fresh / 30min stale | URL path | In-memory Map (stale-while-revalidate) |
+| Circuit breaker (poe2api.ts) | `src/lib/poe2api.ts` | 60s open | — | 3 consecutive failures → open |
+| Circuit breaker (flipper-proxy.ts) | `src/lib/flipper-proxy.ts` | 15s initial (grows to 5min) | Backend URL | 5 consecutive failures → open |
 | cache-snapshot.json | `src/data/` | Regenerated | — | JSON file (pre-populated) |
 
 ## 8. Error Handling & Resilience
 
 ### Frontend (poe2api.ts)
-- **Circuit breaker:** 5 consecutive failures → open for 15s (exponential backoff to max 5min, health probe on recovery)
-- **Stale-while-revalidate:** serve cached data up to 30 min old while revalidating
+- **Circuit breaker:** 3 consecutive failures → open for 60s (`CIRCUIT_BREAKER_THRESHOLD=3`, `CIRCUIT_BREAKER_COOLDOWN=60_000`)
+- **Stale-while-revalidate:** fresh TTL = 60s (`CACHE_TTL`); stale data served up to 30 min old (`CACHE_STALE_TTL`) while revalidating
 - **CORS proxy fallback:** automatic retry through Cloudflare Worker on ECONNRESET/ETIMEDOUT
 - **Pre-populated cache:** `cache-snapshot.json` seeds in-memory cache on startup
 - **Dynamic fallback:** last successful API response cached and served when unreachable
 
 ### Frontend (flipper-proxy.ts)
-- **Circuit breaker:** 5 failures → open for 15s (exponential backoff to 5min, half-open health probe)
+- **Circuit breaker:** 5 failures → open for 15s (`FLIPPER_CB_THRESHOLD=5`, `FLIPPER_CB_INITIAL_COOLDOWN=15_000`, exponential backoff to `FLIPPER_CB_MAX_COOLDOWN=300_000`, half-open health probe)
 - **Request deduplication:** concurrent identical requests share one in-flight fetch
 - **Error type classification:** `backend_offline`, `insufficient_data`, `upstream_error`, etc.
 - **Graceful UI:** FlipperBackendStatusCard shows consistent offline/insufficient-data messages
@@ -234,15 +247,24 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 
 | Tab | Backend Required | Key Components | Data Source |
 |-----|-----------------|----------------|-------------|
-| Overview | No | market-overview | /api/poe2/overview |
+| Overview | No | market-overview, phase-hints-widget, leveling-uniques-widget | /api/poe2/overview, /api/flipper/phase-hints, /api/flipper/leveling-uniques |
 | Currencies | No | virtual-currency-grid | /api/poe2/currencies |
 | Uniques | No | unique-table, candlestick-chart | /api/poe2/uniques |
 | Exchange | No | exchange-table, exchange-pair-card | /api/poe2/exchange |
-| Flips | Yes | flips-tab, flips-table, flips-detail-dialog, arbitrage-flipper-triangular | /api/flipper/flips, /api/flipper/triangular |
+| Flips | Yes | flips-tab, flips-table, flips-detail-dialog | /api/flipper/flips, /api/flipper/triangular |
 | Optimizer | Yes | optimizer-tab | /api/flipper/optimizer/path, /api/flipper/optimizer/matrix |
 | Analyst | Yes | analyst-tab | /api/flipper/analyst/summary, /api/poe2/analyst-fallback (no backend) |
-| Graph | Yes | currency-graph-tab, comparative-chart | /api/flipper/* |
+| Storage Value | Yes | storage-value-tab, storage-value-history-chart | /api/flipper/storage-value/{currency}/history |
+| Speculation | Yes | speculation-tab | /api/flipper/speculation, /api/flipper/speculation/backtest |
+| Circuit Patterns | Yes | circuit-patterns-tab | /api/flipper/circuit-patterns |
+| Intraday Patterns | Yes | intraday-patterns-tab | /api/flipper/intraday-patterns |
+| Weekly Patterns | Yes | weekly-patterns-tab | /api/flipper/weekly-patterns |
+| Mirror/Divine Arb | Yes | mirror-divine-arb-tab | /api/flipper/mirror-divine-arb |
+| Gold Map ROI | Yes | gold-map-roi-tab, gold-map-roi-calculator, gold-map-roi-trend-chart | /api/flipper/triangular/history (reuses triangular data) |
+| Liquid Chain | Yes | liquid-chain-tab | /api/flipper/liquid-chain/{analysis,opportunities} |
 | Watchlist | No | watchlist-tab | Local Zustand store |
+
+> **Removed tabs:** `Arbitrage` (removed iter 92, KI-7) and `Graph` (removed iter 87) are NO LONGER in `TAB_MAP`. iter 141 verified `src/components/dashboard/dashboard-page.tsx:211` has 16 entries — see `docs/DATA_FLOW.md` §9 for the canonical Data → Component mapping.
 
 **Detailed data→component mapping:** See [`DATA_FLOW.md`](./DATA_FLOW.md) §9
 
@@ -260,7 +282,7 @@ Next.js server starts
   → bridge detects project root (process.cwd())
   → bridge detects Python (PYTHON_CMD env → .venv → system)
   → bridge execs: <python> -m uvicorn backend.main:app --port 8000
-  → bridge monitors /api/health every 45s
+  → bridge monitors /api/v1/health/ping every 45s (ultra-lightweight plain-text "ok" — avoids GIL contention false-positives)
   → if process exits: auto-restart (up to 5 times in 60s)
   → if health check fails 5 consecutive times: kill + auto-restart
   → on Next.js shutdown:
@@ -297,7 +319,9 @@ Next.js server starts
 - **Auto-restart**: If the backend crashes (OOM, unhandled exception), the bridge restarts it
 - **No orphaned processes**: When Next.js exits, the Python process is properly terminated (including entire process tree on Windows)
 - **Single command**: `start.bat` / `start.sh` handles everything — no separate terminal windows
-- **Health monitoring**: Bridge checks `/api/health` every 45 seconds
+- **Health monitoring**: Bridge checks `/api/v1/health/ping` every 45 seconds
 - **Stuck process detection**: If health check fails 5 consecutive times, bridge kills the process and triggers auto-restart
 - **Console logging**: All bridge events written to console (Next.js captures in server log). To persist to a file, redirect output: `npm run start > flipper-bridge.log 2>&1`
 - **WebSocket reconnect**: Frontend health polling detects backend restart and reconnects WebSocket automatically
+
+> **Historical note:** `instrumentation.ts:7` comment still mentions `/api/health` (legacy reference). The actual health endpoint used by the bridge is `/api/v1/health/ping` (see `src/lib/flipper-backend-bridge.ts:52`). Doc-only drift in a code comment — not fixed in iter 142 (no source-code changes beyond the KI-31 `.env.example` fix).

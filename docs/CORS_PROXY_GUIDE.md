@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — CORS Proxy & Resilience Guide
 
-> **Version:** 1.0 | **Date:** 2026-06-08
+> **Version:** 1.1 | **Date:** 2026-07-13 (iter 142 audit — fixed 2 drift items: poe2api.ts circuit breaker open duration 30s → 60s, cache TTL clarified as 60s fresh / 30min stale.)
 
 ---
 
@@ -26,17 +26,21 @@ The frontend uses a layered fallback strategy for all POE2Scout API calls:
 
 ### Circuit Breaker
 
-- **Threshold:** 3 consecutive failures
-- **Open duration:** 30 seconds
+- **Threshold:** 3 consecutive failures (`CIRCUIT_BREAKER_THRESHOLD=3` in `src/lib/poe2api.ts:114`)
+- **Open duration:** 60 seconds (`CIRCUIT_BREAKER_COOLDOWN=60_000` in `src/lib/poe2api.ts:112`)
 - **Behavior:** When open, all requests immediately fail with cached/fallback data (no API calls attempted)
-- **Reset:** After 30s, allows one request through (half-open). If it succeeds, circuit closes.
+- **Reset:** After 60s, allows one request through (half-open). If it succeeds, circuit closes.
+
+> **NOTE:** This is the **poe2api.ts** circuit breaker (POE2Scout API). The **flipper-proxy.ts** circuit breaker (FastAPI backend) has DIFFERENT thresholds: 5 failures → 15s initial open, exponential backoff to max 5min (`FLIPPER_CB_THRESHOLD=5`, `FLIPPER_CB_INITIAL_COOLDOWN=15_000`, `FLIPPER_CB_MAX_COOLDOWN=300_000`). See `docs/ARCHITECTURE.md` §7 + §8 for the side-by-side comparison.
 
 ### Stale-While-Revalidate Cache
 
 - In-memory `Map<string, { data, timestamp }>`
-- TTL: 30 minutes
-- On cache hit but expired: serve stale data immediately, trigger background revalidation
+- **Fresh TTL:** 60 seconds (`CACHE_TTL=60_000` in `src/lib/poe2api.ts:71`) — cache hits within this window served immediately without revalidation
+- **Stale TTL:** 30 minutes (`CACHE_STALE_TTL=1_800_000` in `src/lib/poe2api.ts:72`) — stale data served while a background revalidation runs
+- On cache hit but expired (age > 60s): serve stale data immediately, trigger background revalidation
 - On cache miss: attempt API call, cache result on success
+- Entries older than `CACHE_STALE_TTL * 2` (60min) are evicted entirely
 
 ### Cache Pre-populator
 
