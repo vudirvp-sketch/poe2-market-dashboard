@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-26T00:01:07+0500",
+  "generated_at": "2026-07-12T10:35:12+0000",
   "summary": {
-    "total_poe2scout_items": 639,
+    "total_poe2scout_items": 643,
     "already_translated": 297,
-    "new_candidates": 0,
-    "conflicts": 1,
-    "no_match": 342
+    "new_candidates": 337,
+    "conflicts": 0,
+    "no_match": 9
   },
   "entries": [
     {
@@ -13,170 +13,170 @@
       "en_name": "Azmeri Reliquary Key",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "faded-crisis-fragment",
-      "en_name": "Faded Crisis Fragment",
-      "category_api_id": "fragments",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Ключ от Реликвария азмири",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "breachlord-sac",
       "en_name": "Breachlord Sac",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мешок Повелителя Разлома",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "origin-core",
       "en_name": "Origin Core",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Ядро истока",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "faded-crisis-fragment",
+      "en_name": "Faded Crisis Fragment",
+      "category_api_id": "fragments",
+      "current_ru_name": null,
+      "proposed_ru_name": "Истёртый переломный фрагмент",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "deadly-fate",
       "en_name": "Deadly Fate",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "victorious-fate",
-      "en_name": "Victorious Fate",
-      "category_api_id": "fragments",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Смертельный конец",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "cowardly-fate",
       "en_name": "Cowardly Fate",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Трусливый конец",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "origin-cradle",
-      "en_name": "Origin Cradle",
+      "api_id": "victorious-fate",
+      "en_name": "Victorious Fate",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "simulacrum",
-      "en_name": "Simulacrum",
-      "category_api_id": "fragments",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Победный конец",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "origin-spark",
       "en_name": "Origin Spark",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Искра истока",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "origin-cradle",
+      "en_name": "Origin Cradle",
+      "category_api_id": "fragments",
+      "current_ru_name": null,
+      "proposed_ru_name": "Колыбель истока",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "simulacrum",
+      "en_name": "Simulacrum",
+      "category_api_id": "fragments",
+      "current_ru_name": null,
+      "proposed_ru_name": "Симулякр",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "kulemaks-invitation",
       "en_name": "Kulemak's Invitation",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "weathered-crisis-fragment",
-      "en_name": "Weathered Crisis Fragment",
-      "category_api_id": "fragments",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Приглашение Кулемака",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-crisis-fragment",
       "en_name": "Ancient Crisis Fragment",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древний переломный фрагмент",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "weathered-crisis-fragment",
+      "en_name": "Weathered Crisis Fragment",
+      "category_api_id": "fragments",
+      "current_ru_name": null,
+      "proposed_ru_name": "Выцветший переломный фрагмент",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "breachstone",
       "en_name": "Breachstone",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Камень Разлома",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "an-audience-with-the-king",
       "en_name": "An Audience with the King",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Встреча с Хозяином",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "simulacrum-splinter",
       "en_name": "Simulacrum Splinter",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Осколок Симулякра",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "breach-splinter",
       "en_name": "Breach Splinter",
       "category_api_id": "fragments",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Осколок Разлома",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "aldurs-legacy",
@@ -189,464 +189,474 @@
       "action": "skip"
     },
     {
-      "api_id": "perfect-body-rune",
-      "en_name": "Perfect Body Rune",
+      "api_id": "serles-triumph",
+      "en_name": "Serle's Triumph",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-rune-of-leadership",
-      "en_name": "Greater Rune of Leadership",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-ward-rune",
-      "en_name": "Perfect Ward Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-charging-rune",
-      "en_name": "Perfect Charging Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-adept-rune",
-      "en_name": "Perfect Adept Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-robust-rune",
-      "en_name": "Perfect Robust Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-resolve-rune",
-      "en_name": "Perfect Resolve Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-mind-rune",
-      "en_name": "Perfect Mind Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-desert-rune",
-      "en_name": "Perfect Desert Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-inspiration-rune",
-      "en_name": "Perfect Inspiration Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-glacial-rune",
-      "en_name": "Perfect Glacial Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "perfect-storm-rune",
-      "en_name": "Perfect Storm Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Триумф Серли",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "perfect-rebirth-rune",
       "en_name": "Perfect Rebirth Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Безупречная руна перерождения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "perfect-stone-rune",
-      "en_name": "Perfect Stone Rune",
+      "api_id": "perfect-adept-rune",
+      "en_name": "Perfect Adept Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Безупречная руна искусности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-body-rune",
+      "en_name": "Perfect Body Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна тела",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-charging-rune",
+      "en_name": "Perfect Charging Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна заряда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-storm-rune",
+      "en_name": "Perfect Storm Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна шторма",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "perfect-vision-rune",
       "en_name": "Perfect Vision Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Безупречная руна видения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-robust-rune",
+      "en_name": "Perfect Robust Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна мощи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-mind-rune",
+      "en_name": "Perfect Mind Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна разума",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-inspiration-rune",
+      "en_name": "Perfect Inspiration Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна вдохновения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-ward-rune",
+      "en_name": "Perfect Ward Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна барьера",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-desert-rune",
+      "en_name": "Perfect Desert Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна пустыни",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-resolve-rune",
+      "en_name": "Perfect Resolve Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна решительности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-rune-of-leadership",
+      "en_name": "Greater Rune of Leadership",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна лидерства",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "perfect-glacial-rune",
+      "en_name": "Perfect Glacial Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безупречная руна ледника",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "perfect-iron-rune",
       "en_name": "Perfect Iron Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Безупречная руна железа",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "serles-triumph",
-      "en_name": "Serle's Triumph",
+      "api_id": "perfect-stone-rune",
+      "en_name": "Perfect Stone Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "cadigans-epiphany",
-      "en_name": "Cadigan's Epiphany",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-rune-of-alacrity",
-      "en_name": "Greater Rune of Alacrity",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Безупречная руна камня",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "greater-rune-of-tithing",
       "en_name": "Greater Rune of Tithing",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Большая руна десятины",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "cadigans-epiphany",
+      "en_name": "Cadigan's Epiphany",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Озарение Кадигана",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "masterwork-rune",
       "en_name": "Masterwork Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мастерская руна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-rune-of-alacrity",
+      "en_name": "Greater Rune of Alacrity",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна стремления",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "kolrs-hunt",
       "en_name": "Kolr's Hunt",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uhtreds-sidereus",
-      "en_name": "Uhtred's Sidereus",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-robust-rune",
-      "en_name": "Lesser Robust Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "robust-rune",
-      "en_name": "Robust Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-the-horde",
-      "en_name": "Ancient Rune of the Horde",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Охота Колра",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "charging-rune",
       "en_name": "Charging Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна заряда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "voranas-carnage",
-      "en_name": "Vorana's Carnage",
+      "api_id": "uhtreds-sidereus",
+      "en_name": "Uhtred's Sidereus",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сидерий Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "warding-rune-of-reinforcement",
-      "en_name": "Warding Rune of Reinforcement",
+      "api_id": "rune-of-consistency",
+      "en_name": "Rune of Consistency",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна постоянства",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "rune-of-acrobatics",
-      "en_name": "Rune of Acrobatics",
+      "api_id": "rune-of-reach",
+      "en_name": "Rune of Reach",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна охвата",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "countess-seskes-rune-of-archery",
-      "en_name": "Countess Seske's Rune of Archery",
+      "api_id": "resolve-rune",
+      "en_name": "Resolve Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "medveds-tending",
-      "en_name": "Medved's Tending",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "hedgewitch-assandras-rune-of-wisdom",
-      "en_name": "Hedgewitch Assandra's Rune of Wisdom",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thruds-might",
-      "en_name": "Thrud's Might",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-ward-rune",
-      "en_name": "Greater Ward Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "farruls-rune-of-the-chase",
-      "en_name": "Farrul's Rune of the Chase",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-renown",
-      "en_name": "Rune of Renown",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-the-blossom",
-      "en_name": "Rune of the Blossom",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "body-rune",
-      "en_name": "Body Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна решительности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "rune-of-foundations",
       "en_name": "Rune of Foundations",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна основ",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "warding-rune-of-stability",
-      "en_name": "Warding Rune of Stability",
+      "api_id": "iron-rune",
+      "en_name": "Iron Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна железа",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "warding-rune-of-disintegration",
-      "en_name": "Warding Rune of Disintegration",
+      "api_id": "rune-of-vitality",
+      "en_name": "Rune of Vitality",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна живучести",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "lesser-inspiration-rune",
-      "en_name": "Lesser Inspiration Rune",
+      "api_id": "courtesan-mannans-rune-of-cruelty",
+      "en_name": "Courtesan Mannan's Rune of Cruelty",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна жестокости куртизанки Маннан",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "katlas-gloom",
-      "en_name": "Katla's Gloom",
+      "api_id": "robust-rune",
+      "en_name": "Robust Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна мощи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "inspiration-rune",
-      "en_name": "Inspiration Rune",
+      "api_id": "warding-rune-of-reinforcement",
+      "en_name": "Warding Rune of Reinforcement",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Барьерная руна укрепления",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "rebirth-rune",
-      "en_name": "Rebirth Rune",
+      "api_id": "lesser-robust-rune",
+      "en_name": "Lesser Robust Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна мощи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "hedgewitch-assandras-rune-of-wisdom",
+      "en_name": "Hedgewitch Assandra's Rune of Wisdom",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна мудрости лесной ведьмы Ассандры",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-desperation",
+      "en_name": "Warding Rune of Desperation",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна отчаяния",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "rune-of-the-prism",
+      "en_name": "Rune of the Prism",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна призмы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "body-rune",
+      "en_name": "Body Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна тела",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "medveds-tending",
+      "en_name": "Medved's Tending",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Присмотр Медведя",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "voranas-carnage",
+      "en_name": "Vorana's Carnage",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Резня Вораны",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-adept-rune",
+      "en_name": "Lesser Adept Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна искусности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-ward-rune",
+      "en_name": "Greater Ward Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна барьера",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-rune-of-nobility",
+      "en_name": "Greater Rune of Nobility",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна дворянства",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "rune-of-acrobatics",
+      "en_name": "Rune of Acrobatics",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна акробатики",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-the-titan",
+      "en_name": "Ancient Rune of the Titan",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна Титана",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-detonation",
+      "en_name": "Ancient Rune of Detonation",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна подрыва",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "storm-rune",
+      "en_name": "Storm Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна шторма",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "betrayal-of-aldur",
@@ -659,544 +669,64 @@
       "action": "skip"
     },
     {
-      "api_id": "iron-rune",
-      "en_name": "Iron Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ward-rune",
-      "en_name": "Ward Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-heart",
-      "en_name": "Warding Rune of Heart",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "adept-rune",
-      "en_name": "Adept Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thane-myrks-rune-of-summer",
-      "en_name": "Thane Myrk's Rune of Summer",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "saqawals-rune-of-memory",
-      "en_name": "Saqawal's Rune of Memory",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-accumulation",
-      "en_name": "Rune of Accumulation",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "courtesan-mannans-rune-of-cruelty",
-      "en_name": "Courtesan Mannan's Rune of Cruelty",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "resolve-rune",
-      "en_name": "Resolve Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thane-grannells-rune-of-mastery",
-      "en_name": "Thane Grannell's Rune of Mastery",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thane-girts-rune-of-wildness",
-      "en_name": "Thane Girt's Rune of Wildness",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "fenumus-rune-of-agony",
-      "en_name": "Fenumus' Rune of Agony",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-the-titan",
-      "en_name": "Ancient Rune of the Titan",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-reach",
-      "en_name": "Rune of Reach",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "the-greatwolfs-rune-of-willpower",
-      "en_name": "The Greatwolf's Rune of Willpower",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-hollowing",
-      "en_name": "Warding Rune of Hollowing",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "farruls-rune-of-grace",
-      "en_name": "Farrul's Rune of Grace",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-salvaging",
-      "en_name": "Warding Rune of Salvaging",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-symbiosis",
-      "en_name": "Warding Rune of Symbiosis",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "the-greatwolfs-rune-of-claws",
-      "en_name": "The Greatwolf's Rune of Claws",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-detonation",
-      "en_name": "Ancient Rune of Detonation",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-bodyguards",
-      "en_name": "Warding Rune of Bodyguards",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-equinox",
-      "en_name": "Warding Rune of Equinox",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "fenumus-rune-of-spinning",
-      "en_name": "Fenumus' Rune of Spinning",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-culmination",
-      "en_name": "Rune of Culmination",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-armature",
-      "en_name": "Warding Rune of Armature",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-charging-rune",
-      "en_name": "Greater Charging Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thane-lelds-rune-of-spring",
-      "en_name": "Thane Leld's Rune of Spring",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-discovery",
-      "en_name": "Ancient Rune of Discovery",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "craiceanns-rune-of-recovery",
-      "en_name": "Craiceann's Rune of Recovery",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-iron-rune",
-      "en_name": "Lesser Iron Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-shattering",
-      "en_name": "Ancient Rune of Shattering",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-nourishment",
-      "en_name": "Warding Rune of Nourishment",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-the-prism",
-      "en_name": "Rune of the Prism",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ire-of-aldur",
-      "en_name": "Ire of Aldur",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-splinters",
-      "en_name": "Ancient Rune of Splinters",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-annihilation",
-      "en_name": "Warding Rune of Annihilation",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-the-hunt",
-      "en_name": "Rune of the Hunt",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "fenumus-rune-of-draining",
-      "en_name": "Fenumus' Rune of Draining",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-witchcraft",
-      "en_name": "Ancient Rune of Witchcraft",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-rune-of-nobility",
-      "en_name": "Greater Rune of Nobility",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
       "api_id": "lesser-resolve-rune",
       "en_name": "Lesser Resolve Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна решительности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "greater-robust-rune",
-      "en_name": "Greater Robust Rune",
+      "api_id": "rune-of-the-blossom",
+      "en_name": "Rune of the Blossom",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна цветения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "ancient-rune-of-retaliation",
-      "en_name": "Ancient Rune of Retaliation",
+      "api_id": "katlas-gloom",
+      "en_name": "Katla's Gloom",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rune-of-vitality",
-      "en_name": "Rune of Vitality",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "saqawals-rune-of-the-sky",
-      "en_name": "Saqawal's Rune of the Sky",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "breath-of-aldur",
-      "en_name": "Breath of Aldur",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-iron-rune",
-      "en_name": "Greater Iron Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-storm-rune",
-      "en_name": "Lesser Storm Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "farruls-rune-of-the-hunt",
-      "en_name": "Farrul's Rune of the Hunt",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "storm-rune",
-      "en_name": "Storm Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мрачность Катлы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "craiceanns-rune-of-warding",
       "en_name": "Craiceann's Rune of Warding",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна барьера Краценна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "rune-of-consistency",
-      "en_name": "Rune of Consistency",
+      "api_id": "rune-of-renown",
+      "en_name": "Rune of Renown",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна славы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "greater-adept-rune",
-      "en_name": "Greater Adept Rune",
+      "api_id": "warding-rune-of-heart",
+      "en_name": "Warding Rune of Heart",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Барьерная руна сердца",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "vision-rune",
@@ -1209,78 +739,28 @@
       "action": "skip"
     },
     {
-      "api_id": "greater-mind-rune",
-      "en_name": "Greater Mind Rune",
+      "api_id": "thane-grannells-rune-of-mastery",
+      "en_name": "Thane Grannell's Rune of Mastery",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна мастерства тана Граннеля",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "warding-rune-of-glancing",
-      "en_name": "Warding Rune of Glancing",
+      "api_id": "saqawals-rune-of-the-sky",
+      "en_name": "Saqawal's Rune of the Sky",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна неба Сакаваля",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "lesser-ward-rune",
-      "en_name": "Lesser Ward Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-body-rune",
-      "en_name": "Lesser Body Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-body-rune",
-      "en_name": "Greater Body Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ancient-rune-of-dueling",
-      "en_name": "Ancient Rune of Dueling",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-adept-rune",
-      "en_name": "Lesser Adept Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-rebirth-rune",
-      "en_name": "Lesser Rebirth Rune",
+      "api_id": "rebirth-rune",
+      "en_name": "Rebirth Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
       "proposed_ru_name": null,
@@ -1293,14 +773,84 @@
       "en_name": "Glacial Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна ледника",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "lesser-glacial-rune",
-      "en_name": "Lesser Glacial Rune",
+      "api_id": "ancient-rune-of-splinters",
+      "en_name": "Ancient Rune of Splinters",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна осколков",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "farruls-rune-of-the-chase",
+      "en_name": "Farrul's Rune of the Chase",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна погони Фаррул",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "mind-rune",
+      "en_name": "Mind Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна разума",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "craiceanns-rune-of-recovery",
+      "en_name": "Craiceann's Rune of Recovery",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна восстановления Краценна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "the-greatwolfs-rune-of-willpower",
+      "en_name": "The Greatwolf's Rune of Willpower",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна воли Великого волка",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "fenumus-rune-of-draining",
+      "en_name": "Fenumus' Rune of Draining",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна высушивания Фенумы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-nourishment",
+      "en_name": "Warding Rune of Nourishment",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна пропитания",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "breath-of-aldur",
+      "en_name": "Breath of Aldur",
       "category_api_id": "runes",
       "current_ru_name": null,
       "proposed_ru_name": null,
@@ -1309,24 +859,414 @@
       "action": "skip"
     },
     {
-      "api_id": "warding-rune-of-protection",
-      "en_name": "Warding Rune of Protection",
+      "api_id": "warding-rune-of-hollowing",
+      "en_name": "Warding Rune of Hollowing",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна опустевания",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-adept-rune",
+      "en_name": "Greater Adept Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна искусности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "rune-of-accumulation",
+      "en_name": "Rune of Accumulation",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна накопления",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thruds-might",
+      "en_name": "Thrud's Might",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Сила Трада",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-iron-rune",
+      "en_name": "Lesser Iron Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна железа",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-body-rune",
+      "en_name": "Lesser Body Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна тела",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "fenumus-rune-of-spinning",
+      "en_name": "Fenumus' Rune of Spinning",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна плетения Фенумы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "countess-seskes-rune-of-archery",
+      "en_name": "Countess Seske's Rune of Archery",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна меткости графини Сеске",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "fenumus-rune-of-agony",
+      "en_name": "Fenumus' Rune of Agony",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна агонии Фенумы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-charging-rune",
+      "en_name": "Greater Charging Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна заряда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ward-rune",
+      "en_name": "Ward Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
       "proposed_ru_name": null,
       "match_source": "none",
       "match_confidence": 0.0,
       "action": "skip"
+    },
+    {
+      "api_id": "rune-of-the-hunt",
+      "en_name": "Rune of the Hunt",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна охоты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-stability",
+      "en_name": "Warding Rune of Stability",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна устойчивости",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "desert-rune",
+      "en_name": "Desert Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна пустыни",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-rune-of-decay",
       "en_name": "Ancient Rune of Decay",
       "category_api_id": "runes",
       "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна тлена",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-shattering",
+      "en_name": "Ancient Rune of Shattering",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна разбивания",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-equinox",
+      "en_name": "Warding Rune of Equinox",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна равноденствия",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "adept-rune",
+      "en_name": "Adept Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна искусности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thane-myrks-rune-of-summer",
+      "en_name": "Thane Myrk's Rune of Summer",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна лета тана Мирка",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-glancing",
+      "en_name": "Warding Rune of Glancing",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна скольжения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "rune-of-culmination",
+      "en_name": "Rune of Culmination",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна кульминации",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "the-greatwolfs-rune-of-claws",
+      "en_name": "The Greatwolf's Rune of Claws",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна когтей Великого волка",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thane-lelds-rune-of-spring",
+      "en_name": "Thane Leld's Rune of Spring",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна весны тана Лельда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ire-of-aldur",
+      "en_name": "Ire of Aldur",
+      "category_api_id": "runes",
+      "current_ru_name": null,
       "proposed_ru_name": null,
       "match_source": "none",
       "match_confidence": 0.0,
       "action": "skip"
+    },
+    {
+      "api_id": "greater-robust-rune",
+      "en_name": "Greater Robust Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна мощи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thane-girts-rune-of-wildness",
+      "en_name": "Thane Girt's Rune of Wildness",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна дикости тана Гирта",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-annihilation",
+      "en_name": "Warding Rune of Annihilation",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна уничтожения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-glacial-rune",
+      "en_name": "Lesser Glacial Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна ледника",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-armature",
+      "en_name": "Warding Rune of Armature",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна панциря",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-storm-rune",
+      "en_name": "Lesser Storm Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна шторма",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-vision-rune",
+      "en_name": "Greater Vision Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна видения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "farruls-rune-of-grace",
+      "en_name": "Farrul's Rune of Grace",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна грации Фаррул",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-mind-rune",
+      "en_name": "Greater Mind Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна разума",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-inspiration-rune",
+      "en_name": "Greater Inspiration Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна вдохновения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "saqawals-rune-of-memory",
+      "en_name": "Saqawal's Rune of Memory",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Руна памяти Сакаваля",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-body-rune",
+      "en_name": "Greater Body Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна тела",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-disintegration",
+      "en_name": "Warding Rune of Disintegration",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна расщепления",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-protection",
+      "en_name": "Warding Rune of Protection",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна защиты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-iron-rune",
+      "en_name": "Greater Iron Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна железа",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-desert-rune",
+      "en_name": "Greater Desert Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна пустыни",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-salvaging",
+      "en_name": "Warding Rune of Salvaging",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна обломков",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "passion-of-aldur",
@@ -1339,124 +1279,204 @@
       "action": "skip"
     },
     {
-      "api_id": "lady-hestras-rune-of-winter",
-      "en_name": "Lady Hestra's Rune of Winter",
+      "api_id": "farruls-rune-of-the-hunt",
+      "en_name": "Farrul's Rune of the Hunt",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна охоты Фаррул",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "desert-rune",
-      "en_name": "Desert Rune",
+      "api_id": "saqawals-rune-of-erosion",
+      "en_name": "Saqawal's Rune of Erosion",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна эрозии Сакаваля",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "warding-rune-of-obsession",
-      "en_name": "Warding Rune of Obsession",
+      "api_id": "lesser-inspiration-rune",
+      "en_name": "Lesser Inspiration Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "mind-rune",
-      "en_name": "Mind Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-storm-rune",
-      "en_name": "Greater Storm Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "warding-rune-of-courage",
-      "en_name": "Warding Rune of Courage",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна вдохновения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "rune-of-confrontation",
       "en_name": "Rune of Confrontation",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна противоборства",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-retaliation",
+      "en_name": "Ancient Rune of Retaliation",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна расплаты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-rebirth-rune",
+      "en_name": "Greater Rebirth Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна перерождения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-witchcraft",
+      "en_name": "Ancient Rune of Witchcraft",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна ведьмовства",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-mind-rune",
+      "en_name": "Lesser Mind Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна разума",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-discovery",
+      "en_name": "Ancient Rune of Discovery",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна находки",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-the-horde",
+      "en_name": "Ancient Rune of the Horde",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна орды",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-glacial-rune",
+      "en_name": "Greater Glacial Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна ледника",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "lesser-ward-rune",
+      "en_name": "Lesser Ward Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Малая руна барьера",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-courage",
+      "en_name": "Warding Rune of Courage",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна храбрости",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-rune-of-control",
       "en_name": "Ancient Rune of Control",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древняя руна правления",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-rune-of-prowess",
       "en_name": "Ancient Rune of Prowess",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древняя руна мастерства",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "warding-rune-of-desperation",
-      "en_name": "Warding Rune of Desperation",
+      "api_id": "rune-of-vital-flame",
+      "en_name": "Rune of Vital Flame",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна живого пламени",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ancient-rune-of-dueling",
+      "en_name": "Ancient Rune of Dueling",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Древняя руна поединка",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-bodyguards",
+      "en_name": "Warding Rune of Bodyguards",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна телохранителей",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-rune-of-animosity",
       "en_name": "Ancient Rune of Animosity",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древняя руна вражды",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "lesser-vision-rune",
       "en_name": "Lesser Vision Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна видения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "stone-rune",
@@ -1469,1975 +1489,1984 @@
       "action": "skip"
     },
     {
-      "api_id": "greater-glacial-rune",
-      "en_name": "Greater Glacial Rune",
+      "api_id": "inspiration-rune",
+      "en_name": "Inspiration Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-vision-rune",
-      "en_name": "Greater Vision Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "lesser-desert-rune",
-      "en_name": "Lesser Desert Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "saqawals-rune-of-erosion",
-      "en_name": "Saqawal's Rune of Erosion",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна вдохновения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "greater-resolve-rune",
       "en_name": "Greater Resolve Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Большая руна решительности",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "greater-desert-rune",
-      "en_name": "Greater Desert Rune",
+      "api_id": "lady-hestras-rune-of-winter",
+      "en_name": "Lady Hestra's Rune of Winter",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Руна зимы леди Гестры",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "rune-of-vital-flame",
-      "en_name": "Rune of Vital Flame",
+      "api_id": "warding-rune-of-obsession",
+      "en_name": "Warding Rune of Obsession",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Барьерная руна одержимости",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "warding-rune-of-symbiosis",
+      "en_name": "Warding Rune of Symbiosis",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Барьерная руна симбиоза",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "greater-storm-rune",
+      "en_name": "Greater Storm Rune",
+      "category_api_id": "runes",
+      "current_ru_name": null,
+      "proposed_ru_name": "Большая руна шторма",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "lesser-stone-rune",
       "en_name": "Lesser Stone Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна камня",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "greater-inspiration-rune",
-      "en_name": "Greater Inspiration Rune",
+      "api_id": "lesser-rebirth-rune",
+      "en_name": "Lesser Rebirth Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна перерождения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "lesser-mind-rune",
-      "en_name": "Lesser Mind Rune",
+      "api_id": "lesser-desert-rune",
+      "en_name": "Lesser Desert Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "greater-rebirth-rune",
-      "en_name": "Greater Rebirth Rune",
-      "category_api_id": "runes",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Малая руна пустыни",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "greater-stone-rune",
       "en_name": "Greater Stone Rune",
       "category_api_id": "runes",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Большая руна камня",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "carved-majesty",
       "en_name": "Carved Majesty",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Высеченное величие",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "perfect-flux",
       "en_name": "Perfect Flux",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Совершенный расплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "emergent-possibility",
       "en_name": "Emergent Possibility",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Зародившаяся возможность",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "emergent-vigour",
       "en_name": "Emergent Vigour",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Зародившаяся сила",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "carved-cunning",
       "en_name": "Carved Cunning",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Высеченная хитрость",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uhtreds-saga",
       "en_name": "Uhtred's Saga",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "carved-tenacity",
-      "en_name": "Carved Tenacity",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "emergent-instinct",
-      "en_name": "Emergent Instinct",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "carved-mischief",
-      "en_name": "Carved Mischief",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thaumaturgic-flux-20",
-      "en_name": "Thaumaturgic Flux (Level 20)",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "emergent-protection",
-      "en_name": "Emergent Protection",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "olroths-saga",
-      "en_name": "Olroth's Saga",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thaumaturgic-flux-9",
-      "en_name": "Thaumaturgic Flux (Level 9)",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "void-flux",
-      "en_name": "Void Flux",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thaumaturgic-flux-10",
-      "en_name": "Thaumaturgic Flux (Level 10)",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thaumaturgic-flux-11",
-      "en_name": "Thaumaturgic Flux (Level 11)",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сага Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "thaumaturgic-flux-8",
       "en_name": "Thaumaturgic Flux (Level 8)",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Чародейский расплав (Уровень 8)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "thaumaturgic-flux-18",
-      "en_name": "Thaumaturgic Flux (Level 18)",
+      "api_id": "thaumaturgic-flux-9",
+      "en_name": "Thaumaturgic Flux (Level 9)",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Чародейский расплав (Уровень 9)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "voranas-saga",
-      "en_name": "Vorana's Saga",
+      "api_id": "carved-tenacity",
+      "en_name": "Carved Tenacity",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Высеченная стойкость",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "medveds-saga",
-      "en_name": "Medved's Saga",
+      "api_id": "emergent-protection",
+      "en_name": "Emergent Protection",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Зародившаяся защита",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thaumaturgic-flux-10",
+      "en_name": "Thaumaturgic Flux (Level 10)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 10)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "emergent-instinct",
+      "en_name": "Emergent Instinct",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Зародившийся инстинкт",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "olroths-saga",
+      "en_name": "Olroth's Saga",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Сага Олрота",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thaumaturgic-flux-20",
+      "en_name": "Thaumaturgic Flux (Level 20)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 20)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "thaumaturgic-flux-17",
       "en_name": "Thaumaturgic Flux (Level 17)",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Чародейский расплав (Уровень 17)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "void-flux",
+      "en_name": "Void Flux",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Пустотный расплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "carved-mischief",
+      "en_name": "Carved Mischief",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Высеченное озорство",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "blazing-flux",
       "en_name": "Blazing Flux",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "chilling-flux",
-      "en_name": "Chilling Flux",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "thaumaturgic-flux-14",
-      "en_name": "Thaumaturgic Flux (Level 14)",
-      "category_api_id": "expedition",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Жгучий расплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "crackling-flux",
       "en_name": "Crackling Flux",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Искрящий расплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "thaumaturgic-flux-15",
-      "en_name": "Thaumaturgic Flux (Level 15)",
+      "api_id": "chilling-flux",
+      "en_name": "Chilling Flux",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Студёный расплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "thaumaturgic-flux-12",
-      "en_name": "Thaumaturgic Flux (Level 12)",
+      "api_id": "thaumaturgic-flux-14",
+      "en_name": "Thaumaturgic Flux (Level 14)",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Чародейский расплав (Уровень 14)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "thaumaturgic-flux-19",
-      "en_name": "Thaumaturgic Flux (Level 19)",
+      "api_id": "medveds-saga",
+      "en_name": "Medved's Saga",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сага Медведя",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "thaumaturgic-flux-16",
       "en_name": "Thaumaturgic Flux (Level 16)",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Чародейский расплав (Уровень 16)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "thaumaturgic-flux-13",
       "en_name": "Thaumaturgic Flux (Level 13)",
       "category_api_id": "expedition",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Чародейский расплав (Уровень 13)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "against-the-darkness",
-      "en_name": "Zarokh's Reliquary Key: Against the Darkness",
-      "category_api_id": "vaultkeys",
-      "current_ru_name": "Ключ от Реликвария Зарока: Противление тьме",
-      "current_en_name_in_json": "Against the Darkness",
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "conflict"
+      "api_id": "thaumaturgic-flux-15",
+      "en_name": "Thaumaturgic Flux (Level 15)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 15)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "voranas-saga",
+      "en_name": "Vorana's Saga",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Сага Вораны",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thaumaturgic-flux-12",
+      "en_name": "Thaumaturgic Flux (Level 12)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 12)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thaumaturgic-flux-18",
+      "en_name": "Thaumaturgic Flux (Level 18)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 18)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thaumaturgic-flux-11",
+      "en_name": "Thaumaturgic Flux (Level 11)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 11)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "thaumaturgic-flux-19",
+      "en_name": "Thaumaturgic Flux (Level 19)",
+      "category_api_id": "expedition",
+      "current_ru_name": null,
+      "proposed_ru_name": "Чародейский расплав (Уровень 19)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "refined-necrotic-catalyst",
       "en_name": "Refined Necrotic Catalyst",
       "category_api_id": "breach",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Очищенный некротический катализатор",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "refined-uul-netols-catalyst",
       "en_name": "Refined Uul-Netol's Catalyst",
       "category_api_id": "breach",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Очищенный катализатор Уул-Нетол",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "necrotic-catalyst",
       "en_name": "Necrotic Catalyst",
       "category_api_id": "breach",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Некротический катализатор",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uul-netols-catalyst",
       "en_name": "Uul-Netol's Catalyst",
       "category_api_id": "breach",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Катализатор Уул-Нетол",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "kurgals-gaze",
       "en_name": "Kurgal's Gaze",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Взгляд Каргала",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "preserved-cranium",
       "en_name": "Preserved Cranium",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сохранившийся череп",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-collarbone",
       "en_name": "Ancient Collarbone",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древняя ключица",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-jawbone",
       "en_name": "Ancient Jawbone",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древняя челюсть",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-rib",
       "en_name": "Ancient Rib",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tecrods-gaze",
-      "en_name": "Tecrod's Gaze",
-      "category_api_id": "abyss",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древнее ребро",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "altered-collarbone",
       "en_name": "Altered Collarbone",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Видоизменившаяся ключица",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tecrods-gaze",
+      "en_name": "Tecrod's Gaze",
+      "category_api_id": "abyss",
+      "current_ru_name": null,
+      "proposed_ru_name": "Взгляд Текрода",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ulamans-gaze",
       "en_name": "Ulaman's Gaze",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Взгляд Уламана",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "amanamus-gaze",
       "en_name": "Amanamu's Gaze",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Взгляд Аманаму",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "preserved-collarbone",
       "en_name": "Preserved Collarbone",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "preserved-jawbone",
-      "en_name": "Preserved Jawbone",
-      "category_api_id": "abyss",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сохранившаяся ключица",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "preserved-rib",
       "en_name": "Preserved Rib",
       "category_api_id": "abyss",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сохранившееся ребро",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "preserved-jawbone",
+      "en_name": "Preserved Jawbone",
+      "category_api_id": "abyss",
+      "current_ru_name": null,
+      "proposed_ru_name": "Сохранившаяся челюсть",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-20",
       "en_name": "Uncut Spirit Gem (Level 20)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 20)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-20",
       "en_name": "Uncut Skill Gem (Level 20)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 20)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-8",
       "en_name": "Uncut Spirit Gem (Level 8)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 8)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-14",
       "en_name": "Uncut Spirit Gem (Level 14)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-spirit-gem-9",
-      "en_name": "Uncut Spirit Gem (Level 9)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 14)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-15",
       "en_name": "Uncut Spirit Gem (Level 15)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 15)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-spirit-gem-9",
+      "en_name": "Uncut Spirit Gem (Level 9)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень духа (уровень 9)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-16",
       "en_name": "Uncut Spirit Gem (Level 16)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-spirit-gem-4",
-      "en_name": "Uncut Spirit Gem (Level 4)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-7",
-      "en_name": "Uncut Skill Gem (Level 7)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-spirit-gem-7",
-      "en_name": "Uncut Spirit Gem (Level 7)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 16)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-1",
       "en_name": "Uncut Skill Gem (Level 1)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 1)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-spirit-gem-13",
-      "en_name": "Uncut Spirit Gem (Level 13)",
+      "api_id": "uncut-spirit-gem-4",
+      "en_name": "Uncut Spirit Gem (Level 4)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 4)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-spirit-gem-19",
-      "en_name": "Uncut Spirit Gem (Level 19)",
+      "api_id": "uncut-skill-gem-7",
+      "en_name": "Uncut Skill Gem (Level 7)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 7)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-spirit-gem-11",
-      "en_name": "Uncut Spirit Gem (Level 11)",
+      "api_id": "uncut-spirit-gem-7",
+      "en_name": "Uncut Spirit Gem (Level 7)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 7)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-5",
       "en_name": "Uncut Spirit Gem (Level 5)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 5)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-spirit-gem-6",
-      "en_name": "Uncut Spirit Gem (Level 6)",
+      "api_id": "uncut-spirit-gem-13",
+      "en_name": "Uncut Spirit Gem (Level 13)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-8",
-      "en_name": "Uncut Skill Gem (Level 8)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 13)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-10",
       "en_name": "Uncut Spirit Gem (Level 10)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 10)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-skill-gem-11",
-      "en_name": "Uncut Skill Gem (Level 11)",
+      "api_id": "uncut-spirit-gem-19",
+      "en_name": "Uncut Spirit Gem (Level 19)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 19)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-spirit-gem-12",
-      "en_name": "Uncut Spirit Gem (Level 12)",
+      "api_id": "uncut-skill-gem-8",
+      "en_name": "Uncut Skill Gem (Level 8)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 8)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-spirit-gem-17",
-      "en_name": "Uncut Spirit Gem (Level 17)",
+      "api_id": "uncut-spirit-gem-11",
+      "en_name": "Uncut Spirit Gem (Level 11)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 11)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-spirit-gem-6",
+      "en_name": "Uncut Spirit Gem (Level 6)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень духа (уровень 6)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-spirit-gem-18",
       "en_name": "Uncut Spirit Gem (Level 18)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 18)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-9",
       "en_name": "Uncut Skill Gem (Level 9)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 9)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-skill-gem-5",
-      "en_name": "Uncut Skill Gem (Level 5)",
+      "api_id": "uncut-spirit-gem-12",
+      "en_name": "Uncut Spirit Gem (Level 12)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-support-gem-4",
-      "en_name": "Uncut Support Gem (Level 4)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-support-gem-3",
-      "en_name": "Uncut Support Gem (Level 3)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-15",
-      "en_name": "Uncut Skill Gem (Level 15)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-19",
-      "en_name": "Uncut Skill Gem (Level 19)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-3",
-      "en_name": "Uncut Skill Gem (Level 3)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-2",
-      "en_name": "Uncut Skill Gem (Level 2)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-skill-gem-13",
-      "en_name": "Uncut Skill Gem (Level 13)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 12)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-10",
       "en_name": "Uncut Skill Gem (Level 10)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 10)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-skill-gem-16",
-      "en_name": "Uncut Skill Gem (Level 16)",
+      "api_id": "uncut-skill-gem-11",
+      "en_name": "Uncut Skill Gem (Level 11)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 11)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-skill-gem-14",
-      "en_name": "Uncut Skill Gem (Level 14)",
+      "api_id": "uncut-spirit-gem-17",
+      "en_name": "Uncut Spirit Gem (Level 17)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень духа (уровень 17)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-5",
+      "en_name": "Uncut Skill Gem (Level 5)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 5)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-12",
       "en_name": "Uncut Skill Gem (Level 12)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 12)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-support-gem-1",
-      "en_name": "Uncut Support Gem (Level 1)",
+      "api_id": "uncut-support-gem-3",
+      "en_name": "Uncut Support Gem (Level 3)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень поддержки (уровень 3)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-2",
+      "en_name": "Uncut Skill Gem (Level 2)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 2)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-support-gem-4",
+      "en_name": "Uncut Support Gem (Level 4)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень поддержки (уровень 4)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-16",
+      "en_name": "Uncut Skill Gem (Level 16)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 16)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-15",
+      "en_name": "Uncut Skill Gem (Level 15)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 15)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-19",
+      "en_name": "Uncut Skill Gem (Level 19)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 19)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-3",
+      "en_name": "Uncut Skill Gem (Level 3)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 3)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-14",
+      "en_name": "Uncut Skill Gem (Level 14)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 14)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-13",
+      "en_name": "Uncut Skill Gem (Level 13)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 13)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-support-gem-2",
       "en_name": "Uncut Support Gem (Level 2)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uncut-support-gem-5",
-      "en_name": "Uncut Support Gem (Level 5)",
-      "category_api_id": "uncutgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень поддержки (уровень 2)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-4",
       "en_name": "Uncut Skill Gem (Level 4)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 4)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uncut-skill-gem-6",
-      "en_name": "Uncut Skill Gem (Level 6)",
+      "api_id": "uncut-support-gem-5",
+      "en_name": "Uncut Support Gem (Level 5)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень поддержки (уровень 5)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-17",
       "en_name": "Uncut Skill Gem (Level 17)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 17)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-skill-gem-6",
+      "en_name": "Uncut Skill Gem (Level 6)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень умения (уровень 6)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uncut-skill-gem-18",
       "en_name": "Uncut Skill Gem (Level 18)",
       "category_api_id": "uncutgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неогранённый камень умения (уровень 18)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uncut-support-gem-1",
+      "en_name": "Uncut Support Gem (Level 1)",
+      "category_api_id": "uncutgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неогранённый камень поддержки (уровень 1)",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "atziris-communion",
       "en_name": "Atziri's Communion",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "diallas-desire",
-      "en_name": "Dialla's Desire",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Причастие Атзири",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uhtreds-exodus",
       "en_name": "Uhtred's Exodus",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Исход Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "diallas-desire",
+      "en_name": "Dialla's Desire",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Желание Диаллы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "seraphs-heart",
       "en_name": "Seraph's Heart",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сердце серафима",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "her-declaration",
       "en_name": "Her Declaration",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tuls-stillness",
-      "en_name": "Tul's Stillness",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Её заявление",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "eshs-radiance",
       "en_name": "Esh's Radiance",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Сияние Иш",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uhtreds-augury",
       "en_name": "Uhtred's Augury",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Предчувствие Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tuls-stillness",
+      "en_name": "Tul's Stillness",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безмолвие Тул",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "xophs-pyre",
       "en_name": "Xoph's Pyre",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "breachlords-rift",
-      "en_name": "Breachlord's Rift",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Костёр Ксофа",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uhtreds-omen",
       "en_name": "Uhtred's Omen",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Знамение Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "breachlords-rift",
+      "en_name": "Breachlord's Rift",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Разрыв повелителя Разлома",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ixchels-torment",
       "en_name": "Ixchel's Torment",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ataluis-bloodletting",
-      "en_name": "Atalui's Bloodletting",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "khatals-rejuvenation",
-      "en_name": "Khatal's Rejuvenation",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "atziris-allure",
-      "en_name": "Atziri's Allure",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "cathas-brilliance",
-      "en_name": "Catha's Brilliance",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мука Ишчейла",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "breachlords-amalgam",
       "en_name": "Breachlord's Amalgam",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Слияние Повелителя Разлома",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "amanamus-tithe",
-      "en_name": "Amanamu's Tithe",
+      "api_id": "ataluis-bloodletting",
+      "en_name": "Atalui's Bloodletting",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Кровопускание Аталуи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "khatals-rejuvenation",
+      "en_name": "Khatal's Rejuvenation",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Оживление Хаталя",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "arbiters-ignition",
       "en_name": "Arbiter's Ignition",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Воспламенение Арбитра",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "eshs-prowess",
       "en_name": "Esh's Prowess",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Умение Иш",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "cathas-brilliance",
+      "en_name": "Catha's Brilliance",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Великолепие Каты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "atziris-allure",
+      "en_name": "Atziri's Allure",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Искушение Атзири",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "mórrigans-insight",
       "en_name": "Mórrigan's Insight",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Проницательность Морриган",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "siones-temper",
-      "en_name": "Sione's Temper",
+      "api_id": "amanamus-tithe",
+      "en_name": "Amanamu's Tithe",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "prototype-seventeen",
-      "en_name": "Prototype Seventeen",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "brutus-brain",
-      "en_name": "Brutus' Brain",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "zerphis-infamy",
-      "en_name": "Zerphi's Infamy",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uhtreds-constellation",
-      "en_name": "Uhtred's Constellation",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "paquates-pact",
-      "en_name": "Paquate's Pact",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ailiths-chimes",
-      "en_name": "Ailith's Chimes",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "arbiters-reach",
-      "en_name": "Arbiter's Reach",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "hayoxis-fulmination",
-      "en_name": "Hayoxi's Fulmination",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Десятина Аманаму",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "medveds-felling",
       "en_name": "Medved's Felling",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "styrns-ferocity",
-      "en_name": "Styrn's Ferocity",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tuls-avalanche",
-      "en_name": "Tul's Avalanche",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "zarokhs-revolt",
-      "en_name": "Zarokh's Revolt",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "einhars-beastrite",
-      "en_name": "Einhar's Beastrite",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "uhtreds-rite",
-      "en_name": "Uhtred's Rite",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "styrns-mountain",
-      "en_name": "Styrn's Mountain",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "atziris-impatience",
-      "en_name": "Atziri's Impatience",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Неистовство Медведя",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "xibaquas-rending",
       "en_name": "Xibaqua's Rending",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Разрывание Шибаквы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "doedres-undoing",
-      "en_name": "Doedre's Undoing",
+      "api_id": "zarokhs-revolt",
+      "en_name": "Zarokh's Revolt",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мятеж Зарока",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "kaoms-madness",
-      "en_name": "Kaom's Madness",
+      "api_id": "siones-temper",
+      "en_name": "Sione's Temper",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Гнев Сионы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "olroths-hubris",
-      "en_name": "Olroth's Hubris",
+      "api_id": "ailiths-chimes",
+      "en_name": "Ailith's Chimes",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "zarokhs-refrain",
-      "en_name": "Zarokh's Refrain",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tricksters-shard",
-      "en_name": "Trickster's Shard",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "kulemaks-dominion",
-      "en_name": "Kulemak's Dominion",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "ahns-citadel",
-      "en_name": "Ahn's Citadel",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tacatis-ire",
-      "en_name": "Tacati's Ire",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tecrods-revenge",
-      "en_name": "Tecrod's Revenge",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "dominus-grasp",
-      "en_name": "Dominus' Grasp",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мелодия Алилит",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "kalisas-crescendo",
       "en_name": "Kalisa's Crescendo",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Крещендо Калисы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "kurgals-leash",
-      "en_name": "Kurgal's Leash",
+      "api_id": "uhtreds-constellation",
+      "en_name": "Uhtred's Constellation",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "oisins-oath",
-      "en_name": "Oisín's Oath",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tangmazus-thurible",
-      "en_name": "Tangmazu's Thurible",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "arakaalis-lust",
-      "en_name": "Arakaali's Lust",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "romiras-requital",
-      "en_name": "Romira's Requital",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "daressos-passion",
-      "en_name": "Daresso's Passion",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "rathas-assault",
-      "en_name": "Ratha's Assault",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "vilentas-propulsion",
-      "en_name": "Vilenta's Propulsion",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "vruuns-inevitability",
-      "en_name": "Vruun's Inevitability",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Созвездие Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "morganas-tempest",
       "en_name": "Morgana's Tempest",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Буря Морганы",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "uruks-smelting",
-      "en_name": "Uruk's Smelting",
+      "api_id": "styrns-ferocity",
+      "en_name": "Styrn's Ferocity",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Свирепость Стирна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tricksters-shard",
+      "en_name": "Trickster's Shard",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Осколок Плута",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uhtreds-rite",
+      "en_name": "Uhtred's Rite",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Ритуал Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "tasalios-rhythm",
       "en_name": "Tasalio's Rhythm",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Ритм Тасалио",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "bhatairs-vengeance",
-      "en_name": "Bhatair's Vengeance",
+      "api_id": "doedres-undoing",
+      "en_name": "Doedre's Undoing",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Пагуба Доэдре",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "arjuns-medal",
-      "en_name": "Arjun's Medal",
+      "api_id": "zarokhs-refrain",
+      "en_name": "Zarokh's Refrain",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Рефрен Зарока",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "arbiters-reach",
+      "en_name": "Arbiter's Reach",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Охват Арбитра",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "brutus-brain",
+      "en_name": "Brutus' Brain",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Мозг Изувера",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "ahns-citadel",
+      "en_name": "Ahn's Citadel",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Цитадель Ахна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "hayoxis-fulmination",
+      "en_name": "Hayoxi's Fulmination",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Взрыв Хайоши",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "styrns-mountain",
+      "en_name": "Styrn's Mountain",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Гора Стирна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "kulemaks-dominion",
+      "en_name": "Kulemak's Dominion",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Господство Кулемака",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "oisins-oath",
+      "en_name": "Oisín's Oath",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Клятва Исина",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "olroths-hubris",
+      "en_name": "Olroth's Hubris",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Гордыня Олрота",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "einhars-beastrite",
+      "en_name": "Einhar's Beastrite",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Ритуал Эйнара",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "kurgals-leash",
+      "en_name": "Kurgal's Leash",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Поводок Каргала",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "cirels-cultivation",
       "en_name": "Cirel's Cultivation",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Культивация Сирэл",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "zerphis-infamy",
+      "en_name": "Zerphi's Infamy",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Бесславие Зерфи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tuls-avalanche",
+      "en_name": "Tul's Avalanche",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Лавина Тул",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "bhatairs-vengeance",
+      "en_name": "Bhatair's Vengeance",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Возмездие Батира",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "romiras-requital",
+      "en_name": "Romira's Requital",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Расплата Ромиры",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "dominus-grasp",
+      "en_name": "Dominus' Grasp",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Хватка Владыки",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "prototype-seventeen",
+      "en_name": "Prototype Seventeen",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Прототип семнадцать",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tecrods-revenge",
+      "en_name": "Tecrod's Revenge",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Месть Текрода",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "paquates-pact",
+      "en_name": "Paquate's Pact",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Пакт Паквате",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "uruks-smelting",
+      "en_name": "Uruk's Smelting",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Плавильня Урука",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tangmazus-thurible",
+      "en_name": "Tangmazu's Thurible",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Кадильница Тангмазу",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "kaoms-madness",
+      "en_name": "Kaom's Madness",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Безумие Каома",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "atziris-impatience",
+      "en_name": "Atziri's Impatience",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Нетерпение Атзири",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "vilentas-propulsion",
+      "en_name": "Vilenta's Propulsion",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Разгон Виленты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "rathas-assault",
+      "en_name": "Ratha's Assault",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Нападение Раты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "arjuns-medal",
+      "en_name": "Arjun's Medal",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Медаль Аржуна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "vruuns-inevitability",
+      "en_name": "Vruun's Inevitability",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Неизбежность Рууна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "daressos-passion",
+      "en_name": "Daresso's Passion",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Страсть Дарессо",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "varashtas-blessing",
       "en_name": "Varashta's Blessing",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Благословение Варашты",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "arakaalis-lust",
+      "en_name": "Arakaali's Lust",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Похоть Аракаали",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tacatis-ire",
+      "en_name": "Tacati's Ire",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Гнев Такати",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "guatelitzis-ablation",
       "en_name": "Guatelitzi's Ablation",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "tawhoas-tending",
-      "en_name": "Tawhoa's Tending",
-      "category_api_id": "lineagesupportgems",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Отсечение Гвателитзи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "vruuns-aftermath",
       "en_name": "Vruun's Aftermath",
       "category_api_id": "lineagesupportgems",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Последствие Рууна",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "tawhoas-tending",
+      "en_name": "Tawhoa's Tending",
+      "category_api_id": "lineagesupportgems",
+      "current_ru_name": null,
+      "proposed_ru_name": "Забота Тахоа",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "jiquanis-thesis",
       "en_name": "Jiquani's Thesis",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Доклад Джиквани",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "guatelitzis-thesis",
       "en_name": "Guatelitzi's Thesis",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "quipolatls-thesis",
-      "en_name": "Quipolatl's Thesis",
-      "category_api_id": "incursion",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "architects-orb",
-      "en_name": "Architect's Orb",
-      "category_api_id": "incursion",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "crystallised-corruption",
-      "en_name": "Crystallised Corruption",
-      "category_api_id": "incursion",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Доклад Гвателитзи",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "core-destabiliser",
       "en_name": "Core Destabiliser",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Дестабилизатор ядра",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "orb-of-extraction",
-      "en_name": "Orb of Extraction",
+      "api_id": "quipolatls-thesis",
+      "en_name": "Quipolatl's Thesis",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Доклад Квиполатля",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "architects-orb",
+      "en_name": "Architect's Orb",
+      "category_api_id": "incursion",
+      "current_ru_name": null,
+      "proposed_ru_name": "Сфера архитектора",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "crystallised-corruption",
+      "en_name": "Crystallised Corruption",
+      "category_api_id": "incursion",
+      "current_ru_name": null,
+      "proposed_ru_name": "Кристаллизованная Порча",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "citaqualotls-thesis",
       "en_name": "Citaqualotl's Thesis",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Доклад Ситаквалотля",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "orb-of-extraction",
+      "en_name": "Orb of Extraction",
+      "category_api_id": "incursion",
+      "current_ru_name": null,
+      "proposed_ru_name": "Сфера извлечения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "ancient-infuser",
       "en_name": "Ancient Infuser",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Древний нагнетатель",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "vaal-siphoner",
       "en_name": "Vaal Siphoner",
       "category_api_id": "incursion",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Поглотитель ваал",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "celestial-alloy",
       "en_name": "Celestial Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "transcendent-alloy",
-      "en_name": "Transcendent Alloy",
-      "category_api_id": "verisium",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Небесный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "warding-starlit-ore",
       "en_name": "Warding Starlit Ore",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "veridical-starlit-ore",
-      "en_name": "Veridical Starlit Ore",
-      "category_api_id": "verisium",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "revered-starlit-ore",
-      "en_name": "Revered Starlit Ore",
-      "category_api_id": "verisium",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Оберегающая подзвёздная руда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "sovereign-alloy",
       "en_name": "Sovereign Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Державный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
-      "api_id": "liquid-verisium",
-      "en_name": "Liquid Verisium",
+      "api_id": "veridical-starlit-ore",
+      "en_name": "Veridical Starlit Ore",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Истинная подзвёздная руда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "adaptive-alloy",
       "en_name": "Adaptive Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Адаптивный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "transcendent-alloy",
+      "en_name": "Transcendent Alloy",
+      "category_api_id": "verisium",
+      "current_ru_name": null,
+      "proposed_ru_name": "Возвышенный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "liquid-verisium",
+      "en_name": "Liquid Verisium",
+      "category_api_id": "verisium",
+      "current_ru_name": null,
+      "proposed_ru_name": "Жидкий веризий",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "protective-alloy",
       "en_name": "Protective Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "prismatic-alloy",
-      "en_name": "Prismatic Alloy",
-      "category_api_id": "verisium",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Защитный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "mystic-alloy",
       "en_name": "Mystic Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Мистический сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "prismatic-alloy",
+      "en_name": "Prismatic Alloy",
+      "category_api_id": "verisium",
+      "current_ru_name": null,
+      "proposed_ru_name": "Радужный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "expansive-alloy",
       "en_name": "Expansive Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Экспансивный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "cyclonic-alloy",
       "en_name": "Cyclonic Alloy",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "runic-alloy",
-      "en_name": "Runic Alloy",
-      "category_api_id": "verisium",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
-    },
-    {
-      "api_id": "swift-alloy",
-      "en_name": "Swift Alloy",
-      "category_api_id": "verisium",
-      "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Вихревой сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "venerable-starlit-ore",
       "en_name": "Venerable Starlit Ore",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Почитаемая подзвёздная руда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "runic-alloy",
+      "en_name": "Runic Alloy",
+      "category_api_id": "verisium",
+      "current_ru_name": null,
+      "proposed_ru_name": "Рунный сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "revered-starlit-ore",
+      "en_name": "Revered Starlit Ore",
+      "category_api_id": "verisium",
+      "current_ru_name": null,
+      "proposed_ru_name": "Благоговейная подзвёздная руда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "swift-alloy",
+      "en_name": "Swift Alloy",
+      "category_api_id": "verisium",
+      "current_ru_name": null,
+      "proposed_ru_name": "Лёгкий сплав",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     },
     {
       "api_id": "uhtreds-crest-of-the-chalice",
       "en_name": "Uhtred's Crest of the Chalice",
       "category_api_id": "verisium",
       "current_ru_name": null,
-      "proposed_ru_name": null,
-      "match_source": "none",
-      "match_confidence": 0.0,
-      "action": "skip"
+      "proposed_ru_name": "Знак Чаши Утреда",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "kopecs-orb-of-sacrifice",
+      "en_name": "Kopec's Orb of Sacrifice",
+      "category_api_id": "vaal",
+      "current_ru_name": null,
+      "proposed_ru_name": "Укреплённая сфера жертвоприношения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "kamasas-orb-of-sacrifice",
+      "en_name": "Kamasa's Orb of Sacrifice",
+      "category_api_id": "vaal",
+      "current_ru_name": null,
+      "proposed_ru_name": "Нечестивая сфера жертвоприношения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "yaomacs-orb-of-sacrifice",
+      "en_name": "Yaomac's Orb of Sacrifice",
+      "category_api_id": "vaal",
+      "current_ru_name": null,
+      "proposed_ru_name": "Жестокая сфера жертвоприношения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
+    },
+    {
+      "api_id": "yuguls-orb-of-sacrifice",
+      "en_name": "Yugul's Orb of Sacrifice",
+      "category_api_id": "vaal",
+      "current_ru_name": null,
+      "proposed_ru_name": "Царская сфера жертвоприношения",
+      "match_source": "poe2db",
+      "match_confidence": 1.0,
+      "action": "add"
     }
   ]
 }

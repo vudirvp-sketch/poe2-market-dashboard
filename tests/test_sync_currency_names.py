@@ -497,3 +497,90 @@ class TestCli:
         # Either way, returns 4.
         rc = sync.main(["--fetch-ids", "--from-cache-snapshot"])
         assert rc == 4
+
+
+# ---------------------------------------------------------------------------
+# iter 137 additions — KI-29 URL encoding + KI-30 per-item title-tag fetcher
+# ---------------------------------------------------------------------------
+
+class TestEnNameToPoe2dbSlug:
+    """KI-30: slug generation strips apostrophes (URL-encoded %27 returns 404)."""
+
+    def test_replaces_spaces_with_underscores(self):
+        assert sync._en_name_to_poe2db_slug("Mirror of Kalandra") == "Mirror_of_Kalandra"
+
+    def test_strips_apostrophes(self):
+        # poe2db accepts both "Hinekora's_Lock" and "Hinekoras_Lock" — strip is safer
+        assert sync._en_name_to_poe2db_slug("Hinekora's Lock") == "Hinekoras_Lock"
+        assert sync._en_name_to_poe2db_slug("Atziri's Communion") == "Atziris_Communion"
+
+    def test_strips_curly_apostrophes(self):
+        assert sync._en_name_to_poe2db_slug("Hinekora\u2019s Lock") == "Hinekoras_Lock"
+
+    def test_empty(self):
+        assert sync._en_name_to_poe2db_slug("") == ""
+        assert sync._en_name_to_poe2db_slug(None) == ""  # type: ignore[arg-type]
+
+
+class TestExtractRuNameFromTitle:
+    """KI-30: extract Russian item name from poe2db page <title> tag."""
+
+    def test_extracts_russian_name_from_ru_locale_title(self):
+        html_text = '<html><head><title>Зеркало Каландры - PoE2DB, Path of Exile Wiki ru</title></head></html>'
+        assert sync._extract_ru_name_from_title(html_text) == "Зеркало Каландры"
+
+    def test_returns_none_for_search_results_page(self):
+        """When poe2db has no item page, the title is 'Search Results' (English-only)."""
+        html_text = '<title>Search Results - PoE2DB, Path of Exile Wiki ru</title>'
+        assert sync._extract_ru_name_from_title(html_text) is None
+
+    def test_returns_none_for_english_only_title(self):
+        """If poe2db has the page but hasn't translated it, the title is English-only."""
+        html_text = '<title>Vision Rune - PoE2DB, Path of Exile Wiki ru</title>'
+        assert sync._extract_ru_name_from_title(html_text) is None
+
+    def test_returns_none_for_unrecognized_title_format(self):
+        """Non-item pages (homepage, category landing, etc.) have different title suffixes."""
+        html_text = '<title>Path of Exile 2 Wiki</title>'
+        assert sync._extract_ru_name_from_title(html_text) is None
+
+    def test_returns_none_for_missing_title(self):
+        assert sync._extract_ru_name_from_title("<html><body>no title</body></html>") is None
+
+    def test_decodes_html_entities_in_title(self):
+        """poe2db titles sometimes contain &amp; / &#39; entities."""
+        html_text = '<title>Сущность &amp; пламя - PoE2DB, Path of Exile Wiki ru</title>'
+        assert sync._extract_ru_name_from_title(html_text) == "Сущность & пламя"
+
+
+class TestKi29UrlEncoding:
+    """KI-29: --fetch-ids must URL-encode league names with spaces."""
+
+    def test_fetch_poe2scout_items_url_encodes_league(self, monkeypatch):
+        """Verify the URL passed to _http_get_json has the league URL-encoded."""
+        captured_urls: list[str] = []
+
+        class DummyResp:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return None
+            def read(self):
+                return b'{"Items": [], "Pages": 1}'
+
+        def fake_urlopen(req, timeout=None):
+            captured_urls.append(req.full_url)
+            return DummyResp()
+
+        # Patch urlopen so no real network call is made
+        monkeypatch.setattr(sync.urllib.request, "urlopen", fake_urlopen)
+
+        sync.fetch_poe2scout_items(
+            base_url="https://poe2scout.com/api",
+            realm="poe2",
+            league="Runes of Aldur",
+        )
+        # The URL must contain %20 (encoded space), not a raw space
+        assert any("%20" in url and "Runes%20of%20Aldur" in url for url in captured_urls), (
+            f"Expected URL-encoded league name, got: {captured_urls[:3]}"
+        )

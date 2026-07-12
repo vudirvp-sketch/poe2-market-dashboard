@@ -160,7 +160,7 @@ PATCH_CACHE = CACHE_DIR / "currency_names_patch.json"
 DEFAULT_POE2SCOUT_BASE = "https://poe2scout.com/api"
 DEFAULT_POE2DB_BASE = "https://poe2db.tw"
 DEFAULT_REALM = "poe2"
-DEFAULT_LEAGUE = "runes"  # Current PoE2 league as of iter 85 (Dawn of the Hunt retired, runes is current)
+DEFAULT_LEAGUE = "Runes of Aldur"  # Current PoE2 league as of iter 137 (was "runes" at iter 85; was "Dawn of the Hunt" before that)
 
 # All 17 categories from config.yaml → league.currency_categories.
 # Used for both poe2scout ByCategory pagination AND poe2db.tw/ru/<Category> URL construction.
@@ -335,8 +335,11 @@ def fetch_poe2scout_items(*, base_url: str, realm: str, league: str) -> list[dic
     for category in ALL_CATEGORIES:
         page = 1
         while True:
+            # KI-29: league + realm MUST be URL-encoded — league names like
+            # "Runes of Aldur" contain spaces which crash http.client.
             url = (
-                f"{base}/{realm}/Leagues/{league}/Currencies/ByCategory"
+                f"{base}/{urllib.parse.quote(realm, safe='')}/Leagues/"
+                f"{urllib.parse.quote(league, safe='')}/Currencies/ByCategory"
                 f"?Category={urllib.parse.quote(category)}&Page={page}&PerPage=250"
             )
             log.info("  Fetching %s page %d: %s", category, page, url)
@@ -560,6 +563,183 @@ def fetch_poe2db_ru_names(*, base_url: str) -> dict[str, list[dict[str, str]]]:
         log.info("    Parsed %d EN→RU pairs", len(pairs))
         result[category] = pairs
 
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Stage 2b — fetch RU names by per-item page title (iter 137, KI-30 fix)
+# ---------------------------------------------------------------------------
+
+# Suffix appended by poe2db to every page <title>.
+_POE2DB_TITLE_SUFFIX = " - PoE2DB, Path of Exile Wiki ru"
+_POE2DB_TITLE_SUFFIX_EN = " - PoE2DB, Path of Exile Wiki us"
+
+# Items whose English name poe2scout reports with a different spelling than
+# poe2db's URL slug. Add new entries here when the diff reports "no match" for
+# an item that DOES exist on poe2db. Each value is the URL slug (no /ru/ prefix).
+_POE2DB_URL_SLUG_OVERRIDES: dict[str, str] = {
+    # poe2scout api_id -> poe2db URL slug
+    # (empty by default — populated as drift is discovered)
+}
+
+
+def _en_name_to_poe2db_slug(en_name: str) -> str:
+    """Convert a poe2scout English item name to its poe2db URL slug.
+
+    poe2db URLs use underscores instead of spaces. Apostrophes are STRIPPED
+    (not URL-encoded — %27 returns 404 on poe2db). Both "Atziri's_Communion"
+    and "Atziris_Communion" resolve to the same page, so stripping is the
+    safer choice.
+
+    Examples:
+      "Mirror of Kalandra" -> "Mirror_of_Kalandra"
+      "Hinekora's Lock"     -> "Hinekoras_Lock"
+      "Greater Chaos Orb"   -> "Greater_Chaos_Orb"
+    """
+    if not en_name:
+        return ""
+    # Strip apostrophes (ASCII + curly variants) — poe2db accepts the no-apostrophe form
+    s = en_name
+    for ch in ("'", "\u2018", "\u2019", "\u201b", "\u2032"):
+        s = s.replace(ch, "")
+    return s.replace(" ", "_")
+
+
+def _extract_ru_name_from_title(html_text: str) -> str | None:
+    """Extract the Russian item name from a poe2db item page's <title> tag.
+
+    poe2db item pages have title format: "<Russian Name> - PoE2DB, Path of Exile Wiki ru"
+    Returns None if the page is not a valid item page (e.g. 404 search page,
+    whose title is "Search Results - PoE2DB, ...").
+
+    Args:
+        html_text: Full HTML source of the poe2db item page.
+
+    Returns:
+        The Russian name, or None if the title doesn't match the expected pattern.
+    """
+    title_match = _POE2DB_TITLE_RE.search(html_text)
+    if not title_match:
+        return None
+    title = html.unescape(title_match.group("title").strip())
+    # Strip the suffix
+    candidate: str | None = None
+    if title.endswith(_POE2DB_TITLE_SUFFIX):
+        candidate = title[: -len(_POE2DB_TITLE_SUFFIX)].strip()
+    elif title.endswith(_POE2DB_TITLE_SUFFIX_EN):
+        candidate = title[: -len(_POE2DB_TITLE_SUFFIX_EN)].strip()
+    if not candidate:
+        return None
+    # Reject non-item pages: "Search Results", category landing pages, etc.
+    # An item page's title is the item's display name. We require at least one
+    # Cyrillic character to confirm we got an actual Russian translation.
+    # (English-only titles mean poe2db has no Russian page for this item yet.)
+    if not re.search(r"[А-Яа-яЁё]", candidate):
+        return None
+    # Reject obvious non-item page titles
+    if candidate.lower() in ("search results", "search", "404 not found"):
+        return None
+    return candidate
+
+
+def fetch_poe2db_ru_names_by_item(
+    *,
+    base_url: str,
+    poe2scout_items: list[dict[str, str]],
+    existing_names: dict[str, dict[str, str]],
+    rate_limit_delay: float = 0.5,
+) -> dict[str, list[dict[str, str]]]:
+    """Fetch RU names by hitting each item's individual poe2db page.
+
+    This is the KI-30 fix for the broken category-page parser. For each
+    poe2scout item, we:
+      1. Convert the EN name to a poe2db URL slug (spaces -> underscores).
+      2. GET https://poe2db.tw/ru/<slug>
+      3. Parse the <title> tag to extract the Russian name.
+      4. If 404 or title doesn't match the item-page pattern, skip (no match).
+
+    Items already translated (i.e. present in existing_names) are SKIPPED to
+    save network calls — only items missing from currency_names.json are fetched.
+
+    Args:
+        base_url: poe2db base URL (default https://poe2db.tw).
+        poe2scout_items: List of {api_id, en_name, category_api_id} from Stage 1.
+        existing_names: The 4-dict structure loaded from currency_names.json.
+        rate_limit_delay: Seconds to sleep between requests (default 0.5).
+
+    Returns:
+        Dict keyed by category, where each value is a list of
+        `{en_name, ru_name, category, href}` dicts. Items that returned no
+        match are simply omitted from the result (not included as empty pairs).
+    """
+    base = base_url.rstrip("/")
+    existing_ru = existing_names["currency_names_ru"]
+    existing_en = existing_names["currency_names_en"]
+
+    # Build the list of items we need to fetch (skip already-translated items)
+    to_fetch: list[dict[str, str]] = []
+    for item in poe2scout_items:
+        api_id = item["api_id"]
+        if api_id in existing_ru and api_id in existing_en:
+            continue  # already translated — skip
+        to_fetch.append(item)
+
+    log.info("  %d items to fetch (%d already translated, skipping)",
+             len(to_fetch), len(poe2scout_items) - len(to_fetch))
+
+    result: dict[str, list[dict[str, str]]] = {}
+    fetched = 0
+    matched = 0
+    skipped_404 = 0
+    skipped_no_title = 0
+
+    for i, item in enumerate(to_fetch, 1):
+        en_name = item["en_name"]
+        category = item["category_api_id"]
+        api_id = item["api_id"]
+
+        # Check for manual slug overrides first
+        slug = _POE2DB_URL_SLUG_OVERRIDES.get(api_id) or _en_name_to_poe2db_slug(en_name)
+        if not slug:
+            continue
+        url = f"{base}/ru/{slug}"
+
+        if i % 25 == 0 or i == len(to_fetch):
+            log.info("  [%d/%d] %s -> %s", i, len(to_fetch), en_name, url)
+
+        try:
+            html_text = _http_get_html(url)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                skipped_404 += 1
+                time.sleep(rate_limit_delay)
+                continue
+            # On 5xx, retry (already done in _http_get); if it still fails, log and move on
+            log.warning("  HTTP %d for %s — skipping", e.code, url)
+            time.sleep(rate_limit_delay)
+            continue
+        except urllib.error.URLError as e:
+            log.warning("  URLError %s for %s — skipping", e.reason, url)
+            time.sleep(rate_limit_delay)
+            continue
+
+        fetched += 1
+        ru_name = _extract_ru_name_from_title(html_text)
+        if ru_name:
+            matched += 1
+            result.setdefault(category, []).append({
+                "en_name": en_name,
+                "ru_name": ru_name,
+                "category": category,
+                "href": f"/ru/{slug}",
+            })
+        else:
+            skipped_no_title += 1
+
+        time.sleep(rate_limit_delay)
+
+    log.info("  Fetched %d pages, matched %d items, skipped %d (404) + %d (no title)",
+             fetched, matched, skipped_404, skipped_no_title)
     return result
 
 
@@ -826,6 +1006,60 @@ def cmd_fetch_ru(args: argparse.Namespace) -> int:
 
     log.info("Stage 2 COMPLETE — %d total EN→RU pairs across %d categories written to %s",
              total_pairs, len(result), POE2DB_RU_CACHE.relative_to(REPO_ROOT))
+    log.info("  WARNING (KI-30): the category-page parser produces junk for most categories.")
+    log.info("  Prefer --fetch-ru-by-item for the iter-137 pipeline.")
+    return 0
+
+
+def cmd_fetch_ru_by_item(args: argparse.Namespace) -> int:
+    """Stage 2b — fetch RU names by hitting each item's individual poe2db page.
+
+    This is the KI-30 fix. Reads poe2scout_items.json (Stage 1 output) and
+    the existing currency_names.json, fetches each untranslated item's poe2db
+    page, extracts the Russian name from the <title> tag, and writes the same
+    cache file format as --fetch-ru (so --diff can consume either source).
+    """
+    base_url = args.poe2db_base_url
+    log.info("Stage 2b — fetching RU names by per-item page (KI-30 fix)")
+    log.info("  Base URL: %s", base_url)
+
+    if not POE2SCOUT_ITEMS_CACHE.exists():
+        log.error("Missing %s — run --fetch-ids (or --from-cache-snapshot) first.",
+                  POE2SCOUT_ITEMS_CACHE)
+        return 4
+    if not CURRENCY_NAMES_PATH.exists():
+        log.error("Missing %s — run from the repo root.", CURRENCY_NAMES_PATH)
+        return 2
+
+    with POE2SCOUT_ITEMS_CACHE.open(encoding="utf-8") as f:
+        poe2scout_data = json.load(f)
+    with CURRENCY_NAMES_PATH.open(encoding="utf-8") as f:
+        existing_names = json.load(f)
+
+    try:
+        result = fetch_poe2db_ru_names_by_item(
+            base_url=base_url,
+            poe2scout_items=poe2scout_data["items"],
+            existing_names=existing_names,
+            rate_limit_delay=args.rate_limit_delay,
+        )
+    except urllib.error.URLError as e:
+        log.error("Network error during fetch_poe2db_ru_names_by_item: %s", e)
+        return 1
+
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    total_pairs = sum(len(v) for v in result.values())
+    payload = {
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime()),
+        "source": f"{base_url}/ru/<Item_Name> (per-item page title extraction)",
+        "total_pairs": total_pairs,
+        "categories": result,
+    }
+    with POE2DB_RU_CACHE.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    log.info("Stage 2b COMPLETE — %d total EN→RU pairs across %d categories written to %s",
+             total_pairs, len(result), POE2DB_RU_CACHE.relative_to(REPO_ROOT))
     return 0
 
 
@@ -973,7 +1207,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--from-cache-snapshot", action="store_true",
                         help="Stage 1 fallback: extract api_ids from bundled src/data/cache-snapshot.json (no network).")
     parser.add_argument("--fetch-ru", action="store_true",
-                        help="Stage 2: fetch RU translations from poe2db.tw/ru/.")
+                        help="Stage 2: fetch RU translations from poe2db.tw/ru/ (LEGACY — broken per KI-30).")
+    parser.add_argument("--fetch-ru-by-item", action="store_true",
+                        help="Stage 2b (iter 137, KI-30 fix): fetch RU translations by hitting each item's individual poe2db page and parsing the <title> tag. This is the recommended approach.")
     parser.add_argument("--diff", action="store_true",
                         help="Stage 3: compute patch of proposed new translations.")
     parser.add_argument("--apply", action="store_true",
@@ -982,6 +1218,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="Confirmation flag for --apply (without it, --apply is a no-op).")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output (show every patch entry in --diff).")
+    parser.add_argument("--rate-limit-delay", type=float, default=0.5,
+                        help="Seconds to sleep between poe2db HTTP requests in --fetch-ru-by-item (default: 0.5). Lower = faster but risks rate-limiting.")
 
     parser.add_argument("--poe2scout-base-url", default=None,
                         help=f"Override poe2scout API base URL (default: ${'POE2_API_BASE_URL'!r} env or {DEFAULT_POE2SCOUT_BASE!r}).")
@@ -1006,7 +1244,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # Validate stage selection
     stage_count = sum([
-        args.fetch_ids, args.from_cache_snapshot, args.fetch_ru, args.diff, args.apply,
+        args.fetch_ids, args.from_cache_snapshot, args.fetch_ru, args.fetch_ru_by_item,
+        args.diff, args.apply,
     ])
     if stage_count == 0:
         parser.print_help()
@@ -1024,6 +1263,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_from_cache_snapshot(args)
     if args.fetch_ru:
         return cmd_fetch_ru(args)
+    if args.fetch_ru_by_item:
+        return cmd_fetch_ru_by_item(args)
     if args.diff:
         return cmd_diff(args)
     if args.apply:

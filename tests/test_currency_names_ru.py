@@ -25,12 +25,13 @@ from backend.data.currency_names_ru import (
 
 
 def test_dicts_load_from_json_and_are_non_empty():
-    # Numbers verified at iter 70 — these are the exact counts the old hardcoded
-    # module had. If you add new translations, bump these numbers in the same PR.
+    # Counts verified at iter 137 (F1 unblock — 337 new translations added via
+    # the sync_currency_names_from_poe2db.py --fetch-ru-by-item pipeline).
+    # If you add new translations, bump these numbers in the same PR.
     assert len(CATEGORY_NAMES_RU) == 17
     assert len(CATEGORY_NAMES_EN) == 17
-    assert len(CURRENCY_NAMES_RU) == 349
-    assert len(CURRENCY_NAMES_EN) == 349
+    assert len(CURRENCY_NAMES_RU) == 686
+    assert len(CURRENCY_NAMES_EN) == 686
 
 
 def test_helpers_return_none_for_unknown_ids():
