@@ -42,8 +42,13 @@ def test_helpers_return_none_for_unknown_ids():
 
 
 def test_helpers_return_expected_name_for_known_ids():
-    # exalted is the canonical reference currency in PoE2
-    assert get_ru_name("exalted") == "Благородная сфера"
+    # Spot-check the canonical reference currencies in PoE2.
+    # iter 146 (TD-6 phase 1 / KI-32 fix): exalted was previously the PoE1-style
+    # "Благородная сфера" — overwritten with poe2db's official "Сфера возвышения"
+    # via `sync_currency_names_from_poe2db.py --apply-audit --confirm`.
+    # divine and mirror already matched poe2db's official RU translation, so
+    # they were not in the KI-32 mismatch list and remain unchanged.
+    assert get_ru_name("exalted") == "Сфера возвышения"
     assert get_en_name("exalted") == "Exalted Orb"
     assert get_ru_name("divine") == "Божественная сфера"
     assert get_en_name("divine") == "Divine Orb"

@@ -834,3 +834,310 @@ class TestBuildPoe2dbUrl:
         assert "ó" not in url
         assert "/ru/" in url
         url.encode("ascii")  # should not raise
+
+
+# ---------------------------------------------------------------------------
+# apply_audit (iter 146, TD-6 phase 1, KI-32 fix)
+# ---------------------------------------------------------------------------
+
+class TestApplyAudit:
+    """Tests for the KI-32 fix: apply_audit() function (iter 146).
+
+    apply_audit() reads an audit report (Stage 5 output) and overwrites every
+    `mismatches` entry's `our_ru` value in `currency_names_ru` with the
+    `poe2db_ru` value from the report. Does NOT touch `currency_names_en`.
+    """
+
+    def setup_method(self):
+        self.existing_names = {
+            "category_names_ru": {"currency": "Валюта"},
+            "category_names_en": {"currency": "Currency"},
+            "currency_names_ru": {
+                "exalted": "Благородная сфера",      # in audit, will be overwritten
+                "divine": "Божественная сфера",       # NOT in audit (matches poe2db)
+                "fracturing-orb": "Сфера раскалывания",  # in audit, will be overwritten
+            },
+            "currency_names_en": {
+                "exalted": "Exalted Orb",
+                "divine": "Divine Orb",
+                "fracturing-orb": "Fracturing Orb",
+            },
+        }
+
+    def test_overwrites_mismatch_entries_with_poe2db_value(self):
+        """Each mismatch entry's `our_ru` is replaced with `poe2db_ru` in currency_names_ru."""
+        audit_report = {
+            "summary": {"mismatch": 2},
+            "mismatches": [
+                {
+                    "api_id": "exalted",
+                    "en_name": "Exalted Orb",
+                    "our_ru": "Благородная сфера",
+                    "poe2db_ru": "Сфера возвышения",
+                    "poe2db_url": "https://poe2db.tw/ru/Exalted_Orb",
+                },
+                {
+                    "api_id": "fracturing-orb",
+                    "en_name": "Fracturing Orb",
+                    "our_ru": "Сфера раскалывания",
+                    "poe2db_ru": "Раскалывающая сфера",
+                    "poe2db_url": "https://poe2db.tw/ru/Fracturing_Orb",
+                },
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        applied, skipped_no_change, skipped_not_in_json = sync.apply_audit(
+            audit_report, self.existing_names
+        )
+        assert applied == 2
+        assert skipped_no_change == 0
+        assert skipped_not_in_json == 0
+        assert self.existing_names["currency_names_ru"]["exalted"] == "Сфера возвышения"
+        assert self.existing_names["currency_names_ru"]["fracturing-orb"] == "Раскалывающая сфера"
+        # divine was not in the audit — must be untouched
+        assert self.existing_names["currency_names_ru"]["divine"] == "Божественная сфера"
+
+    def test_does_not_touch_currency_names_en(self):
+        """apply_audit only mutates currency_names_ru — EN names come from poe2scout, not poe2db."""
+        audit_report = {
+            "summary": {"mismatch": 1},
+            "mismatches": [
+                {
+                    "api_id": "exalted",
+                    "en_name": "Exalted Orb",
+                    "our_ru": "Благородная сфера",
+                    "poe2db_ru": "Сфера возвышения",
+                    "poe2db_url": "https://poe2db.tw/ru/Exalted_Orb",
+                },
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        en_before = dict(self.existing_names["currency_names_en"])
+        sync.apply_audit(audit_report, self.existing_names)
+        assert self.existing_names["currency_names_en"] == en_before, (
+            "apply_audit must NOT mutate currency_names_en"
+        )
+
+    def test_preserves_ru_en_key_parity(self):
+        """Since apply_audit only mutates values (never adds/removes keys),
+        RU/EN key parity is preserved by construction.
+        """
+        audit_report = {
+            "summary": {"mismatch": 2},
+            "mismatches": [
+                {"api_id": "exalted", "our_ru": "Благородная сфера", "poe2db_ru": "Сфера возвышения"},
+                {"api_id": "fracturing-orb", "our_ru": "Сфера раскалывания", "poe2db_ru": "Раскалывающая сфера"},
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        sync.apply_audit(audit_report, self.existing_names)
+        ru_keys = set(self.existing_names["currency_names_ru"].keys())
+        en_keys = set(self.existing_names["currency_names_en"].keys())
+        assert ru_keys == en_keys
+
+    def test_idempotent_rerun_is_noop(self):
+        """Re-running apply_audit with the same audit report after a successful
+        apply should be a no-op: every entry's current value already equals
+        `poe2db_ru`, so it falls into the `skipped_no_change` bucket.
+        """
+        audit_report = {
+            "summary": {"mismatch": 1},
+            "mismatches": [
+                {
+                    "api_id": "exalted",
+                    "our_ru": "Благородная сфера",  # stale: post-apply, current is "Сфера возвышения"
+                    "poe2db_ru": "Сфера возвышения",
+                },
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        # Simulate the post-apply state: exalted already has the poe2db_ru value.
+        self.existing_names["currency_names_ru"]["exalted"] = "Сфера возвышения"
+
+        applied, skipped_no_change, skipped_not_in_json = sync.apply_audit(
+            audit_report, self.existing_names
+        )
+        assert applied == 0
+        assert skipped_no_change == 1
+        assert skipped_not_in_json == 0
+        # Value unchanged
+        assert self.existing_names["currency_names_ru"]["exalted"] == "Сфера возвышения"
+
+    def test_skips_when_current_differs_from_audit_our_ru(self):
+        """If current_ru != audit our_ru AND current_ru != poe2db_ru, the audit
+        report is stale (someone manually edited the JSON between --audit and
+        --apply-audit). Skip rather than silently overwrite the manual edit.
+        """
+        audit_report = {
+            "summary": {"mismatch": 1},
+            "mismatches": [
+                {
+                    "api_id": "exalted",
+                    "our_ru": "Благородная сфера",
+                    "poe2db_ru": "Сфера возвышения",
+                },
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        # Someone manually edited the JSON to a third value the audit didn't see.
+        self.existing_names["currency_names_ru"]["exalted"] = "Возвышенная сфера (manual edit)"
+
+        applied, skipped_no_change, skipped_not_in_json = sync.apply_audit(
+            audit_report, self.existing_names
+        )
+        assert applied == 0
+        assert skipped_no_change == 1
+        # Manual edit preserved (NOT overwritten with poe2db_ru)
+        assert self.existing_names["currency_names_ru"]["exalted"] == "Возвышенная сфера (manual edit)"
+
+    def test_skips_when_api_id_not_in_json(self):
+        """Defensive: if audit report references an api_id that's not in
+        currency_names_ru, skip it (audit report is stale).
+        """
+        audit_report = {
+            "summary": {"mismatch": 1},
+            "mismatches": [
+                {
+                    "api_id": "phantom-item-not-in-json",
+                    "our_ru": "Несуществующее",
+                    "poe2db_ru": "Другое",
+                },
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        applied, skipped_no_change, skipped_not_in_json = sync.apply_audit(
+            audit_report, self.existing_names
+        )
+        assert applied == 0
+        assert skipped_no_change == 0
+        assert skipped_not_in_json == 1
+
+    def test_ignores_no_poe2db_page_and_no_cyrillic_entries(self):
+        """Only `mismatches` are actionable. `no_poe2db_page` and `no_cyrillic`
+        entries must NOT be touched by apply_audit.
+        """
+        audit_report = {
+            "summary": {"mismatch": 1, "no_poe2db_page": 1, "no_cyrillic": 1},
+            "mismatches": [
+                {
+                    "api_id": "exalted",
+                    "our_ru": "Благородная сфера",
+                    "poe2db_ru": "Сфера возвышения",
+                },
+            ],
+            "no_poe2db_page": [
+                {"api_id": "aldurs-legacy", "en_name": "Aldur's Legacy"},
+            ],
+            "no_cyrillic": [
+                {"api_id": "aldurs-saga", "en_name": "Aldur's Saga"},
+            ],
+        }
+        applied, _, _ = sync.apply_audit(audit_report, self.existing_names)
+        assert applied == 1
+        # aldurs-legacy and aldurs-saga not in JSON to begin with — they're
+        # in the audit report but apply_audit only iterates `mismatches`.
+
+    def test_empty_mismatches_returns_zero(self):
+        """If audit report has no mismatches (all match), apply_audit is a no-op."""
+        audit_report = {
+            "summary": {"mismatch": 0, "match": 686},
+            "mismatches": [],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }
+        applied, skipped_no_change, skipped_not_in_json = sync.apply_audit(
+            audit_report, self.existing_names
+        )
+        assert applied == 0
+        assert skipped_no_change == 0
+        assert skipped_not_in_json == 0
+
+
+class TestApplyAuditCli:
+    """CLI-level tests for the --apply-audit flag (iter 146)."""
+
+    def test_apply_audit_without_confirm_returns_4(self, caplog):
+        """--apply-audit requires --confirm (destructive — overwrites existing translations)."""
+        with caplog.at_level("ERROR"):
+            rc = sync.main(["--apply-audit"])
+        assert rc == 4
+        assert "--apply-audit requires --confirm" in caplog.text
+
+    def test_apply_audit_with_other_stage_returns_4(self, capsys):
+        """--apply-audit combined with --audit should be rejected (exactly one stage)."""
+        rc = sync.main(["--apply-audit", "--audit", "--confirm"])
+        assert rc == 4
+
+    def test_apply_audit_missing_audit_cache_returns_4(self, monkeypatch, caplog):
+        """If scripts/.cache/translation_audit.json doesn't exist, return 4
+        (caller must run --audit first).
+        """
+        # Point TRANSLATION_AUDIT_CACHE at a non-existent path.
+        fake_path = sync.Path("/tmp/__definitely_does_not_exist_apply_audit_test__.json")
+        monkeypatch.setattr(sync, "TRANSLATION_AUDIT_CACHE", fake_path)
+
+        with caplog.at_level("ERROR"):
+            rc = sync.main(["--apply-audit", "--confirm"])
+        assert rc == 4
+        assert "run --audit first" in caplog.text
+
+    def test_apply_audit_runs_full_pipeline_on_synthetic_data(self, monkeypatch, tmp_path, caplog):
+        """End-to-end: synthetic audit cache + synthetic currency_names.json +
+        monkeypatched CURRENCY_NAMES_PATH → verify file is written with the
+        corrected value.
+        """
+        # 1. Synthetic audit cache file
+        audit_cache = tmp_path / "translation_audit.json"
+        audit_cache.write_text(json.dumps({
+            "summary": {"mismatch": 1, "match": 1},
+            "mismatches": [
+                {
+                    "api_id": "exalted",
+                    "en_name": "Exalted Orb",
+                    "category_api_id": "currency",
+                    "our_ru": "Благородная сфера",
+                    "poe2db_ru": "Сфера возвышения",
+                    "poe2db_url": "https://poe2db.tw/ru/Exalted_Orb",
+                },
+            ],
+            "no_poe2db_page": [],
+            "no_cyrillic": [],
+        }), encoding="utf-8")
+        monkeypatch.setattr(sync, "TRANSLATION_AUDIT_CACHE", audit_cache)
+
+        # 2. Synthetic currency_names.json
+        names_path = tmp_path / "currency_names.json"
+        names_path.write_text(json.dumps({
+            "category_names_ru": {"currency": "Валюта"},
+            "category_names_en": {"currency": "Currency"},
+            "currency_names_ru": {
+                "exalted": "Благородная сфера",
+                "divine": "Божественная сфера",
+            },
+            "currency_names_en": {
+                "exalted": "Exalted Orb",
+                "divine": "Divine Orb",
+            },
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        monkeypatch.setattr(sync, "CURRENCY_NAMES_PATH", names_path)
+
+        with caplog.at_level("INFO"):
+            rc = sync.main(["--apply-audit", "--confirm"])
+        assert rc == 0
+
+        # 3. Verify file was written with corrected value
+        with names_path.open(encoding="utf-8") as f:
+            result = json.load(f)
+        assert result["currency_names_ru"]["exalted"] == "Сфера возвышения"
+        assert result["currency_names_ru"]["divine"] == "Божественная сфера"  # untouched
+        assert result["currency_names_en"]["exalted"] == "Exalted Orb"  # untouched
+
+        assert "Stage 6 COMPLETE" in caplog.text
+        assert "1 applied" in caplog.text
+

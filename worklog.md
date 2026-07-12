@@ -5,6 +5,62 @@
 
 ---
 
+Task ID: iter-146
+Agent: main
+Task: iter 146 — TD-6 phase 1 / KI-32 fix. Closes candidate (a) from iter 145 stop point: add `--apply-audit` flag to `scripts/sync_currency_names_from_poe2db.py` (Stage 6 of the translation pipeline). Reads `scripts/.cache/translation_audit.json` (iter-145 Stage 5 output, 32 mismatches), overwrites every mismatch entry's value in `currency_names_ru` with the `poe2db_ru` value from the report. Requires `--confirm`. Does NOT touch `currency_names_en`. Then regenerate TS mirror + update spot-check assertions + add tests + update docs.
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 145 SHIPPED, KI-32 open, KI-33 fixed, TD-6 phase 1 planned), `worklog.md` (iter 145 + iter 144), `AGENT_NAVIGATION.md` §1 + invariant #24.
+- Inspected audit artifact `scripts/.cache/translation_audit.json`: 32 mismatches confirmed (13 currency + 7 vaultkeys + 6 ultimatum + 3 lineagesupportgems/ritual/runes + 1 lineagesupportgems `uul-netols-embrace` actually). Fields per entry: `api_id` / `en_name` / `category_api_id` / `our_ru` / `poe2db_ru` / `poe2db_url`. Plus 1 `no_cyrillic` (`aldurs-saga`) and 0 `no_poe2db_page`.
+- Inspected `scripts/sync_currency_names_from_poe2db.py` (1509 lines): 5 existing stages, module docstring, `apply_patch()` pattern at line 902 (good template for `apply_audit()`), `cmd_audit()` at line 1456 (good template for `cmd_apply_audit()`), argparse + stage_count + dispatch at `main()`.
+- Inspected `tests/test_currency_names_ru.py:46-51` spot-check: only `exalted` needs to change (in audit mismatch list with `our_ru="Благородная сфера"`, `poe2db_ru="Сфера возвышения"`). `divine` and `mirror` are NOT in the mismatch list → their spot-check assertions stay unchanged.
+- **Added Stage 6 `apply_audit()` function** to `scripts/sync_currency_names_from_poe2db.py:apply_audit` (after `audit_translations`, before Main CLI section):
+  - Takes `(audit_report, existing_names)` → `(applied, skipped_no_change, skipped_not_in_json)`.
+  - Iterates ONLY `audit_report["mismatches"]` (not `no_poe2db_page` / `no_cyrillic` — those are not actionable).
+  - For each entry: if `current == poe2db_ru` → idempotent skip; if `current != our_ru` → stale audit skip (preserve manual edits); else → overwrite with `poe2db_ru`.
+  - Mutates ONLY `currency_names_ru` values — does NOT touch `currency_names_en`, does NOT add/remove keys (RU/EN key parity preserved by construction).
+- **Added `cmd_apply_audit(args)` CLI handler**: requires `--confirm` (returns 4 without it); reads `TRANSLATION_AUDIT_CACHE` (returns 4 if missing — "run --audit first"); reads `CURRENCY_NAMES_PATH`; pre-flight RU/EN key parity check; calls `apply_audit()`; post-flight parity check; atomic write via `.json.tmp` + rename. Display path uses `try/except ValueError` around `.relative_to(REPO_ROOT)` for robustness under symlinked / tmp_path-based invocation (helps tests + real-world weird layouts).
+- **Registered `--apply-audit` flag** in argparse (between `--audit` and `--confirm`); added to `stage_count` sum; added dispatch branch `if args.apply_audit: return cmd_apply_audit(args)`. Updated `--confirm` help text to mention both `--apply` and `--apply-audit`. Updated `cmd_audit()` "Next steps" log to point at the new `--apply-audit --confirm` flag (was "future: --apply-audit flag").
+- **Updated module docstring** with Stage 5 + Stage 6 sections (Stage 5 was previously only mentioned in passing; now formalized).
+- **Updated `tests/test_currency_names_ru.py:46-51`**: `exalted` RU assertion changed from `"Благородная сфера"` to `"Сфера возвышения"`. Added explanatory comment citing iter 146 / TD-6 phase 1 / KI-32 fix. `divine` and `mirror` assertions unchanged (already match poe2db per audit).
+- **Updated `scripts/sync_currency_names_ts.py:67`**: stale docstring example comment `// "Благородная сфера"` → `// "Сфера возвышения"` (auto-emitted into the TS file header).
+- **Added 12 new tests to `tests/test_sync_currency_names.py`**:
+  - `TestApplyAudit` (8 tests): `test_overwrites_mismatch_entries_with_poe2db_value`, `test_does_not_touch_currency_names_en`, `test_preserves_ru_en_key_parity`, `test_idempotent_rerun_is_noop`, `test_skips_when_current_differs_from_audit_our_ru` (stale-audit guard), `test_skips_when_api_id_not_in_json` (defensive), `test_ignores_no_poe2db_page_and_no_cyrillic_entries`, `test_empty_mismatches_returns_zero`.
+  - `TestApplyAuditCli` (4 tests): `test_apply_audit_without_confirm_returns_4` (uses `caplog` not `capsys.err` — pytest captures logging separately), `test_apply_audit_with_other_stage_returns_4`, `test_apply_audit_missing_audit_cache_returns_4` (monkeypatches `TRANSLATION_AUDIT_CACHE` to a non-existent path), `test_apply_audit_runs_full_pipeline_on_synthetic_data` (full end-to-end: synthetic audit cache + synthetic currency_names.json in `tmp_path` + monkeypatched `CURRENCY_NAMES_PATH` → verify file is written with corrected value, EN untouched, parity preserved, log output contains "Stage 6 COMPLETE" + "1 applied").
+- **Iter 1 test run failure → fix:** 3 CLI tests failed because (a) `capsys.readouterr().err` returns empty for `logging.error()` output — pytest captures log separately via `caplog` fixture; (b) `CURRENCY_NAMES_PATH.relative_to(REPO_ROOT)` raises `ValueError` when the path is in `tmp_path` (not under `REPO_ROOT`). Fixed by switching the 2 affected tests to use `caplog` fixture + adding a `try/except ValueError` around the `.relative_to()` call in `cmd_apply_audit` (more robust production code, helps both tests and real-world symlinked invocation).
+- **Iter 2 test run:** 69 tests in `test_sync_currency_names.py` all green (57 existing + 12 new).
+- **Applied the audit:** `python scripts/sync_currency_names_from_poe2db.py --apply-audit --confirm` → "Stage 6 COMPLETE — 32 applied, 0 skipped (no change / idempotent), 0 skipped (not in JSON)." Verified `exalted` now `"Сфера возвышения"`, `fracturing-orb` now `"Раскалывающая сфера"`, `vaal` now `"Сфера ваал"`, `alch` now `"Сфера алхимии"`, `regal` now `"Сфера царей"`, `the-trialmasters-reliquary-key` now `"Ключ от Реликвария Мастера испытаний"`, `xopecs-soul-core-of-power` now `"Ядро душ могущества Шопека"`. Counts unchanged: 686 RU + 686 EN (values only mutated). RU/EN key parity preserved.
+- **Regenerated TS mirror:** `python scripts/sync_currency_names_ts.py` → "Wrote src/lib/currency-names.ts — 686 RU + 686 EN + 17 categories". Verified line 14 docstring example now reads `// "Сфера возвышения"` and line 29 reads `"exalted": "Сфера возвышения",`.
+- **Final test verification:**
+  - `pytest tests/test_currency_names_ru.py tests/test_sync_currency_names.py -v` → 76 passed (8 + 69 - 1 shared = 76).
+  - `pytest tests/` (full suite) → **1492 passed** (was 1466 in iter 145; +26 = 12 new TestApplyAudit/TestApplyAuditCli + 14 from aiosqlite install enabling previously-skipped modules to load). Zero regressions.
+- **Documentation updates:**
+  - `STATUS.md` — header bump (iter 145 → iter 146); KI-32 moved from "open" to new "closed (kept for recovery recipes)" section with full root-cause + fix narrative; TD-6 row updated (Phase 1 SHIPPED iter 146); F1 row updated (mismatches FIXED iter 146); Quick Reference "translation drift" row updated (KI-32 → FIXED iter 146 with `--apply-audit` recipe); Key Technical Insights "Translation pipeline" section expanded from 5 stages to 6 stages; pytest baseline bumped 1466 → 1492.
+  - `worklog.md` — added this iter-146 entry; removed iter-144 entry (rule: only last 2 iterations).
+  - `AGENT_NAVIGATION.md` — header bump (iter 145 → iter 146); invariant #24 updated (mention `--apply-audit` flag); workflow recipe for "Add a new Russian currency/item translation" updated (5-stage → 6-stage pipeline description).
+
+Stage Summary:
+- **iter 146 SHIPPED — TD-6 phase 1 complete, KI-32 CLOSED. 32 drift items fixed, 12 new tests, 1492 pytest green.**
+- **Modified files (4 source + 3 tests/docs):**
+  - `scripts/sync_currency_names_from_poe2db.py` — added Stage 6 (`--apply-audit` flag + `apply_audit()` + `cmd_apply_audit()` + module docstring update + `--audit` "Next steps" pointer + `cmd_apply_audit` defensive `relative_to` handling).
+  - `scripts/sync_currency_names_ts.py` — 1-line docstring example comment fix (`Благородная сфера` → `Сфера возвышения`).
+  - `backend/data/currency_names.json` — 32 RU values overwritten with poe2db official (idempotent, RU/EN parity preserved, count unchanged at 686).
+  - `src/lib/currency-names.ts` — regenerated from JSON (auto-generated file, 32 RU values changed, docstring example comment updated).
+  - `tests/test_currency_names_ru.py` — 1 spot-check assertion updated (`exalted` RU name) + explanatory comment.
+  - `tests/test_sync_currency_names.py` — added 12 tests (TestApplyAudit 8 + TestApplyAuditCli 4).
+  - `STATUS.md` — header bump + KI-32 moved to closed + TD-6 phase 1 SHIPPED + F1 updated + Quick Reference updated + Key Technical Insights expanded (5 stages → 6 stages) + pytest baseline 1466 → 1492.
+  - `worklog.md` — this iter-146 entry (removed iter-144).
+  - `AGENT_NAVIGATION.md` — header bump + invariant #24 + workflow recipe updated.
+- **What was NOT done (intentionally deferred to iter 147+):**
+  - **TD-6 Phase 2 — unique items RU support:** Extend pipeline to crawl `poe2db.tw/ru/Unique_item` index page → per-item page `<title>` extraction. Add `unique_names_ru` / `unique_names_en` sections (either new file `unique_names.json` or new top-level keys in `currency_names.json`). Update `mapUniqueItem` in `src/lib/poe2api.ts:1030` to look up RU name when locale=ru. Add UI tests for RU locale rendering of unique items. Largest scope, addresses the 2nd half of user's complaint about missing RU for unique items.
+  - **TD-6 Phase 3 — re-audit cycle:** Re-run `--audit` monthly / after each patch to catch new drift. With iter 146's `--apply-audit` flag, this is now a 2-command workflow: `--audit` → review → `--apply-audit --confirm` → `python scripts/sync_currency_names_ts.py`.
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141–146 only verified doc-level references + translation infrastructure. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 147+.
+  - **9 currency items still untranslated** (F1) + **1 no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+- **Stopping point:** iter 146 = TD-6 phase 1 complete + KI-32 closed (32 drift items fixed via new `--apply-audit` flag, 12 new tests, 1492 pytest green). Next iter candidates: (a) **TD-6 Phase 2** — extend pipeline to unique items (largest scope, addresses user's 2nd complaint about missing RU for unique items); (b) per-tab UX/logic deep-audit (deferred since iter 139); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
+
+---
+
 Task ID: iter-145
 Agent: main
 Task: iter 145 — closes candidate (a) from iter 144 stop point (fix `instrumentation.ts:7` + `flipper-backend-bridge.ts:313` comment drift `/api/health` → `/api/v1/health/ping`), PLUS addresses user's new requirement about translation quality. User reported: "далеко не все и не везде предметы и валюта имеет перевод а где имеет ---> перевод корявый и не такой как в официальном клиенте игры! перевод надо смотреть на пое 2 дб!" — provided poe2db.tw/ru/Unique_item URLs as reference.
@@ -63,69 +119,3 @@ Stage Summary:
   - **9 currency items still untranslated** (F1) + **1 newly-discovered no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
   - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
 - **Stopping point:** iter 145 = 1 source-cleanup (closes candidate a) + 1 new audit tool (Stage 5 `--audit`) + 2 new KIs (KI-32 translation drift, KI-33 non-ASCII slug crash fixed) + 1 new TD (TD-6 translation alignment + unique-items RU support) + 14 new tests + 1 audit artifact. Next iter candidates: (a) **TD-6 Phase 1** — add `--apply-audit` flag to overwrite the 32 KI-32 drift items (highest value — directly addresses user's complaint about wrong translations); (b) **TD-6 Phase 2** — extend pipeline to unique items (largest scope, addresses user's complaint about missing RU for unique items); (c) per-tab UX/logic deep-audit (deferred since iter 139); (d) re-run F1 pipeline after a patch / monthly; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.
-
----
-
-Task ID: iter-144
-Agent: main
-Task: iter 144 — `docs/DATA_FLOW.md` §2 (POE2Scout API) + §5 (Field Transformation) deep cross-check. Per the iter-143 stop point: candidate (a) next logical docs batch. Chose this — lowest risk (doc-only, 0 source-code changes), natural continuation of the doc-audit chain (iter 141: DATA_FLOW cosmetic, iter 142: ARCHITECTURE/PLAYBOOK/CORS, iter 143: BACKEND_GUIDE/DATA_CONTRACTS). §2 + §5 were the only sections from the iter-141 audit that received only a cosmetic pass and deserved a deep cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts`.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 143 SHIPPED), `worklog.md` (iter 143 + iter 142), `AGENT_NAVIGATION.md` §1–§3.
-- Re-verified canonical references against live code:
-  - `backend/data/providers/poe2scout.py:417-418` — `get_historical_prices(currency: str, days)` calls `f"{self._league_path()}/Currencies/{currency}"`. The path parameter is an ApiId string (e.g. "divine"). DATA_FLOW.md §2 table row #16 said `/{Realm}/Leagues/{LeagueName}/Currencies/{ApiId}` — correct, no drift.
-  - `backend/data/providers/poe2scout.py:707-720` — `get_pair_history(currency_one_item_id: int, currency_two_item_id: int)` calls `f".../Currencies/Pairs/{currency_one_item_id}/{currency_two_item_id}/History"`. Parameters are NUMERIC ItemIds. DATA_FLOW.md §2 table row #17 used generic `{C1}/{C2}` shorthand — INCONSISTENT with §2 path-params section (line 54) which explicitly names them `{CurrencyOneItemId}/{CurrencyTwoItemId}`. Aligned table to match path-params section.
-  - `src/lib/poe2api.ts:618-630` — `RawCurrencyItem` interface has `ItemMetadata: Record<string, unknown> | null` (strict TS type). DATA_FLOW.md §5.1 said `ItemMetadata?: any` — legacy loose typing. Fixed.
-  - `src/lib/poe2api.ts:639-652` — `RawUniqueItem` interface has NO `ApiId` field. Has `IsChanceable: boolean | null` and `ItemMetadata: Record<string, unknown> | null`. DATA_FLOW.md §5.1 listed `ApiId: string` as a field — WRONG. Code comment at `poe2api.ts:1025` explicitly notes: "BUG FIX: Unique items don't have an ApiId field in the POE2Scout API. CategoryApiId is shared by ALL items in the same category... Use ItemId as a stable, unique identifier instead." Removed phantom ApiId, added explanatory note, fixed IsChanceable/ItemMetadata types.
-  - `src/lib/poe2api.ts:977` (mapCurrencyItem) — `id: String(item.ItemId || item.CurrencyItemId)` — ItemId takes PRIORITY. DATA_FLOW.md §5.1 mapping table said `id = String(CurrencyItemId || UniqueItemId || ItemId)` — priority REVERSED (and incorrectly mixed CurrencyItemId/UniqueItemId into a single rule).
-  - `src/lib/poe2api.ts:1024` (mapUniqueItem) — `id: String(raw.ItemId || raw.UniqueItemId)` — ItemId takes PRIORITY.
-  - `src/lib/poe2api.ts:978` (mapCurrencyItem) — `apiId: item.ApiId` — correct for currencies.
-  - `src/lib/poe2api.ts:1029` (mapUniqueItem) — `apiId: String(raw.ItemId || raw.UniqueItemId)` — NOT ApiId (uniques have no ApiId field). DATA_FLOW.md §5.1 mapping table presented `apiId = ApiId` as a single unified rule — MISLEADING. Split into two rules: currencies use ApiId, uniques use String(ItemId || UniqueItemId).
-  - `src/lib/poe2api.ts:960,1008` — `const relPrice = referencePrice && currentPrice ? currentPrice / referencePrice : currentPrice;`. DATA_FLOW.md §5.1 said `relativePrice = CurrentPrice / referencePrice` — didn't mention the fallback to `currentPrice` when `referencePrice` is missing. Added note.
-  - `src/lib/poe2api.ts:1148-1180` (mapSnapshotPair) — returns 15 fields. DATA_FLOW.md §5.2 mapping table listed only 12 — MISSING 3: `currency1CategoryApiId` (line 1164), `currency2CategoryApiId` (line 1169), `currency2RelativePrice` (line 1172, comment: "price of currency2 in base currency — needed for cross-rate"). Added all 3.
-  - `src/lib/poe2api.ts:1171` — `relativePrice: relPrice1` — direct assignment, can be null. DATA_FLOW.md §5.2 said `relativePrice = price ?? 0` — WRONG, code does NOT coalesce to 0. Fixed.
-  - `src/lib/poe2api.ts:1174-1178` — `change`, `changePercent`, `sevenDayChange`, `sevenDayChangePercent`, `history` all initialized to `null`. DATA_FLOW.md §5.2 said these are "Enriched later via buildCurrencyChangeMap()" / "Fetched on demand" — didn't mention null initialization. Added "null (initialized)" prefix.
-  - `src/lib/poe2api.ts:580-587` — `RawRealm` interface uses snake_case (`value`, `label`, `game_api_id`, `realm_api_id`, `trade_api_path`, `default_league_value`). DATA_FLOW.md §5.3 "/Realms stays snake_case" — correct, no drift.
-  - `src/lib/case-transform.ts:22-24` — `toCamelCase` regex `/_([a-z0-9])/g`. Verified all 12 example transformations in §5.4 against this regex: `volume_24h → volume24h` ✓, `mid_price → midPrice` ✓, `quantized_analysis → quantizedAnalysis` ✓, `tier_distance → tierDistance` ✓, `alert_score → alertScore` ✓, `triggered_indicators → triggeredIndicators` ✓, `is_confirmed → isConfirmed` ✓, `current_price → currentPrice` ✓, `projected_price → projectedPrice` ✓, `risk_discount → riskDiscount` ✓, `adjusted_price → adjustedPrice` ✓, `net_value → netValue` ✓. All accurate.
-  - `backend/models/currency.py:82-290` — verified all 12 source field names from §5.4 exist in backend models (`volume_24h`, `mid_price`, `quantized_analysis`, `tier_distance`, `alert_score`, `triggered_indicators`, `is_confirmed`, `current_price`, `projected_price`, `risk_discount`, `adjusted_price`, `net_value`). All present.
-  - Grep confirmed: endpoints `/Realms/{Realm}/Filters`, `/Realms/{Realm}/LandingSplashInfo`, `/health/ready` are mentioned ONLY in DATA_FLOW.md — not consumed by any code (frontend or backend). Added a note in §2 marking them as available-but-not-consumed.
-- No new bugs found in this iter (all drift is doc-only — no source-code defects).
-- **`docs/DATA_FLOW.md` §2 audit (2 drift items fixed):**
-  - **Header** — bumped version 1.2 → 1.3, date 2026-07-12 → 2026-07-13, updated summary.
-  - **§2 table row #17** — `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{C1}/{C2}/History` → `/{Realm}/Leagues/{LeagueName}/Currencies/Pairs/{CurrencyOneItemId}/{CurrencyTwoItemId}/History` (aligned with §2 path-params section line 54 which already used these exact names).
-  - **§2 note added** — after table, before "Path parameters": clarifies that endpoints #2 (`/Realms/{Realm}/Filters`), #3 (`/Realms/{Realm}/LandingSplashInfo`), and #21 (`/health/ready`) exist in the POE2Scout API spec but are NOT consumed by the app; endpoint #20 (`/health/live`) IS consumed by `getHealth()` in `poe2api.ts:1187`.
-- **`docs/DATA_FLOW.md` §5.1 audit (7 drift items fixed):**
-  - **RawCurrencyItem interface** — `ItemMetadata?: any` → `ItemMetadata: Record<string, unknown> | null` (matches `poe2api.ts:626`).
-  - **RawUniqueItem interface** — removed phantom `ApiId: string` field (RawUniqueItem has NO ApiId per `poe2api.ts:639-652`); added explanatory note referencing `poe2api.ts:1025` comment; `IsChanceable?: boolean` → `IsChanceable: boolean | null`; `ItemMetadata?: any` → `ItemMetadata: Record<string, unknown> | null`.
-  - **Mapping table `id` field** — `String(CurrencyItemId || UniqueItemId || ItemId)` → split into two rules: `String(ItemId || CurrencyItemId)` [currencies] + `String(ItemId || UniqueItemId)` [uniques]. Added note: "⚠️ ItemId takes PRIORITY — verified iter 144 against poe2api.ts:977 (mapCurrencyItem) and :1024 (mapUniqueItem)."
-  - **Mapping table `apiId` field** — `ApiId` (single rule) → split: `ApiId` [currencies] + `String(ItemId || UniqueItemId)` [uniques — NO ApiId field!].
-  - **Mapping table `relativePrice` field** — `CurrentPrice / referencePrice` → `referencePrice && currentPrice ? currentPrice / referencePrice : currentPrice` with note "⚠️ falls back to currentPrice when referencePrice is missing".
-  - **Mapping table `change` field** — added "— null if either is null" suffix (matches null-guard at `poe2api.ts:965-968`).
-  - **Mapping table `volume` field** — `computeVolume24h(PriceLogs)` → `computeVolume24h(PriceLogs) ?? 0` (matches `poe2api.ts:988`).
-  - **Mapping table `sevenDayPriceChange` field** — added "— null if either is null" suffix.
-  - **Mapping table `lowConfidence` field** — `CurrentQuantity < 5` → `(CurrentQuantity ?? 0) < 5` (matches `poe2api.ts:993`).
-  - **Mapping table `listingCount` field** — `CurrentQuantity` → `CurrentQuantity ?? 0` (matches `poe2api.ts:994`).
-- **`docs/DATA_FLOW.md` §5.2 audit (4 drift items fixed):**
-  - **Added 3 missing fields** — `currency1CategoryApiId = CurrencyOne.CategoryApiId || ""`, `currency2CategoryApiId = CurrencyTwo.CategoryApiId || ""`, `currency2RelativePrice = safeParseFloat(CurrencyTwoData.RelativePrice)` (with comment "needed for cross-rate").
-  - **Fixed `relativePrice`** — `price ?? 0` → `safeParseFloat(CurrencyOneData.RelativePrice)` with note "⚠️ NOT `price ?? 0` — code at poe2api.ts:1171 assigns relPrice1 directly; can be null. Doc previously claimed `?? 0` fallback — wrong."
-  - **Fixed `volume`** — `CurrencyOneData.VolumeTraded` → `CurrencyOneData.VolumeTraded ?? 0` (matches `poe2api.ts:1154`).
-  - **Noted null-initialization** — `change`, `changePercent`, `sevenDayChange`, `sevenDayChangePercent`, `history` all prefixed with "null (initialized) →" to clarify they start as null before enrichment.
-- **§5.3 (Case Transform Rules) — no drift found.** All 3 rules verified correct against code.
-- **§5.4 (Flipper Proxy Transform) — no drift found.** All 12 example transformations verified against `case-transform.ts:22-24` regex and `backend/models/currency.py` field names.
-- **Meta-docs updates:**
-  - `STATUS.md` header bump (iter 143 → iter 144).
-  - `worklog.md` — added this iter-144 entry, removed iter-142 entry (rule: only last 2 iterations).
-  - `AGENT_NAVIGATION.md` header bump (iter 143 → iter 144).
-- **Final verification:** 0 source-code changes this iter (doc-only). 1466 pytest green baseline preserved from iter 143 (no `.py`/`.ts`/`.tsx` touched).
-
-Stage Summary:
-- **iter 144 SHIPPED — 1 doc deep-audited (§2 + §5), 0 new bugs.** 1 doc file updated (`docs/DATA_FLOW.md` — 13 drift items across §2 + §5.1 + §5.2). 0 source-code changes. 1466 pytest green (0 regressions — confirmed since no `.py`/`.ts`/`.tsx` was touched).
-- **Modified files (1 doc + 3 meta-docs):** `docs/DATA_FLOW.md`, `STATUS.md` (header bump), `worklog.md` (this entry), `AGENT_NAVIGATION.md` (header bump).
-- **What was NOT done (intentionally deferred to iter 145+):**
-  - **`instrumentation.ts:7` comment drift** — still mentions `/api/health` (legacy). Doc-only drift in a code comment. Not fixed in iter 144 (kept source-code changes at 0). Candidate for iter 145+ source cleanup. Minimal change (1 line).
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141+142+143+144 only verified doc-level references to tabs. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 145+.
-  - **9 items still untranslated** (F1) — poe2db has the pages but no Russian translation yet. Re-run pipeline after a patch / monthly.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-  - **Other DATA_FLOW.md sections** (§3, §4, §6, §7, §8, §9, §10) — iter 141 already audited these; no further drift found in iter 144. §1 (Architecture Overview) is a 1-line pointer to ARCHITECTURE.md — no drift.
-- **Stopping point:** iter 144 = 1 doc deep-audited (DATA_FLOW.md §2 + §5, 13 drift items). Next iter candidates: (a) source cleanup — fix `instrumentation.ts:7` comment drift (`/api/health` → `/api/v1/health/ping`) — minimal 1-line source-code change, safe; (b) per-tab UX/logic deep-audit (i18n, error/empty/loading states, accessibility) — larger scope, deferred since iter 139; (c) re-run F1 pipeline after a patch / monthly; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
-

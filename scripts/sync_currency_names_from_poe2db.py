@@ -48,6 +48,29 @@ Each stage is a separate subcommand. Outputs are cached as JSON files under
     in tests/test_currency_names_ru.py (lines 30-33) to match the new
     totals, then run `pytest tests/test_currency_names_ru.py` to verify.
 
+  Stage 5 — --audit  (iter 145, KI-32)
+    READ-ONLY audit of every existing RU translation against poe2db's
+    current RU <title> tag. Writes a structured report to
+    `scripts/.cache/translation_audit.json` with `match` / `mismatch` /
+    `no_poe2db_page` / `no_cyrillic` buckets. Does NOT mutate
+    currency_names.json. Requires `poe2scout_items.json` (Stage 1 output)
+    to know which api_ids + EN names to audit.
+
+  Stage 6 — --apply-audit  (iter 146, TD-6 phase 1)
+    Reads the audit report (Stage 5 output) and overwrites every
+    `mismatch` entry in `currency_names_ru` with the `poe2db_ru` value
+    from the report. Requires --confirm (destructive — overwrites
+    existing translations). Does NOT touch `currency_names_en` (EN names
+    come from poe2scout, not poe2db). Idempotent: re-running after a
+    successful apply is a no-op because the audit report's `our_ru`
+    field no longer matches the freshly-written `currency_names_ru`
+    value (the report is stale until --audit is re-run).
+    After --apply-audit, the maintainer MUST run
+    `python scripts/sync_currency_names_ts.py` to regenerate the TS
+    mirror, then bump spot-check assertions in
+    tests/test_currency_names_ru.py if any of the spot-checked api_ids
+    (exalted, divine, mirror) were in the mismatch list.
+
 ------------------------------------------------------------------------------
 FALLBACK MODE — --from-cache-snapshot
 ------------------------------------------------------------------------------
@@ -1084,6 +1107,80 @@ def audit_translations(
 
 
 # ---------------------------------------------------------------------------
+# Stage 6 — apply audit corrections (iter 146, TD-6 phase 1, KI-32 fix)
+# ---------------------------------------------------------------------------
+
+def apply_audit(
+    audit_report: dict[str, Any],
+    existing_names: dict[str, dict[str, str]],
+) -> tuple[int, int, int]:
+    """Apply audit-correction patch to the in-memory existing_names dict.
+
+    Mutates `existing_names["currency_names_ru"]` in place. Returns
+    (applied, skipped_no_change, skipped_not_in_json).
+
+    For every entry in `audit_report["mismatches"]`:
+      - If api_id is present in `currency_names_ru` AND its current value
+        equals the audit's `our_ru` field (i.e. the audit report is fresh
+        w.r.t. this item): overwrite the value with `poe2db_ru`.
+        → `applied` += 1
+      - If api_id is present but the current value already differs from
+        `our_ru` (audit report is stale — likely already applied, or
+        someone manually edited the JSON): skip with a warning.
+        → `skipped_no_change` += 1
+      - If api_id is NOT present in `currency_names_ru`: skip with warning
+        (shouldn't happen if audit_report was generated against this JSON).
+        → `skipped_not_in_json` += 1
+
+    Does NOT touch `currency_names_en` — EN names come from poe2scout, not
+    poe2db. RU/EN key parity is therefore preserved (no new keys added).
+
+    The audit's `no_poe2db_page` and `no_cyrillic` entries are NOT touched
+    (no actionable correction).
+    """
+    applied = 0
+    skipped_no_change = 0
+    skipped_not_in_json = 0
+
+    existing_ru = existing_names["currency_names_ru"]
+    mismatches = audit_report.get("mismatches", [])
+
+    for entry in mismatches:
+        api_id = entry.get("api_id")
+        our_ru = entry.get("our_ru")
+        poe2db_ru = entry.get("poe2db_ru")
+
+        if not api_id or not poe2db_ru:
+            skipped_no_change += 1
+            continue
+
+        current = existing_ru.get(api_id)
+        if current is None:
+            log.warning("  api_id %s not in currency_names_ru — skipping (audit report stale?)", api_id)
+            skipped_not_in_json += 1
+            continue
+
+        if current == poe2db_ru:
+            # Already applied (idempotent re-run).
+            skipped_no_change += 1
+            continue
+
+        if current != our_ru:
+            # Current value differs from what the audit recorded as `our_ru` —
+            # someone edited the JSON between --audit and --apply-audit. Skip
+            # rather than silently overwrite a manual edit.
+            log.warning("  api_id %s — current_ru=%r differs from audit our_ru=%r — skipping (resolve manually)",
+                        api_id, current, our_ru)
+            skipped_no_change += 1
+            continue
+
+        existing_ru[api_id] = poe2db_ru
+        applied += 1
+
+    return applied, skipped_no_change, skipped_not_in_json
+
+
+# ---------------------------------------------------------------------------
 # Main CLI
 # ---------------------------------------------------------------------------
 
@@ -1413,8 +1510,93 @@ def cmd_audit(args: argparse.Namespace) -> int:
     log.info("    1. Review %s", TRANSLATION_AUDIT_CACHE.relative_to(REPO_ROOT))
     log.info("    2. Inspect 'mismatches' array — these are existing translations")
     log.info("       that differ from poe2db's current RU title.")
-    log.info("    3. To apply corrections: edit currency_names.json directly")
-    log.info("       (future: --apply-audit flag will automate this — see TD-6).")
+    log.info("    3. To apply corrections: run --apply-audit --confirm (TD-6 phase 1).")
+    return 0
+
+
+def cmd_apply_audit(args: argparse.Namespace) -> int:
+    """Stage 6 (iter 146, TD-6 phase 1, KI-32 fix) — apply audit corrections.
+
+    Reads `scripts/.cache/translation_audit.json` (Stage 5 output) and
+    overwrites every `mismatches` entry in `currency_names_ru` with the
+    `poe2db_ru` value from the report. Destructive — requires --confirm.
+
+    Idempotent: re-running with the same audit cache is a no-op (every
+    entry will fall into the `skipped_no_change` bucket because
+    `current == poe2db_ru` already holds).
+
+    Does NOT touch `currency_names_en` — EN names come from poe2scout,
+    not poe2db. RU/EN key parity is therefore preserved.
+    """
+    if not args.confirm:
+        log.error("--apply-audit requires --confirm flag (destructive — overwrites existing translations).")
+        log.error("  Re-run with: --apply-audit --confirm")
+        return 4
+
+    log.info("Stage 6 — applying audit corrections to backend/data/currency_names.json")
+
+    if not TRANSLATION_AUDIT_CACHE.exists():
+        log.error("Missing %s — run --audit first.", TRANSLATION_AUDIT_CACHE)
+        return 4
+    if not CURRENCY_NAMES_PATH.exists():
+        log.error("Missing %s — run from the repo root.", CURRENCY_NAMES_PATH)
+        return 2
+
+    with TRANSLATION_AUDIT_CACHE.open(encoding="utf-8") as f:
+        audit_report = json.load(f)
+    with CURRENCY_NAMES_PATH.open(encoding="utf-8") as f:
+        existing_names = json.load(f)
+
+    # Pre-flight: validate RU/EN key parity (same guard as --apply).
+    ru_keys = set(existing_names["currency_names_ru"].keys())
+    en_keys = set(existing_names["currency_names_en"].keys())
+    if ru_keys != en_keys:
+        diff_ru = ru_keys - en_keys
+        diff_en = en_keys - ru_keys
+        log.error("Pre-existing RU/EN key drift in currency_names.json — refusing to apply.")
+        log.error("  only-RU: %s", sorted(diff_ru)[:5])
+        log.error("  only-EN: %s", sorted(diff_en)[:5])
+        return 3
+
+    mismatches_count = len(audit_report.get("mismatches", []))
+    log.info("  Audit report: %d mismatches, %d no_poe2db_page, %d no_cyrillic",
+             mismatches_count,
+             len(audit_report.get("no_poe2db_page", [])),
+             len(audit_report.get("no_cyrillic", [])))
+
+    applied, skipped_no_change, skipped_not_in_json = apply_audit(audit_report, existing_names)
+
+    # Post-flight: re-validate RU/EN key parity (apply_audit only mutates values,
+    # never keys — so this should always pass; the check exists as defense in depth).
+    ru_keys = set(existing_names["currency_names_ru"].keys())
+    en_keys = set(existing_names["currency_names_en"].keys())
+    if ru_keys != en_keys:
+        log.error("Post-apply RU/EN key drift — aborting write (in-memory state corrupted).")
+        return 3
+
+    # Write back atomically (write to temp, then rename).
+    tmp_path = CURRENCY_NAMES_PATH.with_suffix(".json.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(existing_names, f, ensure_ascii=False, indent=2)
+        f.write("\n")  # trailing newline matches existing file convention
+    tmp_path.replace(CURRENCY_NAMES_PATH)
+
+    # Display path: prefer repo-relative, fall back to absolute if the path
+    # isn't under REPO_ROOT (e.g. when invoked from a tmp_path in tests).
+    try:
+        display_path = CURRENCY_NAMES_PATH.relative_to(REPO_ROOT)
+    except ValueError:
+        display_path = CURRENCY_NAMES_PATH
+
+    log.info("Stage 6 COMPLETE — %d applied, %d skipped (no change / idempotent), %d skipped (not in JSON).",
+             applied, skipped_no_change, skipped_not_in_json)
+    log.info("  Wrote: %s", display_path)
+    if applied > 0:
+        log.info("  NEXT:")
+        log.info("    1. python scripts/sync_currency_names_ts.py  (regenerate TS mirror)")
+        log.info("    2. pytest tests/test_currency_names_ru.py tests/test_sync_currency_names.py")
+        log.info("    3. If any of exalted/divine/mirror were in the mismatch list,")
+        log.info("       bump spot-check assertions in tests/test_currency_names_ru.py:46-51.")
     return 0
 
 
@@ -1439,8 +1621,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="Stage 4: apply patch to backend/data/currency_names.json (requires --confirm).")
     parser.add_argument("--audit", action="store_true",
                         help="Stage 5 (iter 145, KI-32): READ-ONLY audit of existing RU translations against poe2db current RU <title>. Writes scripts/.cache/translation_audit.json. Does NOT modify currency_names.json.")
+    parser.add_argument("--apply-audit", action="store_true",
+                        help="Stage 6 (iter 146, TD-6 phase 1): apply audit corrections — overwrite every mismatch entry in currency_names_ru with poe2db_ru value from scripts/.cache/translation_audit.json. Requires --confirm (destructive). Run --audit first.")
     parser.add_argument("--confirm", action="store_true",
-                        help="Confirmation flag for --apply (without it, --apply is a no-op).")
+                        help="Confirmation flag for --apply and --apply-audit (without it, both are no-ops).")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output (show every patch entry in --diff).")
     parser.add_argument("--rate-limit-delay", type=float, default=0.5,
@@ -1470,7 +1654,7 @@ def main(argv: list[str] | None = None) -> int:
     # Validate stage selection
     stage_count = sum([
         args.fetch_ids, args.from_cache_snapshot, args.fetch_ru, args.fetch_ru_by_item,
-        args.diff, args.apply, args.audit,
+        args.diff, args.apply, args.audit, args.apply_audit,
     ])
     if stage_count == 0:
         parser.print_help()
@@ -1492,6 +1676,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_fetch_ru_by_item(args)
     if args.audit:
         return cmd_audit(args)
+    if args.apply_audit:
+        return cmd_apply_audit(args)
     if args.diff:
         return cmd_diff(args)
     if args.apply:
