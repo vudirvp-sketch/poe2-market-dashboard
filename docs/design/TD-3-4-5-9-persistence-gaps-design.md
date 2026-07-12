@@ -453,6 +453,13 @@ appears.
 5. **TD-9 fallback removal timing.** When can `deriveTrendSparklineData`
    be removed? *Default: keep for 2 iters after TD-9 ships (iter 129+),
    then remove if no fallback path is hit in production logs.*
+   **RESOLVED iter 135:** `deriveTrendSparklineData` removed. The
+   `getTrendSparklineData` helper now returns `[]` when no real history
+   exists (≥ 2 points required), and the `Sparkline` component renders
+   an em-dash placeholder (`—`) for empty arrays. The `TrendSparklineInput`
+   interface dropped its `momentum` / `volatility` fields. Six iters of
+   production exposure (iter 127→134) without a logged fallback hit
+   established sufficient confidence to remove the synthetic path.
 
 ---
 
@@ -467,8 +474,9 @@ appears.
   the existing provider method for TD-5.
 - `backend/economy/speculation.py:214` — canonical `price_history_short`
   slice pattern (TD-9 will mirror this).
-- `src/components/dashboard/flips-helpers.ts:131` —
-  `deriveTrendSparklineData` (TD-9 fallback to preserve).
+- `src/components/dashboard/flips-helpers.ts` — `getTrendSparklineData`
+  (TD-9 sparkline helper). **Note:** the synthetic `deriveTrendSparklineData`
+  fallback was REMOVED iter 135 — see §10 Q5 below for resolution.
 - `PoE2_Flipper_Canonical_Formulas.md` §7 — `market_spread` formula
   definition.
 - `PoE2_Flipper_Canonical_Formulas.md` §8 — triangular arbitrage

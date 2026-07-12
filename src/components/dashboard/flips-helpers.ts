@@ -117,64 +117,30 @@ export function spreadTierColor(tier: SpreadTier): string {
 }
 
 // ---------------------------------------------------------------------------
-// iter 94 (Spread Capture view — Q5): Trend sparkline synthetic shape
-// ---------------------------------------------------------------------------
-// The /api/flipper/flips endpoint does NOT return per-pair price history
-// (only momentum + volatility). We derive a 6-point shape that visualizes
-// the price-action character: linear slope from momentum, amplitude from
-// volatility. CLEARLY labeled in UI as "derived indicator, not historical".
-// When backend adds priceHistoryShort (TD-9, future iter), the Sparkline
-// column can switch to real data without UI changes.
-
-export const FLIPS_TREND_SPARKLINE_POINTS = 6;
-
-export function deriveTrendSparklineData(
-  momentum: number | null | undefined,
-  volatility: number | null | undefined,
-): number[] {
-  const m = momentum ?? 0;
-  const v = volatility ?? 0;
-  // Baseline = 0, slope = momentum (signed), amplitude = volatility.
-  // Generate N points: trend line + alternating perturbations (deterministic,
-  // no Math.random — same input always produces same shape).
-  // Wave uses sin(i * PI/2): 0,1,0,-1,0,1,... — gives a clean oscillation.
-  // Multiplied by (1-t) so amplitude decays toward the final point (lands on
-  // the pure trend value at t=1).
-  const points: number[] = [];
-  for (let i = 0; i < FLIPS_TREND_SPARKLINE_POINTS; i++) {
-    const t = i / (FLIPS_TREND_SPARKLINE_POINTS - 1); // 0..1
-    const trend = m * t;
-    const wave = v * Math.sin((i * Math.PI) / 2) * (1 - t) * 0.5;
-    points.push(trend + wave);
-  }
-  return points;
-}
-
-// ---------------------------------------------------------------------------
-// TD-9 (iter 127): real price history with synthetic fallback
+// TD-9 (iter 127 + iter 135 fallback removal): real price history only
 // ---------------------------------------------------------------------------
 // When `priceHistoryShort` has ≥ 2 points, render the REAL price-history
-// sparkline (array of price numbers, oldest-first). Otherwise, fall back to
-// the synthetic `deriveTrendSparklineData(momentum, volatility)` shape so
-// the Sparkline cell is never empty.
+// sparkline (array of price numbers, oldest-first). Otherwise, return an
+// empty array — the `Sparkline` component renders an em-dash placeholder
+// (`—`) when `data.length < 2` (see `sparkline.tsx:115-116`).
 //
-// The fallback exists for two reasons:
-//   1. Zero-history opportunities (early league / fresh listing).
-//   2. The backend may omit `price_history_short` on the dataclass when no
-//      price history exists — the field is optional on the TS type.
+// iter 135 removed the synthetic `deriveTrendSparklineData(momentum,
+// volatility)` fallback that previously filled the cell with a "derived
+// indicator, not historical" shape. Reason: 2 iterations (iter 128-134)
+// have shipped since TD-9 Phase 1 (iter 127) wired real `price_history_short`
+// into the `/flips` response, and no production logs indicated the fallback
+// path was being hit. The fallback was misleading users by visualizing
+// momentum × volatility as if it were a price chart.
 //
-// Ref: docs/design/TD-3-4-5-9-persistence-gaps-design.md §5.3 (Phase 1).
+// Ref: docs/design/TD-3-4-5-9-persistence-gaps-design.md §5.3 + §10 Q5
+// (fallback-removal timing).
 
 export interface TrendSparklineInput {
   /** Real price history from backend (TD-9). Optional + may be empty. */
   priceHistoryShort?: { date: string; price: number }[] | null;
-  /** Price momentum — used by the synthetic fallback. */
-  momentum?: number | null;
-  /** Volatility — used by the synthetic fallback. */
-  volatility?: number | null;
 }
 
-/** Minimum number of real-history points required to skip the fallback. */
+/** Minimum number of real-history points required to render a sparkline. */
 export const FLIPS_TREND_REAL_HISTORY_MIN_POINTS = 2;
 
 export function getTrendSparklineData(input: TrendSparklineInput): number[] {
@@ -182,11 +148,12 @@ export function getTrendSparklineData(input: TrendSparklineInput): number[] {
   if (real && real.length >= FLIPS_TREND_REAL_HISTORY_MIN_POINTS) {
     return real.map((p) => p.price);
   }
-  return deriveTrendSparklineData(input.momentum, input.volatility);
+  return [];
 }
 
-/** Returns true when the sparkline is rendering REAL price history (not the
- *  synthetic derived shape). UI can use this to update the tooltip. */
+/** Returns true when the sparkline will render REAL price history (≥ 2 points).
+ *  UI uses this to choose between the "real history" tooltip and the
+ *  "no history yet" tooltip. */
 export function isTrendSparklineRealData(input: TrendSparklineInput): boolean {
   return !!(
     input.priceHistoryShort &&

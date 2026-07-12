@@ -232,10 +232,11 @@ class FlipOpportunityData(BaseModel):
     deviation_pct: float = Field(default=0.0, description="Deviation from fair rate %")
     price_from_in_base: float = Field(default=0.0, description="Price of currency_from in base currency")
     price_to_in_base: float = Field(default=0.0, description="Price of currency_to in base currency")
-    # TD-9 (iter 127): up to 14 most-recent (date, price) points for currency_from,
-    # oldest-first. Empty list when no price history is available. Frontend
-    # FlipsTable sparkline renders this; falls back to the synthetic
-    # deriveTrendSparklineData shape when empty.
+    # TD-9 (iter 127 + iter 135 fallback removal): up to 14 most-recent
+    # (date, price) points for currency_from, oldest-first. Empty list when
+    # no price history is available. Frontend FlipsTable sparkline renders
+    # this; renders an em-dash placeholder (—) when empty (no synthetic
+    # fallback since iter 135).
     price_history_short: list[SpeculationPriceHistoryPoint] = Field(
         default_factory=list,
         description="Up to 14 most-recent (date, price) points for currency_from, oldest-first (TD-9)",

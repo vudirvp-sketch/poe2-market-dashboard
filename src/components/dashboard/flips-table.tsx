@@ -443,10 +443,11 @@ export const FlipsTable = memo(function FlipsTable({
                     })()}
                   </span>
 
-                  {/* TD-9 (iter 127): Trend sparkline — now renders REAL
-                      price history when priceHistoryShort is non-empty;
-                      falls back to the synthetic momentum×volatility shape
-                      when no history is available. */}
+                  {/* TD-9 (iter 127 + iter 135 fallback removal): Trend
+                      sparkline renders REAL price history when
+                      priceHistoryShort has ≥ 2 points. Otherwise the cell
+                      shows an em-dash placeholder (—) — the synthetic
+                      momentum×volatility fallback was removed iter 135. */}
                   <span
                     className="flex justify-center hidden lg:table-cell"
                     title={
@@ -458,8 +459,6 @@ export const FlipsTable = memo(function FlipsTable({
                     <Sparkline
                       data={getTrendSparklineData({
                         priceHistoryShort: opp.priceHistoryShort,
-                        momentum: opp.momentum,
-                        volatility: opp.volatility,
                       })}
                       color="#94a3b8"
                       width={60}

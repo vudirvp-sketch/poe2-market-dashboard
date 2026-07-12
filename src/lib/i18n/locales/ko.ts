@@ -637,7 +637,7 @@ const ko: Record<TranslationKeys, string> = {
   flipsSpreadTierMedium: "중간 2-5%",
   flipsSpreadTierTight: "좁음 <2%",
   flipsTrend: "추세",
-  flipsTrendTooltip: "모멘텀 × 변동성 지표 (현재 스냅샷에서 파생 — 과거 가격 데이터 아님). 기울기 = 모멘텀 부호/크기, 진폭 = 변동성. 백엔드가 priceHistoryShort (TD-9)를 추가하면 실제 최근 가격으로 전환.",
+  flipsTrendTooltip: "최근 가격 이력 (라이브 스냅샷에서 최대 14포인트, 오래된 → 새로운). 이 통화 쌍에 대한 가격 이력이 아직 없으면 —로 표시됩니다.",
   flipsTrendTooltipReal: "최근 가격 이력 (라이브 스냅샷에서 최대 14포인트, 오래된 → 새로운). 실제 시장 데이터 — 파생 아님.",
 
   // P1-1: Quantized Detail Panel

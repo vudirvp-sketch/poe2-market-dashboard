@@ -179,12 +179,12 @@ class FlipOpportunity:
     deviation_pct: float = 0.0          # |market_rate - fair_rate| / fair_rate * 100
     price_from_in_base: float = 0.0     # price of currency_from in base currency
     price_to_in_base: float = 0.0       # price of currency_to in base currency
-    # TD-9 (iter 127): up to 14 most-recent (timestamp, price) points for the
-    # currency_from side, oldest-first. Used by the FlipsTable Trend sparkline
-    # so it renders REAL price history instead of the synthetic
-    # `deriveTrendSparklineData(momentum, volatility)` shape. Empty list when
-    # no price history is available (the frontend falls back to the synthetic
-    # shape — see flips-helpers.ts:getTrendSparklineData).
+    # TD-9 (iter 127 + iter 135 fallback removal): up to 14 most-recent
+    # (timestamp, price) points for the currency_from side, oldest-first.
+    # Used by the FlipsTable Trend sparkline so it renders REAL price
+    # history. Empty list when no price history is available (the frontend
+    # Sparkline renders an em-dash placeholder — no synthetic fallback
+    # since iter 135; see flips-helpers.ts:getTrendSparklineData).
     price_history_short: list[dict] = field(default_factory=list)
 
 

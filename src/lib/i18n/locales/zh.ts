@@ -637,7 +637,7 @@ const zh: Record<TranslationKeys, string> = {
   flipsSpreadTierMedium: "中 2-5%",
   flipsSpreadTierTight: "窄 <2%",
   flipsTrend: "趋势",
-  flipsTrendTooltip: "动量 × 波动率指标（从当前快照派生 — 非历史价格数据）。斜率 = 动量符号/幅度，振幅 = 波动率。当后端添加 priceHistoryShort (TD-9) 时，将切换到真实近期价格。",
+  flipsTrendTooltip: "近期价格历史（来自实时快照的最多 14 个点，旧 → 新）。当该货币对尚无价格历史时显示 —。",
   flipsTrendTooltipReal: "近期价格历史（来自实时快照的最多 14 个点，旧 → 新）。真实市场数据 — 非派生。",
 
   // P1-1: Quantized Detail Panel

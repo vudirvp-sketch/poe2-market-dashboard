@@ -198,9 +198,10 @@ export interface FlipOpportunity {
   /** Price of currency_to in base currency (exalted). */
   priceToInBase?: number;
   /**
-   * TD-9 (iter 127): up to 14 most-recent (date, price) points for currency_from,
-   * oldest-first. Empty array when no price history is available (frontend
-   * sparkline falls back to deriveTrendSparklineData shape).
+   * TD-9 (iter 127 + iter 135 fallback removal): up to 14 most-recent
+   * (date, price) points for currency_from, oldest-first. Empty array when
+   * no price history is available (frontend Sparkline renders an em-dash
+   * placeholder — no synthetic fallback since iter 135).
    */
   priceHistoryShort?: SpeculationPriceHistoryPoint[];
 }

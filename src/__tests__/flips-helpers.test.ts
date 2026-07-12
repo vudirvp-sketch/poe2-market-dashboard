@@ -1,16 +1,16 @@
 // ============================================================================
-// Unit tests for components/dashboard/flips-helpers.ts — iter 94 additions
-// Tests Spread tier classification (Q4) + Trend sparkline derivation (Q5).
+// Unit tests for components/dashboard/flips-helpers.ts
+// Tests Spread tier classification (Q4) + Trend sparkline real-history path.
+// iter 135 removed the synthetic deriveTrendSparklineData fallback — the
+// sparkline now returns [] when no real history exists (Sparkline renders —).
 // ============================================================================
 import {
   classifySpreadTier,
   spreadTierColor,
-  deriveTrendSparklineData,
   getTrendSparklineData,
   isTrendSparklineRealData,
   SPREAD_TIER_WIDE_THRESHOLD,
   SPREAD_TIER_MEDIUM_THRESHOLD,
-  FLIPS_TREND_SPARKLINE_POINTS,
   FLIPS_TREND_REAL_HISTORY_MIN_POINTS,
 } from "@/components/dashboard/flips-helpers";
 
@@ -70,66 +70,13 @@ describe("spreadTierColor (iter 94 Q4)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// deriveTrendSparklineData
-// ---------------------------------------------------------------------------
-describe("deriveTrendSparklineData (iter 94 Q5)", () => {
-  it("returns exactly FLIPS_TREND_SPARKLINE_POINTS points", () => {
-    const points = deriveTrendSparklineData(0.05, 0.02);
-    expect(points).toHaveLength(FLIPS_TREND_SPARKLINE_POINTS);
-  });
-
-  it("is deterministic — same inputs always produce same outputs", () => {
-    const a = deriveTrendSparklineData(0.05, 0.02);
-    const b = deriveTrendSparklineData(0.05, 0.02);
-    expect(a).toEqual(b);
-  });
-
-  it("with zero momentum + zero volatility, all points are zero (flat line)", () => {
-    const points = deriveTrendSparklineData(0, 0);
-    expect(points.every((p) => p === 0)).toBe(true);
-  });
-
-  it("with positive momentum, last point > first point (upward slope)", () => {
-    const points = deriveTrendSparklineData(0.1, 0);
-    expect(points[points.length - 1]).toBeGreaterThan(points[0]);
-  });
-
-  it("with negative momentum, last point < first point (downward slope)", () => {
-    const points = deriveTrendSparklineData(-0.1, 0);
-    expect(points[points.length - 1]).toBeLessThan(points[0]);
-  });
-
-  it("with zero momentum + non-zero volatility, first and last points are zero", () => {
-    // Slope=0 means trend=0; wave multiplier is (1-t) which is 1 at t=0 and 0 at t=1
-    // So first point (t=0): 0 + v*sin(0)*(1-0)*0.5 = 0 (sin(0)=0)
-    // Last point (t=1): 0 + v*sin(N*PI)*(1-1)*0.5 = 0
-    const points = deriveTrendSparklineData(0, 0.1);
-    expect(points[0]).toBeCloseTo(0, 10);
-    expect(points[points.length - 1]).toBeCloseTo(0, 10);
-  });
-
-  it("handles null/undefined inputs gracefully (treats as 0)", () => {
-    const a = deriveTrendSparklineData(null, null);
-    const b = deriveTrendSparklineData(0, 0);
-    expect(a).toEqual(b);
-
-    const c = deriveTrendSparklineData(undefined, undefined);
-    expect(c).toEqual(b);
-  });
-
-  it("with non-zero volatility, intermediate points deviate from pure slope", () => {
-    // With momentum=0, volatility=0.1, intermediate points should be non-zero
-    const points = deriveTrendSparklineData(0, 0.1);
-    const intermediate = points.slice(1, -1);
-    expect(intermediate.some((p) => Math.abs(p) > 0.001)).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// getTrendSparklineData (TD-9 iter 127) — real price history with fallback
+// getTrendSparklineData (TD-9 iter 127 + iter 135 fallback removal)
+// iter 135 removed the synthetic deriveTrendSparklineData fallback — the
+// function now returns [] when no real history exists (≥ 2 points required).
+// The Sparkline component renders an em-dash placeholder for empty arrays.
 // ---------------------------------------------------------------------------
 
-describe("getTrendSparklineData (TD-9 iter 127)", () => {
+describe("getTrendSparklineData (TD-9 iter 127 + iter 135)", () => {
   it("returns real price array when priceHistoryShort has ≥ 2 points", () => {
     const result = getTrendSparklineData({
       priceHistoryShort: [
@@ -137,50 +84,35 @@ describe("getTrendSparklineData (TD-9 iter 127)", () => {
         { date: "2026-07-11T12:05:00Z", price: 1.15 },
         { date: "2026-07-11T12:10:00Z", price: 1.20 },
       ],
-      momentum: 0.05,
-      volatility: 0.02,
     });
     expect(result).toEqual([1.10, 1.15, 1.20]);
   });
 
-  it("falls back to deriveTrendSparklineData when priceHistoryShort is empty", () => {
-    const fallback = deriveTrendSparklineData(0.05, 0.02);
+  it("returns empty array when priceHistoryShort is empty (no fallback)", () => {
     const result = getTrendSparklineData({
       priceHistoryShort: [],
-      momentum: 0.05,
-      volatility: 0.02,
     });
-    expect(result).toEqual(fallback);
-    expect(result).toHaveLength(FLIPS_TREND_SPARKLINE_POINTS);
+    expect(result).toEqual([]);
+    expect(result).toHaveLength(0);
   });
 
-  it("falls back to deriveTrendSparklineData when priceHistoryShort is undefined", () => {
-    const fallback = deriveTrendSparklineData(0.05, 0.02);
-    const result = getTrendSparklineData({
-      momentum: 0.05,
-      volatility: 0.02,
-    });
-    expect(result).toEqual(fallback);
+  it("returns empty array when priceHistoryShort is undefined (no fallback)", () => {
+    const result = getTrendSparklineData({});
+    expect(result).toEqual([]);
   });
 
-  it("falls back to deriveTrendSparklineData when priceHistoryShort is null", () => {
-    const fallback = deriveTrendSparklineData(0.05, 0.02);
+  it("returns empty array when priceHistoryShort is null (no fallback)", () => {
     const result = getTrendSparklineData({
       priceHistoryShort: null,
-      momentum: 0.05,
-      volatility: 0.02,
     });
-    expect(result).toEqual(fallback);
+    expect(result).toEqual([]);
   });
 
-  it("falls back when priceHistoryShort has exactly 1 point (below min)", () => {
-    const fallback = deriveTrendSparklineData(0.05, 0.02);
+  it("returns empty array when priceHistoryShort has exactly 1 point (below min)", () => {
     const result = getTrendSparklineData({
       priceHistoryShort: [{ date: "2026-07-11T12:00:00Z", price: 1.10 }],
-      momentum: 0.05,
-      volatility: 0.02,
     });
-    expect(result).toEqual(fallback);
+    expect(result).toEqual([]);
   });
 
   it("uses real data when priceHistoryShort has exactly 2 points (meets min)", () => {
@@ -189,8 +121,6 @@ describe("getTrendSparklineData (TD-9 iter 127)", () => {
         { date: "2026-07-11T12:00:00Z", price: 1.10 },
         { date: "2026-07-11T12:05:00Z", price: 1.20 },
       ],
-      momentum: 0.05,
-      volatility: 0.02,
     });
     expect(result).toEqual([1.10, 1.20]);
   });

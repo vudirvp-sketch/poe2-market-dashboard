@@ -642,7 +642,7 @@ const en = {
   flipsSpreadTierMedium: "Medium 2-5%",
   flipsSpreadTierTight: "Tight <2%",
   flipsTrend: "Trend",
-  flipsTrendTooltip: "Momentum × volatility indicator (derived from current snapshot — NOT historical price data). Slope = momentum sign/magnitude, amplitude = volatility. When backend adds priceHistoryShort (TD-9), this will switch to real recent price points.",
+  flipsTrendTooltip: "Recent price history (up to 14 points from the live snapshot, oldest → newest). Shows — when no price history is available for this pair yet.",
   flipsTrendTooltipReal: "Recent price history (last up to 14 points from the live snapshot, oldest → newest). Real market data — not derived.",
 
   // ---- P1-1: Quantized Detail Panel ----
