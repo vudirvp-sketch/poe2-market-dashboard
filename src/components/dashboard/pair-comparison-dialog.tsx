@@ -32,6 +32,13 @@ import { formatLocaleDate } from "@/lib/utils";
 import { DialogContentSkeleton } from "./skeletons";
 import type { PairComparisonId } from "@/lib/store";
 import { useMemo } from "react";
+// iter 148 (KI-34 fix): re-derive the pair label at render time using the
+// current locale. Previously, `pair.label` was frozen at add-time (whatever
+// locale the user was in when they clicked "Compare"), so switching locale
+// didn't refresh the chip/legend/summary labels. Now we re-derive from
+// `pair.currency1Id` / `pair.currency2Id` via `getCurrencyDisplayName` on
+// every render, with the stored `label` as a fallback for unknown apiIds.
+import { getCurrencyDisplayName } from "@/lib/currency-names";
 
 // Colors for up to 4 comparison lines
 const COLORS = ["#8b5cf6", "#f59e0b", "#34d399", "#f87171"];
@@ -60,6 +67,17 @@ export function PairComparisonDialog({
     useDashboardStore();
   const { t, locale } = useI18n();
 
+  // iter 148 (KI-34 fix): re-derive the pair label from the apiIds on every
+  // render so it follows the active locale. The stored `pair.label` is used
+  // as a fallback when `getCurrencyDisplayName` returns null for either
+  // currency (e.g. an apiId that's not in our RU translation map).
+  const liveLabel = (pair: PairComparisonId): string => {
+    const c1 = getCurrencyDisplayName(pair.currency1Id, locale);
+    const c2 = getCurrencyDisplayName(pair.currency2Id, locale);
+    if (c1 && c2) return `${c1} / ${c2}`;
+    return pair.label;
+  };
+
   // Fetch history for each compared pair
   const histories = useQuery({
     queryKey: [
@@ -84,7 +102,9 @@ export function PairComparisonDialog({
             }
           );
           const pairKey = `${pair.currency1Id}_${pair.currency2Id}`;
-          return { pairKey, data, label: pair.label };
+          // iter 148 (KI-34 fix): store the PAIR object on the query result
+          // so we can re-derive `liveLabel` at render time after locale changes.
+          return { pairKey, data, pair };
         })
       );
       return results;
@@ -117,7 +137,11 @@ export function PairComparisonDialog({
 
       return {
         pairKey: h.pairKey,
-        name: h.label || h.pairKey,
+        // iter 148 (KI-34 fix): re-derive the label from the stored pair +
+        // current locale. Previously this used `h.label` which was frozen at
+        // add-time, causing the dialog to show stale labels when the user
+        // switched locale after adding pairs to comparison.
+        name: h.pair ? liveLabel(h.pair) : h.pairKey,
         color: COLORS[idx % COLORS.length],
         points,
       };
@@ -153,7 +177,10 @@ export function PairComparisonDialog({
     });
 
     return { chartData: merged, seriesMeta: series };
-  }, [histories.data]);
+    // iter 148: `liveLabel` reads `locale` (closure); add it to deps so the
+    // seriesMeta names refresh when the user switches locale.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [histories.data, locale]);
 
   const isLoading = histories.isLoading;
 
@@ -186,7 +213,10 @@ export function PairComparisonDialog({
                     className="w-2.5 h-2.5 rounded-full inline-block"
                     style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                   />
-                  {pair.label}
+                  {/* iter 148 (KI-34 fix): chip label is re-derived on every
+                      render so it follows the active locale. Previously this
+                      rendered `pair.label` which was frozen at add-time. */}
+                  {liveLabel(pair)}
                 </span>
                 <button
                   onClick={() => removePairFromComparison(pairKey)}

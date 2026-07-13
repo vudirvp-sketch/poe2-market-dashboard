@@ -129,9 +129,18 @@ export function ComparisonDialog({
         }
       }
 
+      // iter 148 (TD-6 phase 2 follow-up): pick RU name when locale=ru and
+      // the unique item has a poe2db RU translation; otherwise fall back to
+      // the upstream English name. Closes the iter-147 follow-up gap where
+      // only `unique-table.tsx` was locale-aware for unique items.
+      const displayName =
+        locale === "ru" && item?.nameRu
+          ? item.nameRu
+          : item?.name || h.itemId;
+
       return {
         itemId: h.itemId,
-        name: item?.name || h.itemId,
+        name: displayName,
         color: COLORS[idx % COLORS.length],
         points,
       };
@@ -167,7 +176,7 @@ export function ComparisonDialog({
     });
 
     return { chartData: merged, seriesMeta: series };
-  }, [histories.data, comparedItems]);
+  }, [histories.data, comparedItems, locale]);
 
   const isLoading = histories.isLoading;
 
@@ -198,7 +207,9 @@ export function ComparisonDialog({
                   className="w-2.5 h-2.5 rounded-full inline-block"
                   style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                 />
-                {item.name}
+                {/* iter 148: chip rendering uses the same locale-aware lookup
+                    as seriesMeta.name above so chips and chart stay in sync. */}
+                {locale === "ru" && item.nameRu ? item.nameRu : item.name}
               </span>
               <button
                 onClick={() => removeFromComparison(item.id)}

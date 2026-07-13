@@ -95,56 +95,83 @@ Stage Summary:
 
 ---
 
-Task ID: iter-146
+Task ID: iter-148
 Agent: main
-Task: iter 146 — TD-6 phase 1 / KI-32 fix. Closes candidate (a) from iter 145 stop point: add `--apply-audit` flag to `scripts/sync_currency_names_from_poe2db.py` (Stage 6 of the translation pipeline). Reads `scripts/.cache/translation_audit.json` (iter-145 Stage 5 output, 32 mismatches), overwrites every mismatch entry's value in `currency_names_ru` with the `poe2db_ru` value from the report. Requires `--confirm`. Does NOT touch `currency_names_en`. Then regenerate TS mirror + update spot-check assertions + add tests + update docs.
+Task: iter 148 — TD-6 phase 2 follow-up. Closes candidate (a) from iter 147 stop point: extend `nameRu` rendering to the remaining UI components that displayed unique-item names in EN only. The iter-147 worklog listed 5 candidates: `comparison-dialog.tsx`, `comparative-chart.tsx`, `pair-comparison-dialog.tsx`, `leveling-uniques-widget.tsx`, `fuzzy-search.tsx`. Inspection during iter 148 revealed `pair-comparison-dialog.tsx` was a mis-classification — it renders `pair.label` (currency pair string), not `item.name` (unique item). However, it had a separate pre-existing locale-staleness bug (KI-34) that was fixed in the same iter.
 
 Work Log:
-- Cloned repo. Read `STATUS.md` (iter 145 SHIPPED, KI-32 open, KI-33 fixed, TD-6 phase 1 planned), `worklog.md` (iter 145 + iter 144), `AGENT_NAVIGATION.md` §1 + invariant #24.
-- Inspected audit artifact `scripts/.cache/translation_audit.json`: 32 mismatches confirmed (13 currency + 7 vaultkeys + 6 ultimatum + 3 lineagesupportgems/ritual/runes + 1 lineagesupportgems `uul-netols-embrace` actually). Fields per entry: `api_id` / `en_name` / `category_api_id` / `our_ru` / `poe2db_ru` / `poe2db_url`. Plus 1 `no_cyrillic` (`aldurs-saga`) and 0 `no_poe2db_page`.
-- Inspected `scripts/sync_currency_names_from_poe2db.py` (1509 lines): 5 existing stages, module docstring, `apply_patch()` pattern at line 902 (good template for `apply_audit()`), `cmd_audit()` at line 1456 (good template for `cmd_apply_audit()`), argparse + stage_count + dispatch at `main()`.
-- Inspected `tests/test_currency_names_ru.py:46-51` spot-check: only `exalted` needs to change (in audit mismatch list with `our_ru="Благородная сфера"`, `poe2db_ru="Сфера возвышения"`). `divine` and `mirror` are NOT in the mismatch list → their spot-check assertions stay unchanged.
-- **Added Stage 6 `apply_audit()` function** to `scripts/sync_currency_names_from_poe2db.py:apply_audit` (after `audit_translations`, before Main CLI section):
-  - Takes `(audit_report, existing_names)` → `(applied, skipped_no_change, skipped_not_in_json)`.
-  - Iterates ONLY `audit_report["mismatches"]` (not `no_poe2db_page` / `no_cyrillic` — those are not actionable).
-  - For each entry: if `current == poe2db_ru` → idempotent skip; if `current != our_ru` → stale audit skip (preserve manual edits); else → overwrite with `poe2db_ru`.
-  - Mutates ONLY `currency_names_ru` values — does NOT touch `currency_names_en`, does NOT add/remove keys (RU/EN key parity preserved by construction).
-- **Added `cmd_apply_audit(args)` CLI handler**: requires `--confirm` (returns 4 without it); reads `TRANSLATION_AUDIT_CACHE` (returns 4 if missing — "run --audit first"); reads `CURRENCY_NAMES_PATH`; pre-flight RU/EN key parity check; calls `apply_audit()`; post-flight parity check; atomic write via `.json.tmp` + rename. Display path uses `try/except ValueError` around `.relative_to(REPO_ROOT)` for robustness under symlinked / tmp_path-based invocation (helps tests + real-world weird layouts).
-- **Registered `--apply-audit` flag** in argparse (between `--audit` and `--confirm`); added to `stage_count` sum; added dispatch branch `if args.apply_audit: return cmd_apply_audit(args)`. Updated `--confirm` help text to mention both `--apply` and `--apply-audit`. Updated `cmd_audit()` "Next steps" log to point at the new `--apply-audit --confirm` flag (was "future: --apply-audit flag").
-- **Updated module docstring** with Stage 5 + Stage 6 sections (Stage 5 was previously only mentioned in passing; now formalized).
-- **Updated `tests/test_currency_names_ru.py:46-51`**: `exalted` RU assertion changed from `"Благородная сфера"` to `"Сфера возвышения"`. Added explanatory comment citing iter 146 / TD-6 phase 1 / KI-32 fix. `divine` and `mirror` assertions unchanged (already match poe2db per audit).
-- **Updated `scripts/sync_currency_names_ts.py:67`**: stale docstring example comment `// "Благородная сфера"` → `// "Сфера возвышения"` (auto-emitted into the TS file header).
-- **Added 12 new tests to `tests/test_sync_currency_names.py`**:
-  - `TestApplyAudit` (8 tests): `test_overwrites_mismatch_entries_with_poe2db_value`, `test_does_not_touch_currency_names_en`, `test_preserves_ru_en_key_parity`, `test_idempotent_rerun_is_noop`, `test_skips_when_current_differs_from_audit_our_ru` (stale-audit guard), `test_skips_when_api_id_not_in_json` (defensive), `test_ignores_no_poe2db_page_and_no_cyrillic_entries`, `test_empty_mismatches_returns_zero`.
-  - `TestApplyAuditCli` (4 tests): `test_apply_audit_without_confirm_returns_4` (uses `caplog` not `capsys.err` — pytest captures logging separately), `test_apply_audit_with_other_stage_returns_4`, `test_apply_audit_missing_audit_cache_returns_4` (monkeypatches `TRANSLATION_AUDIT_CACHE` to a non-existent path), `test_apply_audit_runs_full_pipeline_on_synthetic_data` (full end-to-end: synthetic audit cache + synthetic currency_names.json in `tmp_path` + monkeypatched `CURRENCY_NAMES_PATH` → verify file is written with corrected value, EN untouched, parity preserved, log output contains "Stage 6 COMPLETE" + "1 applied").
-- **Iter 1 test run failure → fix:** 3 CLI tests failed because (a) `capsys.readouterr().err` returns empty for `logging.error()` output — pytest captures log separately via `caplog` fixture; (b) `CURRENCY_NAMES_PATH.relative_to(REPO_ROOT)` raises `ValueError` when the path is in `tmp_path` (not under `REPO_ROOT`). Fixed by switching the 2 affected tests to use `caplog` fixture + adding a `try/except ValueError` around the `.relative_to()` call in `cmd_apply_audit` (more robust production code, helps both tests and real-world symlinked invocation).
-- **Iter 2 test run:** 69 tests in `test_sync_currency_names.py` all green (57 existing + 12 new).
-- **Applied the audit:** `python scripts/sync_currency_names_from_poe2db.py --apply-audit --confirm` → "Stage 6 COMPLETE — 32 applied, 0 skipped (no change / idempotent), 0 skipped (not in JSON)." Verified `exalted` now `"Сфера возвышения"`, `fracturing-orb` now `"Раскалывающая сфера"`, `vaal` now `"Сфера ваал"`, `alch` now `"Сфера алхимии"`, `regal` now `"Сфера царей"`, `the-trialmasters-reliquary-key` now `"Ключ от Реликвария Мастера испытаний"`, `xopecs-soul-core-of-power` now `"Ядро душ могущества Шопека"`. Counts unchanged: 686 RU + 686 EN (values only mutated). RU/EN key parity preserved.
-- **Regenerated TS mirror:** `python scripts/sync_currency_names_ts.py` → "Wrote src/lib/currency-names.ts — 686 RU + 686 EN + 17 categories". Verified line 14 docstring example now reads `// "Сфера возвышения"` and line 29 reads `"exalted": "Сфера возвышения",`.
-- **Final test verification:**
-  - `pytest tests/test_currency_names_ru.py tests/test_sync_currency_names.py -v` → 76 passed (8 + 69 - 1 shared = 76).
-  - `pytest tests/` (full suite) → **1492 passed** (was 1466 in iter 145; +26 = 12 new TestApplyAudit/TestApplyAuditCli + 14 from aiosqlite install enabling previously-skipped modules to load). Zero regressions.
+- Cloned repo. Read `STATUS.md` (iter 147 SHIPPED — 445 unique items translated, KI-32/KI-33 closed, KI-34 not yet discovered), `worklog.md` (iter 147 + iter 146), `AGENT_NAVIGATION.md` §1 + invariant #24.
+- Inspected all 5 candidate files in parallel to understand the rendering surface:
+  - `comparison-dialog.tsx` — renders `item.name` in chip (line 201) and via `seriesMeta.name` (line 134) for tooltip/legend/summary table.
+  - `comparative-chart.tsx` — same pattern as comparison-dialog, plus correlation matrix `names` array (lines 278, 280) and chip rendering (line 395).
+  - `pair-comparison-dialog.tsx` — renders `pair.label` (currency pair string, NOT unique-item name). The label IS locale-aware at add-time (built via `getCurrencyDisplayName(pair.currency1Id, locale)` in both `exchange-table.tsx:698` and `exchange-pair-card.tsx:81`), BUT frozen in the zustand store → switching locale doesn't refresh the dialog. This is **KI-34** (newly identified this iter).
+  - `leveling-uniques-widget.tsx` — uses backend `LevelingUnique` type (NO `nameRu` field) instead of `PoeItem`. Needs `getUniqueDisplayName(unique.name, locale)` at render time.
+  - `fuzzy-search.tsx` — builds a search index with `item.name` (EN). Needs locale-aware `name` + `nameAlt` for cross-locale search.
+- Verified baseline: 1518 pytest green + 690 Jest green + tsc clean. Installed `aiosqlite` in venv (env-only — see Quick Reference).
+- **Modified `src/components/dashboard/comparison-dialog.tsx`:**
+  - In `seriesMeta` builder: replaced `name: item?.name || h.itemId` with locale-aware lookup `locale === "ru" && item?.nameRu ? item.nameRu : (item?.name || h.itemId)`. Added `locale` to useMemo deps.
+  - In chip rendering: replaced `{item.name}` with the same locale-aware pattern.
+- **Modified `src/components/dashboard/comparative-chart.tsx`:**
+  - Same seriesMeta.name change as comparison-dialog.
+  - In correlation matrix builder (backend branch): replaced `names.push(item.name)` and `itemsWithoutCorrelation.push(item.name)` with locale-aware `itemDisplayName` variable.
+  - In chip rendering: replaced `{item.name}` with locale-aware pattern.
+  - Added `locale` to both useMemo deps (seriesMeta + correlationMatrix).
+- **Modified `src/components/dashboard/leveling-uniques-widget.tsx`:**
+  - Imported `getUniqueDisplayName` from `@/lib/currency-names`.
+  - Added `locale: string` to `UniqueRowProps` interface.
+  - Pass `locale={locale}` from `LevelingUniquesWidget` to each `UniqueRow`.
+  - In `UniqueRow` body: compute `displayName = locale === "ru" ? getUniqueDisplayName(unique.name, "ru") ?? unique.name : unique.name` and render `{displayName}` instead of `{unique.name}`.
+  - Documented known coverage limitation in the import comment: of the 10 leveling uniques, ~1-2 currently have a poe2db RU match because poe2db slugs don't always match the curated backend names (e.g. "Polcirkeln Sapphire Ring" → slug `Polcirkeln_Sapphire_Ring` doesn't match poe2db slug `Polcirkeln`). Full coverage would require a curated `nameRu` field on the backend `LevelingUniqueData` model — deferred.
+- **Modified `src/components/dashboard/fuzzy-search.tsx`:**
+  - Imported `getCurrencyDisplayName` and `getUniqueDisplayName` from `@/lib/currency-names`.
+  - Added `nameAlt: string | null` to `SearchItem` interface.
+  - Destructured `locale` from `useI18n()`.
+  - For exchange pairs: compute `enName` (upstream) and `ruName` (via `getCurrencyDisplayName`); set `name` = locale-appropriate, `nameAlt` = the OTHER language's name when it differs.
+  - For PoeItem entries: compute `ruUnique = item.nameRu ?? getUniqueDisplayName(item.name, "ru")`; same primary/alt logic.
+  - Updated fuse.js keys: `name` (weight 0.6) + `nameAlt` (weight 0.25) + `secondary` (weight 0.15). Previously: `name` (0.7) + `secondary` (0.3).
+  - Added `locale` to useMemo deps for `searchItems`.
+- **Documented KI-34 in `STATUS.md` BEFORE fixing it** (per user rule "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись"). KI-34 = PairComparisonDialog labels frozen at add-time. Fix: `liveLabel(pair)` helper that re-derives from `pair.currency1Id` / `pair.currency2Id` via `getCurrencyDisplayName(..., locale)` on every render, with stored `pair.label` as fallback.
+- **Modified `src/components/dashboard/pair-comparison-dialog.tsx` (KI-34 fix):**
+  - Imported `getCurrencyDisplayName` from `@/lib/currency-names`.
+  - Added `liveLabel(pair: PairComparisonId): string` helper at the top of the component. Uses `getCurrencyDisplayName` for both currencies in the current locale; falls back to `pair.label` if either lookup returns null.
+  - Changed queryFn result: store `pair` object instead of `label` string (so `liveLabel` can re-derive on every render).
+  - In seriesMeta builder: replaced `name: h.label || h.pairKey` with `name: h.pair ? liveLabel(h.pair) : h.pairKey`. Added `locale` to useMemo deps.
+  - In chip rendering: replaced `{pair.label}` with `{liveLabel(pair)}`.
+- **Added 14 new tests in `src/__tests__/unique-items-i18n.test.tsx`:**
+  - ComparisonDialog (3 tests): RU name in chip when nameRu set; EN fallback when nameRu null; EN name when locale=en.
+  - ComparativeChart (2 tests): RU name in chip; EN name when locale=en.
+  - LevelingUniquesWidget (3 tests): RU name via `getUniqueDisplayName("Mind of the Council")` → "Разум Совета"; EN fallback for "Polcirkeln Sapphire Ring" (slug mismatch); EN name when locale=en.
+  - FuzzySearch (4 tests): RU name in result list; cross-locale search (EN query finds RU-primary item via nameAlt); EN name when locale=en; EN fallback when item has no nameRu.
+  - PairComparisonDialog (2 tests): KI-34 fix — re-derives RU label from `currency1Id`/`currency2Id` even when stored label is EN; re-derives EN label even when stored label is RU.
+- **Iter 1 test run failure → fix:** 1 of 14 tests failed initially: I assumed divine's RU name was "Сфера божественности" but the actual translation in `currency-names.ts` is "Божественная сфера". Fixed the regex assertion to match the full label string `Сфера хаоса / Божественная сфера`.
+- **Iter 2 test run:** all 14 tests green.
+- **Iter 3 (cleanup):** ESLint flagged 3 unused vars in the test file: `within` import, `makeExchangePair` helper (never called), `itemId` parameter in `makeHistory`. Removed all 3. Re-ran ESLint → 0 warnings on the test file. Re-ran tests → still 14 green.
+- **Final verification:**
+  - `pytest tests/` → **1518 passed** (unchanged from iter 147 — no Python changes this iter). Zero regressions.
+  - `npx tsc --noEmit` → clean (no type errors). The `nameAlt: string | null` field doesn't break any existing SearchItem consumers.
+  - `npx jest --silent` → **704 passed** (was 690 in iter 147; +14 new tests). Zero regressions.
+  - `npx eslint` on modified TS files → 0 errors, 10 warnings (all pre-existing: unused `useQueryClient`/`COLOR_NAMES`/`Table2`/`comparedApiIds`/`phase`/`activeTab`, `<img>` element, React Compiler warning). My changes added 0 new warnings.
 - **Documentation updates:**
-  - `STATUS.md` — header bump (iter 145 → iter 146); KI-32 moved from "open" to new "closed (kept for recovery recipes)" section with full root-cause + fix narrative; TD-6 row updated (Phase 1 SHIPPED iter 146); F1 row updated (mismatches FIXED iter 146); Quick Reference "translation drift" row updated (KI-32 → FIXED iter 146 with `--apply-audit` recipe); Key Technical Insights "Translation pipeline" section expanded from 5 stages to 6 stages; pytest baseline bumped 1466 → 1492.
-  - `worklog.md` — added this iter-146 entry; removed iter-144 entry (rule: only last 2 iterations).
-  - `AGENT_NAVIGATION.md` — header bump (iter 145 → iter 146); invariant #24 updated (mention `--apply-audit` flag); workflow recipe for "Add a new Russian currency/item translation" updated (5-stage → 6-stage pipeline description).
+  - `STATUS.md` — header bump (iter 147 → iter 148); added KI-34 to closed section (with full root-cause + fix narrative); TD-6 row updated (Phase 2 follow-up SHIPPED iter 148); Quick Reference "unique items show English" row updated (now mentions ALL 5 components covered + leveling-uniques coverage limitation); added new Quick Reference row for KI-34; Key Technical Insights expanded with new "UI nameRu rendering pattern" section covering iter 147 + iter 148 lessons; open Known Issues section now empty (was KI-33 open).
+  - `worklog.md` — added this iter-148 entry; removed iter-146 entry (rule: only last 2 iterations).
+  - `AGENT_NAVIGATION.md` — header bump (iter 147 → iter 148); invariant #24 updated to mention all 5 components covered.
 
 Stage Summary:
-- **iter 146 SHIPPED — TD-6 phase 1 complete, KI-32 CLOSED. 32 drift items fixed, 12 new tests, 1492 pytest green.**
-- **Modified files (4 source + 3 tests/docs):**
-  - `scripts/sync_currency_names_from_poe2db.py` — added Stage 6 (`--apply-audit` flag + `apply_audit()` + `cmd_apply_audit()` + module docstring update + `--audit` "Next steps" pointer + `cmd_apply_audit` defensive `relative_to` handling).
-  - `scripts/sync_currency_names_ts.py` — 1-line docstring example comment fix (`Благородная сфера` → `Сфера возвышения`).
-  - `backend/data/currency_names.json` — 32 RU values overwritten with poe2db official (idempotent, RU/EN parity preserved, count unchanged at 686).
-  - `src/lib/currency-names.ts` — regenerated from JSON (auto-generated file, 32 RU values changed, docstring example comment updated).
-  - `tests/test_currency_names_ru.py` — 1 spot-check assertion updated (`exalted` RU name) + explanatory comment.
-  - `tests/test_sync_currency_names.py` — added 12 tests (TestApplyAudit 8 + TestApplyAuditCli 4).
-  - `STATUS.md` — header bump + KI-32 moved to closed + TD-6 phase 1 SHIPPED + F1 updated + Quick Reference updated + Key Technical Insights expanded (5 stages → 6 stages) + pytest baseline 1466 → 1492.
-  - `worklog.md` — this iter-146 entry (removed iter-144).
-  - `AGENT_NAVIGATION.md` — header bump + invariant #24 + workflow recipe updated.
-- **What was NOT done (intentionally deferred to iter 147+):**
-  - **TD-6 Phase 2 — unique items RU support:** Extend pipeline to crawl `poe2db.tw/ru/Unique_item` index page → per-item page `<title>` extraction. Add `unique_names_ru` / `unique_names_en` sections (either new file `unique_names.json` or new top-level keys in `currency_names.json`). Update `mapUniqueItem` in `src/lib/poe2api.ts:1030` to look up RU name when locale=ru. Add UI tests for RU locale rendering of unique items. Largest scope, addresses the 2nd half of user's complaint about missing RU for unique items.
-  - **TD-6 Phase 3 — re-audit cycle:** Re-run `--audit` monthly / after each patch to catch new drift. With iter 146's `--apply-audit` flag, this is now a 2-command workflow: `--audit` → review → `--apply-audit --confirm` → `python scripts/sync_currency_names_ts.py`.
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 141–146 only verified doc-level references + translation infrastructure. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 147+.
-  - **9 currency items still untranslated** (F1) + **1 no-Cyrillic** (`aldurs-saga`) — re-run `--fetch-ru-by-item` after a patch / monthly.
+- **iter 148 SHIPPED — TD-6 phase 2 follow-up complete. 5 components now use nameRu when locale=ru, KI-34 closed, 14 new tests, 1518 pytest + 704 Jest green.**
+- **Modified files (5 source + 1 test + 3 docs):**
+  - `src/components/dashboard/comparison-dialog.tsx` — seriesMeta.name + chip rendering use locale-aware lookup; `locale` added to useMemo deps.
+  - `src/components/dashboard/comparative-chart.tsx` — seriesMeta.name + correlation matrix names + chip rendering use locale-aware lookup; `locale` added to 2 useMemo deps.
+  - `src/components/dashboard/leveling-uniques-widget.tsx` — imports `getUniqueDisplayName`; `UniqueRow` accepts `locale` prop; renders `getUniqueDisplayName(unique.name, "ru") ?? unique.name` when locale=ru.
+  - `src/components/dashboard/fuzzy-search.tsx` — `SearchItem.nameAlt` field added; search index uses locale-aware `name` + cross-locale `nameAlt`; fuse.js keys updated to 3-key weighted search.
+  - `src/components/dashboard/pair-comparison-dialog.tsx` — KI-34 fix: `liveLabel(pair)` helper re-derives label from `currency1Id`/`currency2Id` via `getCurrencyDisplayName`; queryFn stores `pair` object instead of `label`; chip + seriesMeta use `liveLabel`.
+  - `src/__tests__/unique-items-i18n.test.tsx` — NEW test file with 14 tests covering all 5 components.
+  - `STATUS.md` — header bump + KI-34 added to closed + TD-6 row updated + 2 Quick Reference rows updated + Key Technical Insights "UI nameRu rendering pattern" section added.
+  - `worklog.md` — this iter-148 entry (removed iter-146).
+  - `AGENT_NAVIGATION.md` — header bump + invariant #24 updated.
+- **What was NOT done (intentionally deferred to iter 149+):**
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 148 only extended nameRu rendering. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 149+.
+  - **Leveling-uniques-widget full RU coverage** — currently ~1-2 of 10 leveling uniques have a poe2db RU match (slug mismatch). Full coverage would require adding a `nameRu` field to the backend `LevelingUniqueData` model in `backend/economy/leveling_uniques.py` and manually populating it for the 10 curated items. Deferred to iter 149+.
+  - **Re-run F1 pipeline** (`--fetch-ru-by-item`) — 9 currency items still untranslated + 1 no-Cyrillic (`aldurs-saga`). Re-run after a patch / monthly.
+  - **TD-6 Phase 3 — re-audit cycle** — monthly `--audit` + `--apply-audit` (currency) + `--fetch-unique-ru` + `--apply-unique` (unique items) + `python scripts/sync_currency_names_ts.py`. Routine maintenance.
   - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-- **Stopping point:** iter 146 = TD-6 phase 1 complete + KI-32 closed (32 drift items fixed via new `--apply-audit` flag, 12 new tests, 1492 pytest green). Next iter candidates: (a) **TD-6 Phase 2** — extend pipeline to unique items (largest scope, addresses user's 2nd complaint about missing RU for unique items); (b) per-tab UX/logic deep-audit (deferred since iter 139); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
+- **Stopping point:** iter 148 = TD-6 phase 2 follow-up complete (5 UI components use nameRu when locale=ru, KI-34 closed, 14 new tests, 1518 pytest + 704 Jest green). Next iter candidates: (a) per-tab UX/logic deep-audit (deferred since iter 139 — large scope); (b) leveling-uniques-widget full RU coverage via backend `nameRu` field (small scope, finishes the unique-items RU story); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.

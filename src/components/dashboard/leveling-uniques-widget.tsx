@@ -75,6 +75,16 @@ import {
   type LevelingUniqueStage,
   type LevelingUniqueRecommendation,
 } from "@/lib/types";
+// iter 148 (TD-6 phase 2 follow-up): unique-item name localization.
+// `getUniqueDisplayName` looks up the poe2db RU name by deriving the slug
+// from the EN name. Returns null when no mapping exists — caller falls back
+// to the EN name. Coverage is partial because poe2db slugs don't always
+// match the leveling-uniques table's curated names (e.g. "Polcirkeln
+// Sapphire Ring" → slug "Polcirkeln_Sapphire_Ring" doesn't match the poe2db
+// slug "Polcirkeln"). Of the 10 leveling uniques, ~1-2 currently have a
+// poe2db RU match. Full coverage would require a curated `nameRu` field on
+// the backend `LevelingUniqueData` model — deferred to a future iter.
+import { getUniqueDisplayName } from "@/lib/currency-names";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -345,7 +355,7 @@ export function LevelingUniquesWidget({ backendOnline }: LevelingUniquesWidgetPr
               <span>{t("levelingColAction")}</span>
             </div>
             {uniques.map((u) => (
-              <UniqueRow key={u.id} unique={u} t={t} />
+              <UniqueRow key={u.id} unique={u} t={t} locale={locale} />
             ))}
           </div>
         )}
@@ -381,9 +391,18 @@ export function LevelingUniquesWidget({ backendOnline }: LevelingUniquesWidgetPr
 interface UniqueRowProps {
   unique: LevelingUnique;
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
+  /** Active locale — used to pick RU display name when available (iter 148). */
+  locale: string;
 }
 
-function UniqueRow({ unique, t }: UniqueRowProps) {
+function UniqueRow({ unique, t, locale }: UniqueRowProps) {
+  // iter 148: prefer the poe2db RU translation when locale=ru and a
+  // translation exists; otherwise fall back to the curated EN name.
+  const displayName =
+    locale === "ru"
+      ? getUniqueDisplayName(unique.name, "ru") ?? unique.name
+      : unique.name;
+
   return (
     <div
       data-testid={`leveling-unique-${unique.id}`}
@@ -392,7 +411,7 @@ function UniqueRow({ unique, t }: UniqueRowProps) {
       {/* Item name + notes tooltip */}
       <div className="min-w-0">
         <div className="font-medium truncate" title={unique.notes}>
-          {unique.name}
+          {displayName}
         </div>
         {unique.notes && (
           <div

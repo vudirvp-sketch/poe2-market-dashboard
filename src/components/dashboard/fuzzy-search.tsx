@@ -35,6 +35,14 @@ import { Input } from "@/components/ui/input";
 import { fmt, fmtChange } from "@/lib/types";
 import type { ExchangePair, PoeItem } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+// iter 148 (TD-6 phase 2 follow-up): pick RU display name for unique items
+// (and currency pairs) when locale=ru. The EN name is kept as `nameAlt` so
+// users can search across both languages (e.g. search "Сфера" finds "Сфера
+// хаоса" via `name`; search "Chaos" finds the same item via `nameAlt`).
+import {
+  getCurrencyDisplayName,
+  getUniqueDisplayName,
+} from "@/lib/currency-names";
 
 // ============================================================================
 // Types for search results
@@ -43,6 +51,13 @@ import { useI18n } from "@/lib/i18n";
 interface SearchItem {
   id: string;
   name: string;
+  /** iter 148: alternate-language name for cross-locale search.
+   *  - For unique items in RU locale: the EN upstream name.
+   *  - For unique items in EN locale: the poe2db RU name (when available).
+   *  - For currency pairs in RU locale: the EN upstream pair string.
+   *  - For currency pairs in EN locale: the RU pair string (when different).
+   *  Null when no alternate name is available (e.g. no RU translation). */
+  nameAlt: string | null;
   /** Secondary text (e.g. category, base type) */
   secondary: string;
   /** Current price or rate */
@@ -92,7 +107,7 @@ export function FuzzySearch({
   activeTab,
   placeholder,
 }: FuzzySearchProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -103,16 +118,26 @@ export function FuzzySearch({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Build unified search index from exchange pairs and items
+  // Build unified search index from exchange pairs and items.
+  // iter 148: locale-aware `name` (RU when available) + `nameAlt` (the other
+  // language's name) so users can search across both languages.
   const searchItems = useMemo<SearchItem[]>(() => {
     const items: SearchItem[] = [];
 
-    // Add exchange pairs
+    // Add exchange pairs — derive locale-aware label.
     for (const pair of exchangePairs) {
       const chg = fmtChange(pair.changePercent);
+      const enName = `${pair.currency1Name} / ${pair.currency2Name}`;
+      const ruName = `${getCurrencyDisplayName(pair.currency1Id, "ru") || pair.currency1Name} / ${getCurrencyDisplayName(pair.currency2Id, "ru") || pair.currency2Name}`;
+      const primaryName = locale === "ru" ? ruName : enName;
+      // `nameAlt` is the OTHER language's name when it differs from primary.
+      const nameAlt = primaryName === enName
+        ? (ruName !== enName ? ruName : null)
+        : enName;
       items.push({
         id: pair.id,
-        name: `${pair.currency1Name} / ${pair.currency2Name}`,
+        name: primaryName,
+        nameAlt,
         secondary: "Exchange",
         price: fmt(pair.relativePrice),
         changeText: chg.text,
@@ -123,12 +148,29 @@ export function FuzzySearch({
       });
     }
 
-    // Add currencies and uniques
+    // Add currencies and uniques — derive locale-aware name from `item.nameRu`
+    // (already populated by `mapUniqueItem` in poe2api.ts for uniques) plus
+    // `getCurrencyDisplayName` for currency items.
     for (const item of allItems) {
       const chg = fmtChange(item.changePercent);
+      // For unique items: prefer `item.nameRu` (set by mapUniqueItem via poe2db
+      // lookup). For currencies: use `getCurrencyDisplayName(apiId, locale)`.
+      // The two paths are mutually exclusive — currencies never have `nameRu`
+      // (it's only set for uniques) and uniques don't have a stable `apiId`
+      // (they use ItemId). Falling back to `item.name` (the upstream EN name)
+      // covers any uncovered case.
+      const ruUnique = item.nameRu ?? getUniqueDisplayName(item.name, "ru");
+      const enName = item.name;
+      const primaryName =
+        locale === "ru" && ruUnique ? ruUnique : enName;
+      const nameAlt =
+        primaryName === enName
+          ? (ruUnique && ruUnique !== enName ? ruUnique : null)
+          : enName;
       items.push({
         id: item.id,
-        name: item.name,
+        name: primaryName,
+        nameAlt,
         secondary: item.type || item.category,
         price: fmt(item.relativePrice ?? item.chaosEquivalentRate),
         changeText: chg.text,
@@ -140,15 +182,21 @@ export function FuzzySearch({
     }
 
     return items;
-  }, [exchangePairs, allItems]);
+  }, [exchangePairs, allItems, locale]);
 
   // Create Fuse.js instance
+  // iter 148: include `nameAlt` as a third search key with lower weight so
+  // users can search across both languages (e.g. EN search "Chaos" still
+  // finds "Сфера хаоса" when locale=ru). Weights sum to 1.0; `name` is the
+  // primary display name, `nameAlt` is the alternate-language name, and
+  // `secondary` is the category/base-type hint.
   const fuse = useMemo(
     () =>
       new Fuse(searchItems, {
         keys: [
-          { name: "name", weight: 0.7 },
-          { name: "secondary", weight: 0.3 },
+          { name: "name", weight: 0.6 },
+          { name: "nameAlt", weight: 0.25 },
+          { name: "secondary", weight: 0.15 },
         ],
         threshold: 0.3,
         includeScore: true,
