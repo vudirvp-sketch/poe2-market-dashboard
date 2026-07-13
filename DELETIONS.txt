@@ -1,0 +1,30 @@
+iter 139 — Files to DELETE from your local checkout
+====================================================
+
+These 4 files were removed in iter 139. Run `git rm` (or just `rm` if not
+tracked) on each before extracting the modified-files archive, or use the
+git commands provided in the chat.
+
+  README_iter138.md
+  scripts/cleanup_dead_i18n_keys.py
+  scripts/fix_duplicate_comments.py
+  scripts/restore_blank_lines.py
+
+Rationale (see worklog.md -> iter-139 entry for full detail):
+  - README_iter138.md — duplicates the iter-138 entry already in worklog.md.
+  - scripts/cleanup_dead_i18n_keys.py — iter-89 one-shot, already applied,
+    DEAD_KEY_NAMES hardcoded, LOCALE_DIR points at a non-existent path.
+  - scripts/fix_duplicate_comments.py — iter-89 one-shot bugfix for above.
+  - scripts/restore_blank_lines.py — iter-89 one-shot bugfix for above.
+
+Modified files (in this archive, extract at repo root — paths are relative
+to repo root):
+
+  AGENT_NAVIGATION.md   — header iter 138->139, S5 +5 missing API routes,
+                          S6 design-docs status fix, 2 recipe fixes.
+  README.md             — test command: removed stale --ignore=test_scheduler.py.
+  STATUS.md             — last-updated iter 139, aiosqlite row clarified.
+  worklog.md            — iter-139 entry appended, iter-137 entry trimmed.
+
+Verification: 1466 pytest green (was 1289 in iter 138 — the 6 aiosqlite-
+dependent modules now also run, adding 177 tests). 0 regressions.

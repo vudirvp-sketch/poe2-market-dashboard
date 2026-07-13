@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Flow Reference
 
-> **Version:** 1.3 | **Date:** 2026-07-13 (iter 144 — DATA_FLOW §2 + §5 deep cross-check against `backend/data/providers/poe2scout.py` + `src/lib/poe2api.ts`: §2 (endpoint #17 path params aligned to `{CurrencyOneItemId}/{CurrencyTwoItemId}` per §2 path-params section; added note marking endpoints #2/#3/#21 as available-but-not-consumed by app), §5.1 (RawUniqueItem: removed phantom `ApiId` field — code at `poe2api.ts:1025` explicitly notes uniques have NO ApiId; fixed `ItemMetadata`/`IsChanceable` types on both Raw interfaces to match code; mapping table: fixed `id` priority order `ItemId || CurrencyItemId/UniqueItemId` — was reversed, split `apiId` rule for currencies vs uniques, added `relativePrice` fallback-to-currentPrice note), §5.2 (added 3 missing fields `currency1CategoryApiId`/`currency2CategoryApiId`/`currency2RelativePrice`; fixed `relativePrice` — doc said `price ?? 0` but code does NOT coalesce to 0; noted null-initialization for change/changePercent/sevenDayChange/sevenDayChangePercent/history). 13 drift items resolved. 1466 pytest green, 0 source-code changes.)
+> **Version:** 1.4 | **Date:** 2026-07-13 (iter 149 — §9 Gold Map ROI row removed (P10 tab deleted, see STATUS.md KI-35). §6 proxy-route listing: `/api/flipper/triangular/history` row removed (only consumer was the gold-map-roi-trend-chart, deleted). Backend route `/api/v1/arbitrage/triangular/history` KEPT for TD-3 persistence.)
 
 ---
 
@@ -224,7 +224,6 @@ Browser
   # ── Newer endpoints (iter 75–131) — same proxy pattern, abbreviated ──
   → GET /api/flipper/health/circuit-breakers     → routes_health (main.py)
   → GET /api/flipper/prices/stream (SSE)         → routes_sse.py (KI-13: registered before /prices/{pair})
-  → GET /api/flipper/triangular/history          → routes_arbitrage.py (TD-3 iter 129)
   → GET /api/flipper/storage-value/{c}/history    → routes_storage_value.py
   → GET /api/flipper/content-pulse                → routes_content_pulse.py (F3 iter 75)
   → GET /api/flipper/speculation                  → routes_speculation.py (F5 iter 77)
@@ -561,7 +560,6 @@ flipper/                            # FastAPI backend proxy
   heatmap/route.ts                 → GET /api/v1/prices/heatmap
   flips/route.ts                   → GET /api/v1/arbitrage/flips
   triangular/route.ts              → GET /api/v1/arbitrage/triangular
-  triangular/history/route.ts      → GET /api/v1/arbitrage/triangular/history (TD-3 iter 129)
   tiers/route.ts                   → GET /api/v1/tiers
   anomalies/route.ts               → GET /api/v1/anomalies
   storage-value/[currency]/route.ts        → GET /api/v1/storage-value/{currency}
@@ -725,13 +723,13 @@ Verified against `src/components/dashboard/dashboard-page.tsx` `TAB_MAP` (16 ent
 | 11 | **Intraday Patterns** (P4) | `intraday-patterns-tab.tsx` | `/api/flipper/intraday-patterns` |
 | 12 | **Weekly Patterns** (P5) | `weekly-patterns-tab.tsx` | `/api/flipper/weekly-patterns` |
 | 13 | **Mirror/Divine Arb** (P7) | `mirror-divine-arb-tab.tsx` | `/api/flipper/mirror-divine-arb` |
-| 14 | **Gold Map ROI** (P10) | `gold-map-roi-tab.tsx` | `/api/flipper/triangular`, `/api/flipper/triangular/history` |
-| 15 | **Liquid Chain** | `liquid-chain-tab.tsx` | `/api/flipper/liquid-chain` (analysis) |
-| 16 | **Watchlist** | `watchlist-tab.tsx` | Exchange pair data via fetchApi, Zustand store (persisted) |
+| 14 | **Liquid Chain** | `liquid-chain-tab.tsx` | `/api/flipper/liquid-chain` (analysis) |
+| 15 | **Watchlist** | `watchlist-tab.tsx` | Exchange pair data via fetchApi, Zustand store (persisted) |
 
 **Removed tabs (phantom entries from pre-iter 141 docs):**
 - `Arbitrage` — removed iter 92 (KI-7), was dead (`Flips` tab now covers this).
 - `Graph` (`CurrencyGraphTab`) — removed iter 87.
+- `Gold Map ROI` — removed iter 149 (KI-35), deemed unused.
 
 **Utility components:**
 

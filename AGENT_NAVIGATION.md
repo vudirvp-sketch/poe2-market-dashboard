@@ -239,7 +239,7 @@ npx openapi-typescript openapi_schema.json --output src/lib/api-types.ts
 | `docs/DATA_FLOW.md` | Data flow traces, field transforms |
 | `docs/BACKEND_GUIDE.md` | FastAPI backend internals |
 | `docs/CORS_PROXY_GUIDE.md` | CORS proxy setup |
-| `docs/design/` | **Architectural design-docs (iter 126+)** — produced before any high-risk implementation. Read these BEFORE implementing the corresponding TD/P item. Current docs: `TD-3-4-5-9-persistence-gaps-design.md` (persistence-layer unification for TD-3/4/5/9 — **ALL 4 PHASES SHIPPED** iter 127/128/129/131; kept as historical reference), `P10-gold-map-roi-design.md` (Gold Map ROI UX + formula — **Phase 1 MVP iter 127 + Phase 2 trend chart iter 132 SHIPPED**; Phase 3 SQLite promotion optional). |
+| `docs/design/` | **Architectural design-docs (iter 126+)** — produced before any high-risk implementation. Read these BEFORE implementing the corresponding TD/P item. Current docs: `TD-3-4-5-9-persistence-gaps-design.md` (persistence-layer unification for TD-3/4/5/9 — **ALL 4 PHASES SHIPPED** iter 127/128/129/131; kept as historical reference). |
 | `PoE2_Flipper_Canonical_Formulas.md` | Mathematical formulas |
 
 > **Note:** `REFACTOR_PLAN.md` was deleted in iter 73 (P3-7) after all P2/P3 issues were closed. `worklog.md` was deleted in iter 73 then re-created in iter 74 as the shared multi-agent work log (append-only, sections separated by `---`). For old task history before iter 73 see `git log`.

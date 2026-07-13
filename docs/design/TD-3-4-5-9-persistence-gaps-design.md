@@ -481,5 +481,3 @@ appears.
   definition.
 - `PoE2_Flipper_Canonical_Formulas.md` §8 — triangular arbitrage
   Bellman-Ford algorithm (the source of `executable_estimate`).
-- `docs/MARKET_PLAYBOOK.md` §C.8 — Gold Map ROI (separate design-doc
-  covers this — `docs/design/P10-gold-map-roi-design.md`).

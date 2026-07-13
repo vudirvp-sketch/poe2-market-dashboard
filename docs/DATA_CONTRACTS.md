@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Data Contracts
 
-> **Version:** 1.2 | **Date:** 2026-07-13 (iter 143 — doc-drift re-audit: §3 added missing `UniqueItemExtended` row + `average` field on `DailyStatsPoint`, §6 /Leagues `DefaultCurrency` missing `IconUrl` field)
+> **Version:** 1.3 | **Date:** 2026-07-13 (iter 149 — removed `/api/flipper/triangular/history` proxy-route row: route deleted (only consumer was gold-map-roi-trend-chart, removed iter 149 — see STATUS.md KI-35). Backend route `/api/v1/arbitrage/triangular/history` KEPT.)
 
 ---
 
@@ -300,7 +300,6 @@ Key models with PascalCase serialization (verified iter 143 against `backend/dat
 | `/api/flipper/heatmap` | `GET /api/v1/prices/heatmap` | `HeatmapData` | snake→camel |
 | `/api/flipper/flips` | `GET /api/v1/arbitrage/flips` | `FlipsResponse` | snake→camel |
 | `/api/flipper/triangular` | `GET /api/v1/arbitrage/triangular` | `TriangularResponse` | snake→camel |
-| `/api/flipper/triangular/history` | `GET /api/v1/arbitrage/triangular/history` | `TriangularHistoryResponse` (TD-3 iter 129) | snake→camel |
 | `/api/flipper/events` | `GET/POST /api/v1/events` | `Event[]` | snake→camel |
 | `/api/flipper/events/summary` | `GET /api/v1/events/summary` | `EventSummaryResponse` | snake→camel |
 | `/api/flipper/events/[id]` | `GET/DELETE /api/v1/events/{id}` | `Event` | snake→camel |

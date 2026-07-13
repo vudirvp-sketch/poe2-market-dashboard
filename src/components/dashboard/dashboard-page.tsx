@@ -121,16 +121,6 @@ const MirrorDivineArbTab = dynamic(
   { loading: TabSkeleton },
 );
 
-// P10 (iter 127): Gold Map ROI tab — lazy-loaded. Wraps the existing
-// /api/v1/arbitrage/triangular endpoint (NO new backend route) with a
-// Castaway-run ROI calculator: gold → Div via best 3-way chain, minus
-// map cost. localStorage-persisted inputs. Click-only tab (index 13).
-// See docs/design/P10-gold-map-roi-design.md.
-const GoldMapRoiTab = dynamic(
-  () => import("@/components/dashboard/gold-map-roi-tab").then((m) => ({ default: m.GoldMapRoiTab })),
-  { loading: TabSkeleton },
-);
-
 import { FlipperStickyBar } from "@/components/dashboard/flipper-sticky-bar";
 import { ErrorBoundary } from "@/components/dashboard/error-boundary";
 
@@ -194,16 +184,13 @@ const CURRENCY_VIRTUAL_THRESHOLD = 30;
 // "mirror-divine-arb" added iter 109 (P7) — placed after weekly-patterns
 // to extend the analytics-cluster further. Single-object card UI (Mirror:Divine
 // is one market, not a per-currency list).
-// "gold-map-roi" added iter 127 (P10) — placed after mirror-divine-arb at
-// index 13 (click-only). Reuses /api/v1/arbitrage/triangular (no new backend
-// route). See docs/design/P10-gold-map-roi-design.md.
 // iter 92 (KI-7): Removed dead "arbitrage" (was idx 4, shortcut 5 silently did nothing)
 // and dead "graph" (was idx 11, removed in iter 87). Now shortcuts 1–0 all work.
-// NOTE: tab count grew to 16 in iter 127 — shortcuts 1–9 cover the first 9
-// tabs (overview through speculation), shortcut 0 covers circuit-patterns.
-// intraday-patterns + weekly-patterns + mirror-divine-arb + gold-map-roi
-// + liquid-chain + watchlist remain accessible via click only (only 10
-// shortcut slots).
+// iter 149: Removed "gold-map-roi" (P10 tab — deleted as unused).
+// NOTE: tab count is 15 — shortcuts 1–9 cover the first 9 tabs (overview
+// through speculation), shortcut 0 covers circuit-patterns.
+// intraday-patterns + weekly-patterns + mirror-divine-arb + liquid-chain
+// + watchlist remain accessible via click only (only 10 shortcut slots).
 //
 // iter 124 (TD-10): Moved to module level so the array identity is stable
 // across renders. This eliminates `TAB_MAP` from the `keyboardActions`
@@ -222,7 +209,6 @@ const TAB_MAP = [
   "intraday-patterns",
   "weekly-patterns",
   "mirror-divine-arb",
-  "gold-map-roi",       // NEW iter 127 (P10) — click-only (shortcuts 1-0 already assigned)
   "liquid-chain",
   "watchlist",
 ];
@@ -1114,13 +1100,6 @@ export function Dashboard() {
             <TabsContent value="mirror-divine-arb">
               <ErrorBoundary fallbackTitle={t("fallbackMirrorDivineArb")}>
                 <MirrorDivineArbTab backendOnline={flipperBackendOnline} />
-              </ErrorBoundary>
-            </TabsContent>
-
-            {/* ============ GOLD MAP ROI TAB (P10, iter 127) ============ */}
-            <TabsContent value="gold-map-roi">
-              <ErrorBoundary fallbackTitle={t("fallbackGoldMapRoi")}>
-                <GoldMapRoiTab backendOnline={flipperBackendOnline} />
               </ErrorBoundary>
             </TabsContent>
 

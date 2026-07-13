@@ -291,7 +291,7 @@ export interface TriangularResponse {
 // Triangular arbitrage history (TD-3 Phase 3, iter 129)
 // ============================================================================
 
-/** A single persisted triangular-cycle row from GET /api/flipper/triangular/history.
+/** A single persisted triangular-cycle row from GET /api/v1/arbitrage/triangular/history.
  *
  *  Mirrors the backend pydantic model `TriangularCyclePoint` in
  *  `backend/api/response_models.py`. Numeric fields are `number | null`
@@ -324,7 +324,7 @@ export interface TriangularCycleHistoryPoint {
   snapshotAgeSec: number | null;
 }
 
-/** Response shape from GET /api/flipper/triangular/history.
+/** Response shape from GET /api/v1/arbitrage/triangular/history.
  *
  *  Empty `points` list + `dataAvailable=false` when no rows match the lookback
  *  window (e.g. the feature just shipped and the first snapshot hasn't

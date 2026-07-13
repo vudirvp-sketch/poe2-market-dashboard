@@ -1,6 +1,6 @@
 # PoE2 Market Dashboard — Architecture
 
-> **Version:** 1.1 | **Date:** 2026-07-13 (iter 142 audit — fixed 12 drift items: tabs list 10→16, DataSnapshot fields, HistoricalStore tables 3→5, scheduler jobs 3→4, poe2api.ts circuit breaker thresholds, Graph tab phantom removed, /api/health → /api/v1/health/ping, P10 Gold Map ROI tab added.)
+> **Version:** 1.2 | **Date:** 2026-07-13 (iter 149 — Gold Map ROI (P10) tab removed. Tab count 16→15. Backend route `/api/v1/arbitrage/triangular/history` KEPT for TD-3 persistence. See STATUS.md KI-35.)
 
 ---
 
@@ -10,9 +10,9 @@
 +------------------------------------------------------------------+
 |                      Browser (Client)                             |
 |  React 19, Next.js 16, TypeScript, Tailwind CSS 4                |
-|  Tabs (16): Overview | Currencies | Uniques | Exchange | Flips   |
+|  Tabs (15): Overview | Currencies | Uniques | Exchange | Flips   |
 |        Optimizer | Analyst | Storage Value | Speculation           |
-|        Circuit | Intraday | Weekly | Mirror/Divine | Gold Map ROI |
+|        Circuit | Intraday | Weekly | Mirror/Divine                |
 |        Liquid Chain | Watchlist                              |
 +------------------------------------------------------------------+
 |                     Next.js Proxy Layer                           |
@@ -260,11 +260,10 @@ P10. Read-only artifacts    — cache-snapshot.json is generated, never hand-edi
 | Intraday Patterns | Yes | intraday-patterns-tab | /api/flipper/intraday-patterns |
 | Weekly Patterns | Yes | weekly-patterns-tab | /api/flipper/weekly-patterns |
 | Mirror/Divine Arb | Yes | mirror-divine-arb-tab | /api/flipper/mirror-divine-arb |
-| Gold Map ROI | Yes | gold-map-roi-tab, gold-map-roi-calculator, gold-map-roi-trend-chart | /api/flipper/triangular/history (reuses triangular data) |
 | Liquid Chain | Yes | liquid-chain-tab | /api/flipper/liquid-chain/{analysis,opportunities} |
 | Watchlist | No | watchlist-tab | Local Zustand store |
 
-> **Removed tabs:** `Arbitrage` (removed iter 92, KI-7) and `Graph` (removed iter 87) are NO LONGER in `TAB_MAP`. iter 141 verified `src/components/dashboard/dashboard-page.tsx:211` has 16 entries — see `docs/DATA_FLOW.md` §9 for the canonical Data → Component mapping.
+> **Removed tabs:** `Arbitrage` (removed iter 92, KI-7), `Graph` (removed iter 87), and `Gold Map ROI` (removed iter 149, KI-35) are NO LONGER in `TAB_MAP`. iter 149 verified `src/components/dashboard/dashboard-page.tsx` has 15 entries — see `docs/DATA_FLOW.md` §9 for the canonical Data → Component mapping.
 
 **Detailed data→component mapping:** See [`DATA_FLOW.md`](./DATA_FLOW.md) §9
 

@@ -1,6 +1,6 @@
 # MARKET_PLAYBOOK.md — паттерны рынка POE2 и дорожная карта дашборда
 
-> **Last updated:** 2026-07-13 (iter 142 — doc cleanup: P10 Gold Map ROI marked SHIPPED, sections C.1–C.7 iter-by-iter detail trimmed to concise pointer to git log, §D.3 outdated iter-110 stop-point removed.)
+> **Last updated:** 2026-07-13 (iter 149 — P10 Gold Map ROI tab DELETED as unused (KI-35). Pattern entry in §A kept as market-pattern inventory; §B/§C marked «удалён iter 149».)
 > **Source:** анализ видео-гайда «Step By Step Currency Making Guide In POE 2» + кодовая база проекта.
 > **Цель:** превратить дашборд из «копирки scout/ninja» в инструмент, который **сам** находит схемы заработка. Каждый паттерн здесь → либо уже реализован, либо имеет конкретный план реализации.
 
@@ -117,7 +117,7 @@
 | **P7** Mirror ↔ Divine arb | `backend/economy/mirror_divine_arb.py` (iter 108) + `routes_mirror_divine_arb.py` + Next.js proxy + UI tab (iter 109) | ✅ Готово (end-to-end). Backend: pure function `compute_mirror_divine_arb()` (70 pytest) + API route `/api/v1/mirror-divine-arb` + Next.js proxy + TS types. Single-object response (Mirror:Divine = one market). UI (iter 109): `mirror-divine-arb-tab.tsx` — single-card render with current rate / z-score / deviation / signal+action badges / sparkline + 7/14/30/90-day selector. 42 i18n keys × 4 locales. Profit threshold = 100 Div per Mirror (per playbook). |
 | **P8** Trajectory classification | `backend/economy/circuit_patterns.py` (iter 96) + `routes_circuit_patterns.py` + UI tab `circuit-patterns-tab.tsx` (iter 97) | ✅ Готово. Pure function (75 unit-тестов) + API route `/api/v1/circuit-patterns` + Next.js proxy + UI tab с бейджами траекторий и mini-sparkline + i18n × 4 locales (47 ключей × 4) + 20 jest-тестов + 4 pytest route smoke-теста. |
 | **P9** Phase-aware investment | `phase_hints.py` (iter 78 + iter 110 live-price binding) | ✅ Готово (iter 110). Static table 4 hints/phase + live-price enrichment: 3 hints tracked (exalted/divine) with current_price / change_pct_week / change_pct_month / momentum / phase-aware recommendation. |
-| **P10** Gold Map ROI | `backend/economy/triangular_cycles.py` (TD-3) + `src/components/dashboard/gold-map-roi-tab.tsx` + `gold-map-roi-calculator.tsx` + `gold-map-roi-trend-chart.tsx` | ✅ Готово (end-to-end). Phase 1 (MVP) SHIPPED iter 127 — calculator reuses `/api/v1/arbitrage/triangular` best 3-way rate. Phase 2 (trend chart) SHIPPED iter 132 — reuses `/api/v1/arbitrage/triangular/history` (TD-3 SQLite persistence). See `docs/design/P10-gold-map-roi-design.md`. |
+| **P10** Gold Map ROI | ~~`gold-map-roi-tab.tsx`~~ | ❌ Удалён iter 149 (KI-35) — tab deemed unused. Backend `triangular_cycles.py` (TD-3) kept for persistence. Pattern entry in §A kept as market-pattern inventory only. |
 | **P11** Megalomaniac / +3 Prism scanner | Нет | ❌ Требует GGG trade API (фильтрация по аффиксам). |
 | **P12** Tablet resell | Нет | ❌ Требует item-level данных, которых POE2Scout не отдаёт. |
 | **P13** Crafting Profit Discovery | Нет | ❌ Требует GGG trade API. |
@@ -130,7 +130,8 @@
 | **P20** Skill gem quality crafting | Нет | ❌ Нужны данные по quality-модификаторам. |
 
 **Резюме.** Из 20 паттернов:
-- 10 полностью готовы (P1, P3, P4, P5, P7, P8, P9, P10, P18, частично P16/P17).
+- 9 полностью готовы (P1, P3, P4, P5, P7, P8, P9, P18, частично P16/P17).
+- 1 удалён (P10 — iter 149, KI-35).
 - 3 частично готовы (P2, P16, P17) — нужна доработка.
 - 7 не реализованы. Из них:
   - **P6, P11, P12, P13, P14, P19, P20** — требуют GGG official trade API (не в scope без OAuth2).
@@ -151,7 +152,7 @@
 | **P3** Leveling Uniques | 100 | `backend/economy/leveling_uniques.py:compute_leveling_uniques_lifecycle(phase, days_since_reference, *, reference_currency="", league_name="", now=None, lang="en")` — static table of 10 leveling uniques + PRE_PEAK/AT_PEAK/POST_PEAK stage + BUY_OR_HOLD/SELL_NOW/AVOID_BUYING recommendation + heuristic est. price. Immune to KI-11 (uses PhaseDetector only). 86 pytest. | `GET /api/v1/leveling-uniques?lang=en\|ru` | `leveling-uniques-widget.tsx` (на Overview) — table with stage + recommendation badges. 28 jest. |
 | **P7** Mirror/Divine Arb | 108–109 | `backend/economy/mirror_divine_arb.py:compute_mirror_divine_arb(snapshot, config, *, days=30, mirror_api_id="mirror", divine_api_id="divine", now=None)` — single-object response, z-score signal (SELL_MIRROR_BUY_DIVINE / SELL_DIVINE_BUY_MIRROR / NEUTRAL), profit_potential_per_mirror_div (≥100 Div = actionable). 70 pytest. | `GET /api/v1/mirror-divine-arb?days=` | `mirror-divine-arb-tab.tsx` — single-card render with rate / z / deviation / sparkline + 7/14/30/90-day selector. 42 i18n keys × 4. |
 | **P9** Phase-aware Investment | 78 + 110 | `backend/economy/phase_hints.py:get_phase_hints(phase, days_since_reference, *, reference_currency="", league_name="", now=None, lang="en", snapshot=None)` — static table 4 hints/phase × 3 phases + optional live-price enrichment (current_price / change_pct_week / change_pct_month / momentum / recommendation) when snapshot provided. 3 of 12 hints tracked (exalted/divine). 109 pytest (61 original + 48 iter-110 enrichment). | `GET /api/v1/phase-hints` | `phase-hints-widget.tsx` (на Overview) — HintRow renders live-price section when trackedCurrency + currentPrice available. 13 jest. |
-| **P10** Gold Map ROI | 127 + 132 | Reuses `backend/economy/triangular_cycles.py` (TD-3) for best 3-way rate. No new backend module. | `GET /api/v1/arbitrage/triangular` (live) + `GET /api/v1/arbitrage/triangular/history` (TD-3 SQLite persistence) | `gold-map-roi-tab.tsx` + `gold-map-roi-calculator.tsx` (Phase 1, iter 127) + `gold-map-roi-trend-chart.tsx` (Phase 2, iter 132 — dependency-free SVG line chart, reuses pattern from `storage-value-history-chart.tsx`). |
+| **P10** Gold Map ROI | ~~127 + 132~~ → **удалён iter 149** | — | — | ❌ Tab removed (KI-35). Backend `triangular_cycles.py` (TD-3) kept for persistence. |
 
 ### Не реализованы (требуют GGG trade API)
 - P6 Priority Listing Arb — нужен GGG trade API.
@@ -183,7 +184,7 @@
 | 4 | P3 Leveling uniques | 100 | ✅ Done |
 | 5 | P7 Mirror/Divine arb | 108–109 | ✅ Done |
 | 6 | P9 Phase-aware investment | 78 + 110 | ✅ Done |
-| 7 | P10 Gold Map ROI | 127 + 132 | ✅ Done |
+| 7 | ~~P10 Gold Map ROI~~ | ~~127 + 132~~ | ❌ Удалён iter 149 (KI-35) |
 
 ### D.3. Что осталось
 - **TD-3/4/5/9** — persistence gaps. TD-3/4/5 SHIPPED iter 128–131, runtime log verification pending (requires prod access).
@@ -201,5 +202,4 @@
 - `AGENT_NAVIGATION.md` — навигация по коду.
 - `PoE2_Flipper_Canonical_Formulas.md` — математика скоринга.
 - `docs/ARCHITECTURE.md` — слои и инварианты.
-- `docs/design/P10-gold-map-roi-design.md` — P10 Gold Map ROI design doc (Phases 1+2 SHIPPED).
 - `docs/design/TD-3-4-5-9-persistence-gaps-design.md` — TD-3/4/5/9 unified persistence-layer analysis (ALL PHASES SHIPPED).
