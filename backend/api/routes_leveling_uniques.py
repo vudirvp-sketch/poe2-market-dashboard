@@ -28,6 +28,16 @@ iter 100: Added `?lang=` query parameter. `?lang=ru` returns the parallel
 Russian notes table from `_LEVELING_UNIQUES_NOTES_RU` in
 `leveling_uniques.py`. Default is English. Same i18n convention as
 `routes_phase_hints.py` (iter 87).
+
+iter 150: Added curated `name_ru` field to each unique in the static table
+(`_LEVELING_UNIQUES` in `leveling_uniques.py`). 4/10 items populated from
+poe2db's official RU pages (Polcirkeln / Megalomaniac / Mind of the Council
+/ Soul Tether); the remaining 6 have `name_ru=None` and the frontend falls
+back to the EN `name`. The `name_ru` field is returned for ALL locales —
+the frontend picks `name_ru` vs `name` at render time based on its own
+locale state. This removes the widget's dependency on the slug-based
+`getUniqueDisplayName` lookup (which had ~1/10 coverage due to slug
+mismatch).
 """
 
 from __future__ import annotations
@@ -52,9 +62,12 @@ async def get_leveling_uniques_route(
     lang: str = Query(
         "en",
         description="Locale: 'ru' returns the Russian notes for each unique, "
-                    "default English. The unique id/name/category/peak_day/"
+                    "default English. The unique id/name/name_ru/category/peak_day/"
                     "peak_price_exalted/decay_pct/pattern fields are identical "
-                    "across locales — only the notes field is translated.",
+                    "across locales — only the notes field is translated. "
+                    "name_ru is a curated static field (iter 150) returned for "
+                    "all locales; the frontend picks name_ru vs name at render "
+                    "time based on its own locale state.",
     ),
 ) -> dict:
     """Leveling-uniques lifecycle widget data for the Overview tab.
@@ -67,6 +80,7 @@ async def get_leveling_uniques_route(
       - recommendation (BUY_OR_HOLD / SELL_NOW / AVOID_BUYING)
       - estimated_current_price_exalted (heuristic, NOT live market price)
       - days_until_peak (positive/negative/zero)
+      - name_ru (curated RU display name, iter 150; None when no poe2db RU match)
       - notes (localized via ?lang=)
 
     Always returns data_available=True (the table is hardcoded and always
@@ -76,7 +90,8 @@ async def get_leveling_uniques_route(
 
     Query params:
         lang: Locale code — "ru" returns Russian notes (iter 100),
-              anything else returns English (default).
+              anything else returns English (default). The curated ``name_ru``
+              field (iter 150) is returned for all locales.
     """
     config = get_settings()
 

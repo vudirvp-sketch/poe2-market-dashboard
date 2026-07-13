@@ -75,16 +75,16 @@ import {
   type LevelingUniqueStage,
   type LevelingUniqueRecommendation,
 } from "@/lib/types";
-// iter 148 (TD-6 phase 2 follow-up): unique-item name localization.
-// `getUniqueDisplayName` looks up the poe2db RU name by deriving the slug
-// from the EN name. Returns null when no mapping exists — caller falls back
-// to the EN name. Coverage is partial because poe2db slugs don't always
-// match the leveling-uniques table's curated names (e.g. "Polcirkeln
-// Sapphire Ring" → slug "Polcirkeln_Sapphire_Ring" doesn't match the poe2db
-// slug "Polcirkeln"). Of the 10 leveling uniques, ~1-2 currently have a
-// poe2db RU match. Full coverage would require a curated `nameRu` field on
-// the backend `LevelingUniqueData` model — deferred to a future iter.
-import { getUniqueDisplayName } from "@/lib/currency-names";
+// iter 150: unique-item name localization now uses the curated `nameRu`
+// field from the backend (added iter 150 to `LevelingUniqueData`). The
+// previous iter-148 implementation called `getUniqueDisplayName(name, "ru")`
+// which performed a slug-based lookup against `UNIQUE_NAMES_RU` — but only
+// ~1/10 leveling uniques had a matching poe2db slug (e.g. "Mind of the
+// Council" matched but "Polcirkeln Sapphire Ring" did NOT match the poe2db
+// slug "Polcirkeln"). The backend `nameRu` field is curated at the static
+// table level in `backend/economy/leveling_uniques.py` — 4/10 items have a
+// confirmed poe2db RU translation, the rest fall back to the EN `name`.
+// This removes the fragile slug-mismatch dependency.
 
 // ---------------------------------------------------------------------------
 // Props
@@ -391,17 +391,19 @@ export function LevelingUniquesWidget({ backendOnline }: LevelingUniquesWidgetPr
 interface UniqueRowProps {
   unique: LevelingUnique;
   t: (key: TranslationKeys, params?: Record<string, string | number>) => string;
-  /** Active locale — used to pick RU display name when available (iter 148). */
+  /** Active locale — used to pick RU display name when available (iter 150). */
   locale: string;
 }
 
 function UniqueRow({ unique, t, locale }: UniqueRowProps) {
-  // iter 148: prefer the poe2db RU translation when locale=ru and a
-  // translation exists; otherwise fall back to the curated EN name.
+  // iter 150: prefer the curated backend `nameRu` field when locale=ru and
+  // the field is non-null; otherwise fall back to the EN `name`. The
+  // `nameRu` field is sourced from poe2db's official RU pages at the
+  // backend static-table level (see backend/economy/leveling_uniques.py).
+  // Coverage: 4/10 items have a non-null nameRu (Polcirkeln / Megalomaniac
+  // / Mind of the Council / Soul Tether); the other 6 fall back to EN.
   const displayName =
-    locale === "ru"
-      ? getUniqueDisplayName(unique.name, "ru") ?? unique.name
-      : unique.name;
+    locale === "ru" && unique.nameRu ? unique.nameRu : unique.name;
 
   return (
     <div

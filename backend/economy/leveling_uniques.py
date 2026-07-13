@@ -72,13 +72,29 @@ Design notes
   This is NOT a live market price — it's a planning heuristic so the user
   can see "if I list now, I can expect ~X exa". The widget tooltip
   explicitly states this.
-- i18n: The static table is EN-only. The route accepts ``?lang=ru`` and
-  returns Russian ``notes`` for each unique (parallel ``_LEVELING_UNIQUES_RU``
-  table, same structure, only ``notes`` translated — ``id`` / ``name`` /
-  ``category`` / ``peak_day`` / ``peak_price_exalted`` / ``decay_pct`` /
-  ``pattern`` are identical across locales so the frontend can switch
-  tables by locale without breaking cross-references). Same convention as
-  ``phase_hints.py`` (iter 87).
+- i18n: The static table carries an EN ``name`` plus an optional curated
+  ``name_ru`` field (added iter 150). The route accepts ``?lang=ru`` and
+  returns Russian ``notes`` for each unique (parallel
+  ``_LEVELING_UNIQUES_NOTES_RU`` table — only ``notes`` is translated).
+  The ``name_ru`` field is the same regardless of ``lang`` (it's a static
+  curated field, not a query-time lookup) — the frontend picks
+  ``name_ru`` vs ``name`` at render time based on the active locale.
+  ``id`` / ``category`` / ``peak_day`` / ``peak_price_exalted`` /
+  ``decay_pct`` / ``pattern`` are identical across locales so the frontend
+  can switch tables by locale without breaking cross-references. Same
+  convention as ``phase_hints.py`` (iter 87).
+
+  ``name_ru`` coverage (iter 150): 4/10 items populated from poe2db's
+  official RU pages (see ``scripts/.cache/poe2db_unique_names.json``):
+  ``polcirkeln-sapphire-ring`` → "Полярный круг",
+  ``megalomaniac-diamond`` → "Мания величия",
+  ``mind-of-the-council`` → "Разум Совета",
+  ``soul-tether-amulet`` → "Оковы души". The remaining 6 items have
+  ``name_ru: None`` — they have no poe2db RU page under the matching
+  slug. Frontend falls back to the EN ``name`` when ``name_ru`` is
+  None. To extend coverage: re-run ``scripts/sync_currency_names_from_poe2db.py
+  --fetch-unique-ru`` after a poe2db update, then manually update this
+  table for any new matches.
 """
 
 from __future__ import annotations
@@ -146,6 +162,13 @@ but for iter 100 we ship the MVP with just SPIKE_THEN_CRASH."""
 # Each entry has:
 #   - "id":                    stable slug (for tests + future metric linkage)
 #   - "name":                  display name (EN, matches in-game name)
+#   - "name_ru":               curated Russian display name (iter 150) or None
+#                              when no official poe2db RU translation exists
+#                              for this item's slug. The frontend renders this
+#                              when locale=ru and the field is non-None,
+#                              otherwise falls back to ``name``. Sourced from
+#                              ``scripts/.cache/poe2db_unique_names.json``
+#                              (populated by ``--fetch-unique-ru``).
 #   - "category":              POE2Scout category slug for future cross-ref
 #                              (e.g. "currency" if priced as currency, "" if
 #                              priced as item — most leveling uniques are
@@ -170,6 +193,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "polcirkeln-sapphire-ring",
         "name": "Polcirkeln Sapphire Ring",
+        "name_ru": "Полярный круг",
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 15.0,
@@ -184,6 +208,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "megalomaniac-diamond",
         "name": "Megalomaniac Diamond",
+        "name_ru": "Мания величия",
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 12.0,
@@ -198,6 +223,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "wall-of-brambles",
         "name": "Wall of Brambles",
+        "name_ru": None,
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 8.0,
@@ -212,6 +238,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "mana-leech-support",
         "name": "Mana Leech Support Gem",
+        "name_ru": None,
         "category": "uncutgems",
         "peak_day": 2,
         "peak_price_exalted": 5.0,
@@ -226,6 +253,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "feeding-frenzy-support",
         "name": "Feeding Frenzy Support",
+        "name_ru": None,
         "category": "uncutgems",
         "peak_day": 2,
         "peak_price_exalted": 5.0,
@@ -240,6 +268,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "echoes-of-worldstone",
         "name": "Echoes of Worldstone",
+        "name_ru": None,
         "category": "",
         "peak_day": 3,
         "peak_price_exalted": 4.0,
@@ -254,6 +283,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "mind-of-the-council",
         "name": "Mind of the Council",
+        "name_ru": "Разум Совета",
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 4.0,
@@ -267,6 +297,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "boots-of-momentum",
         "name": "Boots of Momentum",
+        "name_ru": None,
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 3.0,
@@ -280,6 +311,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "wings-of-entropy",
         "name": "Wings of Entropy",
+        "name_ru": None,
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 2.5,
@@ -293,6 +325,7 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
     {
         "id": "soul-tether-amulet",
         "name": "Soul Tether Amulet",
+        "name_ru": "Оковы души",
         "category": "",
         "peak_day": 2,
         "peak_price_exalted": 2.0,
@@ -307,9 +340,11 @@ _LEVELING_UNIQUES: list[dict[str, Any]] = [
 
 # ---------------------------------------------------------------------------
 # Russian notes table — parallel to _LEVELING_UNIQUES but only ``notes``
-# is translated. ``id`` / ``name`` / ``category`` / ``peak_day`` /
+# is translated. ``id`` / ``name`` / ``name_ru`` / ``category`` / ``peak_day`` /
 # ``peak_price_exalted`` / ``decay_pct`` / ``pattern`` are identical
-# (same convention as phase_hints.py iter 87).
+# (same convention as phase_hints.py iter 87). Note: ``name_ru`` is a curated
+# field on the main table (iter 150), not a per-locale translation here —
+# only ``notes`` is locale-sensitive and lives in this dict.
 # ---------------------------------------------------------------------------
 
 _LEVELING_UNIQUES_NOTES_RU: dict[str, str] = {
@@ -529,10 +564,13 @@ def compute_leveling_uniques_lifecycle(
         now: Optional override for "today" (for tests). Defaults to UTC now.
         lang: Locale code — "ru" returns the parallel Russian notes table
             (iter 100), anything else returns the default English notes.
-            The unique ``id`` / ``name`` / ``category`` / ``peak_day`` /
-            ``peak_price_exalted`` / ``decay_pct`` / ``pattern`` fields are
-            identical across locales, so the frontend can safely switch
-            tables by locale.
+            The unique ``id`` / ``name`` / ``name_ru`` / ``category`` /
+            ``peak_day`` / ``peak_price_exalted`` / ``decay_pct`` / ``pattern``
+            fields are identical across locales, so the frontend can safely
+            switch tables by locale. The ``name_ru`` field is a curated static
+            field (iter 150) — it is NOT locale-sensitive (returned for both
+            ``lang=en`` and ``lang=ru``). The frontend picks ``name_ru`` vs
+            ``name`` at render time based on its own locale state.
 
     Returns:
         Dict with shape:
@@ -545,7 +583,8 @@ def compute_leveling_uniques_lifecycle(
                 "uniques": [
                     {
                         "id": str,
-                        "name": str,
+                        "name": str,               # EN display name
+                        "name_ru": str | None,     # curated RU name (iter 150), None if no poe2db RU
                         "category": str,
                         "peak_day": int,
                         "peak_price_exalted": float,
@@ -555,7 +594,7 @@ def compute_leveling_uniques_lifecycle(
                         "recommendation": str,    # BUY_OR_HOLD | SELL_NOW | AVOID_BUYING
                         "estimated_current_price_exalted": float,
                         "days_until_peak": int,   # 0 during AT_PEAK, negative post-peak
-                        "notes": str,
+                        "notes": str,             # localized via ?lang=
                     },
                     ...
                 ],
@@ -591,6 +630,7 @@ def compute_leveling_uniques_lifecycle(
         uniques_out.append({
             "id": entry["id"],
             "name": entry["name"],
+            "name_ru": entry.get("name_ru"),
             "category": entry["category"],
             "peak_day": peak_day,
             "peak_price_exalted": peak_price,

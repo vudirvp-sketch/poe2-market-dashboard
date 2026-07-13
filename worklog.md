@@ -5,89 +5,6 @@
 
 ---
 
-Task ID: iter-148
-Agent: main
-Task: iter 148 — TD-6 phase 2 follow-up. Closes candidate (a) from iter 147 stop point: extend `nameRu` rendering to the remaining UI components that displayed unique-item names in EN only. The iter-147 worklog listed 5 candidates: `comparison-dialog.tsx`, `comparative-chart.tsx`, `pair-comparison-dialog.tsx`, `leveling-uniques-widget.tsx`, `fuzzy-search.tsx`. Inspection during iter 148 revealed `pair-comparison-dialog.tsx` was a mis-classification — it renders `pair.label` (currency pair string), not `item.name` (unique item). However, it had a separate pre-existing locale-staleness bug (KI-34) that was fixed in the same iter.
-
-Work Log:
-- Cloned repo. Read `STATUS.md` (iter 147 SHIPPED — 445 unique items translated, KI-32/KI-33 closed, KI-34 not yet discovered), `worklog.md` (iter 147 + iter 146), `AGENT_NAVIGATION.md` §1 + invariant #24.
-- Inspected all 5 candidate files in parallel to understand the rendering surface:
-  - `comparison-dialog.tsx` — renders `item.name` in chip (line 201) and via `seriesMeta.name` (line 134) for tooltip/legend/summary table.
-  - `comparative-chart.tsx` — same pattern as comparison-dialog, plus correlation matrix `names` array (lines 278, 280) and chip rendering (line 395).
-  - `pair-comparison-dialog.tsx` — renders `pair.label` (currency pair string, NOT unique-item name). The label IS locale-aware at add-time (built via `getCurrencyDisplayName(pair.currency1Id, locale)` in both `exchange-table.tsx:698` and `exchange-pair-card.tsx:81`), BUT frozen in the zustand store → switching locale doesn't refresh the dialog. This is **KI-34** (newly identified this iter).
-  - `leveling-uniques-widget.tsx` — uses backend `LevelingUnique` type (NO `nameRu` field) instead of `PoeItem`. Needs `getUniqueDisplayName(unique.name, locale)` at render time.
-  - `fuzzy-search.tsx` — builds a search index with `item.name` (EN). Needs locale-aware `name` + `nameAlt` for cross-locale search.
-- Verified baseline: 1518 pytest green + 690 Jest green + tsc clean. Installed `aiosqlite` in venv (env-only — see Quick Reference).
-- **Modified `src/components/dashboard/comparison-dialog.tsx`:**
-  - In `seriesMeta` builder: replaced `name: item?.name || h.itemId` with locale-aware lookup `locale === "ru" && item?.nameRu ? item.nameRu : (item?.name || h.itemId)`. Added `locale` to useMemo deps.
-  - In chip rendering: replaced `{item.name}` with the same locale-aware pattern.
-- **Modified `src/components/dashboard/comparative-chart.tsx`:**
-  - Same seriesMeta.name change as comparison-dialog.
-  - In correlation matrix builder (backend branch): replaced `names.push(item.name)` and `itemsWithoutCorrelation.push(item.name)` with locale-aware `itemDisplayName` variable.
-  - In chip rendering: replaced `{item.name}` with locale-aware pattern.
-  - Added `locale` to both useMemo deps (seriesMeta + correlationMatrix).
-- **Modified `src/components/dashboard/leveling-uniques-widget.tsx`:**
-  - Imported `getUniqueDisplayName` from `@/lib/currency-names`.
-  - Added `locale: string` to `UniqueRowProps` interface.
-  - Pass `locale={locale}` from `LevelingUniquesWidget` to each `UniqueRow`.
-  - In `UniqueRow` body: compute `displayName = locale === "ru" ? getUniqueDisplayName(unique.name, "ru") ?? unique.name : unique.name` and render `{displayName}` instead of `{unique.name}`.
-  - Documented known coverage limitation in the import comment: of the 10 leveling uniques, ~1-2 currently have a poe2db RU match because poe2db slugs don't always match the curated backend names (e.g. "Polcirkeln Sapphire Ring" → slug `Polcirkeln_Sapphire_Ring` doesn't match poe2db slug `Polcirkeln`). Full coverage would require a curated `nameRu` field on the backend `LevelingUniqueData` model — deferred.
-- **Modified `src/components/dashboard/fuzzy-search.tsx`:**
-  - Imported `getCurrencyDisplayName` and `getUniqueDisplayName` from `@/lib/currency-names`.
-  - Added `nameAlt: string | null` to `SearchItem` interface.
-  - Destructured `locale` from `useI18n()`.
-  - For exchange pairs: compute `enName` (upstream) and `ruName` (via `getCurrencyDisplayName`); set `name` = locale-appropriate, `nameAlt` = the OTHER language's name when it differs.
-  - For PoeItem entries: compute `ruUnique = item.nameRu ?? getUniqueDisplayName(item.name, "ru")`; same primary/alt logic.
-  - Updated fuse.js keys: `name` (weight 0.6) + `nameAlt` (weight 0.25) + `secondary` (weight 0.15). Previously: `name` (0.7) + `secondary` (0.3).
-  - Added `locale` to useMemo deps for `searchItems`.
-- **Documented KI-34 in `STATUS.md` BEFORE fixing it** (per user rule "Если найден новый баг — сначала документируй в STATUS.md как Known Issue, потом фиксись"). KI-34 = PairComparisonDialog labels frozen at add-time. Fix: `liveLabel(pair)` helper that re-derives from `pair.currency1Id` / `pair.currency2Id` via `getCurrencyDisplayName(..., locale)` on every render, with stored `pair.label` as fallback.
-- **Modified `src/components/dashboard/pair-comparison-dialog.tsx` (KI-34 fix):**
-  - Imported `getCurrencyDisplayName` from `@/lib/currency-names`.
-  - Added `liveLabel(pair: PairComparisonId): string` helper at the top of the component. Uses `getCurrencyDisplayName` for both currencies in the current locale; falls back to `pair.label` if either lookup returns null.
-  - Changed queryFn result: store `pair` object instead of `label` string (so `liveLabel` can re-derive on every render).
-  - In seriesMeta builder: replaced `name: h.label || h.pairKey` with `name: h.pair ? liveLabel(h.pair) : h.pairKey`. Added `locale` to useMemo deps.
-  - In chip rendering: replaced `{pair.label}` with `{liveLabel(pair)}`.
-- **Added 14 new tests in `src/__tests__/unique-items-i18n.test.tsx`:**
-  - ComparisonDialog (3 tests): RU name in chip when nameRu set; EN fallback when nameRu null; EN name when locale=en.
-  - ComparativeChart (2 tests): RU name in chip; EN name when locale=en.
-  - LevelingUniquesWidget (3 tests): RU name via `getUniqueDisplayName("Mind of the Council")` → "Разум Совета"; EN fallback for "Polcirkeln Sapphire Ring" (slug mismatch); EN name when locale=en.
-  - FuzzySearch (4 tests): RU name in result list; cross-locale search (EN query finds RU-primary item via nameAlt); EN name when locale=en; EN fallback when item has no nameRu.
-  - PairComparisonDialog (2 tests): KI-34 fix — re-derives RU label from `currency1Id`/`currency2Id` even when stored label is EN; re-derives EN label even when stored label is RU.
-- **Iter 1 test run failure → fix:** 1 of 14 tests failed initially: I assumed divine's RU name was "Сфера божественности" but the actual translation in `currency-names.ts` is "Божественная сфера". Fixed the regex assertion to match the full label string `Сфера хаоса / Божественная сфера`.
-- **Iter 2 test run:** all 14 tests green.
-- **Iter 3 (cleanup):** ESLint flagged 3 unused vars in the test file: `within` import, `makeExchangePair` helper (never called), `itemId` parameter in `makeHistory`. Removed all 3. Re-ran ESLint → 0 warnings on the test file. Re-ran tests → still 14 green.
-- **Final verification:**
-  - `pytest tests/` → **1518 passed** (unchanged from iter 147 — no Python changes this iter). Zero regressions.
-  - `npx tsc --noEmit` → clean (no type errors). The `nameAlt: string | null` field doesn't break any existing SearchItem consumers.
-  - `npx jest --silent` → **704 passed** (was 690 in iter 147; +14 new tests). Zero regressions.
-  - `npx eslint` on modified TS files → 0 errors, 10 warnings (all pre-existing: unused `useQueryClient`/`COLOR_NAMES`/`Table2`/`comparedApiIds`/`phase`/`activeTab`, `<img>` element, React Compiler warning). My changes added 0 new warnings.
-- **Documentation updates:**
-  - `STATUS.md` — header bump (iter 147 → iter 148); added KI-34 to closed section (with full root-cause + fix narrative); TD-6 row updated (Phase 2 follow-up SHIPPED iter 148); Quick Reference "unique items show English" row updated (now mentions ALL 5 components covered + leveling-uniques coverage limitation); added new Quick Reference row for KI-34; Key Technical Insights expanded with new "UI nameRu rendering pattern" section covering iter 147 + iter 148 lessons; open Known Issues section now empty (was KI-33 open).
-  - `worklog.md` — added this iter-148 entry; removed iter-146 entry (rule: only last 2 iterations).
-  - `AGENT_NAVIGATION.md` — header bump (iter 147 → iter 148); invariant #24 updated to mention all 5 components covered.
-
-Stage Summary:
-- **iter 148 SHIPPED — TD-6 phase 2 follow-up complete. 5 components now use nameRu when locale=ru, KI-34 closed, 14 new tests, 1518 pytest + 704 Jest green.**
-- **Modified files (5 source + 1 test + 3 docs):**
-  - `src/components/dashboard/comparison-dialog.tsx` — seriesMeta.name + chip rendering use locale-aware lookup; `locale` added to useMemo deps.
-  - `src/components/dashboard/comparative-chart.tsx` — seriesMeta.name + correlation matrix names + chip rendering use locale-aware lookup; `locale` added to 2 useMemo deps.
-  - `src/components/dashboard/leveling-uniques-widget.tsx` — imports `getUniqueDisplayName`; `UniqueRow` accepts `locale` prop; renders `getUniqueDisplayName(unique.name, "ru") ?? unique.name` when locale=ru.
-  - `src/components/dashboard/fuzzy-search.tsx` — `SearchItem.nameAlt` field added; search index uses locale-aware `name` + cross-locale `nameAlt`; fuse.js keys updated to 3-key weighted search.
-  - `src/components/dashboard/pair-comparison-dialog.tsx` — KI-34 fix: `liveLabel(pair)` helper re-derives label from `currency1Id`/`currency2Id` via `getCurrencyDisplayName`; queryFn stores `pair` object instead of `label`; chip + seriesMeta use `liveLabel`.
-  - `src/__tests__/unique-items-i18n.test.tsx` — NEW test file with 14 tests covering all 5 components.
-  - `STATUS.md` — header bump + KI-34 added to closed + TD-6 row updated + 2 Quick Reference rows updated + Key Technical Insights "UI nameRu rendering pattern" section added.
-  - `worklog.md` — this iter-148 entry (removed iter-146).
-  - `AGENT_NAVIGATION.md` — header bump + invariant #24 updated.
-- **What was NOT done (intentionally deferred to iter 149+):**
-  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 148 only extended nameRu rendering. Full per-tab audit (i18n coverage, error states, empty states, loading skeletons, accessibility) is candidate for iter 149+.
-  - **Leveling-uniques-widget full RU coverage** — currently ~1-2 of 10 leveling uniques have a poe2db RU match (slug mismatch). Full coverage would require adding a `nameRu` field to the backend `LevelingUniqueData` model in `backend/economy/leveling_uniques.py` and manually populating it for the 10 curated items. Deferred to iter 149+.
-  - **Re-run F1 pipeline** (`--fetch-ru-by-item`) — 9 currency items still untranslated + 1 no-Cyrillic (`aldurs-saga`). Re-run after a patch / monthly.
-  - **TD-6 Phase 3 — re-audit cycle** — monthly `--audit` + `--apply-audit` (currency) + `--fetch-unique-ru` + `--apply-unique` (unique items) + `python scripts/sync_currency_names_ts.py`. Routine maintenance.
-  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
-- **Stopping point:** iter 148 = TD-6 phase 2 follow-up complete (5 UI components use nameRu when locale=ru, KI-34 closed, 14 new tests, 1518 pytest + 704 Jest green). Next iter candidates: (a) per-tab UX/logic deep-audit (deferred since iter 139 — large scope); (b) leveling-uniques-widget full RU coverage via backend `nameRu` field (small scope, finishes the unique-items RU story); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
-
----
-
 Task ID: iter-149
 Agent: main
 Task: iter 149 — delete the Gold Map ROI (P10) tab completely per user request: «вкладку gold roi --- удали чисто, отовсюду упоминания и прочее, она бесполезная!» The tab shipped iter 127 (calculator) + iter 132 (trend chart) but was deemed not useful enough to keep.
@@ -139,3 +56,96 @@ Stage Summary:
   - **TD-6 Phase 3 — re-audit cycle** — monthly `--audit` + `--apply-audit` (currency) + `--fetch-unique-ru` + `--apply-unique` (unique items) + `python scripts/sync_currency_names_ts.py`. Routine maintenance.
   - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
 - **Stopping point:** iter 149 = Gold Map ROI (P10) tab fully deleted (8 files deleted, 11 modified, 49 i18n keys × 4 locales stripped, 1518 pytest + 640 Jest green + tsc clean + 0 new ESLint warnings). Next iter candidates: (a) per-tab UX/logic deep-audit (deferred since iter 139 — large scope); (b) leveling-uniques-widget full RU coverage via backend `nameRu` field (small scope, finishes the unique-items RU story); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-3 runtime log verification (requires prod access); (e) any new bugs the user identifies.
+
+---
+
+Task ID: iter-150
+Agent: main
+Task: iter 150 — Leveling-uniques-widget full RU coverage. Closes candidate (b) from iter 149 stop point: add `nameRu` field to the backend `LevelingUniqueData` model and populate curated poe2db RU translations, removing the widget's dependency on the fragile `getUniqueDisplayName(name, "ru")` slug-lookup (which had ~1/10 coverage due to slug mismatch — see iter-148 worklog). Per principle «лучше недоделать, чем сломать»: only populate confirmed poe2db translations, leave the rest as `None` with a documented extension path.
+
+Work Log:
+- Cloned repo. Read `STATUS.md` (iter 149 SHIPPED), `worklog.md` (iter 149 + iter 148), `AGENT_NAVIGATION.md` §1 + invariant #24.
+- Inspected the 4 candidate files for the change:
+  - `backend/economy/leveling_uniques.py` — `_LEVELING_UNIQUES` static table (10 entries), `_LEVELING_UNIQUES_NOTES_RU` parallel notes dict, `compute_leveling_uniques_lifecycle` returns dict per unique.
+  - `backend/api/response_models.py:LevelingUniqueData` — Pydantic model with id/name/category/peak_day/.../notes (no nameRu).
+  - `src/components/dashboard/leveling-uniques-widget.tsx:UniqueRow` — uses `getUniqueDisplayName(unique.name, "ru") ?? unique.name` (iter 148 impl).
+  - `src/lib/types.ts:LevelingUnique` — TS interface (no nameRu).
+- **Coverage analysis (4/10 confirmed):** queried `scripts/.cache/poe2db_unique_names.json` for the 10 leveling-unique EN names. Found poe2db RU matches for 4:
+  - `polcirkeln-sapphire-ring` → "Полярный круг" (poe2db slug `Polcirkeln`)
+  - `megalomaniac-diamond` → "Мания величия" (poe2db slug `Megalomaniac`)
+  - `mind-of-the-council` → "Разум Совета" (poe2db slug `Mind_of_the_Council` — confirmed iter 147)
+  - `soul-tether-amulet` → "Оковы души" (poe2db slug `Soul_Tether`)
+  - Other 6 (Wall of Brambles / Mana Leech Support / Feeding Frenzy Support / Echoes of Worldstone / Boots of Momentum / Wings of Entropy) NOT in poe2db cache — left as `None` with documented extension path. This avoids inventing translations.
+- **Modified `backend/economy/leveling_uniques.py`:**
+  - Module docstring i18n section rewritten: explains `name_ru` field (curated, locale-independent) + the 4/10 coverage + extension path (re-run `--fetch-unique-ru` after poe2db update).
+  - Static-table comment block: added `name_ru` field documentation.
+  - Each of the 10 entries in `_LEVELING_UNIQUES` got a `"name_ru": <value>` field — 4 strings + 6 `None`.
+  - `_LEVELING_UNIQUES_NOTES_RU` comment block: updated to mention `name_ru` is now on the main table.
+  - `compute_leveling_uniques_lifecycle` lang param docstring: updated to mention `name_ru` is identical across locales.
+  - `compute_leveling_uniques_lifecycle` return-shape docstring: added `name_ru: str | None` to the uniques dict schema.
+  - The `uniques_out.append({...})` block: added `"name_ru": entry.get("name_ru")` (defensive .get() in case future entries miss the field).
+- **Modified `backend/api/response_models.py:LevelingUniqueData`:**
+  - Added `name_ru: str | None = Field(default=None, description=...)` with full docstring explaining the 4/10 coverage + extension path.
+- **Modified `backend/api/routes_leveling_uniques.py`:**
+  - Top docstring: added iter-150 paragraph explaining the curated `name_ru` field + the 4/10 coverage + that the widget no longer depends on `getUniqueDisplayName` slug-lookup.
+  - `lang` Query description: added `name_ru` to the list of locale-independent fields.
+  - Route function docstring: added `name_ru` to the per-item bullet list + added "name_ru is returned for all locales" note.
+- **Modified `src/lib/types.ts:LevelingUnique`:**
+  - Added `nameRu?: string | null` field with full JSDoc.
+- **Modified `src/components/dashboard/leveling-uniques-widget.tsx`:**
+  - Replaced the iter-148 `getUniqueDisplayName` import + comment with an iter-150 comment explaining the curated backend field.
+  - `UniqueRow` displayName logic: `locale === "ru" && unique.nameRu ? unique.nameRu : unique.name` (was `locale === "ru" ? getUniqueDisplayName(unique.name, "ru") ?? unique.name : unique.name`).
+  - `UniqueRowProps.locale` JSDoc updated to "iter 150".
+- **Modified `tests/test_leveling_uniques.py` (+9 tests):**
+  - `TestStaticTableIntegrity.test_all_entries_have_required_fields`: added `name_ru` to required_fields.
+  - `TestStaticTableIntegrity.test_name_ru_is_str_or_none` (NEW): verifies `name_ru` is None or non-empty str (empty string would render as blank cell).
+  - `TestComputeLevelingUniquesLifecycle.test_each_unique_has_all_required_fields`: added `name_ru` to required_fields.
+  - `TestRussianLocalization.test_ru_keeps_non_notes_fields_identical_to_en`: added `name_ru` to non_notes_fields list (it's a curated static field, locale-independent).
+  - `TestNameRuCuratedField` (NEW class, 5 tests):
+    - `test_all_expected_ru_names_are_present` — verifies 4 expected RU names.
+    - `test_other_items_have_none_name_ru` — verifies the 6 None items match the expected set.
+    - `test_name_ru_returned_for_all_locales` — verifies name_ru is identical for lang=en and lang=ru.
+    - `test_name_ru_count_is_4_of_10` — guards against accidental regression (count check).
+    - `test_name_ru_differs_from_name_when_set` — defensive against bad curation (name_ru == name would suggest a copy-paste).
+  - `TestRouteHandler` (3 new tests):
+    - `test_route_returns_name_ru_field` — first unique (Polcirkeln) has name_ru="Полярный круг".
+    - `test_route_returns_name_ru_for_ru_lang_too` — name_ru returned for lang=ru as well.
+    - `test_route_response_model_validates_name_ru_none` — Pydantic model accepts name_ru=None (validates wall-of-brambles case).
+- **Modified `src/__tests__/unique-items-i18n.test.tsx` (+1 net test):**
+  - `makeLevelingResponse(name, nameRu=null)` — added `nameRu` parameter and `nameRu` field to the unique object.
+  - `LevelingUniquesWidget` describe block — replaced 3 iter-148 tests with 4 iter-150 tests:
+    - "renders backend nameRu when locale=ru and nameRu is set" (uses Polcirkeln → "Полярный круг").
+    - "falls back to EN name when locale=ru but nameRu is null" (uses Wall of Brambles, nameRu=null).
+    - "renders EN name when locale=en (ignores nameRu)".
+    - "renders all 4 confirmed poe2db RU names when locale=ru (iter 150 baseline)" — loops over all 4 curated translations, unmounts between cases.
+- **Final verification:**
+  - `pytest tests/test_leveling_uniques.py -q` → **95 passed** (was 86; +9 new tests). Zero regressions.
+  - `pytest tests/ --ignore=tests/e2e -q` → **1527 passed** (was 1518 in iter 149; +9 new tests). Zero regressions.
+  - `npx tsc --noEmit` → clean (0 errors).
+  - `npx eslint .` → 0 errors, 110 warnings (all pre-existing; 0 new warnings — verified by running ESLint on the 4 modified TS files individually).
+  - `npx jest --silent` → **641 passed** (was 640 in iter 149; +1 net new test, since I replaced 3 iter-148 tests with 4 iter-150 tests). Zero regressions.
+- **Documentation updates:**
+  - `STATUS.md` — header bump (iter 149 → iter 150) with full change summary; TD-6 row updated (added iter-150 phase 2 follow-up); Quick Reference "unique items show English" row updated (removed "Known limitation" caveat, added leveling-uniques extension recipe); Quick Reference pytest count updated (1518 → 1527); Key Technical Insights "UI nameRu rendering pattern" section updated (iter 150 lesson added).
+  - `worklog.md` — this iter-150 entry; removed iter-148 section (rule: last 2 iterations only). Kept iter-149 + iter-150.
+  - `AGENT_NAVIGATION.md` — header bump (iter 149 → iter 150); invariant #24 caveat updated (leveling-uniques-widget now uses backend nameRu field — no longer "partial coverage").
+
+Stage Summary:
+- **iter 150 SHIPPED — Leveling-uniques-widget full RU coverage. Backend `nameRu` field added to `LevelingUniqueData` model with 4/10 confirmed poe2db RU translations curated; 6/10 `None` with documented extension path. Frontend widget switched from fragile `getUniqueDisplayName(name, "ru")` slug-lookup (~1/10 coverage) to direct `unique.nameRu` field. +9 pytest + +1 net jest, 1527 pytest + 641 Jest + tsc clean + 0 new ESLint warnings.**
+- **Modified files (3 backend + 2 frontend + 2 tests + 3 docs = 10 total):**
+  - `backend/economy/leveling_uniques.py` — added `name_ru` field to 10 entries in `_LEVELING_UNIQUES`; updated docstrings (module / lang param / return shape / static-table comment / `_LEVELING_UNIQUES_NOTES_RU` comment); `compute_leveling_uniques_lifecycle` now emits `name_ru` in each unique dict.
+  - `backend/api/response_models.py` — `LevelingUniqueData.name_ru: str | None = None` field added with full docstring.
+  - `backend/api/routes_leveling_uniques.py` — top docstring + lang Query description + route function docstring all updated to mention `name_ru`.
+  - `src/lib/types.ts` — `LevelingUnique.nameRu?: string | null` field added with full JSDoc.
+  - `src/components/dashboard/leveling-uniques-widget.tsx` — `UniqueRow.displayName` now uses `unique.nameRu` directly; removed `getUniqueDisplayName` import; iter-150 comment replaces iter-148 comment.
+  - `tests/test_leveling_uniques.py` — +9 new tests (1 in `TestStaticTableIntegrity`, 5 in new `TestNameRuCuratedField` class, 3 in `TestRouteHandler`); 3 existing tests updated to include `name_ru` in required_fields lists.
+  - `src/__tests__/unique-items-i18n.test.tsx` — `makeLevelingResponse` accepts nameRu param; `LevelingUniquesWidget` describe block replaced (3 → 4 tests).
+  - `STATUS.md` — header bump + TD-6 row + 2 Quick Reference rows + Key Technical Insights section.
+  - `worklog.md` — this iter-150 entry (removed iter-148).
+  - `AGENT_NAVIGATION.md` — header bump + invariant #24 caveat.
+- **What was NOT done (intentionally deferred to iter 151+):**
+  - **6/10 leveling uniques still have `name_ru=None`** — Wall of Brambles / Mana Leech Support / Feeding Frenzy Support / Echoes of Worldstone / Boots of Momentum / Wings of Entropy. These items have no poe2db RU page under the matching slug. To extend: (1) re-run `scripts/sync_currency_names_from_poe2db.py --fetch-unique-ru` after a poe2db update (the cache file is `scripts/.cache/poe2db_unique_names.json`); (2) search the cache for new slug matches against the leveling-uniques EN names; (3) manually edit `_LEVELING_UNIQUES` in `backend/economy/leveling_uniques.py` for any new matches. Do NOT invent translations.
+  - **Per-tab UX/logic deep-audit** — still deferred since iter 139. iter 150 was a backend/frontend nameRu extension, not a per-tab audit. Candidate for iter 151+.
+  - **Re-run F1 pipeline** (`--fetch-ru-by-item`) — 9 currency items still untranslated + 1 no-Cyrillic (`aldurs-saga`). Re-run after a patch / monthly.
+  - **TD-6 Phase 3 — re-audit cycle** — monthly `--audit` + `--apply-audit` (currency) + `--fetch-unique-ru` + `--apply-unique` (unique items) + `python scripts/sync_currency_names_ts.py`. Routine maintenance. Periodic re-check of leveling-uniques table for new poe2db RU matches.
+  - **TD-3 runtime log verification** — still deferred since iter 136 (requires prod access).
+- **Stopping point:** iter 150 = Leveling-uniques-widget full RU coverage (backend `nameRu` field added with 4/10 confirmed poe2db RU translations; frontend widget uses `unique.nameRu` directly; +9 pytest + +1 jest, 1527 pytest + 641 Jest + tsc clean + 0 new ESLint warnings). Next iter candidates: (a) per-tab UX/logic deep-audit (deferred since iter 139 — large scope); (b) extend leveling-uniques `nameRu` coverage — re-run `--fetch-unique-ru` after a poe2db update, manually curate new matches in `_LEVELING_UNIQUES` (small scope, requires poe2db to add new RU pages); (c) re-run F1 pipeline (`--fetch-ru-by-item`) after a patch / monthly to pick up 9 untranslated items; (d) TD-6 Phase 3 routine re-audit cycle; (e) TD-3 runtime log verification (requires prod access); (f) any new bugs the user identifies.

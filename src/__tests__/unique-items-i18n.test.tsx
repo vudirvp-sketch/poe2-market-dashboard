@@ -131,8 +131,13 @@ function makePairHistory(): ExchangePairHistoryPoint[] {
   })) as ExchangePairHistoryPoint[];
 }
 
-/** Build the minimal LevelingUniquesResponse used by LevelingUniquesWidget. */
-function makeLevelingResponse(name: string): LevelingUniquesResponse {
+/** Build the minimal LevelingUniquesResponse used by LevelingUniquesWidget.
+ *  `nameRu` defaults to null (iter 150) — pass a string to simulate an item
+ *  with a curated poe2db RU translation. */
+function makeLevelingResponse(
+  name: string,
+  nameRu: string | null = null,
+): LevelingUniquesResponse {
   return {
     league: "Standard",
     phase: "early",
@@ -143,6 +148,7 @@ function makeLevelingResponse(name: string): LevelingUniquesResponse {
       {
         id: "test-unique",
         name,
+        nameRu,
         category: "",
         peakDay: 2,
         peakPriceExalted: 15.0,
@@ -300,33 +306,63 @@ describe("iter 148 — unique-items RU localization across UI components", () =>
   // 3. LevelingUniquesWidget
   // =========================================================================
   describe("LevelingUniquesWidget", () => {
-    it("renders RU name when locale=ru and a poe2db RU translation exists", async () => {
-      // "Mind of the Council" → slug "Mind_of_the_Council" → poe2db RU
-      // "Разум Совета" (verified in iter 147 spot-check tests).
-      mockFetchApi.mockResolvedValue(makeLevelingResponse("Mind of the Council"));
+    it("renders backend nameRu when locale=ru and nameRu is set (iter 150)", async () => {
+      // iter 150: the widget now uses `unique.nameRu` directly from the
+      // backend response instead of `getUniqueDisplayName(name, "ru")`
+      // (which had ~1/10 coverage due to slug mismatch).
+      mockFetchApi.mockResolvedValue(
+        makeLevelingResponse("Polcirkeln Sapphire Ring", "Полярный круг"),
+      );
       renderWith(<LevelingUniquesWidget backendOnline={true} />, "ru");
       await waitFor(() => {
-        expect(screen.getByText("Разум Совета")).toBeInTheDocument();
+        expect(screen.getByText("Полярный круг")).toBeInTheDocument();
       });
     });
 
-    it("falls back to EN name when locale=ru but no poe2db RU translation", async () => {
-      // "Polcirkeln Sapphire Ring" → slug doesn't match poe2db index.
+    it("falls back to EN name when locale=ru but nameRu is null", async () => {
+      // 6/10 leveling uniques have nameRu=null (no poe2db RU match).
+      // The widget must fall back to the EN `name`.
       mockFetchApi.mockResolvedValue(
-        makeLevelingResponse("Polcirkeln Sapphire Ring"),
+        makeLevelingResponse("Wall of Brambles", null),
       );
       renderWith(<LevelingUniquesWidget backendOnline={true} />, "ru");
+      await waitFor(() => {
+        expect(screen.getByText("Wall of Brambles")).toBeInTheDocument();
+      });
+    });
+
+    it("renders EN name when locale=en (ignores nameRu)", async () => {
+      // Even when nameRu is set, locale=en must render the EN name.
+      mockFetchApi.mockResolvedValue(
+        makeLevelingResponse("Polcirkeln Sapphire Ring", "Полярный круг"),
+      );
+      renderWith(<LevelingUniquesWidget backendOnline={true} />, "en");
       await waitFor(() => {
         expect(screen.getByText("Polcirkeln Sapphire Ring")).toBeInTheDocument();
       });
     });
 
-    it("renders EN name when locale=en (no RU lookup)", async () => {
-      mockFetchApi.mockResolvedValue(makeLevelingResponse("Mind of the Council"));
-      renderWith(<LevelingUniquesWidget backendOnline={true} />, "en");
-      await waitFor(() => {
-        expect(screen.getByText("Mind of the Council")).toBeInTheDocument();
-      });
+    it("renders all 4 confirmed poe2db RU names when locale=ru (iter 150 baseline)", async () => {
+      // Verify the 4 curated poe2db RU translations render correctly.
+      // This guards against accidental removal of nameRu from the backend
+      // static table (regression test for the iter-150 curation).
+      const cases: Array<[string, string, string]> = [
+        ["Polcirkeln Sapphire Ring", "Полярный круг", "polcirkeln-sapphire-ring"],
+        ["Megalomaniac Diamond", "Мания величия", "megalomaniac-diamond"],
+        ["Mind of the Council", "Разум Совета", "mind-of-the-council"],
+        ["Soul Tether Amulet", "Оковы души", "soul-tether-amulet"],
+      ];
+      for (const [enName, ruName, _id] of cases) {
+        mockFetchApi.mockResolvedValue(makeLevelingResponse(enName, ruName));
+        const { unmount } = renderWith(
+          <LevelingUniquesWidget backendOnline={true} />,
+          "ru",
+        );
+        await waitFor(() => {
+          expect(screen.getByText(ruName)).toBeInTheDocument();
+        });
+        unmount();
+      }
     });
   });
 

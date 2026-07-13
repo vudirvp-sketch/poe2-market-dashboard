@@ -69,15 +69,28 @@ class TestStaticTableIntegrity:
         assert leveling_unique_count() >= 5
 
     def test_all_entries_have_required_fields(self):
-        """Every entry must have id, name, category, peak_day,
+        """Every entry must have id, name, name_ru, category, peak_day,
         peak_price_exalted, decay_pct, pattern, notes."""
         required_fields = {
-            "id", "name", "category", "peak_day",
+            "id", "name", "name_ru", "category", "peak_day",
             "peak_price_exalted", "decay_pct", "pattern", "notes",
         }
         for entry in list_leveling_uniques():
             missing = required_fields - set(entry.keys())
             assert not missing, f"Entry {entry.get('id', '?')} missing fields: {missing}"
+
+    def test_name_ru_is_str_or_none(self):
+        """name_ru (iter 150) must be either a non-empty str or None.
+
+        None means "no poe2db RU translation available for this slug" — the
+        frontend falls back to the EN name. An empty string would render as
+        a blank cell, which is a bug.
+        """
+        for entry in list_leveling_uniques():
+            name_ru = entry["name_ru"]
+            assert name_ru is None or (isinstance(name_ru, str) and len(name_ru) > 0), (
+                f"{entry['id']}: name_ru={name_ru!r} must be None or a non-empty str"
+            )
 
     def test_all_ids_are_unique(self):
         """ids must be unique — they're used as React keys and test selectors."""
@@ -416,7 +429,7 @@ class TestComputeLevelingUniquesLifecycle:
             LeaguePhase.EARLY, days_since_reference=2
         )
         required_fields = {
-            "id", "name", "category", "peak_day", "peak_price_exalted",
+            "id", "name", "name_ru", "category", "peak_day", "peak_price_exalted",
             "decay_pct", "pattern", "current_lifecycle_stage",
             "recommendation", "estimated_current_price_exalted",
             "days_until_peak", "notes",
@@ -605,9 +618,11 @@ class TestRussianLocalization:
             )
 
     def test_ru_keeps_non_notes_fields_identical_to_en(self):
-        """Only notes differs between en and ru — id/name/category/peak_day/
-        peak_price_exalted/decay_pct/pattern/stage/rec/est_price/days_until
-        must all match."""
+        """Only notes differs between en and ru — id/name/name_ru/category/
+        peak_day/peak_price_exalted/decay_pct/pattern/stage/rec/est_price/
+        days_until must all match. Note: name_ru is a curated static field
+        (iter 150), NOT a locale-specific translation — it must be identical
+        across locales."""
         result_en = compute_leveling_uniques_lifecycle(
             LeaguePhase.EARLY, days_since_reference=2, lang="en"
         )
@@ -615,7 +630,7 @@ class TestRussianLocalization:
             LeaguePhase.EARLY, days_since_reference=2, lang="ru"
         )
         non_notes_fields = [
-            "id", "name", "category", "peak_day", "peak_price_exalted",
+            "id", "name", "name_ru", "category", "peak_day", "peak_price_exalted",
             "decay_pct", "pattern", "current_lifecycle_stage",
             "recommendation", "estimated_current_price_exalted",
             "days_until_peak",
@@ -636,6 +651,121 @@ class TestRussianLocalization:
         )
         for u_zh, u_en in zip(result_zh["uniques"], result_en["uniques"]):
             assert u_zh["notes"] == u_en["notes"]
+
+
+# ---------------------------------------------------------------------------
+# name_ru curated field tests (iter 150)
+# ---------------------------------------------------------------------------
+
+
+class TestNameRuCuratedField:
+    """Verify the curated ``name_ru`` field on each leveling unique (iter 150).
+
+    ``name_ru`` is a static field sourced from poe2db's official RU pages
+    (see ``scripts/.cache/poe2db_unique_names.json``). It is returned for ALL
+    locales — the frontend picks ``name_ru`` vs ``name`` at render time based
+    on its own locale state. 4/10 items currently have a non-None translation
+    (the slugs that match poe2db's unique-item index); the remaining 6 are
+    None and the frontend falls back to the EN ``name``.
+    """
+
+    # The 4 items with a known poe2db RU translation (iter 150).
+    EXPECTED_RU_NAMES: dict[str, str] = {
+        "polcirkeln-sapphire-ring": "Полярный круг",
+        "megalomaniac-diamond": "Мания величия",
+        "mind-of-the-council": "Разум Совета",
+        "soul-tether-amulet": "Оковы души",
+    }
+
+    def test_all_expected_ru_names_are_present(self):
+        """The 4 items with a poe2db RU page have the correct RU name."""
+        result = compute_leveling_uniques_lifecycle(
+            LeaguePhase.EARLY, days_since_reference=2
+        )
+        by_id = {u["id"]: u for u in result["uniques"]}
+        for item_id, expected_ru in self.EXPECTED_RU_NAMES.items():
+            assert item_id in by_id, f"{item_id} not in uniques list"
+            assert by_id[item_id]["name_ru"] == expected_ru, (
+                f"{item_id}: name_ru={by_id[item_id]['name_ru']!r} "
+                f"expected {expected_ru!r}"
+            )
+
+    def test_other_items_have_none_name_ru(self):
+        """Items without a poe2db RU page have name_ru=None.
+
+        The 6 items currently missing a poe2db RU match (iter 150):
+        wall-of-brambles, mana-leech-support, feeding-frenzy-support,
+        echoes-of-worldstone, boots-of-momentum, wings-of-entropy.
+        """
+        result = compute_leveling_uniques_lifecycle(
+            LeaguePhase.EARLY, days_since_reference=2
+        )
+        none_ids = {u["id"] for u in result["uniques"] if u["name_ru"] is None}
+        expected_none = {
+            "wall-of-brambles",
+            "mana-leech-support",
+            "feeding-frenzy-support",
+            "echoes-of-worldstone",
+            "boots-of-momentum",
+            "wings-of-entropy",
+        }
+        assert none_ids == expected_none, (
+            f"None-name_ru set mismatch. Got: {none_ids}. "
+            f"Expected: {expected_none}."
+        )
+
+    def test_name_ru_returned_for_all_locales(self):
+        """name_ru is a static curated field — same value for lang=en and lang=ru.
+
+        The frontend picks name_ru vs name at render time based on its own
+        locale state, NOT based on the ?lang= query param. So the backend
+        must return name_ru regardless of lang.
+        """
+        result_en = compute_leveling_uniques_lifecycle(
+            LeaguePhase.EARLY, days_since_reference=2, lang="en"
+        )
+        result_ru = compute_leveling_uniques_lifecycle(
+            LeaguePhase.EARLY, days_since_reference=2, lang="ru"
+        )
+        for u_en, u_ru in zip(result_en["uniques"], result_ru["uniques"]):
+            assert u_en["name_ru"] == u_ru["name_ru"], (
+                f"{u_en['id']}: name_ru differs across locales "
+                f"(en={u_en['name_ru']!r}, ru={u_ru['name_ru']!r}) — "
+                f"name_ru must be locale-independent"
+            )
+
+    def test_name_ru_count_is_4_of_10(self):
+        """iter 150 ships with 4/10 items having a curated name_ru.
+
+        This test guards against accidental regression — if a future iter
+        adds more translations, update this count. If poe2db removes a RU
+        page, this test will catch it.
+        """
+        result = compute_leveling_uniques_lifecycle(
+            LeaguePhase.EARLY, days_since_reference=2
+        )
+        translated = sum(1 for u in result["uniques"] if u["name_ru"] is not None)
+        assert translated == 4, (
+            f"Expected 4 items with non-None name_ru (iter 150 baseline), "
+            f"got {translated}. Update this test if translations were added/removed."
+        )
+
+    def test_name_ru_differs_from_name_when_set(self):
+        """When name_ru is non-None, it must differ from the EN name.
+
+        A name_ru that equals the EN name suggests a copy-paste error or a
+        poe2db page that didn't actually translate the item (defensive check
+        against bad curation).
+        """
+        result = compute_leveling_uniques_lifecycle(
+            LeaguePhase.EARLY, days_since_reference=2
+        )
+        for u in result["uniques"]:
+            if u["name_ru"] is not None:
+                assert u["name_ru"] != u["name"], (
+                    f"{u['id']}: name_ru={u['name_ru']!r} equals name={u['name']!r} "
+                    f"(RU translation should differ from EN)"
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -736,6 +866,85 @@ class TestRouteHandler:
             result = asyncio_run(get_leveling_uniques_route(lang="en"))
 
         assert result["league"] == "temporium-league"
+
+    def test_route_returns_name_ru_field(self):
+        """Route output includes the curated name_ru field (iter 150).
+
+        The first unique in the table (polcirkeln-sapphire-ring) has a
+        known poe2db RU translation — verify the field is present and
+        correctly populated in the route response.
+        """
+        from backend.api.routes_leveling_uniques import get_leveling_uniques_route
+
+        mock_info = SimpleNamespace(
+            phase=LeaguePhase.EARLY,
+            days_since_reference=2,
+            reference_currency="exalted",
+        )
+        mock_detector = SimpleNamespace(get_phase_info=lambda: mock_info)
+
+        with patch(
+            "backend.api.routes_leveling_uniques.get_phase_detector",
+            return_value=mock_detector,
+        ):
+            result = asyncio_run(get_leveling_uniques_route(lang="en"))
+
+        first = result["uniques"][0]
+        assert first["id"] == "polcirkeln-sapphire-ring"
+        assert first["name_ru"] == "Полярный круг", (
+            f"polcirkeln-sapphire-ring: name_ru={first['name_ru']!r} "
+            f"expected 'Полярный круг'"
+        )
+
+    def test_route_returns_name_ru_for_ru_lang_too(self):
+        """name_ru is returned for lang=ru as well (it's a curated static field,
+        not locale-sensitive)."""
+        from backend.api.routes_leveling_uniques import get_leveling_uniques_route
+
+        mock_info = SimpleNamespace(
+            phase=LeaguePhase.EARLY,
+            days_since_reference=2,
+            reference_currency="exalted",
+        )
+        mock_detector = SimpleNamespace(get_phase_info=lambda: mock_info)
+
+        with patch(
+            "backend.api.routes_leveling_uniques.get_phase_detector",
+            return_value=mock_detector,
+        ):
+            result = asyncio_run(get_leveling_uniques_route(lang="ru"))
+
+        first = result["uniques"][0]
+        assert first["name_ru"] == "Полярный круг"
+
+    def test_route_response_model_validates_name_ru_none(self):
+        """The Pydantic response model accepts name_ru=None for items without
+        a poe2db RU translation. Verify by constructing the model from a
+        response that includes a None name_ru (wall-of-brambles)."""
+        from backend.api.routes_leveling_uniques import get_leveling_uniques_route
+        from backend.api.response_models import LevelingUniquesResponse
+
+        mock_info = SimpleNamespace(
+            phase=LeaguePhase.EARLY,
+            days_since_reference=2,
+            reference_currency="exalted",
+        )
+        mock_detector = SimpleNamespace(get_phase_info=lambda: mock_info)
+
+        with patch(
+            "backend.api.routes_leveling_uniques.get_phase_detector",
+            return_value=mock_detector,
+        ):
+            result = asyncio_run(get_leveling_uniques_route(lang="en"))
+
+        # Validate the response passes Pydantic model validation (will raise
+        # if name_ru=None is rejected by the model).
+        validated = LevelingUniquesResponse.model_validate(result)
+        # Find wall-of-brambles — it should have name_ru=None
+        brambles = next(
+            u for u in validated.uniques if u.id == "wall-of-brambles"
+        )
+        assert brambles.name_ru is None
 
 
 # ---------------------------------------------------------------------------

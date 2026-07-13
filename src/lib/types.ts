@@ -814,6 +814,13 @@ export interface LevelingUnique {
   id: string;
   /** Display name (EN, matches in-game name). */
   name: string;
+  /** Curated Russian display name (iter 150), sourced from poe2db's official
+   *  RU pages. `null` when no poe2db RU translation exists for this item's
+   *  slug — the frontend falls back to `name`. Currently 4/10 leveling
+   *  uniques have a non-null `nameRu`. The field is locale-independent
+   *  (returned by the backend for all `?lang=` values) — the frontend picks
+   *  `nameRu` vs `name` at render time based on its own locale state. */
+  nameRu?: string | null;
   /** Optional POE2Scout category slug for future cross-reference. Empty string if priced as item. */
   category: string;
   /** League day on which the unique's price historically peaks (Day 1 = launch). Typically 2. */

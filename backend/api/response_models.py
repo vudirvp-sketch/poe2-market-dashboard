@@ -895,6 +895,16 @@ class LevelingUniqueData(BaseModel):
     """A single leveling unique with its current lifecycle stage."""
     id: str = Field(description="Stable slug (e.g. 'polcirkeln-sapphire-ring') — for tests and future metric linkage")
     name: str = Field(description="Display name (EN, matches in-game name)")
+    name_ru: str | None = Field(default=None, description=(
+        "Curated Russian display name (iter 150) sourced from poe2db's "
+        "official RU pages. None when no poe2db RU translation exists for "
+        "this item's slug — the frontend then falls back to the EN ``name``. "
+        "Currently 4/10 leveling uniques have a non-None ``name_ru``. To "
+        "extend coverage: re-run "
+        "``scripts/sync_currency_names_from_poe2db.py --fetch-unique-ru`` "
+        "after a poe2db update, then manually update the static table in "
+        "``backend/economy/leveling_uniques.py`` for any new matches."
+    ))
     category: str = Field(default="", description="Optional POE2Scout category slug for future cross-reference. Empty string if the unique is priced as an item (most cases).")
     peak_day: int = Field(description="League day on which the unique's price historically peaks (Day 1 = launch day; Day 2 = first full day). Typically 2 for leveling uniques.")
     peak_price_exalted: float = Field(description="Typical peak price in Exalted Orbs. Used by the widget to render 'est. ~X exa'.")
